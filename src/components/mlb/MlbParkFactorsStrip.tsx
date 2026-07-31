@@ -78,32 +78,74 @@ function ParkMatchupLogos({ park }: { park: MlbParkFactorDisplayRow }) {
   );
 }
 
-/** Collapsed-state item: matchup identity, stadium, and park-factor score only -- no weather detail. */
-function CompactParkItem({ park, toneClass }: { park: MlbParkFactorDisplayRow; toneClass: string }) {
+/** Shared selected-state ring/border treatment so both card variants highlight identically. */
+function selectionClass(isSelected: boolean) {
+  return isSelected ? "ring-2 ring-sky-500 border-sky-400 bg-sky-50" : "border-slate-200";
+}
+
+/** Collapsed-state item: matchup identity, stadium, and park-factor score only -- no weather detail. Clickable to filter the player table to this game. */
+function CompactParkItem({
+  park,
+  toneClass,
+  isSelected,
+  onSelect,
+}: {
+  park: MlbParkFactorDisplayRow;
+  toneClass: string;
+  isSelected: boolean;
+  onSelect?: (key: string) => void;
+}) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-2 py-1.5">
+    <button
+      type="button"
+      onClick={() => onSelect?.(park.key)}
+      aria-pressed={isSelected}
+      className={cn(
+        "flex w-full items-center justify-between gap-2 rounded-lg border px-2 py-1.5 text-left transition hover:border-sky-300",
+        selectionClass(isSelected),
+      )}
+    >
       <ParkMatchupLogos park={park} />
       <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", toneClass)}>
         {park.parkFactor.toFixed(2)}
       </span>
-    </div>
+    </button>
   );
 }
 
-/** Expanded-state card: adds roof, temperature, precipitation, wind, and HR/game on top of the compact identity. */
+/** Expanded-state card: adds roof, temperature, precipitation, wind, and HR/game on top of the compact identity. Clickable to filter the player table to this game. */
 function ExpandedParkCard({
   park,
   toneClass,
   showHrPerGame,
   showPrecipitation,
+  isSelected,
+  onSelect,
 }: {
   park: MlbParkFactorDisplayRow;
   toneClass: string;
   showHrPerGame: boolean;
   showPrecipitation: boolean;
+  isSelected: boolean;
+  onSelect?: (key: string) => void;
 }) {
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+    <article
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      onClick={() => onSelect?.(park.key)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect?.(park.key);
+        }
+      }}
+      className={cn(
+        "cursor-pointer rounded-xl border bg-white p-2 shadow-sm transition hover:border-sky-300",
+        selectionClass(isSelected),
+      )}
+    >
       <div className="flex items-center justify-between gap-2">
         <ParkMatchupLogos park={park} />
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", toneClass)}>
@@ -144,15 +186,21 @@ export interface MlbParkFactorsStripProps {
   /** Overrides the "Hide details" expanded-state label. */
   collapseLabel?: string;
   className?: string;
+  /** The currently selected game's key ("all" or a park's `key`), shared with the page's "Game" dropdown so both controls stay in sync. Omit to render Park Factors as selection-less (no highlight, no click filtering). */
+  selectedGameKey?: string;
+  /** Called with a park's `key` when clicked, or "all" when the selected park is clicked again (toggle off) -- lets the caller drive one shared game-filter state from both Park Factors and the "Game" dropdown. */
+  onSelectGame?: (gameKey: string) => void;
 }
 
 /**
  * Compact, collapsible Park Factors section shared by HR Props, Strikeout
  * Props, and Batter vs Pitcher. Collapsed by default on every viewport: the
  * always-visible summary shows one compact row per park (matchup, stadium,
- * score). Expanding reveals the full weather/roof detail beneath it.
- * Presentation-only -- renders whatever `parks` array (already built and
- * sorted by the caller) it's given, in that exact order.
+ * score). Expanding swaps that same summary for the full weather/roof detail
+ * -- exactly one copy of each park's data is ever in the DOM at a time, never
+ * both a compact row and a detail card simultaneously. Presentation-only --
+ * renders whatever `parks` array (already built and sorted by the caller) it
+ * is given, in that exact order.
  */
 export function MlbParkFactorsStrip({
   parks,
@@ -164,65 +212,83 @@ export function MlbParkFactorsStrip({
   expandLabel = "Show details",
   collapseLabel = "Hide details",
   className,
+  selectedGameKey,
+  onSelectGame,
 }: MlbParkFactorsStripProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const toneClass = perspective === "hitter" ? getHitterParkTone : getPitcherParkTone;
   const collapsedParks = collapsedPreviewCount != null ? parks.slice(0, collapsedPreviewCount) : parks;
+  const selectedPark = selectedGameKey && selectedGameKey !== "all" ? parks.find((park) => park.key === selectedGameKey) : undefined;
+
+  const handleSelect = (key: string) => {
+    if (!onSelectGame) return;
+    onSelectGame(selectedGameKey === key ? "all" : key);
+  };
 
   return (
-    <section className={cn("rounded-2xl border border-slate-200 bg-white p-3 shadow-sm", className)}>
-      <details className="group" open={isExpanded}>
-        <summary
-          className="flex cursor-pointer list-none flex-col gap-3 rounded-lg [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          onClick={(event) => {
-            // Native <details> toggling is replaced with controlled state so the expanded
-            // detail grid can be conditionally rendered (not just CSS-hidden) -- exactly
-            // one copy of each park's data sits in the DOM at a time.
-            event.preventDefault();
-            setIsExpanded((expanded) => !expanded);
-          }}
+    <section data-testid="park-factors-strip" className={cn("rounded-2xl border border-slate-200 bg-white p-3 shadow-sm", className)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="border-l-2 border-sky-500 pl-2 text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
+          <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {selectedPark && onSelectGame ? (
+            <button
+              type="button"
+              onClick={() => onSelectGame("all")}
+              className="flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-800 transition hover:bg-sky-200"
+            >
+              {selectedPark.awayTeam} @ {selectedPark.homeTeam}
+              <span aria-hidden="true">✕</span>
+            </button>
+          ) : (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parks.length} parks</span>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsExpanded((expanded) => !expanded)}
+            className="flex items-center gap-1 text-xs font-semibold text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          >
+            {isExpanded ? collapseLabel : expandLabel}
+            <span aria-hidden="true" className={cn("text-slate-400 transition-transform duration-150", isExpanded && "rotate-180")}>⌄</span>
+          </button>
+        </div>
+      </div>
+
+      {isExpanded ? (
+        <div
+          data-testid="park-factors-expanded-grid"
+          className="mt-3 grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="border-l-2 border-sky-500 pl-2 text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
-              <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
-            </div>
-            <span className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parks.length} parks</span>
-              <span className="flex items-center gap-1 text-xs font-semibold text-sky-700">
-                {isExpanded ? collapseLabel : expandLabel}
-                <span aria-hidden="true" className="text-slate-400 transition-transform duration-150 group-open:rotate-180">⌄</span>
-              </span>
-            </span>
-          </div>
-
-          <div
-            data-testid="park-factors-compact-grid"
-            className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-          >
-            {collapsedParks.map((park) => (
-              <CompactParkItem key={park.key} park={park} toneClass={toneClass(park.parkFactor)} />
-            ))}
-          </div>
-        </summary>
-
-        {isExpanded && (
-          <div
-            data-testid="park-factors-expanded-grid"
-            className="mt-3 grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-          >
-            {parks.map((park) => (
-              <ExpandedParkCard
-                key={park.key}
-                park={park}
-                toneClass={toneClass(park.parkFactor)}
-                showHrPerGame={showHrPerGame}
-                showPrecipitation={showPrecipitation}
-              />
-            ))}
-          </div>
-        )}
-      </details>
+          {parks.map((park) => (
+            <ExpandedParkCard
+              key={park.key}
+              park={park}
+              toneClass={toneClass(park.parkFactor)}
+              showHrPerGame={showHrPerGame}
+              showPrecipitation={showPrecipitation}
+              isSelected={selectedGameKey === park.key}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      ) : (
+        <div
+          data-testid="park-factors-compact-grid"
+          className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+        >
+          {collapsedParks.map((park) => (
+            <CompactParkItem
+              key={park.key}
+              park={park}
+              toneClass={toneClass(park.parkFactor)}
+              isSelected={selectedGameKey === park.key}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

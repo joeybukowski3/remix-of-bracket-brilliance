@@ -1,17 +1,18 @@
 /**
  * Focused tests for the shared, presentation-only MlbParkFactorsStrip
- * component -- a single collapsible disclosure shared by HR Props,
- * Strikeout Props, and Batter vs Pitcher. Collapsed by default on every
- * viewport: the always-visible summary shows one compact row per park
- * (matchup, stadium, score); expanding reveals the full weather/roof
- * detail. Renders whatever `parks` array it is given (already built and
- * sorted by the caller) -- it performs no park-factor calculation or
- * ordering of its own.
+ * component -- a single collapsible section shared by HR Props, Strikeout
+ * Props, and Batter vs Pitcher. Collapsed by default on every viewport:
+ * a compact row per park (matchup, stadium, score). Expanding SWAPS that
+ * compact row for the full weather/roof detail cards -- never both at once,
+ * so exactly one copy of each park's data is ever in the DOM. Each park is
+ * clickable to drive a shared, caller-owned game-filter selection. Renders
+ * whatever `parks` array it is given (already built and sorted by the
+ * caller) -- it performs no park-factor calculation or ordering of its own.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MlbParkFactorsStrip, type MlbParkFactorDisplayRow } from "./MlbParkFactorsStrip";
 
 function makePark(overrides: Partial<MlbParkFactorDisplayRow> = {}): MlbParkFactorDisplayRow {
@@ -31,10 +32,10 @@ function makePark(overrides: Partial<MlbParkFactorDisplayRow> = {}): MlbParkFact
   };
 }
 
-function expand(container: HTMLElement) {
-  const summary = container.querySelector("summary") as HTMLElement;
-  fireEvent.click(summary);
-  return summary;
+function toggle(container: HTMLElement) {
+  const button = within(container).getByText(/show details|hide details/i);
+  fireEvent.click(button);
+  return button;
 }
 
 describe("MlbParkFactorsStrip", () => {
@@ -46,10 +47,11 @@ describe("MlbParkFactorsStrip", () => {
   });
 
   it("is collapsed by default on every viewport", () => {
-    const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
+    render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
 
-    expect(container.querySelector("details")).not.toHaveAttribute("open");
     expect(screen.getByText("Show details")).toBeInTheDocument();
+    expect(screen.getByTestId("park-factors-compact-grid")).toBeInTheDocument();
+    expect(screen.queryByTestId("park-factors-expanded-grid")).toBeNull();
   });
 
   it("shows the compact grid, matchup logos, stadium, and score while collapsed", () => {
@@ -89,9 +91,8 @@ describe("MlbParkFactorsStrip", () => {
   it("expands on click and reveals expand state, roof, and temperature", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
 
-    expand(container);
+    toggle(container);
 
-    expect(container.querySelector("details")).toHaveAttribute("open");
     expect(screen.getByText("Hide details")).toBeInTheDocument();
     expect(screen.getByText("Open")).toBeInTheDocument();
     expect(screen.getByText("78°")).toBeInTheDocument();
@@ -100,7 +101,7 @@ describe("MlbParkFactorsStrip", () => {
   it("shows HR/game once expanded, by default for hitter perspective", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
 
-    expand(container);
+    toggle(container);
 
     expect(screen.getByText(/2\.40 HR\/G/)).toBeInTheDocument();
   });
@@ -108,7 +109,7 @@ describe("MlbParkFactorsStrip", () => {
   it("omits HR/game once expanded for pitcher perspective by default", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="pitcher" subtitle="Pitcher-friendly order" />);
 
-    expand(container);
+    toggle(container);
 
     expect(screen.queryByText(/HR\/G/)).toBeNull();
   });
@@ -116,7 +117,7 @@ describe("MlbParkFactorsStrip", () => {
   it("respects an explicit showHrPerGame override once expanded", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="pitcher" subtitle="x" showHrPerGame />);
 
-    expand(container);
+    toggle(container);
 
     expect(screen.getByText(/HR\/G/)).toBeInTheDocument();
   });
@@ -124,7 +125,7 @@ describe("MlbParkFactorsStrip", () => {
   it("shows precipitation once expanded by default", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
 
-    expand(container);
+    toggle(container);
 
     expect(screen.getByText(/Precip 10%/)).toBeInTheDocument();
   });
@@ -132,25 +133,25 @@ describe("MlbParkFactorsStrip", () => {
   it("omits precipitation once expanded when showPrecipitation is false (matches Strikeout Props' prior sidebar)", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="pitcher" subtitle="x" showPrecipitation={false} />);
 
-    expand(container);
+    toggle(container);
 
     expect(screen.queryByText(/Precip/)).toBeNull();
   });
 
   it("shows wind once expanded only when wind speed reaches the existing 10 MPH threshold", () => {
     const { container: below } = render(<MlbParkFactorsStrip parks={[makePark({ windSpeed: 5 })]} perspective="hitter" subtitle="x" />);
-    expand(below);
+    toggle(below);
     expect(screen.queryByText(/💨/)).toBeNull();
 
     const { container: above } = render(<MlbParkFactorsStrip parks={[makePark({ windSpeed: 12 })]} perspective="hitter" subtitle="x" />);
-    expand(above);
+    toggle(above);
     expect(screen.getByText(/💨/)).toBeInTheDocument();
   });
 
   it("preserves existing wind-arrow direction mapping", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark({ windSpeed: 12, windDirection: "SW" })]} perspective="hitter" subtitle="x" />);
 
-    expand(container);
+    toggle(container);
 
     expect(screen.getByText(/↗/)).toBeInTheDocument();
   });
@@ -164,14 +165,14 @@ describe("MlbParkFactorsStrip", () => {
       />,
     );
 
-    expand(container);
+    toggle(container);
 
     expect(screen.getByText("Retractable")).toBeInTheDocument();
     expect(screen.getByText("Roof")).toBeInTheDocument();
   });
 
   it("preserves existing hitter-perspective park-factor color thresholds", () => {
-    const { container } = render(
+    render(
       <MlbParkFactorsStrip
         parks={[makePark({ key: "hi", parkFactor: 1.15 }), makePark({ key: "lo", parkFactor: 0.9, homeTeam: "MIA" })]}
         perspective="hitter"
@@ -183,7 +184,6 @@ describe("MlbParkFactorsStrip", () => {
     const low = screen.getByText("0.90");
     expect(high.className).toMatch(/bg-green-500/);
     expect(low.className).toMatch(/bg-blue-500/);
-    void container;
   });
 
   it("preserves existing pitcher-perspective park-factor color thresholds", () => {
@@ -201,46 +201,38 @@ describe("MlbParkFactorsStrip", () => {
     expect(low.className).toMatch(/bg-green-500/);
   });
 
-  it("is keyboard accessible: the summary is focusable and activation toggles the disclosure", () => {
+  it("is keyboard accessible: the toggle button is focusable and activation toggles the section", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
-    const summary = container.querySelector("summary") as HTMLElement;
+    const button = screen.getByText("Show details");
 
-    summary.focus();
-    expect(document.activeElement).toBe(summary);
+    button.focus();
+    expect(document.activeElement).toBe(button);
 
-    // A native <summary> translates Enter/Space activation into a click event;
-    // this component's toggle handler treats every click on the summary the same way.
-    fireEvent.click(summary);
+    fireEvent.click(button);
 
-    expect(container.querySelector("details")).toHaveAttribute("open");
-  });
-
-  it("exposes expanded state via the native details `open` attribute", () => {
-    const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
-    const details = container.querySelector("details") as HTMLDetailsElement;
-
-    expect(details.open).toBe(false);
-    expand(container);
-    expect(details.open).toBe(true);
+    expect(screen.getByText("Hide details")).toBeInTheDocument();
+    void container;
   });
 
   it("renders exactly one semantic Park Factors instance with no duplicated mobile/desktop park trees", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
 
     expect(container.querySelectorAll("section")).toHaveLength(1);
-    expect(container.querySelectorAll("details")).toHaveLength(1);
-    // Collapsed: only the compact grid's copy of the stadium name should exist.
     expect(screen.getAllByText("Wrigley Field")).toHaveLength(1);
   });
 
-  it("does not duplicate park data once expanded (compact identity plus one detailed card, not two full copies)", () => {
+  it("never renders both the compact grid and the expanded grid at once, collapsed or expanded (no duplicated park cards)", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
 
-    expand(container);
+    expect(screen.getAllByText("Wrigley Field")).toHaveLength(1);
+    expect(container.querySelectorAll("article")).toHaveLength(0);
 
-    // Stadium now appears in the compact row and the expanded card -- exactly two, not more.
-    expect(screen.getAllByText("Wrigley Field")).toHaveLength(2);
+    toggle(container);
+
+    // Expanded: exactly one detail card, no leftover compact row.
+    expect(screen.getAllByText("Wrigley Field")).toHaveLength(1);
     expect(container.querySelectorAll("article")).toHaveLength(1);
+    expect(screen.queryByTestId("park-factors-compact-grid")).toBeNull();
   });
 
   it("includes the required compact-grid responsive breakpoint classes", () => {
@@ -252,7 +244,7 @@ describe("MlbParkFactorsStrip", () => {
 
   it("includes the required expanded-grid responsive breakpoint classes", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
-    expand(container);
+    toggle(container);
     const grid = container.querySelector('[data-testid="park-factors-expanded-grid"]');
 
     expect(grid).toHaveClass("sm:grid-cols-2", "md:grid-cols-3", "lg:grid-cols-4", "xl:grid-cols-5", "2xl:grid-cols-6");
@@ -279,7 +271,7 @@ describe("MlbParkFactorsStrip", () => {
 
   it("does not render any model recommendation or betting-claim wording", () => {
     const { container } = render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
-    expand(container);
+    toggle(container);
     const text = container.textContent ?? "";
 
     expect(text).not.toMatch(/recommend/i);
@@ -294,7 +286,114 @@ describe("MlbParkFactorsStrip", () => {
     expect(screen.getByText("0 parks")).toBeInTheDocument();
     expect(container.querySelectorAll("article")).toHaveLength(0);
 
-    expand(container);
+    toggle(container);
     expect(container.querySelectorAll("article")).toHaveLength(0);
+  });
+
+  it("clicking a compact park card calls onSelectGame with that park's key", () => {
+    const onSelectGame = vi.fn();
+    render(
+      <MlbParkFactorsStrip
+        parks={[makePark()]}
+        perspective="hitter"
+        subtitle="x"
+        selectedGameKey="all"
+        onSelectGame={onSelectGame}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Wrigley Field"));
+
+    expect(onSelectGame).toHaveBeenCalledWith("BAL@CHC");
+  });
+
+  it("clicking the already-selected park calls onSelectGame with \"all\" (toggle off)", () => {
+    const onSelectGame = vi.fn();
+    render(
+      <MlbParkFactorsStrip
+        parks={[makePark()]}
+        perspective="hitter"
+        subtitle="x"
+        selectedGameKey="BAL@CHC"
+        onSelectGame={onSelectGame}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Wrigley Field"));
+
+    expect(onSelectGame).toHaveBeenCalledWith("all");
+  });
+
+  it("clicking an expanded park card also calls onSelectGame with that park's key", () => {
+    const onSelectGame = vi.fn();
+    const { container } = render(
+      <MlbParkFactorsStrip
+        parks={[makePark()]}
+        perspective="hitter"
+        subtitle="x"
+        selectedGameKey="all"
+        onSelectGame={onSelectGame}
+      />,
+    );
+
+    toggle(container);
+    fireEvent.click(screen.getByText("Wrigley Field"));
+
+    expect(onSelectGame).toHaveBeenCalledWith("BAL@CHC");
+  });
+
+  it("highlights the selected park card", () => {
+    render(
+      <MlbParkFactorsStrip
+        parks={[makePark(), makePark({ key: "NYY@BOS", homeTeam: "BOS", awayTeam: "NYY", stadium: "Fenway Park" })]}
+        perspective="hitter"
+        subtitle="x"
+        selectedGameKey="BAL@CHC"
+        onSelectGame={vi.fn()}
+      />,
+    );
+
+    const selected = screen.getByText("Wrigley Field").closest("button");
+    const unselected = screen.getByText("Fenway Park").closest("button");
+
+    expect(selected?.className).toMatch(/ring-sky-500/);
+    expect(unselected?.className).not.toMatch(/ring-sky-500/);
+  });
+
+  it("shows a clear-selection pill with the matchup label when a game is selected", () => {
+    render(
+      <MlbParkFactorsStrip
+        parks={[makePark()]}
+        perspective="hitter"
+        subtitle="x"
+        selectedGameKey="BAL@CHC"
+        onSelectGame={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/BAL @ CHC/)).toBeInTheDocument();
+  });
+
+  it("clicking the clear-selection pill calls onSelectGame with \"all\"", () => {
+    const onSelectGame = vi.fn();
+    render(
+      <MlbParkFactorsStrip
+        parks={[makePark()]}
+        perspective="hitter"
+        subtitle="x"
+        selectedGameKey="BAL@CHC"
+        onSelectGame={onSelectGame}
+      />,
+    );
+
+    fireEvent.click(screen.getByText(/BAL @ CHC/));
+
+    expect(onSelectGame).toHaveBeenCalledWith("all");
+  });
+
+  it("does not throw or require onSelectGame -- clicking a park is a no-op without it", () => {
+    render(<MlbParkFactorsStrip parks={[makePark()]} perspective="hitter" subtitle="x" />);
+
+    expect(() => fireEvent.click(screen.getByText("Wrigley Field"))).not.toThrow();
   });
 });

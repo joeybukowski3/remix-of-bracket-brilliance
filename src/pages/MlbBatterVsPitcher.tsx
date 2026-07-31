@@ -38,12 +38,13 @@ import {
   resolveSampleSize,
 } from "@/lib/mlb/percentileColorScale";
 import type { BvpHistoryEntry } from "@/hooks/useMlbBvpHistory";
+import { compareGameStartTime, formatGameTime } from "@/lib/mlb/mlbGameTime";
 
 const DASH = "—";
 /** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors MlbHrProps.tsx's Batter View and MlbStrikeoutProps.tsx's main table. */
 const PAGE_SIZE = 50;
 
-type SortKey = "rank" | "player" | "team" | "opposingPitcher" | "bestMatchupScore" | "batterPowerScore" | "opposingPitcherHitsVs" | "pitcherVulnerabilityScore" | "xba" | "hardHitRate" | "barrelRate";
+type SortKey = "rank" | "player" | "team" | "opposingPitcher" | "bestMatchupScore" | "batterPowerScore" | "opposingPitcherHitsVs" | "pitcherVulnerabilityScore" | "xba" | "hardHitRate" | "barrelRate" | "gameStartTime";
 type SortDirection = "asc" | "desc";
 
 /** Comparative metric keys colored by slate-relative percentile (not absolute cutoffs). */
@@ -72,6 +73,7 @@ const CONTACT_QUALITY_METRICS = new Set<BvpPercentileMetric>(["xba", "hardHitRat
 const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"];
 
 function sortRows(rows: PitcherVsBatterRow[], key: SortKey, dir: SortDirection) {
+  if (key === "gameStartTime") return [...rows].sort((a, b) => compareGameStartTime(a.gameStartTime, b.gameStartTime, dir));
   const m = dir === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
     const av = a[key], bv = b[key];
@@ -306,7 +308,7 @@ export default function MlbBatterVsPitcher() {
   }, [search, teamFilter, gameFilter, confidenceFilter, sortKey, sortDir]);
 
   const handleSort = (key: SortKey) => {
-    setSortDir((cur) => (sortKey === key ? (cur === "asc" ? "desc" : "asc") : ["player", "team", "opposingPitcher"].includes(key) ? "asc" : "desc"));
+    setSortDir((cur) => (sortKey === key ? (cur === "asc" ? "desc" : "asc") : ["player", "team", "opposingPitcher", "gameStartTime"].includes(key) ? "asc" : "desc"));
     setSortKey(key);
   };
 
@@ -418,6 +420,8 @@ export default function MlbBatterVsPitcher() {
             collapsedPreviewCount={isCompactLayout ? 1 : undefined}
             expandLabel={isCompactLayout ? "Click to expand" : undefined}
             collapseLabel={isCompactLayout ? "Show less" : undefined}
+            selectedGameKey={gameFilter}
+            onSelectGame={setGameFilter}
           />
 
           <div className="space-y-4">
@@ -470,7 +474,10 @@ export default function MlbBatterVsPitcher() {
                               <MlbTeamLogo team={row.team} size={28} />
                               <div className="min-w-0 flex-1">
                                 <div className="truncate text-[13px] font-black text-slate-900">{row.player}</div>
-                                <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
+                                <div className="truncate text-[11px] text-slate-400">
+                                  <span>vs {row.opposingPitcher}</span>
+                                  <span className="ml-1">· {formatGameTime(row.gameStartTime)}</span>
+                                </div>
                               </div>
                               <PercentileCell
                                 value={row.bestMatchupScore}
@@ -513,6 +520,7 @@ export default function MlbBatterVsPitcher() {
                         <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black whitespace-nowrap min-w-[130px] text-left">
                           <button type="button" onClick={() => handleSort("player")} className="hover:text-slate-900">Batter{makeSortIndicator(sortKey === "player", sortDir)}</button>
                         </th>
+                        <SortTh k="gameStartTime" label="Game Time" />
                         <SortTh k="bestMatchupScore" label="Matchup Score" help="Overall matchup strength, roughly 0-100, ranking today's batters against each other. Not a probability or a betting recommendation." />
                         <SortTh k="xba" label="xBA" help="Expected batting average from contact quality. Shown for context." />
                         <SortTh k="hardHitRate" label="Hard Hit%" />
@@ -560,6 +568,7 @@ export default function MlbBatterVsPitcher() {
                               </div>
                               <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                             </td>
+                            <td className="border-b border-slate-100 px-2 py-1 whitespace-nowrap text-[11px] font-semibold text-slate-600">{formatGameTime(row.gameStartTime)}</td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <PercentileCell value={row.bestMatchupScore} display={fmt(row.bestMatchupScore)} percentile={metricPercentile(row, "bestMatchupScore")} strong {...sampleGateForMetric(row, "bestMatchupScore")} />
                             </td>
@@ -599,7 +608,7 @@ export default function MlbBatterVsPitcher() {
                           </tr>
                           {isBvpExpanded && (
                             <tr>
-                              <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                              <td colSpan={11} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
                                 <BvpExpandedSeasonMatchupStats
                                   row={row}
                                   bvpEntry={bvpEntry}
@@ -613,7 +622,7 @@ export default function MlbBatterVsPitcher() {
                           </Fragment>
                         );
                       }) : (
-                        <tr><td colSpan={10} className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</td></tr>
+                        <tr><td colSpan={11} className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</td></tr>
                       )}
                     </tbody>
                   </table>

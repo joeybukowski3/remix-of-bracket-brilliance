@@ -22,6 +22,7 @@ import {
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
+import { compareGameStartTime, formatGameTime } from "@/lib/mlb/mlbGameTime";
 import type { KPropStatus } from "@/lib/mlb/kPropStatus";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -80,6 +81,8 @@ export type HrDashboardGame = {
   windDirection: string;
   conditions: string;
   parkFactor: number;
+  /** Scheduled first-pitch time (ISO 8601, UTC), from the same authoritative schedule source as the rest of the slate. Null when the generator didn't receive one. */
+  gameStartTime?: string | null;
 };
 
 export type HrDashboardPitcher = {
@@ -129,6 +132,8 @@ export type HrDashboardPitcher = {
   workloadConfidenceGrade?: string | null;
   workloadConfidenceScore?: number | null;
   workloadFlags?: string[];
+  /** Scheduled first-pitch time (ISO 8601, UTC). Not present on the raw pitcher record -- backfilled by joining `games` on `gameKey` in normalizeHrDashboardPayload, the same join key used for park factor/ballpark. */
+  gameStartTime?: string | null;
 };
 
 export type HrLineupStatus = "confirmed" | "projected" | "unknown";
@@ -185,6 +190,8 @@ export type HrDashboardBatter = {
   /** Dual-side current-season splits for expanded batter UI comparison (not used in scoring). */
   handednessSplits?: HandednessSplits | null;
   bats?: "L" | "R" | "S" | null;
+  /** Scheduled first-pitch time (ISO 8601, UTC), from the same authoritative schedule source as the rest of the slate. Null when the generator didn't receive one. */
+  gameStartTime?: string | null;
   hrLine?: number | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
   hrOddsNo?: string | null;      // sportsbook no HR odds e.g. "-450"
@@ -295,9 +302,9 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "flyBallRate" | "hrVs" | "hitsVs" | "kVs" | "last7HR" | "hrPerStart";
-type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "hrScore" | "pitcherXera" | "pitcherFlyBallRate";
-type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
-type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore";
+type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "hrScore" | "pitcherXera" | "pitcherFlyBallRate" | "gameStartTime";
+type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate" | "gameStartTime";
+type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore" | "gameStartTime";
 
 type HeatRange = { low: number; high: number };
 type HeatIntent = "warm" | "cool" | "balance";
@@ -391,6 +398,8 @@ export type PitcherVsBatterRow = {
   pitcherFlyBallRate: number | null;
   windBlowingOut: boolean;
   angleTags: string[];
+  /** Scheduled first-pitch time (ISO 8601, UTC), joined from `games` by gameKey. Null when unavailable. */
+  gameStartTime?: string | null;
 };
 
 export type PitcherStrikeoutTeamRow = {
@@ -398,6 +407,8 @@ export type PitcherStrikeoutTeamRow = {
   gameKey: string;
   /** Canonical numeric MLB gamePk, passed through from the pitcher's raw row. Null when upstream could not resolve one -- never fabricated. Doubleheader-safe; `gameKey` alone is not. */
   gameId: number | null;
+  /** Scheduled first-pitch time (ISO 8601, UTC), joined from `games` by gameKey. Null when unavailable. */
+  gameStartTime?: string | null;
   /** Canonical numeric MLB pitcher id, passed through from the pitcher's raw row. */
   pitcherId: number | null;
   pitcher: string;
@@ -575,6 +586,7 @@ function normalizeGame(entry: unknown): HrDashboardGame | null {
     windDirection: normalizeText(entry.windDirection) || DASH,
     conditions: normalizeText(entry.conditions) || DASH,
     parkFactor: normalizeNumber(entry.parkFactor),
+    gameStartTime: normalizeText(entry.gameStartTime) || null,
   };
   if (!g.gameKey || !g.awayTeam || !g.homeTeam || g.parkFactor == null) return null;
   return g as HrDashboardGame;
@@ -703,6 +715,7 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     splitHrFrequencyScore: normalizeNumber(entry.splitHrFrequencyScore),
     handednessSplits: normalizeHandednessSplits(entry.handednessSplits),
     bats: (["L","R","S"].includes(String(entry.bats ?? "")) ? String(entry.bats) as "L"|"R"|"S" : null),
+    gameStartTime: normalizeText(entry.gameStartTime) || null,
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
   return b as HrDashboardBatter;
@@ -758,12 +771,19 @@ export function normalizeHrDashboardPayload(value: unknown): HrDashboardPayload 
         avgQualifyingHitterScore: g.avgQualifyingHitterScore == null ? null : (normalizeNumber(g.avgQualifyingHitterScore) ?? null),
       }))
     : [];
+  const games = Array.isArray(value.games) ? value.games.map(normalizeGame).filter((e): e is HrDashboardGame => Boolean(e)) : [];
+  const gameStartTimeByKey = new Map(games.map((g) => [g.gameKey, g.gameStartTime]));
+  const pitchers = (Array.isArray(value.pitchers) ? value.pitchers.map(normalizePitcher).filter((e): e is HrDashboardPitcher => Boolean(e)) : [])
+    // The raw pitcher record has no gameStartTime of its own -- backfill it from `games`
+    // via the shared gameKey join, the same key already used for park factor/ballpark.
+    .map((p) => ({ ...p, gameStartTime: gameStartTimeByKey.get(p.gameKey) ?? null }));
+
   return {
     date: normalizeText(value.date),
     generatedAt: normalizeText(value.generatedAt),
     modelVersion: normalizeText(value.modelVersion) || undefined,
-    games: Array.isArray(value.games) ? value.games.map(normalizeGame).filter((e): e is HrDashboardGame => Boolean(e)) : [],
-    pitchers: Array.isArray(value.pitchers) ? value.pitchers.map(normalizePitcher).filter((e): e is HrDashboardPitcher => Boolean(e)) : [],
+    games,
+    pitchers,
     batters: Array.isArray(value.batters) ? value.batters.map(normalizeBatter).filter((e): e is HrDashboardBatter => Boolean(e)) : [],
     gameEnvironments,
     nextRunAt: normalizeNextRunAt(value.nextRunAt),
@@ -1231,6 +1251,7 @@ export function buildPitcherVsBatterRows(
       pitcherFlyBallRate: pitcher?.flyBallRate ?? null,
       windBlowingOut: isWindBlowingOut(game?.stadium ?? b.ballpark, game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null),
       angleTags: b.angleTags,
+      gameStartTime: game?.gameStartTime ?? b.gameStartTime ?? null,
     };
   }).sort((a, b) =>
     b.bestMatchupScore - a.bestMatchupScore
@@ -1271,6 +1292,7 @@ function sortPitchers(rows: HrDashboardPitcher[], key: PitcherSortKey, dir: Sort
   });
 }
 export function sortBatters(rows: HrDashboardBatter[], key: BatterSortKey, dir: SortDirection) {
+  if (key === "gameStartTime") return [...rows].sort((a, b) => compareGameStartTime(a.gameStartTime, b.gameStartTime, dir));
   return [...rows].sort((a, b) => {
     const av = a[key], bv = b[key];
     const base = typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv) : Number(av) - Number(bv);
@@ -1278,6 +1300,7 @@ export function sortBatters(rows: HrDashboardBatter[], key: BatterSortKey, dir: 
   });
 }
 function sortMatchups(rows: PitcherVsBatterRow[], key: MatchupSortKey, dir: SortDirection) {
+  if (key === "gameStartTime") return [...rows].sort((a, b) => compareGameStartTime(a.gameStartTime, b.gameStartTime, dir));
   return [...rows].sort((a, b) => {
     const av = a[key], bv = b[key];
     const base = typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv) : Number(av) - Number(bv);
@@ -1286,6 +1309,7 @@ function sortMatchups(rows: PitcherVsBatterRow[], key: MatchupSortKey, dir: Sort
 }
 
 function sortStrikeoutRows(rows: PitcherStrikeoutTeamRow[], key: StrikeoutSortKey, dir: SortDirection) {
+  if (key === "gameStartTime") return [...rows].sort((a, b) => compareGameStartTime(a.gameStartTime, b.gameStartTime, dir));
   return [...rows].sort((a, b) => {
     const av = a[key], bv = b[key];
     const base = typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv) : Number(av) - Number(bv);
@@ -1909,9 +1933,17 @@ export default function MlbHrProps() {
   const [pitcherSearch, setPitcherSearch] = useState("");
   const [batterSearch, setBatterSearch] = useState("");
   const [matchupSearch, setMatchupSearch] = useState("");
-  const [pitcherGameFilter, setPitcherGameFilter] = useState("all");
-  const [batterGameFilter, setBatterGameFilter] = useState("all");
-  const [matchupGameFilter, setMatchupGameFilter] = useState("all");
+  // One shared "Game" filter drives the pitcher/batter/matchup tables and the
+  // Park Factors selection together -- clicking a park card, or any of the
+  // per-tab "Game" dropdowns, all read and write this single state so the
+  // two controls can never disagree about which game is selected.
+  const [gameFilter, setGameFilter] = useState("all");
+  const pitcherGameFilter = gameFilter;
+  const setPitcherGameFilter = setGameFilter;
+  const batterGameFilter = gameFilter;
+  const setBatterGameFilter = setGameFilter;
+  const matchupGameFilter = gameFilter;
+  const setMatchupGameFilter = setGameFilter;
   const [hrFilterActive, setHrFilterActive] = useState(false);
   /** How many already-sorted/filtered batter rows are currently rendered -- "Show 50 more" grows this, a materially-changed filter/tab resets it. Never affects ranking order or which rows pass the filters, only how many of them are on screen. */
   const [visibleBatterCount, setVisibleBatterCount] = useState(BATTER_PAGE_SIZE);
@@ -2172,17 +2204,17 @@ export default function MlbHrProps() {
   };
 
   const handleBatterSort = (key: BatterSortKey) => {
-    setBatterSortDirection((current) => (batterSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "player" || key === "team" || key === "opposingPitcher" ? "asc" : "desc"));
+    setBatterSortDirection((current) => (batterSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "player" || key === "team" || key === "opposingPitcher" || key === "gameStartTime" ? "asc" : "desc"));
     setBatterSortKey(key);
   };
 
   const handleMatchupSort = (key: MatchupSortKey) => {
-    setMatchupSortDirection((current) => (matchupSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "player" || key === "team" || key === "opposingPitcher" ? "asc" : "desc"));
+    setMatchupSortDirection((current) => (matchupSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "player" || key === "team" || key === "opposingPitcher" || key === "gameStartTime" ? "asc" : "desc"));
     setMatchupSortKey(key);
   };
 
   const handleStrikeoutSort = (key: StrikeoutSortKey) => {
-    setStrikeoutSortDirection((current) => (strikeoutSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "pitcher" || key === "team" || key === "opponent" ? "asc" : "desc"));
+    setStrikeoutSortDirection((current) => (strikeoutSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "pitcher" || key === "team" || key === "opponent" || key === "gameStartTime" ? "asc" : "desc"));
     setStrikeoutSortKey(key);
   };
 
@@ -2245,6 +2277,8 @@ export default function MlbHrProps() {
                   collapsedPreviewCount={isCompactLayout ? 1 : undefined}
                   expandLabel={isCompactLayout ? "Click to expand" : undefined}
                   collapseLabel={isCompactLayout ? "Show less" : undefined}
+                  selectedGameKey={gameFilter}
+                  onSelectGame={setGameFilter}
                 />
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
@@ -2766,6 +2800,9 @@ export default function MlbHrProps() {
                                               );
                                             })() : <span className="text-[11px] text-slate-300">—</span>}
                                           </MetricTile>
+                                          <MetricTile label="Game Time">
+                                            <span className="text-[11px] font-semibold text-slate-600">{formatGameTime(row.gameStartTime)}</span>
+                                          </MetricTile>
                                           <MetricTile label="Angle">
                                             {angleTags.length ? (
                                               <div className="flex flex-wrap gap-1">
@@ -2816,60 +2853,34 @@ export default function MlbHrProps() {
                                   ["opposingPitcherHrVs","P.HR", "Ptch HR VS"],
                                   ["pitcherXera",      "xERA",    "Ptch xERA"],
                                   ["pitcherFlyBallRate", "FB%",   "Ptch FB%"],
-                                ] as [string, string, string][]).map(([key, short, full]) => {
-                                  const help = key === "hrScore"
-                                    ? {
-                                        label: "HR Score",
-                                        description: "Relative HR matchup-quality score. It ranks batters against each other today and is not a probability of hitting a home run.",
-                                      }
-                                    : key === "hrOddsYes"
-                                      ? {
-                                          label: "HR Odds",
-                                          description: "Sportsbook anytime-home-run price. Shown only when available.",
-                                        }
-                                      : null;
-                                  return (
-                                    <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[56px] sm:max-w-none sm:whitespace-nowrap">
-                                      <div className="flex items-center gap-0.5">
-                                        <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
-                                          <span className="sm:hidden">{short}</span>
-                                          <span className="hidden sm:inline">{full}</span>
-                                          {makeSortIndicator(batterSortKey === key, batterSortDirection)}
-                                        </button>
-                                        {help ? <HeaderHelp label={help.label} description={help.description} /> : null}
+                                ] as [string, string, string][]).map(([key, short, full]) => (
+                                  <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[56px] sm:max-w-none sm:whitespace-nowrap">
+                                    <div className="flex items-center gap-0.5">
+                                      <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
+                                        <span className="sm:hidden">{short}</span>
+                                        <span className="hidden sm:inline">{full}</span>
+                                        {makeSortIndicator(batterSortKey === key, batterSortDirection)}
+                                      </button>
+                                    </div>
+                                    {key === "hrOddsYes" ? (
+                                      <div className="mt-0.5 flex items-center gap-0.5 normal-case tracking-normal text-[8px] text-slate-400 sm:text-[9px]">
+                                        <span className="sm:hidden">Mkt %</span>
+                                        <span className="hidden sm:inline">Market %</span>
                                       </div>
-                                      {key === "hrOddsYes" ? (
-                                        <div className="mt-0.5 flex items-center gap-0.5 normal-case tracking-normal text-[8px] text-slate-400 sm:text-[9px]">
-                                          <span className="sm:hidden">Mkt %</span>
-                                          <span className="hidden sm:inline">Market %</span>
-                                          <HeaderHelp
-                                            label="Market %"
-                                            description="Raw sportsbook-implied probability from the displayed odds. Not adjusted for vig and not a model estimate."
-                                          />
-                                        </div>
-                                      ) : null}
-                                    </th>
-                                  );
-                                })}
+                                    ) : null}
+                                  </th>
+                                ))}
                                 <th className="min-w-[64px] border-b border-slate-200 bg-slate-50 px-1 py-1.5 text-left font-bold sm:min-w-[116px] sm:px-2 sm:whitespace-nowrap">
-                                  <div className="flex items-center gap-0.5">
-                                    <span className="sm:hidden">Trend</span>
-                                    <span className="hidden sm:inline">Pitcher Trend</span>
-                                    <HeaderHelp
-                                      label="Pitcher Trend"
-                                      description="Recent pitcher form compared with season baseline. Positive values indicate more home-run risk than the season numbers suggest; negative values indicate less."
-                                    />
-                                  </div>
+                                  <span className="sm:hidden">Trend</span>
+                                  <span className="hidden sm:inline">Pitcher Trend</span>
                                 </th>
-                                <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">Angle</th>
                                 <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">
-                                  <div className="flex items-center gap-0.5">
-                                    AVG vs P
-                                    <HeaderHelp
-                                      label="AVG vs P"
-                                      description="Batter's career batting average against this specific opposing starter. Historical context only -- not used in HR Score or any ranking. Click a row to see PA, H, HR, and a Career / Last 5Y toggle."
-                                    />
-                                  </div>
+                                  <button type="button" onClick={() => handleBatterSort("gameStartTime")} className="hover:text-slate-900">
+                                    Game Time{makeSortIndicator(batterSortKey === "gameStartTime", batterSortDirection)}
+                                  </button>
+                                </th>
+                                <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">
+                                  AVG vs P
                                 </th>
                               </tr>
                             </thead>
@@ -3008,18 +3019,9 @@ export default function MlbHrProps() {
                                         );
                                       })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
-                                    {/* Angle */}
-                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      <div className="flex flex-wrap gap-0.5 sm:gap-1">
-                                        {(() => {
-                                          const tags = getBatterAngleTags(row);
-                                          return tags.length
-                                            ? tags.map((tag) => (
-                                                <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-slate-600 whitespace-nowrap">{tag}</span>
-                                              ))
-                                            : <span className="text-slate-400">{DASH}</span>;
-                                        })()}
-                                      </div>
+                                    {/* Game Time */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 whitespace-nowrap text-[9px] sm:text-[10px] font-semibold text-slate-600">
+                                      {formatGameTime(row.gameStartTime)}
                                     </td>
                                     {/* AVG vs P — display-only historical context, click row to expand */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
@@ -3201,7 +3203,11 @@ export default function MlbHrProps() {
                                   </div>
                                   <ScorePill value={(row as PitcherStrikeoutTeamRow).strikeoutMatchupScore} />
                                 </div>
-                                <div className="mt-3 text-sm text-slate-600">{(row as PitcherStrikeoutTeamRow).park}</div>
+                                <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                                  <span>{(row as PitcherStrikeoutTeamRow).park}</span>
+                                  <span className="text-slate-300">•</span>
+                                  <span>{formatGameTime((row as PitcherStrikeoutTeamRow).gameStartTime)}</span>
+                                </div>
                                 <p className="mt-3 text-sm leading-6 text-slate-600">{(row as PitcherStrikeoutTeamRow).whyItRanksWell}</p>
                                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                                   <div>
@@ -3231,7 +3237,11 @@ export default function MlbHrProps() {
                                   </div>
                                   <ScorePill value={activeMatchupLens === "best" ? (row as PitcherVsBatterRow).bestMatchupScore : (row as PitcherVsBatterRow).hrTargetScore} />
                                 </div>
-                                <div className="mt-3 text-sm text-slate-600">{(row as PitcherVsBatterRow).park}</div>
+                                <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                                  <span>{(row as PitcherVsBatterRow).park}</span>
+                                  <span className="text-slate-300">•</span>
+                                  <span>{formatGameTime((row as PitcherVsBatterRow).gameStartTime)}</span>
+                                </div>
                                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                                   <div>
                                     <div className="text-xs uppercase tracking-[0.14em] text-slate-400">
@@ -3425,6 +3435,7 @@ export default function MlbHrProps() {
                                         ["team", "Team"],
                                         ["opposingPitcher", "Vs Pitcher"],
                                         ["parkFactor", "Park"],
+                                        ["gameStartTime", "Game Time"],
                                         ["hrScore", "Batter HR"],
                                         ["opposingPitcherHitsVs", "Pitcher Hits VS"],
                                         ["opposingPitcherHrVs", "Pitcher HR VS"],
@@ -3438,6 +3449,7 @@ export default function MlbHrProps() {
                                           ["team", "Team"],
                                           ["opposingPitcher", "Vs Pitcher"],
                                           ["parkFactor", "Park"],
+                                          ["gameStartTime", "Game Time"],
                                           ["hrScore", "Batter HR"],
                                           ["opposingPitcherHrVs", "Pitcher HR VS"],
                                           ["hrTargetScore", "HR Target Score"],
@@ -3451,6 +3463,7 @@ export default function MlbHrProps() {
                                           ["team", "Team"],
                                           ["opponent", "Opponent"],
                                           ["parkFactor", "Park"],
+                                          ["gameStartTime", "Game Time"],
                                           ["pitcherKRate", "Pitcher K%"],
                                           ["pitcherWhiffRate", "Pitcher Whiff%"],
                                           ["pitcherKVs", "Pitcher K VS"],
@@ -3503,6 +3516,7 @@ export default function MlbHrProps() {
                                         <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
                                       </div>
                                     </td>
+                                    <td className="border-b border-slate-100 px-4 py-1.5 whitespace-nowrap">{formatGameTime(row.gameStartTime)}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5" style={getStrikeoutTableHeatStyle("pitcherKRate", row.pitcherKRate, strikeoutHeat)}>{formatPercent(row.pitcherKRate)}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5" style={getStrikeoutTableHeatStyle("pitcherWhiffRate", row.pitcherWhiffRate, strikeoutHeat)}>{formatPercent(row.pitcherWhiffRate)}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5" style={getStrikeoutTableHeatStyle("pitcherKVs", row.pitcherKVs, strikeoutHeat)}><ScorePill value={row.pitcherKVs} /></td>
@@ -3513,7 +3527,7 @@ export default function MlbHrProps() {
                                   </tr>
                                 )) : (
                                   <tr>
-                                    <td colSpan={14} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                    <td colSpan={15} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                       No matchup rows match the current search or game filter.
                                     </td>
                                   </tr>
@@ -3556,6 +3570,7 @@ export default function MlbHrProps() {
                                         <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
                                       </div>
                                     </td>
+                                    <td className="border-b border-slate-100 px-4 py-1.5 whitespace-nowrap">{formatGameTime(row.gameStartTime)}</td>
                                     {activeMatchupLens === "best" ? (
                                       <>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
@@ -3603,7 +3618,7 @@ export default function MlbHrProps() {
                                   </tr>
                                   {isBvpExpanded && (
                                     <tr>
-                                      <td colSpan={activeMatchupLens === "hr" ? 13 : 12} className="border-b border-slate-100 bg-slate-50 px-4 py-2">
+                                      <td colSpan={activeMatchupLens === "hr" ? 14 : 13} className="border-b border-slate-100 bg-slate-50 px-4 py-2">
                                         <div className="space-y-3">
                                           <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
                                           <BatterVsPitcherSummary
@@ -3623,7 +3638,7 @@ export default function MlbHrProps() {
                                   );
                                 }) : (
                                 <tr>
-                                  <td colSpan={activeMatchupLens === "hr" ? 13 : 12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={activeMatchupLens === "hr" ? 14 : 13} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No matchup rows match the current search or game filter.
                                   </td>
                                 </tr>
