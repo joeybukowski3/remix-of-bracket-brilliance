@@ -25,6 +25,26 @@ const STAT_GLOSSARY: [string, string][] = [
   ["Regr ↑", "Green pill — pitcher is underperforming ERA vs metrics. ERA improvement likely."],
 ];
 
+/**
+ * Definitions moved off the HR Props/Batter View table's per-header "?"
+ * tooltips (previously the HeaderHelp popover in MlbHrProps.tsx). Copy is
+ * carried over verbatim where a tooltip already existed; "Ptch xERA" reuses
+ * the existing "xERA" entry above instead of duplicating it.
+ */
+const HR_TABLE_GLOSSARY: [string, string][] = [
+  ["HR Odds", "Sportsbook anytime-home-run price. Shown only when available."],
+  ["Market %", "Raw sportsbook-implied probability from the displayed odds. Not adjusted for vig and not a model estimate."],
+  ["HR Score", "Relative HR matchup-quality score. It ranks batters against each other today and is not a probability of hitting a home run."],
+  ["Barrel%", "Share of a batter's batted balls hit as a 'barrel' — the exit-velocity/launch-angle combination most likely to produce extra-base power."],
+  ["HH%", "Hard-hit rate — share of batted balls struck at 95+ mph exit velocity."],
+  ["L7 HR", "Home runs hit by the batter over the last 7 games."],
+  ["L30 HR", "Home runs hit by the batter over the last 30 games."],
+  ["Ptch HR VS", "Home runs allowed by the opposing starting pitcher this season. Higher values indicate more home-run vulnerability."],
+  ["Ptch FB%", "The opposing starting pitcher's fly-ball rate. Higher fly-ball rates raise home-run risk."],
+  ["Pitcher Trend", "Recent pitcher form compared with season baseline. Positive values indicate more home-run risk than the season numbers suggest; negative values indicate less."],
+  ["AVG vs P", "Batter's career batting average against this specific opposing starter. Historical context only — not used in HR Score or any ranking."],
+];
+
 function NavLink({ item, active, onNavigate }: { item: MlbNavItem; active: boolean; onNavigate?: () => void }) {
   const Icon = item.icon;
   return (
@@ -119,6 +139,17 @@ export default function MlbSectionSidebar({ mobile = false, onNavigate }: MlbSec
             </div>
           ))}
         </dl>
+
+        <div className="mb-2 mt-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">HR Props Table</div>
+        <dl className="space-y-2">
+          {HR_TABLE_GLOSSARY.map(([term, def]) => (
+            <div key={term}>
+              <dt className="text-[10px] font-extrabold text-slate-700">{term}</dt>
+              <dd className="text-[9px] leading-tight text-slate-500">{def}</dd>
+            </div>
+          ))}
+        </dl>
+
         <div className="mt-3 rounded-md bg-slate-100 p-2">
           <div className="mb-1 text-[9px] font-bold uppercase tracking-wide text-slate-500">Regression Scale</div>
           <div className="flex items-center gap-1">

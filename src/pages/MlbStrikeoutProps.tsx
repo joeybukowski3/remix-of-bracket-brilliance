@@ -33,12 +33,13 @@ import MlbStrikeoutPropRowDetail, {
   MlbStrikeoutPropRowDetailStale,
   MlbStrikeoutPropRowDetailUnavailable,
 } from "@/components/mlb/MlbStrikeoutPropRowDetail";
+import { compareGameStartTime, formatGameTime } from "@/lib/mlb/mlbGameTime";
 
 const DASH = "—";
 /** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors the Batter View pattern from MlbHrProps.tsx. */
 const PAGE_SIZE = 50;
 
-type SortKey = "rank" | "pitcher" | "team" | "opponent" | "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "projectedKs" | "absoluteProjectionEdge";
+type SortKey = "rank" | "pitcher" | "team" | "opponent" | "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "projectedKs" | "absoluteProjectionEdge" | "gameStartTime";
 type SortDirection = "asc" | "desc";
 
 const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"];
@@ -54,6 +55,7 @@ const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"
 function sortRows(rows: PitcherStrikeoutTeamRow[], key: SortKey, dir: SortDirection) {
   if (key === "projectedKs") return sortByProjectedKs(rows, dir);
   if (key === "absoluteProjectionEdge") return sortByAbsoluteProjectionEdge(rows);
+  if (key === "gameStartTime") return [...rows].sort((a, b) => compareGameStartTime(a.gameStartTime, b.gameStartTime, dir));
 
   const multiplier = dir === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
@@ -400,7 +402,7 @@ export default function MlbStrikeoutProps() {
   }, [search, teamFilter, gameFilter, confidenceFilter, sortKey, sortDir]);
 
   const handleSort = (key: SortKey) => {
-    setSortDir((current) => sortKey === key ? (current === "asc" ? "desc" : "asc") : ["pitcher", "team", "opponent"].includes(key) ? "asc" : "desc");
+    setSortDir((current) => sortKey === key ? (current === "asc" ? "desc" : "asc") : ["pitcher", "team", "opponent", "gameStartTime"].includes(key) ? "asc" : "desc");
     setSortKey(key);
   };
 
@@ -493,6 +495,8 @@ export default function MlbStrikeoutProps() {
             collapsedPreviewCount={isCompactLayout ? 1 : undefined}
             expandLabel={isCompactLayout ? "Click to expand" : undefined}
             collapseLabel={isCompactLayout ? "Show less" : undefined}
+            selectedGameKey={gameFilter}
+            onSelectGame={setGameFilter}
           />
 
           <div className="space-y-4">
@@ -564,6 +568,7 @@ export default function MlbStrikeoutProps() {
                                 <div className="truncate text-[11px] text-slate-400">
                                   <span>vs {row.opponent}</span>
                                   <span className="ml-1">· {venueIndicator}</span>
+                                  <span className="ml-1">· {formatGameTime(row.gameStartTime)}</span>
                                 </div>
                               </div>
                               <div className="flex shrink-0 flex-col items-end gap-1">
@@ -649,12 +654,13 @@ export default function MlbStrikeoutProps() {
                       <th className="sticky left-8 z-30 min-w-[140px] border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
+                      <SortTh k="gameStartTime" label="Game Time" />
                       {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="hidden border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 xl:table-cell">K/9</th><th className="hidden border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 xl:table-cell">Avg IP</th>
                     </tr></thead>
                     <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
                       const isExpanded = expandedRowKey === rowKey;
-                      const desktopColumnCount = hasKOdds ? 15 : 12;
+                      const desktopColumnCount = hasKOdds ? 16 : 13;
                       const edgeInfo = getProjectionEdgeInfo(row);
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
                       const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
@@ -684,6 +690,7 @@ export default function MlbStrikeoutProps() {
                           <MlbTeamLogo team={row.team} size={16} /><span className="min-w-0 truncate text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="shrink-0 text-[9px] text-slate-400">vs {row.opponent}</span><span className="shrink-0 rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-slate-500">{venueIndicator}</span>
                         </span>
                       </td>
+                      <td className="border-b border-slate-100 px-2 py-1 whitespace-nowrap text-[11px] font-semibold text-slate-600">{formatGameTime(row.gameStartTime)}</td>
                       {hasKOdds && <td className="border-b border-slate-100 px-2 py-1"><div className="font-semibold text-slate-900">{hasPostedLine ? fmt(row.kLine) : "No line posted yet"}</div>{hasPostedOdds ? <div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div> : hasPostedLine ? <div className="max-w-[120px] text-[9px] leading-4 text-slate-500">Odds not yet available for this slate.</div> : null}</td>}
                       {hasKOdds && <td className="border-b border-slate-100 px-2 py-1 font-semibold text-slate-900">{fmt(edgeInfo.projectedKs)}</td>}
                       {hasKOdds && (
@@ -825,6 +832,7 @@ export default function MlbStrikeoutProps() {
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">#</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Pitcher</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Status</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Game Time</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K Score</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K%</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Whiff%</th>
@@ -864,6 +872,7 @@ export default function MlbStrikeoutProps() {
                           </span>
                         </td>
                         <td className="border-b border-slate-100 px-2 py-1"><LowConfidenceStatusBadge row={row} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1 whitespace-nowrap">{formatGameTime(row.gameStartTime)}</td>
                         <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td>
                         <td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td>
                         <td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td>
@@ -876,7 +885,7 @@ export default function MlbStrikeoutProps() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={11} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                            <td colSpan={12} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
                               <RowDetailPanel row={row} />
                             </td>
                           </tr>
