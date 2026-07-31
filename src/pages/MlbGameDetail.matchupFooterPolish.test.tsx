@@ -87,12 +87,10 @@ describe("Game Matchup Analyzer — Top Model Drivers / Market Summary footer al
     const rows = within(card).getAllByText(/Pitcher Quality|Recent Form|Matchup Edge/).map((el) => el.closest("div"));
     expect(rows.length).toBe(3);
     const templates = rows.map((row) => row?.className);
-    // Every driver row shares the same grid template and minimum height class.
-    // The bar and result-value columns use minmax(...) (not fixed px) so long
-    // values wrap onto a controlled second line instead of overlapping the bar.
+    // Every driver row shares the same semantic grid class; index.css owns the
+    // stable label/team/bar/team/value template so it can respond to card width.
     for (const className of templates) {
-      expect(className).toContain("grid-cols-[68px_16px_minmax(0,1fr)_16px_minmax(40px,auto)]");
-      expect(className).toContain("min-h-6");
+      expect(className).toContain("mlb-matchup-driver-row");
     }
     expect(driverLabel).toBeInTheDocument();
   });
