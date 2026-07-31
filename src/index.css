@@ -516,3 +516,62 @@
     padding-top: 0;
   }
 }
+
+/* Factor rows respond to the detail panel width instead of the viewport. */
+.mlb-factor-breakdown {
+  container-name: mlb-factor-breakdown;
+  container-type: inline-size;
+}
+
+.mlb-factor-row {
+  display: grid;
+  grid-template-areas:
+    "info"
+    "comparison"
+    "winner";
+  gap: 0.625rem;
+}
+
+.mlb-factor-info {
+  grid-area: info;
+}
+
+.mlb-factor-comparison {
+  grid-area: comparison;
+}
+
+.mlb-factor-winner {
+  grid-area: winner;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  border-top: 1px solid rgb(15 23 42 / 0.12);
+  padding-top: 0.625rem;
+}
+
+@container mlb-factor-breakdown (min-width: 460px) {
+  .mlb-factor-row {
+    grid-template-columns: minmax(0, 1fr) minmax(132px, auto);
+    grid-template-areas:
+      "info info"
+      "comparison winner";
+    column-gap: 0.875rem;
+  }
+
+  .mlb-factor-winner {
+    border-top: 0;
+    border-left: 1px solid rgb(15 23 42 / 0.12);
+    padding-top: 0;
+    padding-left: 0.875rem;
+  }
+}
+
+@container mlb-factor-breakdown (min-width: 700px) {
+  .mlb-factor-row {
+    grid-template-columns: minmax(210px, 260px) minmax(240px, 1fr) 168px;
+    grid-template-areas: "info comparison winner";
+    align-items: center;
+  }
+}
