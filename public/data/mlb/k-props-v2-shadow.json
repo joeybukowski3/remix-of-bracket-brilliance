@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "slateDate": "2026-08-01",
-  "generatedAt": "2026-08-01T09:28:33.146Z",
+  "generatedAt": "2026-08-01T14:05:05.810Z",
   "sourceDates": {
     "hr-props-raw.json": "2026-08-01",
     "k-workload-shadow.json": "2026-08-01",
@@ -47,13 +47,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.475325514274776,
-        "projectedKRate": 0.22671216571880154,
+        "projectedStrikeouts": 5.4671531806555045,
+        "projectedKRate": 0.2263737808229682,
         "projectedBattersFaced": 24.151,
         "projectedInnings": 5.428,
-        "pitcherSkillRate": 0.23464923759380155,
-        "opponentEnvironmentRate": 0.2038620625,
-        "matchupAdjustment": -0.007937071875000003,
+        "pitcherSkillRate": 0.2341249042604682,
+        "opponentEnvironmentRate": 0.20427528125,
+        "matchupAdjustment": -0.007751123437500003,
         "confidence": "high",
         "components": [
           {
@@ -80,10 +80,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2325,
+            "value": 0.230355,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05683333333333334,
+            "contribution": 0.056309000000000005,
             "source": "derived"
           },
           {
@@ -110,10 +110,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.19977799999999998,
+            "value": 0.20166699999999999,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.0437014375,
+            "contribution": 0.04411465625,
             "source": "provided"
           }
         ],
@@ -121,9 +121,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.075,
+        "v2MinusLegacyKs": 0.067,
         "legacyEdgeToLine": -0.1,
-        "v2EdgeToLine": -0.025
+        "v2EdgeToLine": -0.033
       },
       "inputs": {
         "v2Input": {
@@ -188,7 +188,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 19.9778,
+            "projectedLineupKRate": 20.1667,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -257,7 +257,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -314,8 +314,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -329,8 +328,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 19.9778,
-          "projectedLineupWhiffRate": 22.8667,
+          "projectedLineupKRate": 20.1667,
+          "projectedLineupWhiffRate": 23.0667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -757,8 +756,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "+105",
-        "oddsUnder": "-134",
+        "oddsOver": "+129",
+        "oddsUnder": "-165",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -776,7 +775,7 @@
         "projectedBattersFaced": 22.584,
         "projectedInnings": 5.42,
         "pitcherSkillRate": null,
-        "opponentEnvironmentRate": 0.191694375,
+        "opponentEnvironmentRate": 0.19171865625,
         "matchupAdjustment": null,
         "confidence": "insufficient",
         "components": [
@@ -804,10 +803,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.193,
+            "value": 0.193111,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.042218750000000006,
+            "contribution": 0.04224303125000001,
             "source": "provided"
           }
         ],
@@ -856,7 +855,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 19.3,
+            "projectedLineupKRate": 19.3111,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -925,7 +924,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -980,16 +979,14 @@
           "recentBfAverage": null,
           "recentIpAverage": null,
           "confidenceGrade": "D",
-          "confidenceScore": 0.15,
+          "confidenceScore": 0.3,
           "flags": [
             "NO_STARTS_AVAILABLE",
             "LOW_RECENT_APPEARANCE_SAMPLE",
             "RECENT_PITCH_COUNTS_MISSING",
-            "PITCHER_SEASON_K_RATE_MISSING",
             "PITCHER_RECENT_K_RATE_MISSING",
-            "PITCHER_K_RATE_MISSING",
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE",
+            "K_RATE_ADJUSTMENT_CAPPED"
           ]
         },
         "opponent": {
@@ -1003,7 +1000,7 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 19.3,
+          "projectedLineupKRate": 19.3111,
           "projectedLineupWhiffRate": 22.1444,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
@@ -1289,8 +1286,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "-128",
-        "oddsUnder": "+101",
+        "oddsOver": "-138",
+        "oddsUnder": "+108",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -1303,13 +1300,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.332051170054689,
-        "projectedKRate": 0.24553560370485766,
+        "projectedStrikeouts": 5.314728441269272,
+        "projectedKRate": 0.24473790943402432,
         "projectedBattersFaced": 21.716,
         "projectedInnings": 5.208,
-        "pitcherSkillRate": 0.24015658495485767,
-        "opponentEnvironmentRate": 0.23345337499999996,
-        "matchupAdjustment": 0.005379018749999982,
+        "pitcherSkillRate": 0.23963225162152435,
+        "opponentEnvironmentRate": 0.23284590624999996,
+        "matchupAdjustment": 0.005105657812499979,
         "confidence": "high",
         "components": [
           {
@@ -1336,10 +1333,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2204,
+            "value": 0.218255,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.053875555555555565,
+            "contribution": 0.05335122222222223,
             "source": "derived"
           },
           {
@@ -1366,10 +1363,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.23244399999999998,
+            "value": 0.22966699999999998,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.050847125,
+            "contribution": 0.05023965625,
             "source": "provided"
           }
         ],
@@ -1377,9 +1374,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.132,
+        "v2MinusLegacyKs": 0.115,
         "legacyEdgeToLine": -0.3,
-        "v2EdgeToLine": -0.168
+        "v2EdgeToLine": -0.185
       },
       "inputs": {
         "v2Input": {
@@ -1444,7 +1441,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 23.2444,
+            "projectedLineupKRate": 22.9667,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -1513,7 +1510,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -1570,8 +1567,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -1585,8 +1581,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 23.2444,
-          "projectedLineupWhiffRate": 27.3889,
+          "projectedLineupKRate": 22.9667,
+          "projectedLineupWhiffRate": 27.2444,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -2027,13 +2023,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 1.0642543183854167,
-        "projectedKRate": 0.23390204799679487,
+        "projectedStrikeouts": 1.0612003797135416,
+        "projectedKRate": 0.2332308526842949,
         "projectedBattersFaced": 4.55,
         "projectedInnings": 0.969,
-        "pitcherSkillRate": 0.24533179487179488,
-        "opponentEnvironmentRate": 0.1961005625,
-        "matchupAdjustment": -0.011429746875000006,
+        "pitcherSkillRate": 0.24461679487179488,
+        "opponentEnvironmentRate": 0.19619790625,
+        "matchupAdjustment": -0.011385942187500003,
         "confidence": "high",
         "components": [
           {
@@ -2050,10 +2046,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.21930000000000002,
+            "value": 0.21715500000000001,
             "weight": 0.22,
             "normalizedWeight": 0.3333333333333333,
-            "contribution": 0.0731,
+            "contribution": 0.072385,
             "source": "derived"
           },
           {
@@ -2080,10 +2076,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.196444,
+            "value": 0.196889,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04297212500000001,
+            "contribution": 0.043069468750000006,
             "source": "provided"
           }
         ],
@@ -2091,9 +2087,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.736,
+        "v2MinusLegacyKs": -0.739,
         "legacyEdgeToLine": 0.3,
-        "v2EdgeToLine": -0.436
+        "v2EdgeToLine": -0.439
       },
       "inputs": {
         "v2Input": {
@@ -2127,7 +2123,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 19.6444,
+            "projectedLineupKRate": 19.6889,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -2196,7 +2192,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -2255,10 +2251,7 @@
           "flags": [
             "RELIEVER_PROFILE",
             "RELIEVER_WORKLOAD_CAP",
-            "PITCHER_SEASON_K_RATE_MISSING",
-            "PITCHER_K_RATE_MISSING",
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -2272,8 +2265,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 19.6444,
-          "projectedLineupWhiffRate": 20.6778,
+          "projectedLineupKRate": 19.6889,
+          "projectedLineupWhiffRate": 20.6889,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -2558,8 +2551,8 @@
       },
       "market": {
         "kLine": 6.5,
-        "oddsOver": "-136",
-        "oddsUnder": "+106",
+        "oddsOver": "-127",
+        "oddsUnder": "-101",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -2572,13 +2565,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 6.268111895343438,
-        "projectedKRate": 0.2577136705593059,
+        "projectedStrikeouts": 6.251367933819479,
+        "projectedKRate": 0.25702524191347254,
         "projectedBattersFaced": 24.322,
         "projectedInnings": 6.185,
-        "pitcherSkillRate": 0.2633155799343059,
-        "opponentEnvironmentRate": 0.2090513125,
-        "matchupAdjustment": -0.005601909375,
+        "pitcherSkillRate": 0.26279124660097253,
+        "opponentEnvironmentRate": 0.20868665625,
+        "matchupAdjustment": -0.005766004687500006,
         "confidence": "high",
         "components": [
           {
@@ -2605,10 +2598,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.24845,
+            "value": 0.246305,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.06073222222222223,
+            "contribution": 0.060207888888888894,
             "source": "derived"
           },
           {
@@ -2635,10 +2628,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.194556,
+            "value": 0.192889,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04255912500000001,
+            "contribution": 0.042194468750000005,
             "source": "provided"
           }
         ],
@@ -2646,9 +2639,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.632,
+        "v2MinusLegacyKs": -0.649,
         "legacyEdgeToLine": 0.4,
-        "v2EdgeToLine": -0.232
+        "v2EdgeToLine": -0.249
       },
       "inputs": {
         "v2Input": {
@@ -2713,7 +2706,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 19.4556,
+            "projectedLineupKRate": 19.2889,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -2782,7 +2775,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -2839,8 +2832,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -2854,8 +2846,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 19.4556,
-          "projectedLineupWhiffRate": 24.2333,
+          "projectedLineupKRate": 19.2889,
+          "projectedLineupWhiffRate": 24.0667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -3282,8 +3274,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "-124",
-        "oddsUnder": "-102",
+        "oddsOver": "-138",
+        "oddsUnder": "+108",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -3296,13 +3288,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.356270753824728,
-        "projectedKRate": 0.24303601587298554,
+        "projectedStrikeouts": 5.350982553167957,
+        "projectedKRate": 0.24279606847715218,
         "projectedBattersFaced": 22.039,
         "projectedInnings": 5.498,
-        "pitcherSkillRate": 0.23927137212298555,
-        "opponentEnvironmentRate": 0.229865875,
-        "matchupAdjustment": 0.0037646437499999977,
+        "pitcherSkillRate": 0.2387470387896522,
+        "opponentEnvironmentRate": 0.23049784375,
+        "matchupAdjustment": 0.004049029687499993,
         "confidence": "high",
         "components": [
           {
@@ -3329,10 +3321,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20884999999999998,
+            "value": 0.20670499999999997,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05105222222222222,
+            "contribution": 0.050527888888888886,
             "source": "derived"
           },
           {
@@ -3359,10 +3351,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.223889,
+            "value": 0.226778,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04897571875000001,
+            "contribution": 0.04960768750000001,
             "source": "provided"
           }
         ],
@@ -3370,9 +3362,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.644,
+        "v2MinusLegacyKs": -0.649,
         "legacyEdgeToLine": 0.5,
-        "v2EdgeToLine": -0.144
+        "v2EdgeToLine": -0.149
       },
       "inputs": {
         "v2Input": {
@@ -3437,7 +3429,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.3889,
+            "projectedLineupKRate": 22.6778,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -3506,7 +3498,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -3563,8 +3555,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -3578,8 +3569,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.3889,
-          "projectedLineupWhiffRate": 26.8667,
+          "projectedLineupKRate": 22.6778,
+          "projectedLineupWhiffRate": 26.8111,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -4006,8 +3997,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "+101",
-        "oddsUnder": "-129",
+        "oddsOver": "+113",
+        "oddsUnder": "-144",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -4020,13 +4011,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.4927544519745455,
-        "projectedKRate": 0.20782470404174974,
+        "projectedStrikeouts": 4.363669579565171,
+        "projectedKRate": 0.20185352852091643,
         "projectedBattersFaced": 21.618,
         "projectedInnings": 4.779,
-        "pitcherSkillRate": 0.20621640404174973,
-        "opponentEnvironmentRate": 0.22507400000000002,
-        "matchupAdjustment": 0.0016083000000000098,
+        "pitcherSkillRate": 0.2056920707084164,
+        "opponentEnvironmentRate": 0.21296990625,
+        "matchupAdjustment": -0.003838542187499998,
         "confidence": "high",
         "components": [
           {
@@ -4053,10 +4044,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2028,
+            "value": 0.200655,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.04957333333333334,
+            "contribution": 0.049049,
             "source": "derived"
           },
           {
@@ -4083,10 +4074,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.280889,
+            "value": 0.22555599999999998,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.06144446875000001,
+            "contribution": 0.049340375,
             "source": "provided"
           }
         ],
@@ -4094,9 +4085,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.493,
+        "v2MinusLegacyKs": 0.364,
         "legacyEdgeToLine": -0.5,
-        "v2EdgeToLine": -0.007
+        "v2EdgeToLine": -0.136
       },
       "inputs": {
         "v2Input": {
@@ -4161,7 +4152,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 28.0889,
+            "projectedLineupKRate": 22.5556,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -4230,7 +4221,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -4287,8 +4278,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -4302,17 +4292,17 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 28.0889,
-          "projectedLineupWhiffRate": 27.2889,
+          "projectedLineupKRate": 22.5556,
+          "projectedLineupWhiffRate": 24.1222,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
           },
           "handedness": {
             "left": 5,
-            "right": 3,
+            "right": 4,
             "switch": 0,
-            "unknown": 1
+            "unknown": 0
           }
         },
         "details": {
@@ -4730,8 +4720,8 @@
       },
       "market": {
         "kLine": 3.5,
-        "oddsOver": "-171",
-        "oddsUnder": "+134",
+        "oddsOver": "-152",
+        "oddsUnder": "+119",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -4744,13 +4734,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.606347196558542,
-        "projectedKRate": 0.20576910553732433,
+        "projectedStrikeouts": 4.590202226808541,
+        "projectedKRate": 0.20504789720399097,
         "projectedBattersFaced": 22.386,
         "projectedInnings": 5.49,
-        "pitcherSkillRate": 0.20713543209982432,
-        "opponentEnvironmentRate": 0.21846371875,
-        "matchupAdjustment": -0.0013663265624999977,
+        "pitcherSkillRate": 0.20661109876649097,
+        "opponentEnvironmentRate": 0.21802621875,
+        "matchupAdjustment": -0.001563201562500001,
         "confidence": "high",
         "components": [
           {
@@ -4777,10 +4767,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20005,
+            "value": 0.197905,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.04890111111111112,
+            "contribution": 0.04837677777777778,
             "source": "derived"
           },
           {
@@ -4807,10 +4797,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.224222,
+            "value": 0.222222,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04904856250000001,
+            "contribution": 0.04861106250000001,
             "source": "provided"
           }
         ],
@@ -4818,9 +4808,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.194,
+        "v2MinusLegacyKs": -0.21,
         "legacyEdgeToLine": 1.3,
-        "v2EdgeToLine": 1.106
+        "v2EdgeToLine": 1.09
       },
       "inputs": {
         "v2Input": {
@@ -4885,7 +4875,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.4222,
+            "projectedLineupKRate": 22.2222,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -4954,7 +4944,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -5011,8 +5001,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -5026,8 +5015,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.4222,
-          "projectedLineupWhiffRate": 26.5778,
+          "projectedLineupKRate": 22.2222,
+          "projectedLineupWhiffRate": 26.1667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -5468,13 +5457,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 3.283404709621528,
-        "projectedKRate": 0.1870885874428221,
+        "projectedStrikeouts": 3.279768916340278,
+        "projectedKRate": 0.18688141973448877,
         "projectedBattersFaced": 17.55,
         "projectedInnings": 4.086,
-        "pitcherSkillRate": 0.1836282843178221,
-        "opponentEnvironmentRate": 0.2291895625,
-        "matchupAdjustment": 0.0034603031249999987,
+        "pitcherSkillRate": 0.18310395098448878,
+        "opponentEnvironmentRate": 0.22989437499999998,
+        "matchupAdjustment": 0.0037774687499999918,
         "confidence": "high",
         "components": [
           {
@@ -5501,10 +5490,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.22755,
+            "value": 0.225405,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05562333333333334,
+            "contribution": 0.055099,
             "source": "derived"
           },
           {
@@ -5531,10 +5520,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.220778,
+            "value": 0.22399999999999998,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04829518750000001,
+            "contribution": 0.049,
             "source": "provided"
           }
         ],
@@ -5542,9 +5531,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.483,
+        "v2MinusLegacyKs": 0.48,
         "legacyEdgeToLine": -0.7,
-        "v2EdgeToLine": -0.217
+        "v2EdgeToLine": -0.22
       },
       "inputs": {
         "v2Input": {
@@ -5609,7 +5598,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.0778,
+            "projectedLineupKRate": 22.4,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -5678,7 +5667,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -5735,8 +5724,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -5750,8 +5738,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.0778,
-          "projectedLineupWhiffRate": 24.1444,
+          "projectedLineupKRate": 22.4,
+          "projectedLineupWhiffRate": 24.1556,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -6178,8 +6166,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "+107",
-        "oddsUnder": "-137",
+        "oddsOver": "+120",
+        "oddsUnder": "-153",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -6192,13 +6180,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.37450620000339,
-        "projectedKRate": 0.20061020819973355,
+        "projectedStrikeouts": 4.362596058092974,
+        "projectedKRate": 0.20006402174140023,
         "projectedBattersFaced": 21.806,
         "projectedInnings": 5.91,
-        "pitcherSkillRate": 0.20068437382473353,
-        "opponentEnvironmentRate": 0.22133518750000003,
-        "matchupAdjustment": -0.00007416562499998752,
+        "pitcherSkillRate": 0.2001600404914002,
+        "opponentEnvironmentRate": 0.22128662500000001,
+        "matchupAdjustment": -0.00009601874999999455,
         "confidence": "high",
         "components": [
           {
@@ -6225,10 +6213,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20115,
+            "value": 0.199005,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.049170000000000005,
+            "contribution": 0.04864566666666667,
             "source": "derived"
           },
           {
@@ -6255,10 +6243,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.22633299999999998,
+            "value": 0.226111,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.049510343750000005,
+            "contribution": 0.04946178125000001,
             "source": "provided"
           }
         ],
@@ -6266,9 +6254,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.025,
+        "v2MinusLegacyKs": -0.037,
         "legacyEdgeToLine": -0.1,
-        "v2EdgeToLine": -0.125
+        "v2EdgeToLine": -0.137
       },
       "inputs": {
         "v2Input": {
@@ -6333,7 +6321,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.6333,
+            "projectedLineupKRate": 22.6111,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -6402,7 +6390,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -6460,8 +6448,7 @@
           "confidenceScore": 0.917,
           "flags": [
             "LOW_PITCHER_SAMPLE",
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -6475,8 +6462,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.6333,
-          "projectedLineupWhiffRate": 25.4556,
+          "projectedLineupKRate": 22.6111,
+          "projectedLineupWhiffRate": 25.4667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -6903,8 +6890,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "+106",
-        "oddsUnder": "-135",
+        "oddsOver": "+110",
+        "oddsUnder": "-140",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -6917,13 +6904,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.410819892439199,
-        "projectedKRate": 0.2523350227318565,
+        "projectedStrikeouts": 5.39136772980222,
+        "projectedKRate": 0.2514278659610232,
         "projectedBattersFaced": 21.443,
         "projectedInnings": 5.077,
-        "pitcherSkillRate": 0.26074884148185645,
-        "opponentEnvironmentRate": 0.20280262500000001,
-        "matchupAdjustment": -0.008413818749999994,
+        "pitcherSkillRate": 0.26022450814852316,
+        "opponentEnvironmentRate": 0.20195190625,
+        "matchupAdjustment": -0.008796642187499999,
         "confidence": "high",
         "components": [
           {
@@ -6950,10 +6937,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2303,
+            "value": 0.228155,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.056295555555555564,
+            "contribution": 0.05577122222222223,
             "source": "derived"
           },
           {
@@ -6980,10 +6967,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.184667,
+            "value": 0.180778,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04039590625,
+            "contribution": 0.0395451875,
             "source": "provided"
           }
         ],
@@ -6991,9 +6978,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.311,
+        "v2MinusLegacyKs": 0.291,
         "legacyEdgeToLine": -0.4,
-        "v2EdgeToLine": -0.089
+        "v2EdgeToLine": -0.109
       },
       "inputs": {
         "v2Input": {
@@ -7058,7 +7045,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 18.4667,
+            "projectedLineupKRate": 18.0778,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -7127,7 +7114,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -7184,8 +7171,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -7199,8 +7185,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 18.4667,
-          "projectedLineupWhiffRate": 24.8333,
+          "projectedLineupKRate": 18.0778,
+          "projectedLineupWhiffRate": 24.2667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -7627,8 +7613,8 @@
       },
       "market": {
         "kLine": 6.5,
-        "oddsOver": "-103",
-        "oddsUnder": "-124",
+        "oddsOver": "-107",
+        "oddsUnder": "-119",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -7641,13 +7627,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 6.190502393597705,
-        "projectedKRate": 0.23913556586694884,
+        "projectedStrikeouts": 6.175512148728955,
+        "projectedKRate": 0.23855650128361552,
         "projectedBattersFaced": 25.887,
         "projectedInnings": 6.664,
-        "pitcherSkillRate": 0.24091150492944885,
-        "opponentEnvironmentRate": 0.21755346875,
-        "matchupAdjustment": -0.0017759390624999983,
+        "pitcherSkillRate": 0.24038717159611553,
+        "opponentEnvironmentRate": 0.21743184375,
+        "matchupAdjustment": -0.0018306703125000046,
         "confidence": "high",
         "components": [
           {
@@ -7674,10 +7660,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.23140000000000002,
+            "value": 0.22925500000000001,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05656444444444445,
+            "contribution": 0.05604011111111112,
             "source": "derived"
           },
           {
@@ -7704,10 +7690,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.200778,
+            "value": 0.200222,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.043920187500000006,
+            "contribution": 0.043798562500000006,
             "source": "provided"
           }
         ],
@@ -7715,9 +7701,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.209,
+        "v2MinusLegacyKs": -0.224,
         "legacyEdgeToLine": -0.1,
-        "v2EdgeToLine": -0.309
+        "v2EdgeToLine": -0.324
       },
       "inputs": {
         "v2Input": {
@@ -7782,7 +7768,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 20.0778,
+            "projectedLineupKRate": 20.0222,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -7851,7 +7837,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -7908,8 +7894,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -7923,8 +7908,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 20.0778,
-          "projectedLineupWhiffRate": 23.1667,
+          "projectedLineupKRate": 20.0222,
+          "projectedLineupWhiffRate": 23.1444,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -8365,13 +8350,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.2963585379129405,
-        "projectedKRate": 0.24567949429042307,
+        "projectedStrikeouts": 5.2857616244160655,
+        "projectedKRate": 0.24518794064458974,
         "projectedBattersFaced": 21.558,
         "projectedInnings": 5.419,
-        "pitcherSkillRate": 0.25111230210292307,
-        "opponentEnvironmentRate": 0.20942709375000002,
-        "matchupAdjustment": -0.005432807812499995,
+        "pitcherSkillRate": 0.2505879687695897,
+        "opponentEnvironmentRate": 0.2094999375,
+        "matchupAdjustment": -0.005400028124999997,
         "confidence": "high",
         "components": [
           {
@@ -8398,10 +8383,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2567,
+            "value": 0.254555,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.0627488888888889,
+            "contribution": 0.062224555555555554,
             "source": "derived"
           },
           {
@@ -8428,10 +8413,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.221111,
+            "value": 0.221444,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.048368031250000006,
+            "contribution": 0.04844087500000001,
             "source": "provided"
           }
         ],
@@ -8439,9 +8424,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.504,
+        "v2MinusLegacyKs": -0.514,
         "legacyEdgeToLine": 0.3,
-        "v2EdgeToLine": -0.204
+        "v2EdgeToLine": -0.214
       },
       "inputs": {
         "v2Input": {
@@ -8506,7 +8491,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.1111,
+            "projectedLineupKRate": 22.1444,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -8575,7 +8560,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -8632,8 +8617,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -8647,7 +8631,7 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.1111,
+          "projectedLineupKRate": 22.1444,
           "projectedLineupWhiffRate": 24.8889,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
@@ -9075,8 +9059,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "-160",
-        "oddsUnder": "+125",
+        "oddsOver": "-157",
+        "oddsUnder": "+123",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -9089,13 +9073,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.804338073492417,
-        "projectedKRate": 0.22506971205342532,
+        "projectedStrikeouts": 4.792912415755958,
+        "projectedKRate": 0.22453445215759196,
         "projectedBattersFaced": 21.346,
         "projectedInnings": 5.315,
-        "pitcherSkillRate": 0.21495419017842532,
-        "opponentEnvironmentRate": 0.2439789375,
-        "matchupAdjustment": 0.010115521874999997,
+        "pitcherSkillRate": 0.21442985684509197,
+        "opponentEnvironmentRate": 0.24395465625,
+        "matchupAdjustment": 0.010104595312500004,
         "confidence": "high",
         "components": [
           {
@@ -9122,10 +9106,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2094,
+            "value": 0.207255,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05118666666666667,
+            "contribution": 0.05066233333333334,
             "source": "derived"
           },
           {
@@ -9152,10 +9136,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.228778,
+            "value": 0.228667,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.05004518750000001,
+            "contribution": 0.05002090625000001,
             "source": "provided"
           }
         ],
@@ -9163,9 +9147,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.196,
+        "v2MinusLegacyKs": -0.207,
         "legacyEdgeToLine": 0.5,
-        "v2EdgeToLine": 0.304
+        "v2EdgeToLine": 0.293
       },
       "inputs": {
         "v2Input": {
@@ -9230,7 +9214,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.8778,
+            "projectedLineupKRate": 22.8667,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -9299,7 +9283,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -9356,8 +9340,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -9371,17 +9354,17 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.8778,
-          "projectedLineupWhiffRate": 25.9333,
+          "projectedLineupKRate": 22.8667,
+          "projectedLineupWhiffRate": 25.8667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
           },
           "handedness": {
             "left": 2,
-            "right": 6,
+            "right": 7,
             "switch": 0,
-            "unknown": 1
+            "unknown": 0
           }
         },
         "details": {
@@ -9799,8 +9782,8 @@
       },
       "market": {
         "kLine": 6.5,
-        "oddsOver": "-116",
-        "oddsUnder": "-110",
+        "oddsOver": "-106",
+        "oddsUnder": "-120",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -9813,13 +9796,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 6.574021722106395,
-        "projectedKRate": 0.28633745904030644,
+        "projectedStrikeouts": 6.558218348853271,
+        "projectedKRate": 0.28564912883197313,
         "projectedBattersFaced": 22.959,
         "projectedInnings": 5.398,
-        "pitcherSkillRate": 0.28690821372780645,
-        "opponentEnvironmentRate": 0.22023165625000002,
-        "matchupAdjustment": -0.0005707546874999927,
+        "pitcherSkillRate": 0.2863838803944731,
+        "opponentEnvironmentRate": 0.21986721875,
+        "matchupAdjustment": -0.0007347515624999967,
         "confidence": "high",
         "components": [
           {
@@ -9846,10 +9829,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.26935000000000003,
+            "value": 0.267205,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.06584111111111113,
+            "contribution": 0.06531677777777779,
             "source": "derived"
           },
           {
@@ -9876,10 +9859,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.224444,
+            "value": 0.222778,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.049097125000000005,
+            "contribution": 0.04873268750000001,
             "source": "provided"
           }
         ],
@@ -9887,9 +9870,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.026,
+        "v2MinusLegacyKs": -0.042,
         "legacyEdgeToLine": 0.1,
-        "v2EdgeToLine": 0.074
+        "v2EdgeToLine": 0.058
       },
       "inputs": {
         "v2Input": {
@@ -9954,7 +9937,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.4444,
+            "projectedLineupKRate": 22.2778,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -10023,7 +10006,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -10080,8 +10063,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -10095,8 +10077,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.4444,
-          "projectedLineupWhiffRate": 26.7889,
+          "projectedLineupKRate": 22.2778,
+          "projectedLineupWhiffRate": 26.7111,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -10523,8 +10505,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "+119",
-        "oddsUnder": "-152",
+        "oddsOver": "+121",
+        "oddsUnder": "-154",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -10537,13 +10519,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 6.7038585328015285,
-        "projectedKRate": 0.2916242619106285,
+        "projectedStrikeouts": 6.6945703990223615,
+        "projectedKRate": 0.2912202192022952,
         "projectedBattersFaced": 22.988,
         "projectedInnings": 5.666,
-        "pitcherSkillRate": 0.2868879415981285,
-        "opponentEnvironmentRate": 0.23202515625,
-        "matchupAdjustment": 0.0047363203125,
+        "pitcherSkillRate": 0.2863636082647952,
+        "opponentEnvironmentRate": 0.23229246875,
+        "matchupAdjustment": 0.004856610937500003,
         "confidence": "high",
         "components": [
           {
@@ -10570,10 +10552,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.26715,
+            "value": 0.265005,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.06530333333333334,
+            "contribution": 0.064779,
             "source": "derived"
           },
           {
@@ -10600,10 +10582,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.24100000000000002,
+            "value": 0.24222200000000002,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.05271875000000001,
+            "contribution": 0.052986062500000014,
             "source": "provided"
           }
         ],
@@ -10611,9 +10593,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.704,
+        "v2MinusLegacyKs": 0.695,
         "legacyEdgeToLine": 0.5,
-        "v2EdgeToLine": 1.204
+        "v2EdgeToLine": 1.195
       },
       "inputs": {
         "v2Input": {
@@ -10660,7 +10642,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 24.1,
+            "projectedLineupKRate": 24.2222,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -10729,7 +10711,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -10787,8 +10769,7 @@
           "confidenceScore": 1,
           "flags": [
             "LOW_PITCHER_SAMPLE",
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -10802,8 +10783,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 24.1,
-          "projectedLineupWhiffRate": 28.2778,
+          "projectedLineupKRate": 24.2222,
+          "projectedLineupWhiffRate": 28.2222,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -11146,8 +11127,8 @@
       },
       "market": {
         "kLine": 3.5,
-        "oddsOver": "-153",
-        "oddsUnder": "+120",
+        "oddsOver": "-155",
+        "oddsUnder": "+121",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -11160,13 +11141,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 3.993880842145978,
-        "projectedKRate": 0.18101345368681918,
+        "projectedStrikeouts": 3.9651776351543115,
+        "projectedKRate": 0.17971254691598584,
         "projectedBattersFaced": 22.064,
         "projectedInnings": 4.755,
-        "pitcherSkillRate": 0.1835422286868192,
-        "opponentEnvironmentRate": 0.2158805,
-        "matchupAdjustment": -0.002528775,
+        "pitcherSkillRate": 0.18301789535348584,
+        "opponentEnvironmentRate": 0.21415478125,
+        "matchupAdjustment": -0.0033053484374999972,
         "confidence": "high",
         "components": [
           {
@@ -11193,10 +11174,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2237,
+            "value": 0.221555,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05468222222222223,
+            "contribution": 0.054157888888888894,
             "source": "derived"
           },
           {
@@ -11223,10 +11204,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.225333,
+            "value": 0.217444,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.04929159375000001,
+            "contribution": 0.04756587500000001,
             "source": "provided"
           }
         ],
@@ -11234,9 +11215,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.394,
+        "v2MinusLegacyKs": 0.365,
         "legacyEdgeToLine": 0.1,
-        "v2EdgeToLine": 0.494
+        "v2EdgeToLine": 0.465
       },
       "inputs": {
         "v2Input": {
@@ -11301,7 +11282,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.5333,
+            "projectedLineupKRate": 21.7444,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -11370,7 +11351,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -11427,8 +11408,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -11442,8 +11422,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.5333,
-          "projectedLineupWhiffRate": 24.1111,
+          "projectedLineupKRate": 21.7444,
+          "projectedLineupWhiffRate": 23.9667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -11870,8 +11850,8 @@
       },
       "market": {
         "kLine": 3.5,
-        "oddsOver": "-162",
-        "oddsUnder": "+126",
+        "oddsOver": "-141",
+        "oddsUnder": "+111",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -11884,13 +11864,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.6941894572453675,
-        "projectedKRate": 0.20697484379388748,
+        "projectedStrikeouts": 4.683041020557867,
+        "projectedKRate": 0.2064832901480541,
         "projectedBattersFaced": 22.68,
         "projectedInnings": 5.155,
-        "pitcherSkillRate": 0.20375606410638747,
-        "opponentEnvironmentRate": 0.22865284375,
-        "matchupAdjustment": 0.0032187796874999994,
+        "pitcherSkillRate": 0.20323173077305412,
+        "opponentEnvironmentRate": 0.2287256875,
+        "matchupAdjustment": 0.0032515593749999974,
         "confidence": "high",
         "components": [
           {
@@ -11917,10 +11897,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.21545,
+            "value": 0.213305,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05266555555555556,
+            "contribution": 0.05214122222222223,
             "source": "derived"
           },
           {
@@ -11947,10 +11927,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.215778,
+            "value": 0.216111,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.047201437500000006,
+            "contribution": 0.04727428125000001,
             "source": "provided"
           }
         ],
@@ -11958,9 +11938,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.394,
+        "v2MinusLegacyKs": 0.383,
         "legacyEdgeToLine": 0.8,
-        "v2EdgeToLine": 1.194
+        "v2EdgeToLine": 1.183
       },
       "inputs": {
         "v2Input": {
@@ -12025,7 +12005,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 21.5778,
+            "projectedLineupKRate": 21.6111,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -12094,7 +12074,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -12151,8 +12131,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -12166,17 +12145,17 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 21.5778,
-          "projectedLineupWhiffRate": 25.2556,
+          "projectedLineupKRate": 21.6111,
+          "projectedLineupWhiffRate": 25.3222,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
           },
           "handedness": {
             "left": 4,
-            "right": 3,
+            "right": 4,
             "switch": 1,
-            "unknown": 1
+            "unknown": 0
           }
         },
         "details": {
@@ -12594,8 +12573,8 @@
       },
       "market": {
         "kLine": 3.5,
-        "oddsOver": "-147",
-        "oddsUnder": "+115",
+        "oddsOver": "-133",
+        "oddsUnder": "+104",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -12608,13 +12587,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 3.4320327185713553,
-        "projectedKRate": 0.1720230925052055,
+        "projectedStrikeouts": 3.4189538301302087,
+        "projectedKRate": 0.17136754198437215,
         "projectedBattersFaced": 19.951,
         "projectedInnings": 4.47,
-        "pitcherSkillRate": 0.1735089221927055,
-        "opponentEnvironmentRate": 0.21819815625,
-        "matchupAdjustment": -0.0014858296875000024,
+        "pitcherSkillRate": 0.17298458885937215,
+        "opponentEnvironmentRate": 0.2179065625,
+        "matchupAdjustment": -0.0016170468749999959,
         "confidence": "high",
         "components": [
           {
@@ -12641,10 +12620,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.24680000000000002,
+            "value": 0.244655,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.0603288888888889,
+            "contribution": 0.05980455555555556,
             "source": "derived"
           },
           {
@@ -12671,10 +12650,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.222333,
+            "value": 0.221,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.048635343750000004,
+            "contribution": 0.048343750000000005,
             "source": "provided"
           }
         ],
@@ -12682,9 +12661,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.432,
+        "v2MinusLegacyKs": 0.419,
         "legacyEdgeToLine": -0.5,
-        "v2EdgeToLine": -0.068
+        "v2EdgeToLine": -0.081
       },
       "inputs": {
         "v2Input": {
@@ -12731,7 +12710,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 22.2333,
+            "projectedLineupKRate": 22.1,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -12800,7 +12779,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -12859,8 +12838,7 @@
           "flags": [
             "LOW_RECENT_APPEARANCE_SAMPLE",
             "LOW_PITCHER_SAMPLE",
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -12874,8 +12852,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 22.2333,
-          "projectedLineupWhiffRate": 24.5556,
+          "projectedLineupKRate": 22.1,
+          "projectedLineupWhiffRate": 24.5,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -13218,8 +13196,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "-156",
-        "oddsUnder": "+122",
+        "oddsOver": "-158",
+        "oddsUnder": "+124",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -13232,13 +13210,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.27468894677219,
-        "projectedKRate": 0.2222606163312064,
+        "projectedStrikeouts": 5.258872112630523,
+        "projectedKRate": 0.22159413924787305,
         "projectedBattersFaced": 23.732,
         "projectedInnings": 6.186,
-        "pitcherSkillRate": 0.2379060757062064,
-        "opponentEnvironmentRate": 0.1867323125,
-        "matchupAdjustment": -0.015645459375000004,
+        "pitcherSkillRate": 0.23738174237287304,
+        "opponentEnvironmentRate": 0.1864164375,
+        "matchupAdjustment": -0.015787603125,
         "confidence": "high",
         "components": [
           {
@@ -13265,10 +13243,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.22425,
+            "value": 0.222105,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05481666666666667,
+            "contribution": 0.05429233333333334,
             "source": "derived"
           },
           {
@@ -13295,10 +13273,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.183222,
+            "value": 0.18177800000000002,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.040079812500000006,
+            "contribution": 0.03976393750000001,
             "source": "provided"
           }
         ],
@@ -13306,9 +13284,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.825,
+        "v2MinusLegacyKs": -0.841,
         "legacyEdgeToLine": 1.6,
-        "v2EdgeToLine": 0.775
+        "v2EdgeToLine": 0.759
       },
       "inputs": {
         "v2Input": {
@@ -13373,7 +13351,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 18.3222,
+            "projectedLineupKRate": 18.1778,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -13442,7 +13420,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -13499,8 +13477,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -13514,8 +13491,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 18.3222,
-          "projectedLineupWhiffRate": 21.3556,
+          "projectedLineupKRate": 18.1778,
+          "projectedLineupWhiffRate": 21.3111,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -13942,8 +13919,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "+120",
-        "oddsUnder": "-154",
+        "oddsOver": "+124",
+        "oddsUnder": "-158",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -13956,13 +13933,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.785622007908751,
-        "projectedKRate": 0.2030731565776437,
+        "projectedStrikeouts": 4.7724907626816675,
+        "projectedKRate": 0.20251594511931034,
         "projectedBattersFaced": 23.566,
         "projectedInnings": 5.541,
-        "pitcherSkillRate": 0.1948780659526437,
-        "opponentEnvironmentRate": 0.23971131249999997,
-        "matchupAdjustment": 0.008195090624999984,
+        "pitcherSkillRate": 0.19435373261931035,
+        "opponentEnvironmentRate": 0.23963824999999997,
+        "matchupAdjustment": 0.008162212499999986,
         "confidence": "high",
         "components": [
           {
@@ -13989,10 +13966,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20995,
+            "value": 0.207805,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.051321111111111116,
+            "contribution": 0.05079677777777778,
             "source": "derived"
           },
           {
@@ -14019,10 +13996,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.23355599999999999,
+            "value": 0.23322199999999998,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.051090375,
+            "contribution": 0.0510173125,
             "source": "provided"
           }
         ],
@@ -14030,9 +14007,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.486,
+        "v2MinusLegacyKs": 0.472,
         "legacyEdgeToLine": -1.2,
-        "v2EdgeToLine": -0.714
+        "v2EdgeToLine": -0.728
       },
       "inputs": {
         "v2Input": {
@@ -14097,7 +14074,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 23.3556,
+            "projectedLineupKRate": 23.3222,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -14166,7 +14143,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -14223,8 +14200,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -14238,8 +14214,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 23.3556,
-          "projectedLineupWhiffRate": 26.4111,
+          "projectedLineupKRate": 23.3222,
+          "projectedLineupWhiffRate": 26.5333,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -14666,8 +14642,8 @@
       },
       "market": {
         "kLine": 6.5,
-        "oddsOver": "-121",
-        "oddsUnder": "-105",
+        "oddsOver": "-114",
+        "oddsUnder": "-111",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -14680,13 +14656,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 6.1373056574774,
-        "projectedKRate": 0.2704850444018246,
+        "projectedStrikeouts": 6.1273941573159405,
+        "projectedKRate": 0.2700482220059912,
         "projectedBattersFaced": 22.69,
         "projectedInnings": 5.167,
-        "pitcherSkillRate": 0.25379010065182456,
-        "opponentEnvironmentRate": 0.25859987500000003,
-        "matchupAdjustment": 0.016694943750000014,
+        "pitcherSkillRate": 0.2532657673184912,
+        "opponentEnvironmentRate": 0.25879434375000004,
+        "matchupAdjustment": 0.01678245468750002,
         "confidence": "high",
         "components": [
           {
@@ -14713,10 +14689,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.22920000000000001,
+            "value": 0.227055,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.056026666666666676,
+            "contribution": 0.05550233333333334,
             "source": "derived"
           },
           {
@@ -14743,10 +14719,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.270333,
+            "value": 0.271222,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.059135343750000006,
+            "contribution": 0.05932981250000001,
             "source": "provided"
           }
         ],
@@ -14754,9 +14730,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.537,
+        "v2MinusLegacyKs": 0.527,
         "legacyEdgeToLine": -0.9,
-        "v2EdgeToLine": -0.363
+        "v2EdgeToLine": -0.373
       },
       "inputs": {
         "v2Input": {
@@ -14821,7 +14797,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 27.0333,
+            "projectedLineupKRate": 27.1222,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -14890,7 +14866,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -14947,8 +14923,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -14962,8 +14937,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 27.0333,
-          "projectedLineupWhiffRate": 29.0889,
+          "projectedLineupKRate": 27.1222,
+          "projectedLineupWhiffRate": 29.1222,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -15390,8 +15365,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "+108",
-        "oddsUnder": "-137",
+        "oddsOver": "+123",
+        "oddsUnder": "-157",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -15404,13 +15379,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.079151863714903,
-        "projectedKRate": 0.21982926620580417,
+        "projectedStrikeouts": 4.072264533706569,
+        "projectedKRate": 0.21945810162247084,
         "projectedBattersFaced": 18.556,
         "projectedInnings": 4.325,
-        "pitcherSkillRate": 0.22082770370580418,
-        "opponentEnvironmentRate": 0.21928125,
-        "matchupAdjustment": -0.0009984374999999963,
+        "pitcherSkillRate": 0.22030337037247083,
+        "opponentEnvironmentRate": 0.21962162500000001,
+        "matchupAdjustment": -0.0008452687499999944,
         "confidence": "high",
         "components": [
           {
@@ -15437,10 +15412,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.21545,
+            "value": 0.213305,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05266555555555556,
+            "contribution": 0.05214122222222223,
             "source": "derived"
           },
           {
@@ -15467,10 +15442,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.217,
+            "value": 0.218556,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.047468750000000004,
+            "contribution": 0.04780912500000001,
             "source": "provided"
           }
         ],
@@ -15478,9 +15453,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.079,
+        "v2MinusLegacyKs": 0.072,
         "legacyEdgeToLine": -1.5,
-        "v2EdgeToLine": -1.421
+        "v2EdgeToLine": -1.428
       },
       "inputs": {
         "v2Input": {
@@ -15545,7 +15520,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 21.7,
+            "projectedLineupKRate": 21.8556,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -15614,7 +15589,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -15671,8 +15646,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -15686,8 +15660,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 21.7,
-          "projectedLineupWhiffRate": 24.4778,
+          "projectedLineupKRate": 21.8556,
+          "projectedLineupWhiffRate": 24.5,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -16113,9 +16087,9 @@
         "handedness": "L"
       },
       "market": {
-        "kLine": 5.5,
-        "oddsOver": "+131",
-        "oddsUnder": "-167",
+        "kLine": 4.5,
+        "oddsOver": "-165",
+        "oddsUnder": "+129",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -16128,13 +16102,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.285104170862867,
-        "projectedKRate": 0.1980635161018196,
+        "projectedStrikeouts": 4.273285297141513,
+        "projectedKRate": 0.19751723120598624,
         "projectedBattersFaced": 21.635,
         "projectedInnings": 5.347,
-        "pitcherSkillRate": 0.18566127703931962,
-        "opponentEnvironmentRate": 0.24906053125,
-        "matchupAdjustment": 0.012402239062499997,
+        "pitcherSkillRate": 0.18513694370598627,
+        "opponentEnvironmentRate": 0.24901174999999998,
+        "matchupAdjustment": 0.012380287499999988,
         "confidence": "high",
         "components": [
           {
@@ -16161,10 +16135,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20005,
+            "value": 0.197905,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.04890111111111112,
+            "contribution": 0.04837677777777778,
             "source": "derived"
           },
           {
@@ -16191,10 +16165,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.256556,
+            "value": 0.256333,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.05612162500000001,
+            "contribution": 0.056072843750000004,
             "source": "provided"
           }
         ],
@@ -16202,9 +16176,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.015,
-        "legacyEdgeToLine": -1.2,
-        "v2EdgeToLine": -1.215
+        "v2MinusLegacyKs": -0.027,
+        "legacyEdgeToLine": -0.2,
+        "v2EdgeToLine": -0.227
       },
       "inputs": {
         "v2Input": {
@@ -16269,7 +16243,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 25.6556,
+            "projectedLineupKRate": 25.6333,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -16338,7 +16312,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -16395,8 +16369,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -16410,8 +16383,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 25.6556,
-          "projectedLineupWhiffRate": 26.8778,
+          "projectedLineupKRate": 25.6333,
+          "projectedLineupWhiffRate": 27.0222,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -16838,8 +16811,8 @@
       },
       "market": {
         "kLine": 7.5,
-        "oddsOver": "+100",
-        "oddsUnder": "-128",
+        "oddsOver": "+121",
+        "oddsUnder": "-154",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -16852,13 +16825,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 6.764264731539993,
-        "projectedKRate": 0.27505956130204917,
+        "projectedStrikeouts": 6.750564208131659,
+        "projectedKRate": 0.27450244828121584,
         "projectedBattersFaced": 24.592,
         "projectedInnings": 5.759,
-        "pitcherSkillRate": 0.26524739567704914,
-        "opponentEnvironmentRate": 0.24330481250000002,
-        "matchupAdjustment": 0.00981216562500001,
+        "pitcherSkillRate": 0.26472306234371584,
+        "opponentEnvironmentRate": 0.24323196875000003,
+        "matchupAdjustment": 0.009779385937500011,
         "confidence": "high",
         "components": [
           {
@@ -16885,10 +16858,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.26330000000000003,
+            "value": 0.261155,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.06436222222222224,
+            "contribution": 0.0638378888888889,
             "source": "derived"
           },
           {
@@ -16915,10 +16888,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.256222,
+            "value": 0.255889,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.05604856250000001,
+            "contribution": 0.05597571875,
             "source": "provided"
           }
         ],
@@ -16926,9 +16899,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.264,
+        "v2MinusLegacyKs": 0.251,
         "legacyEdgeToLine": -1,
-        "v2EdgeToLine": -0.736
+        "v2EdgeToLine": -0.749
       },
       "inputs": {
         "v2Input": {
@@ -16993,7 +16966,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 25.6222,
+            "projectedLineupKRate": 25.5889,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -17062,7 +17035,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -17119,8 +17092,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -17134,8 +17106,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 25.6222,
-          "projectedLineupWhiffRate": 27.0222,
+          "projectedLineupKRate": 25.5889,
+          "projectedLineupWhiffRate": 26.9889,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -17562,8 +17534,8 @@
       },
       "market": {
         "kLine": 5.5,
-        "oddsOver": "+102",
-        "oddsUnder": "-130",
+        "oddsOver": "+106",
+        "oddsUnder": "-135",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -17576,13 +17548,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.993446498017617,
-        "projectedKRate": 0.21466109956227394,
+        "projectedStrikeouts": 4.983539309142616,
+        "projectedKRate": 0.2142352037289406,
         "projectedBattersFaced": 23.262,
         "projectedInnings": 5.397,
-        "pitcherSkillRate": 0.20500892299977394,
-        "opponentEnvironmentRate": 0.24294928124999998,
-        "matchupAdjustment": 0.009652176562499991,
+        "pitcherSkillRate": 0.2044845896664406,
+        "opponentEnvironmentRate": 0.24316803125,
+        "matchupAdjustment": 0.0097506140625,
         "confidence": "high",
         "components": [
           {
@@ -17609,10 +17581,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20555,
+            "value": 0.203405,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.050245555555555564,
+            "contribution": 0.04972122222222223,
             "source": "derived"
           },
           {
@@ -17639,10 +17611,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.252556,
+            "value": 0.253556,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.05524662500000001,
+            "contribution": 0.05546537500000001,
             "source": "provided"
           }
         ],
@@ -17650,9 +17622,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.093,
+        "v2MinusLegacyKs": 0.084,
         "legacyEdgeToLine": -0.6,
-        "v2EdgeToLine": -0.507
+        "v2EdgeToLine": -0.516
       },
       "inputs": {
         "v2Input": {
@@ -17717,7 +17689,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 25.2556,
+            "projectedLineupKRate": 25.3556,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -17786,7 +17758,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -17843,8 +17815,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -17858,8 +17829,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 25.2556,
-          "projectedLineupWhiffRate": 27.1222,
+          "projectedLineupKRate": 25.3556,
+          "projectedLineupWhiffRate": 27.1889,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -18286,8 +18257,8 @@
       },
       "market": {
         "kLine": 2.5,
-        "oddsOver": "+113",
-        "oddsUnder": "-145",
+        "oddsOver": "+110",
+        "oddsUnder": "-140",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -18300,13 +18271,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 2.7409360786029184,
-        "projectedKRate": 0.12717780617125643,
+        "projectedStrikeouts": 2.7263345537029187,
+        "projectedKRate": 0.1265003040879231,
         "projectedBattersFaced": 21.552,
         "projectedInnings": 5.107,
-        "pitcherSkillRate": 0.13045740617125642,
-        "opponentEnvironmentRate": 0.214212,
-        "matchupAdjustment": -0.003279599999999995,
+        "pitcherSkillRate": 0.1299330728379231,
+        "opponentEnvironmentRate": 0.213871625,
+        "matchupAdjustment": -0.0034327687499999967,
         "confidence": "high",
         "components": [
           {
@@ -18333,10 +18304,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.1632,
+            "value": 0.161055,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.039893333333333336,
+            "contribution": 0.039369,
             "source": "derived"
           },
           {
@@ -18363,10 +18334,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.211667,
+            "value": 0.210111,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.046302156250000004,
+            "contribution": 0.04596178125000001,
             "source": "provided"
           }
         ],
@@ -18374,9 +18345,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.141,
+        "v2MinusLegacyKs": 0.126,
         "legacyEdgeToLine": 0.1,
-        "v2EdgeToLine": 0.241
+        "v2EdgeToLine": 0.226
       },
       "inputs": {
         "v2Input": {
@@ -18441,7 +18412,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 21.1667,
+            "projectedLineupKRate": 21.0111,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -18510,7 +18481,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -18567,8 +18538,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -18582,8 +18552,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 21.1667,
-          "projectedLineupWhiffRate": 24.2333,
+          "projectedLineupKRate": 21.0111,
+          "projectedLineupWhiffRate": 24.1333,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -19010,8 +18980,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "+108",
-        "oddsUnder": "-138",
+        "oddsOver": "+105",
+        "oddsUnder": "-134",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -19024,13 +18994,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 4.6103424038058005,
-        "projectedKRate": 0.21186261678258356,
+        "projectedStrikeouts": 4.5860797955141335,
+        "projectedKRate": 0.2107476584492502,
         "projectedBattersFaced": 21.761,
         "projectedInnings": 5.022,
-        "pitcherSkillRate": 0.21402696209508354,
-        "opponentEnvironmentRate": 0.21669034375000001,
-        "matchupAdjustment": -0.002164345312499995,
+        "pitcherSkillRate": 0.2135026287617502,
+        "opponentEnvironmentRate": 0.21537784375000002,
+        "matchupAdjustment": -0.0027549703124999923,
         "confidence": "high",
         "components": [
           {
@@ -19057,10 +19027,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.2039,
+            "value": 0.201755,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.049842222222222225,
+            "contribution": 0.04931788888888889,
             "source": "derived"
           },
           {
@@ -19087,10 +19057,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.24177800000000002,
+            "value": 0.235778,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.05288893750000001,
+            "contribution": 0.0515764375,
             "source": "provided"
           }
         ],
@@ -19098,9 +19068,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.01,
+        "v2MinusLegacyKs": -0.014,
         "legacyEdgeToLine": 0.1,
-        "v2EdgeToLine": 0.11
+        "v2EdgeToLine": 0.086
       },
       "inputs": {
         "v2Input": {
@@ -19165,7 +19135,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 24.1778,
+            "projectedLineupKRate": 23.5778,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -19234,7 +19204,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -19291,8 +19261,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -19306,8 +19275,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 24.1778,
-          "projectedLineupWhiffRate": 28.6111,
+          "projectedLineupKRate": 23.5778,
+          "projectedLineupWhiffRate": 28.4111,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -19734,8 +19703,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "-123",
-        "oddsUnder": "-103",
+        "oddsOver": "-128",
+        "oddsUnder": "+101",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -19748,13 +19717,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 3.98397467964345,
-        "projectedKRate": 0.18566384004303524,
+        "projectedStrikeouts": 3.9659156827236575,
+        "projectedKRate": 0.18482224264720187,
         "projectedBattersFaced": 21.458,
         "projectedInnings": 4.689,
-        "pitcherSkillRate": 0.18522119473053522,
-        "opponentEnvironmentRate": 0.22248365625000002,
-        "matchupAdjustment": 0.0004426453125000091,
+        "pitcherSkillRate": 0.18469686139720187,
+        "opponentEnvironmentRate": 0.221778625,
+        "matchupAdjustment": 0.00012538125000000205,
         "confidence": "high",
         "components": [
           {
@@ -19781,10 +19750,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.20005,
+            "value": 0.197905,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.04890111111111112,
+            "contribution": 0.04837677777777778,
             "source": "derived"
           },
           {
@@ -19811,10 +19780,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.210556,
+            "value": 0.207333,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.046059125000000006,
+            "contribution": 0.045354093750000005,
             "source": "provided"
           }
         ],
@@ -19822,9 +19791,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": 0.184,
+        "v2MinusLegacyKs": 0.166,
         "legacyEdgeToLine": -0.7,
-        "v2EdgeToLine": -0.516
+        "v2EdgeToLine": -0.534
       },
       "inputs": {
         "v2Input": {
@@ -19889,7 +19858,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 21.0556,
+            "projectedLineupKRate": 20.7333,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -19958,7 +19927,7 @@
           "context": {
             "pitcherIsHome": false,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -20015,8 +19984,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -20030,8 +19998,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 21.0556,
-          "projectedLineupWhiffRate": 25.6,
+          "projectedLineupKRate": 20.7333,
+          "projectedLineupWhiffRate": 25.4667,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
@@ -20458,8 +20426,8 @@
       },
       "market": {
         "kLine": 4.5,
-        "oddsOver": "-131",
-        "oddsUnder": "+102",
+        "oddsOver": "-116",
+        "oddsUnder": "-110",
         "book": "draftkings",
         "slateDate": "2026-08-01"
       },
@@ -20472,13 +20440,13 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 5.545292655213429,
-        "projectedKRate": 0.26152106466767727,
+        "projectedStrikeouts": 5.532319109294679,
+        "projectedKRate": 0.26090922039684394,
         "projectedBattersFaced": 21.204,
         "projectedInnings": 4.982,
-        "pitcherSkillRate": 0.2595130662301773,
-        "opponentEnvironmentRate": 0.22596221875,
-        "matchupAdjustment": 0.0020079984374999985,
+        "pitcherSkillRate": 0.25898873289684393,
+        "opponentEnvironmentRate": 0.22576775000000002,
+        "matchupAdjustment": 0.0019204875000000067,
         "confidence": "high",
         "components": [
           {
@@ -20505,10 +20473,10 @@
             "key": "pitcher.whiffSupportedKRate",
             "label": "Pitcher whiff-supported K%",
             "group": "pitcher",
-            "value": 0.23855,
+            "value": 0.236405,
             "weight": 0.22,
             "normalizedWeight": 0.24444444444444446,
-            "contribution": 0.05831222222222223,
+            "contribution": 0.057787888888888896,
             "source": "derived"
           },
           {
@@ -20535,10 +20503,10 @@
             "key": "opponent.projectedLineupKRate",
             "label": "Projected lineup K%",
             "group": "opponent",
-            "value": 0.23277799999999998,
+            "value": 0.231889,
             "weight": 0.14,
             "normalizedWeight": 0.21875000000000003,
-            "contribution": 0.050920187500000005,
+            "contribution": 0.05072571875000001,
             "source": "provided"
           }
         ],
@@ -20546,9 +20514,9 @@
         "warnings": []
       },
       "comparison": {
-        "v2MinusLegacyKs": -0.155,
+        "v2MinusLegacyKs": -0.168,
         "legacyEdgeToLine": 1.2,
-        "v2EdgeToLine": 1.045
+        "v2EdgeToLine": 1.032
       },
       "inputs": {
         "v2Input": {
@@ -20613,7 +20581,7 @@
             "recentWhiffRate": null,
             "homeWhiffRate": null,
             "awayWhiffRate": null,
-            "projectedLineupKRate": 23.2778,
+            "projectedLineupKRate": 23.1889,
             "opponentKScore": null,
             "matchupRating": null,
             "recentVsStarters": [
@@ -20682,7 +20650,7 @@
           "context": {
             "pitcherIsHome": true,
             "leagueAverageKRate": 0.2215,
-            "leagueAverageWhiffRate": 0.25
+            "leagueAverageWhiffRate": 0.2539
           }
         },
         "availability": {
@@ -20739,8 +20707,7 @@
           "confidenceGrade": "A",
           "confidenceScore": 1,
           "flags": [
-            "PITCHER_WHIFF_RATE_MISSING",
-            "PITCHER_HAND_MISSING"
+            "HAND_SPLIT_UNAVAILABLE"
           ]
         },
         "opponent": {
@@ -20754,8 +20721,8 @@
         },
         "lineup": {
           "hitterCount": 9,
-          "projectedLineupKRate": 23.2778,
-          "projectedLineupWhiffRate": 25.5,
+          "projectedLineupKRate": 23.1889,
+          "projectedLineupWhiffRate": 25.3222,
           "battingOrderKnownCount": 9,
           "lineupStatusCounts": {
             "projected": 9
