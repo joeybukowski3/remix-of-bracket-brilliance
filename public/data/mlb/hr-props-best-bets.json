@@ -1,10 +1,10 @@
 {
   "date": "2026-08-01",
-  "generatedAt": "2026-08-01T14:04:51.332Z",
+  "generatedAt": "2026-08-01T15:33:57.855Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field (1.4 PF) and Daikin Park (1.04 PF) headline today's slate, with Ryan Feltner and Ronel Blanco both allowing elevated HR rates to right-handed power bats. The model is zeroing in on barrel rate, exit velocity, and park-adjusted HR/FB ratios, with John Rave's 29.4% barrel rate and 97.8 mph exit velo at altitude standing out as the top signal.",
-    "modelNote": "The model is overweighting park-adjusted barrel rate and recent HR/FB trends while discounting last-7 HR variance, pushing Rave and Pederson to the top despite modest recent power output."
+    "slateOverview": "Coors Field (1.4) and Daikin Park (1.04) headline the slate, with Ryan Feltner and Ronel Blanco both allowing elevated HR rates to right-handed power. Truist Park (1.03) and Wrigley Field (1.0) round out the favorable venues, while Jacob deGrom's matchup against Yordan Alvarez offers a rare power-vs-power spot.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR vulnerability, elevating John Rave and Joc Pederson to the top despite modest recent HR totals."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=29.4%",
         "park=1.4"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+478",
+      "marketImpliedProbability": 0.17301038062283736,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "barrel=11.6%",
         "park=1.04"
       ],
-      "hrOddsYes": "+370",
-      "marketImpliedProbability": 0.2127659574468085,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -59,11 +59,51 @@
         "barrel=21.1%",
         "park=1.03"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "TEX",
+      "opposingPitcher": "Jacob deGrom",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=61.1",
+        "Hard Hit%=53.7"
+      ],
+      "bullets": [
+        "HR score 75.3 (#4)",
+        "Pitcher HR VS 61.1 at park 1.04"
+      ],
+      "hrOddsYes": "+250",
+      "marketImpliedProbability": 0.2857142857142857,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "WSH",
+      "opposingPitcher": "Miles Mikolas",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=63.1",
+        "Hard Hit%=50.5"
+      ],
+      "bullets": [
+        "HR score 74.3 (#5)",
+        "Pitcher HR VS 63.1 at park 1.03"
+      ],
+      "hrOddsYes": "+265",
+      "marketImpliedProbability": 0.273972602739726,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
@@ -97,13 +137,11 @@
         "barrel=14.5%",
         "park=1.03"
       ],
-      "hrOddsYes": "+330",
-      "marketImpliedProbability": 0.23255813953488372,
+      "hrOddsYes": "+265",
+      "marketImpliedProbability": 0.273972602739726,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
       "player": "Jac Caglianone",
       "team": "KC",
@@ -130,6 +168,46 @@
       "opposingPitcher": "David Peterson",
       "hrScoreRank": 7,
       "topStats": [
+        "Pitcher HR VS=54.1",
+        "Hard Hit%=48.4"
+      ],
+      "bullets": [
+        "HR score 69.9 (#7)",
+        "Pitcher HR VS 54.1 at park 1.00"
+      ],
+      "hrOddsYes": "+680",
+      "marketImpliedProbability": 0.1282051282051282,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "WSH",
+      "opposingPitcher": "Miles Mikolas",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=63.1",
+        "Hard Hit%=50.8"
+      ],
+      "bullets": [
+        "HR score 69.7 (#8)",
+        "Pitcher HR VS 63.1 at park 1.03"
+      ],
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "CHC",
+      "opposingPitcher": "David Peterson",
+      "hrScoreRank": 7,
+      "topStats": [
         "barrel=15.8%",
         "HH=48.4%"
       ],
@@ -137,8 +215,8 @@
         "barrel=15.8%",
         "park=1"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
+      "hrOddsYes": "+680",
+      "marketImpliedProbability": 0.1282051282051282,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -156,13 +234,11 @@
         "barrel=14.7%",
         "park=1.03"
       ],
-      "hrOddsYes": "+440",
-      "marketImpliedProbability": 0.18518518518518517,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    }
-  ],
-  "longshots": [
+    },
     {
       "player": "Dominic Canzone",
       "team": "SEA",
@@ -170,15 +246,15 @@
       "opposingPitcher": "Connor Prielipp",
       "hrScoreRank": 16,
       "topStats": [
-        "barrel=14.6%",
-        "HH=48.4%"
+        "Pitcher HR VS=55.5",
+        "Hard Hit%=48.4"
       ],
       "bullets": [
-        "barrel=14.6%",
-        "park=0.93"
+        "HR score 64.4 (#16)",
+        "Pitcher HR VS 55.5 at park 0.93"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+560",
+      "marketImpliedProbability": 0.15151515151515152,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -189,12 +265,12 @@
       "opposingPitcher": "Zac Thornton",
       "hrScoreRank": 14,
       "topStats": [
-        "barrel=12.5%",
-        "HH=54.3%"
+        "Pitcher HR VS=70.0",
+        "Hard Hit%=54.3"
       ],
       "bullets": [
-        "barrel=12.5%",
-        "park=1.06"
+        "HR score 64.6 (#14)",
+        "Pitcher HR VS 70.0 at park 1.06"
       ],
       "hrOddsYes": "+450",
       "marketImpliedProbability": 0.18181818181818182,
