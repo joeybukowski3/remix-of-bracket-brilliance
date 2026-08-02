@@ -17,40 +17,35 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
       - id: guard
-        name: Check whether redesign is already applied
         run: |
-          if grep -q "Signed numeric edge only" src/pages/MlbStrikeoutProps.tsx; then
-            echo "apply=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "apply=true" >> "$GITHUB_OUTPUT"
-          fi
+          if grep -q "Signed numeric edge only" src/pages/MlbStrikeoutProps.tsx; then echo "apply=false" >> "$GITHUB_OUTPUT"; else echo "apply=true" >> "$GITHUB_OUTPUT"; fi
       - if: steps.guard.outputs.apply == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
       - if: steps.guard.outputs.apply == 'true'
-        name: Recover and apply reviewed transformer
+        name: Apply refreshed transformer
         run: |
-          git fetch origin 60610b76c713ebc236e98ba99a14f930287194f9
-          git show 60610b76c713ebc236e98ba99a14f930287194f9:.github/workflows/apply-k-prop-redesign-temp.yml \
-            | sed -n '/^      - name: Apply source changes$/,/^      - name: Install dependencies$/p' \
-            | sed '1,3d;$d;s/^          //' > /tmp/apply-k-redesign.py
+          git fetch origin feat/mlb-k-prop-table-and-splits-redesign
+          git show origin/feat/mlb-k-prop-table-and-splits-redesign:.github/workflows/apply-k-prop-redesign-temp.yml > /tmp/base-workflow.yml
+          awk '
+            /name: Apply source changes/ { found=1; next }
+            found && /run: \|/ { script=1; next }
+            script && /^      - if:/ { exit }
+            script { sub(/^          /, ""); print }
+          ' /tmp/base-workflow.yml > /tmp/apply-k-redesign.py
           python /tmp/apply-k-redesign.py
       - if: steps.guard.outputs.apply == 'true'
-        name: Install dependencies
         run: npm ci
       - if: steps.guard.outputs.apply == 'true'
-        name: Typecheck
         run: npx tsc --noEmit
       - if: steps.guard.outputs.apply == 'true'
-        name: Focused tests
         run: npx vitest run src/pages/MlbStrikeoutProps*.test.tsx src/components/mlb/MlbStrikeoutPropRowDetail*.test.tsx --passWithNoTests
       - if: steps.guard.outputs.apply == 'true'
-        name: Build
         run: npm run build
       - if: steps.guard.outputs.apply == 'true'
-        name: Commit changes
+        name: Commit validated source changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
