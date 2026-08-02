@@ -1,0 +1,226 @@
+name: Finalize K prop detail redesign
+
+on:
+  pull_request:
+    branches:
+      - feat/mlb-k-prop-table-and-splits-redesign
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: ${{ contains(github.event.pull_request.head.sha, '') && contains(github.event.head_commit.message || '', '[detail-finalize]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Restore production detail component and apply approved split redesign
+        shell: python
+        run: |
+          from pathlib import Path
+          import subprocess
+
+          component_path = Path("src/components/mlb/MlbStrikeoutPropRowDetail.tsx")
+          source = subprocess.check_output([
+              "git", "show", "origin/main:src/components/mlb/MlbStrikeoutPropRowDetail.tsx"
+          ], text=True)
+
+          source = source.replace(
+              'import { useState, type CSSProperties, type ReactNode } from "react";',
+              'import { useState, type ReactNode } from "react";',
+              1,
+          )
+          source = source.replace('import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";\n', '', 1)
+          source = source.replace('''// League-average pitcher K% comes from the shared MLB_LEAGUE_AVERAGES constant (kPct).
+          // No repo-wide "hits allowed per batter faced" constant exists -- the closest canonical
+          // value is batting-average-against (avg: .243, hits/AB, not hits/BF). Derived here as
+          // avg * (1 - bbPct) to approximate AB/BF share; flagged as an estimate, not an official figure.
+          const PITCHER_LEAGUE_AVG_K_PCT = MLB_LEAGUE_AVERAGES.kPct;
+          const PITCHER_LEAGUE_AVG_HIT_PCT = Number((MLB_LEAGUE_AVERAGES.avg * (1 - MLB_LEAGUE_AVERAGES.bbPct / 100) * 100).toFixed(1));
+
+          ''', '', 1)
+
+          old_helpers = '''// Bounded diverging scale: +/- this many percentage points from league average reaches full saturation,
+          // so one extreme outlier can't blow out the whole column. Below the neutral threshold, cells get a
+          // faint neutral tint (distinct from N/A, which gets no gradient at all).
+          const GRADIENT_BOUND_PP = 6;
+          const GRADIENT_NEUTRAL_THRESHOLD_T = 0.12;
+          const GRADIENT_MAX_ALPHA = 0.32;
+          const GRADIENT_NEUTRAL_ALPHA = 0.07;
+
+          /** Higher-is-red diverging background for a 0-100 percentage vs. a league-average baseline. Returns undefined (no gradient) for N/A. */
+          function percentGradientStyle(value: number | null | undefined, leagueAverage: number): CSSProperties | undefined {
+            if (value == null || !Number.isFinite(value)) return undefined;
+            const t = Math.max(-1, Math.min(1, (value - leagueAverage) / GRADIENT_BOUND_PP));
+            if (Math.abs(t) < GRADIENT_NEUTRAL_THRESHOLD_T) {
+              return { backgroundColor: `rgba(100, 116, 139, ${GRADIENT_NEUTRAL_ALPHA})` }; // slate-500: near league average
+            }
+            const alpha = GRADIENT_NEUTRAL_ALPHA + (GRADIENT_MAX_ALPHA - GRADIENT_NEUTRAL_ALPHA) * ((Math.abs(t) - GRADIENT_NEUTRAL_THRESHOLD_T) / (1 - GRADIENT_NEUTRAL_THRESHOLD_T));
+            const rgb = t > 0 ? "220, 38, 38" : "37, 99, 235"; // red-600 above average, blue-600 below
+            return { backgroundColor: `rgba(${rgb}, ${alpha.toFixed(3)})` };
+          }
+
+          function GradientPercentCell({ value, leagueAverage }: { value: number | null | undefined; leagueAverage: number }) {
+            return (
+              <span className="inline-block rounded px-1.5 py-0.5" style={percentGradientStyle(value, leagueAverage)}>
+                {fmtPercent(value)}
+              </span>
+            );
+          }
+
+          function pitcherVenueRow(split: PitcherVenueSplit, label: string): ReactNode[] {
+            return [
+              label,
+              formatVenueInnings(split.season),
+              fmtNumber(split.season.strikeouts),
+              <GradientPercentCell key="season-k-pct" value={split.season.strikeoutRate} leagueAverage={PITCHER_LEAGUE_AVG_K_PCT} />,
+              fmtNumber(split.season.hitsAllowed),
+              <GradientPercentCell key="season-hit-pct" value={split.season.hitRate} leagueAverage={PITCHER_LEAGUE_AVG_HIT_PCT} />,
+              formatVenueInnings(split.lastFiveAtSite),
+              fmtNumber(split.lastFiveAtSite.strikeouts),
+              <GradientPercentCell key="last5-k-pct" value={split.lastFiveAtSite.strikeoutRate} leagueAverage={PITCHER_LEAGUE_AVG_K_PCT} />,
+              fmtNumber(split.lastFiveAtSite.hitsAllowed),
+              <GradientPercentCell key="last5-hit-pct" value={split.lastFiveAtSite.hitRate} leagueAverage={PITCHER_LEAGUE_AVG_HIT_PCT} />,
+            ];
+          }
+          '''
+
+          new_helpers = '''function venuePerNine(total: number | null | undefined, outs: number | null | undefined) {
+            if (total == null || outs == null || !Number.isFinite(total) || !Number.isFinite(outs) || outs <= 0) return null;
+            return (total * 27) / outs;
+          }
+
+          function signedVenueValue(value: number | null, percent = false) {
+            if (value == null || !Number.isFinite(value)) return DASH;
+            const sign = value > 0 ? "+" : "";
+            return percent ? `${sign}${value.toFixed(0)}%` : `${sign}${value.toFixed(1)}`;
+          }
+
+          function VenueDifferenceCell({ value, lowerIsBetter = false, percent = false }: { value: number | null; lowerIsBetter?: boolean; percent?: boolean }) {
+            if (value == null || !Number.isFinite(value)) return <span className="text-slate-400">{DASH}</span>;
+            const favorable = lowerIsBetter ? value < 0 : value > 0;
+            const unfavorable = lowerIsBetter ? value > 0 : value < 0;
+            return (
+              <span className={cn("font-black tabular-nums", favorable && "text-emerald-700", unfavorable && "text-red-600", !favorable && !unfavorable && "text-slate-500")}>
+                {signedVenueValue(value, percent)}
+              </span>
+            );
+          }
+
+          function pitcherVenueRow(split: PitcherVenueSplit, label: string, overallSeasonK9: number | null, overallSeasonH9: number | null): ReactNode[] {
+            const seasonK9 = venuePerNine(split.season.strikeouts, split.season.totalOuts);
+            const seasonH9 = venuePerNine(split.season.hitsAllowed, split.season.totalOuts);
+            const recentK9 = venuePerNine(split.lastFiveAtSite.strikeouts, split.lastFiveAtSite.totalOuts);
+            const recentH9 = venuePerNine(split.lastFiveAtSite.hitsAllowed, split.lastFiveAtSite.totalOuts);
+            const seasonKDiff = seasonK9 != null && overallSeasonK9 != null ? seasonK9 - overallSeasonK9 : null;
+            const recentKDiff = recentK9 != null && overallSeasonK9 != null ? recentK9 - overallSeasonK9 : null;
+            const seasonHDiff = seasonH9 != null && overallSeasonH9 != null && overallSeasonH9 !== 0 ? ((seasonH9 - overallSeasonH9) / overallSeasonH9) * 100 : null;
+            const recentHDiff = recentH9 != null && overallSeasonH9 != null && overallSeasonH9 !== 0 ? ((recentH9 - overallSeasonH9) / overallSeasonH9) * 100 : null;
+            const shortSample = split.lastFiveAtSite.gamesUsed < 5;
+            return [
+              label,
+              formatVenueInnings(split.season),
+              fmtFixed(seasonK9),
+              <VenueDifferenceCell key="season-k-diff" value={seasonKDiff} />,
+              fmtFixed(seasonH9),
+              <VenueDifferenceCell key="season-h-diff" value={seasonHDiff} lowerIsBetter percent />,
+              `${formatVenueInnings(split.lastFiveAtSite)}${shortSample ? "*" : ""}`,
+              fmtFixed(recentK9),
+              <VenueDifferenceCell key="recent-k-diff" value={recentKDiff} />,
+              fmtFixed(recentH9),
+              <VenueDifferenceCell key="recent-h-diff" value={recentHDiff} lowerIsBetter percent />,
+            ];
+          }
+          '''
+          if old_helpers not in source:
+              raise SystemExit("original venue helper block not found")
+          source = source.replace(old_helpers, new_helpers, 1)
+
+          old_rows = '''  const pitcherVenueRows = detail.pitcherVenueSplits
+            ? [
+              pitcherVenueRow(detail.pitcherVenueSplits.home, "Home"),
+              pitcherVenueRow(detail.pitcherVenueSplits.away, "Away"),
+            ]
+            : [];
+          '''
+          new_rows = '''  const pitcherVenueRows = (() => {
+            if (!detail.pitcherVenueSplits) return [];
+            const homeSeason = detail.pitcherVenueSplits.home.season;
+            const awaySeason = detail.pitcherVenueSplits.away.season;
+            const totalOuts = (homeSeason.totalOuts ?? 0) + (awaySeason.totalOuts ?? 0);
+            const totalKs = (homeSeason.strikeouts ?? 0) + (awaySeason.strikeouts ?? 0);
+            const totalHits = (homeSeason.hitsAllowed ?? 0) + (awaySeason.hitsAllowed ?? 0);
+            const overallSeasonK9 = totalOuts > 0 ? venuePerNine(totalKs, totalOuts) : null;
+            const overallSeasonH9 = totalOuts > 0 ? venuePerNine(totalHits, totalOuts) : null;
+            return [
+              pitcherVenueRow(detail.pitcherVenueSplits.home, "Home", overallSeasonK9, overallSeasonH9),
+              pitcherVenueRow(detail.pitcherVenueSplits.away, "Away", overallSeasonK9, overallSeasonH9),
+            ];
+          })();
+            const hasShortVenueSample = Boolean(detail.pitcherVenueSplits && (
+              detail.pitcherVenueSplits.home.lastFiveAtSite.gamesUsed < 5
+              || detail.pitcherVenueSplits.away.lastFiveAtSite.gamesUsed < 5
+            ));
+          '''
+          if old_rows not in source:
+              raise SystemExit("pitcher venue row block not found")
+          source = source.replace(old_rows, new_rows, 1)
+
+          old_table = '''            {detail.pitcherVenueSplits && (
+              <MiniTable
+                title={`${detail.pitcher} — Home/Away Splits`}
+                columns={["Site", "IP", "K", "K%", "Hits", "Hit%", "IP", "K", "K%", "Hits", "Hit%"]}
+                columnWidths={["8%", "11%", "7%", "9%", "10%", "9%", "11%", "7%", "9%", "10%", "9%"]}
+                headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
+                leadingUngroupedColumns={1}
+                mobileLabels={["Site", "Season IP", "Season K", "Season K%", "Season Hits", "Season Hit%", "Last 5 IP", "Last 5 K", "Last 5 K%", "Last 5 Hits", "Last 5 Hit%"]}
+                rows={pitcherVenueRows}
+                emptyMessage="No venue splits available."
+              />
+            )}
+          '''
+          new_table = '''            {detail.pitcherVenueSplits && (
+              <div className="min-w-0">
+                <MiniTable
+                  title={`${detail.pitcher} — Home/Away Splits`}
+                  columns={["Site", "IP", "K/9", "K/9 +/-", "H/9", "Hit Avg +/-", "IP", "K/9", "K/9 +/-", "H/9", "Hit Avg +/-"]}
+                  columnWidths={["8%", "10%", "8%", "10%", "8%", "11%", "10%", "8%", "10%", "8%", "11%"]}
+                  headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
+                  leadingUngroupedColumns={1}
+                  mobileLabels={["Site", "Season IP", "Season K/9", "Season K/9 +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/9", "Last 5 K/9 +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
+                  rows={pitcherVenueRows}
+                  emptyMessage="No venue splits available."
+                />
+                {hasShortVenueSample && (
+                  <div className="mt-1 px-1 text-[10px] font-semibold text-amber-700">* fewer than 5 starts available at that site; calculation uses all available starts.</div>
+                )}
+              </div>
+            )}
+          '''
+          if old_table not in source:
+              raise SystemExit("pitcher venue table block not found")
+          source = source.replace(old_table, new_table, 1)
+          component_path.write_text(source, encoding="utf-8")
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Focused detail tests
+        run: npx vitest run src/components/mlb/MlbStrikeoutPropRowDetail*.test.tsx --passWithNoTests
+      - name: Build
+        run: npm run build
+      - name: Commit restored and redesigned detail component
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/mlb/MlbStrikeoutPropRowDetail.tsx
+          git diff --cached --check
+          git commit -m "feat: finalize pitcher Home Away split redesign [detail-applied]"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
