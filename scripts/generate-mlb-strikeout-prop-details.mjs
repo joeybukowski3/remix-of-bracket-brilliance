@@ -153,11 +153,11 @@ async function main() {
       opponentId,
       pitcherStarts: starts,
       opponentLastFiveGames: opponentGameRows,
-      opponentContext,
       sourceWarnings,
       generatedAt: new Date().toISOString(),
       source: SOURCE_LABEL,
     });
+    detail.opponentContext = opponentContext;
     details.push(detail);
 
     if (detail.pitcherRecentStarts.length > 0 && detail.opponentLastFiveGames.length > 0) successCount += 1;
