@@ -91,6 +91,15 @@ export type OpponentLastFiveVsStartersSummary = {
   rows?: unknown[];
 };
 
+export type OpponentContext = {
+  home: { kPerNine: number | null; xba: number | null };
+  away: { kPerNine: number | null; xba: number | null };
+  last10: { kPerNine: number | null; xba: number | null };
+  samples?: Record<string, number>;
+  sources?: { strikeouts?: string; xba?: string };
+  warnings?: string[];
+};
+
 export type StrikeoutPropDetail = {
   key: string;
   legacyKey?: string;
@@ -111,6 +120,7 @@ export type StrikeoutPropDetail = {
   pitcherVenueSplits?: { home: PitcherVenueSplit; away: PitcherVenueSplit } | null;
   opponentLastFiveGames: StrikeoutPropOpponentGameRow[];
   opponentLastFiveVsStartersSummary?: OpponentLastFiveVsStartersSummary | null;
+  opponentContext?: OpponentContext | null;
   sourceWarnings?: string[];
   completeness?: StrikeoutDetailCompleteness | null;
   generatedAt: string;
