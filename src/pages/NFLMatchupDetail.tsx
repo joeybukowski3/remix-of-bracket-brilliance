@@ -1,47 +1,64 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
-import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
-import { getMatchupBySlug, type NflMatchupTeam } from "@/lib/nfl/matchups";
+import { getMatchupBySlug } from "@/lib/nfl/matchups";
+import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import {
-  buildComparisonRows,
-  deriveAdvantages,
-  deriveAngles,
-} from "@/lib/nfl/matchupComparison";
-import { kickoffLabel } from "@/pages/NFLSchedule";
-import SpreadPlaceholder from "@/components/nfl/matchups/SpreadPlaceholder";
-import MatchupComparisonTable from "@/components/nfl/matchups/MatchupComparisonTable";
+  DEFENSE_METRIC_GROUPS,
+  OFFENSE_METRIC_GROUPS,
+  unavailableInjuryResolver,
+  unavailableMetricResolver,
+} from "@/lib/nfl/matchupMetrics";
+import {
+  DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
+  type NflMatchupSampleSettings,
+} from "@/lib/nfl/matchupSampleWindow";
 import MatchupAdvantages from "@/components/nfl/matchups/MatchupAdvantages";
 import MatchupAngles from "@/components/nfl/matchups/MatchupAngles";
+import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
+import MatchupFutureSection from "@/components/nfl/matchups/MatchupFutureSection";
+import MatchupHero from "@/components/nfl/matchups/MatchupHero";
+import MatchupInjuries from "@/components/nfl/matchups/MatchupInjuries";
+import MatchupJumpNav from "@/components/nfl/matchups/MatchupJumpNav";
+import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile";
+import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
+import MatchupSection from "@/components/nfl/matchups/MatchupSection";
+import MatchupTrenches from "@/components/nfl/matchups/MatchupTrenches";
+import MatchupUnitBattles from "@/components/nfl/matchups/MatchupUnitBattles";
+import MatchupUnitComparison from "@/components/nfl/matchups/MatchupUnitComparison";
 
 const CURRENT_SEASON = 2026;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
 
-function TeamIdentity({ team, label }: { team: NflMatchupTeam; label: string }) {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <img src={nflLogoUrl(team.abbr)} alt={`${team.teamName} logo`} className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14" />
-      <div className="min-w-0">
-        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</div>
-        <Link
-          to={`/nfl/guide/team/${team.slug}`}
-          className="block truncate text-lg font-black leading-6 text-slate-900 hover:text-emerald-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:text-xl"
-        >
-          {team.teamName}
-        </Link>
-        <div className="text-[11px] font-bold text-slate-500">{team.division}</div>
-      </div>
-    </div>
-  );
-}
+const MODEL_ANALYSIS_SCOPE = [
+  "Projected spread",
+  "Current spread comparison",
+  "Model edge",
+  "Projected winner",
+] as const;
 
+/**
+ * NFL matchup analyzer (Phase 1).
+ *
+ * This page owns routing, SEO, data loading and section composition only. All
+ * presentation lives in src/components/nfl/matchups/*, and every statistic is
+ * supplied by an injected resolver — in this phase the "unavailable" resolvers,
+ * which is what structurally prevents a placeholder section from rendering an
+ * invented number.
+ *
+ * The Joe Knows Ball power model, Advantages and Things to Watch (formerly
+ * "Angles to watch") keep their existing logic untouched.
+ */
 export default function NFLMatchupDetail() {
   const { gameSlug = "" } = useParams();
   const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
+  const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
+    DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
+  );
 
   const matchup = useMemo(
     () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
@@ -59,8 +76,7 @@ export default function NFLMatchupDetail() {
     noindex: seo.noindex ?? !matchup,
   });
 
-  const rows = useMemo(() => (matchup ? buildComparisonRows(matchup) : []), [matchup]);
-  const advantages = useMemo(() => (matchup ? deriveAdvantages(matchup, rows) : []), [matchup, rows]);
+  const advantages = useMemo(() => (matchup ? deriveAdvantages(matchup) : []), [matchup]);
   const angles = useMemo(() => (matchup ? deriveAngles(matchup) : []), [matchup]);
 
   if (loading) {
@@ -83,53 +99,71 @@ export default function NFLMatchupDetail() {
   // Loaded but no matching game → safe redirect (invalid/unknown slug).
   if (!matchup) return <Navigate to="/nfl/matchups" replace />;
 
-  const { away, home } = matchup;
-
   return (
-    <main className="site-page pb-16 pt-8">
-      <div className="site-container site-stack">
+    <main className="site-page pb-16 pt-6">
+      <div className="site-container space-y-3">
         <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
-        {/* Header */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="matchup-heading">
-          <h1 id="matchup-heading" className="sr-only">
-            {away.teamName} at {home.teamName} — Week {matchup.week} matchup
-          </h1>
-          <div className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Week {matchup.week} Matchup</div>
-          <div className="mt-3 grid grid-cols-1 items-center gap-4 sm:grid-cols-[1fr_auto_1fr]">
-            <TeamIdentity team={away} label="Away" />
-            <div className="text-center text-xs font-black uppercase tracking-wider text-slate-400">at</div>
-            <div className="sm:text-right sm:[&>div]:flex-row-reverse">
-              <TeamIdentity team={home} label="Home" />
-            </div>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
-            <span className="font-semibold">{kickoffLabel(matchup.kickoffUtc)}</span>
-            <span>{matchup.stadium ?? "Venue TBD"}</span>
-            <SpreadPlaceholder spread={matchup.spread} />
-          </div>
-        </section>
+        <MatchupHero matchup={matchup} />
 
-        {/* Comparison + advantages/angles */}
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-slate-700">Team comparison</h2>
-            <MatchupComparisonTable matchup={matchup} rows={rows} />
-            <p className="mt-3 text-[11px] leading-4 text-slate-400">
-              Ratings from the Joe Knows Ball 2026 power model. "Edge" marks the model-favored team; context-only rows do not award an edge.
-            </p>
-          </section>
+        <MatchupJumpNav />
 
-          <div className="space-y-5">
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-slate-700">Advantages</h2>
-              <MatchupAdvantages notes={advantages} />
-            </section>
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="mb-3 text-sm font-black uppercase tracking-wider text-slate-700">Angles to watch</h2>
-              <MatchupAngles angles={angles} />
-            </section>
-          </div>
+        <MatchupDataControls settings={sampleSettings} onChange={setSampleSettings} />
+
+        <MatchupRankLegend />
+
+        {/* Advantages + Things to Watch share a row on wide screens. */}
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          <MatchupSection id="advantages">
+            <MatchupAdvantages notes={advantages} />
+          </MatchupSection>
+
+          <MatchupSection id="things-to-watch">
+            <MatchupAngles angles={angles} />
+          </MatchupSection>
+        </div>
+
+        <div className="grid items-start gap-3 xl:grid-cols-2">
+          <MatchupUnitComparison
+            id="offense"
+            matchup={matchup}
+            groups={OFFENSE_METRIC_GROUPS}
+            resolver={unavailableMetricResolver}
+            baselineLabel="JKB Offense Rating"
+            baselineRank={(team) => team.offenseRank}
+            baselineValue={(team) => team.offensePct}
+          />
+
+          <MatchupUnitComparison
+            id="defense"
+            matchup={matchup}
+            groups={DEFENSE_METRIC_GROUPS}
+            resolver={unavailableMetricResolver}
+            baselineLabel="JKB Defense Rating"
+            baselineRank={(team) => team.defenseRank}
+            baselineValue={(team) => team.defensePct}
+          />
+        </div>
+
+        <MatchupUnitBattles matchup={matchup} resolver={unavailableMetricResolver} />
+
+        <div className="grid items-start gap-3 xl:grid-cols-2">
+          <MatchupTrenches matchup={matchup} resolver={unavailableMetricResolver} />
+          <MatchupMarketProfile matchup={matchup} resolver={unavailableMetricResolver} />
+        </div>
+
+        <MatchupInjuries matchup={matchup} resolver={unavailableInjuryResolver} />
+
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          <MatchupFutureSection
+            id="game-trends"
+            message="Game trend analysis will be added in a future data phase."
+          />
+          <MatchupFutureSection
+            id="model-analysis"
+            message="The Joe Knows Ball matchup model will be added in a future phase."
+            futureScope={MODEL_ANALYSIS_SCOPE}
+          />
         </div>
 
         <p className="text-[11px] leading-5 text-slate-400">
