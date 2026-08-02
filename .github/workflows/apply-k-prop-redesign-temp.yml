@@ -26,7 +26,7 @@ jobs:
           git fetch origin 60610b76c713ebc236e98ba99a14f930287194f9
           git show 60610b76c713ebc236e98ba99a14f930287194f9:.github/workflows/apply-k-prop-redesign-temp.yml \
             | sed -n '/^      - name: Apply source changes$/,/^      - name: Install dependencies$/p' \
-            | sed '1,2d;$d;s/^          //' > /tmp/apply-k-redesign.py
+            | sed '1,3d;$d;s/^          //' > /tmp/apply-k-redesign.py
           python /tmp/apply-k-redesign.py
       - name: Install dependencies
         run: npm ci
