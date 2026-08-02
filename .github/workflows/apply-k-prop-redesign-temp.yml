@@ -1,0 +1,46 @@
+name: Apply K prop redesign
+
+on:
+  push:
+    branches:
+      - feat/mlb-k-prop-table-and-splits-redesign
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[k-redesign-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mlb-k-prop-table-and-splits-redesign
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Recover and apply reviewed transformer
+        run: |
+          git fetch origin 60610b76c713ebc236e98ba99a14f930287194f9
+          git show 60610b76c713ebc236e98ba99a14f930287194f9:.github/workflows/apply-k-prop-redesign-temp.yml \
+            | sed -n '/^      - name: Apply source changes$/,/^      - name: Install dependencies$/p' \
+            | sed '1,2d;$d;s/^          //' > /tmp/apply-k-redesign.py
+          python /tmp/apply-k-redesign.py
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Focused tests
+        run: npx vitest run src/pages/MlbStrikeoutProps*.test.tsx src/components/mlb/MlbStrikeoutPropRowDetail*.test.tsx --passWithNoTests
+      - name: Build
+        run: npm run build
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/MlbStrikeoutProps.tsx src/components/mlb/MlbStrikeoutPropRowDetail.tsx
+          git diff --cached --check
+          git commit -m "feat: redesign MLB K prop table and pitcher splits [k-redesign-applied]"
+          git push origin HEAD:feat/mlb-k-prop-table-and-splits-redesign
