@@ -141,7 +141,22 @@ function plateAppearanceRows(rows) {
   // The Statcast CSV repeats each PA for every pitch; `events` is populated on
   // the terminal pitch only, so selecting rows with an event yields one record
   // per completed PA.
-  return rows.filter((row) => row.events && row.game_date);
+  return rows.filter((row) => row.events && row.game_date && row.game_pk);
+}
+
+function latestGamePks(rows, limit = 10) {
+  const games = new Map();
+  for (const row of rows) {
+    const key = String(row.game_pk);
+    if (!games.has(key)) games.set(key, row.game_date);
+  }
+  return [...games.entries()]
+    .sort(([gamePkA, dateA], [gamePkB, dateB]) => {
+      const dateOrder = String(dateB).localeCompare(String(dateA));
+      return dateOrder !== 0 ? dateOrder : Number(gamePkB) - Number(gamePkA);
+    })
+    .slice(0, limit)
+    .map(([gamePk]) => gamePk);
 }
 
 /**
@@ -176,16 +191,15 @@ export async function fetchTeamXbaContext(teamAbbr, season, beforeDate, options 
     isHome: String(row.home_team).toUpperCase() === String(teamAbbr).toUpperCase(),
   }));
 
-  const uniqueDates = [...new Set(withSite.map((row) => row.game_date))].sort((a, b) => b.localeCompare(a));
-  const last10Dates = new Set(uniqueDates.slice(0, 10));
+  const last10GamePks = new Set(latestGamePks(withSite, 10));
   const home = aggregateXba(withSite.filter((row) => row.isHome));
   const away = aggregateXba(withSite.filter((row) => !row.isHome));
-  const last10 = aggregateXba(withSite.filter((row) => last10Dates.has(row.game_date)));
+  const last10 = aggregateXba(withSite.filter((row) => last10GamePks.has(String(row.game_pk))));
   return {
     homeXba: home.xba,
     awayXba: away.xba,
     last10Xba: last10.xba,
-    samples: { homeAtBats: home.atBats, awayAtBats: away.atBats, last10AtBats: last10.atBats, last10Games: last10Dates.size },
+    samples: { homeAtBats: home.atBats, awayAtBats: away.atBats, last10AtBats: last10.atBats, last10Games: last10GamePks.size },
     source: "baseball_savant_statcast",
   };
 }
