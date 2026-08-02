@@ -2,7 +2,8 @@ name: Apply K prop redesign
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - feat/mlb-k-prop-table-and-splits-redesign
 
 permissions:
   contents: write
@@ -13,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/mlb-k-prop-table-and-splits-redesign
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
       - id: guard
         name: Check whether redesign is already applied
@@ -56,4 +57,4 @@ jobs:
           git add src/pages/MlbStrikeoutProps.tsx src/components/mlb/MlbStrikeoutPropRowDetail.tsx
           git diff --cached --check
           git commit -m "feat: redesign MLB K prop table and pitcher splits [k-redesign-applied]"
-          git push origin HEAD:feat/mlb-k-prop-table-and-splits-redesign
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
