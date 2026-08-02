@@ -1,47 +1,47 @@
 {
   "date": "2026-08-02",
-  "generatedAt": "2026-08-02T09:25:52.008Z",
+  "generatedAt": "2026-08-02T14:05:44.362Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field (1.4 PF) headlines a slate with two KC hitters facing Kyle Freeland, while Daikin Park (1.04 PF) and Great American Ball Park (1.25 PF) offer secondary boosts. Rocker, Freeland, and Rea are all right-handed, aligning with the top model picks' platoon advantages and elevated barrel/exit-velo profiles.",
-    "modelNote": "The model is prioritizing park-adjusted barrel rates and recent HR/FB ratios over raw xBA, elevating Alvarez and Rave despite modest last-7 HR counts."
+    "slateOverview": "Coors Field is the clear HR hub with a 1.4 park factor and Kyle Freeland on the mound, setting up Rave, Caglianone, and Goodman for elevated fly-ball outcomes. Scherzer at Rogers Centre and Rocker at Daikin Park create secondary edges, while Wrigley and Truist remain neutral-to-slightly favorable for Wood and Rice.",
+    "modelNote": "The model is prioritizing barrel rate, exit velo, and park-adjusted hrFBRatio over recent volume, elevating Rave to the top despite modest last-30 totals because his 30% barrel rate and Coors matchup outweigh historical trends."
   },
   "bestBets": [
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "TEX",
-      "opposingPitcher": "Kumar Rocker",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=18.5%",
-        "HH=53.7%"
-      ],
-      "bullets": [
-        "barrel=18.5%",
-        "park=1.04"
-      ],
-      "hrOddsYes": "+215",
-      "marketImpliedProbability": 0.31746031746031744,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "John Rave",
       "team": "KC",
       "opponent": "COL",
       "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 2,
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=29.4%",
-        "HH=58.8%"
+        "barrel=30%",
+        "HH=55%"
       ],
       "bullets": [
-        "barrel=29.4%",
-        "park=1.4"
+        "park=1.4",
+        "barrel=30%"
       ],
       "hrOddsYes": "+520",
       "marketImpliedProbability": 0.16129032258064516,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "TEX",
+      "opposingPitcher": "Kumar Rocker",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=18.7%",
+        "HH=53.8%"
+      ],
+      "bullets": [
+        "park=1.04",
+        "HH=53.8%"
+      ],
+      "hrOddsYes": "+235",
+      "marketImpliedProbability": 0.29850746268656714,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,15 +52,15 @@
       "opposingPitcher": "Kyle Freeland",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=14.6%",
+        "barrel=14.8%",
         "HH=55.3%"
       ],
       "bullets": [
-        "barrel=14.6%",
-        "park=1.4"
+        "park=1.4",
+        "HH=55.3%"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
+      "hrOddsYes": "+285",
+      "marketImpliedProbability": 0.2597402597402597,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -71,12 +71,12 @@
       "opposingPitcher": "Colin Rea",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=68.8",
-        "Hard Hit%=48.4"
+        "Pitcher HR VS=68.9",
+        "Hard Hit%=48.3"
       ],
       "bullets": [
-        "HR score 76.5 (#4)",
-        "Pitcher HR VS 68.8 at park 1.00"
+        "HR score 74.0 (#4)",
+        "Pitcher HR VS 68.9 at park 1.00"
       ],
       "hrOddsYes": "+450",
       "marketImpliedProbability": 0.18181818181818182,
@@ -84,21 +84,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "KC",
-      "opposingPitcher": "Seth Lugo",
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "ATL",
+      "opposingPitcher": "JR Ritchie",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=71.1",
-        "Hard Hit%=45.4"
+        "Hard Hit%=58.2",
+        "Pitcher HR VS=56.6"
       ],
       "bullets": [
-        "HR score 70.6 (#5)",
-        "Pitcher HR VS 71.1 at park 1.40"
+        "HR score 72.8 (#5)",
+        "Pitcher HR VS 56.6 at park 1.03"
       ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -111,15 +111,34 @@
       "opposingPitcher": "Colin Rea",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=15.8%",
-        "HH=48.4%"
+        "barrel=15.7%",
+        "HH=48.3%"
       ],
       "bullets": [
-        "barrel=15.8%",
-        "park=1"
+        "park=1",
+        "barrel=15.7%"
       ],
       "hrOddsYes": "+450",
       "marketImpliedProbability": 0.18181818181818182,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "ATL",
+      "opposingPitcher": "JR Ritchie",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=20.9%",
+        "HH=58.2%"
+      ],
+      "bullets": [
+        "park=1.03",
+        "HH=58.2%"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,14 +147,14 @@
       "team": "COL",
       "opponent": "KC",
       "opposingPitcher": "Seth Lugo",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
-        "barrel=16.9%",
-        "HH=45.4%"
+        "barrel=17%",
+        "HH=46.1%"
       ],
       "bullets": [
-        "barrel=16.9%",
-        "park=1.4"
+        "park=1.4",
+        "barrel=17%"
       ],
       "hrOddsYes": "+230",
       "marketImpliedProbability": 0.30303030303030304,
@@ -147,114 +166,76 @@
       "team": "TB",
       "opponent": "CWS",
       "opposingPitcher": "Anthony Kay",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=13.4%",
-        "HH=50.5%"
-      ],
-      "bullets": [
-        "barrel=13.4%",
-        "park=0.98"
-      ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "TB",
-      "opposingPitcher": "Griffin Jax",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=60.4",
-        "Pitcher HR VS=60.1"
+        "Pitcher HR VS=61.0",
+        "Hard Hit%=50.3"
       ],
       "bullets": [
-        "HR score 67.7 (#7)",
-        "Pitcher HR VS 60.1 at park 0.98"
+        "HR score 68.2 (#7)",
+        "Pitcher HR VS 61.0 at park 0.98"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "Mitch Keller",
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "TOR",
+      "opposingPitcher": "Max Scherzer",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=59.6",
-        "Hard Hit%=53.2"
+        "Pitcher HR VS=78.5",
+        "Hard Hit%=48.6"
       ],
       "bullets": [
-        "HR score 66.9 (#8)",
-        "Pitcher HR VS 59.6 at park 1.25"
+        "HR score 68.1 (#8)",
+        "Pitcher HR VS 78.5 at park 1.08"
       ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "TB",
-      "opposingPitcher": "Griffin Jax",
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=20.1%",
-        "HH=60.4%"
+        "barrel=13.4%",
+        "HH=50.3%"
       ],
       "bullets": [
-        "barrel=20.1%",
-        "park=0.98"
+        "park=0.98",
+        "barrel=13.4%"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "Mitch Keller",
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "TOR",
+      "opposingPitcher": "Max Scherzer",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=14.8%",
-        "HH=53.2%"
+        "barrel=11.1%",
+        "HH=48.6%"
       ],
       "bullets": [
-        "barrel=14.8%",
-        "park=1.25"
+        "park=1.08",
+        "HH=48.6%"
       ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Trent Grisham",
-      "team": "NYY",
-      "opponent": "CHC",
-      "opposingPitcher": "Colin Rea",
-      "hrScoreRank": 22,
-      "topStats": [
-        "Pitcher HR VS=68.8",
-        "Hard Hit%=44.5"
-      ],
-      "bullets": [
-        "HR score 57.5 (#22)",
-        "Pitcher HR VS 68.8 at park 1.00"
-      ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +244,36 @@
       "team": "CLE",
       "opponent": "AZ",
       "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 12,
+      "hrScoreRank": 17,
       "topStats": [
-        "Pitcher HR VS=89.5",
-        "Hard Hit%=44.9"
+        "Pitcher HR VS=89.8",
+        "Hard Hit%=44.8"
       ],
       "bullets": [
-        "HR score 64.5 (#12)",
-        "Pitcher HR VS 89.5 at park 0.91"
+        "HR score 62.3 (#17)",
+        "Pitcher HR VS 89.8 at park 0.91"
       ],
-      "hrOddsYes": "+480",
-      "marketImpliedProbability": 0.1724137931034483,
+      "hrOddsYes": "+470",
+      "marketImpliedProbability": 0.17543859649122806,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Lars Nootbaar",
+      "team": "STL",
+      "opponent": "TOR",
+      "opposingPitcher": "Max Scherzer",
+      "hrScoreRank": 24,
+      "topStats": [
+        "Pitcher HR VS=78.5",
+        "Hard Hit%=51.3"
+      ],
+      "bullets": [
+        "HR score 59.7 (#24)",
+        "Pitcher HR VS 78.5 at park 1.08"
+      ],
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
