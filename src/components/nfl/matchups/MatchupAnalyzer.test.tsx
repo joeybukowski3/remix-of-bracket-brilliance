@@ -397,7 +397,15 @@ describe("Preserved model features", () => {
 });
 
 describe("Matchup hero", () => {
-  it("shows both team identities, the Joe Knows Ball ranks and real schedule context", () => {
+  /** Two teams' worth of generated v0.3.1 ratings. */
+  const MODEL_RATINGS = (abbr: string) =>
+    abbr === "ne"
+      ? { rating: 65.74, rank: 5, offenseRating: 75.51, offenseRank: 3, defenseRating: 55.2, defenseRank: 11 }
+      : abbr === "sea"
+        ? { rating: 74.36, rank: 2, offenseRating: 55.51, offenseRank: 14, defenseRating: 85.16, defenseRank: 1 }
+        : null;
+
+  it("shows both team identities and real schedule context", () => {
     renderWithRouter(<MatchupHero matchup={MATCHUP} />);
 
     expect(screen.getByRole("link", { name: "New England Patriots" })).toHaveAttribute(
@@ -412,14 +420,41 @@ describe("Matchup hero", () => {
     expect(screen.getByText("Lumen Field")).toBeInTheDocument();
     expect(screen.getByText("Week 1")).toBeInTheDocument();
     expect(screen.getByText("11-6")).toBeInTheDocument();
-    // Power ranks 6 and 21 come from the guide model.
-    expect(screen.getByText("#6")).toBeInTheDocument();
-    expect(screen.getByText("#21")).toBeInTheDocument();
+  });
+
+  it("shows generated model ratings, not the retired static percentages", () => {
+    renderWithRouter(<MatchupHero matchup={MATCHUP} modelRatings={MODEL_RATINGS} />);
+
+    // Public-scale values, rendered to one decimal and never as a percentage.
+    expect(screen.getByText("65.7")).toBeInTheDocument();
+    expect(screen.getByText("74.4")).toBeInTheDocument();
+    expect(screen.getByText("85.2")).toBeInTheDocument();
+    expect(screen.getByText("#2")).toBeInTheDocument();
+    expect(screen.getByText("#1")).toBeInTheDocument();
+    // The hand-curated static ratings were signed percentages; none may remain.
+    const heroText = screen.getByRole("region", { hidden: true }).textContent ?? document.body.textContent ?? "";
+    expect(heroText).not.toMatch(/[+-]\d+\.\d+%/);
+  });
+
+  it("renders N/A rather than falling back to the static rating system", () => {
+    // No resolver supplied: the hero must not silently read nflPreseason2026.
+    renderWithRouter(<MatchupHero matchup={MATCHUP} />);
+    // Three rating slots per team, plus the structural spread and game total.
+    expect(screen.getAllByText("N/A")).toHaveLength(8);
   });
 
   it("shows the spread and total as unavailable rather than deriving them", () => {
-    renderWithRouter(<MatchupHero matchup={MATCHUP} />);
+    renderWithRouter(<MatchupHero matchup={MATCHUP} modelRatings={MODEL_RATINGS} />);
     // One N/A for the structural spread, one for the game total.
     expect(screen.getAllByText("N/A")).toHaveLength(2);
+  });
+
+  it("never shows a projected spread, win probability or pick in the hero", () => {
+    const { container } = renderWithRouter(
+      <MatchupHero matchup={MATCHUP} modelRatings={MODEL_RATINGS} />
+    );
+    expect(container.textContent).not.toMatch(
+      /projected spread|win prob|model edge|picked winner|favou?rite to win/i
+    );
   });
 });

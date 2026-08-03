@@ -9,12 +9,14 @@ import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
+import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import { DEFENSE_METRIC_GROUPS, OFFENSE_METRIC_GROUPS } from "@/lib/nfl/matchupMetrics";
 import { createInjuryResolver, describeUnavailable } from "@/lib/nfl/injuryData";
 import { composeMetricResolvers, createEpaResolver } from "@/lib/nfl/epaData";
+import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import {
   completedGamesFor as marketCompletedGamesFor,
   createMarketResolver,
@@ -105,6 +107,10 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: a missing EPA artifact leaves only the six
   // EPA rows unavailable.
   const { artifact: epaArtifact } = useNflMatchupEpa();
+  // The hero's team-strength ratings come from the active generated model, the
+  // same board the /nfl landing page renders — never from the retired static
+  // preseason file, so the two surfaces cannot show contradictory ratings.
+  const { data: powerBoard } = useNflV03PublicPowerRatings(CURRENT_SEASON);
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -211,6 +217,11 @@ export default function NFLMatchupDetail() {
     noindex: seo.noindex ?? !matchup,
   });
 
+  const heroModelRatings = useMemo(
+    () => createHeroModelRatingResolver(powerBoard),
+    [powerBoard]
+  );
+
   const advantages = useMemo(() => (matchup ? deriveAdvantages(matchup) : []), [matchup]);
   const angles = useMemo(() => (matchup ? deriveAngles(matchup) : []), [matchup]);
 
@@ -239,7 +250,7 @@ export default function NFLMatchupDetail() {
       <div className="site-container space-y-3">
         <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
-        <MatchupHero matchup={matchup} />
+        <MatchupHero matchup={matchup} modelRatings={heroModelRatings} />
 
         <MatchupJumpNav />
 

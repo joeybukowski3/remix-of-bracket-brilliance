@@ -1742,3 +1742,137 @@ null for every non-EPA key, so the success-rate, trench, injury and market
 pipelines are unaffected. No EPA edge, matchup score, projected points,
 projected spread, win probability, favourite or picked winner is produced. The
 Offense vs Defense rows are direct descriptive comparisons only.
+
+# 26. Phase 7B implementation note (EPA model migration + generated hero ratings)
+
+## 26.1 What changed, and what deliberately did not
+
+The active power model migrated its **EPA source only**. Everything else is
+byte-for-byte identical:
+
+| | Status |
+|---|---|
+| Weights 40/40/20 | **unchanged** |
+| Point-differential component and its opponent adjustment | **unchanged** |
+| One-pass opponent adjustment (`epa: opponent-mean one-pass`, `margin: game-level one-pass residual`) | **unchanged** — iterative adjustment deferred to the spread phase |
+| Trajectory / recency (`lambda = 0`) | **unchanged** — recency stays off |
+| Public scale (50 ± 15, pooled divisor 0.733, clamp [1, 99]) | **unchanged** |
+| Home-field advantage | **still absent** — these remain neutral-field team-strength ratings |
+| Market, Success Rate, trenches, injuries | **still excluded from the rating** |
+
+Isolating the source change is what makes the before/after diff interpretable:
+every rating movement below is attributable to the EPA definition alone.
+
+## 26.2 Legacy vs migrated EPA
+
+| | Legacy (retired from the model) | Migrated |
+|---|---|---|
+| Source | `stats_team_week` `passing_epa` + `rushing_epa` | nflverse play-by-play, nflfastR `epa` |
+| Pass denominator | `attempts + sacks_suffered` | count of `pass == 1` |
+| Rush denominator | `carries` | count of `rush == 1` |
+| Scrambles | booked as **rushing** | counted as **passing** (nflfastR indicator) |
+| Coverage | misses ~3.2% of eligible plays | full eligible set |
+| League EPA/play (2025) | **+0.00747** | **+0.01496** |
+
+Eligible plays are `(pass == 1 OR rush == 1) AND epa present AND posteam
+present AND two_point_attempt != 1`, with nflfastR's own indicators
+authoritative — the same definition the Phase 6 display pipeline uses, so the
+model and the matchup page can no longer disagree about what EPA means.
+
+Aggregation sums numerators and denominators across the window and divides
+once; per-game rates are never averaged. Defence remains the opponents'
+offensive production in the same `game_id`.
+
+## 26.3 Implementation
+
+`scripts/lib/nfl-epa-team-metrics.mjs` adapts the Phase 6 compact cache
+(`data/nfl/nflverse/epa-team-game/`, now committed for 2022–2025) to the shape
+the v0.3 pipeline already consumed, so the change inside
+`nfl-v03-artifacts.mjs` is a provider swap rather than a rewrite. The
+final-eight window still selects the same games through the same team-week
+keys; only the EPA underneath differs.
+
+`scripts/lib/nfl-advanced-stats.mjs` is **retained but no longer feeds the
+active model**. It still backs the orphaned v0.2 `power-ratings.json` generator
+and its own tests. It is legacy.
+
+## 26.4 Before/after impact
+
+Full 32-team tables per season live in
+`docs/nfl-power-v0.3.1-epa-migration.md`. Summary:
+
+| Preseason | From | Mean Δrating | Max Δrating | Spearman | Teams ≥3 places |
+|---|---|---|---|---|---|
+| 2023 | 2022 | 1.339 | 5.487 | 0.9824 | 3 |
+| 2024 | 2023 | 1.382 | 4.150 | 0.9919 | 2 |
+| 2025 | 2024 | 1.949 | 4.852 | 0.9879 | 1 |
+| 2026 | 2025 | 1.302 | 5.038 | 0.9941 | 1 |
+
+These match the Phase 7 audit forecast (~1.34 / ~1.38 / ~1.95 / ~1.30) to three
+decimals. Notable: **DET overtakes BAL for the 2025 preseason #1**; LAR stays
+#1 for 2026 but gains +5.04. Bottom five is unchanged in three of four seasons.
+
+## 26.5 Model version
+
+Bumped **`nfl-power-v0.3.0` → `nfl-power-v0.3.1`**. A patch bump is the right
+size: the mathematics did not change, but the same team and season can now
+publish a different rating, so the identifier must not be reused. The constant
+is now declared once in `src/lib/nfl/v03Review.ts` as `NFL_V03_MODEL_VERSION`
+and referenced by the artifact validator and the public board, rather than
+being repeated as a literal in three places.
+
+Artifact `_meta` now carries an `epaSource` block (source, definition
+`matchup-epa-v1`, cache path, `migratedIn`), and the `source` label states the
+play-by-play cache rather than the weekly cache.
+
+**Movement fields are now version-aware.** `rankChange` and `ratingChange` are
+computed only against a prior of the same model version, so all 32 teams read
+as a first publication under v0.3.1. Reporting the migration delta as movement
+would have implied teams improved or declined when only the definition changed.
+
+## 26.6 Matchup hero
+
+The hero previously read `src/data/nflPreseason2026.ts` — a hand-curated static
+file whose ratings already disagreed with the generated model. It now reads the
+active generated board through `createHeroModelRatingResolver`, the same
+`buildPublicPowerBoard` output the `/nfl` landing page renders, so the two
+surfaces cannot show contradictory ratings.
+
+All three components migrate: overall, offense and defense. The artifact
+publishes `publicRating`, `offenseRating` and `defenseRating` on the 1–99 scale
+and `buildPublicPowerBoard` already derives `rank`, `offRank` and `defRank`, so
+nothing is fabricated from the overall rating.
+
+**Display semantics changed, and had to.** The retired static values were signed
+percentages above average ("+7.69%"); a v0.3 rating is a 1–99 scale value
+centred on 50. The hero now renders one decimal ("74.4") and never a percent
+sign, because labelling the new number "%" would misstate it. The visual layout,
+rank chips and tier colours are otherwise untouched. When the board is
+unavailable the hero renders N/A rather than falling back to the retired static
+system.
+
+No projected spread, win probability, model edge or picked winner appears in the
+hero; these remain neutral-field team-strength ratings.
+
+## 26.7 Retained static preseason data
+
+`src/data/nflPreseason2026.ts` is **not deleted**. It still supplies
+`nflLogoUrl`, division tables, `record2025`, `winTotal`, schedule strength and
+guide editorial content consumed by the guide pages and `guide2026.ts`. Only its
+`ovrPct` / `offPct` / `defPct` values have stopped being the matchup hero's
+authoritative team rating.
+
+## 26.8 Boundaries preserved
+
+The market forbidden-term guard in `nfl-v03-artifacts.mjs` is untouched and
+still active. The rating uses football performance data only — no spread, odds,
+moneyline, ATS, O/U, picks or model edge. Success Rate remains RBSDM
+display-only, trench metrics remain display-only (no weekly walk-forward
+history), and injury snap exposure remains display-only (no player-value
+source). None of them entered the rating.
+
+> **Still outstanding from the Phase 7 audit.** Iterative opponent adjustment,
+> recency weighting, an early-season decaying prior, home-field advantage and a
+> target variable all remain unimplemented by design. They belong to the
+> projected-spread phase, where each can be calibrated and reviewed on its own
+> terms.

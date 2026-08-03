@@ -2,16 +2,16 @@ import { Link } from "react-router-dom";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
 import SpreadPlaceholder from "@/components/nfl/matchups/SpreadPlaceholder";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
-import { formatSigned } from "@/lib/nfl/guideData";
+import {
+  formatHeroModelRating,
+  unavailableHeroModelRatings,
+  type HeroModelRating,
+  type HeroModelRatingResolver,
+} from "@/lib/nfl/heroModelRatings";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 const NA = "N/A";
-
-function pct(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return NA;
-  return `${formatSigned(value)}%`;
-}
 
 /** One labelled rank chip inside a team block. */
 function RankStat({
@@ -42,10 +42,13 @@ function TeamBlock({
   team,
   label,
   align,
+  model,
 }: {
   team: NflMatchupTeam;
   label: string;
   align: "start" | "end";
+  /** Generated v0.3 rating for this team; null renders N/A rather than a stale static value. */
+  model: HeroModelRating | null;
 }) {
   const isEnd = align === "end";
   return (
@@ -86,9 +89,24 @@ function TeamBlock({
           Joe Knows Ball
         </div>
         <div className="mt-1 flex items-start justify-between gap-1 sm:justify-around">
-          <RankStat label="Overall power rank" shortLabel="OVR" rank={team.powerRank} value={pct(team.overallPct)} />
-          <RankStat label="Offense rank" shortLabel="OFF" rank={team.offenseRank} value={pct(team.offensePct)} />
-          <RankStat label="Defense rank" shortLabel="DEF" rank={team.defenseRank} value={pct(team.defensePct)} />
+          <RankStat
+            label="Overall power rank"
+            shortLabel="OVR"
+            rank={model?.rank ?? null}
+            value={formatHeroModelRating(model?.rating)}
+          />
+          <RankStat
+            label="Offense rank"
+            shortLabel="OFF"
+            rank={model?.offenseRank ?? null}
+            value={formatHeroModelRating(model?.offenseRating)}
+          />
+          <RankStat
+            label="Defense rank"
+            shortLabel="DEF"
+            rank={model?.defenseRank ?? null}
+            value={formatHeroModelRating(model?.defenseRating)}
+          />
         </div>
       </div>
 
@@ -126,7 +144,21 @@ function GameFact({ label, children }: { label: string; children: React.ReactNod
  * intentionally absent rather than shown as invented values — the market total
  * appears as an explicit N/A because the slot is structural.
  */
-export default function MatchupHero({ matchup }: { matchup: NflMatchup }) {
+/**
+ * Matchup hero.
+ *
+ * The Joe Knows Ball block shows generated neutral-field team-strength ratings
+ * from the active power model (nfl-power-v0.3.1), on the model's 1-99 public
+ * scale centred on 50 — not a percentage, and not a game prediction. No
+ * projected spread, win probability, model edge or picked winner appears here.
+ */
+export default function MatchupHero({
+  matchup,
+  modelRatings = unavailableHeroModelRatings,
+}: {
+  matchup: NflMatchup;
+  modelRatings?: HeroModelRatingResolver;
+}) {
   const { away, home } = matchup;
 
   return (
@@ -141,7 +173,7 @@ export default function MatchupHero({ matchup }: { matchup: NflMatchup }) {
       </h1>
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-5">
-        <TeamBlock team={away} label="Away" align="start" />
+        <TeamBlock team={away} label="Away" align="start" model={modelRatings(away.abbr)} />
 
         <div className="order-last col-span-2 border-t border-slate-100 pt-3 lg:order-none lg:col-span-1 lg:min-w-[13rem] lg:border-l lg:border-t-0 lg:px-5 lg:pt-0">
           <div className="mb-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">
@@ -161,7 +193,7 @@ export default function MatchupHero({ matchup }: { matchup: NflMatchup }) {
           </dl>
         </div>
 
-        <TeamBlock team={home} label="Home" align="end" />
+        <TeamBlock team={home} label="Home" align="end" model={modelRatings(home.abbr)} />
       </div>
     </section>
   );
