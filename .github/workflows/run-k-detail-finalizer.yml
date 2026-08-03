@@ -36,6 +36,17 @@ jobs:
           end_index = next(i for i in range(run_index + 1, len(lines)) if lines[i].startswith('      - name:'))
           script_lines = lines[run_index + 1:end_index]
           script = '\n'.join(line[10:] if line.startswith('          ') else line for line in script_lines) + '\n'
+          strict = '''if old_rows not in source:
+              raise SystemExit("pitcher venue row block not found")
+          source = source.replace(old_rows, new_rows, 1)'''
+          resilient = '''import re
+          row_pattern = r"  const pitcherVenueRows = detail\\.pitcherVenueSplits\\n    \\? \\[.*?\\n    : \\[\\];\\n"
+          source, row_count = re.subn(row_pattern, new_rows, source, count=1, flags=re.S)
+          if row_count != 1:
+              raise SystemExit(f"pitcher venue row block not found: {row_count}")'''
+          if strict not in script:
+              raise SystemExit('unable to patch strict row transformer')
+          script = script.replace(strict, resilient, 1)
           Path('/tmp/finalize-detail.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/finalize-detail.py
