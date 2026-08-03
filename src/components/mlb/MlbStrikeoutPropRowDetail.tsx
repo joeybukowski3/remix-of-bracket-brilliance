@@ -104,6 +104,9 @@ function MiniTable({
   mobileLabels,
   mobileCollapsibleRows,
   rowClassNames,
+  columnAlignments,
+  centerHeaderGroups = false,
+  boldRows,
 }: {
   title: string;
   columns: string[];
@@ -121,6 +124,12 @@ function MiniTable({
   mobileCollapsibleRows?: CollapsibleGameRow[];
   /** Optional per-row emphasis shared by the desktop table and mobile cards. */
   rowClassNames?: string[];
+  /** Per-column alignment used when a compact comparison table mixes identity and numeric columns. */
+  columnAlignments?: Array<"left" | "center">;
+  /** Centers grouped headings over their exact column spans. */
+  centerHeaderGroups?: boolean;
+  /** Applies emphasis to every value in selected comparison rows, including mobile cards. */
+  boldRows?: boolean[];
 }) {
   const cardLabels = mobileLabels ?? columns;
   return (
@@ -141,31 +150,34 @@ function MiniTable({
             {headerGroups && (
               <tr className="text-[9px] uppercase tracking-wide text-slate-400">
                 {columns.slice(0, leadingUngroupedColumns).map((column, index) => (
-                  <th key={`lead-${index}`} rowSpan={2} className="border-b border-slate-100 px-2 py-1 text-left font-bold align-bottom">
+                  <th key={`lead-${index}`} rowSpan={2} className="border-b border-slate-100 px-2 py-1.5 text-left align-middle font-bold">
                     {column}
                   </th>
                 ))}
                 {headerGroups.map((group, index) => (
-                  <th key={`group-${index}`} colSpan={group.span} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
+                  <th key={`group-${index}`} colSpan={group.span} className={cn("border-b border-slate-100 px-2 py-1.5 align-middle font-bold", centerHeaderGroups ? "text-center" : "text-left")}>
                     {group.label}
                   </th>
                 ))}
               </tr>
             )}
             <tr className="text-[9px] uppercase tracking-wide text-slate-400">
-              {columns.slice(headerGroups ? leadingUngroupedColumns : 0).map((column, index) => (
-                <th key={`col-${index}`} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
+              {columns.slice(headerGroups ? leadingUngroupedColumns : 0).map((column, index) => {
+                const columnIndex = index + (headerGroups ? leadingUngroupedColumns : 0);
+                return (
+                <th key={`col-${index}`} className={cn("border-b border-slate-100 px-2 py-1.5 align-middle font-bold leading-tight", columnAlignments?.[columnIndex] === "center" ? "text-center" : "text-left")}>
                   {column}
                 </th>
-              ))}
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {rows.length ? (
               rows.map((row, index) => (
-                <tr key={index} className={rowClassNames?.[index] ?? (index % 2 === 0 ? "bg-white" : "bg-slate-50/70")}>
+                <tr key={index} className={cn(rowClassNames?.[index] ?? (index % 2 === 0 ? "bg-white" : "bg-slate-50/70"), boldRows?.[index] && "font-bold")}>
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="break-words border-b border-slate-50 px-2 py-1 text-slate-700">
+                    <td key={cellIndex} className={cn("break-words border-b border-slate-50 px-2 py-1.5 align-middle tabular-nums text-slate-700", columnAlignments?.[cellIndex] === "center" ? "text-center" : "text-left")}>
                       {cell}
                     </td>
                   ))}
@@ -202,11 +214,11 @@ function MiniTable({
             <div className="px-2 py-3 text-center text-xs text-slate-400">{emptyMessage}</div>
           )
         ) : rows.length ? rows.map((row, index) => (
-          <div key={index} className={cn("rounded-lg border p-2", rowClassNames?.[index] ?? "border-slate-100 bg-white")}>
+          <div key={index} className={cn("rounded-lg border p-2", rowClassNames?.[index] ?? "border-slate-100 bg-white", boldRows?.[index] && "font-bold")}>
             {cardLabels.map((label, cellIndex) => (
               <div key={`${label}-${cellIndex}`} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
                 <span className="shrink-0 font-black uppercase tracking-wide text-slate-400">{label}</span>
-                <span className="min-w-0 text-right font-semibold text-slate-700">{row[cellIndex]}</span>
+                <span className={cn("min-w-0 text-right text-slate-700", boldRows?.[index] ? "font-bold" : "font-semibold")}>{row[cellIndex]}</span>
               </div>
             ))}
           </div>
@@ -358,7 +370,7 @@ function pitcherVenueRow(split: PitcherVenueSplit, label: string, overallKPerInn
   const lastFiveH9 = ratePerNine(split.lastFiveAtSite.hitsAllowed, split.lastFiveAtSite.totalOuts);
   const shortSample = split.lastFiveAtSite.gamesUsed < 5;
   return [
-    <span key="site" className="flex flex-wrap items-center gap-1"><span>{label}</span>{isToday && <span className={cn("rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide", split.site === "home" ? "border-emerald-300 bg-emerald-100 text-emerald-800" : "border-sky-300 bg-sky-100 text-sky-800")}>Today</span>}</span>,
+    <span key="site" className="flex flex-wrap items-center gap-1"><span>{label}</span>{isToday && <span className="rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-800">Today</span>}</span>,
     formatVenueInnings(split.season),
     fmtFixed(seasonKPerInning, 2),
     <DifferenceCell key="season-k-diff" value={seasonKPerInning != null && overallKPerInning != null ? seasonKPerInning - overallKPerInning : null} />,
@@ -668,9 +680,12 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     : [];
   const pitcherVenueRowClasses = detail.pitcherVenueSplits
     ? [
-      todaySite === "home" ? "border-l-2 border-emerald-400 bg-emerald-50/70" : "bg-white",
-      todaySite === "away" ? "border-l-2 border-sky-400 bg-sky-50/70" : "bg-slate-50/70",
+      todaySite === "home" ? "border-l-2 border-amber-300 bg-amber-50 text-slate-900" : "bg-white font-normal",
+      todaySite === "away" ? "border-l-2 border-amber-300 bg-amber-50 text-slate-900" : "bg-white font-normal",
     ]
+    : [];
+  const pitcherVenueBoldRows = detail.pitcherVenueSplits
+    ? [todaySite === "home", todaySite === "away"]
     : [];
 
   const opponentSource = opponentSummaryRows.length ? opponentSummaryRows : detail.opponentLastFiveGames.map((game, index) => ({ index, date: game.date, opponent: game.opponent, opposingStartingPitcher: game.opposingStartingPitcher, opposingStarterInningsPitched: game.opposingStarterInningsPitched, opposingStarterStrikeouts: game.opposingStarterStrikeouts, teamStrikeouts: game.teamTotalStrikeouts }));
@@ -725,12 +740,15 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
                 <MiniTable
                   title={`${detail.pitcher} — Home/Away Splits`}
                   columns={["Site", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-"]}
-                  columnWidths={["7%", "12%", "8%", "9%", "8%", "11%", "12%", "8%", "9%", "8%", "8%"]}
+                  columnWidths={["8%", "13%", "8%", "10%", "7%", "8%", "13%", "8%", "10%", "7%", "8%"]}
                   headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
                   leadingUngroupedColumns={1}
+                  columnAlignments={["left", "center", "center", "center", "center", "center", "center", "center", "center", "center", "center"]}
+                  centerHeaderGroups
                   mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
                   rows={pitcherVenueRows}
                   rowClassNames={pitcherVenueRowClasses}
+                  boldRows={pitcherVenueBoldRows}
                   emptyMessage="No venue splits available."
                 />
                 {hasShortVenueSample && <p className="mt-1 px-1 text-[9px] font-semibold text-amber-700">* fewer than 5 starts available</p>}

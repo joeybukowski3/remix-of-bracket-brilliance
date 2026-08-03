@@ -362,9 +362,12 @@ describe("pitcher Home/Away split K/Inning and H/9", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} row={todayRow} />);
     const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
     const desktopRows = splitPanel.querySelectorAll("table tbody tr");
-    expect(desktopRows[0].className).toMatch(/emerald/);
+    expect(desktopRows[0].className).toMatch(/bg-amber-50/);
+    expect(desktopRows[0].className).toMatch(/border-amber-300/);
+    expect(desktopRows[0].className).toMatch(/font-bold/);
     expect(within(desktopRows[0] as HTMLElement).getByText("Today")).toBeInTheDocument();
     expect(within(desktopRows[1] as HTMLElement).queryByText("Today")).not.toBeInTheDocument();
+    expect(desktopRows[1].className).not.toMatch(/bg-amber-50|font-bold/);
     expect(within(desktopRows[1] as HTMLElement).getByText("*", { selector: "sup" })).toBeInTheDocument();
   });
 
@@ -374,10 +377,24 @@ describe("pitcher Home/Away split K/Inning and H/9", () => {
     const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
     const desktopTable = splitPanel.querySelector("table") as HTMLElement;
     const desktopRows = desktopTable.querySelectorAll("tbody tr");
-    expect(desktopRows[1].className).toMatch(/sky/);
+    expect(desktopRows[1].className).toMatch(/bg-amber-50/);
+    expect(desktopRows[1].className).toMatch(/border-amber-300/);
+    expect(desktopRows[1].className).toMatch(/font-bold/);
     expect(within(desktopRows[1] as HTMLElement).getByText("Today")).toBeInTheDocument();
     expect(within(desktopRows[0] as HTMLElement).queryByText("Today")).not.toBeInTheDocument();
+    expect(desktopRows[0].className).not.toMatch(/bg-amber-50|font-bold/);
     expect(within(desktopTable).getAllByText("Today")).toHaveLength(1);
+  });
+
+  it("centers the Season and Last 5 groups over aligned numeric columns", () => {
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
+    const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const seasonHeader = within(splitPanel).getByText("Season");
+    const lastFiveHeader = within(splitPanel).getByText("Last 5 at Site");
+    expect(seasonHeader.className).toContain("text-center");
+    expect(lastFiveHeader.className).toContain("text-center");
+    expect(splitPanel.querySelectorAll('col[style="width: 13%;"]')).toHaveLength(2);
+    expect(splitPanel.querySelectorAll('col[style="width: 8%;"]')).toHaveLength(5);
   });
 });
 
