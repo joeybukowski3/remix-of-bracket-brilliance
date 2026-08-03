@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "nfl-epa-team-game-cache-v1",
+  "source": "nflverse (play-by-play, nflfastR EPA)",
+  "attribution": "EPA data: nflverse / nflfastR",
+  "eligiblePlayFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+  "requiredSourceColumns": [
+    "game_id",
+    "season",
+    "season_type",
+    "week",
+    "posteam",
+    "defteam",
+    "epa",
+    "pass",
+    "rush",
+    "two_point_attempt"
+  ],
+  "files": [
+    {
+      "season": 2025,
+      "filename": "epa_team_game_2025.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-08-03",
+      "byteSize": 52630,
+      "sha256": "1f8ccc5715f598e63fca6e90fe770b3118dae58d44806046c1461ed1e3415c99",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19109143,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 48771,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "epa",
+          "pass",
+          "rush",
+          "two_point_attempt"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+      "upstreamCompressedBytes": 19109143,
+      "upstreamSourceRows": 48771,
+      "upstreamColumnCount": 372,
+      "eligiblePlays": 34301,
+      "compactRowCount": 544,
+      "reductionRatio": 363.1
+    }
+  ],
+  "notPublished": [
+    {
+      "season": 2026,
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz"
+    }
+  ],
+  "rawPlayByPlayCommitted": false
+}
