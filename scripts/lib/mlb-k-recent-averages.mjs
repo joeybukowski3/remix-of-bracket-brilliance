@@ -75,6 +75,7 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
   const rows = (games ?? []).map((game, index) => {
     const opposingStarterOuts = mlbInningsToOuts(game?.opposingStarterInningsPitched);
     const opposingStarterStrikeouts = nonNegativeNumber(game?.opposingStarterStrikeouts);
+    const opposingStarterWalks = nonNegativeNumber(game?.opposingStarterWalks);
     const teamStrikeouts = nonNegativeNumber(game?.teamTotalStrikeouts);
     const plateAppearances = nonNegativeNumber(game?.teamPlateAppearances);
     const whiffRate = nonNegativeNumber(game?.teamWhiffRate ?? game?.whiffRate);
@@ -88,6 +89,7 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
       opposingStarterOuts,
       opposingStarterInnings: outsToDecimalInnings(opposingStarterOuts),
       opposingStarterStrikeouts,
+      opposingStarterWalks,
       teamStrikeouts,
       plateAppearances,
       whiffRate,
@@ -97,6 +99,9 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
   const validRows = rows.filter((row) => row.valid);
   const totalOuts = validRows.reduce((sum, row) => sum + row.opposingStarterOuts, 0);
   const totalStarterKs = validRows.reduce((sum, row) => sum + row.opposingStarterStrikeouts, 0);
+  const starterWalkRows = validRows.filter((row) => row.opposingStarterWalks != null);
+  const totalStarterWalks = starterWalkRows.reduce((sum, row) => sum + row.opposingStarterWalks, 0);
+  const totalStarterWalkOuts = starterWalkRows.reduce((sum, row) => sum + row.opposingStarterOuts, 0);
   const teamStrikeoutRows = validRows.filter((row) => row.teamStrikeouts != null);
   const paRows = validRows.filter((row) => row.teamStrikeouts != null && row.plateAppearances != null);
   const whiffRows = validRows.filter((row) => row.whiffRate != null);
@@ -109,6 +114,7 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
     sampleCounts: {
       opposingStarterInnings: validRows.length,
       opposingStarterStrikeouts: validRows.length,
+      opposingStarterWalks: starterWalkRows.length,
       teamStrikeouts: teamStrikeoutRows.length,
       plateAppearances: paRows.length,
       whiffRate: whiffRows.length,
@@ -116,7 +122,13 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
     totalOpposingStarterOuts: validRows.length ? totalOuts : null,
     averageOpposingStarterInnings: validRows.length ? outsToDecimalInnings(totalOuts) / validRows.length : null,
     averageOpposingStarterStrikeouts: validRows.length ? totalStarterKs / validRows.length : null,
+    totalOpposingStarterStrikeouts: validRows.length ? totalStarterKs : null,
+    totalOpposingStarterWalks: starterWalkRows.length ? totalStarterWalks : null,
+    opposingStarterStrikeoutsPerInning: totalOuts > 0 ? (totalStarterKs * 3) / totalOuts : null,
+    opposingStarterWalksPerInning: totalStarterWalkOuts > 0 ? (totalStarterWalks * 3) / totalStarterWalkOuts : null,
     averageTeamStrikeouts: average(teamStrikeoutRows.map((row) => row.teamStrikeouts)),
+    totalTeamStrikeouts: teamStrikeoutRows.length ? totalTeamKs : null,
+    teamStrikeoutsPerInning: teamStrikeoutRows.length ? totalTeamKs / (teamStrikeoutRows.length * 9) : null,
     recentTeamKRate: divide(totalTeamKs, totalPa),
     recentWhiffRate: average(whiffRows.map((row) => row.whiffRate)),
     rows,

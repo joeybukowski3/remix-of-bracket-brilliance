@@ -48,8 +48,8 @@ describe("MLB K recent-average helpers", () => {
 
   it("summarizes complete opponent last-five vs starter samples", () => {
     const summary = summarizeOpponentLastFiveVsStarters([
-      { opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, teamTotalStrikeouts: 10, teamPlateAppearances: 38, teamWhiffRate: 0.28 },
-      { opposingStarterInningsPitched: "5.1", opposingStarterStrikeouts: 6, teamTotalStrikeouts: 8, teamPlateAppearances: 36, teamWhiffRate: 0.3 },
+      { opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, opposingStarterWalks: 2, teamTotalStrikeouts: 10, teamPlateAppearances: 38, teamWhiffRate: 0.28 },
+      { opposingStarterInningsPitched: "5.1", opposingStarterStrikeouts: 6, opposingStarterWalks: 1, teamTotalStrikeouts: 8, teamPlateAppearances: 36, teamWhiffRate: 0.3 },
     ]);
 
     expect(summary.gamesUsed).toBe(2);
@@ -57,6 +57,10 @@ describe("MLB K recent-average helpers", () => {
     expect(summary.averageOpposingStarterInnings).toBeCloseTo(34 / 3 / 2, 8);
     expect(summary.averageOpposingStarterStrikeouts).toBe(6.5);
     expect(summary.averageTeamStrikeouts).toBe(9);
+    expect(summary.totalOpposingStarterWalks).toBe(3);
+    expect(summary.opposingStarterStrikeoutsPerInning).toBeCloseTo((13 * 3) / 34, 8);
+    expect(summary.opposingStarterWalksPerInning).toBeCloseTo((3 * 3) / 34, 8);
+    expect(summary.teamStrikeoutsPerInning).toBe(1);
     expect(summary.recentTeamKRate).toBeCloseTo(18 / 74, 8);
     expect(summary.recentWhiffRate).toBeCloseTo(0.29, 8);
   });

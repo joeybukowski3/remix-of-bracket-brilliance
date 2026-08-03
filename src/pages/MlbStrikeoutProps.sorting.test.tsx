@@ -39,7 +39,7 @@ const baseRow: PitcherStrikeoutTeamRow = {
   opponentTeamXba: 0.24,
   pitcherKSkillScore: 65,
   opponentTeamStrikeoutScore: 58,
-  strikeoutMatchupScore: 62,
+  strikeoutMatchupScore: 70,
   whyItRanksWell: "Strong K matchup",
   projectedIP: 5.5,
   projectedK9: 8.2,
@@ -49,8 +49,8 @@ const baseRow: PitcherStrikeoutTeamRow = {
   kOddsUnder: "-110",
 };
 
-// Highest projected Ks, but the smallest edge vs its line -- should rank
-// first under "Most Strikeouts" but NOT first under "Best Value".
+// Highest projected Ks, but a lower K Score. "Most Strikeouts" must not
+// use this projection field despite its product label.
 const highKsRow: PitcherStrikeoutTeamRow = {
   ...baseRow,
   rank: 2,
@@ -60,6 +60,8 @@ const highKsRow: PitcherStrikeoutTeamRow = {
   gameKey: "AZ@SD",
   projectedKs: 9.0,
   kLine: 8.8,
+  strikeoutMatchupScore: 50,
+  gameStartTime: "2026-07-09T23:10:00.000Z",
 };
 
 // Lower projected Ks, but the biggest absolute edge vs its line (a strong
@@ -73,6 +75,8 @@ const bigUnderEdgeRow: PitcherStrikeoutTeamRow = {
   gameKey: "HOU@TEX",
   projectedKs: 4.0,
   kLine: 7.0,
+  strikeoutMatchupScore: 80,
+  gameStartTime: "2026-07-09T17:05:00.000Z",
 };
 
 const noMarketRow: PitcherStrikeoutTeamRow = {
@@ -144,7 +148,7 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     expect(screen.getByText(/This board ranks today's probable starters by K Score/)).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Understanding Edge" })).toBeTruthy();
     expect(screen.getByText("Edge compares our projected strikeouts to the sportsbook line.")).toBeTruthy();
-    expect(screen.getByText(/Best Value ranks the largest differences between the model and sportsbook line/)).toBeTruthy();
+    expect(screen.getByText(/Best Value ranks the largest model-to-line differences/)).toBeTruthy();
 
     const rankControl = screen.getByRole("button", { name: "Model Rank. This remains fixed even if you sort by another column." });
     expect(rankControl).toHaveAttribute("title", "Model Rank. This remains fixed even if you sort by another column.");
@@ -228,7 +232,7 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     });
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it('"Most Strikeouts" sorts rows by projected strikeouts, highest first', async () => {
+  it('"Most Strikeouts" sorts rows by K Score descending, not projected strikeouts', async () => {
     vi.resetModules();
     mockPropsData([bigUnderEdgeRow, highKsRow, baseRow]); // deliberately out of order
     await renderPage();
@@ -238,13 +242,66 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     await waitFor(() => {
       const cells = screen.getAllByText(/Gallen|Valdez|Kremer/);
       const desktopOrder = cells.filter((el) => el.closest("tr")).map((el) => el.textContent);
-      // Zac Gallen (9.0 proj) should now appear before Dean Kremer (5.0 proj) in the desktop table body.
+      // Framber has the highest K Score (80) despite the lowest projected Ks (4.0).
+      const valdezIndex = desktopOrder.findIndex((t) => t?.includes("Valdez"));
       const gallenIndex = desktopOrder.findIndex((t) => t?.includes("Gallen"));
-      const kremerIndex = desktopOrder.findIndex((t) => t?.includes("Kremer"));
-      expect(gallenIndex).toBeGreaterThanOrEqual(0);
-      expect(gallenIndex).toBeLessThan(kremerIndex);
+      expect(valdezIndex).toBeGreaterThanOrEqual(0);
+      expect(valdezIndex).toBeLessThan(gallenIndex);
     });
   }, SLOW_RENDER_TIMEOUT_MS);
+
+  it('"Game Time" sorts earliest first', async () => {
+    vi.resetModules();
+    mockPropsData([highKsRow, bigUnderEdgeRow]);
+    await renderPage();
+
+    fireEvent.click(firstTrigger("Game Time"));
+
+    await waitFor(() => {
+      const cells = screen.getAllByText(/Gallen|Valdez/);
+      const desktopOrder = cells.filter((el) => el.closest("tr")).map((el) => el.textContent);
+      expect(desktopOrder.findIndex((text) => text?.includes("Valdez"))).toBeLessThan(desktopOrder.findIndex((text) => text?.includes("Gallen")));
+    });
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("renders the exact grouped metric order, separators, signed edges, and venue tiles without legacy labels", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow, highKsRow]);
+    await renderPage();
+
+    const mainTable = screen.getAllByRole("table")[0];
+    const headerRows = mainTable.querySelectorAll("thead tr");
+    expect(Array.from(headerRows[0].querySelectorAll("th")).map((header) => header.textContent?.trim())).toEqual([
+      "Core / Market", "Pitcher Stats", "Opposing Team Stats",
+    ]);
+    const headers = Array.from(headerRows[1].querySelectorAll("th")).map((header) => header.textContent?.replace(/[↑↓]/g, "").trim());
+    expect(headers).toEqual([
+      "#", "Pitcher", "Game Time", "K Line", "Proj K", "Edge", "K Score",
+      "K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP",
+      "Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10",
+    ]);
+    for (const removed of ["K%", "Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score", "K/9", "Opp K/9"]) {
+      expect(headers).not.toContain(removed);
+    }
+    for (const groupStart of ["pitcher-stats-start", "opposing-team-stats-start"]) {
+      const separators = mainTable.querySelectorAll(`[data-table-group="${groupStart}"]`);
+      expect(separators.length).toBeGreaterThanOrEqual(2);
+      expect(Array.from(separators).every((element) => element.className.includes("border-l-2"))).toBe(true);
+    }
+    expect(within(mainTable).getByText("+0.2")).toBeInTheDocument();
+    expect(within(mainTable).getByText("-1.5")).toBeInTheDocument();
+    expect(within(mainTable).queryByText("OVER")).not.toBeInTheDocument();
+    expect(within(mainTable).queryByText("UNDER")).not.toBeInTheDocument();
+    expect(within(mainTable).getAllByText("Away").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("converts pitcher strikeouts and outs to K/Inning instead of relabeling K/9", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    const { perInning } = await import("@/pages/MlbStrikeoutProps");
+    expect(perInning(6, 18)).toBe(1);
+    expect(perInning(null, 18)).toBeNull();
+  });
 
   it('"Best Value" ranks the largest absolute edge first, so a big UNDER outranks a small OVER even with fewer projected strikeouts', async () => {
     vi.resetModules();

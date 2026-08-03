@@ -212,7 +212,7 @@ describe("Main table incremental loading", () => {
 });
 
 describe("Mobile compact rows -- collapsed header and K Model Metrics expand grid", () => {
-  it("shows logo/name/opponent/line/score in the collapsed row and moves secondary metrics into the expand grid", async () => {
+  it("keeps Core / Market visible and places secondary metrics in closed-by-default accordions", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow({ pitcher: "Compact Guy", strikeoutMatchupScore: 71 })]);
@@ -221,13 +221,36 @@ describe("Mobile compact rows -- collapsed header and K Model Metrics expand gri
     const collapsedRow = await screen.findByRole("button", { name: /Show recent strikeout details for Compact Guy/ });
     expect(within(collapsedRow).getByText("Compact Guy")).toBeInTheDocument();
     expect(within(collapsedRow).getByText("vs CHC")).toBeInTheDocument();
+    expect(within(collapsedRow).getByText("Away")).toBeInTheDocument();
     // Secondary metrics are not in the collapsed row.
-    expect(within(collapsedRow).queryByText(/K VS/)).not.toBeInTheDocument();
+    expect(within(collapsedRow).queryByText(/K\/Inning SZN/)).not.toBeInTheDocument();
 
     fireEvent.click(collapsedRow);
-    expect(await screen.findByText("K Model Metrics")).toBeInTheDocument();
-    expect(screen.getByText("K VS")).toBeInTheDocument();
-    expect(screen.getByText("Recent Starts")).toBeInTheDocument();
+    for (const label of ["K Line", "Proj K", "Edge", "K Score"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    const pitcherStats = screen.getByRole("button", { name: "Pitcher Stats" });
+    const opposingStats = screen.getByRole("button", { name: "Opposing Team Stats" });
+    expect(pitcherStats.className).toContain("border-emerald-200");
+    expect(opposingStats.className).toContain("border-indigo-200");
+    expect(pitcherStats).toHaveAttribute("aria-expanded", "false");
+    expect(opposingStats).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("K/Inning SZN")).not.toBeInTheDocument();
+    expect(screen.queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+
+    fireEvent.click(pitcherStats);
+    expect(pitcherStats).toHaveAttribute("aria-expanded", "true");
+    for (const label of ["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    expect(opposingStats).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+
+    fireEvent.click(opposingStats);
+    expect(opposingStats).toHaveAttribute("aria-expanded", "true");
+    for (const label of ["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("renders no page-level table markup below lg for the main section", async () => {
@@ -322,11 +345,12 @@ describe("How to use this page / Understanding Edge -- collapsed by default belo
     mockPropsData([makeRow()]);
     await renderPage();
 
-    await screen.findByText("How to use this page");
+    const guideHeading = await screen.findByText("How to use this page");
+    const guide = within(guideHeading.closest("section") as HTMLElement);
     expect(screen.queryByText(/This board ranks today's probable starters by K Score/)).not.toBeInTheDocument();
     expect(screen.queryByText("Edge compares our projected strikeouts to the sportsbook line.")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Click to expand" }));
+    fireEvent.click(guide.getByRole("button", { name: "Click to expand" }));
     expect(screen.getByText(/This board ranks today's probable starters by K Score/)).toBeInTheDocument();
     expect(screen.getByText("Edge compares our projected strikeouts to the sportsbook line.")).toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);

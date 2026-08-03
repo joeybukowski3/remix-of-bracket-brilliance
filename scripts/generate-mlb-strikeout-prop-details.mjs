@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildStrikeoutPropDetail } from "./lib/mlb-strikeout-prop-details-core.mjs";
+import { fetchOpponentContext } from "./lib/mlb-opponent-k-context.mjs";
 import {
   buildTeamAbbrById,
   buildTeamIdByAbbr,
@@ -17,7 +18,7 @@ const ROOT = path.resolve(__dirname, "..");
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const DEFAULT_INPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const OUTPUT_PATH = path.join(DATA_DIR, "strikeout-prop-details.json");
-const SOURCE_LABEL = "mlb_stats_api";
+const SOURCE_LABEL = "mlb_stats_api+baseball_savant";
 const OPPONENT_RECENT_GAMES_LIMIT = 10;
 const OPPONENT_RECENT_GAMES_LOOKBACK_DAYS = 45;
 
@@ -75,6 +76,7 @@ async function main() {
   const boxscoreCache = new Map();
   const pitcherStartsCache = new Map();
   const opponentGamesCache = new Map();
+  const opponentContextCache = new Map();
   const details = [];
   const warnings = [];
   let successCount = 0;
@@ -102,6 +104,7 @@ async function main() {
     }
 
     let opponentGameRows = [];
+    let opponentContext = null;
     if (opponentId == null) {
       warnings.push(`${pitcher.pitcher}: could not resolve team id for opponent "${pitcher.opponent}"`);
     } else {
@@ -121,9 +124,21 @@ async function main() {
       const { rows, error: opponentError } = await opponentGamesCache.get(pitcher.opponent);
       if (opponentError) {
         sourceWarnings.push("OPPONENT_API_REQUEST_FAILED");
-        warnings.push(`${pitcher.opponent}: opponent last-5-games unavailable (${opponentError.message})`);
+        warnings.push(`${pitcher.opponent}: opponent last-10-games unavailable (${opponentError.message})`);
       }
       opponentGameRows = rows;
+
+      if (!opponentContextCache.has(pitcher.opponent)) {
+        opponentContextCache.set(
+          pitcher.opponent,
+          fetchOpponentContext(opponentId, pitcher.opponent, season, slateDate),
+        );
+      }
+      opponentContext = await opponentContextCache.get(pitcher.opponent);
+      if (opponentContext?.warnings?.length) {
+        sourceWarnings.push(...opponentContext.warnings.map((warning) => warning.split(":")[0]));
+        warnings.push(...opponentContext.warnings.map((warning) => `${pitcher.opponent}: ${warning}`));
+      }
     }
 
     const detail = buildStrikeoutPropDetail({
@@ -142,6 +157,7 @@ async function main() {
       generatedAt: new Date().toISOString(),
       source: SOURCE_LABEL,
     });
+    detail.opponentContext = opponentContext;
     details.push(detail);
 
     if (detail.pitcherRecentStarts.length > 0 && detail.opponentLastFiveGames.length > 0) successCount += 1;
@@ -149,9 +165,13 @@ async function main() {
   }
 
   const payload = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     source: SOURCE_LABEL,
+    sources: {
+      pitcherAndTeamStrikeouts: "MLB Stats API",
+      opponentExpectedBattingAverage: "Baseball Savant Statcast",
+    },
     date: slateDate,
     details,
   };

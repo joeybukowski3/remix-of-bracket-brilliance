@@ -131,7 +131,7 @@ describe("MlbLayout", () => {
     ["/mlb/props", "max-w-[1720px]"],
     ["/mlb/hr-props", "max-w-[1720px]"],
     ["/mlb/numerology", "max-w-[1720px]"],
-    ["/mlb/strikeout-props", "max-w-[1440px]"],
+    ["/mlb/strikeout-props", "max-w-[1720px]"],
     ["/mlb/batter-vs-pitcher", "max-w-[1440px]"],
     ["/mlb/power-rankings", "max-w-[1440px]"],
     ["/mlb/sin-city", "max-w-[1440px]"],

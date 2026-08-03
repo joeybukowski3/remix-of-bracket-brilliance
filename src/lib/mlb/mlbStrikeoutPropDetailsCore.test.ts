@@ -88,12 +88,16 @@ describe("enriched pitcher start details", () => {
     expect(normalizePitcherStart({ inningsPitched: "6.1" }).outsRecorded).toBe(19);
   });
 
-  it("calculates recent H/9 and K/9 after duplicate game removal", () => {
+  it("calculates recent per-inning rates after duplicate game removal", () => {
     const details = buildPitcherDetails(preSlateStarts, { pitcherId: 669456, season: 2026 });
     expect(details.recentStarts.map((start: { gamePk: number | null }) => start.gamePk)).toEqual([1001, 1002, 1003, 1004, 1005]);
     expect(details.recentSummary.totalOuts).toBe(91);
     expect(details.recentSummary.hitsPerNine).toBeCloseTo((21 * 27) / 91, 8);
     expect(details.recentSummary.strikeoutsPerNine).toBeCloseTo((34 * 27) / 91, 8);
+    expect(details.recentSummary.hitsPerInning).toBeCloseTo((21 * 3) / 91, 8);
+    expect(details.recentSummary.strikeoutsPerInning).toBeCloseTo((34 * 3) / 91, 8);
+    expect(details.recentSummary.totalWalksAllowed).toBe(10);
+    expect(details.recentSummary.walksPerInning).toBeCloseTo((10 * 3) / 91, 8);
     expect(details.recentSummary.averagePitchCount).toBeCloseTo(94.2, 8);
     expect(details.diagnostics.duplicateGameLogs).toBe(1);
   });
@@ -237,6 +241,7 @@ describe("buildOpponentLastFiveGames", () => {
         opposingStartingPitcher: "Freddy Peralta",
         opposingStarterInningsPitched: "6.0",
         opposingStarterStrikeouts: 8,
+        opposingStarterWalks: 2,
         teamTotalStrikeouts: 11,
       },
     ]);
@@ -247,6 +252,7 @@ describe("buildOpponentLastFiveGames", () => {
         opposingStartingPitcher: "Freddy Peralta",
         opposingStarterInningsPitched: "6.0",
         opposingStarterStrikeouts: 8,
+        opposingStarterWalks: 2,
         teamTotalStrikeouts: 11,
       },
     ]);
@@ -254,7 +260,7 @@ describe("buildOpponentLastFiveGames", () => {
 
   it("produces a clear per-game unavailable row instead of dropping the game", () => {
     const rows = buildOpponentLastFiveGames([
-      { date: "2026-07-05", opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, teamTotalStrikeouts: null },
+      { date: "2026-07-05", opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null },
     ]);
     expect(rows).toHaveLength(1);
     expect(rows[0].opposingStartingPitcher).toBeNull();
@@ -294,11 +300,11 @@ describe("buildStrikeoutPropDetail", () => {
       gameDate: "2026-07-23",
       pitcherLastFiveStarts: [],
       opponentLastFiveGames: [
-        { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Braydon Fisher", opposingStarterInningsPitched: "1.1", opposingStarterStrikeouts: 1, teamTotalStrikeouts: 9 },
-        { date: "2026-07-21", opponent: "TOR", opposingStartingPitcher: "Kevin Gausman", opposingStarterInningsPitched: "3.1", opposingStarterStrikeouts: 1, teamTotalStrikeouts: 7 },
-        { date: "2026-07-20", opponent: "TOR", opposingStartingPitcher: "Dylan Cease", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, teamTotalStrikeouts: 9 },
-        { date: "2026-07-19", opponent: "BOS", opposingStartingPitcher: "Sonny Gray", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 5, teamTotalStrikeouts: 8 },
-        { date: "2026-07-18", opponent: "BOS", opposingStartingPitcher: "Patrick Sandoval", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, teamTotalStrikeouts: 7 },
+        { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Braydon Fisher", opposingStarterInningsPitched: "1.1", opposingStarterStrikeouts: 1, opposingStarterWalks: 1, teamTotalStrikeouts: 9 },
+        { date: "2026-07-21", opponent: "TOR", opposingStartingPitcher: "Kevin Gausman", opposingStarterInningsPitched: "3.1", opposingStarterStrikeouts: 1, opposingStarterWalks: 2, teamTotalStrikeouts: 7 },
+        { date: "2026-07-20", opponent: "TOR", opposingStartingPitcher: "Dylan Cease", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, opposingStarterWalks: 3, teamTotalStrikeouts: 9 },
+        { date: "2026-07-19", opponent: "BOS", opposingStartingPitcher: "Sonny Gray", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 5, opposingStarterWalks: 2, teamTotalStrikeouts: 8 },
+        { date: "2026-07-18", opponent: "BOS", opposingStartingPitcher: "Patrick Sandoval", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, opposingStarterWalks: 2, teamTotalStrikeouts: 7 },
       ],
       generatedAt: "2026-07-23T13:00:00.000Z",
       source: "mlb_stats_api",
@@ -309,6 +315,9 @@ describe("buildStrikeoutPropDetail", () => {
     expect(summary.totalOpposingStarterOuts).toBe(65);
     expect(summary.averageOpposingStarterStrikeouts).toBeCloseTo((1 + 1 + 7 + 5 + 5) / 5, 8);
     expect(summary.averageTeamStrikeouts).toBeCloseTo((9 + 7 + 9 + 8 + 7) / 5, 8);
+    expect(summary.totalOpposingStarterWalks).toBe(10);
+    expect(summary.opposingStarterWalksPerInning).toBeCloseTo((10 * 3) / 65, 8);
+    expect(summary.teamStrikeoutsPerInning).toBeCloseTo(8 / 9, 8);
   });
 
   it("does not invalidate the SP IP/K average when one game is missing Game K, or vice versa", () => {

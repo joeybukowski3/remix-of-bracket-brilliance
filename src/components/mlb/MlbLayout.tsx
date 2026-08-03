@@ -14,6 +14,7 @@ const MLB_WIDE_CONTENT_PATHS = new Set<string>([
   "/mlb/props",
   "/mlb/hr-props",
   "/mlb/numerology",
+  "/mlb/strikeout-props",
 ]);
 
 export default function MlbLayout() {

@@ -75,6 +75,19 @@ function ratePerNine(total, totalOuts) {
   return total == null || totalOuts == null || totalOuts <= 0 ? null : (total * 27) / totalOuts;
 }
 
+function ratePerInning(total, totalOuts) {
+  return total == null || totalOuts == null || totalOuts <= 0 ? null : (total * 3) / totalOuts;
+}
+
+function perInningFromEligibleRows(rows, key) {
+  const eligible = rows.filter((row) => row.outsRecorded != null && row.outsRecorded > 0 && row[key] != null);
+  if (!eligible.length) return null;
+  return ratePerInning(
+    eligible.reduce((sum, row) => sum + row[key], 0),
+    eligible.reduce((sum, row) => sum + row.outsRecorded, 0),
+  );
+}
+
 export function normalizePitcherStart(start) {
   const inningsPitched = inningsString(start?.inningsPitched);
   const outsRecorded = integer(start?.outsRecorded ?? mlbInningsToOuts(inningsPitched));
@@ -92,6 +105,7 @@ export function normalizePitcherStart(start) {
     outsRecorded,
     strikeouts: integer(start?.strikeouts),
     hitsAllowed: integer(start?.hitsAllowed),
+    walksAllowed: integer(start?.walksAllowed),
     pitchCount: integer(start?.pitchCount),
     battersFaced: integer(start?.battersFaced),
     gamesStarted: integer(start?.gamesStarted),
@@ -121,6 +135,7 @@ export function buildPitcherLastFiveSummary(starts) {
   const totalOuts = validOutsRows.length ? validOutsRows.reduce((sum, row) => sum + row.outsRecorded, 0) : null;
   const totalStrikeouts = sumNullable(rows, "strikeouts");
   const totalHitsAllowed = sumNullable(rows, "hitsAllowed");
+  const totalWalksAllowed = sumNullable(rows, "walksAllowed");
   const pitchCounts = rows.map((row) => row.pitchCount).filter((value) => value != null);
   return {
     gamesUsed: rows.length,
@@ -129,8 +144,12 @@ export function buildPitcherLastFiveSummary(starts) {
     totalStrikeouts,
     averageStrikeouts: totalStrikeouts == null || rows.length === 0 ? null : totalStrikeouts / rows.length,
     totalHitsAllowed,
+    totalWalksAllowed,
     hitsPerNine: ratePerNine(totalHitsAllowed, totalOuts),
     strikeoutsPerNine: ratePerNine(totalStrikeouts, totalOuts),
+    hitsPerInning: perInningFromEligibleRows(rows, "hitsAllowed"),
+    strikeoutsPerInning: perInningFromEligibleRows(rows, "strikeouts"),
+    walksPerInning: perInningFromEligibleRows(rows, "walksAllowed"),
     averagePitchCount: pitchCounts.length ? pitchCounts.reduce((sum, value) => sum + value, 0) / pitchCounts.length : null,
   };
 }
@@ -190,6 +209,7 @@ export function buildPitcherDetails(starts, { pitcherId = null, season = null } 
       recentStartsRequested: 5,
       recentStartsFound: recentStarts.length,
       rowsWithHitsAllowed: recentStarts.filter((row) => row.hitsAllowed != null).length,
+      rowsWithWalksAllowed: recentStarts.filter((row) => row.walksAllowed != null).length,
       rowsWithPitchCount: recentStarts.filter((row) => row.pitchCount != null).length,
       rowsWithSite: recentStarts.filter((row) => row.site != null).length,
       homeSeasonGames: currentSeasonStarts.filter((row) => row.site === "home").length,
@@ -209,6 +229,7 @@ export function buildOpponentLastFiveGames(games) {
     opposingStartingPitcher: game?.opposingStartingPitcher ?? null,
     opposingStarterInningsPitched: game?.opposingStarterInningsPitched == null ? null : String(game.opposingStarterInningsPitched),
     opposingStarterStrikeouts: finite(game?.opposingStarterStrikeouts),
+    opposingStarterWalks: finite(game?.opposingStarterWalks),
     teamTotalStrikeouts: finite(game?.teamTotalStrikeouts),
   }));
 }

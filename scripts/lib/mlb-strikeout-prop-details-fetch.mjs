@@ -92,6 +92,7 @@ export function normalizePitcherGameLogSplit(split, season, teamAbbrById) {
     inningsPitched: stat.inningsPitched == null ? null : String(stat.inningsPitched),
     strikeouts: toFiniteNumber(stat.strikeOuts ?? stat.strikeouts),
     hitsAllowed: toFiniteNumber(stat.hits),
+    walksAllowed: toFiniteNumber(stat.baseOnBalls ?? stat.walks),
     pitchCount: toFiniteNumber(stat.numberOfPitches ?? stat.pitchesThrown),
     battersFaced: toFiniteNumber(stat.battersFaced),
     gamesStarted,
@@ -169,19 +170,21 @@ export async function fetchBoxscoreCached(gamePk, cache, options = {}) {
 }
 
 export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
-  if (!boxscore?.teams) return { date: officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, teamTotalStrikeouts: null };
+  if (!boxscore?.teams) return { date: officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
   const isHomeTeam = boxscore.teams.home?.team?.id === teamId;
   const own = isHomeTeam ? boxscore.teams.home : boxscore.teams.away;
   const opposing = isHomeTeam ? boxscore.teams.away : boxscore.teams.home;
   let opposingStartingPitcher = null;
   let opposingStarterInningsPitched = null;
   let opposingStarterStrikeouts = null;
+  let opposingStarterWalks = null;
   for (const player of Object.values(opposing?.players ?? {})) {
     const pitching = player?.stats?.pitching;
     if (pitching?.gamesStarted === 1) {
       opposingStartingPitcher = player?.person?.fullName ?? null;
       opposingStarterInningsPitched = pitching.inningsPitched ?? null;
       opposingStarterStrikeouts = pitching.strikeOuts ?? null;
+      opposingStarterWalks = pitching.baseOnBalls ?? pitching.walks ?? null;
       break;
     }
   }
@@ -191,6 +194,7 @@ export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
     opposingStartingPitcher,
     opposingStarterInningsPitched,
     opposingStarterStrikeouts,
+    opposingStarterWalks,
     teamTotalStrikeouts: own?.teamStats?.batting?.strikeOuts ?? null,
   };
 }
@@ -199,7 +203,7 @@ export async function fetchOpponentLastFiveGamesDetail(teamId, games, boxscoreCa
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   return runLimited(games, concurrency, async (game) => {
     const { boxscore, error } = await fetchBoxscoreCached(game.gamePk, boxscoreCache, options);
-    if (error || !boxscore) return { date: game.officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, teamTotalStrikeouts: null };
+    if (error || !boxscore) return { date: game.officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
     return deriveOpponentGameSummary(boxscore, teamId, game.officialDate);
   });
 }
