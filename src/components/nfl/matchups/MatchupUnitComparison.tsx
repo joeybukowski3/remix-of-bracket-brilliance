@@ -16,6 +16,9 @@ import {
   type SuccessRateResolver,
 } from "@/lib/nfl/successRateData";
 
+import MatchupTrenchRow, { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
+import { collectTrenchPeriodValues, isTrenchMetric } from "@/lib/nfl/trenchMetricsData";
+
 export type MatchupSuccessRateConfig = {
   periods: readonly SuccessPeriodKey[];
   resolve: SuccessRateResolver;
@@ -47,6 +50,7 @@ export default function MatchupUnitComparison({
   baselineRank,
   baselineValue,
   successRate,
+  trench,
 }: {
   id: Extract<NflMatchupSectionId, "offense" | "defense">;
   matchup: NflMatchup;
@@ -58,6 +62,8 @@ export default function MatchupUnitComparison({
   baselineValue: (team: NflMatchupTeam) => number | null;
   /** RBSDM success rates, shown per period rather than via the sample controls. */
   successRate?: MatchupSuccessRateConfig;
+  /** ESPN trench win rates, shown per season rather than via the sample controls. */
+  trench?: MatchupTrenchConfig;
 }) {
   const [activeGroup, setActiveGroup] = useState(groups[0]?.id ?? "");
 
@@ -110,6 +116,21 @@ export default function MatchupUnitComparison({
             resolver={resolver}
             showHeader={false}
             renderMetric={(metric) => {
+              if (trench && isTrenchMetric(metric.key)) {
+                return (
+                  <MatchupTrenchRow
+                    metricLabel={metric.label}
+                    shortLabel={metric.shortLabel}
+                    help={metric.help}
+                    artifact={trench.artifact}
+                    periods={trench.periods}
+                    awayValues={collectTrenchPeriodValues(trench.resolve, matchup.away.abbr, metric.key, trench.periods)}
+                    homeValues={collectTrenchPeriodValues(trench.resolve, matchup.home.abbr, metric.key, trench.periods)}
+                    awayTeamName={matchup.away.teamName}
+                    homeTeamName={matchup.home.teamName}
+                  />
+                );
+              }
               if (!successRate || !isSuccessRateMetric(metric.key)) return null;
               return (
                 <MatchupSuccessRateRow

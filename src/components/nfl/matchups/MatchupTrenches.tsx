@@ -1,125 +1,107 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
-import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
-import { rankAccentClass } from "@/lib/nfl/rankTier";
-import {
-  METRIC_NA,
-  TRENCH_BATTLES,
-  getMetricDef,
-  type NflMatchupMetricResolver,
-  type NflMatchupMetricValue,
-} from "@/lib/nfl/matchupMetrics";
+import MatchupTrenchRow, { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
+import { TRENCH_BATTLES, getMetricDef, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
+import { collectTrenchPeriodValues } from "@/lib/nfl/trenchMetricsData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /**
- * One side of a trench battle.
+ * One line-of-scrimmage battle: the team with the ball's blocking metric against
+ * the opposing front's matching disruption metric.
  *
- * Each side is scaled independently against its own 0-100 win rate — there is
- * deliberately no head-to-head fraction, because a combined split bar would
- * read as a derived matchup score, which this phase does not produce.
- *
- * When the win rate is unavailable the track renders as an explicit dashed
- * "awaiting data" state rather than a zero-width fill that would look like a
- * genuine result of 0%.
+ * Periods are always aligned across the pairing — a 2025 blocking value is never
+ * shown against a 2026 rush value. No trench score, percentage edge, projected
+ * sacks or winner is derived; this stays a factual comparison.
  */
-function TrenchSide({
-  metric,
-  teamName,
-  metricLabel,
-  align,
-}: {
-  metric: NflMatchupMetricValue | null;
-  teamName: string;
-  metricLabel: string;
-  align: "start" | "end";
-}) {
-  const isEnd = align === "end";
-  const value = metric?.value ?? null;
-  const hasValue = value != null && Number.isFinite(value);
-  const fill = hasValue ? Math.max(0, Math.min(100, value)) : 0;
-
-  return (
-    <div className={`min-w-0 ${isEnd ? "text-right" : "text-left"}`}>
-      <div className={`flex items-center gap-1.5 ${isEnd ? "flex-row-reverse" : ""}`}>
-        <span className="truncate text-[10px] font-bold text-slate-500">{teamName}</span>
-        <MatchupRankBadge rank={metric?.rank ?? null} />
-        <span
-          className={`text-[12px] font-black tabular-nums ${hasValue ? "text-slate-900" : "text-slate-400"}`}
-        >
-          {metric?.formattedValue ?? METRIC_NA}
-        </span>
-      </div>
-
-      <div
-        className={`mt-1 h-1.5 w-full overflow-hidden rounded-full ${
-          hasValue ? "bg-slate-100" : "border border-dashed border-slate-300 bg-slate-50"
-        }`}
-        role="img"
-        aria-label={
-          hasValue
-            ? `${teamName} ${metricLabel}: ${metric?.formattedValue}`
-            : `${teamName} ${metricLabel}: unavailable`
-        }
-      >
-        {hasValue && (
-          <div
-            className={`h-full rounded-full ${rankAccentClass(metric?.rank ?? null)} ${isEnd ? "ml-auto" : ""}`}
-            style={{ width: `${fill}%` }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
 function TrenchBattle({
   offenseTeam,
   defenseTeam,
   offenseKey,
   defenseKey,
   label,
-  resolver,
+  help,
+  trench,
 }: {
   offenseTeam: NflMatchupTeam;
   defenseTeam: NflMatchupTeam;
   offenseKey: string;
   defenseKey: string;
   label: string;
-  resolver: NflMatchupMetricResolver;
+  help?: string;
+  trench?: MatchupTrenchConfig;
 }) {
   const offenseDef = getMetricDef(offenseKey);
   const defenseDef = getMetricDef(defenseKey);
+  const periods = trench?.periods ?? [];
+
+  const awayValues = trench
+    ? collectTrenchPeriodValues(trench.resolve, offenseTeam.abbr, offenseKey, periods)
+    : {};
+  const homeValues = trench
+    ? collectTrenchPeriodValues(trench.resolve, defenseTeam.abbr, defenseKey, periods)
+    : {};
 
   return (
     <div className="rounded-lg border border-slate-200 p-2">
-      <div className="mb-1.5 text-center text-[10px] font-black uppercase tracking-wide text-slate-500">
+      <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-slate-500">
         {label}
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <TrenchSide
-          metric={resolver(offenseTeam.slug, offenseKey)}
-          teamName={`${offenseTeam.abbr.toUpperCase()} ${offenseDef?.shortLabel ?? ""}`.trim()}
-          metricLabel={offenseDef?.label ?? offenseKey}
-          align="start"
-        />
-        <TrenchSide
-          metric={resolver(defenseTeam.slug, defenseKey)}
-          teamName={`${defenseTeam.abbr.toUpperCase()} ${defenseDef?.shortLabel ?? ""}`.trim()}
-          metricLabel={defenseDef?.label ?? defenseKey}
-          align="end"
-        />
+
+      {/* Which team and metric each side represents. */}
+      <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 border-b border-slate-100 pb-1 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
+        <div className="truncate text-right text-[9px] font-black uppercase tracking-wide text-slate-500">
+          {offenseTeam.abbr.toUpperCase()} {offenseDef?.shortLabel ?? ""}
+        </div>
+        <div className="text-center text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">
+          vs
+        </div>
+        <div className="truncate text-left text-[9px] font-black uppercase tracking-wide text-slate-500">
+          {defenseTeam.abbr.toUpperCase()} {defenseDef?.shortLabel ?? ""}
+        </div>
       </div>
+
+      {periods.length > 0 ? (
+        <MatchupTrenchRow
+          metricLabel={label}
+          help={help}
+          showMetricLabel={false}
+          artifact={trench?.artifact ?? null}
+          periods={periods}
+          awayValues={awayValues}
+          homeValues={homeValues}
+          awayTeamName={`${offenseTeam.teamName} ${offenseDef?.label ?? ""}`.trim()}
+          homeTeamName={`${defenseTeam.teamName} ${defenseDef?.label ?? ""}`.trim()}
+        />
+      ) : (
+        <p className="py-2 text-center text-[11px] font-semibold text-slate-400">N/A</p>
+      )}
     </div>
   );
 }
 
-/** Four line-of-scrimmage battles, two per possession. */
+/**
+ * Trenches: four line-of-scrimmage battles, two per possession.
+ *
+ * Values are ESPN Analytics team win rates (PBWR / RBWR / PRWR / RSWR) built on
+ * NFL Next Gen Stats tracking data, shown with ESPN's official ranks. Sacks and
+ * other conventional metrics are never substituted here.
+ *
+ * ESPN publishes cumulative season-to-date figures only, so this section uses
+ * its own season-based period policy rather than the conventional Season/Last 5
+ * controls, and never produces a Last 5 or Last 8 trench value.
+ */
 export default function MatchupTrenches({
   matchup,
-  resolver,
+  trench,
+  note,
 }: {
   matchup: NflMatchup;
-  resolver: NflMatchupMetricResolver;
+  /** Present only when the generated ESPN artifact loaded. */
+  trench?: MatchupTrenchConfig;
+  /** Section-level period explanation, rendered once. */
+  note?: string;
+  /** Retained for API compatibility with the other sections; unused here. */
+  resolver?: NflMatchupMetricResolver;
 }) {
   const { away, home } = matchup;
 
@@ -136,9 +118,6 @@ export default function MatchupTrenches({
             <h3 className="mb-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
               {offense.teamName} has the ball
             </h3>
-            {/* One battle per row. Side-by-side battles leave roughly 128px per
-                side once this section sits in the desktop two-column grid,
-                which truncates the team/metric labels. */}
             <div className="grid gap-2">
               {TRENCH_BATTLES.map((battle) => (
                 <TrenchBattle
@@ -148,16 +127,19 @@ export default function MatchupTrenches({
                   offenseKey={battle.offenseKey}
                   defenseKey={battle.defenseKey}
                   label={battle.label}
-                  resolver={resolver}
+                  help={battle.help}
+                  trench={trench}
                 />
               ))}
             </div>
           </div>
         ))}
       </div>
+
       <MatchupPendingNote>
-        Win rates come from the ESPN / Next Gen Stats line-of-scrimmage feed, which is not connected
-        yet. Each side is scaled independently — no combined trench score is produced.
+        {note ??
+          "Trench win rates are ESPN Analytics season-level metrics based on NFL Next Gen Stats tracking data."}{" "}
+        Trench data: ESPN Analytics / NFL Next Gen Stats.
       </MatchupPendingNote>
     </MatchupSection>
   );

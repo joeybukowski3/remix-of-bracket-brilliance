@@ -863,3 +863,162 @@ shows a compact, non-dominant note: "Success rate data: RBSDM."
 - `max_season` was 2025 at implementation time; 2026 periods populate
   automatically once RBSDM publishes 2026 and the repository has completed 2026
   games.
+
+---
+
+# 22. Phase 3B implementation note (ESPN trench win rates)
+
+Records what Phase 3B shipped. Does not amend the product requirements above.
+
+## 22.1 Source and API contract
+
+PBWR / RBWR / PRWR / RSWR are ESPN Analytics metrics built on NFL Next Gen Stats
+player-tracking data. ESPN's published team values and official ranks are used
+verbatim. Nothing is approximated, reconstructed, or derived from sacks,
+pressure rate, player leaderboards, PFF grades or play-by-play.
+
+    GET https://now.core.api.espn.com/v1/sports/news/{articleId}?enable=inlines
+
+`enable=inlines` is **required**: without it the response returns unresolved
+`<inlineN-wide>` placeholders instead of the table modules (6 KB vs 38 KB).
+
+The endpoint is public and unauthenticated — verified working with no
+User-Agent, no cookies, no referer, and no `Set-Cookie` in the response.
+
+**No WAF circumvention.** The rendered `www.espn.com` article path, and the
+`secure.espn.com` / `cdn.espn.com` XHR routes, return HTTP 202 with
+`x-amzn-waf-action: challenge`. Those paths are never requested. The data is
+taken from a separate, genuinely public API host.
+
+## 22.2 Module location and fields
+
+The team table is found by **normalized headline**, never by array position:
+`"nfl team win rate rankings"`. Header order is normalized rather than assumed,
+but every expected column must appear exactly once.
+
+    header: ["team","PRWR","RSWR","PBWR","RBWR"]
+    cell:   "31% (27)"   ->  valuePct 31, espnRank 27
+
+| Analyzer metric | ESPN column |
+|---|---|
+| Pass Block Win Rate | PBWR |
+| Run Block Win Rate | RBWR |
+| Pass Rush Win Rate | PRWR |
+| Run Stop Win Rate | RSWR |
+
+## 22.3 Article discovery
+
+The article ID changes every season, so IDs are discovered rather than
+hardcoded as the permanent strategy:
+
+1. explicit `--article=<season>:<id>` override (recovery / manual use),
+2. otherwise the public ESPN search API, filtered to headlines matching
+   `^<season> NFL ... win rate rankings` — noisy unrelated results are ignored,
+   and two different IDs claiming the same season is **ambiguous and fatal**,
+3. otherwise a known historical ID as a last-resort fallback
+   (2025 `46138675`, 2024 `41040723`), also used as deterministic fixtures.
+
+The resolved ID, discovery method and headline are recorded in provenance.
+
+## 22.4 Ranking policy
+
+**ESPN's official rank is authoritative and is the only rank stored or shown.**
+
+ESPN publishes whole-number percentages but ranks on finer internal precision.
+In the 2025 table RSWR has only 7 distinct published values across 32 teams
+(largest tie group 11) and RBWR has 8 — yet ESPN's ranks are a complete distinct
+1-32. A locally computed competition rank would therefore produce large ties and
+disagree with ESPN, so **no local rank is computed or presented as
+verification**. The generator asserts the distinct-1-32 invariant per metric and
+fails if it breaks.
+
+Rank-tier colouring is driven by ESPN's rank. Higher is better for all four
+metrics.
+
+## 22.5 Granularity limits
+
+The source is **cumulative season-to-date only**. It has no weekly split, no
+arbitrary window, no cross-season blend and no team-level numerators or
+denominators, so the official team value cannot be recomputed.
+
+Consequently these metrics **never** produce a Last 5 or Last 8 value and are
+deliberately **not** wired to the Phase 2 Season/Last 5 rolling controls.
+Percentages keep whole-number precision; no decimals are invented.
+
+## 22.6 Display policy
+
+Driven by completed 2026 regular-season game counts for the two teams, taken
+from the repository's own results — never week numbers.
+
+| State | Condition | Periods shown |
+|---|---|---|
+| A | both teams 0 completed 2026 games | 2025 Season |
+| B | any 2026 game completed, either team < 6 | 2025 Season + 2026 Through Week X |
+| C | both teams >= 6 completed 2026 games | 2026 Through Week X only |
+
+The matchup transitions as one unit: 6 vs 5 keeps both teams in State B, so a
+bye can never move one side ahead. Seasons are shown separately and never
+blended, and trench pairings always compare the same period on both sides — a
+2025 blocking value is never shown against a 2026 rush value.
+
+If the 2026 article or value is not yet available, the 2026 line reads N/A and
+the 2025 line is retained; no other metric is substituted.
+
+## 22.7 Through-week label
+
+ESPN's freshness marker is parsed from the article prose, e.g.
+`"Last updated: Through all Week 18 games, Jan. 6, 10:30 a.m. ET"` -> week 18.
+
+Stored: `throughWeek`, `sourceUpdatedText`, `sourceLastModified`, `retrievedAt`,
+plus the article ID and module id/headline. When the week cannot be parsed
+safely the label falls back to `"<season> Season to Date"` and the full source
+text is retained — the week is never guessed.
+
+## 22.8 Artifact, command, failure safety
+
+Artifact: `public/data/nfl/matchup-trench-metrics.json` (~19 KB, fetched at
+runtime, not bundled). Command: `npm run nfl:trench-metrics`
+(`--dry-run`, `--seasons=`, `--article=<season>:<id>`, `--offline=<dir>`).
+
+Independent of the Phase 2 conventional generator and the Phase 3A RBSDM
+generator: an ESPN outage cannot block either, and a missing trench artifact
+leaves the Trenches section visible with N/A values while every other metric
+keeps working.
+
+Validation rejects HTML/WAF responses, missing headlines or inlines, a missing
+or renamed or duplicated team module, unexpected/missing/duplicated headers,
+row counts other than 32, unknown or duplicate team slugs, malformed cells,
+percentages outside 0-100, ranks outside 1-32, and non-distinct official ranks.
+Nothing is dropped silently.
+
+Requests: ordinary GET, descriptive User-Agent, 30s timeout, ~2.5s spacing, and
+a bounded retry (3 attempts) for transient 5xx/429 only — a 4xx fails
+immediately. No cookies, no browser automation, no concurrency.
+
+Fetch -> validate -> normalize -> validate artifact -> temp file -> atomic
+rename. On failure the command exits non-zero, reports the article ID, season
+and endpoint, and leaves the previous known-good artifact untouched.
+
+## 22.9 Team mapping
+
+The ESPN team slug is parsed from each row's anchor
+(`/nfl/team/_/name/buf/...`), never from the visible team name. ESPN's slugs are
+the same codes `teams.json` already uses as `abbr` — including `wsh`, `lar`,
+`lac` — so the repository's canonical identity is reused. Exactly 32 recognized
+teams, no duplicates, no unknown slugs, every canonical team present once.
+
+## 22.10 Attribution and known risks
+
+Attribution: "Trench data: ESPN Analytics / NFL Next Gen Stats", shown once at
+section level.
+
+Risks: the API is undocumented and unversioned; `enable=inlines` is an
+undocumented parameter; the article ID changes each season and depends on search
+discovery; the module is located by a headline string ESPN could rename. All of
+these fail loudly with the previous artifact preserved rather than degrading
+silently.
+
+Note: the Phase 1 placeholder bars were removed from the Trenches card. They
+existed to make the unavailable state visually deliberate; with real values and
+official ranks the rank chip carries the signal, and per-period bars would have
+tripled the card height.

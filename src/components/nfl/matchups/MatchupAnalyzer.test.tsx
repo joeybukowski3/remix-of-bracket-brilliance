@@ -323,10 +323,12 @@ describe("Placeholder sections stay honest", () => {
   it("renders trenches with an explicit unavailable state and no fabricated win rates", () => {
     renderWithRouter(<MatchupTrenches matchup={MATCHUP} resolver={unavailableMetricResolver} />);
 
-    // Four battles × two sides.
-    expect(screen.getAllByText("N/A")).toHaveLength(8);
-    expect(screen.getAllByRole("img", { name: /unavailable/i })).toHaveLength(8);
-    expect(screen.getByText(/no combined trench score is produced/i)).toBeInTheDocument();
+    // Phase 3B: the card stays visible and every battle reads N/A when the
+    // ESPN artifact is absent.
+    expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
+    expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
+    expect(screen.getAllByText("N/A")).toHaveLength(4);
+    expect(screen.queryByText(/Sacks/i)).toBeNull();
   });
 
   it("renders injuries with an empty-report state and N/A snap exposure", () => {

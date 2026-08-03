@@ -254,7 +254,8 @@ describe("nothing else regressed", () => {
         <MatchupTrenches matchup={MATCHUP} resolver={unavailableMetricResolver} />
       </MemoryRouter>
     );
-    expect(screen.getAllByText("N/A")).toHaveLength(8);
+    // Phase 3B: one N/A per battle when the ESPN artifact is absent.
+    expect(screen.getAllByText("N/A")).toHaveLength(4);
   });
 
   it("renders no success rate at all when the artifact is missing", () => {

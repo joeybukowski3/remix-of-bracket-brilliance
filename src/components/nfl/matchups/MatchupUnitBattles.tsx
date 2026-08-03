@@ -17,6 +17,8 @@ import {
   isSuccessRateMetric,
 } from "@/lib/nfl/successRateData";
 import type { MatchupSuccessRateConfig } from "@/components/nfl/matchups/MatchupUnitComparison";
+import MatchupTrenchRow, { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
+import { collectTrenchPeriodValues, isTrenchMetric } from "@/lib/nfl/trenchMetricsData";
 
 type PossessionSide = "away-ball" | "home-ball";
 
@@ -44,11 +46,13 @@ function PossessionPanel({
   defenseTeam,
   resolver,
   successRate,
+  trench,
 }: {
   offenseTeam: NflMatchupTeam;
   defenseTeam: NflMatchupTeam;
   resolver: NflMatchupMetricResolver;
   successRate?: MatchupSuccessRateConfig;
+  trench?: MatchupTrenchConfig;
 }) {
   return (
     <div className="rounded-lg border border-slate-200">
@@ -75,6 +79,23 @@ function PossessionPanel({
               {group.label}
             </h4>
             {group.pairings.map((pairing) => {
+              // Trench pairings follow the ESPN season policy; both sides use
+              // the same period so a 2025 value never faces a 2026 one.
+              if (trench && isTrenchMetric(pairing.offenseKey)) {
+                return (
+                  <MatchupTrenchRow
+                    key={pairing.id}
+                    metricLabel={pairing.label}
+                    help={pairing.help}
+                    artifact={trench.artifact}
+                    periods={trench.periods}
+                    awayValues={collectTrenchPeriodValues(trench.resolve, offenseTeam.abbr, pairing.offenseKey, trench.periods)}
+                    homeValues={collectTrenchPeriodValues(trench.resolve, defenseTeam.abbr, pairing.defenseKey, trench.periods)}
+                    awayTeamName={`${offenseTeam.teamName} offense`}
+                    homeTeamName={`${defenseTeam.teamName} defense`}
+                  />
+                );
+              }
               // Success-rate pairings follow the RBSDM period policy, not the
               // conventional-stat sample controls.
               if (successRate && isSuccessRateMetric(pairing.offenseKey)) {
@@ -115,10 +136,12 @@ export default function MatchupUnitBattles({
   matchup,
   resolver,
   successRate,
+  trench,
 }: {
   matchup: NflMatchup;
   resolver: NflMatchupMetricResolver;
   successRate?: MatchupSuccessRateConfig;
+  trench?: MatchupTrenchConfig;
 }) {
   const [side, setSide] = useState<PossessionSide>("away-ball");
   const { away, home } = matchup;
@@ -145,10 +168,10 @@ export default function MatchupUnitBattles({
     >
       <div className="grid gap-3 xl:grid-cols-2">
         <div className={side === "away-ball" ? "" : "hidden lg:block"}>
-          <PossessionPanel offenseTeam={away} defenseTeam={home} resolver={resolver} successRate={successRate} />
+          <PossessionPanel offenseTeam={away} defenseTeam={home} resolver={resolver} successRate={successRate} trench={trench} />
         </div>
         <div className={side === "home-ball" ? "" : "hidden lg:block"}>
-          <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} successRate={successRate} />
+          <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} successRate={successRate} trench={trench} />
         </div>
       </div>
       <MatchupPendingNote>{CONVENTIONAL_STATS_NOTE}</MatchupPendingNote>

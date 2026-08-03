@@ -198,8 +198,9 @@ describe("deferred metrics stay unavailable", () => {
         <MatchupTrenches matchup={MATCHUP} resolver={resolver} />
       </MemoryRouter>
     );
-    // Four battles x two sides, none substituted with sacks.
-    expect(screen.getAllByText("N/A")).toHaveLength(8);
+    // Phase 3B: one N/A per battle when the ESPN artifact is absent; sacks are
+    // never substituted for a win rate.
+    expect(screen.getAllByText("N/A")).toHaveLength(4);
     expect(screen.queryByText(/Sacks/i)).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import { getSeoMeta } from "@/lib/seo";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
+import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
@@ -23,6 +24,12 @@ import {
   describeSuccessPeriods,
   resolveSuccessPeriods,
 } from "@/lib/nfl/successRateData";
+import {
+  countCompletedGames,
+  createTrenchResolver,
+  describeTrenchPeriods,
+  resolveTrenchPeriods,
+} from "@/lib/nfl/trenchMetricsData";
 import {
   DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
   type NflMatchupSampleSettings,
@@ -78,6 +85,9 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: an RBSDM outage leaves only the
   // success-rate rows unavailable.
   const { artifact: successArtifact } = useNflSuccessRates();
+  // Independent optional enrichment: an ESPN outage leaves only the trench rows
+  // unavailable.
+  const { artifact: trenchArtifact } = useNflTrenchMetrics();
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -116,6 +126,18 @@ export default function NFLMatchupDetail() {
     );
     return { periods, resolve: createSuccessRateResolver(successArtifact) };
   }, [matchup, successArtifact]);
+
+  // ESPN publishes cumulative season figures only, so the Trenches section uses
+  // its own season policy. Completed-game counts come from the repository's own
+  // results, independent of any generated artifact.
+  const trench = useMemo(() => {
+    if (!matchup || !trenchArtifact) return undefined;
+    const periods = resolveTrenchPeriods(
+      countCompletedGames(data?.results, matchup.away.abbr),
+      countCompletedGames(data?.results, matchup.home.abbr)
+    );
+    return { artifact: trenchArtifact, periods, resolve: createTrenchResolver(trenchArtifact) };
+  }, [matchup, trenchArtifact, data]);
 
   usePageSeo({
     title: matchup
@@ -189,6 +211,7 @@ export default function NFLMatchupDetail() {
             baselineRank={(team) => team.offenseRank}
             baselineValue={(team) => team.offensePct}
             successRate={successRate}
+            trench={trench}
           />
 
           <MatchupUnitComparison
@@ -200,13 +223,18 @@ export default function NFLMatchupDetail() {
             baselineRank={(team) => team.defenseRank}
             baselineValue={(team) => team.defensePct}
             successRate={successRate}
+            trench={trench}
           />
         </div>
 
-        <MatchupUnitBattles matchup={matchup} resolver={metricResolver} successRate={successRate} />
+        <MatchupUnitBattles matchup={matchup} resolver={metricResolver} successRate={successRate} trench={trench} />
 
         <div className="grid items-start gap-3 xl:grid-cols-2">
-          <MatchupTrenches matchup={matchup} resolver={metricResolver} />
+          <MatchupTrenches
+            matchup={matchup}
+            trench={trench}
+            note={trench ? describeTrenchPeriods(trench.periods) : undefined}
+          />
           <MatchupMarketProfile matchup={matchup} resolver={metricResolver} />
         </div>
 
