@@ -223,14 +223,15 @@ describe("Mobile compact rows -- collapsed header and K Model Metrics expand gri
     expect(within(collapsedRow).getByText("vs CHC")).toBeInTheDocument();
     expect(within(collapsedRow).getByText("Away")).toBeInTheDocument();
     // Secondary metrics are not in the collapsed row.
-    expect(within(collapsedRow).queryByText(/K\/9 - SZN/)).not.toBeInTheDocument();
+    expect(within(collapsedRow).queryByText(/K\/Inning SZN/)).not.toBeInTheDocument();
 
     fireEvent.click(collapsedRow);
-    expect(await screen.findByText("K Model Metrics")).toBeInTheDocument();
-    for (const label of ["K/9 - SZN", "Szn vs Hand", "K/9 - Last 5", "Opp K/9 Last 10", "K% Split", "Opp K/9 Split", "Opp xBA Split", "Opp xBA Last 10", "Avg IP"]) {
+    expect(await screen.findByText("Pitcher Stats")).toBeInTheDocument();
+    expect(screen.getByText("Opposing Team Stats")).toBeInTheDocument();
+    for (const label of ["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP", "Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    for (const removed of ["Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score"]) {
+    for (const removed of ["K/9 - SZN", "K/9 - Last 5", "Opp K/9 Last 10", "Opp K/9 Split", "Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score"]) {
       expect(screen.queryByText(removed)).not.toBeInTheDocument();
     }
     expect(screen.getByText("Recent Starts")).toBeInTheDocument();

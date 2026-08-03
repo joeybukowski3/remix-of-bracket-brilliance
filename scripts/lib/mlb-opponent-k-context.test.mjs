@@ -141,4 +141,30 @@ describe("mlb opponent K context", () => {
     expect(context.sources).toEqual({ strikeouts: "mlb_stats_api", xba: "baseball_savant_statcast" });
     expect(context.warnings[0]).toMatch(/^OPPONENT_XBA_CONTEXT_FAILED:/);
   });
+
+  it("retries one transient timeout and retains both MLB K/Game and Savant xBA context", async () => {
+    let savantCalls = 0;
+    const csv = [
+      "game_pk,game_date,events,home_team,away_team,estimated_ba_using_speedangle",
+      "7001,2026-07-12,single,ATL,NYM,0.600",
+    ].join("\n");
+    const fetchImpl = vi.fn(async (url) => {
+      if (String(url).includes("statsapi.mlb.com")) {
+        return textResponse(JSON.stringify({ stats: [{ splits: [
+          { gamePk: 7001, date: "2026-07-12", isHome: true, stat: { strikeOuts: 9 } },
+        ] }] }));
+      }
+      savantCalls += 1;
+      if (savantCalls === 1) throw new DOMException("timed out", "AbortError");
+      return textResponse(csv);
+    });
+
+    const context = await fetchOpponentContext(144, "ATL", 2026, "2026-07-13", { fetchImpl });
+    expect(savantCalls).toBe(2);
+    expect(context.home.kPerNine).toBe(9);
+    expect(context.last10.kPerNine).toBe(9);
+    expect(context.home.xba).toBeCloseTo(0.6, 6);
+    expect(context.last10.xba).toBeCloseTo(0.6, 6);
+    expect(context.warnings).toEqual([]);
+  });
 });

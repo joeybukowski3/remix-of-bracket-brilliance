@@ -18,7 +18,7 @@ function shiftDate(dateStr, deltaDays) {
   return date.toISOString().slice(0, 10);
 }
 
-async function fetchText(url, options = {}) {
+async function fetchTextOnce(url, options = {}) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 20000);
@@ -28,6 +28,18 @@ async function fetchText(url, options = {}) {
     return await response.text();
   } finally {
     clearTimeout(timer);
+  }
+}
+
+async function fetchText(url, options = {}) {
+  try {
+    return await fetchTextOnce(url, options);
+  } catch (error) {
+    // Savant occasionally leaves a cold CSV request open until our timeout.
+    // Retry only that transient abort once; HTTP/source failures still surface
+    // immediately and remain traceable through opponentContext.warnings.
+    if (error?.name !== "AbortError" || options.retryOnTimeout !== true) throw error;
+    return fetchTextOnce(url, { ...options, retryOnTimeout: false });
   }
 }
 
@@ -94,7 +106,7 @@ function isCompletedGame(split) {
 
 /**
  * Official MLB StatsAPI team batting game logs. We intentionally express the
- * UI's team "K/9" tendency as strikeouts per completed game: for a team
+ * UI's team K/Game tendency as strikeouts per completed game: for a team
  * offense, one game is the natural nine-inning exposure unit and avoids
  * inventing offensive-innings denominators that the team batting feed does
  * not publish consistently.
@@ -198,7 +210,7 @@ export async function fetchTeamXbaContext(teamAbbr, season, beforeDate, options 
     min_abs: "0",
     type: "details",
   });
-  const text = await fetchText(`${SAVANT_SEARCH_CSV}?${params.toString()}`, options);
+  const text = await fetchText(`${SAVANT_SEARCH_CSV}?${params.toString()}`, { ...options, retryOnTimeout: true });
   const completedGamePks = options.completedGamePks ? new Set(options.completedGamePks.map(String)) : null;
   const rows = plateAppearanceRows(parseCsv(text)).filter((row) =>
     row.game_date < beforeDate

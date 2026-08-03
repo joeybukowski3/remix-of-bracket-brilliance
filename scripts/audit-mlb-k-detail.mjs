@@ -41,6 +41,11 @@ const totals = {
   recordsWithBothStableKeys: 0,
   stableKeyCollisions: 0,
   ambiguousLegacyKeys: 0,
+  opponentContextPresent: 0,
+  opponentLast10KGamePresent: 0,
+  opponentVenueKGamePresent: 0,
+  opponentVenueXbaPresent: 0,
+  opponentLast10XbaPresent: 0,
 };
 
 const nullCounts = {
@@ -54,11 +59,24 @@ const nullCounts = {
   outsRecorded: 0,
 };
 const reasons = {};
+const opponentWarningCounts = {};
 function addReason(reason) { reasons[reason] = (reasons[reason] ?? 0) + 1; }
+function addOpponentWarning(warning) {
+  const warningType = String(warning).split(":")[0] || "UNKNOWN";
+  opponentWarningCounts[warningType] = (opponentWarningCounts[warningType] ?? 0) + 1;
+}
 const stableKeyCounts = new Map();
 const legacyKeyCounts = new Map();
 
 for (const detail of details) {
+  const opponentContext = detail.opponentContext;
+  if (opponentContext) totals.opponentContextPresent += 1;
+  if (opponentContext?.last10?.kPerNine != null) totals.opponentLast10KGamePresent += 1;
+  if (opponentContext?.home?.kPerNine != null || opponentContext?.away?.kPerNine != null) totals.opponentVenueKGamePresent += 1;
+  if (opponentContext?.home?.xba != null || opponentContext?.away?.xba != null) totals.opponentVenueXbaPresent += 1;
+  if (opponentContext?.last10?.xba != null) totals.opponentLast10XbaPresent += 1;
+  for (const warning of opponentContext?.warnings ?? []) addOpponentWarning(warning);
+
   const starts = detail.pitcherRecentStarts ?? detail.pitcherLastFiveStarts ?? [];
   totals.startsFound += starts.length;
   totals.rowsWithHitsAllowed += starts.filter((row) => row.hitsAllowed != null).length;
@@ -172,6 +190,16 @@ const passed = details.length > 0
   && totals.duplicateRecentStarts === 0
   && totals.stableKeyCollisions === 0
   && totals.recordsWithBothStableKeys === details.length;
+const opponentContextExamples = details.slice(0, 4).map((detail) => ({
+  pitcher: detail.pitcher,
+  opponent: detail.opponent,
+  home: detail.opponentContext?.home ?? null,
+  away: detail.opponentContext?.away ?? null,
+  last10: detail.opponentContext?.last10 ?? null,
+  samples: detail.opponentContext?.samples ?? null,
+  sources: detail.opponentContext?.sources ?? null,
+  warnings: detail.opponentContext?.warnings ?? [],
+}));
 
-console.log(JSON.stringify({ passed, date: payload.date ?? null, generatedAt: payload.generatedAt ?? null, totals, nullCounts, missingDataReasons: reasons }, null, 2));
+console.log(JSON.stringify({ passed, schemaVersion: payload.schemaVersion ?? null, date: payload.date ?? null, generatedAt: payload.generatedAt ?? null, totals, opponentWarningCounts, opponentContextExamples, nullCounts, missingDataReasons: reasons }, null, 2));
 if (!passed) process.exitCode = 1;

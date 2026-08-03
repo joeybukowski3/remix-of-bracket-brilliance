@@ -103,6 +103,7 @@ function MiniTable({
   leadingUngroupedColumns = 0,
   mobileLabels,
   mobileCollapsibleRows,
+  rowClassNames,
 }: {
   title: string;
   columns: string[];
@@ -118,6 +119,8 @@ function MiniTable({
   mobileLabels?: string[];
   /** When provided, mobile renders one compact per-game row (date/opponent/headline stat) that expands independently, instead of the default always-expanded field list. Desktop is unaffected. */
   mobileCollapsibleRows?: CollapsibleGameRow[];
+  /** Optional per-row emphasis shared by the desktop table and mobile cards. */
+  rowClassNames?: string[];
 }) {
   const cardLabels = mobileLabels ?? columns;
   return (
@@ -160,7 +163,7 @@ function MiniTable({
           <tbody>
             {rows.length ? (
               rows.map((row, index) => (
-                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                <tr key={index} className={rowClassNames?.[index] ?? (index % 2 === 0 ? "bg-white" : "bg-slate-50/70")}>
                   {row.map((cell, cellIndex) => (
                     <td key={cellIndex} className="break-words border-b border-slate-50 px-2 py-1 text-slate-700">
                       {cell}
@@ -199,7 +202,7 @@ function MiniTable({
             <div className="px-2 py-3 text-center text-xs text-slate-400">{emptyMessage}</div>
           )
         ) : rows.length ? rows.map((row, index) => (
-          <div key={index} className="rounded-lg border border-slate-100 bg-white p-2">
+          <div key={index} className={cn("rounded-lg border p-2", rowClassNames?.[index] ?? "border-slate-100 bg-white")}>
             {cardLabels.map((label, cellIndex) => (
               <div key={`${label}-${cellIndex}`} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
                 <span className="shrink-0 font-black uppercase tracking-wide text-slate-400">{label}</span>
@@ -329,6 +332,11 @@ function ratePerNine(total: number | null | undefined, outs: number | null | und
   return (total * 27) / outs;
 }
 
+function ratePerInning(total: number | null | undefined, outs: number | null | undefined) {
+  if (total == null || outs == null || !Number.isFinite(total) || !Number.isFinite(outs) || outs <= 0) return null;
+  return (total * 3) / outs;
+}
+
 function signedTone(value: number | null, invert = false) {
   if (value == null || !Number.isFinite(value) || Math.abs(value) < 0.0001) return "bg-slate-100 text-slate-600";
   const favorable = invert ? value < 0 : value > 0;
@@ -337,28 +345,28 @@ function signedTone(value: number | null, invert = false) {
 
 function DifferenceCell({ value, percent = false, invert = false }: { value: number | null; percent?: boolean; invert?: boolean }) {
   return (
-    <span data-testid={invert ? "hit-difference" : "k9-difference"} className={cn("inline-block rounded px-1.5 py-0.5 font-black tabular-nums", signedTone(value, invert))}>
-      {value == null ? DASH : `${value > 0 ? "+" : ""}${value.toFixed(percent ? 0 : 1)}${percent ? "%" : ""}`}
+    <span data-testid={invert ? "hit-difference" : "k-inning-difference"} className={cn("inline-block rounded px-1.5 py-0.5 font-black tabular-nums", signedTone(value, invert))}>
+      {value == null ? DASH : `${value > 0 ? "+" : ""}${value.toFixed(percent ? 0 : 2)}${percent ? "%" : ""}`}
     </span>
   );
 }
 
-function pitcherVenueRow(split: PitcherVenueSplit, label: string, overallK9: number | null, overallH9: number | null): ReactNode[] {
-  const seasonK9 = ratePerNine(split.season.strikeouts, split.season.totalOuts);
+function pitcherVenueRow(split: PitcherVenueSplit, label: string, overallKPerInning: number | null, overallH9: number | null, isToday: boolean): ReactNode[] {
+  const seasonKPerInning = ratePerInning(split.season.strikeouts, split.season.totalOuts);
   const seasonH9 = ratePerNine(split.season.hitsAllowed, split.season.totalOuts);
-  const lastFiveK9 = ratePerNine(split.lastFiveAtSite.strikeouts, split.lastFiveAtSite.totalOuts);
+  const lastFiveKPerInning = ratePerInning(split.lastFiveAtSite.strikeouts, split.lastFiveAtSite.totalOuts);
   const lastFiveH9 = ratePerNine(split.lastFiveAtSite.hitsAllowed, split.lastFiveAtSite.totalOuts);
   const shortSample = split.lastFiveAtSite.gamesUsed < 5;
   return [
-    label,
+    <span key="site" className="flex flex-wrap items-center gap-1"><span>{label}</span>{isToday && <span className={cn("rounded-full border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide", split.site === "home" ? "border-emerald-300 bg-emerald-100 text-emerald-800" : "border-sky-300 bg-sky-100 text-sky-800")}>Today</span>}</span>,
     formatVenueInnings(split.season),
-    fmtFixed(seasonK9),
-    <DifferenceCell key="season-k-diff" value={seasonK9 != null && overallK9 != null ? seasonK9 - overallK9 : null} />,
+    fmtFixed(seasonKPerInning, 2),
+    <DifferenceCell key="season-k-diff" value={seasonKPerInning != null && overallKPerInning != null ? seasonKPerInning - overallKPerInning : null} />,
     fmtFixed(seasonH9),
     <DifferenceCell key="season-hit-diff" value={seasonH9 != null && overallH9 != null && overallH9 > 0 ? ((seasonH9 - overallH9) / overallH9) * 100 : null} percent invert />,
     <span key="last-five-ip">{formatVenueInnings(split.lastFiveAtSite)}{shortSample ? <sup className="ml-0.5 font-black text-amber-700">*</sup> : null}</span>,
-    fmtFixed(lastFiveK9),
-    <DifferenceCell key="last-five-k-diff" value={lastFiveK9 != null && overallK9 != null ? lastFiveK9 - overallK9 : null} />,
+    fmtFixed(lastFiveKPerInning, 2),
+    <DifferenceCell key="last-five-k-diff" value={lastFiveKPerInning != null && overallKPerInning != null ? lastFiveKPerInning - overallKPerInning : null} />,
     fmtFixed(lastFiveH9),
     <DifferenceCell key="last-five-hit-diff" value={lastFiveH9 != null && overallH9 != null && overallH9 > 0 ? ((lastFiveH9 - overallH9) / overallH9) * 100 : null} percent invert />,
   ];
@@ -639,16 +647,29 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     return activeSeasonSplits.reduce((sum, split) => sum + (split[key] ?? 0), 0);
   };
   const overallSeasonOuts = combinedSeasonTotal("totalOuts");
-  const overallSeasonK9 = ratePerNine(combinedSeasonTotal("strikeouts"), overallSeasonOuts);
+  const overallSeasonKPerInning = ratePerInning(combinedSeasonTotal("strikeouts"), overallSeasonOuts);
   const overallSeasonH9 = ratePerNine(combinedSeasonTotal("hitsAllowed"), overallSeasonOuts);
+  const [todayAwayTeam, todayHomeTeam] = String(row?.gameKey ?? "").split("@").map((team) => team.trim().toUpperCase());
+  const pitcherTeam = String(row?.team ?? detail.team).trim().toUpperCase();
+  const todaySite = pitcherTeam && pitcherTeam === todayHomeTeam
+    ? "home"
+    : pitcherTeam && pitcherTeam === todayAwayTeam
+      ? "away"
+      : null;
   const hasShortVenueSample = Boolean(detail.pitcherVenueSplits && (
     detail.pitcherVenueSplits.home.lastFiveAtSite.gamesUsed < 5
     || detail.pitcherVenueSplits.away.lastFiveAtSite.gamesUsed < 5
   ));
   const pitcherVenueRows = detail.pitcherVenueSplits
     ? [
-      pitcherVenueRow(detail.pitcherVenueSplits.home, "Home", overallSeasonK9, overallSeasonH9),
-      pitcherVenueRow(detail.pitcherVenueSplits.away, "Away", overallSeasonK9, overallSeasonH9),
+      pitcherVenueRow(detail.pitcherVenueSplits.home, "Home", overallSeasonKPerInning, overallSeasonH9, todaySite === "home"),
+      pitcherVenueRow(detail.pitcherVenueSplits.away, "Away", overallSeasonKPerInning, overallSeasonH9, todaySite === "away"),
+    ]
+    : [];
+  const pitcherVenueRowClasses = detail.pitcherVenueSplits
+    ? [
+      todaySite === "home" ? "border-l-2 border-emerald-400 bg-emerald-50/70" : "bg-white",
+      todaySite === "away" ? "border-l-2 border-sky-400 bg-sky-50/70" : "bg-slate-50/70",
     ]
     : [];
 
@@ -703,12 +724,13 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
               <div>
                 <MiniTable
                   title={`${detail.pitcher} — Home/Away Splits`}
-                  columns={["Site", "IP", "K/9", "K/9 +/-", "H/9", "Hit Avg +/-", "IP", "K/9", "K/9 +/-", "H/9", "Hit Avg +/-"]}
+                  columns={["Site", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-"]}
                   columnWidths={["7%", "12%", "8%", "9%", "8%", "11%", "12%", "8%", "9%", "8%", "8%"]}
                   headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
                   leadingUngroupedColumns={1}
-                  mobileLabels={["Site", "Season IP", "Season K/9", "Season K/9 +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/9", "Last 5 K/9 +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
+                  mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
                   rows={pitcherVenueRows}
+                  rowClassNames={pitcherVenueRowClasses}
                   emptyMessage="No venue splits available."
                 />
                 {hasShortVenueSample && <p className="mt-1 px-1 text-[9px] font-semibold text-amber-700">* fewer than 5 starts available</p>}
@@ -726,6 +748,25 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
           />
         </div>
       </section>
+      {detail.opponentContext && (
+        <details data-testid="opponent-context-source-details" className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] text-slate-600">
+          <summary className="cursor-pointer font-black uppercase tracking-wide text-slate-500">Opponent data sources</summary>
+          <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
+            <div><span className="font-black text-slate-500">K/Game:</span> {detail.opponentContext.sources?.strikeouts ?? DASH}</div>
+            <div><span className="font-black text-slate-500">xBA:</span> {detail.opponentContext.sources?.xba ?? DASH}</div>
+          </div>
+          {detail.opponentContext.samples && Object.keys(detail.opponentContext.samples).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500">
+              {Object.entries(detail.opponentContext.samples).map(([label, value]) => <span key={label}>{label}: <strong>{value}</strong></span>)}
+            </div>
+          )}
+          {detail.opponentContext.warnings && detail.opponentContext.warnings.length > 0 && (
+            <ul className="mt-1 list-disc pl-4 font-semibold text-amber-700">
+              {detail.opponentContext.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          )}
+        </details>
+      )}
       {showV2Shadow && shadowRow && (
         <div data-testid="strikeout-v2-debug-panels" className="grid min-w-0 gap-2">
           <ProjectionComparison detail={detail} shadowRow={shadowRow} row={row} />

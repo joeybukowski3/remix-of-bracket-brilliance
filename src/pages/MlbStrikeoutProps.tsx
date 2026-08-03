@@ -114,9 +114,9 @@ function venueTileClass(venue: string) {
   return "border-slate-200 bg-white text-slate-500";
 }
 
-function perNine(total: number | null | undefined, outs: number | null | undefined) {
+export function perInning(total: number | null | undefined, outs: number | null | undefined) {
   if (total == null || outs == null || !Number.isFinite(total) || !Number.isFinite(outs) || outs <= 0) return null;
-  return (total * 27) / outs;
+  return (total * 3) / outs;
 }
 
 function paWeightedStrikeoutRate(values: Array<{ rate: number | null | undefined; plateAppearances: number | null | undefined }>) {
@@ -395,12 +395,12 @@ export default function MlbStrikeoutProps() {
     const opponentSiteContext = opponentSite ? detail?.opponentContext?.[opponentSite] : undefined;
 
     return {
-      pitcherSeasonK9: perNine(seasonStrikeouts, seasonOuts) ?? row.projectedK9 ?? null,
+      pitcherSeasonKPerInning: perInning(seasonStrikeouts, seasonOuts) ?? (row.projectedK9 != null ? row.projectedK9 / 9 : null),
       seasonVsHand,
-      pitcherLastFiveK9: detail?.pitcherLastFiveSummary?.strikeoutsPerNine ?? null,
-      opponentLast10K9: detail?.opponentContext?.last10.kPerNine ?? null,
+      pitcherLastFiveKPerInning: perInning(detail?.pitcherLastFiveSummary?.totalStrikeouts, detail?.pitcherLastFiveSummary?.totalOuts),
+      opponentLast10KPerGame: detail?.opponentContext?.last10.kPerNine ?? null,
       pitcherVenueKRate: pitcherVenueSeason?.strikeoutRate ?? null,
-      opponentVenueK9: opponentSiteContext?.kPerNine ?? null,
+      opponentVenueKPerGame: opponentSiteContext?.kPerNine ?? null,
       opponentVenueXba: opponentSiteContext?.xba ?? null,
       opponentLast10Xba: detail?.opponentContext?.last10.xba ?? null,
     };
@@ -518,7 +518,7 @@ export default function MlbStrikeoutProps() {
   }
 
   const SortTh = ({ k, label, help }: { k: SortKey; label: string; help?: string }) => (
-    <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
+    <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left font-black uppercase leading-tight text-slate-500">
       <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900" aria-label={help} title={help}>{label}{makeSortIndicator(sortKey === k, sortDir)}</button>
     </th>
   );
@@ -652,7 +652,7 @@ export default function MlbStrikeoutProps() {
                           {isExpanded && (
                             <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
                               <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">K Model Metrics</div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Core / Market</div>
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                   {hasKOdds && (
                                     <MetricTile label="Edge">
@@ -673,15 +673,25 @@ export default function MlbStrikeoutProps() {
                                       bypassSampleGate
                                     />
                                   </MetricTile>
-                                  <MetricTile label="K/9 - SZN"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherSeasonK9)}</span></MetricTile>
-                                  <MetricTile label="Szn vs Hand"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</span></MetricTile>
-                                  <MetricTile label="K/9 - Last 5"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherLastFiveK9)}</span></MetricTile>
-                                  <MetricTile label="Opp K/9 Last 10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10K9)}</span></MetricTile>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Pitcher Stats</div>
+                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                  <MetricTile label="K/Inning SZN"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherSeasonKPerInning, 2)}</span></MetricTile>
+                                  <MetricTile label="K/Inning L5"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherLastFiveKPerInning, 2)}</span></MetricTile>
                                   <MetricTile label="K% Split"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</span></MetricTile>
-                                  <MetricTile label="Opp K/9 Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueK9)}</span></MetricTile>
-                                  <MetricTile label="Opp xBA Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueXba, 3)}</span></MetricTile>
-                                  <MetricTile label="Opp xBA Last 10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10Xba, 3)}</span></MetricTile>
                                   <MetricTile label="Avg IP"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedIP)}</span></MetricTile>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Opposing Team Stats</div>
+                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                  <MetricTile label="Szn vs Hand"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</span></MetricTile>
+                                  <MetricTile label="Opp K/Game L10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10KPerGame)}</span></MetricTile>
+                                  <MetricTile label="Opp K/Game Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueKPerGame)}</span></MetricTile>
+                                  <MetricTile label="Opp xBA Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueXba, 3)}</span></MetricTile>
+                                  <MetricTile label="Opp xBA L10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10Xba, 3)}</span></MetricTile>
                                 </div>
                               </div>
                               <div>
@@ -697,20 +707,33 @@ export default function MlbStrikeoutProps() {
                     )}
                   </div>
                 ) : (
-                  /* Desktop (lg and above): existing table, unchanged. */
+                  /* Desktop (lg and above): grouped, responsive-density table. */
                   <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                  <table className="min-w-full border-separate border-spacing-0 text-xs">
-                    <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
-                      <th className="sticky left-0 z-30 w-8 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <table className="w-full min-w-[1120px] border-separate border-spacing-0 text-xs xl:min-w-[1060px] 2xl:min-w-full 2xl:table-fixed">
+                    <colgroup>
+                      <col className="w-[2.5%]" /><col className="w-[13%]" /><col className="w-[6%]" />
+                      {hasKOdds && <><col className="w-[7%]" /><col className="w-[4.5%]" /><col className="w-[4.5%]" /></>}
+                      <col className="w-[4.5%]" />
+                      {Array.from({ length: 4 }, (_, index) => <col key={`pitcher-stat-col-${index}`} className="w-[6%]" />)}
+                      {Array.from({ length: 5 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[6.8%]" />)}
+                    </colgroup>
+                    <thead className="sticky top-0 z-20">
+                    <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      <th colSpan={hasKOdds ? 7 : 4} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1 text-left">Core / Market</th>
+                      <th colSpan={4} data-table-group="pitcher-stats" className="border-b border-l-2 border-slate-300 bg-slate-100/90 px-1.5 py-1 text-left">Pitcher Stats</th>
+                      <th colSpan={5} data-table-group="opposing-team-stats" className="border-b border-l-2 border-slate-300 bg-slate-100/90 px-1.5 py-1 text-left">Opposing Team Stats</th>
+                    </tr>
+                    <tr className="text-[9px] uppercase tracking-wide text-slate-500">
+                      <th className="sticky left-0 z-30 w-8 border-b border-r border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left font-black text-slate-500">
                         <button type="button" onClick={() => handleSort("rank")} className="hover:text-slate-900" aria-label="Model Rank. This remains fixed even if you sort by another column." title="Model Rank. This remains fixed even if you sort by another column.">#{makeSortIndicator(sortKey === "rank", sortDir)}</button>
                       </th>
-                      <th className="sticky left-8 z-30 min-w-[140px] border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
+                      <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left font-black text-slate-500">
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
                       <SortTh k="gameStartTime" label="Game Time" />
-                      {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" />
-                      {["K/9 - SZN", "Szn vs Hand", "K/9 - Last 5", "Opp K/9 Last 10", "K% Split", "Opp K/9 Split", "Opp xBA Split", "Opp xBA Last 10"].map((label) => <th key={label} className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[9px] font-black uppercase tracking-wide text-slate-500 whitespace-nowrap">{label}</th>)}
-                      <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Avg IP</th>
+                      {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-1.5 text-left font-black text-slate-500">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" />
+                      {["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"].map((label, index) => <th key={label} data-table-group={index === 0 ? "pitcher-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-1.5 text-left font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-300")}>{label}</th>)}
+                      {["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"].map((label, index) => <th key={label} data-table-group={index === 0 ? "opposing-team-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-1.5 text-left font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-300")}>{label}</th>)}
                     </tr></thead>
                     <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
@@ -768,15 +791,15 @@ export default function MlbStrikeoutProps() {
                           bypassSampleGate
                         />
                       </td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(displayMetrics.pitcherSeasonK9)}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(displayMetrics.pitcherLastFiveK9)}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentLast10K9)}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueK9)}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueXba, 3)}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentLast10Xba, 3)}</td>
-                      <td className="border-b border-slate-100 px-2 py-1 font-semibold tabular-nums">{fmt(row.projectedIP)}</td>
+                      <td data-table-group="pitcher-stats-start" className="border-b border-l-2 border-slate-300 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.pitcherSeasonKPerInning, 2)}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.pitcherLastFiveKPerInning, 2)}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(row.projectedIP)}</td>
+                      <td data-table-group="opposing-team-stats-start" className="border-b border-l-2 border-slate-300 px-1 py-1 font-semibold tabular-nums">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentLast10KPerGame)}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueKPerGame)}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueXba, 3)}</td>
+                      <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentLast10Xba, 3)}</td>
                       </tr>
                       {showKProjectionV2Debug && (
                         <tr>
@@ -869,18 +892,28 @@ export default function MlbStrikeoutProps() {
                                   <LowConfidenceStatusBadge row={row} />
                                 </div>
                                 <div>
-                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">K Model Metrics</div>
+                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Core / Market</div>
                                   <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                     <MetricTile label="K Score"><StatScorePill value={row.strikeoutMatchupScore} /></MetricTile>
-                                    <MetricTile label="K/9 - SZN"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherSeasonK9)}</span></MetricTile>
-                                    <MetricTile label="Szn vs Hand"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</span></MetricTile>
-                                    <MetricTile label="K/9 - Last 5"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherLastFiveK9)}</span></MetricTile>
-                                    <MetricTile label="Opp K/9 Last 10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10K9)}</span></MetricTile>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Pitcher Stats</div>
+                                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                    <MetricTile label="K/Inning SZN"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherSeasonKPerInning, 2)}</span></MetricTile>
+                                    <MetricTile label="K/Inning L5"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherLastFiveKPerInning, 2)}</span></MetricTile>
                                     <MetricTile label="K% Split"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</span></MetricTile>
-                                    <MetricTile label="Opp K/9 Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueK9)}</span></MetricTile>
-                                    <MetricTile label="Opp xBA Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueXba, 3)}</span></MetricTile>
-                                    <MetricTile label="Opp xBA Last 10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10Xba, 3)}</span></MetricTile>
                                     <MetricTile label="Avg IP"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedIP)}</span></MetricTile>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Opposing Team Stats</div>
+                                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                    <MetricTile label="Szn vs Hand"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</span></MetricTile>
+                                    <MetricTile label="Opp K/Game L10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10KPerGame)}</span></MetricTile>
+                                    <MetricTile label="Opp K/Game Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueKPerGame)}</span></MetricTile>
+                                    <MetricTile label="Opp xBA Split"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueXba, 3)}</span></MetricTile>
+                                    <MetricTile label="Opp xBA L10"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentLast10Xba, 3)}</span></MetricTile>
                                   </div>
                                 </div>
                                 <div>
@@ -896,14 +929,21 @@ export default function MlbStrikeoutProps() {
                   ) : (
                     /* Desktop (lg and above): existing table, unchanged. */
                     <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                    <table className="min-w-full border-separate border-spacing-0 text-xs">
-                      <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                    <table className="w-full min-w-[1040px] border-separate border-spacing-0 text-xs xl:min-w-[980px] 2xl:min-w-full 2xl:table-fixed">
+                      <thead className="sticky top-0 z-20">
+                      <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
+                        <th colSpan={5} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1 text-left">Core / Market</th>
+                        <th colSpan={4} className="border-b border-l-2 border-slate-300 bg-slate-100/90 px-1.5 py-1 text-left">Pitcher Stats</th>
+                        <th colSpan={5} className="border-b border-l-2 border-slate-300 bg-slate-100/90 px-1.5 py-1 text-left">Opposing Team Stats</th>
+                      </tr>
+                      <tr className="text-[9px] uppercase tracking-wide text-slate-500">
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">#</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Pitcher</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Status</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Game Time</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K Score</th>
-                        {["K/9 - SZN", "Szn vs Hand", "K/9 - Last 5", "Opp K/9 Last 10", "K% Split", "Opp K/9 Split", "Opp xBA Split", "Opp xBA Last 10", "Avg IP"].map((label) => <th key={label} className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[9px] font-black uppercase tracking-wide text-slate-500 whitespace-nowrap">{label}</th>)}
+                        {["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"].map((label, index) => <th key={label} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-1.5 text-left font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-300")}>{label}</th>)}
+                        {["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"].map((label, index) => <th key={label} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-1.5 text-left font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-300")}>{label}</th>)}
                       </tr></thead>
                       <tbody>{lowConfidenceRows.map((row, index) => {
                         const rowKey = keyForStrikeoutPropRow(row, slateDate);
@@ -937,15 +977,15 @@ export default function MlbStrikeoutProps() {
                         <td className="border-b border-slate-100 px-2 py-1"><LowConfidenceStatusBadge row={row} /></td>
                         <td className="border-b border-slate-100 px-2 py-1 whitespace-nowrap">{formatGameTime(row.gameStartTime)}</td>
                         <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(displayMetrics.pitcherSeasonK9)}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(displayMetrics.pitcherLastFiveK9)}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(displayMetrics.opponentLast10K9)}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(displayMetrics.opponentVenueK9)}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(displayMetrics.opponentVenueXba, 3)}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(displayMetrics.opponentLast10Xba, 3)}</td>
-                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedIP)}</td>
+                        <td className="border-b border-l-2 border-slate-300 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.pitcherSeasonKPerInning, 2)}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.pitcherLastFiveKPerInning, 2)}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(row.projectedIP)}</td>
+                        <td className="border-b border-l-2 border-slate-300 px-1 py-1 font-semibold tabular-nums">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentLast10KPerGame)}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueKPerGame)}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueXba, 3)}</td>
+                        <td className="border-b border-slate-100 px-1 py-1 font-semibold tabular-nums">{fmt(displayMetrics.opponentLast10Xba, 3)}</td>
                         </tr>
                         {isExpanded && (
                           <tr>

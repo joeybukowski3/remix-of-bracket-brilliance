@@ -264,20 +264,29 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     });
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("renders the exact new metric order, signed edges, and venue tiles without legacy labels", async () => {
+  it("renders the exact grouped metric order, separators, signed edges, and venue tiles without legacy labels", async () => {
     vi.resetModules();
     mockPropsData([baseRow, highKsRow]);
     await renderPage();
 
     const mainTable = screen.getAllByRole("table")[0];
-    const headers = within(mainTable).getAllByRole("columnheader").map((header) => header.textContent?.replace(/[↑↓]/g, "").trim());
+    const headerRows = mainTable.querySelectorAll("thead tr");
+    expect(Array.from(headerRows[0].querySelectorAll("th")).map((header) => header.textContent?.trim())).toEqual([
+      "Core / Market", "Pitcher Stats", "Opposing Team Stats",
+    ]);
+    const headers = Array.from(headerRows[1].querySelectorAll("th")).map((header) => header.textContent?.replace(/[↑↓]/g, "").trim());
     expect(headers).toEqual([
       "#", "Pitcher", "Game Time", "K Line", "Proj K", "Edge", "K Score",
-      "K/9 - SZN", "Szn vs Hand", "K/9 - Last 5", "Opp K/9 Last 10", "K% Split",
-      "Opp K/9 Split", "Opp xBA Split", "Opp xBA Last 10", "Avg IP",
+      "K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP",
+      "Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10",
     ]);
-    for (const removed of ["K%", "Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score", "K/9"]) {
+    for (const removed of ["K%", "Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score", "K/9", "Opp K/9"]) {
       expect(headers).not.toContain(removed);
+    }
+    for (const groupStart of ["pitcher-stats-start", "opposing-team-stats-start"]) {
+      const separators = mainTable.querySelectorAll(`[data-table-group="${groupStart}"]`);
+      expect(separators.length).toBeGreaterThanOrEqual(2);
+      expect(Array.from(separators).every((element) => element.className.includes("border-l-2"))).toBe(true);
     }
     expect(within(mainTable).getByText("+0.2")).toBeInTheDocument();
     expect(within(mainTable).getByText("-1.5")).toBeInTheDocument();
@@ -285,6 +294,14 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     expect(within(mainTable).queryByText("UNDER")).not.toBeInTheDocument();
     expect(within(mainTable).getAllByText("Away").length).toBeGreaterThan(0);
   }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("converts pitcher strikeouts and outs to K/Inning instead of relabeling K/9", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    const { perInning } = await import("@/pages/MlbStrikeoutProps");
+    expect(perInning(6, 18)).toBe(1);
+    expect(perInning(null, 18)).toBeNull();
+  });
 
   it('"Best Value" ranks the largest absolute edge first, so a big UNDER outranks a small OVER even with fewer projected strikeouts', async () => {
     vi.resetModules();

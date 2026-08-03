@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import MlbStrikeoutPropRowDetail from "@/components/mlb/MlbStrikeoutPropRowDetail";
 import type { StrikeoutPropDetail } from "@/hooks/useMlbStrikeoutPropDetails";
 import type { KPropsV2ShadowArtifact, KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
+import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 
 const detail: StrikeoutPropDetail = {
   key: "shane-bieber|tor|tb|2026-07-23",
@@ -280,7 +281,7 @@ describe("opponent Last 10 games", () => {
   });
 });
 
-describe("pitcher Home/Away split K/9 and H/9", () => {
+describe("pitcher Home/Away split K/Inning and H/9", () => {
   const venueDetail: StrikeoutPropDetail = {
     ...detail,
     pitcherVenueSplits: {
@@ -304,28 +305,29 @@ describe("pitcher Home/Away split K/9 and H/9", () => {
     expect(within(splitTable).getAllByText("Last 5 at Site").length).toBeGreaterThan(0);
     expect(within(splitTable).getAllByText("Home").length).toBeGreaterThan(0);
     expect(within(splitTable).getAllByText("Away").length).toBeGreaterThan(0);
-    expect(within(splitTable).getAllByText("K/9").length).toBeGreaterThanOrEqual(2);
-    expect(within(splitTable).getAllByText("K/9 +/-").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).getAllByText("K/Inning").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).getAllByText("K/Inning +/-").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).queryByText("K/9")).not.toBeInTheDocument();
     expect(within(splitTable).getAllByText("H/9").length).toBeGreaterThanOrEqual(2);
     expect(within(splitTable).getAllByText("Hit Avg +/-").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("uses combined season totals for K/9 and H/9 baselines and all four deltas", () => {
+  it("uses combined season totals for K/Inning and H/9 baselines and all four deltas", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
     const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    expect(within(detailPanel).getAllByText("+1.2").length).toBeGreaterThan(0);
-    expect(within(detailPanel).getAllByText("-1.8").length).toBeGreaterThan(0);
-    expect(within(detailPanel).getAllByText("+1.8").length).toBeGreaterThan(0);
-    expect(within(detailPanel).getAllByText("-3.0").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("+0.13").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("-0.20").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("+0.20").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("-0.33").length).toBeGreaterThan(0);
     expect(within(detailPanel).getAllByText("-17%").length).toBeGreaterThan(0);
     expect(within(detailPanel).getAllByText("+25%").length).toBeGreaterThan(0);
   });
 
-  it("uses green/red K/9 direction and the intentionally reversed Hit Avg direction", () => {
+  it("uses green/red K/Inning direction and the intentionally reversed Hit Avg direction", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
-    const kDiffs = screen.getAllByTestId("k9-difference");
-    expect(kDiffs.some((cell) => cell.textContent === "+1.2" && cell.className.includes("text-emerald"))).toBe(true);
-    expect(kDiffs.some((cell) => cell.textContent === "-1.8" && cell.className.includes("text-red"))).toBe(true);
+    const kDiffs = screen.getAllByTestId("k-inning-difference");
+    expect(kDiffs.some((cell) => cell.textContent === "+0.13" && cell.className.includes("text-emerald"))).toBe(true);
+    expect(kDiffs.some((cell) => cell.textContent === "-0.20" && cell.className.includes("text-red"))).toBe(true);
     const hitDiffs = screen.getAllByTestId("hit-difference");
     expect(hitDiffs.some((cell) => cell.textContent === "-17%" && cell.className.includes("text-emerald"))).toBe(true);
     expect(hitDiffs.some((cell) => cell.textContent === "+25%" && cell.className.includes("text-red"))).toBe(true);
@@ -354,6 +356,49 @@ describe("pitcher Home/Away split K/9 and H/9", () => {
     render(<MlbStrikeoutPropRowDetail detail={fullSampleDetail} />);
     expect(screen.queryByText("* fewer than 5 starts available")).not.toBeInTheDocument();
   });
+
+  it("highlights HOME as today's site and keeps the short-sample marker independent", () => {
+    const todayRow = { gameKey: "TB@TOR", team: "TOR" } as PitcherStrikeoutTeamRow;
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} row={todayRow} />);
+    const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const desktopRows = splitPanel.querySelectorAll("table tbody tr");
+    expect(desktopRows[0].className).toMatch(/emerald/);
+    expect(within(desktopRows[0] as HTMLElement).getByText("Today")).toBeInTheDocument();
+    expect(within(desktopRows[1] as HTMLElement).queryByText("Today")).not.toBeInTheDocument();
+    expect(within(desktopRows[1] as HTMLElement).getByText("*", { selector: "sup" })).toBeInTheDocument();
+  });
+
+  it("highlights AWAY as today's site and marks only that split row", () => {
+    const todayRow = { gameKey: "TB@TOR", team: "TB" } as PitcherStrikeoutTeamRow;
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} row={todayRow} />);
+    const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const desktopTable = splitPanel.querySelector("table") as HTMLElement;
+    const desktopRows = desktopTable.querySelectorAll("tbody tr");
+    expect(desktopRows[1].className).toMatch(/sky/);
+    expect(within(desktopRows[1] as HTMLElement).getByText("Today")).toBeInTheDocument();
+    expect(within(desktopRows[0] as HTMLElement).queryByText("Today")).not.toBeInTheDocument();
+    expect(within(desktopTable).getAllByText("Today")).toHaveLength(1);
+  });
+});
+
+it("surfaces opponent source samples and warnings only inside expanded detail", () => {
+  const warningDetail: StrikeoutPropDetail = {
+    ...detail,
+    opponentContext: {
+      home: { kPerNine: 8.2, xba: null },
+      away: { kPerNine: 7.8, xba: null },
+      last10: { kPerNine: 8, xba: null },
+      samples: { season: 100, last10: 10 },
+      sources: { strikeouts: "mlb_stats_api", xba: "baseball_savant_statcast" },
+      warnings: ["OPPONENT_XBA_CONTEXT_FAILED:timeout"],
+    },
+  };
+  render(<MlbStrikeoutPropRowDetail detail={warningDetail} />);
+  const sourceDetails = screen.getByTestId("opponent-context-source-details");
+  expect(within(sourceDetails).getByText("Opponent data sources")).toBeInTheDocument();
+  expect(sourceDetails.textContent).toContain("mlb_stats_api");
+  expect(sourceDetails.textContent).toContain("last10: 10");
+  expect(sourceDetails.textContent).toContain("OPPONENT_XBA_CONTEXT_FAILED:timeout");
 });
 
 it("preserves mobile collapsible recent-game behavior", () => {
