@@ -7,11 +7,19 @@ import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
+import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import { DEFENSE_METRIC_GROUPS, OFFENSE_METRIC_GROUPS } from "@/lib/nfl/matchupMetrics";
 import { createInjuryResolver, describeUnavailable } from "@/lib/nfl/injuryData";
+import {
+  completedGamesFor as marketCompletedGamesFor,
+  createMarketResolver,
+  currentMarketFor,
+  describeMarketPeriods,
+  resolveMarketPeriods,
+} from "@/lib/nfl/marketData";
 import {
   createMatchupMetricResolver,
   describeMatchupSample,
@@ -89,6 +97,9 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: a missing or not-yet-published injury
   // artifact leaves only the Injuries section in an unavailable state.
   const { artifact: injuryArtifact } = useNflMatchupInjuries();
+  // Independent optional enrichment: a missing market artifact leaves only the
+  // market rows unavailable.
+  const { artifact: marketArtifact } = useNflMatchupMarket();
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -152,6 +163,30 @@ export default function NFLMatchupDetail() {
     ]);
     return createInjuryResolver(injuryArtifact, slugToAbbr);
   }, [matchup, injuryArtifact]);
+
+  // Descriptive market profile. Windows follow their own completed-game policy
+  // like Phase 3A/3B, not the conventional sample controls, and the current
+  // line is kept entirely separate from the historical ATS profile.
+  const market = useMemo(() => {
+    if (!matchup || !marketArtifact) return undefined;
+    const slugToAbbr = new Map([
+      [matchup.away.slug, matchup.away.abbr],
+      [matchup.home.slug, matchup.home.abbr],
+    ]);
+    const periods = resolveMarketPeriods(
+      marketCompletedGamesFor(marketArtifact, CURRENT_SEASON, matchup.away.abbr),
+      marketCompletedGamesFor(marketArtifact, CURRENT_SEASON, matchup.home.abbr)
+    );
+    const resolvers = Object.fromEntries(
+      periods.map((period) => [period, createMarketResolver(marketArtifact, slugToAbbr, period)])
+    );
+    return {
+      periods,
+      resolvers,
+      current: currentMarketFor(marketArtifact, matchup.gameId),
+      note: describeMarketPeriods(periods),
+    };
+  }, [matchup, marketArtifact]);
 
   usePageSeo({
     title: matchup
@@ -249,7 +284,7 @@ export default function NFLMatchupDetail() {
             trench={trench}
             note={trench ? describeTrenchPeriods(trench.periods) : undefined}
           />
-          <MatchupMarketProfile matchup={matchup} resolver={metricResolver} />
+          <MatchupMarketProfile matchup={matchup} market={market} />
         </div>
 
         <MatchupInjuries
@@ -279,6 +314,13 @@ export default function NFLMatchupDetail() {
         {injuryArtifact && (
           <p className="text-[11px] leading-5 text-slate-400">
             Injury and snap data: nflverse; snap counts via Pro-Football-Reference.
+          </p>
+        )}
+
+        {marketArtifact && (
+          <p className="text-[11px] leading-5 text-slate-400">
+            Market data: nflverse / nfldata. A single source-published market line; the underlying
+            sportsbook composition is not disclosed.
           </p>
         )}
 

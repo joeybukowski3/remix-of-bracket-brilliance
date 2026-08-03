@@ -1,10 +1,13 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
-import MatchupComparisonGroup, { ComparisonHeader } from "@/components/nfl/matchups/MatchupComparisonGroup";
+import { ComparisonHeader } from "@/components/nfl/matchups/MatchupComparisonGroup";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
-import SpreadPlaceholder from "@/components/nfl/matchups/SpreadPlaceholder";
-import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupCurrentMarket from "@/components/nfl/matchups/MatchupCurrentMarket";
+import MatchupMarketRow, {
+  type MarketPeriodValues,
+} from "@/components/nfl/matchups/MatchupMarketRow";
 import { formatSigned } from "@/lib/nfl/guideData";
 import { MARKET_PROFILE_METRICS, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
+import type { MarketCurrentGame, MarketPeriodKey } from "@/lib/nfl/marketData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 const NA = "N/A";
@@ -14,23 +17,36 @@ function wins(value: number | null | undefined): string {
   return value.toFixed(1);
 }
 
+export type MarketProfileState = {
+  periods: readonly MarketPeriodKey[];
+  /** One resolver per visible period. */
+  resolvers: Partial<Record<MarketPeriodKey, NflMatchupMetricResolver>>;
+  current: MarketCurrentGame | null;
+  note?: string;
+};
+
 /**
  * Descriptive market profile.
  *
- * Two clearly separated blocks:
- *  - the game's current line, which is structural and still unavailable
- *  - ATS / O/U record slots awaiting the TeamRankings phase
- *  - existing Joe Knows Ball *season* win-total context, explicitly labelled so
- *    it is never mistaken for matchup spread analysis
+ * Three clearly separated blocks, in this order:
  *
- * No projected line, model edge or betting recommendation is produced.
+ *  1. Current Market — this game's line, moneyline and total
+ *  2. Team Market Profile — how each team performed against past market lines
+ *  3. Joe Knows Ball season context — full-season win totals, explicitly
+ *     labelled so it is never mistaken for matchup spread analysis
+ *
+ * Blocks 1 and 2 are deliberately distinct: ATS history did not produce the
+ * current line, and the current line is never used to grade history.
+ *
+ * No projected spread, fair spread, model edge, win probability, pick,
+ * confidence, expected value or stake size is produced here or downstream.
  */
 export default function MatchupMarketProfile({
   matchup,
-  resolver,
+  market,
 }: {
   matchup: NflMatchup;
-  resolver: NflMatchupMetricResolver;
+  market?: MarketProfileState;
 }) {
   const seasonRows: {
     key: string;
@@ -69,33 +85,48 @@ export default function MatchupMarketProfile({
     },
   ];
 
+  const periods = market?.periods ?? [];
+
+  /** Gather one team's value for each visible period. */
+  const valuesFor = (teamSlug: string, metricKey: string): MarketPeriodValues => {
+    const out: MarketPeriodValues = {};
+    for (const period of periods) {
+      out[period] = market?.resolvers[period]?.(teamSlug, metricKey) ?? null;
+    }
+    return out;
+  };
+
   return (
     <MatchupSection id="market" subtitle="Descriptive only — no projected line and no pick.">
-      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-          This game
-        </span>
-        <SpreadPlaceholder spread={matchup.spread} />
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Total</span>
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-black text-slate-500">
-            {NA}
-          </span>
-        </div>
-      </div>
+      <MatchupCurrentMarket matchup={matchup} market={market?.current ?? null} />
 
-      <ComparisonHeader matchup={matchup} />
-
-      <div className="pt-1">
+      <div className="pt-3">
         <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-          Season record &amp; ATS profile
+          Team Market Profile
         </h3>
-        <MatchupComparisonGroup
-          matchup={matchup}
-          metrics={MARKET_PROFILE_METRICS}
-          resolver={resolver}
-          showHeader={false}
-        />
+        {market?.note && <p className="mb-1 text-[11px] leading-4 text-slate-500">{market.note}</p>}
+
+        <ComparisonHeader matchup={matchup} />
+
+        {periods.length === 0 ? (
+          <p className="py-3 text-center text-[11px] font-semibold text-slate-400">
+            Market profile not connected.
+          </p>
+        ) : (
+          MARKET_PROFILE_METRICS.map((metric) => (
+            <MatchupMarketRow
+              key={metric.key}
+              metricLabel={metric.label}
+              shortLabel={metric.shortLabel}
+              help={metric.help}
+              periods={periods}
+              awayValues={valuesFor(matchup.away.slug, metric.key)}
+              homeValues={valuesFor(matchup.home.slug, metric.key)}
+              awayTeamName={matchup.away.teamName}
+              homeTeamName={matchup.home.teamName}
+            />
+          ))
+        )}
       </div>
 
       <div className="pt-3">
@@ -117,11 +148,6 @@ export default function MatchupMarketProfile({
           />
         ))}
       </div>
-
-      <MatchupPendingNote>
-        ATS records, point/ATS differentials and over-under records populate with the TeamRankings
-        phase. No line is ever inferred from the power ratings.
-      </MatchupPendingNote>
     </MatchupSection>
   );
 }

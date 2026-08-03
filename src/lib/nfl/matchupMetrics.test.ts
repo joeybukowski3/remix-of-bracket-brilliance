@@ -152,10 +152,31 @@ describe("market profile", () => {
       "Point Differential",
       "ATS Differential",
       "ATS Differential (Home/Away)",
+      "Home ATS Record",
+      "Away ATS Record",
       "Over/Under Record",
     ]);
     // Nothing in the catalogue may imply a model line or a pick.
     expect(labels.join(" ")).not.toMatch(/projected|pick|edge/i);
+  });
+
+  it("ranks only the two differentials, never a raw record", () => {
+    // An over-heavy or ATS-heavy record is not thereby "better", so those rows
+    // stay context-only and draw no tier colour.
+    const byKey = new Map(MARKET_PROFILE_METRICS.map((metric) => [metric.key, metric]));
+    expect(byKey.get("mkt.atsDifferential")!.direction).toBe("higher-is-better");
+    expect(byKey.get("mkt.pointDifferential")!.direction).toBe("higher-is-better");
+    for (const key of ["mkt.record", "mkt.atsRecord", "mkt.overUnderRecord", "mkt.homeAtsRecord", "mkt.awayAtsRecord"]) {
+      expect(byKey.get(key)!.direction, key).toBe("context-only");
+    }
+  });
+
+  it("describes ATS against the historical market spread, never a verified close", () => {
+    // The source publishes one settled line and does not document it as an
+    // independently verified sportsbook close.
+    const help = MARKET_PROFILE_METRICS.map((metric) => metric.help ?? "").join(" ");
+    expect(help).toMatch(/historical market spread/i);
+    expect(help).not.toMatch(/closing spread/i);
   });
 });
 

@@ -266,13 +266,25 @@ export const TRENCH_BATTLES: readonly NflMetricPairing[] = [
 // Market profile (descriptive only — no projected line, no pick)
 // ---------------------------------------------------------------------------
 
+/**
+ * Descriptive market profile.
+ *
+ * "Historical market spread" rather than "closing spread": the source publishes
+ * one settled line per game and does not document it as an independently
+ * verified sportsbook close, so the label must not overstate that.
+ *
+ * Only the two differentials are higher-is-better. Raw ATS and over/under
+ * records are context-only — an over-heavy team is not thereby a better team.
+ */
 export const MARKET_PROFILE_METRICS: readonly NflMatchupMetricDef[] = [
   { key: "mkt.record", label: "W/L Record", direction: "context-only", format: "record" },
-  { key: "mkt.atsRecord", label: "ATS Record", direction: "context-only", format: "record" },
-  { key: "mkt.pointDifferential", label: "Point Differential", direction: "higher-is-better", format: "decimal1" },
-  { key: "mkt.atsDifferential", label: "ATS Differential", direction: "higher-is-better", format: "decimal1", help: "Average margin against the closing spread." },
-  { key: "mkt.atsDifferentialSplit", label: "ATS Differential (Home/Away)", shortLabel: "ATS Diff Home/Away", direction: "higher-is-better", format: "decimal1" },
-  { key: "mkt.overUnderRecord", label: "Over/Under Record", shortLabel: "O/U Record", direction: "context-only", format: "record" },
+  { key: "mkt.atsRecord", label: "ATS Record", direction: "context-only", format: "record", help: "Wins-losses-pushes against the historical market spread." },
+  { key: "mkt.pointDifferential", label: "Point Differential", direction: "higher-is-better", format: "decimal1", help: "Average scoring margin per game." },
+  { key: "mkt.atsDifferential", label: "ATS Differential", direction: "higher-is-better", format: "decimal1", help: "Average margin against the historical market spread. Positive means the team beat its line." },
+  { key: "mkt.atsDifferentialSplit", label: "ATS Differential (Home/Away)", shortLabel: "ATS Diff Home/Away", direction: "higher-is-better", format: "decimal1", help: "Average ATS margin at home and on the road. Neutral-site games are excluded from both." },
+  { key: "mkt.homeAtsRecord", label: "Home ATS Record", shortLabel: "Home ATS", direction: "context-only", format: "record", help: "True home games only — neutral-site games are excluded." },
+  { key: "mkt.awayAtsRecord", label: "Away ATS Record", shortLabel: "Away ATS", direction: "context-only", format: "record", help: "True road games only — neutral-site games are excluded." },
+  { key: "mkt.overUnderRecord", label: "Over/Under Record", shortLabel: "O/U Record", direction: "context-only", format: "record", help: "Overs-unders-pushes against the historical market total." },
 ] as const;
 
 // ---------------------------------------------------------------------------

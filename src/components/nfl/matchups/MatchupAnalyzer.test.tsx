@@ -351,7 +351,7 @@ describe("Placeholder sections stay honest", () => {
   });
 
   it("labels model-vs-market figures as season context, not matchup spread analysis", () => {
-    renderWithRouter(<MatchupMarketProfile matchup={MATCHUP} resolver={unavailableMetricResolver} />);
+    renderWithRouter(<MatchupMarketProfile matchup={MATCHUP} />);
 
     expect(screen.getByText(/joe knows ball season context/i)).toBeInTheDocument();
     expect(screen.getByText(/describe the season, not this matchup/i)).toBeInTheDocument();
