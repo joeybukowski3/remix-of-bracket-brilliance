@@ -8,6 +8,18 @@ import { formatSigned } from "@/lib/nfl/guideData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import type { NflMatchupMetricGroup, NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchupSectionId } from "@/lib/nfl/matchupSections";
+import MatchupSuccessRateRow from "@/components/nfl/matchups/MatchupSuccessRateRow";
+import {
+  collectPeriodValues,
+  isSuccessRateMetric,
+  type SuccessPeriodKey,
+  type SuccessRateResolver,
+} from "@/lib/nfl/successRateData";
+
+export type MatchupSuccessRateConfig = {
+  periods: readonly SuccessPeriodKey[];
+  resolve: SuccessRateResolver;
+};
 
 function pct(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "N/A";
@@ -34,6 +46,7 @@ export default function MatchupUnitComparison({
   baselineLabel,
   baselineRank,
   baselineValue,
+  successRate,
 }: {
   id: Extract<NflMatchupSectionId, "offense" | "defense">;
   matchup: NflMatchup;
@@ -43,6 +56,8 @@ export default function MatchupUnitComparison({
   baselineLabel: string;
   baselineRank: (team: NflMatchupTeam) => number | null;
   baselineValue: (team: NflMatchupTeam) => number | null;
+  /** RBSDM success rates, shown per period rather than via the sample controls. */
+  successRate?: MatchupSuccessRateConfig;
 }) {
   const [activeGroup, setActiveGroup] = useState(groups[0]?.id ?? "");
 
@@ -94,6 +109,21 @@ export default function MatchupUnitComparison({
             metrics={group.metrics}
             resolver={resolver}
             showHeader={false}
+            renderMetric={(metric) => {
+              if (!successRate || !isSuccessRateMetric(metric.key)) return null;
+              return (
+                <MatchupSuccessRateRow
+                  metricLabel={metric.label}
+                  shortLabel={metric.shortLabel}
+                  help={metric.help}
+                  periods={successRate.periods}
+                  awayValues={collectPeriodValues(successRate.resolve, matchup.away.abbr, metric.key, successRate.periods)}
+                  homeValues={collectPeriodValues(successRate.resolve, matchup.home.abbr, metric.key, successRate.periods)}
+                  awayTeamName={matchup.away.teamName}
+                  homeTeamName={matchup.home.teamName}
+                />
+              );
+            }}
           />
         </div>
       ))}

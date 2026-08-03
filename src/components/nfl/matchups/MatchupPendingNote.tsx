@@ -30,4 +30,4 @@ export const PIPELINE_PENDING_COPY =
  * later phases.
  */
 export const CONVENTIONAL_STATS_NOTE =
-  "Conventional stats come from nflverse team-week data and reflect the selected sample. EPA, success rate, first downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";
+  "Conventional stats come from nflverse team-week data and reflect the selected sample. Success rate is published by RBSDM and uses its own period policy shown on each row. EPA, first downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";

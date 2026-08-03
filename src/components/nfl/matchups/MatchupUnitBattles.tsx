@@ -11,6 +11,12 @@ import {
 } from "@/lib/nfl/matchupMetrics";
 
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import MatchupSuccessRateRow from "@/components/nfl/matchups/MatchupSuccessRateRow";
+import {
+  collectPeriodValues,
+  isSuccessRateMetric,
+} from "@/lib/nfl/successRateData";
+import type { MatchupSuccessRateConfig } from "@/components/nfl/matchups/MatchupUnitComparison";
 
 type PossessionSide = "away-ball" | "home-ball";
 
@@ -37,10 +43,12 @@ function PossessionPanel({
   offenseTeam,
   defenseTeam,
   resolver,
+  successRate,
 }: {
   offenseTeam: NflMatchupTeam;
   defenseTeam: NflMatchupTeam;
   resolver: NflMatchupMetricResolver;
+  successRate?: MatchupSuccessRateConfig;
 }) {
   return (
     <div className="rounded-lg border border-slate-200">
@@ -66,18 +74,36 @@ function PossessionPanel({
             <h4 className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
               {group.label}
             </h4>
-            {group.pairings.map((pairing) => (
-              <MatchupComparisonRow
-                key={pairing.id}
-                metricLabel={pairing.label}
-                help={pairing.help}
-                direction={pairingDirection(pairing.offenseKey, pairing.defenseKey)}
-                away={toSideValue(resolver(offenseTeam.slug, pairing.offenseKey))}
-                home={toSideValue(resolver(defenseTeam.slug, pairing.defenseKey))}
-                awayTeamName={`${offenseTeam.teamName} offense`}
-                homeTeamName={`${defenseTeam.teamName} defense`}
-              />
-            ))}
+            {group.pairings.map((pairing) => {
+              // Success-rate pairings follow the RBSDM period policy, not the
+              // conventional-stat sample controls.
+              if (successRate && isSuccessRateMetric(pairing.offenseKey)) {
+                return (
+                  <MatchupSuccessRateRow
+                    key={pairing.id}
+                    metricLabel={pairing.label}
+                    help={pairing.help}
+                    periods={successRate.periods}
+                    awayValues={collectPeriodValues(successRate.resolve, offenseTeam.abbr, pairing.offenseKey, successRate.periods)}
+                    homeValues={collectPeriodValues(successRate.resolve, defenseTeam.abbr, pairing.defenseKey, successRate.periods)}
+                    awayTeamName={`${offenseTeam.teamName} offense`}
+                    homeTeamName={`${defenseTeam.teamName} defense`}
+                  />
+                );
+              }
+              return (
+                <MatchupComparisonRow
+                  key={pairing.id}
+                  metricLabel={pairing.label}
+                  help={pairing.help}
+                  direction={pairingDirection(pairing.offenseKey, pairing.defenseKey)}
+                  away={toSideValue(resolver(offenseTeam.slug, pairing.offenseKey))}
+                  home={toSideValue(resolver(defenseTeam.slug, pairing.defenseKey))}
+                  awayTeamName={`${offenseTeam.teamName} offense`}
+                  homeTeamName={`${defenseTeam.teamName} defense`}
+                />
+              );
+            })}
           </div>
         ))}
       </div>
@@ -88,9 +114,11 @@ function PossessionPanel({
 export default function MatchupUnitBattles({
   matchup,
   resolver,
+  successRate,
 }: {
   matchup: NflMatchup;
   resolver: NflMatchupMetricResolver;
+  successRate?: MatchupSuccessRateConfig;
 }) {
   const [side, setSide] = useState<PossessionSide>("away-ball");
   const { away, home } = matchup;
@@ -117,10 +145,10 @@ export default function MatchupUnitBattles({
     >
       <div className="grid gap-3 xl:grid-cols-2">
         <div className={side === "away-ball" ? "" : "hidden lg:block"}>
-          <PossessionPanel offenseTeam={away} defenseTeam={home} resolver={resolver} />
+          <PossessionPanel offenseTeam={away} defenseTeam={home} resolver={resolver} successRate={successRate} />
         </div>
         <div className={side === "home-ball" ? "" : "hidden lg:block"}>
-          <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} />
+          <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} successRate={successRate} />
         </div>
       </div>
       <MatchupPendingNote>{CONVENTIONAL_STATS_NOTE}</MatchupPendingNote>

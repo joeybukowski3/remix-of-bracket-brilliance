@@ -703,3 +703,163 @@ leading the league in pass attempts is never coloured as "Elite".
 metrics. The hero's Joe Knows Ball preseason ratings are a separate proprietary
 baseline and deliberately do not respond to the sample controls. No projected
 spread, win probability, model edge or picked winner exists anywhere.
+
+---
+
+# 21. Phase 3A implementation note (RBSDM success rate)
+
+Records what Phase 3A shipped. Does not amend the product requirements above.
+
+## 21.1 Source and API contract
+
+Success rate comes from RBSDM (Ben Baldwin, https://rbsdm.com/stats), which is
+built on nflfastR. RBSDM's published percentages are consumed verbatim — success
+is never recomputed at the play level anywhere in this repository.
+
+The site is a React SPA backed by a JSON API:
+
+    POST https://rbsdm.com/api/team-tiers
+    Content-Type: application/json
+
+`GET` with query parameters returns **405 Method Not Allowed** — there are no
+stable URL parameters, only this POST contract. A single `team-tiers` call
+returns all 32 teams with offence and defence together.
+
+Request body (regular season only):
+
+    {
+      "season_min": 2025, "season_max": 2025,
+      "week_min": 10, "week_max": 18,
+      "weeks_post_start": "None", "weeks_post_end": "None",
+      "downs": [1,2,3,4], "quarters": [1,2,3,4,5],
+      "wp_filter": 0, "exclude_turnovers": false
+    }
+
+Six fields are consumed, and nothing else:
+
+| Analyzer metric | RBSDM field |
+|---|---|
+| Success Rate | `off_suc` |
+| Pass Success Rate | `off_pass_suc` |
+| Rush Success Rate | `off_rush_suc` |
+| Success Rate Allowed | `def_suc` |
+| Pass Success Rate Allowed | `def_pass_suc` |
+| Rush Success Rate Allowed | `def_rush_suc` |
+
+Values are decimal fractions (`0.505` = 50.5%). EPA and wEPA fields are present
+in the response but deliberately **not** ingested.
+
+## 21.2 Why periods are never blended
+
+RBSDM publishes the finished success-rate percentage but **not** the
+eligible-play denominator. Success rate is a ratio, so two season ranges cannot
+be combined without weights, and nflfastR's success denominator (which excludes
+kneels, spikes and other non-EPA plays) is not reproducible from the nflverse
+team-week counts used in Phase 2. Any weighted merge would therefore be a
+reconstruction, not RBSDM's published value.
+
+Rather than approximate, success rate uses a **separate-period display policy**
+and shows the relevant periods side by side. It deliberately does **not** follow
+the Phase 2 Season / Last 5 / historical-blend controls, which remain unchanged.
+
+## 21.3 Display policy and transition
+
+Driven by each team's completed 2026 regular-season game count — never week
+numbers, so a bye cannot trigger an early transition.
+
+| State | Condition | Periods shown |
+|---|---|---|
+| A | both teams 0 completed 2026 games | 2025 Last 8 only |
+| B | any 2026 game completed, either team < 6 | 2025 Last 8 + 2026 Season |
+| C | both teams >= 6 completed 2026 games | 2026 Season + 2026 Last 5 (2025 hidden) |
+
+The whole matchup transitions together: if one team has 6 and the other 5, both
+stay in State B, because a comparison where one side showed Last 5 and the other
+Last 8 would not be comparable. In State B a team with no 2026 game shows N/A in
+the 2026 line — 2025 is never substituted into the 2026 column.
+
+2025 values remain in the artifact after the transition for provenance; they are
+simply no longer rendered.
+
+## 21.4 Week-range grouping
+
+RBSDM accepts one uniform week range per request, but byes shift each team's
+window. A team is absent from weeks it did not play, so the range
+[firstSelectedWeek, lastSelectedWeek] returns exactly that team's N games.
+
+Teams are therefore grouped by the range reproducing their own final N completed
+games, one request is issued per distinct range, and each team's value is read
+**only** from the request whose range matches its own window. Ranges are derived
+from the repository's completed-game records, never hardcoded.
+
+For 2025 last-8 this produced two ranges covering all 32 teams: weeks 10-18
+(10 teams with a late bye) and weeks 11-18 (22 teams). The implementation
+supports any number of distinct ranges.
+
+2026 season-to-date uses a single request, week 1 through the last week with any
+completed game. 2026 last-5 is grouped the same way as last-8.
+
+Teams without enough completed games are recorded as skipped, never shortened
+into a smaller window.
+
+## 21.5 Ranking
+
+Ranks are computed **independently within each period** over all teams holding a
+value for that same period definition; periods are never pooled. Direction comes
+from metric metadata (offence higher-is-better, defence-allowed
+lower-is-better). Ties use competition ranking (1, 2, 2, 4) on the unrounded
+source fraction, so display rounding can never change an order. Null values are
+excluded rather than ranked last.
+
+For 2025 Last 8 and 2026 Last 5 every team's rank is based on its own most
+recent eight/five completed games. For 2026 season-to-date, teams may legitimately
+have unequal game counts; `gamesIncluded` is stored per team.
+
+## 21.6 Artifact, command, provenance
+
+Artifact: `public/data/nfl/matchup-success-rates.json`, generated independently
+of the Phase 2 conventional artifact and loaded as optional enrichment. An RBSDM
+outage cannot block `npm run nfl:matchup-metrics`, and a missing or malformed
+success-rate artifact leaves only the six success-rate rows at N/A.
+
+Command: `npm run nfl:success-rates` (`--dry-run`, `--season=`, `--offline=<dir>`).
+
+Provenance stored: source, attribution, endpoint, method, current/prior season,
+source field map, metric directions, completed game counts per season per team,
+and a full request log — the exact POST payload, week range, teams selected and
+teams returned for every request. Per team per period it stores `gamesIncluded`,
+the exact selected `gameIds`, the unrounded source fraction (`raw`), the display
+percentage (`pct`) and the rank.
+
+## 21.7 Failure and cache safety
+
+The API is undocumented and unversioned, so the generator is defensive: fetch,
+validate every response, normalize, rank, then atomically replace the artifact
+via temp-file + rename only after all checks pass. Validation rejects HTML error
+pages, empty bodies, non-object responses, unknown or duplicate team codes,
+missing required teams, non-finite values and fractions outside 0-1. Nothing is
+dropped silently.
+
+Request behaviour: POST with explicit `Content-Type`, a descriptive User-Agent,
+~4s spacing between requests, a 60s timeout, and a bounded retry (3 attempts,
+linear backoff) for transient 5xx/429 only — a 4xx fails immediately. No
+concurrency, no browser automation, no cookie harvesting, no client-side calls.
+
+On failure the command exits non-zero, reports the failing period and week
+range, and leaves the previous known-good artifact untouched.
+
+## 21.8 Attribution
+
+Source metadata carries `attribution: "Ben Baldwin / RBSDM"`. The matchup page
+shows a compact, non-dominant note: "Success rate data: RBSDM."
+
+## 21.9 Known limitations
+
+- No play-count/denominator field is exposed, which is the reason periods are
+  displayed separately rather than blended.
+- The API is undocumented, unversioned and currently served by a Vite dev server,
+  so field names or payload shape could change without notice. The artifact is
+  schema-validated on generation and soft-fails at runtime.
+- `max_season` was 2025 at implementation time; 2026 periods populate
+  automatically once RBSDM publishes 2026 and the repository has completed 2026
+  games.

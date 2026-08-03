@@ -30,36 +30,47 @@ export function ComparisonHeader({ matchup }: { matchup: NflMatchup }) {
  *
  * Values come from the injected resolver; a `null` result renders "N/A". No
  * component in this tree can synthesise a value, which is what keeps the
- * Phase 1 placeholder sections honest.
+ * placeholder sections honest.
+ *
+ * `renderMetric` lets a caller substitute a different row for specific metrics
+ * without this component knowing why. Phase 3A uses it for the six RBSDM
+ * success rates, which display two periods side by side instead of one value
+ * driven by the conventional-stat sample controls.
  */
 export default function MatchupComparisonGroup({
   matchup,
   metrics,
   resolver,
   showHeader = true,
+  renderMetric,
 }: {
   matchup: NflMatchup;
   metrics: readonly NflMatchupMetricDef[];
   resolver: NflMatchupMetricResolver;
   showHeader?: boolean;
+  renderMetric?: (metric: NflMatchupMetricDef) => React.ReactNode | null;
 }) {
   return (
     <div>
       {showHeader && <ComparisonHeader matchup={matchup} />}
       <div>
-        {metrics.map((metric) => (
-          <MatchupComparisonRow
-            key={metric.key}
-            metricLabel={metric.label}
-            shortLabel={metric.shortLabel}
-            help={metric.help}
-            direction={metric.direction}
-            away={toSideValue(resolver(matchup.away.slug, metric.key))}
-            home={toSideValue(resolver(matchup.home.slug, metric.key))}
-            awayTeamName={matchup.away.teamName}
-            homeTeamName={matchup.home.teamName}
-          />
-        ))}
+        {metrics.map((metric) => {
+          const override = renderMetric?.(metric);
+          if (override) return <div key={metric.key}>{override}</div>;
+          return (
+            <MatchupComparisonRow
+              key={metric.key}
+              metricLabel={metric.label}
+              shortLabel={metric.shortLabel}
+              help={metric.help}
+              direction={metric.direction}
+              away={toSideValue(resolver(matchup.away.slug, metric.key))}
+              home={toSideValue(resolver(matchup.home.slug, metric.key))}
+              awayTeamName={matchup.away.teamName}
+              homeTeamName={matchup.home.teamName}
+            />
+          );
+        })}
       </div>
     </div>
   );

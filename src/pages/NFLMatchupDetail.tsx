@@ -4,6 +4,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
+import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
@@ -16,6 +17,12 @@ import {
   createMatchupMetricResolver,
   describeMatchupSample,
 } from "@/lib/nfl/matchupMetricsData";
+import {
+  completedGamesFor,
+  createSuccessRateResolver,
+  describeSuccessPeriods,
+  resolveSuccessPeriods,
+} from "@/lib/nfl/successRateData";
 import {
   DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
   type NflMatchupSampleSettings,
@@ -68,6 +75,9 @@ export default function NFLMatchupDetail() {
   // Soft dependency: the analyzer renders fully without it, with detailed rows
   // staying at "N/A".
   const { artifact: metricsArtifact } = useNflMatchupMetrics();
+  // Independent optional enrichment: an RBSDM outage leaves only the
+  // success-rate rows unavailable.
+  const { artifact: successArtifact } = useNflSuccessRates();
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -95,6 +105,17 @@ export default function NFLMatchupDetail() {
       matchup.home.abbr,
     ]);
   }, [matchup, metricsArtifact, sampleSettings]);
+
+  // Success rate uses its own automatic period policy, not the conventional
+  // sample controls, because RBSDM publishes rates without play denominators.
+  const successRate = useMemo(() => {
+    if (!matchup) return undefined;
+    const periods = resolveSuccessPeriods(
+      completedGamesFor(successArtifact, CURRENT_SEASON, matchup.away.abbr),
+      completedGamesFor(successArtifact, CURRENT_SEASON, matchup.home.abbr)
+    );
+    return { periods, resolve: createSuccessRateResolver(successArtifact) };
+  }, [matchup, successArtifact]);
 
   usePageSeo({
     title: matchup
@@ -167,6 +188,7 @@ export default function NFLMatchupDetail() {
             baselineLabel="JKB Offense Rating"
             baselineRank={(team) => team.offenseRank}
             baselineValue={(team) => team.offensePct}
+            successRate={successRate}
           />
 
           <MatchupUnitComparison
@@ -177,10 +199,11 @@ export default function NFLMatchupDetail() {
             baselineLabel="JKB Defense Rating"
             baselineRank={(team) => team.defenseRank}
             baselineValue={(team) => team.defensePct}
+            successRate={successRate}
           />
         </div>
 
-        <MatchupUnitBattles matchup={matchup} resolver={metricResolver} />
+        <MatchupUnitBattles matchup={matchup} resolver={metricResolver} successRate={successRate} />
 
         <div className="grid items-start gap-3 xl:grid-cols-2">
           <MatchupTrenches matchup={matchup} resolver={metricResolver} />
@@ -200,6 +223,12 @@ export default function NFLMatchupDetail() {
             futureScope={MODEL_ANALYSIS_SCOPE}
           />
         </div>
+
+        {successArtifact && successRate && (
+          <p className="text-[11px] leading-5 text-slate-400">
+            {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
+          </p>
+        )}
 
         <p className="text-[11px] leading-5 text-slate-400">
           Informational model preview only — not betting advice. Spreads are not yet available and are never derived from the power ratings.
