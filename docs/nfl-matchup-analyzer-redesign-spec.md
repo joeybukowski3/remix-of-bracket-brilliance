@@ -1502,3 +1502,243 @@ is asserted to contain no such field.
 The Current Market and Team Market Profile blocks are visually and structurally
 separate: ATS history did not produce the current line, and the current line is
 never used to grade history.
+
+# 25. Phase 6 implementation note (EPA efficiency)
+
+## 25.1 Source
+
+nflverse play-by-play:
+`https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz`
+
+Public, unauthenticated, no API key, no WAF. 18.2 MB gzipped for 2025 (48,771
+rows x 372 columns), downloading in about 1.3 s. Seasons 1999-2025 are
+published; 2026 returns 404 until that regular season begins.
+
+EPA is nflfastR's play-level `epa` column, consumed as authoritative. Expected
+points are never recomputed, re-modelled or approximated anywhere in this
+repository.
+
+RBSDM is **not** a production EPA source. It publishes EPA on the same endpoint
+the success-rate pipeline already calls, but its API takes a *week range* rather
+than a game count — New England's weeks 11-18 contains seven games, not eight,
+because of their Week 14 bye — and it exposes no denominators. Neither Last 5
+nor Last 8 can be expressed exactly from it. It is used for validation only.
+
+## 25.2 Eligible-play filter
+
+```
+(pass == 1 OR rush == 1)
+  AND epa is present
+  AND posteam is present
+  AND two_point_attempt != 1
+```
+
+nflfastR's own `pass` / `rush` indicators are authoritative. **`play_type` is
+never reinterpreted** — doing so is the single easiest way to get this wrong.
+Measured on the 2025 season:
+
+| Class | Plays | Indicators | Result |
+|---|---|---|---|
+| Sacks | 1,352 | all `pass=1` | counted as **PASS** |
+| QB scrambles | 1,221 | all `pass=1` (`play_type` is `"run"`) | counted as **PASS** |
+| Kneels | 453 | `pass=0, rush=0` | excluded by the indicators alone |
+| Spikes | 82 | `pass=0, rush=0` | excluded by the indicators alone |
+| Special teams | 7,424 | `pass=0, rush=0` | excluded by the indicators alone |
+| Aborted rushes | 90 | `rush=1` | counted as **RUSH** |
+| Penalty plays | 1,999 of 3,559 carry an indicator | | **INCLUDED** |
+| Two-point tries | 130 | | **explicitly excluded** |
+
+Two of these are counter-intuitive and both were settled empirically:
+
+- **Penalties are included.** Accepted-penalty plays that were designed passes
+  or runs keep their nflfastR indicator. Excluding them moved the league figures
+  470x *further* from RBSDM's published values.
+- **Two-point tries are the one explicit exclusion.** Adding that single filter
+  moved max divergence from RBSDM from 0.0106 to 0.00019 — a 55x improvement —
+  which is how the exclusion was identified in the first place.
+
+Kneels and spikes need no special-casing: both indicators are already 0.
+
+2025 yields 34,301 eligible regular-season plays across 544 team-games.
+
+## 25.3 Aggregation
+
+Per `(game_id, posteam)`: `off_epa` and `off_plays` over eligible plays,
+`pass_epa` / `pass_plays` where `pass == 1`, `rush_epa` / `rush_plays` where
+`rush == 1`. `off_plays == pass_plays + rush_plays` is asserted on every row.
+
+Window values sum numerators and denominators across the selected games and
+divide **once**:
+
+```
+EPA / Play      = sum(off_epa)  / sum(off_plays)
+Pass EPA / Play = sum(pass_epa) / sum(pass_plays)
+Rush EPA / Play = sum(rush_epa) / sum(rush_plays)
+```
+
+Per-game rates are never averaged. This is not pedantry: Kansas City's 2025
+Last 5 comes out at -0.269 exactly and -0.259 as an equal-weight mean of game
+rates, a difference that is plainly visible at the three decimals this metric
+displays.
+
+Regular season only. Postseason never enters a window; preseason does not exist
+in this source.
+
+## 25.4 Defensive metrics
+
+Defence is the opponents' offensive production in the **same game ids**, joined
+exactly:
+
+```
+Team A defensive EPA allowed = Team B offensive EPA in that game_id
+```
+
+Coverage is 544/544 team-games. Opponents are never inferred from team names or
+schedule order, and a missing opponent row raises rather than producing partial
+defensive numbers. The join is independently validated: opponent-derived
+`def_epa` reproduces RBSDM's published `def_epa` to the same precision as
+offence, confirming both sides use the same definition.
+
+## 25.5 Sample-window integration
+
+EPA does **not** get its own period system. The generator imports
+`selectWindowGames`, `buildCompletedGameIndex`, `computeRanks` and `windowId`
+from `scripts/lib/nfl-matchup-metrics.mjs` — the very module the Phase 2
+conventional generator uses — so the four control states, chronological
+ordering and ranking are shared code rather than a parallel copy.
+
+The consequence is asserted by test: for every team and every control state, the
+EPA artifact's `gameIds`, `gamesIncluded` and `seasons` are byte-identical to
+the conventional artifact's. Season / Last 5 and the historical blend move EPA
+exactly as they move yards per play.
+
+Preseason behaviour therefore matches Phase 2 automatically:
+
+- blend ON + Season -> 2025's final eight completed regular-season games
+- blend ON + Last 5 -> 2025's final five
+- blend OFF -> no completed 2026 games, so EPA is N/A
+
+As 2026 games complete, each one displaces a late-2025 game in the rolling
+eight; from the eighth completed 2026 game the sample is entirely 2026. Byes are
+skipped because windows count games, never weeks.
+
+## 25.6 Cache architecture
+
+Two stages, mirroring Phase 4:
+
+1. `npm run nfl:epa-cache` (network) streams the gzipped play-by-play through
+   Node's built-in `zlib`, reads only the ten required columns out of 372,
+   applies the filter, aggregates to team-game, validates, and writes the
+   compact cache atomically.
+2. `npm run nfl:matchup-epa` (offline) reads the byte-verified cache plus the
+   repository's own schedule/results, builds the four windows, joins defence,
+   ranks, and writes the artifact atomically.
+
+**Raw play-by-play is never written to disk and never committed.**
+
+| | |
+|---|---|
+| Upstream PBP (gzipped) | 18.2 MB |
+| Compact cache `epa_team_game_2025.csv` | 51.4 KB (544 rows x 11 cols) |
+| **Reduction** | **363x** |
+| Client artifact `matchup-epa.json` | 53 KB |
+
+Cache path: `data/nfl/nflverse/epa-team-game/`. The manifest records
+schemaVersion, sourceUrl, season, retrievedDateUtc, upstream compressed byte
+size, upstream source row count, eligible play count, compact row count and byte
+size, sha256, required source columns, the filter string, attribution, and
+`rawPlayByPlayCommitted: false`.
+
+Team codes are resolved to the repository's canonical abbreviations during
+aggregation. The compact cache is a derived aggregate rather than verbatim
+upstream bytes, so it follows the repo-wide rule that generated NFL files
+reference teams by canonical codes; `game_id` still ties every row back to the
+source unambiguously.
+
+## 25.7 Ranking and display
+
+Competition ranking (1, 2, 2, 4) computed per metric per window on **unrounded**
+values, so display rounding can never move a team. Offence higher-is-better,
+defence lower-is-better. Null values are never ranked. Existing rank tiers and
+colours apply unchanged.
+
+Display is signed to three decimals — `+0.128`, `-0.043` — with zero rendered
+unsigned as `0.000`, because `+0.000` reads as a rounded positive it may not be.
+
+## 25.8 RBSDM cross-check
+
+Independent validation against RBSDM's published 2025 season values, all 32
+teams:
+
+| Metric | Max abs diff | Bit-exact | Ranks 1-32 identical |
+|---|---|---|---|
+| EPA / Play | 0.00009611 | 26/32 | **yes** |
+| Pass EPA / Play | 0.00019025 | 26/32 | **yes** |
+| Rush EPA / Play | **0.00000000** | **32/32** | **yes** |
+| EPA / Play Allowed | 0.00008143 | 27/32 | **yes** |
+| Pass EPA Allowed | 0.00026652 | 27/32 | **yes** |
+| Rush EPA Allowed | **0.00000000** | **32/32** | **yes** |
+
+Rush EPA is bit-exact for every team on both sides. Six teams (MIN, IND, WAS,
+PIT, BAL, CAR) carry a residual on *pass* EPA only, all <= 0.00027 — invisible at
+three decimals and never large enough to move a rank. The cause was not isolated
+beyond the two-point exclusion; it is most likely a handful of edge-case plays.
+The approved filter was not bent to force bit-identical agreement.
+
+## 25.9 Failure safety
+
+Refresh: network -> decompress -> parse -> filter -> aggregate -> validate ->
+temp file -> atomic rename. Generate: byte-verified cache -> window aggregation
+-> opponent joins -> ranking -> artifact validation -> temp file -> atomic
+rename.
+
+Neither stage overwrites a known-good file on empty play-by-play, missing
+required columns, a season mismatch, an unknown team code, duplicate team-game
+rows, a game without exactly two reciprocal team rows, `pass + rush != off`,
+non-finite EPA, a broken opponent join, or zero populated windows. If a selected
+game has no EPA row, that team's window is omitted and recorded in provenance
+rather than aggregated from a partial set.
+
+A 404 for a season that has not started is reported as "not yet published" — an
+expected state, distinct from a failure — and never removes or rewrites an
+existing cache. When 2026 play-by-play appears, the same pipeline ingests it
+with no architectural change.
+
+Suggested future cadence (not automated in this phase): daily early morning ET,
+plus Monday and Tuesday mornings during the season, following nflverse's own
+build schedule (daily 09:00 UTC, Sunday 22:00 UTC after the early window,
+Monday 00:05 UTC after the late window, and 05:30 UTC after SNF/MNF).
+
+## 25.10 Existing power-rating EPA — deliberately unchanged
+
+`scripts/lib/nfl-advanced-stats.mjs` derives EPA from `stats_team_week` for the
+internal v0.2 power ratings. That definition differs materially from nflfastR
+play-by-play EPA. Measured across all 544 2025 regular-season team-games:
+
+- only **25** agreed exactly on total EPA
+- pass EPA differed by a mean of -1.371 per team-game, rush EPA by +0.882
+- pass play counts ran 4.16 short per game, rush counts 2.13 long
+- **league EPA/play: +0.00747 (stats_team_week) vs +0.01496 (play-by-play)** —
+  roughly a factor of two
+
+The cause is classification: `stats_team_week` books QB scrambles as rushing
+while nflfastR counts them as pass, and its play denominators
+(`attempts + sacks_suffered`, `carries`) miss 1,102 plays, 3.20% of the true
+base.
+
+**Phase 6 does not change that pipeline, the power ratings, the model weights or
+any historical model artifact.** The display pipeline is entirely separate.
+
+> **Future consistency note.** The legacy/internal power-rating EPA pipeline uses
+> `stats_team_week` semantics that differ from nflfastR play-by-play EPA.
+> Reconciliation should happen only in a dedicated model recalibration phase,
+> where the rating changes can be reviewed on their own terms — never silently
+> during a display implementation.
+
+## 25.11 Scope
+
+Success Rate remains RBSDM-sourced and is untouched; the EPA resolver returns
+null for every non-EPA key, so the success-rate, trench, injury and market
+pipelines are unaffected. No EPA edge, matchup score, projected points,
+projected spread, win probability, favourite or picked winner is produced. The
+Offense vs Defense rows are direct descriptive comparisons only.

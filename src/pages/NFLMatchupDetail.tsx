@@ -8,11 +8,13 @@ import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
+import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import { DEFENSE_METRIC_GROUPS, OFFENSE_METRIC_GROUPS } from "@/lib/nfl/matchupMetrics";
 import { createInjuryResolver, describeUnavailable } from "@/lib/nfl/injuryData";
+import { composeMetricResolvers, createEpaResolver } from "@/lib/nfl/epaData";
 import {
   completedGamesFor as marketCompletedGamesFor,
   createMarketResolver,
@@ -100,6 +102,9 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: a missing market artifact leaves only the
   // market rows unavailable.
   const { artifact: marketArtifact } = useNflMatchupMarket();
+  // Independent optional enrichment: a missing EPA artifact leaves only the six
+  // EPA rows unavailable.
+  const { artifact: epaArtifact } = useNflMatchupEpa();
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -117,8 +122,15 @@ export default function NFLMatchupDetail() {
       [matchup.away.slug, matchup.away.abbr],
       [matchup.home.slug, matchup.home.abbr],
     ]);
-    return createMatchupMetricResolver(metricsArtifact, sampleSettings, slugToAbbr);
-  }, [matchup, metricsArtifact, sampleSettings]);
+    // EPA comes from its own artifact but answers to the same sample controls,
+    // so it is composed ahead of the conventional resolver. It returns null for
+    // every non-EPA key, so nothing else is shadowed and no component needs to
+    // know a second artifact exists.
+    return composeMetricResolvers(
+      createEpaResolver(epaArtifact, sampleSettings, slugToAbbr),
+      createMatchupMetricResolver(metricsArtifact, sampleSettings, slugToAbbr)
+    );
+  }, [matchup, metricsArtifact, epaArtifact, sampleSettings]);
 
   const sample = useMemo(() => {
     if (!matchup) return null;
@@ -321,6 +333,12 @@ export default function NFLMatchupDetail() {
           <p className="text-[11px] leading-5 text-slate-400">
             Market data: nflverse / nfldata. A single source-published market line; the underlying
             sportsbook composition is not disclosed.
+          </p>
+        )}
+
+        {epaArtifact && (
+          <p className="text-[11px] leading-5 text-slate-400">
+            EPA data: nflverse / nflfastR.
           </p>
         )}
 

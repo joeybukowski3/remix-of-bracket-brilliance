@@ -25,9 +25,9 @@ export const PIPELINE_PENDING_COPY =
   "Detailed values populate when the matchup data pipeline is connected. No figures are estimated in the meantime.";
 
 /**
- * Used by the offense/defense sections, which now carry real conventional stats
- * from nflverse while the efficiency and line-of-scrimmage rows still wait on
- * later phases.
+ * Used by the offense/defense sections. Kept in step with what is actually
+ * connected: EPA moved from "unavailable" to sourced in Phase 6, so it is no
+ * longer listed among the pending rows.
  */
 export const CONVENTIONAL_STATS_NOTE =
-  "Conventional stats come from nflverse team-week data and reflect the selected sample. Success rate is published by RBSDM and uses its own period policy shown on each row. EPA, first downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";
+  "Conventional stats come from nflverse team-week data and reflect the selected sample. EPA is nflfastR play-by-play, aggregated over the same sample. Success rate is published by RBSDM and uses its own period policy shown on each row. First downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";
