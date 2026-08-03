@@ -218,7 +218,10 @@ describe("Data controls", () => {
       <MatchupDataControls settings={DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS} onChange={() => {}} />
     );
     expect(screen.getByText(/rolling eight-game sample/i)).toBeInTheDocument();
-    expect(screen.getByText(/populate when the matchup data pipeline is connected/i)).toBeInTheDocument();
+    // Phase 2: conventional stats now respond to the controls, while the
+    // preseason power baseline in the hero deliberately does not.
+    expect(screen.getByText(/conventional team stats respond to these controls/i)).toBeInTheDocument();
+    expect(screen.getByText(/power baseline in the header is a separate preseason model/i)).toBeInTheDocument();
   });
 });
 

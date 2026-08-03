@@ -536,3 +536,170 @@ Run the existing TypeScript/test/build gates used by the repository before openi
 The existing route currently resolves schedule games to `NflMatchup`, joins them with the normalized Joe Knows Ball guide model, builds the existing comparison rows, and derives deterministic Advantages and Angles. The redesign should extend this architecture rather than replacing the existing model layer.
 
 The sportsbook spread field is currently structural and may remain unavailable until a later ingestion phase. Do not infer a spread from the Joe Knows Ball power ratings.
+
+---
+
+# 20. Phase 2 implementation note (conventional team stats)
+
+This section records what Phase 2 actually shipped. It does not amend the
+product requirements above.
+
+## 20.1 Source change: TeamRankings → nflverse
+
+Section 15 named TeamRankings as the primary conventional-stat source. Phase 2
+does **not** use it. Two independent blockers:
+
+1. **Automated retrieval is actively blocked.** Every `/nfl/stat/<metric>` page —
+   the only pages carrying per-team values and ranks — returns `HTTP 202` with
+   the header `x-amzn-waf-action: challenge` and a zero-byte body. The response
+   is an AWS WAF JavaScript challenge (`awswaf.com/.../challenge.js` plus a
+   `gokuProps` token). `robots.txt` is permissive (`Allow: /`, `Crawl-delay: 10`),
+   so this is a technical control, not a policy question. Clearing it requires
+   executing challenge JS in a browser to harvest an `aws-waf-token` cookie.
+   That was rejected: it is browser automation as production ingestion, and it
+   circumvents a deployed access control. The `/nfl/team-stats/` index is
+   reachable but contains zero `<table>` elements — it is a link directory only.
+2. **Insufficient granularity.** TeamRankings exposes season-to-date, "Last 3"
+   and home/away splits. It has no game-level rows and no cross-season window,
+   so the rolling 2025-last-8 to 2026 blend cannot be built from it at all.
+   Approximating the blend from weighted season averages is explicitly forbidden.
+
+nflverse `stats_team_week` was approved instead. It is game-level, already
+cached in this repository, and already the source behind the v0.2 power model.
+
+## 20.2 Metrics implemented (22)
+
+Offense — overall: Yards / Play, Points / Game, Turnovers / Game.
+Offense — passing: Pass Play %, Pass Attempts / Game, Passing Yards / Attempt,
+Passing Yards / Game, Sacks Allowed / Game.
+Offense — rushing: Rush Play %, Rush Attempts / Game, Rush Yards / Attempt,
+Rush Yards / Game.
+Defense — overall: Yards / Play Allowed, Points Allowed / Game, Takeaways / Game.
+Defense — pass: Opponent Passer Rating, Opponent Passing Yards / Attempt,
+Opponent Passing Yards / Game, Sacks / Game.
+Defense — run: Opponent Yards / Rush Attempt, Opponent Rush Attempts / Game,
+Opponent Rushing Yards / Game.
+
+## 20.3 Metrics still unavailable
+
+EPA (all variants) and success rate — deferred to the RBSDM/play-by-play phase.
+
+First downs per play and opponent first downs — the source carries rushing and
+passing first downs but **no penalty first downs**, so the total would not
+reconcile; deferred rather than shipped subtly wrong.
+
+Third-down conversion and time of possession — **no such columns exist** in
+`stats_team_week`; these require play-by-play or another source.
+
+PBWR / RBWR / PRWR / RSWR — ESPN phase. The Trenches card stays fully
+unavailable; sacks are deliberately **not** substituted for win rates.
+
+ATS, ATS differential, home/away ATS, over/under — nflverse carries no betting
+columns and this pipeline reads none by design.
+
+Injuries and snap share — later phase. Game Trends and Model Analysis remain
+intentionally empty.
+
+## 20.4 Artifact, generator, provenance
+
+Artifact: `public/data/nfl/matchup-metrics.json` (~165 KB, fetched at runtime,
+not bundled). All four control states are precomputed, so switching Season /
+Last 5 / blend is a pure client-side lookup with no re-aggregation.
+
+Command: `npm run nfl:matchup-metrics` (`--dry-run`, `--season=`, `--stats-dir=`,
+`--data-dir=`, `--out=` supported).
+
+Inputs: `data/nfl/nflverse/stats-team-week/stats_team_week_<season>.csv`,
+`public/data/nfl/<season>/{games,results}.json`, `public/data/nfl/teams.json`.
+
+Provenance stored: source label, per-season source file paths and row counts,
+`generatedAt`, seasons used, current/prior season, metric keys, and — per team
+per window — `gamesIncluded`, the **exact `gameIds`**, seasons represented and
+the `through` game (season/week/date).
+
+Failure behaviour: parsing and validation complete before anything is written;
+the artifact is written to a temp file and renamed into place, so a failed run
+can never leave a partial or empty file over known-good data. Any unknown team
+code, duplicate stats row, incomplete prior season, or failed opponent join
+throws and exits non-zero.
+
+## 20.5 Aggregation rules
+
+Ratios are recomputed from summed numerators and denominators over the selected
+games — never as a mean of per-game rates.
+
+    offensive plays = pass attempts + sacks taken + carries
+    offensive yards = passing yards + rushing yards
+    pass plays      = pass attempts + sacks taken
+    Yards / Play    = offensive yards / offensive plays
+    Pass Play %     = pass plays / offensive plays
+    Yards / Attempt = passing yards / attempts
+
+Passing yards are **gross** of sack yardage (nflverse keeps sack losses in a
+separate, negative `sack_yards_lost` column). Sack cost surfaces through Sacks
+Allowed / Game. This matches the existing v0.2 pipeline, so the analyzer and the
+power model never disagree about the same quantity; it reads slightly higher
+than sites publishing net passing yards.
+
+Defensive values come from the **opponent's row in the same games**, joined on
+`game_id`. Sacks / Game is read from the opponent's sacks-taken column (the same
+event from the other side) and is asserted in tests to equal the team's own
+`def_sacks`. Points come from `results.json`.
+
+Opponent Passer Rating uses the standard NFL formula over aggregate opponent
+completions / attempts / yards / TDs / INTs, each component clamped to
+[0, 2.375]. Weekly ratings are never averaged.
+
+## 20.6 Sample windows
+
+Selection is over **completed regular-season games**, ordered by kickoff date,
+never by week number — so byes, flexed games and postponements are handled
+naturally. A game counts only when the schedule row and the results row both
+mark it final. Postseason is excluded.
+
+    season + blend ON   rolling 8: each completed current game displaces one
+                        late prior-season game (0 to 8 prior, 4 to 4+4,
+                        8+ to current only)
+    season + blend OFF  every completed current-season game, uncapped
+    last5  + blend ON   five most recent completed games, may cross the boundary
+    last5  + blend OFF  up to five completed current-season games
+
+The generator's composition is asserted against the UI-side
+`resolveSampleComposition()` for every game count 0-12 across all four states, so
+the two can never drift.
+
+## 20.7 Preseason behaviour (current)
+
+`stats_team_week_2026.csv` does not exist yet and there are zero completed 2026
+games. That is expected, not an error:
+
+    blend ON  + Season   -> last 8 completed 2025 games   (populated)
+    blend ON  + Last 5   -> last 5 completed 2025 games   (populated)
+    blend OFF + Season   -> 0 games, all metrics N/A
+    blend OFF + Last 5   -> 0 games, all metrics N/A
+
+Blend-OFF states are **never** backfilled with 2025 values. The sample label
+reads "No completed 2026 games yet". Once the 2026 source file appears, the same
+code begins blending automatically under the rules above.
+
+## 20.8 Ranking
+
+Ranks are computed **per window**, over the teams that have a value for that
+metric in that same window — static season ranks are never reused for a rolling
+window. Direction comes from metric metadata, never from UI code.
+
+Tie handling is **competition ranking** (1, 2, 2, 4), computed on unrounded
+values so display rounding can never change an order. Teams without a value are
+excluded from ranking rather than sorted last.
+
+Play-mix and volume metrics (Pass Play %, Rush Play %, Pass Attempts / Game,
+Rush Attempts / Game, Opponent Rush Attempts / Game) are `context-only`: they
+still show a rank, but render with neutral styling and no quality tier, so
+leading the league in pass attempts is never coloured as "Elite".
+
+## 20.9 Unchanged by Phase 2
+
+`deriveAdvantages` and `deriveAngles` are untouched and do not consume the new
+metrics. The hero's Joe Knows Ball preseason ratings are a separate proprietary
+baseline and deliberately do not respond to the sample controls. No projected
+spread, win probability, model edge or picked winner exists anywhere.

@@ -23,3 +23,11 @@ export default function MatchupPendingNote({
 /** Standard sentence for sections whose rows are scaffolded but unpopulated. */
 export const PIPELINE_PENDING_COPY =
   "Detailed values populate when the matchup data pipeline is connected. No figures are estimated in the meantime.";
+
+/**
+ * Used by the offense/defense sections, which now carry real conventional stats
+ * from nflverse while the efficiency and line-of-scrimmage rows still wait on
+ * later phases.
+ */
+export const CONVENTIONAL_STATS_NOTE =
+  "Conventional stats come from nflverse team-week data and reflect the selected sample. EPA, success rate, first downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";

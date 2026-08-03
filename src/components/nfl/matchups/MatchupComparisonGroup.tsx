@@ -53,6 +53,7 @@ export default function MatchupComparisonGroup({
             metricLabel={metric.label}
             shortLabel={metric.shortLabel}
             help={metric.help}
+            direction={metric.direction}
             away={toSideValue(resolver(matchup.away.slug, metric.key))}
             home={toSideValue(resolver(matchup.home.slug, metric.key))}
             awayTeamName={matchup.away.teamName}

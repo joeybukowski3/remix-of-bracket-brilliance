@@ -3,7 +3,7 @@ import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupComparisonGroup, { ComparisonHeader } from "@/components/nfl/matchups/MatchupComparisonGroup";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
-import MatchupPendingNote, { PIPELINE_PENDING_COPY } from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupPendingNote, { CONVENTIONAL_STATS_NOTE } from "@/components/nfl/matchups/MatchupPendingNote";
 import { formatSigned } from "@/lib/nfl/guideData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import type { NflMatchupMetricGroup, NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
@@ -98,7 +98,7 @@ export default function MatchupUnitComparison({
         </div>
       ))}
 
-      <MatchupPendingNote>{PIPELINE_PENDING_COPY}</MatchupPendingNote>
+      <MatchupPendingNote>{CONVENTIONAL_STATS_NOTE}</MatchupPendingNote>
     </MatchupSection>
   );
 }

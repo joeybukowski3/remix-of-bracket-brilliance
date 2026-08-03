@@ -22,9 +22,12 @@ const WINDOW_OPTIONS = [
 export default function MatchupDataControls({
   settings,
   onChange,
+  sampleLabel,
 }: {
   settings: NflMatchupSampleSettings;
   onChange: (next: NflMatchupSampleSettings) => void;
+  /** Compact description of the resolved sample, e.g. "8 games · 2025". */
+  sampleLabel?: string;
 }) {
   const blendOn = settings.includePriorSeason;
 
@@ -69,14 +72,28 @@ export default function MatchupDataControls({
             <span className="tabular-nums">{blendOn ? "ON" : "OFF"}</span>
           </button>
         </div>
+
+        {sampleLabel && (
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+              Sample
+            </span>
+            <span
+              data-testid="matchup-sample-label"
+              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-black tabular-nums text-slate-700"
+            >
+              {sampleLabel}
+            </span>
+          </div>
+        )}
       </div>
 
       <p className="mt-2.5 border-t border-slate-100 pt-2 text-[11px] leading-4 text-slate-500">
         <span className="font-bold text-slate-600">Active sample rule:</span>{" "}
         {describeSampleRule(settings)}{" "}
         <span className="text-slate-400">
-          Rolling-window statistics populate when the matchup data pipeline is connected; the Joe
-          Knows Ball power baseline below is unaffected by these controls.
+          Conventional team stats respond to these controls. The Joe Knows Ball power baseline in
+          the header is a separate preseason model and is unaffected.
         </span>
       </p>
     </div>

@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
+import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
@@ -10,8 +11,11 @@ import {
   DEFENSE_METRIC_GROUPS,
   OFFENSE_METRIC_GROUPS,
   unavailableInjuryResolver,
-  unavailableMetricResolver,
 } from "@/lib/nfl/matchupMetrics";
+import {
+  createMatchupMetricResolver,
+  describeMatchupSample,
+} from "@/lib/nfl/matchupMetricsData";
 import {
   DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
   type NflMatchupSampleSettings,
@@ -41,21 +45,29 @@ const MODEL_ANALYSIS_SCOPE = [
 ] as const;
 
 /**
- * NFL matchup analyzer (Phase 1).
+ * NFL matchup analyzer.
  *
  * This page owns routing, SEO, data loading and section composition only. All
  * presentation lives in src/components/nfl/matchups/*, and every statistic is
- * supplied by an injected resolver — in this phase the "unavailable" resolvers,
- * which is what structurally prevents a placeholder section from rendering an
- * invented number.
+ * supplied by an injected resolver.
  *
- * The Joe Knows Ball power model, Advantages and Things to Watch (formerly
- * "Angles to watch") keep their existing logic untouched.
+ * Phase 2 wires the conventional-stat resolver over the generated nflverse
+ * artifact, so the Season / Last 5 / historical-blend controls select real
+ * samples. Metrics absent from that artifact (EPA, success rate, first downs,
+ * third down, time of possession, line-of-scrimmage win rates, ATS) resolve to
+ * null and keep rendering "N/A" — nothing is ever estimated to fill a cell.
+ *
+ * Injuries remain on the unavailable resolver. The Joe Knows Ball power model,
+ * Advantages and Things to Watch keep their existing logic untouched, and the
+ * hero's preseason ratings deliberately do not respond to the sample controls.
  */
 export default function NFLMatchupDetail() {
   const { gameSlug = "" } = useParams();
   const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
+  // Soft dependency: the analyzer renders fully without it, with detailed rows
+  // staying at "N/A".
+  const { artifact: metricsArtifact } = useNflMatchupMetrics();
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -64,6 +76,25 @@ export default function NFLMatchupDetail() {
     () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
     [data, gameSlug]
   );
+
+  // The UI addresses teams by guide slug; the artifact is keyed by the canonical
+  // abbreviation, so the resolver is built with an explicit two-entry map.
+  const metricResolver = useMemo(() => {
+    if (!matchup) return () => null;
+    const slugToAbbr = new Map([
+      [matchup.away.slug, matchup.away.abbr],
+      [matchup.home.slug, matchup.home.abbr],
+    ]);
+    return createMatchupMetricResolver(metricsArtifact, sampleSettings, slugToAbbr);
+  }, [matchup, metricsArtifact, sampleSettings]);
+
+  const sample = useMemo(() => {
+    if (!matchup) return null;
+    return describeMatchupSample(metricsArtifact, sampleSettings, [
+      matchup.away.abbr,
+      matchup.home.abbr,
+    ]);
+  }, [matchup, metricsArtifact, sampleSettings]);
 
   usePageSeo({
     title: matchup
@@ -108,7 +139,11 @@ export default function NFLMatchupDetail() {
 
         <MatchupJumpNav />
 
-        <MatchupDataControls settings={sampleSettings} onChange={setSampleSettings} />
+        <MatchupDataControls
+          settings={sampleSettings}
+          onChange={setSampleSettings}
+          sampleLabel={sample?.label}
+        />
 
         <MatchupRankLegend />
 
@@ -128,7 +163,7 @@ export default function NFLMatchupDetail() {
             id="offense"
             matchup={matchup}
             groups={OFFENSE_METRIC_GROUPS}
-            resolver={unavailableMetricResolver}
+            resolver={metricResolver}
             baselineLabel="JKB Offense Rating"
             baselineRank={(team) => team.offenseRank}
             baselineValue={(team) => team.offensePct}
@@ -138,18 +173,18 @@ export default function NFLMatchupDetail() {
             id="defense"
             matchup={matchup}
             groups={DEFENSE_METRIC_GROUPS}
-            resolver={unavailableMetricResolver}
+            resolver={metricResolver}
             baselineLabel="JKB Defense Rating"
             baselineRank={(team) => team.defenseRank}
             baselineValue={(team) => team.defensePct}
           />
         </div>
 
-        <MatchupUnitBattles matchup={matchup} resolver={unavailableMetricResolver} />
+        <MatchupUnitBattles matchup={matchup} resolver={metricResolver} />
 
         <div className="grid items-start gap-3 xl:grid-cols-2">
-          <MatchupTrenches matchup={matchup} resolver={unavailableMetricResolver} />
-          <MatchupMarketProfile matchup={matchup} resolver={unavailableMetricResolver} />
+          <MatchupTrenches matchup={matchup} resolver={metricResolver} />
+          <MatchupMarketProfile matchup={matchup} resolver={metricResolver} />
         </div>
 
         <MatchupInjuries matchup={matchup} resolver={unavailableInjuryResolver} />

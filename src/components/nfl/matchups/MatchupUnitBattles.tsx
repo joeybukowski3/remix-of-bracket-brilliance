@@ -2,15 +2,29 @@ import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
-import MatchupPendingNote, { PIPELINE_PENDING_COPY } from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupPendingNote, { CONVENTIONAL_STATS_NOTE } from "@/components/nfl/matchups/MatchupPendingNote";
 import {
   UNIT_BATTLE_GROUPS,
+  getMetricDef,
   toSideValue,
   type NflMatchupMetricResolver,
 } from "@/lib/nfl/matchupMetrics";
+
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 type PossessionSide = "away-ball" | "home-ball";
+
+/**
+ * A pairing is descriptive when either side is context-only, in which case the
+ * row drops quality-tier colouring. Ranks are already direction-aware per side,
+ * so a quality pairing colours correctly even though the two sides read in
+ * opposite directions (e.g. yards/play gained vs yards/play allowed).
+ */
+function pairingDirection(offenseKey: string, defenseKey: string) {
+  const offense = getMetricDef(offenseKey)?.direction;
+  const defense = getMetricDef(defenseKey)?.direction;
+  return offense === "context-only" || defense === "context-only" ? ("context-only" as const) : undefined;
+}
 
 /**
  * One possession view: the team with the ball on the left, the opposing defense
@@ -57,6 +71,7 @@ function PossessionPanel({
                 key={pairing.id}
                 metricLabel={pairing.label}
                 help={pairing.help}
+                direction={pairingDirection(pairing.offenseKey, pairing.defenseKey)}
                 away={toSideValue(resolver(offenseTeam.slug, pairing.offenseKey))}
                 home={toSideValue(resolver(defenseTeam.slug, pairing.defenseKey))}
                 awayTeamName={`${offenseTeam.teamName} offense`}
@@ -108,7 +123,7 @@ export default function MatchupUnitBattles({
           <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} />
         </div>
       </div>
-      <MatchupPendingNote>{PIPELINE_PENDING_COPY}</MatchupPendingNote>
+      <MatchupPendingNote>{CONVENTIONAL_STATS_NOTE}</MatchupPendingNote>
     </MatchupSection>
   );
 }
