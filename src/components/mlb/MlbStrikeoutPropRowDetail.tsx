@@ -9,6 +9,55 @@ import { cn } from "@/lib/utils";
 
 const DASH = "N/A";
 
+type CompactAccordionTone = "emerald" | "blue" | "sky" | "amber" | "violet" | "slate";
+
+const compactAccordionToneClasses: Record<CompactAccordionTone, string> = {
+  emerald: "border-emerald-200 bg-emerald-50/80 text-emerald-900 hover:bg-emerald-100/80",
+  blue: "border-indigo-200 bg-indigo-50/80 text-indigo-900 hover:bg-indigo-100/80",
+  sky: "border-sky-200 bg-sky-50/80 text-sky-900 hover:bg-sky-100/80",
+  amber: "border-amber-200 bg-amber-50/80 text-amber-900 hover:bg-amber-100/80",
+  violet: "border-violet-200 bg-violet-50/80 text-violet-900 hover:bg-violet-100/80",
+  slate: "border-slate-200 bg-slate-100/80 text-slate-800 hover:bg-slate-200/70",
+};
+
+export function MlbStrikeoutCompactAccordion({
+  id,
+  title,
+  tone,
+  children,
+}: {
+  id: string;
+  title: string;
+  tone: CompactAccordionTone;
+  children: ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const panelId = `${id}-panel`;
+
+  return (
+    <section className="min-w-0">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={() => setIsOpen((current) => !current)}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-wide transition-colors",
+          compactAccordionToneClasses[tone],
+        )}
+      >
+        <span>{title}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform duration-150", isOpen && "rotate-180")} aria-hidden="true" />
+      </button>
+      {isOpen && (
+        <div id={panelId} className="min-w-0 pt-2">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function fmtText(value: string | null | undefined) {
   return value && value.trim() ? value : DASH;
 }
@@ -543,7 +592,7 @@ function SourceIntegrityPanel({ artifact, publicSlateDate }: { artifact: KPropsV
   );
 }
 
-export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null, row = null }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null; row?: PitcherStrikeoutTeamRow | null }) {
+export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null, row = null, compactLayout = false }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null; row?: PitcherStrikeoutTeamRow | null; compactLayout?: boolean }) {
   const detailsInput = getNestedRecord(shadowRow?.inputs ?? {}, ["details"]);
   const pitcherSummary = getNestedRecord(detailsInput ?? {}, ["pitcherLastFiveSummary"]);
   // Canonical summary lives on the generated detail artifact itself; the shadow debug artifact's
@@ -718,6 +767,94 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     fmtFixed(getNumber(opponentSummary, "averageTeamStrikeouts")),
   ]];
 
+  const recentPerformance = (
+    <MiniTable
+      title={`${detail.pitcher} — Last 5 Starts`}
+      columns={startColumns}
+      rows={startRows}
+      footRows={startAvg}
+      mobileCollapsibleRows={startCollapsibleRows}
+      emptyMessage="No recent starts available."
+    />
+  );
+  const homeAwaySplits = detail.pitcherVenueSplits ? (
+    <div>
+      <MiniTable
+        title={`${detail.pitcher} — Home/Away Splits`}
+        columns={["Site", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-"]}
+        columnWidths={["8%", "13%", "8%", "10%", "7%", "8%", "13%", "8%", "10%", "7%", "8%"]}
+        headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
+        leadingUngroupedColumns={1}
+        columnAlignments={["left", "center", "center", "center", "center", "center", "center", "center", "center", "center", "center"]}
+        centerHeaderGroups
+        mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
+        rows={pitcherVenueRows}
+        rowClassNames={pitcherVenueRowClasses}
+        boldRows={pitcherVenueBoldRows}
+        emptyMessage="No venue splits available."
+      />
+      {hasShortVenueSample && <p className="mt-1 px-1 text-[9px] font-semibold text-amber-700">* fewer than 5 starts available</p>}
+    </div>
+  ) : <p className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">No venue splits available.</p>;
+  const opponentLastTen = (
+    <MiniTable
+      title={`${detail.opponent} — Last 10 Games vs SP`}
+      columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "Game K"]}
+      columnWidths={["14%", "12%", "34%", "14%", "12%", "14%"]}
+      rows={opponentRows}
+      footRows={opponentAvg}
+      mobileCollapsibleRows={opponentCollapsibleRows}
+      emptyMessage="No recent games available."
+    />
+  );
+  const opponentDataSources = detail.opponentContext ? (
+    <div data-testid="opponent-context-source-details" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[10px] text-slate-600">
+      <div className="grid gap-1 sm:grid-cols-2">
+        <div><span className="font-black text-slate-500">K/Game:</span> {detail.opponentContext.sources?.strikeouts ?? DASH}</div>
+        <div><span className="font-black text-slate-500">xBA:</span> {detail.opponentContext.sources?.xba ?? DASH}</div>
+      </div>
+      {detail.opponentContext.samples && Object.keys(detail.opponentContext.samples).length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500">
+          {Object.entries(detail.opponentContext.samples).map(([label, value]) => <span key={label}>{label}: <strong>{value}</strong></span>)}
+        </div>
+      )}
+      {detail.opponentContext.warnings && detail.opponentContext.warnings.length > 0 && (
+        <ul className="mt-1 list-disc pl-4 font-semibold text-amber-700">
+          {detail.opponentContext.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+        </ul>
+      )}
+    </div>
+  ) : <p className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">No opponent source diagnostics available.</p>;
+
+  if (compactLayout) {
+    return (
+      <div data-testid="strikeout-prop-detail" data-layout="compact" className="min-w-0 space-y-2">
+        <MlbStrikeoutCompactAccordion id="strikeout-recent-performance" title="Recent Performance" tone="sky">
+          {recentPerformance}
+        </MlbStrikeoutCompactAccordion>
+        <MlbStrikeoutCompactAccordion id="strikeout-home-away-splits" title="Home / Away Splits" tone="amber">
+          {homeAwaySplits}
+        </MlbStrikeoutCompactAccordion>
+        <MlbStrikeoutCompactAccordion id="strikeout-opponent-last-ten" title="Opponent Last 10 Games vs SP" tone="violet">
+          {opponentLastTen}
+        </MlbStrikeoutCompactAccordion>
+        <MlbStrikeoutCompactAccordion id="strikeout-opponent-data-sources" title="Opponent Data Sources" tone="slate">
+          {opponentDataSources}
+        </MlbStrikeoutCompactAccordion>
+        {showV2Shadow && shadowRow && (
+          <MlbStrikeoutCompactAccordion id="strikeout-model-debug" title="Model Debug" tone="slate">
+            <div data-testid="strikeout-v2-debug-panels" className="grid min-w-0 gap-2">
+              <ProjectionComparison detail={detail} shadowRow={shadowRow} row={row} />
+              <ModelBreakdown shadowRow={shadowRow} />
+              <SplitAvailabilityPanel shadowRow={shadowRow} />
+              <SourceIntegrityPanel artifact={shadowArtifact} publicSlateDate={publicSlateDate} />
+            </div>
+          </MlbStrikeoutCompactAccordion>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       data-testid="strikeout-prop-detail"
@@ -727,43 +864,10 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
         <h3 className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Recent Performance</h3>
         <div className="grid min-w-0 gap-2 lg:grid-cols-[3fr_2fr]">
           <div className="grid min-w-0 gap-2">
-            <MiniTable
-              title={`${detail.pitcher} — Last 5 Starts`}
-              columns={startColumns}
-              rows={startRows}
-              footRows={startAvg}
-              mobileCollapsibleRows={startCollapsibleRows}
-              emptyMessage="No recent starts available."
-            />
-            {detail.pitcherVenueSplits && (
-              <div>
-                <MiniTable
-                  title={`${detail.pitcher} — Home/Away Splits`}
-                  columns={["Site", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-"]}
-                  columnWidths={["8%", "13%", "8%", "10%", "7%", "8%", "13%", "8%", "10%", "7%", "8%"]}
-                  headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
-                  leadingUngroupedColumns={1}
-                  columnAlignments={["left", "center", "center", "center", "center", "center", "center", "center", "center", "center", "center"]}
-                  centerHeaderGroups
-                  mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
-                  rows={pitcherVenueRows}
-                  rowClassNames={pitcherVenueRowClasses}
-                  boldRows={pitcherVenueBoldRows}
-                  emptyMessage="No venue splits available."
-                />
-                {hasShortVenueSample && <p className="mt-1 px-1 text-[9px] font-semibold text-amber-700">* fewer than 5 starts available</p>}
-              </div>
-            )}
+            {recentPerformance}
+            {detail.pitcherVenueSplits && homeAwaySplits}
           </div>
-          <MiniTable
-            title={`${detail.opponent} — Last 10 Games vs SP`}
-            columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "Game K"]}
-            columnWidths={["14%", "12%", "34%", "14%", "12%", "14%"]}
-            rows={opponentRows}
-            footRows={opponentAvg}
-            mobileCollapsibleRows={opponentCollapsibleRows}
-            emptyMessage="No recent games available."
-          />
+          {opponentLastTen}
         </div>
       </section>
       {detail.opponentContext && (

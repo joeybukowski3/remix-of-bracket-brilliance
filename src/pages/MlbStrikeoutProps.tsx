@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
 import { useMlbKPropsV2Shadow, type KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
 import MlbStrikeoutPropRowDetail, {
+  MlbStrikeoutCompactAccordion,
   MlbStrikeoutPropDetailsStaleBanner,
   MlbStrikeoutPropRowDetailLoading,
   MlbStrikeoutPropRowDetailStale,
@@ -452,7 +453,7 @@ export default function MlbStrikeoutProps() {
     if (isDetailsStale) return <MlbStrikeoutPropRowDetailStale />;
     const detail = detailsByKey.get(key);
     if (!detail) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
-    return <MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={kV2Shadow.artifact} showV2Shadow={showKProjectionV2Debug} publicSlateDate={slateDate} row={row} />;
+    return <MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={kV2Shadow.artifact} showV2Shadow={showKProjectionV2Debug} publicSlateDate={slateDate} row={row} compactLayout={isCompactLayout} />;
   }
 
   // Rows whose projection status disqualifies them from ranking/
@@ -709,16 +710,16 @@ export default function MlbStrikeoutProps() {
                               <div>
                                 <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Core / Market</div>
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                  {hasKOdds && (
-                                    <MetricTile label="Edge">
-                                      <span className={cn(
-                                        "rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
-                                        edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
-                                      )}>
-                                        {formatEdgeLabel(row)}
-                                      </span>
-                                    </MetricTile>
-                                  )}
+                                  <MetricTile label="K Line"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{hasPostedLine ? fmt(row.kLine) : DASH}</span></MetricTile>
+                                  <MetricTile label="Proj K"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{fmt(row.projectedKs)}</span></MetricTile>
+                                  <MetricTile label="Edge">
+                                    <span className={cn(
+                                      "rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
+                                      edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
+                                    )}>
+                                      {formatEdgeLabel(row)}
+                                    </span>
+                                  </MetricTile>
                                   <MetricTile label="K Score">
                                     <PercentileCell
                                       value={row.strikeoutMatchupScore}
@@ -730,17 +731,15 @@ export default function MlbStrikeoutProps() {
                                   </MetricTile>
                                 </div>
                               </div>
-                              <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Pitcher Stats</div>
+                              <MlbStrikeoutCompactAccordion id={`${panelId}-pitcher-stats`} title="Pitcher Stats" tone="emerald">
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                   <MetricTile label="K/Inning SZN"><ComparativeMetricValue tone={metricTone("pitcherSeasonKPerInning", displayMetrics.pitcherSeasonKPerInning)}>{fmt(displayMetrics.pitcherSeasonKPerInning, 2)}</ComparativeMetricValue></MetricTile>
                                   <MetricTile label="K/Inning L5"><ComparativeMetricValue tone={metricTone("pitcherLastFiveKPerInning", displayMetrics.pitcherLastFiveKPerInning)}>{fmt(displayMetrics.pitcherLastFiveKPerInning, 2)}</ComparativeMetricValue></MetricTile>
                                   <MetricTile label="K% Split"><ComparativeMetricValue tone={metricTone("pitcherVenueKRate", displayMetrics.pitcherVenueKRate)}>{displayMetrics.pitcherVenueKRate == null ? DASH : `${fmt(displayMetrics.pitcherVenueKRate)}%`}</ComparativeMetricValue></MetricTile>
                                   <MetricTile label="Avg IP"><ComparativeMetricValue tone={metricTone("projectedIP", row.projectedIP)}>{fmt(row.projectedIP)}</ComparativeMetricValue></MetricTile>
                                 </div>
-                              </div>
-                              <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Opposing Team Stats</div>
+                              </MlbStrikeoutCompactAccordion>
+                              <MlbStrikeoutCompactAccordion id={`${panelId}-opposing-team-stats`} title="Opposing Team Stats" tone="blue">
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                   <MetricTile label="Szn vs Hand"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></MetricTile>
                                   <MetricTile label="Opp K/Game L10"><ComparativeMetricValue tone={metricTone("opponentLast10KPerGame", displayMetrics.opponentLast10KPerGame)}>{fmt(displayMetrics.opponentLast10KPerGame)}</ComparativeMetricValue></MetricTile>
@@ -748,11 +747,8 @@ export default function MlbStrikeoutProps() {
                                   <MetricTile label="Opp xBA Split"><ComparativeMetricValue tone={metricTone("opponentVenueXba", displayMetrics.opponentVenueXba)}>{fmt(displayMetrics.opponentVenueXba, 3)}</ComparativeMetricValue></MetricTile>
                                   <MetricTile label="Opp xBA L10"><ComparativeMetricValue tone={metricTone("opponentLast10Xba", displayMetrics.opponentLast10Xba)}>{fmt(displayMetrics.opponentLast10Xba, 3)}</ComparativeMetricValue></MetricTile>
                                 </div>
-                              </div>
-                              <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Recent Starts</div>
-                                <RowDetailPanel row={row} />
-                              </div>
+                              </MlbStrikeoutCompactAccordion>
+                              <RowDetailPanel row={row} />
                             </div>
                           )}
                         </article>
@@ -764,13 +760,13 @@ export default function MlbStrikeoutProps() {
                 ) : (
                   /* Desktop (lg and above): grouped, responsive-density table. */
                   <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                  <table className="w-full min-w-[1240px] table-fixed border-separate border-spacing-0 text-xs xl:min-w-[1180px] 2xl:min-w-full">
+                  <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-xs">
                     <colgroup>
-                      <col className="w-8" /><col className="w-[220px]" /><col className="w-[72px]" />
-                      {hasKOdds && <><col className="w-[88px]" /><col className="w-[60px]" /><col className="w-[60px]" /></>}
+                      <col className="w-8" /><col className="w-[210px]" /><col className="w-[68px]" />
+                      {hasKOdds && <><col className="w-[84px]" /><col className="w-[56px]" /><col className="w-[56px]" /></>}
                       <col className="w-[64px]" />
                       {Array.from({ length: 4 }, (_, index) => <col key={`pitcher-stat-col-${index}`} className="w-[68px]" />)}
-                      {Array.from({ length: 5 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[78px]" />)}
+                      {Array.from({ length: 5 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[72px]" />)}
                     </colgroup>
                     <thead className="sticky top-0 z-20">
                     <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">

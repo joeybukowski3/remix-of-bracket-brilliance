@@ -772,6 +772,12 @@ describe("MlbStrikeoutProps — table width and Park Factors layout", () => {
     expect(container.querySelector(".overflow-x-auto")).toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 
+  it("uses the reduced desktop minimum width so the wide MLB shell can avoid unnecessary overflow", () => {
+    const source = readFileSync("src/pages/MlbStrikeoutProps.tsx", "utf-8");
+    expect(source).toContain('className="w-full min-w-[1180px] table-fixed');
+    expect(source).not.toContain('min-w-[1240px] table-fixed');
+  });
+
   it("existing Park Factor value renders unchanged", async () => {
     vi.resetModules();
     mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });

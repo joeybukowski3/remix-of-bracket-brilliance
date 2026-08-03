@@ -212,7 +212,7 @@ describe("Main table incremental loading", () => {
 });
 
 describe("Mobile compact rows -- collapsed header and K Model Metrics expand grid", () => {
-  it("shows logo/name/opponent/line/score in the collapsed row and moves secondary metrics into the expand grid", async () => {
+  it("keeps Core / Market visible and places secondary metrics in closed-by-default accordions", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow({ pitcher: "Compact Guy", strikeoutMatchupScore: 71 })]);
@@ -226,15 +226,31 @@ describe("Mobile compact rows -- collapsed header and K Model Metrics expand gri
     expect(within(collapsedRow).queryByText(/K\/Inning SZN/)).not.toBeInTheDocument();
 
     fireEvent.click(collapsedRow);
-    expect(await screen.findByText("Pitcher Stats")).toBeInTheDocument();
-    expect(screen.getByText("Opposing Team Stats")).toBeInTheDocument();
-    for (const label of ["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP", "Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"]) {
+    for (const label of ["K Line", "Proj K", "Edge", "K Score"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    for (const removed of ["K/9 - SZN", "K/9 - Last 5", "Opp K/9 Last 10", "Opp K/9 Split", "Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score"]) {
-      expect(screen.queryByText(removed)).not.toBeInTheDocument();
+    const pitcherStats = screen.getByRole("button", { name: "Pitcher Stats" });
+    const opposingStats = screen.getByRole("button", { name: "Opposing Team Stats" });
+    expect(pitcherStats.className).toContain("border-emerald-200");
+    expect(opposingStats.className).toContain("border-indigo-200");
+    expect(pitcherStats).toHaveAttribute("aria-expanded", "false");
+    expect(opposingStats).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("K/Inning SZN")).not.toBeInTheDocument();
+    expect(screen.queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+
+    fireEvent.click(pitcherStats);
+    expect(pitcherStats).toHaveAttribute("aria-expanded", "true");
+    for (const label of ["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
     }
-    expect(screen.getByText("Recent Starts")).toBeInTheDocument();
+    expect(opposingStats).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+
+    fireEvent.click(opposingStats);
+    expect(opposingStats).toHaveAttribute("aria-expanded", "true");
+    for (const label of ["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("renders no page-level table markup below lg for the main section", async () => {

@@ -94,6 +94,52 @@ const artifact: KPropsV2ShadowArtifact = {
 };
 
 describe("MlbStrikeoutPropRowDetail", () => {
+  it("renders compact detail sections as independent, accessible, closed-by-default accordions", () => {
+    render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
+
+    const sections = [
+      "Recent Performance",
+      "Home / Away Splits",
+      "Opponent Last 10 Games vs SP",
+      "Opponent Data Sources",
+    ];
+    for (const section of sections) {
+      const trigger = screen.getByRole("button", { name: section });
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(trigger).toHaveAttribute("aria-controls");
+      expect(document.getElementById(trigger.getAttribute("aria-controls") as string)).toBeNull();
+    }
+    expect(screen.getByRole("button", { name: "Recent Performance" }).className).toContain("border-sky-200");
+    expect(screen.getByRole("button", { name: "Home / Away Splits" }).className).toContain("border-amber-200");
+    expect(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }).className).toContain("border-violet-200");
+    expect(screen.getByRole("button", { name: "Opponent Data Sources" }).className).toContain("border-slate-200");
+    expect(screen.queryByText("Shane Bieber — Last 5 Starts")).not.toBeInTheDocument();
+    expect(screen.queryByText("TB — Last 10 Games vs SP")).not.toBeInTheDocument();
+
+    const recentTrigger = screen.getByRole("button", { name: "Recent Performance" });
+    fireEvent.click(recentTrigger);
+    expect(recentTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Shane Bieber — Last 5 Starts")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Home / Away Splits" })).toHaveAttribute("aria-expanded", "false");
+
+    const opponentTrigger = screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" });
+    fireEvent.click(opponentTrigger);
+    expect(opponentTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("TB — Last 10 Games vs SP")).toBeInTheDocument();
+    expect(recentTrigger).toHaveAttribute("aria-expanded", "true");
+
+    const splitsTrigger = screen.getByRole("button", { name: "Home / Away Splits" });
+    fireEvent.click(splitsTrigger);
+    expect(splitsTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("No venue splits available.")).toBeInTheDocument();
+
+    const sourcesTrigger = screen.getByRole("button", { name: "Opponent Data Sources" });
+    fireEvent.click(sourcesTrigger);
+    expect(sourcesTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("No opponent source diagnostics available.")).toBeInTheDocument();
+    expect(recentTrigger).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("uses canonical recent summaries for AVG rows and baseball innings display", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={artifact} showV2Shadow publicSlateDate="2026-07-23" />);
     const detailPanel = screen.getByTestId("strikeout-prop-detail");
