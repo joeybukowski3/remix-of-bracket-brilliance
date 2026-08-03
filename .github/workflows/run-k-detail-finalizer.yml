@@ -31,7 +31,7 @@ jobs:
               'git', 'show', 'origin/feat/mlb-k-prop-table-and-splits-redesign:.github/workflows/finalize-k-prop-detail-redesign.yml'
           ], text=True)
           lines = text.splitlines()
-          name_index = next(i for i, line in enumerate(lines) if line.strip() == 'name: Restore production detail component and apply approved split redesign')
+          name_index = next(i for i, line in enumerate(lines) if line.strip().endswith('name: Restore production detail component and apply approved split redesign'))
           run_index = next(i for i in range(name_index + 1, len(lines)) if lines[i].strip() == 'run: |')
           end_index = next(i for i in range(run_index + 1, len(lines)) if lines[i].startswith('      - name:'))
           script_lines = lines[run_index + 1:end_index]
@@ -54,5 +54,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/components/mlb/MlbStrikeoutPropRowDetail.tsx
           git diff --cached --check
-          git commit -m "feat: finalize pitcher Home Away split redesign [detail-applied]"
+          git commit -m "feat: finalize pitcher Home Away split redesign [detail-applied] [skip ci]"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
