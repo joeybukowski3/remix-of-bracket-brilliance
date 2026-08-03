@@ -36,17 +36,34 @@ jobs:
           end_index = next(i for i in range(run_index + 1, len(lines)) if lines[i].startswith('      - name:'))
           script_lines = lines[run_index + 1:end_index]
           script = '\n'.join(line[10:] if line.startswith('          ') else line for line in script_lines) + '\n'
-          strict = '''if old_rows not in source:
+
+          strict_rows = '''if old_rows not in source:
               raise SystemExit("pitcher venue row block not found")
           source = source.replace(old_rows, new_rows, 1)'''
-          resilient = '''import re
+          resilient_rows = '''import re
           row_pattern = r"  const pitcherVenueRows = detail\\.pitcherVenueSplits\\n    \\? \\[.*?\\n    : \\[\\];\\n"
           source, row_count = re.subn(row_pattern, new_rows, source, count=1, flags=re.S)
           if row_count != 1:
               raise SystemExit(f"pitcher venue row block not found: {row_count}")'''
-          if strict not in script:
-              raise SystemExit('unable to patch strict row transformer')
-          script = script.replace(strict, resilient, 1)
+
+          strict_table = '''if old_table not in source:
+              raise SystemExit("pitcher venue table block not found")
+          source = source.replace(old_table, new_table, 1)'''
+          resilient_table = '''table_start_marker = '            {detail.pitcherVenueSplits && (\\n              <MiniTable\\n                title={`${detail.pitcher} — Home/Away Splits`}'
+          table_start = source.find(table_start_marker)
+          if table_start < 0:
+              raise SystemExit("pitcher venue table start not found")
+          table_end_marker = '            )}\\n'
+          table_end = source.find(table_end_marker, table_start)
+          if table_end < 0:
+              raise SystemExit("pitcher venue table end not found")
+          table_end += len(table_end_marker)
+          source = source[:table_start] + new_table + source[table_end:]'''
+
+          if strict_rows not in script or strict_table not in script:
+              raise SystemExit('unable to patch strict detail transformer')
+          script = script.replace(strict_rows, resilient_rows, 1)
+          script = script.replace(strict_table, resilient_table, 1)
           Path('/tmp/finalize-detail.py').write_text(script, encoding='utf-8')
           PY
           python /tmp/finalize-detail.py
