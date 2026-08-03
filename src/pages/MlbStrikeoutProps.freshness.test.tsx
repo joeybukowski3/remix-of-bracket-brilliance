@@ -510,25 +510,27 @@ describe("MlbStrikeoutProps — freshness status integration", () => {
     expect(rows[0].textContent).toContain("Lower Score Pitcher");
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("33. existing model/value selection is unchanged", async () => {
+  it("33. Most Strikeouts sorts by K Score rather than projected Ks", async () => {
     vi.resetModules();
-    const highKsRow = makeRow({ rank: 2, pitcher: "High Ks Pitcher", team: "SEA", opponent: "OAK", gameKey: "SEA@OAK", projectedKs: 9.0, kLine: 8.8, kOddsOver: "-110", kOddsUnder: "-110" });
+    const highKsRow = makeRow({ rank: 2, pitcher: "High Ks Pitcher", team: "SEA", opponent: "OAK", gameKey: "SEA@OAK", projectedKs: 9.0, strikeoutMatchupScore: 40, kLine: 8.8, kOddsOver: "-110", kOddsUnder: "-110" });
     mockPropsData({ rows: [rowWithLine, highKsRow], status: CURRENT_STATUS });
     const { container } = await renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: "Most Strikeouts" }));
 
     const rows = container.querySelectorAll("table tbody tr");
-    expect(rows[0].textContent).toContain("High Ks Pitcher");
+    expect(rows[0].textContent).toContain("Dean Kremer");
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("34. existing projection differences (edge) are unchanged", async () => {
     vi.resetModules();
     mockPropsData({ rows: [rowWithLine], status: CURRENT_STATUS });
-    await renderPage();
+    const { container } = await renderPage();
 
-    // rowWithLine: projectedKs 5.0, kLine 6.5 -> -1.5 UNDER
-    expect(screen.getAllByText("-1.5 UNDER").length).toBeGreaterThan(0);
+    // rowWithLine: projectedKs 5.0, kLine 6.5 -> -1.5; direction is conveyed by color.
+    const mainTable = container.querySelector("table") as HTMLElement;
+    expect(within(mainTable).getByText("-1.5")).toBeInTheDocument();
+    expect(within(mainTable).queryByText(/\bUNDER\b/)).not.toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("35. existing line and odds formatting is unchanged", async () => {
@@ -752,7 +754,7 @@ describe("MlbStrikeoutProps — table width and Park Factors layout", () => {
     const { container } = await renderPage();
 
     const statusEl = container.querySelector("[data-tone]");
-    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    const parkSection = screen.getByText("🏟️ Park Factors").closest("section");
     const table = container.querySelector("table");
 
     expect(statusEl).toBeInTheDocument();
@@ -821,7 +823,7 @@ describe("MlbStrikeoutProps — table width and Park Factors layout", () => {
     mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
     const { container } = await renderPage();
 
-    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    const parkSection = screen.getByText("🏟️ Park Factors").closest("section");
     expect(parkSection?.className).not.toMatch(/w-\[\d+px\]/);
   }, SLOW_RENDER_TIMEOUT_MS);
 });

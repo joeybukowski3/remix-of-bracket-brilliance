@@ -157,11 +157,12 @@ describe("Proj K, edge and direction use the resolved projection", () => {
     expect(screen.queryByText("5.0")).toBeNull();
   });
 
-  it("derives edge and OVER/UNDER direction from the resolved projection", async () => {
-    await renderPage([v2Row]);
-    // legacy 5.0 vs a 5.5 line would read "-0.5 UNDER"
-    expect(screen.getAllByText("+0.9 OVER").length).toBeGreaterThan(0);
-    expect(screen.queryByText("-0.5 UNDER")).toBeNull();
+  it("derives the signed edge from the resolved projection without a direction literal", async () => {
+    const { container } = await renderPage([v2Row]);
+    const table = container.querySelector("table") as HTMLElement;
+    expect(within(table).getByText("+0.9")).toBeInTheDocument();
+    expect(within(table).queryByText("-0.5")).not.toBeInTheDocument();
+    expect(within(table).queryByText(/\b(?:OVER|UNDER)\b/)).not.toBeInTheDocument();
   });
 
   it("keeps the public column named Proj K", async () => {
@@ -170,11 +171,11 @@ describe("Proj K, edge and direction use the resolved projection", () => {
   });
 
   it("shows the legacy projection when V2 was refused", async () => {
-    await renderPage([fallbackRow]);
+    const { container } = await renderPage([fallbackRow]);
     expect(screen.getAllByText("4.0").length).toBeGreaterThan(0);
     // the unused V2 number never reaches a public cell
     expect(screen.queryByText("9.1")).toBeNull();
-    expect(screen.getAllByText("-3.0 UNDER").length).toBeGreaterThan(0);
+    expect(within(container.querySelector("table") as HTMLElement).getByText("-3.0")).toBeInTheDocument();
   });
 
   it("renders without crashing when V2 is missing entirely", async () => {
@@ -188,17 +189,17 @@ describe("Proj K, edge and direction use the resolved projection", () => {
       projectionFallbackReason: "missing-v2-artifact",
       v2Confidence: null,
     };
-    await renderPage([noV2]);
+    const { container } = await renderPage([noV2]);
     expect(screen.getAllByText("5.0").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("-0.5 UNDER").length).toBeGreaterThan(0);
+    expect(within(container.querySelector("table") as HTMLElement).getByText("-0.5")).toBeInTheDocument();
   });
 
   it("renders mobile and desktop rows from the same resolved value", async () => {
     const { container } = await renderPage([v2Row]);
     // jsdom renders both layouts; every rendered edge label must agree.
-    const edges = within(container).getAllByText(/^[+-]\d+\.\d (OVER|UNDER)$/);
+    const edges = within(container.querySelector("table") as HTMLElement).getAllByText(/^[+-]\d+\.\d$/);
     const labels = new Set(edges.map((node) => node.textContent?.trim()));
-    expect(labels).toEqual(new Set(["+0.9 OVER"]));
+    expect(labels).toEqual(new Set(["+0.9"]));
   });
 });
 

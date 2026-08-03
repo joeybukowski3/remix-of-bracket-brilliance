@@ -71,10 +71,25 @@ function normalizeTeamGameLogSplit(split) {
         ? false
         : null;
   return {
-    date: typeof split?.date === "string" ? split.date.slice(0, 10) : null,
+    gamePk: finite(split?.gamePk ?? split?.game?.gamePk),
+    date: typeof (split?.date ?? split?.game?.gameDate) === "string" ? String(split.date ?? split.game.gameDate).slice(0, 10) : null,
     isHome,
     strikeouts: finite(stat.strikeOuts ?? stat.strikeouts),
+    completed: isCompletedGame(split),
   };
+}
+
+function isCompletedGame(split) {
+  const status = split?.game?.status ?? split?.status ?? {};
+  const abstractState = String(status?.abstractGameState ?? split?.game?.abstractGameState ?? "").toLowerCase();
+  const detailedState = String(status?.detailedState ?? split?.game?.detailedState ?? "").toLowerCase();
+  const codedState = String(status?.codedGameState ?? split?.game?.codedGameState ?? "").toUpperCase();
+  if (!abstractState && !detailedState && !codedState) return true;
+  return abstractState === "final"
+    || detailedState === "final"
+    || detailedState === "game over"
+    || codedState === "F"
+    || codedState === "O";
 }
 
 /**
@@ -90,8 +105,8 @@ export async function fetchTeamStrikeoutContext(teamId, season, beforeDate, opti
   const rows = (json?.stats ?? [])
     .flatMap((block) => block?.splits ?? [])
     .map(normalizeTeamGameLogSplit)
-    .filter((row) => row.date && row.date < beforeDate && row.strikeouts != null)
-    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    .filter((row) => row.completed && row.date && row.date < beforeDate && row.strikeouts != null)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.gamePk ?? 0) - (a.gamePk ?? 0));
 
   function average(sample) {
     return sample.length ? sample.reduce((sum, row) => sum + row.strikeouts, 0) / sample.length : null;
@@ -104,6 +119,8 @@ export async function fetchTeamStrikeoutContext(teamId, season, beforeDate, opti
     awayKPerNine: average(away),
     last10KPerNine: average(rows.slice(0, 10)),
     games: { season: rows.length, home: home.length, away: away.length, last10: Math.min(10, rows.length) },
+    completedGames: rows.map((row) => ({ gamePk: row.gamePk, date: row.date })),
+    last10Games: rows.slice(0, 10).map((row) => ({ gamePk: row.gamePk, date: row.date })),
     source: "mlb_stats_api",
   };
 }
@@ -119,10 +136,7 @@ function expectedHitsForAb(row) {
   if (!AB_EVENTS.has(event)) return null;
   if (event === "strikeout" || event === "strikeout_double_play") return 0;
   const estimate = finite(row.estimated_ba_using_speedangle);
-  if (estimate != null) return Math.max(0, Math.min(1, estimate));
-  // Savant can occasionally omit an estimate for a tracked AB. Keep the
-  // denominator but use the observed hit outcome only as a narrow fallback.
-  return new Set(["single", "double", "triple", "home_run"]).has(event) ? 1 : 0;
+  return estimate == null ? null : Math.max(0, Math.min(1, estimate));
 }
 
 function aggregateXba(rows) {
@@ -185,13 +199,20 @@ export async function fetchTeamXbaContext(teamAbbr, season, beforeDate, options 
     type: "details",
   });
   const text = await fetchText(`${SAVANT_SEARCH_CSV}?${params.toString()}`, options);
-  const rows = plateAppearanceRows(parseCsv(text));
+  const completedGamePks = options.completedGamePks ? new Set(options.completedGamePks.map(String)) : null;
+  const rows = plateAppearanceRows(parseCsv(text)).filter((row) =>
+    row.game_date < beforeDate
+    && (!completedGamePks || completedGamePks.has(String(row.game_pk))),
+  );
   const withSite = rows.map((row) => ({
     ...row,
     isHome: String(row.home_team).toUpperCase() === String(teamAbbr).toUpperCase(),
   }));
 
-  const last10GamePks = new Set(latestGamePks(withSite, 10));
+  const sourceLast10GamePks = Array.isArray(options.last10GamePks)
+    ? options.last10GamePks.map(String).filter((gamePk) => withSite.some((row) => String(row.game_pk) === gamePk)).slice(0, 10)
+    : latestGamePks(withSite, 10);
+  const last10GamePks = new Set(sourceLast10GamePks);
   const home = aggregateXba(withSite.filter((row) => row.isHome));
   const away = aggregateXba(withSite.filter((row) => !row.isHome));
   const last10 = aggregateXba(withSite.filter((row) => last10GamePks.has(String(row.game_pk))));
@@ -205,10 +226,18 @@ export async function fetchTeamXbaContext(teamAbbr, season, beforeDate, options 
 }
 
 export async function fetchOpponentContext(teamId, teamAbbr, season, beforeDate, options = {}) {
-  const [kResult, xbaResult] = await Promise.allSettled([
-    fetchTeamStrikeoutContext(teamId, season, beforeDate, options),
-    fetchTeamXbaContext(teamAbbr, season, beforeDate, options),
-  ]);
+  const kResult = await Promise.resolve(fetchTeamStrikeoutContext(teamId, season, beforeDate, options))
+    .then((value) => ({ status: "fulfilled", value }), (reason) => ({ status: "rejected", reason }));
+  const resolvedCompletedGamePks = kResult.status === "fulfilled"
+    ? kResult.value.completedGames.map((game) => game.gamePk).filter((gamePk) => gamePk != null)
+    : undefined;
+  const resolvedLast10GamePks = kResult.status === "fulfilled"
+    ? kResult.value.last10Games.map((game) => game.gamePk).filter((gamePk) => gamePk != null)
+    : undefined;
+  const completedGamePks = resolvedCompletedGamePks?.length ? resolvedCompletedGamePks : undefined;
+  const last10GamePks = resolvedLast10GamePks?.length ? resolvedLast10GamePks : undefined;
+  const xbaResult = await Promise.resolve(fetchTeamXbaContext(teamAbbr, season, beforeDate, { ...options, completedGamePks, last10GamePks }))
+    .then((value) => ({ status: "fulfilled", value }), (reason) => ({ status: "rejected", reason }));
   return {
     home: {
       kPerNine: kResult.status === "fulfilled" ? kResult.value.homeKPerNine : null,
