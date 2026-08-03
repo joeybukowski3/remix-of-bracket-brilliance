@@ -6,14 +6,12 @@ import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
+import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
-import {
-  DEFENSE_METRIC_GROUPS,
-  OFFENSE_METRIC_GROUPS,
-  unavailableInjuryResolver,
-} from "@/lib/nfl/matchupMetrics";
+import { DEFENSE_METRIC_GROUPS, OFFENSE_METRIC_GROUPS } from "@/lib/nfl/matchupMetrics";
+import { createInjuryResolver, describeUnavailable } from "@/lib/nfl/injuryData";
 import {
   createMatchupMetricResolver,
   describeMatchupSample,
@@ -88,6 +86,9 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: an ESPN outage leaves only the trench rows
   // unavailable.
   const { artifact: trenchArtifact } = useNflTrenchMetrics();
+  // Independent optional enrichment: a missing or not-yet-published injury
+  // artifact leaves only the Injuries section in an unavailable state.
+  const { artifact: injuryArtifact } = useNflMatchupInjuries();
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
@@ -138,6 +139,19 @@ export default function NFLMatchupDetail() {
     );
     return { artifact: trenchArtifact, periods, resolve: createTrenchResolver(trenchArtifact) };
   }, [matchup, trenchArtifact, data]);
+
+  // Injuries are keyed by canonical abbreviation like the other artifacts, so
+  // the resolver is built with the same explicit two-entry slug map. The
+  // resolver returns nothing when the artifact is historical, so a prior
+  // season's report is never presented as this week's availability.
+  const injuryResolver = useMemo(() => {
+    if (!matchup) return () => null;
+    const slugToAbbr = new Map([
+      [matchup.away.slug, matchup.away.abbr],
+      [matchup.home.slug, matchup.home.abbr],
+    ]);
+    return createInjuryResolver(injuryArtifact, slugToAbbr);
+  }, [matchup, injuryArtifact]);
 
   usePageSeo({
     title: matchup
@@ -238,7 +252,11 @@ export default function NFLMatchupDetail() {
           <MatchupMarketProfile matchup={matchup} resolver={metricResolver} />
         </div>
 
-        <MatchupInjuries matchup={matchup} resolver={unavailableInjuryResolver} />
+        <MatchupInjuries
+          matchup={matchup}
+          resolver={injuryResolver}
+          unavailableMessage={describeUnavailable(injuryArtifact)}
+        />
 
         <div className="grid items-start gap-3 lg:grid-cols-2">
           <MatchupFutureSection
@@ -255,6 +273,12 @@ export default function NFLMatchupDetail() {
         {successArtifact && successRate && (
           <p className="text-[11px] leading-5 text-slate-400">
             {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
+          </p>
+        )}
+
+        {injuryArtifact && (
+          <p className="text-[11px] leading-5 text-slate-400">
+            Injury and snap data: nflverse; snap counts via Pro-Football-Reference.
           </p>
         )}
 

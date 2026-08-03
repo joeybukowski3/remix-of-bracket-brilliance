@@ -279,10 +279,28 @@ export const MARKET_PROFILE_METRICS: readonly NflMatchupMetricDef[] = [
 // Injury impact
 // ---------------------------------------------------------------------------
 
-export type NflInjuryStatus = "OUT" | "DOUBTFUL" | "QUESTIONABLE" | "IR" | "PUP";
+/**
+ * Game designation from the official weekly report. `null` is a real state:
+ * a player can appear on the report with a practice note and no designation.
+ */
+export type NflGameStatus = "OUT" | "DOUBTFUL" | "QUESTIONABLE";
 
-/** Statuses counted toward the "unavailable" snap-exposure bucket. */
-export const UNAVAILABLE_INJURY_STATUSES: readonly NflInjuryStatus[] = ["OUT", "DOUBTFUL"] as const;
+/** Weekly practice participation. Separate from, and never a substitute for,
+ *  the game designation. */
+export type NflPracticeStatus = "DID_NOT_PARTICIPATE" | "LIMITED" | "FULL";
+
+/**
+ * Long-term roster status, deliberately generic.
+ *
+ * nflverse publishes no authoritative dictionary for its RES/* sub-codes, so
+ * IR, PUP and NFI are NOT distinguished. Do not add them until that mapping is
+ * confirmed. ACT / INA / DEV are never Reserve, and practice squad is never
+ * presented as an injury.
+ */
+export type NflReserveStatus = "RESERVE";
+
+/** Designations counted toward the "unavailable" snap-exposure bucket. */
+export const UNAVAILABLE_GAME_STATUSES: readonly NflGameStatus[] = ["OUT", "DOUBTFUL"] as const;
 
 /**
  * Positions excluded from injury exposure entirely — specialists whose snap
@@ -296,11 +314,21 @@ export type NflInjuryEntry = {
   playerId: string;
   playerName: string;
   position: string;
+  /** Roster depth-chart label (OLB vs LB). Presentation only — never decides the unit. */
+  depthChartPosition: string | null;
   unit: NflInjuryUnit;
-  status: NflInjuryStatus;
-  /** Snap share in the team's most recent completed game, 0-100. */
+
+  gameStatus: NflGameStatus | null;
+  practiceStatus: NflPracticeStatus | null;
+  reserveStatus: NflReserveStatus | null;
+  injuryDescription: string | null;
+
+  /**
+   * Unit snap share in the team's most recent completed regular-season game,
+   * 0-100. Null means the player did not dress — never assume 0.
+   */
   lastGameSnapPct: number | null;
-  /** Season-to-date snap share, 0-100. */
+  /** Season-to-date unit snap share, 0-100. */
   seasonSnapPct: number | null;
 };
 
@@ -313,16 +341,23 @@ export type NflInjurySnapExposure = {
   questionablePct: number;
 };
 
+/** Designation counts for the compact per-team summary. */
+export type NflInjuryStatusCounts = {
+  out: number;
+  doubtful: number;
+  questionable: number;
+  reserve: number;
+};
+
 export type NflTeamInjuryProfile = {
   entries: readonly NflInjuryEntry[];
-  offense: NflInjurySnapExposure;
-  defense: NflInjurySnapExposure;
+  summary: NflInjuryStatusCounts;
 };
 
 /** Looks up a team's injury profile. `null` means the feed is not connected. */
 export type NflInjuryResolver = (teamSlug: string) => NflTeamInjuryProfile | null;
 
-/** Phase 1 injury resolver — the injury/snap pipeline does not exist yet. */
+/** Resolver used when the injury artifact is missing or not yet available. */
 export const unavailableInjuryResolver: NflInjuryResolver = () => null;
 
 /** True when a player's position is a special-teams specialist. */
@@ -330,14 +365,16 @@ export function isExcludedInjuryPosition(position: string): boolean {
   return EXCLUDED_INJURY_POSITIONS.includes(position.toUpperCase());
 }
 
-/** Which exposure bucket a designation falls into, or null when it counts in neither. */
+/**
+ * Which exposure bucket a designation falls into, or null when it counts in
+ * neither. Reserve is shown for context but is not week-specific exposure.
+ */
 export function injuryExposureBucket(
-  status: NflInjuryStatus
+  gameStatus: NflGameStatus | null
 ): "unavailable" | "questionable" | null {
-  if (UNAVAILABLE_INJURY_STATUSES.includes(status)) return "unavailable";
-  if (status === "QUESTIONABLE") return "questionable";
-  // IR / PUP are shown for depth-chart context but are not summed into
-  // week-specific exposure.
+  if (gameStatus == null) return null;
+  if (UNAVAILABLE_GAME_STATUSES.includes(gameStatus)) return "unavailable";
+  if (gameStatus === "QUESTIONABLE") return "questionable";
   return null;
 }
 

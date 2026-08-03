@@ -14,7 +14,7 @@ import {
   isExcludedInjuryPosition,
   unavailableInjuryResolver,
   unavailableMetricResolver,
-  type NflInjuryStatus,
+  type NflGameStatus,
 } from "@/lib/nfl/matchupMetrics";
 
 describe("Phase 1 resolvers", () => {
@@ -169,10 +169,16 @@ describe("injury rules", () => {
     expect(injuryExposureBucket("QUESTIONABLE")).toBe("questionable");
   });
 
-  it("excludes IR and PUP from week-specific exposure buckets", () => {
-    const contextOnly: NflInjuryStatus[] = ["IR", "PUP"];
-    for (const status of contextOnly) {
-      expect(injuryExposureBucket(status), status).toBeNull();
+  it("puts a blank game status in neither exposure bucket", () => {
+    // A player can appear on the report with only a practice note. That is not
+    // a designation and must never be forced into one.
+    expect(injuryExposureBucket(null)).toBeNull();
+  });
+
+  it("keeps every game designation in a defined bucket", () => {
+    const all: NflGameStatus[] = ["OUT", "DOUBTFUL", "QUESTIONABLE"];
+    for (const status of all) {
+      expect(injuryExposureBucket(status), status).not.toBeUndefined();
     }
   });
 

@@ -1022,3 +1022,262 @@ Note: the Phase 1 placeholder bars were removed from the Trenches card. They
 existed to make the unavailable state visually deliberate; with real values and
 official ranks the rank chip carries the signal, and per-period bars would have
 tripled the card height.
+
+# 23. Phase 4 implementation note (injuries and snap participation)
+
+## 23.1 Sources and API contract
+
+Three nflverse releases plus one league-wide crosswalk, all public static
+release assets fetched over ordinary unauthenticated HTTPS. No WAF, auth,
+cookies, CAPTCHA or paywall is involved or circumvented, and no browser
+automation is used.
+
+| Source | Asset | Supplies |
+|---|---|---|
+| injuries | `.../releases/download/injuries/injuries_{season}.csv` | game status, practice status, injury text, `gsis_id`, team, position |
+| weekly_rosters | `.../releases/download/weekly_rosters/roster_weekly_{season}.csv` | roster/reserve status, depth-chart position, secondary ID crosswalk |
+| snap_counts | `.../releases/download/snap_counts/snap_counts_{season}.csv` | `pfr_player_id`, offense/defense snaps and published percentages, `game_id` |
+| players | `.../releases/download/players/players.csv` | authoritative `gsis_id` to `pfr_id` crosswalk |
+
+Seasons available: injuries 2009-2025, snap counts 2012-2025, weekly rosters and
+players through 2026. The usable overlapping window is 2012-2025.
+
+## 23.2 Exact ID join
+
+```
+injuries.gsis_id
+  -> weekly_rosters.gsis_id -> weekly_rosters.pfr_id   (roster first)
+  -> players.gsis_id        -> players.pfr_id          (authoritative fallback)
+  -> snap_counts.pfr_player_id
+```
+
+Roster alone is not sufficient: `pfr_id` is blank on 11,189 of 44,697 2025
+regular-season roster rows, including established starters, which resolves only
+~81% of injury records. Adding `players.csv` lifts coverage to **99.74%**
+(15 of 5,783 rows unresolved, all fringe players with no Pro-Football-Reference
+page).
+
+**Player-name matching is never used in production, in any direction, as any
+fallback.** Names are carried for display only. An unresolved `gsis_id` keeps
+its injury record in full and reports `null` snap shares. The generator refuses
+to publish below 95% join coverage.
+
+## 23.3 Status separation
+
+Three independent fields, never merged into one designation:
+
+| Field | Values | Source |
+|---|---|---|
+| `gameStatus` | `OUT`, `DOUBTFUL`, `QUESTIONABLE`, `null` | injuries `report_status` |
+| `practiceStatus` | `DID_NOT_PARTICIPATE`, `LIMITED`, `FULL`, `null` | injuries `practice_status` |
+| `reserveStatus` | `RESERVE`, `null` | weekly_rosters `status` |
+
+Blank is a real state and is never forced into a designation. Unexpected
+non-blank values fail schema validation rather than mapping silently. Raw source
+strings are retained in per-entry provenance.
+
+A player with only a practice note and no game or reserve status does not
+appear: "Not injury related - resting player" against a blank `report_status` is
+a rest day, not an injury, and is never rendered as one. Practice status appears
+only as compact secondary context (DNP / Limited / Full) and never replaces the
+game designation.
+
+## 23.4 Reserve is deliberately generic
+
+`RES/*` sub-codes (R01, R04, R05, R06, R48) demonstrably separate IR from
+PUP/NFI in the data, but nflverse publishes no authoritative dictionary for
+them. **IR, PUP, NFI and designated-for-return are therefore NOT distinguished**
+- everything collapses to a single generic `RESERVE`. Do not add them until that
+mapping is confirmed. The sub-code is kept in provenance for future work.
+
+`ACT`, `INA` and `DEV` are never labelled Reserve, and practice squad is never
+presented as an injury.
+
+## 23.5 Snap percentages
+
+**Last game** uses the source-published `offense_pct` / `defense_pct` verbatim
+for the team's most recent completed regular-season game before the analyzed
+week. Preseason and postseason are excluded. Offensive and defensive shares are
+never combined, and special teams is never included.
+
+Null vs zero is load-bearing:
+
+- present in the snap table with 0 unit snaps -> **0%** (he dressed and took no
+  snaps on that side of the ball, which is real information)
+- absent from the snap table -> **null / N/A** (he did not dress; 0% would be a
+  fabrication)
+
+**Season** sums numerators and denominators exactly and divides once. Weekly
+percentages are never averaged - an equal-weight mean over-weights low-snap
+games and is a different number. Games included are the regular-season games the
+player dressed for; games he missed are excluded from both numerator and
+denominator, so the figure reads "when available, how much of the unit's work
+did he take". Byes fall out naturally. `gamesIncluded` and the raw
+snaps/team-snaps totals are in provenance.
+
+## 23.6 Team snap denominator reconstruction
+
+snap_counts publishes each player's raw snaps and his percentage, but never the
+team play total behind the percentage. It is recovered **exactly, not
+estimated**: every player row in a team-game is a simultaneous constraint
+`round(snaps / N, 2) == published_pct`, and a team-game supplies roughly 25-45
+of them. The system is heavily over-determined, so the satisfying integer is
+unique. The 2025 regular season resolves **544/544 offensive and 544/544
+defensive team-games uniquely, with zero ambiguity**.
+
+Rounding tolerance is **0.0051**, not 0.005. Percentages are published to two
+decimals, so the true share sits within +/-0.005; the extra 0.0001 covers ties
+exactly on that boundary (74/80 = 0.925 is equidistant and can publish either
+way depending on rounding mode and float representation). The tolerance cannot
+create ambiguity: moving N by one shifts a mid-range ratio by about 1/N
+(0.012-0.02), an order of magnitude outside it. At a strict 0.005 the same data
+leaves 46 team-games unsolved, all on that boundary.
+
+`max(player snaps)` is **not** used and is not an acceptable fallback: it is
+only a lower bound, correct when some player took every snap and silently short
+otherwise. It was wrong in 3 of 544 2025 team-games - BAL wk4 (54 vs 55), MIA
+wk6 (57 vs 59), SF wk11 (53 vs 55). All three are regression tests.
+
+An ambiguous or unsolved denominator is a hard validation failure that aborts
+generation and preserves the previous artifact. Nothing is estimated.
+
+## 23.7 Positions, specialists and units
+
+The injury feed's own `position` decides the unit: it is the label the official
+report carries and is 100% populated. Offense covers QB/RB/FB/WR/TE/T/OT/G/OG/C/OL;
+defense covers DE/DT/DL/NT/LB/OLB/ILB/MLB/CB/S/FS/SS/DB. The roster's
+`depth_chart_position` (OLB vs LB) is finer and is preserved for presentation
+but never decides the unit.
+
+**EDGE is never synthesized.** The injury feed does not distinguish edge
+rushers; `EDGE` is accepted only if a source emits it directly.
+
+K, P and LS are excluded entirely at parse time. **Special-teams participation
+is never used** - not for the displayed percentage, not for relevance, not for
+ordering. `st_snaps` is retained in the source only for provenance.
+
+## 23.8 Relevance policy
+
+Any player with an `OUT`, `DOUBTFUL` or `QUESTIONABLE` designation is shown: the
+team itself judged him worth reporting. `RESERVE` players require evidence of
+real offensive/defensive participation - season share, last-game share, or a
+depth-chart position when no snap data exists at all (a starter on reserve since
+Week 1 has no snaps to measure and would otherwise vanish).
+
+The threshold is the single constant `RESERVE_RELEVANCE_MIN_SNAP_PCT` in
+`scripts/lib/nfl-injury-join.mjs`, set to **25%**. Chosen against five full 2025
+weeks (4, 8, 12, 15, 18), not one team or one week:
+
+| Threshold | Wk12 shown | Wk18 shown | Effect on reserve candidates |
+|---|---|---|---|
+| 20% | 138 | 195 | admits TE3/CB4 types (Jack Stoll 21.2%, Alex Austin 20.0%) |
+| **25%** | **138** | **193** | **keeps every genuine starter, drops the sub-23% tail** |
+| 30% | 138 | 193 | starts dropping rotational contributors (Otito Ogbonnia 27.6%) |
+| 35% | 138 | 192 | drops real starters (Jaylon Johnson 33.9%, Robbie Ouzts 34.5%) |
+
+Volume is stable and modest: 128-195 players league-wide, 4.1-6.2 per team, max
+13 - and the overwhelming majority carry an active designation, so the threshold
+only ever gates the small reserve tail (2-12 candidates per week). 35% was
+rejected for excluding genuine starters; 20% for admitting fringe depth.
+
+No injury impact score, points-lost estimate, spread adjustment or
+win-probability effect is produced anywhere.
+
+## 23.9 Sorting
+
+Within a team: `OUT`, `DOUBTFUL`, `QUESTIONABLE`, then `RESERVE`; within a
+status group by season unit exposure, then last-game exposure, then a stable
+name order. Special-teams exposure is never an input.
+
+## 23.10 Source cache
+
+Committed under `data/nfl/nflverse/{injuries,weekly-rosters,snap-counts,players}/`,
+following the `stats-team-week` conventions with a shared helper
+(`scripts/lib/nfl-source-cache.mjs`) rather than duplicated validation logic.
+Each manifest entry records `season`, `filename`, `sourceUrl`, `sourceType`,
+`retrievedDateUtc`, `byteSize`, `sha256`, `rowCount` and `headerColumns`.
+
+Two cache shapes exist. `verbatim` (injuries, snap counts) commits the exact
+upstream bytes. `projection` (weekly rosters, players) commits a documented
+column and row subset, because `roster_weekly_2025.csv` is 15.4 MB upstream and
+`players.csv` is 7.0 MB while the join needs 12 of 36 and 7 of 39 columns
+respectively. A projection additionally records the upstream `byteSize`,
+`sha256`, `rowCount` and `headerColumns` plus `projectedColumns` and
+`projectionFilter`, so the reduction stays auditable and re-derivable from the
+recorded release. Committed total is ~7.3 MB.
+
+`scripts/refresh-nfl-injury-source-cache.mjs` is the only script that touches
+the network. The generator reads the cache and never fetches, so generation is
+reproducible and offline.
+
+## 23.11 Artifact, commands, failure safety
+
+Artifact: `public/data/nfl/matchup-injuries.json` (~250 KB), keyed by canonical
+site abbreviation like the other artifacts. React loads it as a static file;
+nflverse is never called from the browser, and the artifact content is not
+bundled into JS.
+
+```
+npm run nfl:injury-cache        # network: refresh the committed cache
+npm run nfl:matchup-injuries    # offline: build the artifact from the cache
+```
+
+Pipeline: validate cache (sha256, byte size, row count, header) -> parse ->
+exact-ID join -> denominator resolution -> aggregate -> validate artifact ->
+temp file -> atomic rename. Generation aborts and leaves the previous artifact
+byte-identical on cache corruption, empty source data, an unknown status value,
+any unresolved denominator, join coverage below 95%, or zero entries. Verified
+against all three failure classes; no temp file is left behind.
+
+The injury pipeline is fully independent of the Phase 2 conventional generator,
+the Phase 3A RBSDM generator and the Phase 3B ESPN generator. A failure in any
+one cannot block the others, and a missing injury artifact leaves only the
+Injuries section in an unavailable state.
+
+## 23.12 Freshness limitations
+
+nflverse rebuilds these assets on a daily schedule at roughly 07:15 UTC
+(~3:15 AM ET). Consequences, stated plainly:
+
+- Wednesday/Thursday/Friday practice reports: available the next morning
+- Final Friday game-status report: available Saturday morning
+- **Sunday-morning downgrades and the 90-minute pre-kickoff inactive list are
+  NOT available before kickoff**
+
+Game-day inactives are recoverable after the fact via weekly_rosters
+`status == "INA"`, but that lands after the game, not before it. A daily refresh
+after the upstream build is sufficient; intra-day polling would buy nothing
+because the upstream file does not change intra-day.
+
+ESPN's public injuries endpoint is fresher and carries IR, but every one of its
+800 entries lacks an `athlete.id` - joining it would require exactly the name
+matching this design prohibits. It is therefore not used.
+
+## 23.13 2026 source-unavailable behaviour
+
+`injuries_2026.csv` and `snap_counts_2026.csv` do not exist yet; nflverse does
+not create them until the regular season begins. The refresh script reports a
+404 as "not yet published" - an expected state, distinct from a source failure -
+and never removes or rewrites an existing cache.
+
+The generator falls back to the most recent complete season, marks the artifact
+`isHistorical: true`, and records per-season availability. The consumer refuses
+to present a historical season as the current week: `createInjuryResolver`
+returns nothing and the section states plainly that current-season data has not
+been published yet. **No 2026 rows are fabricated.** When nflverse publishes the
+2026 files, the same pipeline ingests them with no code change.
+
+## 23.14 Deterministic historical support
+
+The committed cache with sha256 provenance makes 2012-2025 fully replayable
+offline, so historical matchups and future injury logic can be tested
+deterministically. One caveat: stored history is week-resolution final status,
+not intra-week snapshots, so Wednesday-to-Friday practice progression cannot be
+backtested.
+
+## 23.15 Attribution
+
+UI: "Injury and snap data: nflverse; snap counts via Pro-Football-Reference",
+shown once at page level. Fuller provenance - source URLs, digests, retrieval
+dates, join coverage, unresolved players, denominator resolution counts - lives
+in the artifact's `provenance` block.

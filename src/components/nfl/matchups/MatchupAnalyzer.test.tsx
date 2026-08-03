@@ -331,15 +331,23 @@ describe("Placeholder sections stay honest", () => {
     expect(screen.queryByText(/Sacks/i)).toBeNull();
   });
 
-  it("renders injuries with an empty-report state and N/A snap exposure", () => {
-    renderWithRouter(<MatchupInjuries matchup={MATCHUP} resolver={unavailableInjuryResolver} />);
+  it("renders injuries in an unavailable state when the artifact is not connected", () => {
+    renderWithRouter(
+      <MatchupInjuries
+        matchup={MATCHUP}
+        resolver={unavailableInjuryResolver}
+        unavailableMessage="Injury report not connected."
+      />
+    );
 
-    expect(screen.getAllByText(/no injury report connected/i)).toHaveLength(2);
-    // Two teams × two units × two buckets.
-    expect(screen.getAllByText("N/A")).toHaveLength(8);
-    // Summed snap shares must never be labelled as total snaps.
+    expect(screen.getAllByText(/injury report not connected/i)).toHaveLength(2);
+    // No fabricated rows, and no derived number of any kind. "Impact" survives
+    // only as the pre-existing section label, never as a computed value.
     expect(screen.queryByText(/total snaps/i)).toBeNull();
-    expect(screen.getAllByText(/snap exposure/i).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("table")).toBeNull();
+    for (const node of screen.getAllByText(/impact/i)) {
+      expect(node.textContent?.trim()).toBe("Injury Impact");
+    }
   });
 
   it("labels model-vs-market figures as season context, not matchup spread analysis", () => {
