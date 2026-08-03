@@ -22,11 +22,15 @@ import {
   serializeNflV03Artifact,
 } from "./lib/nfl-v03-artifacts.mjs";
 import { validateNflWeeklySourceCache } from "./validate-nfl-weekly-source-cache.mjs";
+import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
+import { parseCompactRow } from "./lib/nfl-epa-core.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_INPUT_DIR = join(ROOT, "public", "data", "nfl");
 const DEFAULT_OUTPUT_DIR = DEFAULT_INPUT_DIR;
 const WEEKLY_CACHE_DIR = join(ROOT, "data", "nfl", "nflverse", "stats-team-week");
+/** Phase 6 compact play-by-play EPA cache — the model's EPA source since v0.3.1. */
+const EPA_CACHE_DIR = join(ROOT, "data", "nfl", "nflverse", "epa-team-game");
 
 export function parseArgs(argv) {
   const args = {
@@ -78,8 +82,10 @@ export function loadNflV03Inputs({ inputDir, outputDir }) {
     seasonInputs[season] = {
       games: readJson(join(inputDir, String(season), "games.json")).games,
       results: readJson(join(inputDir, String(season), "results.json")).results,
-      weeklyCsvText: NFL_V03_SOURCE_SEASONS.includes(season)
-        ? readFileSync(join(WEEKLY_CACHE_DIR, `stats_team_week_${season}.csv`), "utf8")
+      epaRecords: NFL_V03_SOURCE_SEASONS.includes(season)
+        ? parseCsv(
+            readFileSync(join(EPA_CACHE_DIR, `epa_team_game_${season}.csv`), "utf8")
+          ).map(parseCompactRow)
         : null,
     };
   }

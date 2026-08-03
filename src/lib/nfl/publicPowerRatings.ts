@@ -1,5 +1,5 @@
 /**
- * Public projection of nfl-power-v0.3.0 Stage-1 ratings.
+ * Public projection of nfl-power-v0.3.x Stage-1 ratings.
  *
  * Exposes only fields safe for the public NFL power board.
  * Does not surface internalZ, historical trajectory internals,
@@ -18,6 +18,7 @@ import {
   type PublicRatingSelection,
 } from "@/lib/nfl/publicRatingState";
 import {
+  NFL_V03_MODEL_VERSION,
   deepFreeze,
   publicScaleEquivalent,
   validateNflV03ReviewArtifact,
@@ -28,7 +29,7 @@ import {
   type NflV03ReviewSeason,
 } from "@/lib/nfl/v03Review";
 
-export const NFL_V03_PUBLIC_MODEL_VERSION = "nfl-power-v0.3.0" as const;
+export const NFL_V03_PUBLIC_MODEL_VERSION = NFL_V03_MODEL_VERSION;
 export const NFL_V03_PUBLIC_PRESEASON_SEASON = 2026 as const satisfies NflV03ReviewSeason;
 export const NFL_V03_PUBLIC_SCALE_CENTER = 50;
 export const NFL_V03_PUBLIC_PRESEASON_FILENAME = "preseason-power-ratings.json";

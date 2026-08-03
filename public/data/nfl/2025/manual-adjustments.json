@@ -1,11 +1,11 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.2",
-    "modelVersion": "nfl-power-v0.3.0",
+    "modelVersion": "nfl-power-v0.3.1",
     "validationStatus": "stage-1",
-    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "generatedAt": "2026-08-03T21:19:45.299Z",
     "season": 2025,
-    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "source": "checked-in NFL results and the committed nflverse play-by-play EPA cache, regular season only",
     "notes": [
       "Internal Stage-1 manual adjustments artifact.",
       "Owner-maintained entries are validated but never invented by the generator."
@@ -17,6 +17,12 @@
       "opponentAdjustedOffensiveEpaPerPlay": 0.4,
       "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
       "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "epaSource": {
+      "source": "nflverse play-by-play (nflfastR EPA)",
+      "definition": "matchup-epa-v1",
+      "cache": "data/nfl/nflverse/epa-team-game",
+      "migratedIn": "nfl-power-v0.3.1"
     },
     "frozenPublicScaleDivisor": 0.733,
     "trajectory": {

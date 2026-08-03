@@ -1,3 +1,14 @@
+/**
+ * The one model version every v0.3 artifact must declare.
+ *
+ * v0.3.1 (Phase 7B) reconciled the EPA SOURCE only — the model migrated from
+ * legacy stats_team_week EPA to nflfastR play-by-play EPA. Weights, opponent
+ * adjustment, trajectory and public scale are unchanged from v0.3.0; the patch
+ * bump exists because the same team and season can now publish a different
+ * rating, so the identifier must not be reused.
+ */
+export const NFL_V03_MODEL_VERSION = "nfl-power-v0.3.1" as const;
+
 export const NFL_V03_REVIEW_SEASONS = [2022, 2023, 2024, 2025, 2026] as const;
 
 export type NflV03ReviewSeason = (typeof NFL_V03_REVIEW_SEASONS)[number];
@@ -226,7 +237,7 @@ function assertNoNonFinite(value: unknown, path: string): void {
 function validateMeta(value: unknown, season: number, path: string): NflV03Meta {
   const meta = requireRecord(value, `${path}._meta`);
   if (meta.schemaVersion !== "nfl-v0.2") throw new Error(`${path} has an invalid schemaVersion`);
-  if (meta.modelVersion !== "nfl-power-v0.3.0") throw new Error(`${path} has an invalid modelVersion`);
+  if (meta.modelVersion !== NFL_V03_MODEL_VERSION) throw new Error(`${path} has an invalid modelVersion`);
   if (meta.validationStatus !== "stage-1") throw new Error(`${path} has an invalid validationStatus`);
   if (meta.season !== season) throw new Error(`${path} has an invalid season`);
   if (typeof meta.generatedAt !== "string" || Number.isNaN(Date.parse(meta.generatedAt))) {
@@ -449,7 +460,7 @@ export function buildCrossArtifactChecks(artifacts: Partial<NflV03ArtifactByKind
   });
   const weightsValid = metas.every((meta) => Math.abs(Object.values(meta.formulaWeights).reduce((sum, value) => sum + value, 0) - 1) < 1e-9);
   return [
-    { label: "Model version uniformity", pass: metas.length > 0 && metas.every((meta) => meta.modelVersion === "nfl-power-v0.3.0"), detail: "nfl-power-v0.3.0" },
+    { label: "Model version uniformity", pass: metas.length > 0 && metas.every((meta) => meta.modelVersion === NFL_V03_MODEL_VERSION), detail: NFL_V03_MODEL_VERSION },
     { label: "Stage-1 status uniformity", pass: metas.length > 0 && metas.every((meta) => meta.validationStatus === "stage-1"), detail: "stage-1" },
     { label: "Formula weights sum to 1", pass: weightsValid, detail: "0.40 + 0.40 + 0.20" },
     { label: "Frozen public divisor", pass: metas.length > 0 && metas.every((meta) => meta.frozenPublicScaleDivisor === 0.733), detail: "0.733" },

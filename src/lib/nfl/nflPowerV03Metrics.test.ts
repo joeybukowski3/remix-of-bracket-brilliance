@@ -31,7 +31,7 @@ import {
 
 const ROOT = resolve(__dirname, "../../..");
 
-describe("nfl-power-v0.3.0 opponent adjustments", () => {
+describe("nfl-power-v0.3.1 opponent adjustments", () => {
   it("adjusts offensive EPA/play for opponent defensive EPA/play", () => {
     // Opponents allowed -0.03 EPA/play vs a +0.01 league mean, so +0.04.
     expect(adjustOffensiveEpaPerPlay(0.12, [-0.08, 0.02], 0.01)).toBeCloseTo(0.16);
@@ -58,7 +58,7 @@ describe("nfl-power-v0.3.0 opponent adjustments", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 standardization and composite", () => {
+describe("nfl-power-v0.3.1 standardization and composite", () => {
   it("computes league population mean and standard deviation", () => {
     expect(leagueMeanAndStandardDeviation([1, 2, 3])).toEqual({
       mean: 2,
@@ -102,7 +102,7 @@ describe("nfl-power-v0.3.0 standardization and composite", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 missing-data behavior", () => {
+describe("nfl-power-v0.3.1 missing-data behavior", () => {
   it("marks missing EPA as unrated", () => {
     expect(
       validateRequiredMetrics({
@@ -159,7 +159,7 @@ describe("nfl-power-v0.3.0 missing-data behavior", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 public scale and ranking", () => {
+describe("nfl-power-v0.3.1 public scale and ranking", () => {
   it("uses the approved pooled divisor and stable 50 + 15 * unitZ transform", () => {
     expect(NFL_POWER_V03_POOLED_DIVISOR).toBe(0.733);
     expect(compositeToUnitZ(0.733)).toBe(1);
@@ -191,7 +191,7 @@ describe("nfl-power-v0.3.0 public scale and ranking", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 trajectory calculations", () => {
+describe("nfl-power-v0.3.1 trajectory calculations", () => {
   it("uses k = 4 shrinkage with an eight-game window", () => {
     expect(NFL_POWER_V03_TRAJECTORY.shrinkageK).toBe(4);
     // (8 / (8 + 4)) * (1.2 - 0) = 0.8.
@@ -236,7 +236,7 @@ describe("nfl-power-v0.3.0 trajectory calculations", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 trajectory rules", () => {
+describe("nfl-power-v0.3.1 trajectory rules", () => {
   it("classifies the exact +0.5 and -0.5 boundaries", () => {
     expect(NFL_POWER_V03_TRAJECTORY_THRESHOLDS.lateRiser).toBe(0.5);
     expect(NFL_POWER_V03_TRAJECTORY_THRESHOLDS.lateDecline).toBe(-0.5);
@@ -297,7 +297,7 @@ describe("nfl-power-v0.3.0 trajectory rules", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 isolation and immutability", () => {
+describe("nfl-power-v0.3.1 isolation and immutability", () => {
   it("does not use unrelated scoring fields", () => {
     const forbidden = [
       "odds",
@@ -346,7 +346,7 @@ describe("nfl-power-v0.3.0 isolation and immutability", () => {
   });
 
   it("exposes versioned formula metadata for later artifact generation", () => {
-    expect(NFL_POWER_V03_MODEL_VERSION).toBe("nfl-power-v0.3.0");
+    expect(NFL_POWER_V03_MODEL_VERSION).toBe("nfl-power-v0.3.1");
     expect(NFL_POWER_V03_FORMULA_METADATA).toMatchObject({
       modelVersion: NFL_POWER_V03_MODEL_VERSION,
       weights: NFL_POWER_V03_FORMULA_WEIGHTS,
@@ -368,7 +368,7 @@ describe("nfl-power-v0.3.0 isolation and immutability", () => {
   });
 });
 
-describe("nfl-power-v0.3.0 representative teams", () => {
+describe("nfl-power-v0.3.1 representative teams", () => {
   it("separates strong, average, and weak fixtures without season min-max scaling", () => {
     const fixtures = [
       { teamId: "nfl-strong", offense: 0.2, defenseAllowed: -0.16, margin: 9 },

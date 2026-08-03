@@ -1,11 +1,11 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.2",
-    "modelVersion": "nfl-power-v0.3.0",
+    "modelVersion": "nfl-power-v0.3.1",
     "validationStatus": "stage-1",
-    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "generatedAt": "2026-08-03T21:19:45.299Z",
     "season": 2024,
-    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "source": "checked-in NFL results and the committed nflverse play-by-play EPA cache, regular season only",
     "notes": [
       "Internal Stage-1 full-season team metrics artifact.",
       "Only completed regular-season games and REG weekly rows are included.",
@@ -17,6 +17,12 @@
       "opponentAdjustedOffensiveEpaPerPlay": 0.4,
       "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
       "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "epaSource": {
+      "source": "nflverse play-by-play (nflfastR EPA)",
+      "definition": "matchup-epa-v1",
+      "cache": "data/nfl/nflverse/epa-team-game",
+      "migratedIn": "nfl-power-v0.3.1"
     },
     "frozenPublicScaleDivisor": 0.733,
     "trajectory": {
@@ -50,23 +56,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.1764,
-          "adjusted": 0.168695,
-          "zScore": 1.694955,
+          "raw": 0.18606,
+          "adjusted": 0.174189,
+          "zScore": 1.729126,
           "rank": 2,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0001,
-          "adjusted": 0.003816,
-          "zScore": 0.09564,
-          "rank": 14,
+          "raw": -0.004176,
+          "adjusted": 0.002548,
+          "zScore": 0.183341,
+          "rank": 13,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1765,
-          "adjusted": 0.164879,
-          "zScore": 1.382838,
+          "raw": 0.190237,
+          "adjusted": 0.171641,
+          "zScore": 1.433498,
           "rank": 3,
           "missing": false
         },
@@ -78,12 +84,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.2484,
-      "rushingEpaPerPlay": 0.098,
+      "passingEpaPerPlay": 0.2978,
+      "rushingEpaPerPlay": 0.0288,
       "pythagoreanExpectedWins": 11.881,
       "expectedWinsDelta": 1.119,
-      "adjustedComposite": 0.97562,
-      "rawComposite": 1.049623
+      "adjustedComposite": 1.024369,
+      "rawComposite": 1.140787
     },
     {
       "teamId": "nfl-mia",
@@ -98,24 +104,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0368,
-          "adjusted": -0.048076,
-          "zScore": -0.616917,
-          "rank": 22,
+          "raw": -0.039714,
+          "adjusted": -0.055072,
+          "zScore": -0.748316,
+          "rank": 24,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0217,
-          "adjusted": -0.00299,
-          "zScore": 0.215214,
-          "rank": 13,
+          "raw": -0.022576,
+          "adjusted": -0.003924,
+          "zScore": 0.292861,
+          "rank": 12,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0151,
-          "adjusted": -0.045086,
-          "zScore": -0.383592,
-          "rank": 21,
+          "raw": -0.017139,
+          "adjusted": -0.051149,
+          "zScore": -0.435817,
+          "rank": 20,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -126,12 +132,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0686,
-      "rushingEpaPerPlay": -0.186,
+      "passingEpaPerPlay": 0.089,
+      "rushingEpaPerPlay": -0.2456,
       "pythagoreanExpectedWins": 7.961,
       "expectedWinsDelta": 0.039,
-      "adjustedComposite": -0.264145,
-      "rawComposite": -0.017792
+      "adjustedComposite": -0.285645,
+      "rawComposite": -0.023406
     },
     {
       "teamId": "nfl-ne",
@@ -146,24 +152,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0824,
-          "adjusted": -0.084847,
-          "zScore": -1.009078,
+          "raw": -0.081256,
+          "adjusted": -0.086097,
+          "zScore": -1.083568,
           "rank": 27,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0712,
-          "adjusted": 0.066563,
-          "zScore": -1.006781,
-          "rank": 29,
+          "raw": 0.083674,
+          "adjusted": 0.079268,
+          "zScore": -1.114862,
+          "rank": 30,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1536,
-          "adjusted": -0.151409,
-          "zScore": -1.27809,
-          "rank": 29,
+          "raw": -0.16493,
+          "adjusted": -0.165365,
+          "zScore": -1.394149,
+          "rank": 30,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -174,12 +180,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0914,
-      "rushingEpaPerPlay": -0.0707,
+      "passingEpaPerPlay": -0.0201,
+      "rushingEpaPerPlay": -0.1869,
       "pythagoreanExpectedWins": 5.023,
       "expectedWinsDelta": -1.023,
-      "adjustedComposite": -1.063053,
-      "rawComposite": -1.044803
+      "adjustedComposite": -1.136081,
+      "rawComposite": -1.115456
     },
     {
       "teamId": "nfl-nyj",
@@ -194,24 +200,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0026,
-          "adjusted": 0.001118,
-          "zScore": -0.092259,
-          "rank": 18,
+          "raw": -0.000605,
+          "adjusted": 0.002693,
+          "zScore": -0.124097,
+          "rank": 17,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.026,
-          "adjusted": 0.033992,
-          "zScore": -0.434539,
-          "rank": 23,
+          "raw": 0.046748,
+          "adjusted": 0.055223,
+          "zScore": -0.707983,
+          "rank": 26,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0286,
-          "adjusted": -0.032874,
-          "zScore": -0.280854,
-          "rank": 19,
+          "raw": -0.047353,
+          "adjusted": -0.05253,
+          "zScore": -0.447411,
+          "rank": 21,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -222,12 +228,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.033,
-      "rushingEpaPerPlay": -0.066,
+      "passingEpaPerPlay": 0.053,
+      "rushingEpaPerPlay": -0.1081,
       "pythagoreanExpectedWins": 6.73,
       "expectedWinsDelta": -1.73,
-      "adjustedComposite": -0.345144,
-      "rawComposite": -0.286562
+      "adjustedComposite": -0.467256,
+      "rawComposite": -0.407977
     },
     {
       "teamId": "nfl-bal",
@@ -242,23 +248,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.2093,
-          "adjusted": 0.224471,
-          "zScore": 2.289815,
+          "raw": 0.198625,
+          "adjusted": 0.209912,
+          "zScore": 2.115147,
           "rank": 1,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0468,
-          "adjusted": -0.037549,
-          "zScore": 0.822388,
-          "rank": 7,
+          "raw": -0.015847,
+          "adjusted": -0.010512,
+          "zScore": 0.40434,
+          "rank": 11,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.2561,
-          "adjusted": 0.26202,
-          "zScore": 2.200085,
+          "raw": 0.214472,
+          "adjusted": 0.220424,
+          "zScore": 1.842809,
           "rank": 1,
           "missing": false
         },
@@ -270,12 +276,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.3403,
-      "rushingEpaPerPlay": 0.0909,
+      "passingEpaPerPlay": 0.3283,
+      "rushingEpaPerPlay": 0.0533,
       "pythagoreanExpectedWins": 11.93,
       "expectedWinsDelta": 0.07,
-      "adjustedComposite": 1.564961,
-      "rawComposite": 1.508528
+      "adjustedComposite": 1.327874,
+      "rawComposite": 1.273383
     },
     {
       "teamId": "nfl-cin",
@@ -290,24 +296,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0978,
-          "adjusted": 0.104689,
-          "zScore": 1.012328,
+          "raw": 0.107454,
+          "adjusted": 0.10765,
+          "zScore": 1.010088,
           "rank": 6,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0286,
-          "adjusted": 0.053569,
-          "zScore": -0.778484,
-          "rank": 27,
+          "raw": 0.053805,
+          "adjusted": 0.078215,
+          "zScore": -1.09704,
+          "rank": 29,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0692,
-          "adjusted": 0.05112,
-          "zScore": 0.425787,
-          "rank": 12,
+          "raw": 0.053649,
+          "adjusted": 0.029435,
+          "zScore": 0.240317,
+          "rank": 14,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -318,12 +324,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1645,
-      "rushingEpaPerPlay": -0.025,
+      "passingEpaPerPlay": 0.1932,
+      "rushingEpaPerPlay": -0.0807,
       "pythagoreanExpectedWins": 9.343,
       "expectedWinsDelta": -0.343,
-      "adjustedComposite": 0.13196,
-      "rawComposite": 0.306358
+      "adjustedComposite": 0.003642,
+      "rawComposite": 0.196838
     },
     {
       "teamId": "nfl-cle",
@@ -338,24 +344,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.1797,
-          "adjusted": -0.169041,
-          "zScore": -1.907013,
+          "raw": -0.178777,
+          "adjusted": -0.174322,
+          "zScore": -2.036951,
           "rank": 32,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0006,
-          "adjusted": -0.015984,
-          "zScore": 0.443511,
-          "rank": 11,
+          "raw": 0.018181,
+          "adjusted": 0.002727,
+          "zScore": 0.180317,
+          "rank": 14,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1803,
-          "adjusted": -0.153056,
-          "zScore": -1.291947,
-          "rank": 30,
+          "raw": -0.196958,
+          "adjusted": -0.177049,
+          "zScore": -1.492189,
+          "rank": 31,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -366,12 +372,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.2407,
-      "rushingEpaPerPlay": -0.0661,
+      "passingEpaPerPlay": -0.1961,
+      "rushingEpaPerPlay": -0.1403,
       "pythagoreanExpectedWins": 3.821,
       "expectedWinsDelta": -0.821,
-      "adjustedComposite": -0.87541,
-      "rawComposite": -1.058246
+      "adjustedComposite": -1.032663,
+      "rawComposite": -1.181467
     },
     {
       "teamId": "nfl-pit",
@@ -386,24 +392,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0405,
-          "adjusted": -0.029429,
-          "zScore": -0.418045,
+          "raw": -0.026854,
+          "adjusted": -0.023764,
+          "zScore": -0.409992,
           "rank": 20,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0167,
-          "adjusted": -0.020772,
-          "zScore": 0.527637,
-          "rank": 10,
+          "raw": -0.018642,
+          "adjusted": -0.023012,
+          "zScore": 0.615856,
+          "rank": 9,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0238,
-          "adjusted": -0.008656,
-          "zScore": -0.077112,
-          "rank": 17,
+          "raw": -0.008211,
+          "adjusted": -0.000752,
+          "zScore": -0.012966,
+          "rank": 18,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -414,12 +420,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0081,
-      "rushingEpaPerPlay": -0.0905,
+      "passingEpaPerPlay": 0.0507,
+      "rushingEpaPerPlay": -0.1243,
       "pythagoreanExpectedWins": 9.412,
       "expectedWinsDelta": 0.588,
-      "adjustedComposite": 0.109546,
-      "rawComposite": 0.02659
+      "adjustedComposite": 0.148054,
+      "rawComposite": 0.099552
     },
     {
       "teamId": "nfl-hou",
@@ -434,24 +440,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0527,
-          "adjusted": -0.059394,
-          "zScore": -0.737621,
-          "rank": 25,
+          "raw": -0.037854,
+          "adjusted": -0.044201,
+          "zScore": -0.630836,
+          "rank": 23,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0674,
-          "adjusted": -0.061514,
-          "zScore": 1.24343,
-          "rank": 4,
+          "raw": -0.053572,
+          "adjusted": -0.045429,
+          "zScore": 0.99518,
+          "rank": 5,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0147,
-          "adjusted": 0.00212,
-          "zScore": 0.01355,
-          "rank": 16,
+          "raw": 0.015718,
+          "adjusted": 0.001228,
+          "zScore": 0.003648,
+          "rank": 17,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -462,12 +468,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0261,
-      "rushingEpaPerPlay": -0.0909,
+      "passingEpaPerPlay": 0.0085,
+      "rushingEpaPerPlay": -0.1202,
       "pythagoreanExpectedWins": 8.5,
       "expectedWinsDelta": 1.5,
-      "adjustedComposite": 0.179827,
-      "rawComposite": 0.263457
+      "adjustedComposite": 0.123241,
+      "rawComposite": 0.227943
     },
     {
       "teamId": "nfl-ind",
@@ -482,24 +488,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0538,
-          "adjusted": -0.046082,
-          "zScore": -0.59565,
+          "raw": -0.044928,
+          "adjusted": -0.038124,
+          "zScore": -0.565171,
           "rank": 21,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0034,
-          "adjusted": 0.027663,
-          "zScore": -0.323336,
-          "rank": 21,
+          "raw": 0.00504,
+          "adjusted": 0.029081,
+          "zScore": -0.265623,
+          "rank": 18,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0572,
-          "adjusted": -0.073745,
-          "zScore": -0.624698,
-          "rank": 22,
+          "raw": -0.049968,
+          "adjusted": -0.067205,
+          "zScore": -0.57054,
+          "rank": 23,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -510,12 +516,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0636,
-      "rushingEpaPerPlay": -0.0429,
+      "passingEpaPerPlay": -0.025,
+      "rushingEpaPerPlay": -0.0706,
       "pythagoreanExpectedWins": 7.255,
       "expectedWinsDelta": 0.745,
-      "adjustedComposite": -0.483977,
-      "rawComposite": -0.317763
+      "adjustedComposite": -0.4487,
+      "rawComposite": -0.288114
     },
     {
       "teamId": "nfl-jax",
@@ -530,24 +536,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0109,
-          "adjusted": 0.011418,
-          "zScore": 0.017591,
-          "rank": 16,
+          "raw": -0.023021,
+          "adjusted": -0.001136,
+          "zScore": -0.165472,
+          "rank": 18,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.1184,
-          "adjusted": 0.152998,
-          "zScore": -2.525387,
+          "raw": 0.130901,
+          "adjusted": 0.1631,
+          "zScore": -2.533413,
           "rank": 32,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1293,
-          "adjusted": -0.14158,
-          "zScore": -1.195395,
-          "rank": 27,
+          "raw": -0.153922,
+          "adjusted": -0.164237,
+          "zScore": -1.384683,
+          "rank": 29,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -558,12 +564,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0049,
-      "rushingEpaPerPlay": -0.0328,
+      "passingEpaPerPlay": 0.0037,
+      "rushingEpaPerPlay": -0.0666,
       "pythagoreanExpectedWins": 5.537,
       "expectedWinsDelta": -1.537,
-      "adjustedComposite": -1.244459,
-      "rawComposite": -1.044509
+      "adjustedComposite": -1.320894,
+      "rawComposite": -1.160232
     },
     {
       "teamId": "nfl-ten",
@@ -578,24 +584,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.1135,
-          "adjusted": -0.105029,
-          "zScore": -1.224324,
-          "rank": 29,
+          "raw": -0.10384,
+          "adjusted": -0.097454,
+          "zScore": -1.206295,
+          "rank": 30,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0228,
-          "adjusted": 0.016333,
-          "zScore": -0.124287,
-          "rank": 17,
+          "raw": 0.049746,
+          "adjusted": 0.043685,
+          "zScore": -0.512738,
+          "rank": 24,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1363,
-          "adjusted": -0.121362,
-          "zScore": -1.025305,
-          "rank": 25,
+          "raw": -0.153586,
+          "adjusted": -0.141138,
+          "zScore": -1.190876,
+          "rank": 27,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -606,12 +612,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.1148,
-      "rushingEpaPerPlay": -0.1117,
+      "passingEpaPerPlay": -0.0564,
+      "rushingEpaPerPlay": -0.175,
       "pythagoreanExpectedWins": 4.818,
       "expectedWinsDelta": -1.818,
-      "adjustedComposite": -0.79582,
-      "rawComposite": -0.881456
+      "adjustedComposite": -0.943989,
+      "rawComposite": -1.021791
     },
     {
       "teamId": "nfl-den",
@@ -626,24 +632,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0243,
-          "adjusted": 0.024195,
-          "zScore": 0.153853,
-          "rank": 14,
+          "raw": 0.010549,
+          "adjusted": 0.0089,
+          "zScore": -0.057016,
+          "rank": 16,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.1044,
-          "adjusted": -0.094161,
-          "zScore": 1.817016,
+          "raw": -0.099722,
+          "adjusted": -0.090536,
+          "zScore": 1.758458,
           "rank": 1,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1287,
-          "adjusted": 0.118355,
-          "zScore": 0.991436,
-          "rank": 6,
+          "raw": 0.110271,
+          "adjusted": 0.099437,
+          "zScore": 0.827667,
+          "rank": 8,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -654,12 +660,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0674,
-      "rushingEpaPerPlay": -0.0311,
+      "passingEpaPerPlay": 0.0614,
+      "rushingEpaPerPlay": -0.0752,
       "pythagoreanExpectedWins": 11.509,
       "expectedWinsDelta": -1.509,
-      "adjustedComposite": 0.986587,
-      "rawComposite": 1.0479
+      "adjustedComposite": 0.878817,
+      "rawComposite": 0.953429
     },
     {
       "teamId": "nfl-kc",
@@ -674,24 +680,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0601,
-          "adjusted": 0.07623,
-          "zScore": 0.708813,
-          "rank": 9,
+          "raw": 0.070641,
+          "adjusted": 0.083644,
+          "zScore": 0.750678,
+          "rank": 8,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.013,
-          "adjusted": 0.012322,
-          "zScore": -0.053803,
+          "raw": 0.005666,
+          "adjusted": 0.00605,
+          "zScore": 0.124095,
           "rank": 15,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0471,
-          "adjusted": 0.063908,
-          "zScore": 0.533374,
-          "rank": 11,
+          "raw": 0.064975,
+          "adjusted": 0.077594,
+          "zScore": 0.6444,
+          "rank": 9,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -702,12 +708,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0983,
-      "rushingEpaPerPlay": 0.0057,
+      "passingEpaPerPlay": 0.1423,
+      "rushingEpaPerPlay": -0.0582,
       "pythagoreanExpectedWins": 10.154,
       "expectedWinsDelta": 4.846,
-      "adjustedComposite": 0.392753,
-      "rawComposite": 0.292949
+      "adjustedComposite": 0.480658,
+      "rawComposite": 0.40135
     },
     {
       "teamId": "nfl-lv",
@@ -722,24 +728,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.1453,
-          "adjusted": -0.139382,
-          "zScore": -1.5907,
+          "raw": -0.131423,
+          "adjusted": -0.126752,
+          "zScore": -1.522894,
           "rank": 31,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0078,
-          "adjusted": -0.003408,
-          "zScore": 0.222552,
-          "rank": 12,
+          "raw": 0.015923,
+          "adjusted": 0.006448,
+          "zScore": 0.117356,
+          "rank": 16,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1531,
-          "adjusted": -0.135974,
-          "zScore": -1.148233,
-          "rank": 26,
+          "raw": -0.147346,
+          "adjusted": -0.1332,
+          "zScore": -1.124267,
+          "rank": 25,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -750,12 +756,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0919,
-      "rushingEpaPerPlay": -0.2418,
+      "passingEpaPerPlay": -0.0582,
+      "rushingEpaPerPlay": -0.2832,
       "pythagoreanExpectedWins": 5.252,
       "expectedWinsDelta": -1.252,
-      "adjustedComposite": -0.753184,
-      "rawComposite": -0.868731
+      "adjustedComposite": -0.76814,
+      "rawComposite": -0.868714
     },
     {
       "teamId": "nfl-lac",
@@ -770,24 +776,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0379,
-          "adjusted": 0.033518,
-          "zScore": 0.253289,
-          "rank": 12,
+          "raw": 0.043935,
+          "adjusted": 0.038919,
+          "zScore": 0.267374,
+          "rank": 14,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0698,
-          "adjusted": -0.055337,
-          "zScore": 1.134914,
-          "rank": 5,
+          "raw": -0.053858,
+          "adjusted": -0.037239,
+          "zScore": 0.856604,
+          "rank": 7,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1077,
-          "adjusted": 0.088855,
-          "zScore": 0.743253,
-          "rank": 9,
+          "raw": 0.097792,
+          "adjusted": 0.076159,
+          "zScore": 0.632354,
+          "rank": 10,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -798,12 +804,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1145,
-      "rushingEpaPerPlay": -0.0537,
+      "passingEpaPerPlay": 0.1264,
+      "rushingEpaPerPlay": -0.0791,
       "pythagoreanExpectedWins": 11.305,
       "expectedWinsDelta": -0.305,
-      "adjustedComposite": 0.715432,
-      "rawComposite": 0.844043
+      "adjustedComposite": 0.609742,
+      "rawComposite": 0.764043
     },
     {
       "teamId": "nfl-dal",
@@ -818,24 +824,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0887,
-          "adjusted": -0.089076,
-          "zScore": -1.054185,
-          "rank": 28,
+          "raw": -0.089284,
+          "adjusted": -0.093997,
+          "zScore": -1.168944,
+          "rank": 29,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0796,
-          "adjusted": 0.056198,
-          "zScore": -0.824681,
-          "rank": 28,
+          "raw": 0.068675,
+          "adjusted": 0.042883,
+          "zScore": -0.499181,
+          "rank": 23,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1683,
-          "adjusted": -0.145274,
-          "zScore": -1.226474,
-          "rank": 28,
+          "raw": -0.15796,
+          "adjusted": -0.136881,
+          "zScore": -1.155153,
+          "rank": 26,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -846,12 +852,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0684,
-      "rushingEpaPerPlay": -0.1206,
+      "passingEpaPerPlay": -0.0675,
+      "rushingEpaPerPlay": -0.1276,
       "pythagoreanExpectedWins": 5.684,
       "expectedWinsDelta": 1.316,
-      "adjustedComposite": -0.943772,
-      "rawComposite": -1.110827
+      "adjustedComposite": -0.859476,
+      "rawComposite": -1.030699
     },
     {
       "teamId": "nfl-nyg",
@@ -866,24 +872,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.1177,
-          "adjusted": -0.117641,
-          "zScore": -1.358829,
-          "rank": 30,
+          "raw": -0.088116,
+          "adjusted": -0.089055,
+          "zScore": -1.115537,
+          "rank": 28,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0635,
-          "adjusted": 0.049622,
-          "zScore": -0.709137,
-          "rank": 26,
+          "raw": 0.070533,
+          "adjusted": 0.056681,
+          "zScore": -0.732659,
+          "rank": 27,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1812,
-          "adjusted": -0.167262,
-          "zScore": -1.411461,
-          "rank": 31,
+          "raw": -0.158649,
+          "adjusted": -0.145736,
+          "zScore": -1.229455,
+          "rank": 28,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -894,12 +900,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.1505,
-      "rushingEpaPerPlay": -0.0683,
+      "passingEpaPerPlay": -0.0731,
+      "rushingEpaPerPlay": -0.1156,
       "pythagoreanExpectedWins": 4.597,
       "expectedWinsDelta": -1.597,
-      "adjustedComposite": -1.072647,
-      "rawComposite": -1.165787
+      "adjustedComposite": -0.984739,
+      "rawComposite": -1.08171
     },
     {
       "teamId": "nfl-phi",
@@ -914,23 +920,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.1012,
-          "adjusted": 0.072136,
-          "zScore": 0.665149,
-          "rank": 10,
+          "raw": 0.1109,
+          "adjusted": 0.078581,
+          "zScore": 0.695969,
+          "rank": 9,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0842,
-          "adjusted": -0.079255,
-          "zScore": 1.55513,
+          "raw": -0.086595,
+          "adjusted": -0.083802,
+          "zScore": 1.644505,
           "rank": 3,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1854,
-          "adjusted": 0.151391,
-          "zScore": 1.269362,
+          "raw": 0.197496,
+          "adjusted": 0.162383,
+          "zScore": 1.355822,
           "rank": 4,
           "missing": false
         },
@@ -942,12 +948,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1154,
-      "rushingEpaPerPlay": 0.09,
+      "passingEpaPerPlay": 0.1652,
+      "rushingEpaPerPlay": 0.0561,
       "pythagoreanExpectedWins": 12.444,
       "expectedWinsDelta": 1.556,
-      "adjustedComposite": 1.139475,
-      "rawComposite": 1.316047
+      "adjustedComposite": 1.187553,
+      "rawComposite": 1.37911
     },
     {
       "teamId": "nfl-wsh",
@@ -962,24 +968,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.1334,
-          "adjusted": 0.114648,
-          "zScore": 1.11854,
+          "raw": 0.138108,
+          "adjusted": 0.122491,
+          "zScore": 1.17046,
           "rank": 4,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0096,
-          "adjusted": 0.028886,
-          "zScore": -0.344833,
-          "rank": 22,
+          "raw": 0.048725,
+          "adjusted": 0.066722,
+          "zScore": -0.902554,
+          "rank": 28,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1238,
-          "adjusted": 0.085761,
-          "zScore": 0.717222,
-          "rank": 10,
+          "raw": 0.089383,
+          "adjusted": 0.055769,
+          "zScore": 0.461274,
+          "rank": 11,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -990,12 +996,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1379,
-      "rushingEpaPerPlay": 0.1286,
+      "passingEpaPerPlay": 0.2111,
+      "rushingEpaPerPlay": 0.0269,
       "pythagoreanExpectedWins": 10.624,
       "expectedWinsDelta": 1.376,
-      "adjustedComposite": 0.430988,
-      "rawComposite": 0.688002
+      "adjustedComposite": 0.228668,
+      "rawComposite": 0.464178
     },
     {
       "teamId": "nfl-chi",
@@ -1010,24 +1016,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0758,
-          "adjusted": -0.072405,
-          "zScore": -0.876392,
+          "raw": -0.072148,
+          "adjusted": -0.067751,
+          "zScore": -0.885325,
           "rank": 26,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0305,
-          "adjusted": 0.014275,
-          "zScore": -0.088114,
-          "rank": 16,
+          "raw": 0.00242,
+          "adjusted": -0.013374,
+          "zScore": 0.45277,
+          "rank": 10,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.1063,
-          "adjusted": -0.08668,
-          "zScore": -0.733523,
-          "rank": 23,
+          "raw": -0.074568,
+          "adjusted": -0.054377,
+          "zScore": -0.462907,
+          "rank": 22,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -1038,12 +1044,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0841,
-      "rushingEpaPerPlay": -0.0635,
+      "passingEpaPerPlay": -0.036,
+      "rushingEpaPerPlay": -0.1417,
       "pythagoreanExpectedWins": 6.744,
       "expectedWinsDelta": -1.744,
-      "adjustedComposite": -0.464987,
-      "rawComposite": -0.614423
+      "adjustedComposite": -0.252207,
+      "rawComposite": -0.405426
     },
     {
       "teamId": "nfl-det",
@@ -1058,23 +1064,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.1627,
-          "adjusted": 0.166695,
-          "zScore": 1.673625,
+          "raw": 0.155394,
+          "adjusted": 0.166406,
+          "zScore": 1.645019,
           "rank": 3,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0301,
-          "adjusted": -0.030461,
-          "zScore": 0.697853,
-          "rank": 9,
+          "raw": -0.043634,
+          "adjusted": -0.045202,
+          "zScore": 0.991346,
+          "rank": 6,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1928,
-          "adjusted": 0.197155,
-          "zScore": 1.654379,
+          "raw": 0.199028,
+          "adjusted": 0.211608,
+          "zScore": 1.768845,
           "rank": 2,
           "missing": false
         },
@@ -1086,12 +1092,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.2952,
-      "rushingEpaPerPlay": 0.0179,
+      "passingEpaPerPlay": 0.2674,
+      "rushingEpaPerPlay": 0.0213,
       "pythagoreanExpectedWins": 13.021,
       "expectedWinsDelta": 1.979,
-      "adjustedComposite": 1.38316,
-      "rawComposite": 1.315748
+      "adjustedComposite": 1.489115,
+      "rawComposite": 1.392927
     },
     {
       "teamId": "nfl-gb",
@@ -1106,23 +1112,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0792,
-          "adjusted": 0.090765,
-          "zScore": 0.863833,
+          "raw": 0.080552,
+          "adjusted": 0.098149,
+          "zScore": 0.907418,
           "rank": 7,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0548,
-          "adjusted": -0.053767,
-          "zScore": 1.10732,
-          "rank": 6,
+          "raw": -0.06544,
+          "adjusted": -0.063104,
+          "zScore": 1.294271,
+          "rank": 4,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.134,
-          "adjusted": 0.144532,
-          "zScore": 1.211658,
+          "raw": 0.145992,
+          "adjusted": 0.161253,
+          "zScore": 1.346338,
           "rank": 5,
           "missing": false
         },
@@ -1134,12 +1140,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1546,
-      "rushingEpaPerPlay": 0.0075,
+      "passingEpaPerPlay": 0.1823,
+      "rushingEpaPerPlay": -0.0297,
       "pythagoreanExpectedWins": 11.473,
       "expectedWinsDelta": -0.473,
-      "adjustedComposite": 1.047621,
-      "rawComposite": 0.952844
+      "adjustedComposite": 1.139835,
+      "rawComposite": 1.037362
     },
     {
       "teamId": "nfl-min",
@@ -1154,24 +1160,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.021,
-          "adjusted": 0.01603,
-          "zScore": 0.066776,
+          "raw": 0.037878,
+          "adjusted": 0.038732,
+          "zScore": 0.265355,
           "rank": 15,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0848,
-          "adjusted": -0.084125,
-          "zScore": 1.640703,
+          "raw": -0.091476,
+          "adjusted": -0.090532,
+          "zScore": 1.758379,
           "rank": 2,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.1058,
-          "adjusted": 0.100155,
-          "zScore": 0.83832,
-          "rank": 7,
+          "raw": 0.129354,
+          "adjusted": 0.129264,
+          "zScore": 1.077934,
+          "rank": 6,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -1182,12 +1188,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0954,
-      "rushingEpaPerPlay": -0.0761,
+      "passingEpaPerPlay": 0.1347,
+      "rushingEpaPerPlay": -0.1188,
       "pythagoreanExpectedWins": 11.069,
       "expectedWinsDelta": 2.931,
-      "adjustedComposite": 0.869426,
-      "rawComposite": 0.874113
+      "adjustedComposite": 0.995928,
+      "rawComposite": 0.989786
     },
     {
       "teamId": "nfl-atl",
@@ -1202,24 +1208,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0317,
-          "adjusted": 0.027201,
-          "zScore": 0.185911,
+          "raw": 0.040902,
+          "adjusted": 0.039267,
+          "zScore": 0.271134,
           "rank": 13,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0599,
-          "adjusted": 0.066951,
-          "zScore": -1.013602,
-          "rank": 30,
+          "raw": 0.041579,
+          "adjusted": 0.047831,
+          "zScore": -0.582898,
+          "rank": 25,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0282,
-          "adjusted": -0.039751,
-          "zScore": -0.338706,
-          "rank": 20,
+          "raw": -0.000677,
+          "adjusted": -0.008564,
+          "zScore": -0.078509,
+          "rank": 19,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -1230,12 +1236,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0581,
-      "rushingEpaPerPlay": 0.0003,
+      "passingEpaPerPlay": 0.0835,
+      "rushingEpaPerPlay": -0.0145,
       "pythagoreanExpectedWins": 7.659,
       "expectedWinsDelta": 0.341,
-      "adjustedComposite": -0.394224,
-      "rawComposite": -0.316986
+      "adjustedComposite": -0.187853,
+      "rawComposite": -0.136954
     },
     {
       "teamId": "nfl-car",
@@ -1250,23 +1256,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0459,
-          "adjusted": -0.05297,
-          "zScore": -0.669113,
-          "rank": 23,
+          "raw": -0.040173,
+          "adjusted": -0.042323,
+          "zScore": -0.610547,
+          "rank": 22,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.157,
-          "adjusted": 0.146898,
-          "zScore": -2.418215,
+          "raw": 0.154031,
+          "adjusted": 0.144612,
+          "zScore": -2.220565,
           "rank": 31,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.2029,
-          "adjusted": -0.199868,
-          "zScore": -1.685773,
+          "raw": -0.194204,
+          "adjusted": -0.186935,
+          "zScore": -1.575136,
           "rank": 32,
           "missing": false
         },
@@ -1278,12 +1284,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0846,
-      "rushingEpaPerPlay": 0.0091,
+      "passingEpaPerPlay": -0.0405,
+      "rushingEpaPerPlay": -0.0397,
       "pythagoreanExpectedWins": 4.365,
       "expectedWinsDelta": 0.635,
-      "adjustedComposite": -1.579401,
-      "rawComposite": -1.598041
+      "adjustedComposite": -1.476914,
+      "rawComposite": -1.531149
     },
     {
       "teamId": "nfl-no",
@@ -1298,23 +1304,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0427,
-          "adjusted": -0.056223,
-          "zScore": -0.703806,
-          "rank": 24,
+          "raw": -0.057313,
+          "adjusted": -0.067323,
+          "zScore": -0.8807,
+          "rank": 25,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0342,
-          "adjusted": 0.036281,
-          "zScore": -0.474742,
-          "rank": 24,
+          "raw": 0.035475,
+          "adjusted": 0.033629,
+          "zScore": -0.342583,
+          "rank": 20,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0769,
-          "adjusted": -0.092503,
-          "zScore": -0.782516,
+          "raw": -0.092788,
+          "adjusted": -0.100952,
+          "zScore": -0.853695,
           "rank": 24,
           "missing": false
         },
@@ -1326,12 +1332,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": -0.0768,
-      "rushingEpaPerPlay": 0.0026,
+      "passingEpaPerPlay": -0.0714,
+      "rushingEpaPerPlay": -0.0356,
       "pythagoreanExpectedWins": 6.874,
       "expectedWinsDelta": -1.874,
-      "adjustedComposite": -0.601834,
-      "rawComposite": -0.500614
+      "adjustedComposite": -0.619728,
+      "rawComposite": -0.564546
     },
     {
       "teamId": "nfl-tb",
@@ -1346,24 +1352,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.1247,
-          "adjusted": 0.111595,
-          "zScore": 1.08598,
+          "raw": 0.133142,
+          "adjusted": 0.121489,
+          "zScore": 1.159637,
           "rank": 5,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0269,
-          "adjusted": 0.017328,
-          "zScore": -0.141752,
-          "rank": 18,
+          "raw": 0.017351,
+          "adjusted": 0.009804,
+          "zScore": 0.06057,
+          "rank": 17,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0978,
-          "adjusted": 0.094267,
-          "zScore": 0.788782,
-          "rank": 8,
+          "raw": 0.115792,
+          "adjusted": 0.111685,
+          "zScore": 0.930439,
+          "rank": 7,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -1374,12 +1380,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1893,
-      "rushingEpaPerPlay": 0.0429,
+      "passingEpaPerPlay": 0.2107,
+      "rushingEpaPerPlay": 0.0119,
       "pythagoreanExpectedWins": 11.088,
       "expectedWinsDelta": -1.088,
-      "adjustedComposite": 0.588182,
-      "rawComposite": 0.574362
+      "adjustedComposite": 0.698573,
+      "rawComposite": 0.696025
     },
     {
       "teamId": "nfl-ari",
@@ -1394,24 +1400,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0832,
-          "adjusted": 0.083142,
-          "zScore": 0.782528,
-          "rank": 8,
+          "raw": 0.067046,
+          "adjusted": 0.067153,
+          "zScore": 0.57247,
+          "rank": 10,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0614,
-          "adjusted": 0.042669,
-          "zScore": -0.586979,
-          "rank": 25,
+          "raw": 0.049695,
+          "adjusted": 0.029545,
+          "zScore": -0.273469,
+          "rank": 19,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0218,
-          "adjusted": 0.040473,
-          "zScore": 0.336213,
-          "rank": 14,
+          "raw": 0.017351,
+          "adjusted": 0.037608,
+          "zScore": 0.308896,
+          "rank": 12,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -1422,12 +1428,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1126,
-      "rushingEpaPerPlay": 0.0469,
+      "passingEpaPerPlay": 0.1256,
+      "rushingEpaPerPlay": -0.0228,
       "pythagoreanExpectedWins": 9.042,
       "expectedWinsDelta": -1.042,
-      "adjustedComposite": 0.14159,
-      "rawComposite": -0.010994
+      "adjustedComposite": 0.18297,
+      "rawComposite": 0.020268
     },
     {
       "teamId": "nfl-lar",
@@ -1442,24 +1448,24 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.005,
-          "adjusted": 0.010459,
-          "zScore": 0.007366,
-          "rank": 17,
+          "raw": 0.037562,
+          "adjusted": 0.048495,
+          "zScore": 0.370855,
+          "rank": 12,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0388,
-          "adjusted": 0.023351,
-          "zScore": -0.247582,
-          "rank": 20,
+          "raw": 0.04968,
+          "adjusted": 0.038985,
+          "zScore": -0.433208,
+          "rank": 22,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": -0.0338,
-          "adjusted": -0.012892,
-          "zScore": -0.112743,
-          "rank": 18,
+          "raw": -0.012119,
+          "adjusted": 0.009511,
+          "zScore": 0.073144,
+          "rank": 16,
           "missing": false
         },
         "pointDiffPerGame": {
@@ -1470,12 +1476,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.0583,
-      "rushingEpaPerPlay": -0.0649,
+      "passingEpaPerPlay": 0.1124,
+      "rushingEpaPerPlay": -0.0688,
       "pythagoreanExpectedWins": 7.992,
       "expectedWinsDelta": 2.008,
-      "adjustedComposite": -0.102546,
-      "rawComposite": -0.257259
+      "adjustedComposite": -0.031401,
+      "rawComposite": -0.178707
     },
     {
       "teamId": "nfl-sf",
@@ -1490,23 +1496,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": 0.0654,
-          "adjusted": 0.061465,
-          "zScore": 0.551347,
+          "raw": 0.063134,
+          "adjusted": 0.067063,
+          "zScore": 0.5715,
           "rank": 11,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": 0.0398,
-          "adjusted": 0.020698,
-          "zScore": -0.200971,
-          "rank": 19,
+          "raw": 0.053586,
+          "adjusted": 0.034585,
+          "zScore": -0.35876,
+          "rank": 21,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0256,
-          "adjusted": 0.040767,
-          "zScore": 0.338688,
+          "raw": 0.009548,
+          "adjusted": 0.032478,
+          "zScore": 0.265851,
           "rank": 13,
           "missing": false
         },
@@ -1518,12 +1524,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.1201,
-      "rushingEpaPerPlay": -0.0028,
+      "passingEpaPerPlay": 0.1423,
+      "rushingEpaPerPlay": -0.0572,
       "pythagoreanExpectedWins": 7.358,
       "expectedWinsDelta": -1.358,
-      "adjustedComposite": 0.096159,
-      "rawComposite": -0.06086
+      "adjustedComposite": 0.041105,
+      "rawComposite": -0.146017
     },
     {
       "teamId": "nfl-sea",
@@ -1538,23 +1544,23 @@
       "winPercentageScored": false,
       "metrics": {
         "offEpaPerPlay": {
-          "raw": -0.0117,
-          "adjusted": -0.016276,
-          "zScore": -0.277768,
+          "raw": -0.012928,
+          "adjusted": -0.012713,
+          "zScore": -0.290569,
           "rank": 19,
           "missing": false
         },
         "defEpaPerPlay": {
-          "raw": -0.0159,
-          "adjusted": -0.03479,
-          "zScore": 0.773917,
+          "raw": -0.017631,
+          "adjusted": -0.036689,
+          "zScore": 0.847288,
           "rank": 8,
           "missing": false
         },
         "netEpaPerPlay": {
-          "raw": 0.0042,
-          "adjusted": 0.018514,
-          "zScore": 0.151474,
+          "raw": 0.004703,
+          "adjusted": 0.023976,
+          "zScore": 0.194517,
           "rank": 15,
           "missing": false
         },
@@ -1566,12 +1572,12 @@
           "missing": false
         }
       },
-      "passingEpaPerPlay": 0.013,
-      "rushingEpaPerPlay": -0.0535,
+      "passingEpaPerPlay": 0.0441,
+      "rushingEpaPerPlay": -0.1264,
       "pythagoreanExpectedWins": 8.69,
       "expectedWinsDelta": 1.31,
-      "adjustedComposite": 0.231314,
-      "rawComposite": 0.095089
+      "adjustedComposite": 0.255542,
+      "rawComposite": 0.105383
     }
   ]
 }
