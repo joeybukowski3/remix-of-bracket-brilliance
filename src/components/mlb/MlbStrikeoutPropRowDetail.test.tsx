@@ -94,6 +94,84 @@ const artifact: KPropsV2ShadowArtifact = {
 };
 
 describe("MlbStrikeoutPropRowDetail", () => {
+  const rateDetail: StrikeoutPropDetail = {
+    ...detail,
+    pitcherRecentStarts: [
+      { date: "2026-07-18", opponent: "CWS", inningsPitched: "6.0", outsRecorded: 18, strikeouts: 7, hitsAllowed: 3, walksAllowed: 2, pitchCount: 96 },
+      { date: "2026-07-10", opponent: "SD", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 4, hitsAllowed: 5, walksAllowed: null, pitchCount: 88 },
+      { date: "2026-07-04", opponent: "NYY", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 5, hitsAllowed: 4, walksAllowed: 2, pitchCount: 91 },
+    ],
+    pitcherLastFiveSummary: {
+      gamesUsed: 3,
+      totalOuts: 48,
+      averageInningsOuts: 16,
+      totalStrikeouts: 16,
+      averageStrikeouts: 16 / 3,
+      totalHitsAllowed: 12,
+      totalWalksAllowed: 4,
+      hitsPerNine: 6.75,
+      strikeoutsPerNine: 9,
+      hitsPerInning: 0.75,
+      strikeoutsPerInning: 1,
+      walksPerInning: 4 / 11,
+      averagePitchCount: 91.67,
+    },
+    opponentLastFiveGames: [
+      { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Starter Over", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, opposingStarterWalks: 2, teamTotalStrikeouts: 9 },
+      { date: "2026-07-21", opponent: "BOS", opposingStartingPitcher: "Starter Under", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 4, opposingStarterWalks: null, teamTotalStrikeouts: 8 },
+      { date: "2026-07-20", opponent: "NYY", opposingStartingPitcher: "Starter Push", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, opposingStarterWalks: 1, teamTotalStrikeouts: 10 },
+    ],
+    opponentLastFiveVsStartersSummary: undefined,
+  };
+  const currentLineRow = { gameKey: "TB@TOR", team: "TOR", kLine: 5 } as PitcherStrikeoutTeamRow;
+
+  it("replaces pitcher H/9 and K/9 with per-inning H/K/BB rates and total-based AVG values", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+    const panel = screen.getByText("Shane Bieber — Last 5 Starts").parentElement as HTMLElement;
+    expect(within(panel).getAllByText("Hits/Inning").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("K/Inning").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("BB/Inning").length).toBeGreaterThan(0);
+    expect(within(panel).queryByText("H/9")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("K/9")).not.toBeInTheDocument();
+    expect(within(panel).getAllByText("0.50").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("1.17").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("0.33").length).toBeGreaterThan(0);
+    const desktopRows = panel.querySelectorAll("table tbody tr");
+    expect(desktopRows[1].children[6]).toHaveTextContent("N/A");
+  });
+
+  it("adds opponent starter and team per-inning columns with clear Team K naming", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+    const panel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+    for (const label of ["SP K/Inning", "SP BB/Inning", "Team K", "Team K/Inning"]) {
+      expect(within(panel).getAllByText(label).length).toBeGreaterThan(0);
+    }
+    expect(within(panel).queryByText("Game K")).not.toBeInTheDocument();
+    expect(within(panel).getAllByText("1.17").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("0.33").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("1.00").length).toBeGreaterThan(0);
+  });
+
+  it("colors pitcher K and opponent SP K against today's line for over, under, and push", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+    for (const title of ["Shane Bieber — Last 5 Starts", "TB — Last 10 Games vs SP"]) {
+      const panel = screen.getByText(title).parentElement as HTMLElement;
+      const chips = within(panel.querySelector("table") as HTMLElement).getAllByTestId("historical-k-vs-current-line");
+      expect(chips.map((chip) => chip.getAttribute("data-line-result"))).toEqual(["over", "under", "push"]);
+      expect(chips[0].className).toContain("emerald");
+      expect(chips[1].className).toContain("rose");
+      expect(chips[2].className).toContain("slate");
+    }
+  });
+
+  it("keeps historical K values neutral when no valid current line exists", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={{ ...currentLineRow, kLine: null } as PitcherStrikeoutTeamRow} />);
+    const panel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+    const chips = within(panel.querySelector("table") as HTMLElement).getAllByTestId("historical-k-vs-current-line");
+    expect(chips.every((chip) => chip.getAttribute("data-line-result") === "neutral")).toBe(true);
+    expect(chips.every((chip) => !chip.className.match(/emerald|rose/))).toBe(true);
+  });
+
   it("renders compact detail sections as independent, accessible, closed-by-default accordions", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
 
@@ -263,7 +341,7 @@ describe("opponent AVG footer", () => {
     const opposingSpValue = opposingSpLabel.nextElementSibling;
     expect(opposingSpValue).not.toBeNull();
     expect(opposingSpValue?.textContent).toBe("");
-    expect(within(opponentAvgCard).queryByText("N/A")).not.toBeInTheDocument();
+    expect(within(opponentAvgCard).getByText("SP BB/Inning").nextElementSibling).toHaveTextContent("N/A");
   });
 });
 

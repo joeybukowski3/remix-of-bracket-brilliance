@@ -22,6 +22,7 @@ export type PitcherStartDetail = StrikeoutPropStartRow & {
   site?: "home" | "away" | null;
   outsRecorded?: number | null;
   hitsAllowed?: number | null;
+  walksAllowed?: number | null;
   pitchCount?: number | null;
   battersFaced?: number | null;
   gamesStarted?: number | null;
@@ -34,8 +35,12 @@ export type PitcherLastFiveSummary = {
   totalStrikeouts: number | null;
   averageStrikeouts: number | null;
   totalHitsAllowed: number | null;
+  totalWalksAllowed?: number | null;
   hitsPerNine: number | null;
   strikeoutsPerNine: number | null;
+  hitsPerInning?: number | null;
+  strikeoutsPerInning?: number | null;
+  walksPerInning?: number | null;
   averagePitchCount: number | null;
 };
 
@@ -60,6 +65,7 @@ export type StrikeoutDetailCompleteness = {
   recentStartsRequested: number;
   recentStartsFound: number;
   rowsWithHitsAllowed: number;
+  rowsWithWalksAllowed?: number;
   rowsWithPitchCount: number;
   rowsWithSite: number;
   homeSeasonGames: number;
@@ -76,6 +82,7 @@ export type StrikeoutPropOpponentGameRow = {
   opposingStartingPitcher: string | null;
   opposingStarterInningsPitched: number | string | null;
   opposingStarterStrikeouts: number | null;
+  opposingStarterWalks?: number | null;
   teamTotalStrikeouts: number | null;
 };
 
@@ -85,7 +92,13 @@ export type OpponentLastFiveVsStartersSummary = {
   totalOpposingStarterOuts: number | null;
   averageOpposingStarterInnings: number | null;
   averageOpposingStarterStrikeouts: number | null;
+  totalOpposingStarterStrikeouts?: number | null;
+  totalOpposingStarterWalks?: number | null;
+  opposingStarterStrikeoutsPerInning?: number | null;
+  opposingStarterWalksPerInning?: number | null;
   averageTeamStrikeouts: number | null;
+  totalTeamStrikeouts?: number | null;
+  teamStrikeoutsPerInning?: number | null;
   recentTeamKRate: number | null;
   recentWhiffRate: number | null;
   rows?: unknown[];
