@@ -135,10 +135,10 @@ describe("MlbStrikeoutProps — Game Time column", () => {
     mockPropsData([baseRow, earlyRow, tbdRow]);
     const { container } = await renderPage();
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Game Time/ })[0]);
-    fireEvent.click(screen.getAllByRole("button", { name: /Game Time/ })[0]);
-
     const table = container.querySelector("table") as HTMLElement;
+    fireEvent.click(within(table).getByRole("button", { name: /Game Time/ }));
+    fireEvent.click(within(table).getByRole("button", { name: /Game Time/ }));
+
     const names = Array.from(table.querySelectorAll("tbody tr td span.font-semibold.text-slate-900"))
       .map((el) => el.textContent?.trim())
       .filter((t): t is string => Boolean(t) && !t.startsWith("▶"));

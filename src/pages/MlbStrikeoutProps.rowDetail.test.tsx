@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
@@ -50,6 +50,17 @@ const secondRow: PitcherStrikeoutTeamRow = {
   gameKey: "AZ@SD",
 };
 
+const thirdRow: PitcherStrikeoutTeamRow = {
+  ...baseRow,
+  rank: 3,
+  pitcher: "Ian Seymour",
+  team: "TB",
+  opponent: "COL",
+  gameKey: "TB@COL",
+  projectedIP: 6.5,
+  strikeoutMatchupScore: 66,
+};
+
 const availableDetail: StrikeoutPropDetail = {
   key: "dean-kremer|bal|chc|2026-07-08",
   pitcher: "Dean Kremer",
@@ -67,6 +78,46 @@ const availableDetail: StrikeoutPropDetail = {
   generatedAt: "2026-07-08T12:00:00.000Z",
   source: "mlb_stats_api",
 };
+
+function comparativeDetail(
+  row: PitcherStrikeoutTeamRow,
+  key: string,
+  kPerInning: number,
+  opponentKPerGame: number,
+  opponentXba: number | null,
+): StrikeoutPropDetail {
+  const totalOuts = 60;
+  const strikeouts = kPerInning * (totalOuts / 3);
+  return {
+    key,
+    pitcher: row.pitcher,
+    team: row.team,
+    opponent: row.opponent,
+    gameDate: "2026-07-08",
+    pitcherLastFiveStarts: [],
+    pitcherLastFiveSummary: { gamesUsed: 5, totalOuts, totalStrikeouts: strikeouts },
+    opponentLastFiveGames: [],
+    pitcherVenueSplits: {
+      home: {
+        site: "home",
+        season: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
+        lastFiveAtSite: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
+      },
+      away: {
+        site: "away",
+        season: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
+        lastFiveAtSite: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
+      },
+    },
+    opponentContext: {
+      home: { kPerNine: opponentKPerGame, xba: opponentXba },
+      away: { kPerNine: opponentKPerGame, xba: opponentXba },
+      last10: { kPerNine: opponentKPerGame, xba: opponentXba },
+    },
+    generatedAt: "2026-07-08T12:00:00.000Z",
+    source: "test",
+  };
+}
 
 const dashboardFixture = {
   date: "2026-07-08",
@@ -260,5 +311,66 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     expect(screen.getByText("MLB Strikeout Prop Model")).toBeTruthy();
     expect(screen.getAllByText("Dean Kremer").length).toBeGreaterThan(0);
     expect(screen.getByText(/pitchers shown/)).toBeTruthy();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("renders the complete desktop pitcher identity over an opponent and venue line without truncating the name", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    mockDetails({ detailsByKey: new Map() });
+    await renderPage();
+
+    const row = firstTrigger("Show recent strikeout details for Dean Kremer");
+    const pitcherName = within(row).getByText("Dean Kremer");
+    const identityBlock = pitcherName.parentElement as HTMLElement;
+    const secondaryLine = identityBlock.children[1] as HTMLElement;
+
+    expect(pitcherName.className).not.toContain("truncate");
+    expect(pitcherName.className).toContain("whitespace-normal");
+    expect(within(secondaryLine).getByText("vs CHC")).toBeInTheDocument();
+    expect(within(secondaryLine).getByText("Away")).toBeInTheDocument();
+    expect(within(row).getByTestId("team-logo")).toHaveTextContent("BAL");
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("keeps grouped desktop headers and centered opponent values", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    mockDetails({ detailsByKey: new Map() });
+    await renderPage();
+
+    expect(screen.getByText("Core / Market")).toHaveClass("text-center");
+    expect(screen.getByText("Pitcher Stats")).toHaveClass("text-center");
+    expect(screen.getByText("Opposing Team Stats")).toHaveClass("text-center");
+    expect(screen.getByText("Opp K/Game L10")).toHaveClass("text-center");
+    expect(screen.getByText("Opp xBA Split")).toHaveClass("text-center");
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("applies visible-row metric tones with reversed xBA direction and neutral unavailable values", async () => {
+    vi.resetModules();
+    const rows = [
+      { ...baseRow, projectedIP: 4.5, strikeoutMatchupScore: 60 },
+      { ...secondRow, projectedIP: 5.5, strikeoutMatchupScore: 63 },
+      thirdRow,
+    ];
+    const details = new Map<string, StrikeoutPropDetail>([
+      ["dean-kremer|bal|chc|2026-07-08", comparativeDetail(rows[0], "dean-kremer|bal|chc|2026-07-08", 0.5, 6, 0.31)],
+      ["zac-gallen|az|sd|2026-07-08", comparativeDetail(rows[1], "zac-gallen|az|sd|2026-07-08", 0.8, 8, null)],
+      ["ian-seymour|tb|col|2026-07-08", comparativeDetail(rows[2], "ian-seymour|tb|col|2026-07-08", 1.1, 10, 0.19)],
+    ]);
+    mockPropsData(rows);
+    mockDetails({ detailsByKey: details });
+    await renderPage();
+
+    const highRow = firstTrigger("Show recent strikeout details for Ian Seymour");
+    expect(within(highRow).getAllByText("1.10").every((value) => value.getAttribute("data-metric-tone") === "positive")).toBe(true);
+    expect(within(highRow).getAllByText("0.190").every((value) => value.getAttribute("data-metric-tone") === "positive")).toBe(true);
+
+    const lowRow = firstTrigger("Show recent strikeout details for Dean Kremer");
+    expect(within(lowRow).getAllByText("0.50").every((value) => value.getAttribute("data-metric-tone") === "negative")).toBe(true);
+    expect(within(lowRow).getAllByText("0.310").every((value) => value.getAttribute("data-metric-tone") === "negative")).toBe(true);
+
+    const unavailableRow = firstTrigger("Show recent strikeout details for Zac Gallen");
+    const unavailableMetrics = within(unavailableRow).getAllByText("—").filter((value) => value.hasAttribute("data-metric-tone"));
+    expect(unavailableMetrics.length).toBeGreaterThan(0);
+    expect(unavailableMetrics.every((value) => value.getAttribute("data-metric-tone") === "neutral")).toBe(true);
   }, SLOW_RENDER_TIMEOUT_MS);
 });

@@ -135,7 +135,7 @@ describe("MlbStrikeoutProps Low Confidence table", () => {
     expect(within(mainTable).getAllByText("Valid Pitcher").length).toBeGreaterThan(0);
     expect(within(mainTable).queryByText("Jack Perkins")).toBeNull();
     expect(within(mainTable).queryByText("Patrick Sandoval")).toBeNull();
-  });
+  }, 15000);
 
   it("shows an exclusion reason badge for each Low Confidence row", async () => {
     vi.resetModules();

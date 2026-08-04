@@ -95,6 +95,7 @@ describe("pitcher game-log field normalization", () => {
       inningsPitched: "5.2",
       strikeouts: 8,
       hitsAllowed: 4,
+      walksAllowed: 2,
       pitchCount: 95,
       battersFaced: 24,
       gamesStarted: 1,
@@ -180,14 +181,14 @@ const BOXSCORE_FIXTURE = {
       teamStats: { batting: { strikeOuts: 10 } },
       players: {
         ID1: { person: { id: 1, fullName: "Away Reliever" }, stats: { pitching: { gamesStarted: 0 } } },
-        ID2: { person: { id: 2, fullName: "Away Starter" }, stats: { pitching: { gamesStarted: 1, inningsPitched: "5.1", strikeOuts: 6 } } },
+        ID2: { person: { id: 2, fullName: "Away Starter" }, stats: { pitching: { gamesStarted: 1, inningsPitched: "5.1", strikeOuts: 6, baseOnBalls: 2 } } },
       },
     },
     home: {
       team: { id: 111, abbreviation: "BAL" },
       teamStats: { batting: { strikeOuts: 8 } },
       players: {
-        ID3: { person: { id: 3, fullName: "Home Starter" }, stats: { pitching: { gamesStarted: 1, inningsPitched: "6.0", strikeOuts: 7 } } },
+        ID3: { person: { id: 3, fullName: "Home Starter" }, stats: { pitching: { gamesStarted: 1, inningsPitched: "6.0", strikeOuts: 7, baseOnBalls: 1 } } },
       },
     },
   },
@@ -202,6 +203,7 @@ describe("deriveOpponentGameSummary", () => {
       opposingStartingPitcher: "Home Starter",
       opposingStarterInningsPitched: "6.0",
       opposingStarterStrikeouts: 7,
+      opposingStarterWalks: 1,
       teamTotalStrikeouts: 10,
     });
   });
@@ -220,6 +222,7 @@ describe("deriveOpponentGameSummary", () => {
       opposingStartingPitcher: null,
       opposingStarterInningsPitched: null,
       opposingStarterStrikeouts: null,
+      opposingStarterWalks: null,
       teamTotalStrikeouts: null,
     });
   });
@@ -281,7 +284,7 @@ describe("fetchOpponentLastFiveGamesDetail", () => {
       retries: 0,
     });
     expect(rows).toEqual([
-      { date: "2026-07-01", opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, teamTotalStrikeouts: null },
+      { date: "2026-07-01", opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null },
     ]);
   });
 });

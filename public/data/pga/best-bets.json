@@ -1,12 +1,12 @@
 {
   "schemaVersion": 3,
-  "tournament": "Rocket Classic",
-  "tournamentId": "R2026524",
-  "localScheduleId": "rocket-classic-2026",
-  "course": "Detroit Golf Club",
-  "generatedAt": "2026-07-29T14:23:14.451Z",
+  "tournament": "Wyndham Championship",
+  "tournamentId": "R2026013",
+  "localScheduleId": "wyndham-championship-2026",
+  "course": "Sedgefield Country Club",
+  "generatedAt": "2026-08-03T12:33:57.837Z",
   "status": "model-leans-only",
-  "reason": "Verified exact-market prices were unavailable this week (no events returned by provider).",
+  "reason": "Verified exact-market prices were unavailable this week (no event matched tournament \"Wyndham Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship).",
   "sourceStatus": {
     "model": "available",
     "grok": "available",
@@ -16,7 +16,7 @@
   "oddsDiagnostics": {
     "providerKey": "the-odds-api",
     "providerName": "The Odds API",
-    "requestedTournament": "Rocket Classic",
+    "requestedTournament": "Wyndham Championship",
     "matchedEventName": null,
     "providerEventId": null,
     "eventStartTime": null,
@@ -28,13 +28,13 @@
       "top20"
     ],
     "marketsAvailable": [],
-    "fetchedAt": "2026-07-29T14:22:58.798Z",
+    "fetchedAt": "2026-08-03T12:33:42.944Z",
     "quotaDiagnostics": {
-      "requestsRemaining": 0,
-      "requestsUsed": 500
+      "requestsRemaining": 478,
+      "requestsUsed": 22
     },
     "errors": [
-      "no events returned by provider"
+      "no event matched tournament \"Wyndham Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship"
     ]
   },
   "recommendations": [],
@@ -45,16 +45,16 @@
       "marketContext": "outright",
       "modelRank": 1,
       "powerRank": null,
-      "provisionalModelProbability": 1.7753308992580083e-8,
+      "provisionalModelProbability": 1.77533089925801e-8,
       "note": "Provisional field-relative model context for a outright finish; no verified market line was confirmed for this player this week."
     },
     {
-      "player": "Si Woo Kim",
-      "normalizedPlayer": "si woo kim",
+      "player": "Hideki Matsuyama",
+      "normalizedPlayer": "hideki matsuyama",
       "marketContext": "outright",
       "modelRank": 2,
       "powerRank": null,
-      "provisionalModelProbability": 8.711204575014525e-9,
+      "provisionalModelProbability": 8.711204575014508e-9,
       "note": "Provisional field-relative model context for a outright finish; no verified market line was confirmed for this player this week."
     },
     {
@@ -63,12 +63,12 @@
       "marketContext": "top5",
       "modelRank": 1,
       "powerRank": null,
-      "provisionalModelProbability": 0.00017371953039825786,
+      "provisionalModelProbability": 0.00017371953039825797,
       "note": "Provisional field-relative model context for a top-5 finish; no verified market line was confirmed for this player this week."
     },
     {
-      "player": "Si Woo Kim",
-      "normalizedPlayer": "si woo kim",
+      "player": "Hideki Matsuyama",
+      "normalizedPlayer": "hideki matsuyama",
       "marketContext": "top5",
       "modelRank": 2,
       "powerRank": null,
@@ -85,21 +85,21 @@
       "note": "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
     },
     {
-      "player": "Si Woo Kim",
-      "normalizedPlayer": "si woo kim",
+      "player": "Hideki Matsuyama",
+      "normalizedPlayer": "hideki matsuyama",
       "marketContext": "top10",
       "modelRank": 2,
       "powerRank": null,
-      "provisionalModelProbability": 0.029159537718114085,
+      "provisionalModelProbability": 0.02915953771811411,
       "note": "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
     },
     {
-      "player": "Jake Knapp",
-      "normalizedPlayer": "jake knapp",
+      "player": "Ryo Hisatsune",
+      "normalizedPlayer": "ryo hisatsune",
       "marketContext": "top10",
       "modelRank": 3,
       "powerRank": null,
-      "provisionalModelProbability": 0.020634340097589347,
+      "provisionalModelProbability": 0.02063434009758935,
       "note": "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
     },
     {
@@ -108,25 +108,25 @@
       "marketContext": "top20",
       "modelRank": 1,
       "powerRank": null,
-      "provisionalModelProbability": 0.9076950596778982,
+      "provisionalModelProbability": 0.9076950596778983,
       "note": "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
     },
     {
-      "player": "Si Woo Kim",
-      "normalizedPlayer": "si woo kim",
+      "player": "Hideki Matsuyama",
+      "normalizedPlayer": "hideki matsuyama",
       "marketContext": "top20",
       "modelRank": 2,
       "powerRank": null,
-      "provisionalModelProbability": 0.8788181206404987,
+      "provisionalModelProbability": 0.8788181206404988,
       "note": "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
     },
     {
-      "player": "Jake Knapp",
-      "normalizedPlayer": "jake knapp",
+      "player": "Ryo Hisatsune",
+      "normalizedPlayer": "ryo hisatsune",
       "marketContext": "top20",
       "modelRank": 3,
       "powerRank": null,
-      "provisionalModelProbability": 0.8438639290321579,
+      "provisionalModelProbability": 0.8438639290321578,
       "note": "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
     }
   ],
@@ -139,45 +139,39 @@
     "numberOfLadders": 0,
     "oddsCoverage": 0,
     "staleOddsCount": 0,
-    "candidatesCreated": 588,
+    "candidatesCreated": 564,
     "candidatesWithExactPrice": 0,
     "rejectedByProbabilityFloor": 0,
     "rejectedByProbabilityEdge": 0,
     "rejectedByExpectedValue": 0,
     "rejectedByFreshness": 0,
     "rejectedByFieldMembership": 0,
-    "rejectedByMissingModelData": 92,
+    "rejectedByMissingModelData": 68,
     "rejectedByOverlapRules": 0
   },
   "probabilityMethod": "provisional-plackett-luce-style-independent-race-approximation",
   "fieldCoverage": {
-    "fieldCount": 147,
+    "fieldCount": 141,
     "modeledCount": 124,
-    "unmodeledCount": 23,
-    "coveragePct": 84.4,
+    "unmodeledCount": 17,
+    "coveragePct": 87.9,
     "unmodeledPlayers": [
       "Aaron Wise",
+      "Alex Fitzpatrick",
       "Ben James",
       "Ben Kohles",
-      "Ben Silverman",
-      "Brad Dalke",
-      "Brendon Todd",
-      "Daniel Azallion",
-      "Hayden Springer",
+      "Blades Brown",
+      "C.T. Pan",
+      "Cooper Hrabak",
       "Jackson Koivun",
-      "Joe Hooks",
-      "Justin Quiban",
-      "Keenan Huskey",
-      "Keita Nakajima",
+      "Justin Thomas",
+      "Kihei Akina",
       "Kristoffer Ventura",
       "Lanto Griffin",
-      "Patrick Wilkes-Krier",
-      "Ryan Celano",
-      "Ryan Ruffels",
       "Stefano Mazzoli",
       "Trace Crowe",
+      "Tyler Collet",
       "Webb Simpson",
-      "William Jennings",
       "Zac Blair"
     ],
     "reason": "no current statistics available for these official entrants"
@@ -208,7 +202,7 @@
       "isModelLeanOnly": true
     },
     {
-      "player": "Si Woo Kim",
+      "player": "Hideki Matsuyama",
       "tournamentRank": 2,
       "powerRank": 0,
       "topStats": [
@@ -240,7 +234,7 @@
       "isModelLeanOnly": true
     },
     {
-      "player": "Si Woo Kim",
+      "player": "Hideki Matsuyama",
       "tournamentRank": 2,
       "powerRank": 0,
       "topStats": [
@@ -272,7 +266,7 @@
       "isModelLeanOnly": true
     },
     {
-      "player": "Si Woo Kim",
+      "player": "Hideki Matsuyama",
       "tournamentRank": 2,
       "powerRank": 0,
       "topStats": [
@@ -287,7 +281,7 @@
       "isModelLeanOnly": true
     },
     {
-      "player": "Jake Knapp",
+      "player": "Ryo Hisatsune",
       "tournamentRank": 3,
       "powerRank": 0,
       "topStats": [
@@ -319,7 +313,7 @@
       "isModelLeanOnly": true
     },
     {
-      "player": "Si Woo Kim",
+      "player": "Hideki Matsuyama",
       "tournamentRank": 2,
       "powerRank": 0,
       "topStats": [
@@ -334,7 +328,7 @@
       "isModelLeanOnly": true
     },
     {
-      "player": "Jake Knapp",
+      "player": "Ryo Hisatsune",
       "tournamentRank": 3,
       "powerRank": 0,
       "topStats": [
@@ -350,78 +344,86 @@
     }
   ],
   "preview": {
-    "tournamentOverview": "Detroit Golf Club rewards ball-striking and off-the-tee precision, with SG OTT 8%) and SG Total 8%) carrying the heaviest influence. Approach play 3%) and around-the-green work 6%) also matter, while putting 4%) is de-emphasized.",
-    "modelExplainer": "Our model weights SG OTT at 8% and SG APP at 3%, making driving distance and iron play the primary levers. SG Total 8%) captures overall scoring, while SG ATG 6%) and SG PUTT 4%) are secondary. Driving Accuracy 1%), Bogey Avoidance 0%), and Birdie/Bogey Ratio 0%) add marginal edges for consistency.",
-    "pickApproach": "We tier players by a blend of tournament-specific rank and baseline power rank, prioritizing those with strong SG OTT and SG APP marks. Top-10 model names like Cameron Young and Jake Knapp lead the card, while mid-tier names with course fit 3."
+    "tournamentOverview": "Sedgefield Country Club rewards ball-striking over distance, with approach play 8%) and total strokes gained 9%) carrying the heaviest weight. The short, tight layout punishes missed greens and rewards players who convert birdie opportunities efficiently. This final regular-season event sets the FedEx Cup field, making current form critical for playoff positioning.",
+    "modelExplainer": "Approach play dominates our model at 8%, followed by total SG at 9% and around-the-green work at 2%. Driving accuracy 7%) and bogey avoidance 0%) receive minimal weight, confirming this is an iron-play and scrambling test. Putting 9%) matters less than usual, so we prioritize approach SG and total strokes gained over putting metrics.",
+    "pickApproach": "We tier bets by model rank versus power rank, targeting players whose SG:APP and SG:Total exceed their overall power ranking. Cameron Young leads our board with elite total SG 574) and strong approach numbers despite a modest power rank. We fade players with inflated power ranks relative to their course-specific ball-striking metrics."
   },
   "article": {
-    "title": "Rocket Classic 2026: Model Ranks Young, Kim, Knapp Highest at Detroit",
-    "dek": "Cameron Young leads the field in the tournament model, followed by Si Woo Kim and Jake Knapp.",
-    "introduction": "The Rocket Classic model at Detroit Golf Club places Cameron Young at rank 1 with 574 SG Total, Si Woo Kim at rank 2 with 236 SG Total, and Jake Knapp at rank 3 with 002 SG Total. Course weights emphasize SG OTT 8%) and SG APP 3%), aligning with the top three players' combined strengths in those categories. The 147-player field opens July 30 with no weather or tee-time data available.",
+    "title": "Wyndham Championship 2026: Model Ranks Young, Matsuyama, Hisatsune at Sedgefield",
+    "dek": "Cameron Young leads the tournament model at 574 SG total while Hideki Matsuyama and Ryo Hisatsune rank second and third for the 141-player field.",
+    "introduction": "The tournament model weights approach-the-green 8%) and SG total 9%) most heavily at Sedgefield Country Club. Cameron Young tops the model at 574 SG total and rank 1, followed by Hideki Matsuyama at 197 SG total and rank 2. Ryo Hisatsune sits third at 238 SG total despite a power rank of 20.",
     "sections": [
       {
         "heading": "Tournament Overview",
-        "body": "Detroit Golf Club weights SG OTT at 8% and SG APP at 3%, making ball-striking the primary separator. The model ranks Cameron Young first 574 SG Total), Si Woo Kim second 236 SG Total), and Jake Knapp third 002 SG Total) among 147 entrants."
+        "body": "The Wyndham Championship at Sedgefield Country Club features a 141-player field with course weights favoring SG approach 8%) and SG total 9%). The model ranks Cameron Young first at 574 SG total, Hideki Matsuyama second at 197 SG total, and Ryo Hisatsune third at 238 SG total."
       },
       {
         "heading": "Course Fit",
-        "body": "Young's 699 SG OTT and 499 SG APP align directly with the two largest course weights. Kim's 912 SG APP leads the top 20, while Knapp's 285 SG PUTT compensates for a lower 264 SG OTT."
+        "body": "Sedgefield rewards approach play and total strokes gained. Cameron Young posts 499 SG approach and 574 SG total. Hideki Matsuyama records 635 SG approach and 197 SG total. Ryo Hisatsune shows 576 SG approach and 238 SG total."
       },
       {
-        "heading": "Recent Form",
-        "body": "Knapp's 002 SG Total tops the model despite a missed cut at The Open and only two tracked rounds. Young's 574 SG Total and Kim's 236 SG Total both come from four tracked rounds each."
+        "heading": "Recent Form and Model Strength",
+        "body": "Cameron Young leads the model at rank 1 with a power rank of 6. Hideki Matsuyama sits at model rank 2 and power rank 16. Ryo Hisatsune ranks third in the model and 20th in power rank, producing the largest rank gap among the three."
       },
       {
         "heading": "Post-Open Workload",
-        "body": "Young and Kim each logged four tracked rounds after The Open; Knapp logged two. The model still places all three inside the top three regardless of round count."
+        "body": "All three players recorded zero tracked rounds from The Open Championship and Genesis Scottish Open. Cameron Young, Hideki Matsuyama, and Ryo Hisatsune each carry the classification NO_TRACKED_ROUNDS (0 tracked rounds)."
       },
       {
         "heading": "FedExCup Motivation",
-        "body": "Kim enters at FedExCup rank 7 and Young at rank 3, both inside the top 50 bubble. Knapp sits at rank 38, still safely inside the top 50 but with less immediate pressure."
+        "body": "Cameron Young enters at FedExCup rank 3, Hideki Matsuyama at rank 24, and Ryo Hisatsune at rank 42. All three sit safely inside the top 50 with no immediate pressure to climb."
       },
       {
         "heading": "Crossover Research Angles",
-        "body": "Young and Kim both skipped the Scottish Open yet rank inside the model's top two. Knapp's model rank of 3 exceeds his power rank of 3 while carrying the missed-cut and limited-reps flags."
+        "body": "Cameron Young, Hideki Matsuyama, and Ryo Hisatsune each skipped the Scottish Open and rank inside the model's top 10. The model rank versus power rank differential is largest for Ryo Hisatsune (17 spots) and Hideki Matsuyama (14 spots)."
       },
       {
         "heading": "Outright Targets",
-        "body": "Cameron Young (model rank 1, 574 SG Total) and Si Woo Kim (model rank 2, 236 SG Total) are the two outright targets. Both carry four tracked rounds and top-10 FedExCup positioning."
+        "body": "Cameron Young (model rank 1, 574 SG total) and Hideki Matsuyama (model rank 2, 197 SG total) are the two outright targets. Both carry zero tracked rounds and top-10 model placement."
       },
       {
         "heading": "Top-10 Targets",
-        "body": "The top-10 card adds Jake Knapp (model rank 3, 002 SG Total) to Young and Kim. Knapp's putting 285 SG PUTT) supplies the model's highest single-category mark among the three."
+        "body": "Cameron Young (model rank 1), Hideki Matsuyama (model rank 2), and Ryo Hisatsune (model rank 3) form the top-10 card. All three show model ranks ahead of power ranks and zero tracked rounds post-Open."
       },
       {
         "heading": "Top-20 Targets",
-        "body": "The same three players—Young, Kim, and Knapp—form the top-20 card. Their model ranks occupy the first three spots, and each posts at least one strokes-gained figure above 499 in a heavily weighted category."
+        "body": "The same three players—Cameron Young, Hideki Matsuyama, and Ryo Hisatsune—anchor the top-20 card. Their model ranks (1-2-3) sit well ahead of power ranks (6-16-20)."
       },
       {
         "heading": "Data Limitations",
-        "body": "Weather and tee-time data are unavailable. Workload figures cover only recorded rounds from The Open and Scottish Open; opposite-field or non-tracked events are not included."
+        "body": "Weather and tee-time data are unavailable. Workload coverage includes only recorded rounds from The Open Championship and Genesis Scottish Open; opposite-field, DP World Tour, LIV, and other events may be missing."
       },
       {
         "heading": "Final Betting Card",
-        "body": "Tier 1 (model-supported): Cameron Young and Si Woo Kim. Tier 2 (context-supported): Jake Knapp. All three recommendations rest on model rank, SG Total, and at least one course-weighted strokes-gained category."
+        "body": "Tier 1 (model-supported): Cameron Young outright/top-5/top-10/top-20. Tier 2 (model-supported): Hideki Matsuyama outright/top-5/top-10/top-20. Tier 3 (model-supported): Ryo Hisatsune top-10/top-20."
       }
     ],
-    "conclusion": "Model tier: Cameron Young (rank 1) and Si Woo Kim (rank 2). Context tier: Jake Knapp (rank 3).",
+    "conclusion": "Cameron Young leads all tiers as the model's top-ranked player. Hideki Matsuyama follows as the second outright and top-5 target. Ryo Hisatsune rounds out the card as the third-ranked top-10/top-20 play.",
     "keyTakeaways": [
       {
-        "text": "Cameron Young ranks first in the tournament model (1.574 SG Total) and sixth in power rank, with a 0.699 SG OTT mark that matches the course's heaviest weight.",
+        "text": "Cameron Young leads the model at 1.574 SG total and rank 1 with a power rank of 6 and zero tracked rounds post-Open.",
         "players": [
           "Cameron Young"
         ]
       },
       {
-        "text": "Si Woo Kim sits second in the model (1.236 SG Total) and seventh in FedExCup standing, posting a 0.912 SG APP that exceeds the 21.3% course weight for approach play.",
+        "text": "Hideki Matsuyama ranks second in the model at 1.197 SG total and sits 16th in power rank, creating a 14-spot differential.",
         "players": [
-          "Si Woo Kim"
+          "Hideki Matsuyama"
         ]
       },
       {
-        "text": "Jake Knapp holds the model's third spot (2.002 SG Total) and third in power rank, driven by a 1.285 SG PUTT that stands out despite only two tracked rounds post-Open.",
+        "text": "Ryo Hisatsune ranks third in the model at 1.238 SG total and 20th in power rank, an 17-spot gap that signals model strength.",
         "players": [
-          "Jake Knapp"
+          "Ryo Hisatsune"
+        ]
+      },
+      {
+        "text": "All three selections carry FedExCup ranks inside the top 50 and zero tracked rounds from The Open or Scottish Open.",
+        "players": [
+          "Cameron Young",
+          "Hideki Matsuyama",
+          "Ryo Hisatsune"
         ]
       }
     ],
@@ -431,8 +433,8 @@
   "researchContext": {
     "cameron young": {
       "player": "Cameron Young",
-      "openFinishBucket": "TOP_5",
-      "openResult": "top5",
+      "openFinishBucket": "DID_NOT_PLAY",
+      "openResult": "did_not_play",
       "scottish": {
         "participation": "skipped",
         "finishPosition": null,
@@ -441,29 +443,29 @@
         "roundsPlayed": 0
       },
       "majorSwingWorkload": {
-        "rounds": 4,
-        "bucket": "FOUR_ROUNDS",
+        "rounds": 0,
+        "bucket": "NO_TRACKED_ROUNDS",
         "scope": "open_and_scottish_only",
-        "windowStart": "2026-07-16",
-        "windowEnd": "2026-07-30",
+        "windowStart": "2026-07-23",
+        "windowEnd": "2026-08-06",
         "coverage": "partial",
         "trackedEvents": [
           "The Open Championship",
           "Genesis Scottish Open"
         ]
       },
-      "workloadRoundCount": 4,
+      "workloadRoundCount": 0,
       "fedex": {
         "status": "safe",
         "bucket": "SAFE_TOP_50",
         "rank": 3,
-        "points": 3086
+        "points": 3157
       },
       "model": {
         "tournamentRank": 1,
         "powerRank": 6,
         "rankDifferential": 5,
-        "modelScore": "84.0",
+        "modelScore": "80.7",
         "sgTotal": "1.574",
         "sgApp": "0.499",
         "sgPutt": "0.313",
@@ -477,10 +479,10 @@
         }
       ]
     },
-    "si woo kim": {
-      "player": "Si Woo Kim",
-      "openFinishBucket": "TOP_10",
-      "openResult": "top10",
+    "hideki matsuyama": {
+      "player": "Hideki Matsuyama",
+      "openFinishBucket": "DID_NOT_PLAY",
+      "openResult": "did_not_play",
       "scottish": {
         "participation": "skipped",
         "finishPosition": null,
@@ -489,34 +491,34 @@
         "roundsPlayed": 0
       },
       "majorSwingWorkload": {
-        "rounds": 4,
-        "bucket": "FOUR_ROUNDS",
+        "rounds": 0,
+        "bucket": "NO_TRACKED_ROUNDS",
         "scope": "open_and_scottish_only",
-        "windowStart": "2026-07-16",
-        "windowEnd": "2026-07-30",
+        "windowStart": "2026-07-23",
+        "windowEnd": "2026-08-06",
         "coverage": "partial",
         "trackedEvents": [
           "The Open Championship",
           "Genesis Scottish Open"
         ]
       },
-      "workloadRoundCount": 4,
+      "workloadRoundCount": 0,
       "fedex": {
         "status": "safe",
         "bucket": "SAFE_TOP_50",
-        "rank": 7,
-        "points": 2188
+        "rank": 24,
+        "points": 1319
       },
       "model": {
         "tournamentRank": 2,
-        "powerRank": 17,
-        "rankDifferential": 15,
-        "modelScore": "82.6",
-        "sgTotal": "1.236",
-        "sgApp": "0.912",
-        "sgPutt": "-0.390",
-        "sgAtg": "0.142",
-        "sgOtt": "0.572"
+        "powerRank": 16,
+        "rankDifferential": 14,
+        "modelScore": "77.3",
+        "sgTotal": "1.197",
+        "sgApp": "0.635",
+        "sgPutt": "0.271",
+        "sgAtg": "0.390",
+        "sgOtt": "-0.099"
       },
       "crossoverAngles": [
         {
@@ -529,10 +531,10 @@
         }
       ]
     },
-    "jake knapp": {
-      "player": "Jake Knapp",
-      "openFinishBucket": "MISSED_CUT",
-      "openResult": "missed_cut",
+    "ryo hisatsune": {
+      "player": "Ryo Hisatsune",
+      "openFinishBucket": "DID_NOT_PLAY",
+      "openResult": "did_not_play",
       "scottish": {
         "participation": "skipped",
         "finishPosition": null,
@@ -541,50 +543,50 @@
         "roundsPlayed": 0
       },
       "majorSwingWorkload": {
-        "rounds": 2,
-        "bucket": "TWO_ROUNDS",
+        "rounds": 0,
+        "bucket": "NO_TRACKED_ROUNDS",
         "scope": "open_and_scottish_only",
-        "windowStart": "2026-07-16",
-        "windowEnd": "2026-07-30",
+        "windowStart": "2026-07-23",
+        "windowEnd": "2026-08-06",
         "coverage": "partial",
         "trackedEvents": [
           "The Open Championship",
           "Genesis Scottish Open"
         ]
       },
-      "workloadRoundCount": 2,
+      "workloadRoundCount": 0,
       "fedex": {
         "status": "safe",
         "bucket": "SAFE_TOP_50",
-        "rank": 38,
-        "points": 995
+        "rank": 42,
+        "points": 896
       },
       "model": {
         "tournamentRank": 3,
-        "powerRank": 3,
-        "rankDifferential": 0,
-        "modelScore": "82.0",
-        "sgTotal": "2.002",
-        "sgApp": "0.342",
-        "sgPutt": "1.285",
-        "sgAtg": "0.111",
-        "sgOtt": "0.264"
+        "powerRank": 20,
+        "rankDifferential": 17,
+        "modelScore": "77.2",
+        "sgTotal": "1.238",
+        "sgApp": "0.576",
+        "sgPutt": "-0.028",
+        "sgAtg": "0.181",
+        "sgOtt": "0.509"
       },
       "crossoverAngles": [
         {
-          "id": "missed_open_light_reps_model_fit",
-          "label": "Missed the Open cut + limited tracked reps + strong model rank"
-        },
-        {
           "id": "skipped_scottish_top_model",
           "label": "Skipped the Scottish Open + top-10 model rank"
+        },
+        {
+          "id": "model_outruns_power_rank",
+          "label": "Tournament model rank well ahead of power rank"
         }
       ]
     }
   },
   "selectedPlayers": [
     "Cameron Young",
-    "Si Woo Kim",
-    "Jake Knapp"
+    "Hideki Matsuyama",
+    "Ryo Hisatsune"
   ]
 }

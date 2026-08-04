@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import MlbStrikeoutPropRowDetail from "@/components/mlb/MlbStrikeoutPropRowDetail";
 import type { StrikeoutPropDetail } from "@/hooks/useMlbStrikeoutPropDetails";
 import type { KPropsV2ShadowArtifact, KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
+import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 
 const detail: StrikeoutPropDetail = {
   key: "shane-bieber|tor|tb|2026-07-23",
@@ -93,6 +94,130 @@ const artifact: KPropsV2ShadowArtifact = {
 };
 
 describe("MlbStrikeoutPropRowDetail", () => {
+  const rateDetail: StrikeoutPropDetail = {
+    ...detail,
+    pitcherRecentStarts: [
+      { date: "2026-07-18", opponent: "CWS", inningsPitched: "6.0", outsRecorded: 18, strikeouts: 7, hitsAllowed: 3, walksAllowed: 2, pitchCount: 96 },
+      { date: "2026-07-10", opponent: "SD", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 4, hitsAllowed: 5, walksAllowed: null, pitchCount: 88 },
+      { date: "2026-07-04", opponent: "NYY", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 5, hitsAllowed: 4, walksAllowed: 2, pitchCount: 91 },
+    ],
+    pitcherLastFiveSummary: {
+      gamesUsed: 3,
+      totalOuts: 48,
+      averageInningsOuts: 16,
+      totalStrikeouts: 16,
+      averageStrikeouts: 16 / 3,
+      totalHitsAllowed: 12,
+      totalWalksAllowed: 4,
+      hitsPerNine: 6.75,
+      strikeoutsPerNine: 9,
+      hitsPerInning: 0.75,
+      strikeoutsPerInning: 1,
+      walksPerInning: 4 / 11,
+      averagePitchCount: 91.67,
+    },
+    opponentLastFiveGames: [
+      { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Starter Over", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, opposingStarterWalks: 2, teamTotalStrikeouts: 9 },
+      { date: "2026-07-21", opponent: "BOS", opposingStartingPitcher: "Starter Under", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 4, opposingStarterWalks: null, teamTotalStrikeouts: 8 },
+      { date: "2026-07-20", opponent: "NYY", opposingStartingPitcher: "Starter Push", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, opposingStarterWalks: 1, teamTotalStrikeouts: 10 },
+    ],
+    opponentLastFiveVsStartersSummary: undefined,
+  };
+  const currentLineRow = { gameKey: "TB@TOR", team: "TOR", kLine: 5 } as PitcherStrikeoutTeamRow;
+
+  it("replaces pitcher H/9 and K/9 with per-inning H/K/BB rates and total-based AVG values", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+    const panel = screen.getByText("Shane Bieber — Last 5 Starts").parentElement as HTMLElement;
+    expect(within(panel).getAllByText("Hits/Inning").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("K/Inning").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("BB/Inning").length).toBeGreaterThan(0);
+    expect(within(panel).queryByText("H/9")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("K/9")).not.toBeInTheDocument();
+    expect(within(panel).getAllByText("0.50").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("1.17").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("0.33").length).toBeGreaterThan(0);
+    const desktopRows = panel.querySelectorAll("table tbody tr");
+    expect(desktopRows[1].children[6]).toHaveTextContent("N/A");
+  });
+
+  it("adds opponent starter and team per-inning columns with clear Team K naming", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+    const panel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+    for (const label of ["SP K/Inning", "SP BB/Inning", "Team K", "Team K/Inning"]) {
+      expect(within(panel).getAllByText(label).length).toBeGreaterThan(0);
+    }
+    expect(within(panel).queryByText("Game K")).not.toBeInTheDocument();
+    expect(within(panel).getAllByText("1.17").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("0.33").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("1.00").length).toBeGreaterThan(0);
+  });
+
+  it("colors pitcher K and opponent SP K against today's line for over, under, and push", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+    for (const title of ["Shane Bieber — Last 5 Starts", "TB — Last 10 Games vs SP"]) {
+      const panel = screen.getByText(title).parentElement as HTMLElement;
+      const chips = within(panel.querySelector("table") as HTMLElement).getAllByTestId("historical-k-vs-current-line");
+      expect(chips.map((chip) => chip.getAttribute("data-line-result"))).toEqual(["over", "under", "push"]);
+      expect(chips[0].className).toContain("emerald");
+      expect(chips[1].className).toContain("rose");
+      expect(chips[2].className).toContain("slate");
+    }
+  });
+
+  it("keeps historical K values neutral when no valid current line exists", () => {
+    render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={{ ...currentLineRow, kLine: null } as PitcherStrikeoutTeamRow} />);
+    const panel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+    const chips = within(panel.querySelector("table") as HTMLElement).getAllByTestId("historical-k-vs-current-line");
+    expect(chips.every((chip) => chip.getAttribute("data-line-result") === "neutral")).toBe(true);
+    expect(chips.every((chip) => !chip.className.match(/emerald|rose/))).toBe(true);
+  });
+
+  it("renders compact detail sections as independent, accessible, closed-by-default accordions", () => {
+    render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
+
+    const sections = [
+      "Recent Performance",
+      "Home / Away Splits",
+      "Opponent Last 10 Games vs SP",
+      "Opponent Data Sources",
+    ];
+    for (const section of sections) {
+      const trigger = screen.getByRole("button", { name: section });
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(trigger).toHaveAttribute("aria-controls");
+      expect(document.getElementById(trigger.getAttribute("aria-controls") as string)).toBeNull();
+    }
+    expect(screen.getByRole("button", { name: "Recent Performance" }).className).toContain("border-sky-200");
+    expect(screen.getByRole("button", { name: "Home / Away Splits" }).className).toContain("border-amber-200");
+    expect(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }).className).toContain("border-violet-200");
+    expect(screen.getByRole("button", { name: "Opponent Data Sources" }).className).toContain("border-slate-200");
+    expect(screen.queryByText("Shane Bieber — Last 5 Starts")).not.toBeInTheDocument();
+    expect(screen.queryByText("TB — Last 10 Games vs SP")).not.toBeInTheDocument();
+
+    const recentTrigger = screen.getByRole("button", { name: "Recent Performance" });
+    fireEvent.click(recentTrigger);
+    expect(recentTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Shane Bieber — Last 5 Starts")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Home / Away Splits" })).toHaveAttribute("aria-expanded", "false");
+
+    const opponentTrigger = screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" });
+    fireEvent.click(opponentTrigger);
+    expect(opponentTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("TB — Last 10 Games vs SP")).toBeInTheDocument();
+    expect(recentTrigger).toHaveAttribute("aria-expanded", "true");
+
+    const splitsTrigger = screen.getByRole("button", { name: "Home / Away Splits" });
+    fireEvent.click(splitsTrigger);
+    expect(splitsTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("No venue splits available.")).toBeInTheDocument();
+
+    const sourcesTrigger = screen.getByRole("button", { name: "Opponent Data Sources" });
+    fireEvent.click(sourcesTrigger);
+    expect(sourcesTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("No opponent source diagnostics available.")).toBeInTheDocument();
+    expect(recentTrigger).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("uses canonical recent summaries for AVG rows and baseball innings display", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={artifact} showV2Shadow publicSlateDate="2026-07-23" />);
     const detailPanel = screen.getByTestId("strikeout-prop-detail");
@@ -216,7 +341,7 @@ describe("opponent AVG footer", () => {
     const opposingSpValue = opposingSpLabel.nextElementSibling;
     expect(opposingSpValue).not.toBeNull();
     expect(opposingSpValue?.textContent).toBe("");
-    expect(within(opponentAvgCard).queryByText("N/A")).not.toBeInTheDocument();
+    expect(within(opponentAvgCard).getByText("SP BB/Inning").nextElementSibling).toHaveTextContent("N/A");
   });
 });
 
@@ -280,121 +405,148 @@ describe("opponent Last 10 games", () => {
   });
 });
 
-describe("pitcher Home/Away split K%/Hit%", () => {
+describe("pitcher Home/Away split K/Inning and H/9", () => {
   const venueDetail: StrikeoutPropDetail = {
     ...detail,
     pitcherVenueSplits: {
       home: {
         site: "home",
-        season: { gamesUsed: 6, totalOuts: 104, inningsPitched: "34.2", strikeouts: 38, hitsAllowed: 29, battersFaced: 144, strikeoutRate: (38 / 144) * 100, hitRate: (29 / 144) * 100 },
-        lastFiveAtSite: { gamesUsed: 5, totalOuts: 90, inningsPitched: "30.0", strikeouts: 35, hitsAllowed: 22, battersFaced: 120, strikeoutRate: (35 / 120) * 100, hitRate: (22 / 120) * 100 },
+        season: { gamesUsed: 6, totalOuts: 108, inningsPitched: "36.0", strikeouts: 36, hitsAllowed: 24, battersFaced: 150, strikeoutRate: 24, hitRate: 16 },
+        lastFiveAtSite: { gamesUsed: 5, totalOuts: 90, inningsPitched: "30.0", strikeouts: 32, hitsAllowed: 20, battersFaced: 125, strikeoutRate: 25.6, hitRate: 16 },
       },
       away: {
         site: "away",
-        season: { gamesUsed: 2, totalOuts: 26, inningsPitched: "8.2", strikeouts: 7, hitsAllowed: 12, battersFaced: 43, strikeoutRate: (7 / 43) * 100, hitRate: (12 / 43) * 100 },
-        lastFiveAtSite: { gamesUsed: 2, totalOuts: 26, inningsPitched: "8.2", strikeouts: 7, hitsAllowed: 12, battersFaced: 43, strikeoutRate: (7 / 43) * 100, hitRate: (12 / 43) * 100 },
+        season: { gamesUsed: 4, totalOuts: 72, inningsPitched: "24.0", strikeouts: 16, hitsAllowed: 24, battersFaced: 105, strikeoutRate: 15.2, hitRate: 22.9 },
+        lastFiveAtSite: { gamesUsed: 3, totalOuts: 45, inningsPitched: "15.0", strikeouts: 8, hitsAllowed: 15, battersFaced: 65, strikeoutRate: 12.3, hitRate: 23.1 },
       },
     },
   };
 
-  it("renders season Home/Away K% and Hit%", () => {
+  it("renders both sites and the exact grouped metric contract", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
-    const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    expect(within(detailPanel).getAllByText("26.4%").length).toBeGreaterThan(0); // home season K%: 38/144
-    expect(within(detailPanel).getAllByText("20.1%").length).toBeGreaterThan(0); // home season Hit%: 29/144
-    // Away has only 2 starts total, so season and last-5-at-site are identical samples (appears in both desktop + mobile, twice over).
-    expect(within(detailPanel).getAllByText("16.3%").length).toBeGreaterThan(0); // away season + last-5 K%: 7/43
-    expect(within(detailPanel).getAllByText("27.9%").length).toBeGreaterThan(0); // away season + last-5 Hit%: 12/43
+    const splitTable = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    expect(within(splitTable).getAllByText("Season").length).toBeGreaterThan(0);
+    expect(within(splitTable).getAllByText("Last 5 at Site").length).toBeGreaterThan(0);
+    expect(within(splitTable).getAllByText("Home").length).toBeGreaterThan(0);
+    expect(within(splitTable).getAllByText("Away").length).toBeGreaterThan(0);
+    expect(within(splitTable).getAllByText("K/Inning").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).getAllByText("K/Inning +/-").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).queryByText("K/9")).not.toBeInTheDocument();
+    expect(within(splitTable).getAllByText("H/9").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).getAllByText("Hit Avg +/-").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("renders last-five-at-site K% and Hit%", () => {
+  it("uses combined season totals for K/Inning and H/9 baselines and all four deltas", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
     const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    expect(within(detailPanel).getAllByText("29.2%").length).toBeGreaterThan(0); // home last-5 K%: 35/120
-    expect(within(detailPanel).getAllByText("18.3%").length).toBeGreaterThan(0); // home last-5 Hit%: 22/120
+    expect(within(detailPanel).getAllByText("+0.13").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("-0.20").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("+0.20").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("-0.33").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("-17%").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("+25%").length).toBeGreaterThan(0);
   });
 
-  it("keeps fewer-than-five-starts samples visible (away has only 2 starts)", () => {
+  it("uses green/red K/Inning direction and the intentionally reversed Hit Avg direction", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
-    const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    expect(within(detailPanel).getAllByText("16.3%").length).toBeGreaterThan(0);
+    const kDiffs = screen.getAllByTestId("k-inning-difference");
+    expect(kDiffs.some((cell) => cell.textContent === "+0.13" && cell.className.includes("text-emerald"))).toBe(true);
+    expect(kDiffs.some((cell) => cell.textContent === "-0.20" && cell.className.includes("text-red"))).toBe(true);
+    const hitDiffs = screen.getAllByTestId("hit-difference");
+    expect(hitDiffs.some((cell) => cell.textContent === "-17%" && cell.className.includes("text-emerald"))).toBe(true);
+    expect(hitDiffs.some((cell) => cell.textContent === "+25%" && cell.className.includes("text-red"))).toBe(true);
   });
 
-  it("shows N/A for K%/Hit% when batters faced is zero", () => {
-    const zeroBfDetail: StrikeoutPropDetail = {
-      ...detail,
+  it("marks only the short site's Last 5 sample and renders the footnote", () => {
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
+    const splitTable = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const shortSampleMarkers = within(splitTable).getAllByText("*", { selector: "sup" });
+    expect(shortSampleMarkers.length).toBeGreaterThan(0);
+    expect(shortSampleMarkers.every((marker) => marker.parentElement?.textContent === "15.0 (3 starts)*")).toBe(true);
+    expect(screen.getByText("* fewer than 5 starts available")).toBeInTheDocument();
+  });
+
+  it("does not render the short-sample footnote when both sites have five starts", () => {
+    const fullSampleDetail: StrikeoutPropDetail = {
+      ...venueDetail,
       pitcherVenueSplits: {
-        home: { site: "home", season: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3, battersFaced: 0, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3, battersFaced: 0, strikeoutRate: null, hitRate: null } },
-        away: { site: "away", season: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null } },
+        ...venueDetail.pitcherVenueSplits!,
+        away: {
+          ...venueDetail.pitcherVenueSplits!.away,
+          lastFiveAtSite: { ...venueDetail.pitcherVenueSplits!.away.lastFiveAtSite, gamesUsed: 5 },
+        },
       },
     };
-    render(<MlbStrikeoutPropRowDetail detail={zeroBfDetail} />);
-    const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    expect(within(detailPanel).getAllByText("N/A").length).toBeGreaterThan(0);
-    expect(detailPanel.textContent).not.toMatch(/NaN|Infinity/);
+    render(<MlbStrikeoutPropRowDetail detail={fullSampleDetail} />);
+    expect(screen.queryByText("* fewer than 5 starts available")).not.toBeInTheDocument();
   });
 
-  it("shows N/A for K%/Hit% when batters faced is missing (undefined)", () => {
-    const missingBfDetail: StrikeoutPropDetail = {
-      ...detail,
-      pitcherVenueSplits: {
-        home: { site: "home", season: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3 }, lastFiveAtSite: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3 } },
-        away: { site: "away", season: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null }, lastFiveAtSite: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null } },
-      },
-    };
-    render(<MlbStrikeoutPropRowDetail detail={missingBfDetail} />);
-    const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    expect(within(detailPanel).getAllByText("6").length).toBeGreaterThan(0);
-    expect(within(detailPanel).getAllByText("N/A").length).toBeGreaterThan(0);
-    expect(detailPanel.textContent).not.toMatch(/NaN|Infinity/);
+  it("highlights HOME as today's site and keeps the short-sample marker independent", () => {
+    const todayRow = { gameKey: "TB@TOR", team: "TOR" } as PitcherStrikeoutTeamRow;
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} row={todayRow} />);
+    const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const desktopRows = splitPanel.querySelectorAll("table tbody tr");
+    expect(desktopRows[0].className).toMatch(/bg-amber-50/);
+    expect(desktopRows[0].className).toMatch(/border-amber-300/);
+    expect(desktopRows[0].className).toMatch(/font-bold/);
+    expect(within(desktopRows[0] as HTMLElement).getByText("Today")).toBeInTheDocument();
+    expect(within(desktopRows[1] as HTMLElement).queryByText("Today")).not.toBeInTheDocument();
+    expect(desktopRows[1].className).not.toMatch(/bg-amber-50|font-bold/);
+    expect(within(desktopRows[1] as HTMLElement).getByText("*", { selector: "sup" })).toBeInTheDocument();
   });
 
-  it("colors K%/Hit% red when above league average (desktop + mobile match)", () => {
+  it("highlights AWAY as today's site and marks only that split row", () => {
+    const todayRow = { gameKey: "TB@TOR", team: "TB" } as PitcherStrikeoutTeamRow;
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} row={todayRow} />);
+    const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const desktopTable = splitPanel.querySelector("table") as HTMLElement;
+    const desktopRows = desktopTable.querySelectorAll("tbody tr");
+    expect(desktopRows[1].className).toMatch(/bg-amber-50/);
+    expect(desktopRows[1].className).toMatch(/border-amber-300/);
+    expect(desktopRows[1].className).toMatch(/font-bold/);
+    expect(within(desktopRows[1] as HTMLElement).getByText("Today")).toBeInTheDocument();
+    expect(within(desktopRows[0] as HTMLElement).queryByText("Today")).not.toBeInTheDocument();
+    expect(desktopRows[0].className).not.toMatch(/bg-amber-50|font-bold/);
+    expect(within(desktopTable).getAllByText("Today")).toHaveLength(1);
+  });
+
+  it("centers the Season and Last 5 groups over aligned numeric columns", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
-    // Home season K% 26.4% is above the ~22.2% league average.
-    const cells = screen.getAllByText("26.4%");
-    expect(cells.length).toBeGreaterThanOrEqual(2); // desktop td + mobile card
-    for (const cell of cells) expect(cell.style.backgroundColor).toContain("220, 38, 38");
+    const splitPanel = screen.getByText("Shane Bieber — Home/Away Splits").parentElement as HTMLElement;
+    const seasonHeader = within(splitPanel).getByText("Season");
+    const lastFiveHeader = within(splitPanel).getByText("Last 5 at Site");
+    expect(seasonHeader.className).toContain("text-center");
+    expect(lastFiveHeader.className).toContain("text-center");
+    expect(splitPanel.querySelectorAll('col[style="width: 13%;"]')).toHaveLength(2);
+    expect(splitPanel.querySelectorAll('col[style="width: 8%;"]')).toHaveLength(5);
   });
+});
 
-  it("colors K%/Hit% blue when below league average", () => {
-    render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
-    // Away season K% 16.3% is well below the ~22.2% league average.
-    const cells = screen.getAllByText("16.3%");
-    expect(cells.length).toBeGreaterThan(0);
-    for (const cell of cells) expect(cell.style.backgroundColor).toContain("37, 99, 235");
-  });
+it("surfaces opponent source samples and warnings only inside expanded detail", () => {
+  const warningDetail: StrikeoutPropDetail = {
+    ...detail,
+    opponentContext: {
+      home: { kPerNine: 8.2, xba: null },
+      away: { kPerNine: 7.8, xba: null },
+      last10: { kPerNine: 8, xba: null },
+      samples: { season: 100, last10: 10 },
+      sources: { strikeouts: "mlb_stats_api", xba: "baseball_savant_statcast" },
+      warnings: ["OPPONENT_XBA_CONTEXT_FAILED:timeout"],
+    },
+  };
+  render(<MlbStrikeoutPropRowDetail detail={warningDetail} />);
+  const sourceDetails = screen.getByTestId("opponent-context-source-details");
+  expect(within(sourceDetails).getByText("Opponent data sources")).toBeInTheDocument();
+  expect(sourceDetails.textContent).toContain("mlb_stats_api");
+  expect(sourceDetails.textContent).toContain("last10: 10");
+  expect(sourceDetails.textContent).toContain("OPPONENT_XBA_CONTEXT_FAILED:timeout");
+});
 
-  it("uses a neutral tint (not red or blue) when a rate is near league average", () => {
-    const nearAverageDetail: StrikeoutPropDetail = {
-      ...detail,
-      pitcherVenueSplits: {
-        home: { site: "home", season: { gamesUsed: 6, totalOuts: 104, inningsPitched: "34.2", strikeouts: 32, hitsAllowed: 32, battersFaced: 144, strikeoutRate: 22.4, hitRate: 22.2 }, lastFiveAtSite: { gamesUsed: 6, totalOuts: 104, inningsPitched: "34.2", strikeouts: 32, hitsAllowed: 32, battersFaced: 144, strikeoutRate: 22.4, hitRate: 22.2 } },
-        away: { site: "away", season: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null } },
-      },
-    };
-    render(<MlbStrikeoutPropRowDetail detail={nearAverageDetail} />);
-    const kCells = screen.getAllByText("22.4%");
-    expect(kCells.length).toBeGreaterThan(0);
-    for (const cell of kCells) {
-      expect(cell.style.backgroundColor).toContain("100, 116, 139");
-      expect(cell.style.backgroundColor).not.toContain("220, 38, 38");
-      expect(cell.style.backgroundColor).not.toContain("37, 99, 235");
-    }
-  });
-
-  it("applies no gradient (no background color) to N/A K%/Hit% cells", () => {
-    const zeroBfDetail: StrikeoutPropDetail = {
-      ...detail,
-      pitcherVenueSplits: {
-        home: { site: "home", season: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3, battersFaced: 0, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3, battersFaced: 0, strikeoutRate: null, hitRate: null } },
-        away: { site: "away", season: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null } },
-      },
-    };
-    render(<MlbStrikeoutPropRowDetail detail={zeroBfDetail} />);
-    const detailPanel = screen.getByTestId("strikeout-prop-detail");
-    const naCells = within(detailPanel).getAllByText("N/A");
-    expect(naCells.length).toBeGreaterThan(0);
-    for (const cell of naCells) expect(cell.style.backgroundColor).toBe("");
-  });
+it("preserves mobile collapsible recent-game behavior", () => {
+  render(<MlbStrikeoutPropRowDetail detail={detail} />);
+  const buttons = screen.getAllByRole("button");
+  expect(buttons.length).toBeGreaterThan(0);
+  expect(buttons[0]).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(buttons[0]);
+  expect(buttons[0]).toHaveAttribute("aria-expanded", "true");
 });

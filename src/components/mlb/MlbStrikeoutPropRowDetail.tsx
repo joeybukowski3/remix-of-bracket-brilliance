@@ -1,21 +1,62 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import type { PitcherVenueSplit, StrikeoutPropDetail } from "@/hooks/useMlbStrikeoutPropDetails";
 import type { KPropsV2ShadowArtifact, KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
-import { outsToMlbInnings } from "@/lib/mlb/baseballInnings";
-import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
+import { mlbInningsToOuts, outsToMlbInnings } from "@/lib/mlb/baseballInnings";
 import { cn } from "@/lib/utils";
 
-// League-average pitcher K% comes from the shared MLB_LEAGUE_AVERAGES constant (kPct).
-// No repo-wide "hits allowed per batter faced" constant exists -- the closest canonical
-// value is batting-average-against (avg: .243, hits/AB, not hits/BF). Derived here as
-// avg * (1 - bbPct) to approximate AB/BF share; flagged as an estimate, not an official figure.
-const PITCHER_LEAGUE_AVG_K_PCT = MLB_LEAGUE_AVERAGES.kPct;
-const PITCHER_LEAGUE_AVG_HIT_PCT = Number((MLB_LEAGUE_AVERAGES.avg * (1 - MLB_LEAGUE_AVERAGES.bbPct / 100) * 100).toFixed(1));
-
 const DASH = "N/A";
+
+type CompactAccordionTone = "emerald" | "blue" | "sky" | "amber" | "violet" | "slate";
+
+const compactAccordionToneClasses: Record<CompactAccordionTone, string> = {
+  emerald: "border-emerald-200 bg-emerald-50/80 text-emerald-900 hover:bg-emerald-100/80",
+  blue: "border-indigo-200 bg-indigo-50/80 text-indigo-900 hover:bg-indigo-100/80",
+  sky: "border-sky-200 bg-sky-50/80 text-sky-900 hover:bg-sky-100/80",
+  amber: "border-amber-200 bg-amber-50/80 text-amber-900 hover:bg-amber-100/80",
+  violet: "border-violet-200 bg-violet-50/80 text-violet-900 hover:bg-violet-100/80",
+  slate: "border-slate-200 bg-slate-100/80 text-slate-800 hover:bg-slate-200/70",
+};
+
+export function MlbStrikeoutCompactAccordion({
+  id,
+  title,
+  tone,
+  children,
+}: {
+  id: string;
+  title: string;
+  tone: CompactAccordionTone;
+  children: ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const panelId = `${id}-panel`;
+
+  return (
+    <section className="min-w-0">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={() => setIsOpen((current) => !current)}
+        className={cn(
+          "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-wide transition-colors",
+          compactAccordionToneClasses[tone],
+        )}
+      >
+        <span>{title}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform duration-150", isOpen && "rotate-180")} aria-hidden="true" />
+      </button>
+      {isOpen && (
+        <div id={panelId} className="min-w-0 pt-2">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function fmtText(value: string | null | undefined) {
   return value && value.trim() ? value : DASH;
@@ -30,10 +71,6 @@ function fmtRate(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return DASH;
   return `${(value > 1 ? value : value * 100).toFixed(1)}%`;
 }
-/** Formats a value that is already a 0-100 percentage (not a 0-1 fraction), e.g. K%/Hit% derived from batters faced. */
-function fmtPercent(value: number | null | undefined) {
-  return value == null || !Number.isFinite(value) ? DASH : `${value.toFixed(1)}%`;
-}
 function fmtIp(value: number | string | null | undefined) {
   return value == null || value === "" ? DASH : String(value);
 }
@@ -41,9 +78,29 @@ function fmtOutsIp(outs: number | null | undefined) {
   const display = outsToMlbInnings(outs);
   return display ?? DASH;
 }
-/** Emphasized headline stat for a collapsed mobile game row, e.g. "6 K". Leaves DASH unsuffixed. */
-function formatKSuffix(value: string): string {
-  return value === DASH ? DASH : `${value} K`;
+type KLineResult = "over" | "under" | "push" | "neutral";
+
+function resolveKLineResult(strikeouts: number | null | undefined, currentKLine: number | null | undefined): KLineResult {
+  if (strikeouts == null || !Number.isFinite(strikeouts) || currentKLine == null || !Number.isFinite(currentKLine) || currentKLine <= 0) return "neutral";
+  if (strikeouts > currentKLine) return "over";
+  if (strikeouts < currentKLine) return "under";
+  return "push";
+}
+
+function StrikeoutsVsCurrentLine({ strikeouts, currentKLine, suffix = "" }: { strikeouts: number | null | undefined; currentKLine: number | null | undefined; suffix?: string }) {
+  const result = resolveKLineResult(strikeouts, currentKLine);
+  const tone = result === "over"
+    ? "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200"
+    : result === "under"
+      ? "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200"
+      : result === "push"
+        ? "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200"
+        : "text-slate-700";
+  return (
+    <span data-testid="historical-k-vs-current-line" data-line-result={result} className={cn("inline-block rounded-md px-1.5 py-0.5 font-black tabular-nums", tone)}>
+      {fmtNumber(strikeouts)}{strikeouts == null ? "" : suffix}
+    </span>
+  );
 }
 function fmtDate(value: string | null | undefined) {
   if (!value) return DASH;
@@ -115,6 +172,10 @@ function MiniTable({
   leadingUngroupedColumns = 0,
   mobileLabels,
   mobileCollapsibleRows,
+  rowClassNames,
+  columnAlignments,
+  centerHeaderGroups = false,
+  boldRows,
 }: {
   title: string;
   columns: string[];
@@ -130,6 +191,14 @@ function MiniTable({
   mobileLabels?: string[];
   /** When provided, mobile renders one compact per-game row (date/opponent/headline stat) that expands independently, instead of the default always-expanded field list. Desktop is unaffected. */
   mobileCollapsibleRows?: CollapsibleGameRow[];
+  /** Optional per-row emphasis shared by the desktop table and mobile cards. */
+  rowClassNames?: string[];
+  /** Per-column alignment used when a compact comparison table mixes identity and numeric columns. */
+  columnAlignments?: Array<"left" | "center">;
+  /** Centers grouped headings over their exact column spans. */
+  centerHeaderGroups?: boolean;
+  /** Applies emphasis to every value in selected comparison rows, including mobile cards. */
+  boldRows?: boolean[];
 }) {
   const cardLabels = mobileLabels ?? columns;
   return (
@@ -150,31 +219,34 @@ function MiniTable({
             {headerGroups && (
               <tr className="text-[9px] uppercase tracking-wide text-slate-400">
                 {columns.slice(0, leadingUngroupedColumns).map((column, index) => (
-                  <th key={`lead-${index}`} rowSpan={2} className="border-b border-slate-100 px-2 py-1 text-left font-bold align-bottom">
+                  <th key={`lead-${index}`} rowSpan={2} className="border-b border-slate-100 px-2 py-1.5 text-left align-middle font-bold">
                     {column}
                   </th>
                 ))}
                 {headerGroups.map((group, index) => (
-                  <th key={`group-${index}`} colSpan={group.span} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
+                  <th key={`group-${index}`} colSpan={group.span} className={cn("border-b border-slate-100 px-2 py-1.5 align-middle font-bold", centerHeaderGroups ? "text-center" : "text-left")}>
                     {group.label}
                   </th>
                 ))}
               </tr>
             )}
             <tr className="text-[9px] uppercase tracking-wide text-slate-400">
-              {columns.slice(headerGroups ? leadingUngroupedColumns : 0).map((column, index) => (
-                <th key={`col-${index}`} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
+              {columns.slice(headerGroups ? leadingUngroupedColumns : 0).map((column, index) => {
+                const columnIndex = index + (headerGroups ? leadingUngroupedColumns : 0);
+                return (
+                <th key={`col-${index}`} className={cn("border-b border-slate-100 px-2 py-1.5 align-middle font-bold leading-tight", columnAlignments?.[columnIndex] === "center" ? "text-center" : "text-left")}>
                   {column}
                 </th>
-              ))}
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {rows.length ? (
               rows.map((row, index) => (
-                <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                <tr key={index} className={cn(rowClassNames?.[index] ?? (index % 2 === 0 ? "bg-white" : "bg-slate-50/70"), boldRows?.[index] && "font-bold")}>
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="break-words border-b border-slate-50 px-2 py-1 text-slate-700">
+                    <td key={cellIndex} className={cn("break-words border-b border-slate-50 px-2 py-1.5 align-middle tabular-nums text-slate-700", columnAlignments?.[cellIndex] === "center" ? "text-center" : "text-left")}>
                       {cell}
                     </td>
                   ))}
@@ -193,7 +265,7 @@ function MiniTable({
               {footRows.map((row, index) => (
                 <tr key={`foot-${index}`} className="bg-slate-100 font-black text-slate-800">
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="break-words border-t border-slate-200 px-2 py-1.5">
+                    <td key={cellIndex} className={cn("break-words border-t border-slate-200 px-2 py-1.5 tabular-nums", columnAlignments?.[cellIndex] === "center" ? "text-center" : "text-left")}>
                       {cell}
                     </td>
                   ))}
@@ -211,11 +283,11 @@ function MiniTable({
             <div className="px-2 py-3 text-center text-xs text-slate-400">{emptyMessage}</div>
           )
         ) : rows.length ? rows.map((row, index) => (
-          <div key={index} className="rounded-lg border border-slate-100 bg-white p-2">
+          <div key={index} className={cn("rounded-lg border p-2", rowClassNames?.[index] ?? "border-slate-100 bg-white", boldRows?.[index] && "font-bold")}>
             {cardLabels.map((label, cellIndex) => (
               <div key={`${label}-${cellIndex}`} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
                 <span className="shrink-0 font-black uppercase tracking-wide text-slate-400">{label}</span>
-                <span className="min-w-0 text-right font-semibold text-slate-700">{row[cellIndex]}</span>
+                <span className={cn("min-w-0 text-right text-slate-700", boldRows?.[index] ? "font-bold" : "font-semibold")}>{row[cellIndex]}</span>
               </div>
             ))}
           </div>
@@ -336,47 +408,48 @@ function formatVenueInnings(totals: PitcherVenueSplit["season"] | undefined) {
   return `${innings} (${totals.gamesUsed} ${totals.gamesUsed === 1 ? "start" : "starts"})`;
 }
 
-// Bounded diverging scale: +/- this many percentage points from league average reaches full saturation,
-// so one extreme outlier can't blow out the whole column. Below the neutral threshold, cells get a
-// faint neutral tint (distinct from N/A, which gets no gradient at all).
-const GRADIENT_BOUND_PP = 6;
-const GRADIENT_NEUTRAL_THRESHOLD_T = 0.12;
-const GRADIENT_MAX_ALPHA = 0.32;
-const GRADIENT_NEUTRAL_ALPHA = 0.07;
-
-/** Higher-is-red diverging background for a 0-100 percentage vs. a league-average baseline. Returns undefined (no gradient) for N/A. */
-function percentGradientStyle(value: number | null | undefined, leagueAverage: number): CSSProperties | undefined {
-  if (value == null || !Number.isFinite(value)) return undefined;
-  const t = Math.max(-1, Math.min(1, (value - leagueAverage) / GRADIENT_BOUND_PP));
-  if (Math.abs(t) < GRADIENT_NEUTRAL_THRESHOLD_T) {
-    return { backgroundColor: `rgba(100, 116, 139, ${GRADIENT_NEUTRAL_ALPHA})` }; // slate-500: near league average
-  }
-  const alpha = GRADIENT_NEUTRAL_ALPHA + (GRADIENT_MAX_ALPHA - GRADIENT_NEUTRAL_ALPHA) * ((Math.abs(t) - GRADIENT_NEUTRAL_THRESHOLD_T) / (1 - GRADIENT_NEUTRAL_THRESHOLD_T));
-  const rgb = t > 0 ? "220, 38, 38" : "37, 99, 235"; // red-600 above average, blue-600 below
-  return { backgroundColor: `rgba(${rgb}, ${alpha.toFixed(3)})` };
+function ratePerNine(total: number | null | undefined, outs: number | null | undefined) {
+  if (total == null || outs == null || !Number.isFinite(total) || !Number.isFinite(outs) || outs <= 0) return null;
+  return (total * 27) / outs;
 }
 
-function GradientPercentCell({ value, leagueAverage }: { value: number | null | undefined; leagueAverage: number }) {
+function ratePerInning(total: number | null | undefined, outs: number | null | undefined) {
+  if (total == null || outs == null || !Number.isFinite(total) || !Number.isFinite(outs) || outs <= 0) return null;
+  return (total * 3) / outs;
+}
+
+function signedTone(value: number | null, invert = false) {
+  if (value == null || !Number.isFinite(value) || Math.abs(value) < 0.0001) return "bg-slate-100 text-slate-600";
+  const favorable = invert ? value < 0 : value > 0;
+  return favorable ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700";
+}
+
+function DifferenceCell({ value, percent = false, invert = false }: { value: number | null; percent?: boolean; invert?: boolean }) {
   return (
-    <span className="inline-block rounded px-1.5 py-0.5" style={percentGradientStyle(value, leagueAverage)}>
-      {fmtPercent(value)}
+    <span data-testid={invert ? "hit-difference" : "k-inning-difference"} className={cn("inline-block rounded px-1.5 py-0.5 font-black tabular-nums", signedTone(value, invert))}>
+      {value == null ? DASH : `${value > 0 ? "+" : ""}${value.toFixed(percent ? 0 : 2)}${percent ? "%" : ""}`}
     </span>
   );
 }
 
-function pitcherVenueRow(split: PitcherVenueSplit, label: string): ReactNode[] {
+function pitcherVenueRow(split: PitcherVenueSplit, label: string, overallKPerInning: number | null, overallH9: number | null, isToday: boolean): ReactNode[] {
+  const seasonKPerInning = ratePerInning(split.season.strikeouts, split.season.totalOuts);
+  const seasonH9 = ratePerNine(split.season.hitsAllowed, split.season.totalOuts);
+  const lastFiveKPerInning = ratePerInning(split.lastFiveAtSite.strikeouts, split.lastFiveAtSite.totalOuts);
+  const lastFiveH9 = ratePerNine(split.lastFiveAtSite.hitsAllowed, split.lastFiveAtSite.totalOuts);
+  const shortSample = split.lastFiveAtSite.gamesUsed < 5;
   return [
-    label,
+    <span key="site" className="flex flex-wrap items-center gap-1"><span>{label}</span>{isToday && <span className="rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-800">Today</span>}</span>,
     formatVenueInnings(split.season),
-    fmtNumber(split.season.strikeouts),
-    <GradientPercentCell key="season-k-pct" value={split.season.strikeoutRate} leagueAverage={PITCHER_LEAGUE_AVG_K_PCT} />,
-    fmtNumber(split.season.hitsAllowed),
-    <GradientPercentCell key="season-hit-pct" value={split.season.hitRate} leagueAverage={PITCHER_LEAGUE_AVG_HIT_PCT} />,
-    formatVenueInnings(split.lastFiveAtSite),
-    fmtNumber(split.lastFiveAtSite.strikeouts),
-    <GradientPercentCell key="last5-k-pct" value={split.lastFiveAtSite.strikeoutRate} leagueAverage={PITCHER_LEAGUE_AVG_K_PCT} />,
-    fmtNumber(split.lastFiveAtSite.hitsAllowed),
-    <GradientPercentCell key="last5-hit-pct" value={split.lastFiveAtSite.hitRate} leagueAverage={PITCHER_LEAGUE_AVG_HIT_PCT} />,
+    fmtFixed(seasonKPerInning, 2),
+    <DifferenceCell key="season-k-diff" value={seasonKPerInning != null && overallKPerInning != null ? seasonKPerInning - overallKPerInning : null} />,
+    fmtFixed(seasonH9),
+    <DifferenceCell key="season-hit-diff" value={seasonH9 != null && overallH9 != null && overallH9 > 0 ? ((seasonH9 - overallH9) / overallH9) * 100 : null} percent invert />,
+    <span key="last-five-ip">{formatVenueInnings(split.lastFiveAtSite)}{shortSample ? <sup className="ml-0.5 font-black text-amber-700">*</sup> : null}</span>,
+    fmtFixed(lastFiveKPerInning, 2),
+    <DifferenceCell key="last-five-k-diff" value={lastFiveKPerInning != null && overallKPerInning != null ? lastFiveKPerInning - overallKPerInning : null} />,
+    fmtFixed(lastFiveH9),
+    <DifferenceCell key="last-five-hit-diff" value={lastFiveH9 != null && overallH9 != null && overallH9 > 0 ? ((lastFiveH9 - overallH9) / overallH9) * 100 : null} percent invert />,
   ];
 }
 
@@ -539,7 +612,7 @@ function SourceIntegrityPanel({ artifact, publicSlateDate }: { artifact: KPropsV
   );
 }
 
-export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null, row = null }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null; row?: PitcherStrikeoutTeamRow | null }) {
+export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null, row = null, compactLayout = false }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null; row?: PitcherStrikeoutTeamRow | null; compactLayout?: boolean }) {
   const detailsInput = getNestedRecord(shadowRow?.inputs ?? {}, ["details"]);
   const pitcherSummary = getNestedRecord(detailsInput ?? {}, ["pitcherLastFiveSummary"]);
   // Canonical summary lives on the generated detail artifact itself; the shadow debug artifact's
@@ -551,31 +624,47 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const pitcherSummaryRows = getArray(pitcherSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
   const opponentSummaryRows = getArray(opponentSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
 
-  const fallbackStartSource = pitcherSummaryRows.length ? pitcherSummaryRows : detail.pitcherLastFiveStarts.map((start, index) => ({ index, date: start.date, opponent: start.opponent, inningsPitched: start.inningsPitched, strikeouts: start.strikeouts }));
-  const fallbackStartRows: ReactNode[][] = fallbackStartSource.map((start, index) => [
-    fmtDate(start.date),
-    <TeamCell key={`start-opp-${index}`} team={getString(start, "opponent")} />,
-    getNumber(start, "outs") != null ? fmtOutsIp(getNumber(start, "outs")) : fmtIp(start.inningsPitched as number | string | null | undefined),
-    fmtNumber(getNumber(start, "strikeouts")),
-    fmtNumber(getNumber(start, "battersFaced")),
-    fmtRate(getNumber(start, "battersFaced") != null && getNumber(start, "strikeouts") != null && (getNumber(start, "battersFaced") ?? 0) > 0 ? (getNumber(start, "strikeouts") ?? 0) / (getNumber(start, "battersFaced") ?? 1) : null),
-    getNumber(start, "innings") != null && getNumber(start, "strikeouts") != null && (getNumber(start, "innings") ?? 0) > 0 ? fmtFixed(((getNumber(start, "strikeouts") ?? 0) * 9) / (getNumber(start, "innings") ?? 1)) : DASH,
-    fmtNumber(getNumber(start, "pitchCount")),
-  ]);
-  const fallbackStartCollapsibleRows: CollapsibleGameRow[] = fallbackStartSource.map((start, index) => {
-    const battersFaced = getNumber(start, "battersFaced");
+  const currentKLine = row?.kLine ?? null;
+  const fallbackStartSource = pitcherSummaryRows.length ? pitcherSummaryRows : detail.pitcherLastFiveStarts.map((start, index) => ({ index, date: start.date, opponent: start.opponent, inningsPitched: start.inningsPitched, strikeouts: start.strikeouts, hitsAllowed: start.hitsAllowed, walksAllowed: start.walksAllowed, pitchCount: start.pitchCount }));
+  const fallbackStartOuts = (start: Record<string, unknown>) => getNumber(start, "outs") ?? mlbInningsToOuts(start.inningsPitched as number | string | null | undefined);
+  const perInningFromRecords = (records: Record<string, unknown>[], numeratorKey: string, outsKey: string, inningsKey?: string) => {
+    const eligible = records.map((record) => ({
+      numerator: getNumber(record, numeratorKey),
+      outs: getNumber(record, outsKey) ?? (inningsKey ? mlbInningsToOuts(record[inningsKey] as number | string | null | undefined) : null),
+    })).filter((record) => record.numerator != null && record.outs != null && record.outs > 0);
+    if (!eligible.length) return null;
+    return ratePerInning(
+      eligible.reduce((sum, record) => sum + (record.numerator ?? 0), 0),
+      eligible.reduce((sum, record) => sum + (record.outs ?? 0), 0),
+    );
+  };
+  const fallbackStartRows: ReactNode[][] = fallbackStartSource.map((start, index) => {
+    const outs = fallbackStartOuts(start);
     const strikeouts = getNumber(start, "strikeouts");
-    const innings = getNumber(start, "innings");
+    return [
+      fmtDate(start.date),
+      <TeamCell key={`start-opp-${index}`} team={getString(start, "opponent")} />,
+      outs != null ? fmtOutsIp(outs) : fmtIp(start.inningsPitched as number | string | null | undefined),
+      <StrikeoutsVsCurrentLine key={`start-k-${index}`} strikeouts={strikeouts} currentKLine={currentKLine} />,
+      fmtFixed(ratePerInning(getNumber(start, "hitsAllowed"), outs), 2),
+      fmtFixed(ratePerInning(strikeouts, outs), 2),
+      fmtFixed(ratePerInning(getNumber(start, "walksAllowed"), outs), 2),
+      fmtNumber(getNumber(start, "pitchCount")),
+    ];
+  });
+  const fallbackStartCollapsibleRows: CollapsibleGameRow[] = fallbackStartSource.map((start, index) => {
+    const strikeouts = getNumber(start, "strikeouts");
+    const outs = fallbackStartOuts(start);
     return {
       key: `pitcher-fallback-start-${index}`,
       date: fmtDate(start.date as string | null | undefined),
       team: <TeamCell team={getString(start, "opponent")} />,
-      primaryValue: formatKSuffix(fmtNumber(strikeouts)),
+      primaryValue: <StrikeoutsVsCurrentLine strikeouts={strikeouts} currentKLine={currentKLine} suffix=" K" />,
       details: [
-        { label: "IP", value: getNumber(start, "outs") != null ? fmtOutsIp(getNumber(start, "outs")) : fmtIp(start.inningsPitched as number | string | null | undefined) },
-        { label: "BF", value: fmtNumber(battersFaced) },
-        { label: "K%", value: fmtRate(battersFaced != null && strikeouts != null && battersFaced > 0 ? strikeouts / battersFaced : null) },
-        { label: "K/9", value: innings != null && strikeouts != null && innings > 0 ? fmtFixed((strikeouts * 9) / innings) : DASH },
+        { label: "IP", value: outs != null ? fmtOutsIp(outs) : fmtIp(start.inningsPitched as number | string | null | undefined) },
+        { label: "Hits/Inning", value: fmtFixed(ratePerInning(getNumber(start, "hitsAllowed"), outs), 2) },
+        { label: "K/Inning", value: fmtFixed(ratePerInning(strikeouts, outs), 2) },
+        { label: "BB/Inning", value: fmtFixed(ratePerInning(getNumber(start, "walksAllowed"), outs), 2) },
         { label: "Pitch Count", value: fmtNumber(getNumber(start, "pitchCount")) },
       ],
     };
@@ -586,9 +675,9 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     formatGamesUsedLabel(pitcherSummary),
     formatAverageIp(pitcherSummary, "totalOuts"),
     fmtFixed(getNumber(pitcherSummary, "averageStrikeouts")),
-    fmtFixed(getNumber(pitcherSummary, "averageBattersFaced")),
-    fmtRate(getNumber(pitcherSummary, "recentKRate")),
-    fmtFixed(getNumber(pitcherSummary, "recentK9")),
+    fmtFixed(perInningFromRecords(fallbackStartSource, "hitsAllowed", "outs", "inningsPitched"), 2),
+    fmtFixed(perInningFromRecords(fallbackStartSource, "strikeouts", "outs", "inningsPitched"), 2),
+    fmtFixed(perInningFromRecords(fallbackStartSource, "walksAllowed", "outs", "inningsPitched"), 2),
     fmtFixed(getNumber(pitcherSummary, "averagePitchCount")),
   ]];
 
@@ -596,38 +685,34 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const enrichedSummary = detail.pitcherLastFiveSummary;
   const hasEnrichedPitcherStarts = Array.isArray(enrichedStarts) && enrichedSummary != null;
   const enrichedStartRows: ReactNode[][] = (enrichedStarts ?? []).map((start, index) => {
-    const hitsPerNine = start.outsRecorded != null && start.outsRecorded > 0 && start.hitsAllowed != null
-      ? (start.hitsAllowed * 27) / start.outsRecorded
-      : null;
-    const strikeoutsPerNine = start.outsRecorded != null && start.outsRecorded > 0 && start.strikeouts != null
-      ? (start.strikeouts * 27) / start.outsRecorded
-      : null;
+    const hitsPerInning = ratePerInning(start.hitsAllowed, start.outsRecorded);
+    const strikeoutsPerInning = ratePerInning(start.strikeouts, start.outsRecorded);
+    const walksPerInning = ratePerInning(start.walksAllowed, start.outsRecorded);
     return [
       fmtDate(start.date),
       <TeamCell key={`pitcher-start-opp-${index}`} team={start.opponentAbbr ?? start.opponent ?? null} />,
       start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched),
-      fmtNumber(start.strikeouts),
-      fmtFixed(hitsPerNine),
-      fmtFixed(strikeoutsPerNine),
+      <StrikeoutsVsCurrentLine key={`pitcher-start-k-${index}`} strikeouts={start.strikeouts} currentKLine={currentKLine} />,
+      fmtFixed(hitsPerInning, 2),
+      fmtFixed(strikeoutsPerInning, 2),
+      fmtFixed(walksPerInning, 2),
       fmtNumber(start.pitchCount),
     ];
   });
   const enrichedStartCollapsibleRows: CollapsibleGameRow[] = (enrichedStarts ?? []).map((start, index) => {
-    const hitsPerNine = start.outsRecorded != null && start.outsRecorded > 0 && start.hitsAllowed != null
-      ? (start.hitsAllowed * 27) / start.outsRecorded
-      : null;
-    const strikeoutsPerNine = start.outsRecorded != null && start.outsRecorded > 0 && start.strikeouts != null
-      ? (start.strikeouts * 27) / start.outsRecorded
-      : null;
+    const hitsPerInning = ratePerInning(start.hitsAllowed, start.outsRecorded);
+    const strikeoutsPerInning = ratePerInning(start.strikeouts, start.outsRecorded);
+    const walksPerInning = ratePerInning(start.walksAllowed, start.outsRecorded);
     return {
       key: `pitcher-enriched-start-${index}`,
       date: fmtDate(start.date),
       team: <TeamCell team={start.opponentAbbr ?? start.opponent ?? null} />,
-      primaryValue: formatKSuffix(fmtNumber(start.strikeouts)),
+      primaryValue: <StrikeoutsVsCurrentLine strikeouts={start.strikeouts} currentKLine={currentKLine} suffix=" K" />,
       details: [
         { label: "IP", value: start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched) },
-        { label: "H/9", value: fmtFixed(hitsPerNine) },
-        { label: "K/9", value: fmtFixed(strikeoutsPerNine) },
+        { label: "Hits/Inning", value: fmtFixed(hitsPerInning, 2) },
+        { label: "K/Inning", value: fmtFixed(strikeoutsPerInning, 2) },
+        { label: "BB/Inning", value: fmtFixed(walksPerInning, 2) },
         { label: "Pitch Count", value: fmtNumber(start.pitchCount) },
       ],
     };
@@ -637,41 +722,81 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     `${fmtNumber(enrichedSummary.gamesUsed)} used`,
     enrichedSummary.averageInningsOuts != null ? fmtOutsIp(Math.round(enrichedSummary.averageInningsOuts)) : DASH,
     fmtFixed(enrichedSummary.averageStrikeouts),
-    fmtFixed(enrichedSummary.hitsPerNine),
-    fmtFixed(enrichedSummary.strikeoutsPerNine),
+    fmtFixed(enrichedSummary.hitsPerInning ?? ratePerInning(enrichedSummary.totalHitsAllowed, enrichedSummary.totalOuts), 2),
+    fmtFixed(enrichedSummary.strikeoutsPerInning ?? ratePerInning(enrichedSummary.totalStrikeouts, enrichedSummary.totalOuts), 2),
+    fmtFixed(enrichedSummary.walksPerInning ?? ratePerInning(enrichedSummary.totalWalksAllowed, enrichedSummary.totalOuts), 2),
     fmtFixed(enrichedSummary.averagePitchCount),
   ]] : [];
-  const startColumns = hasEnrichedPitcherStarts
-    ? ["Date", "Opp", "IP", "K", "H/9", "K/9", "Pitch Count"]
-    : ["Date", "Opp", "IP", "K", "BF", "K%", "K/9", "Pitch Count"];
+  const startColumns = ["Date", "Opp", "IP", "K", "Hits/Inning", "K/Inning", "BB/Inning", "Pitch Count"];
   const startRows = hasEnrichedPitcherStarts ? enrichedStartRows : fallbackStartRows;
   const startAvg = hasEnrichedPitcherStarts ? enrichedStartAvg : fallbackStartAvg;
   const startCollapsibleRows = hasEnrichedPitcherStarts ? enrichedStartCollapsibleRows : fallbackStartCollapsibleRows;
+  const activeSeasonSplits = detail.pitcherVenueSplits
+    ? [detail.pitcherVenueSplits.home.season, detail.pitcherVenueSplits.away.season].filter((split) => split.gamesUsed > 0)
+    : [];
+  const combinedSeasonTotal = (key: "totalOuts" | "strikeouts" | "hitsAllowed") => {
+    if (!activeSeasonSplits.length || activeSeasonSplits.some((split) => split[key] == null)) return null;
+    return activeSeasonSplits.reduce((sum, split) => sum + (split[key] ?? 0), 0);
+  };
+  const overallSeasonOuts = combinedSeasonTotal("totalOuts");
+  const overallSeasonKPerInning = ratePerInning(combinedSeasonTotal("strikeouts"), overallSeasonOuts);
+  const overallSeasonH9 = ratePerNine(combinedSeasonTotal("hitsAllowed"), overallSeasonOuts);
+  const [todayAwayTeam, todayHomeTeam] = String(row?.gameKey ?? "").split("@").map((team) => team.trim().toUpperCase());
+  const pitcherTeam = String(row?.team ?? detail.team).trim().toUpperCase();
+  const todaySite = pitcherTeam && pitcherTeam === todayHomeTeam
+    ? "home"
+    : pitcherTeam && pitcherTeam === todayAwayTeam
+      ? "away"
+      : null;
+  const hasShortVenueSample = Boolean(detail.pitcherVenueSplits && (
+    detail.pitcherVenueSplits.home.lastFiveAtSite.gamesUsed < 5
+    || detail.pitcherVenueSplits.away.lastFiveAtSite.gamesUsed < 5
+  ));
   const pitcherVenueRows = detail.pitcherVenueSplits
     ? [
-      pitcherVenueRow(detail.pitcherVenueSplits.home, "Home"),
-      pitcherVenueRow(detail.pitcherVenueSplits.away, "Away"),
+      pitcherVenueRow(detail.pitcherVenueSplits.home, "Home", overallSeasonKPerInning, overallSeasonH9, todaySite === "home"),
+      pitcherVenueRow(detail.pitcherVenueSplits.away, "Away", overallSeasonKPerInning, overallSeasonH9, todaySite === "away"),
     ]
     : [];
+  const pitcherVenueRowClasses = detail.pitcherVenueSplits
+    ? [
+      todaySite === "home" ? "border-l-2 border-amber-300 bg-amber-50 text-slate-900" : "bg-white font-normal",
+      todaySite === "away" ? "border-l-2 border-amber-300 bg-amber-50 text-slate-900" : "bg-white font-normal",
+    ]
+    : [];
+  const pitcherVenueBoldRows = detail.pitcherVenueSplits
+    ? [todaySite === "home", todaySite === "away"]
+    : [];
 
-  const opponentSource = opponentSummaryRows.length ? opponentSummaryRows : detail.opponentLastFiveGames.map((game, index) => ({ index, date: game.date, opponent: game.opponent, opposingStartingPitcher: game.opposingStartingPitcher, opposingStarterInningsPitched: game.opposingStarterInningsPitched, opposingStarterStrikeouts: game.opposingStarterStrikeouts, teamStrikeouts: game.teamTotalStrikeouts }));
-  const opponentRows: ReactNode[][] = opponentSource.map((game, index) => [
-    fmtDate(game.date),
-    <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} />,
-    fmtText(getString(game, "opposingStartingPitcher")),
-    getNumber(game, "opposingStarterOuts") != null ? fmtOutsIp(getNumber(game, "opposingStarterOuts")) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined),
-    fmtNumber(getNumber(game, "opposingStarterStrikeouts")),
-    fmtNumber(getNumber(game, "teamStrikeouts")),
-  ]);
+  const opponentSource = opponentSummaryRows.length ? opponentSummaryRows : detail.opponentLastFiveGames.map((game, index) => ({ index, date: game.date, opponent: game.opponent, opposingStartingPitcher: game.opposingStartingPitcher, opposingStarterInningsPitched: game.opposingStarterInningsPitched, opposingStarterStrikeouts: game.opposingStarterStrikeouts, opposingStarterWalks: game.opposingStarterWalks, teamStrikeouts: game.teamTotalStrikeouts }));
+  const opponentRows: ReactNode[][] = opponentSource.map((game, index) => {
+    const starterOuts = getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined);
+    const starterStrikeouts = getNumber(game, "opposingStarterStrikeouts");
+    const teamStrikeouts = getNumber(game, "teamStrikeouts");
+    return [
+      fmtDate(game.date),
+      <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} />,
+      fmtText(getString(game, "opposingStartingPitcher")),
+      starterOuts != null ? fmtOutsIp(starterOuts) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined),
+      <StrikeoutsVsCurrentLine key={`opponent-sp-k-${index}`} strikeouts={starterStrikeouts} currentKLine={currentKLine} />,
+      fmtFixed(ratePerInning(starterStrikeouts, starterOuts), 2),
+      fmtFixed(ratePerInning(getNumber(game, "opposingStarterWalks"), starterOuts), 2),
+      fmtNumber(teamStrikeouts),
+      fmtFixed(teamStrikeouts == null ? null : teamStrikeouts / 9, 2),
+    ];
+  });
   const opponentCollapsibleRows: CollapsibleGameRow[] = opponentSource.map((game, index) => ({
     key: `opponent-game-${index}`,
     date: fmtDate(game.date as string | null | undefined),
     team: <TeamCell team={getString(game, "opponent")} />,
-    primaryValue: formatKSuffix(fmtNumber(getNumber(game, "opposingStarterStrikeouts"))),
+    primaryValue: <StrikeoutsVsCurrentLine strikeouts={getNumber(game, "opposingStarterStrikeouts")} currentKLine={currentKLine} suffix=" K" />,
     details: [
       { label: "Opposing SP", value: fmtText(getString(game, "opposingStartingPitcher")) },
       { label: "SP IP", value: getNumber(game, "opposingStarterOuts") != null ? fmtOutsIp(getNumber(game, "opposingStarterOuts")) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined) },
-      { label: "Game K", value: fmtNumber(getNumber(game, "teamStrikeouts")) },
+      { label: "SP K/Inning", value: fmtFixed(ratePerInning(getNumber(game, "opposingStarterStrikeouts"), getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined)), 2) },
+      { label: "SP BB/Inning", value: fmtFixed(ratePerInning(getNumber(game, "opposingStarterWalks"), getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined)), 2) },
+      { label: "Team K", value: fmtNumber(getNumber(game, "teamStrikeouts")) },
+      { label: "Team K/Inning", value: fmtFixed(getNumber(game, "teamStrikeouts") == null ? null : (getNumber(game, "teamStrikeouts") ?? 0) / 9, 2) },
     ],
   }));
 
@@ -681,8 +806,101 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     "",
     formatAverageIp(opponentSummary, "totalOpposingStarterOuts"),
     fmtFixed(getNumber(opponentSummary, "averageOpposingStarterStrikeouts")),
+    fmtFixed(perInningFromRecords(opponentSource, "opposingStarterStrikeouts", "opposingStarterOuts", "opposingStarterInningsPitched"), 2),
+    fmtFixed(perInningFromRecords(opponentSource, "opposingStarterWalks", "opposingStarterOuts", "opposingStarterInningsPitched"), 2),
     fmtFixed(getNumber(opponentSummary, "averageTeamStrikeouts")),
+    fmtFixed(getNumber(opponentSummary, "teamStrikeoutsPerInning") ?? (getNumber(opponentSummary, "averageTeamStrikeouts") == null ? null : (getNumber(opponentSummary, "averageTeamStrikeouts") ?? 0) / 9), 2),
   ]];
+
+  const recentPerformance = (
+    <MiniTable
+      title={`${detail.pitcher} — Last 5 Starts`}
+      columns={startColumns}
+      columnAlignments={["left", "left", "center", "center", "center", "center", "center", "center"]}
+      rows={startRows}
+      footRows={startAvg}
+      mobileCollapsibleRows={startCollapsibleRows}
+      emptyMessage="No recent starts available."
+    />
+  );
+  const homeAwaySplits = detail.pitcherVenueSplits ? (
+    <div>
+      <MiniTable
+        title={`${detail.pitcher} — Home/Away Splits`}
+        columns={["Site", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-"]}
+        columnWidths={["8%", "13%", "8%", "10%", "7%", "8%", "13%", "8%", "10%", "7%", "8%"]}
+        headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
+        leadingUngroupedColumns={1}
+        columnAlignments={["left", "center", "center", "center", "center", "center", "center", "center", "center", "center", "center"]}
+        centerHeaderGroups
+        mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
+        rows={pitcherVenueRows}
+        rowClassNames={pitcherVenueRowClasses}
+        boldRows={pitcherVenueBoldRows}
+        emptyMessage="No venue splits available."
+      />
+      {hasShortVenueSample && <p className="mt-1 px-1 text-[9px] font-semibold text-amber-700">* fewer than 5 starts available</p>}
+    </div>
+  ) : <p className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">No venue splits available.</p>;
+  const opponentLastTen = (
+    <MiniTable
+      title={`${detail.opponent} — Last 10 Games vs SP`}
+      columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "SP K/Inning", "SP BB/Inning", "Team K", "Team K/Inning"]}
+      columnWidths={["11%", "9%", "24%", "10%", "8%", "10%", "10%", "8%", "10%"]}
+      columnAlignments={["left", "left", "left", "center", "center", "center", "center", "center", "center"]}
+      rows={opponentRows}
+      footRows={opponentAvg}
+      mobileCollapsibleRows={opponentCollapsibleRows}
+      emptyMessage="No recent games available."
+    />
+  );
+  const opponentDataSources = detail.opponentContext ? (
+    <div data-testid="opponent-context-source-details" className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[10px] text-slate-600">
+      <div className="grid gap-1 sm:grid-cols-2">
+        <div><span className="font-black text-slate-500">K/Game:</span> {detail.opponentContext.sources?.strikeouts ?? DASH}</div>
+        <div><span className="font-black text-slate-500">xBA:</span> {detail.opponentContext.sources?.xba ?? DASH}</div>
+      </div>
+      {detail.opponentContext.samples && Object.keys(detail.opponentContext.samples).length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500">
+          {Object.entries(detail.opponentContext.samples).map(([label, value]) => <span key={label}>{label}: <strong>{value}</strong></span>)}
+        </div>
+      )}
+      {detail.opponentContext.warnings && detail.opponentContext.warnings.length > 0 && (
+        <ul className="mt-1 list-disc pl-4 font-semibold text-amber-700">
+          {detail.opponentContext.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+        </ul>
+      )}
+    </div>
+  ) : <p className="rounded-lg border border-dashed border-slate-200 bg-white p-3 text-xs text-slate-500">No opponent source diagnostics available.</p>;
+
+  if (compactLayout) {
+    return (
+      <div data-testid="strikeout-prop-detail" data-layout="compact" className="min-w-0 space-y-2">
+        <MlbStrikeoutCompactAccordion id="strikeout-recent-performance" title="Recent Performance" tone="sky">
+          {recentPerformance}
+        </MlbStrikeoutCompactAccordion>
+        <MlbStrikeoutCompactAccordion id="strikeout-home-away-splits" title="Home / Away Splits" tone="amber">
+          {homeAwaySplits}
+        </MlbStrikeoutCompactAccordion>
+        <MlbStrikeoutCompactAccordion id="strikeout-opponent-last-ten" title="Opponent Last 10 Games vs SP" tone="violet">
+          {opponentLastTen}
+        </MlbStrikeoutCompactAccordion>
+        <MlbStrikeoutCompactAccordion id="strikeout-opponent-data-sources" title="Opponent Data Sources" tone="slate">
+          {opponentDataSources}
+        </MlbStrikeoutCompactAccordion>
+        {showV2Shadow && shadowRow && (
+          <MlbStrikeoutCompactAccordion id="strikeout-model-debug" title="Model Debug" tone="slate">
+            <div data-testid="strikeout-v2-debug-panels" className="grid min-w-0 gap-2">
+              <ProjectionComparison detail={detail} shadowRow={shadowRow} row={row} />
+              <ModelBreakdown shadowRow={shadowRow} />
+              <SplitAvailabilityPanel shadowRow={shadowRow} />
+              <SourceIntegrityPanel artifact={shadowArtifact} publicSlateDate={publicSlateDate} />
+            </div>
+          </MlbStrikeoutCompactAccordion>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -693,38 +911,31 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
         <h3 className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Recent Performance</h3>
         <div className="grid min-w-0 gap-2 lg:grid-cols-[3fr_2fr]">
           <div className="grid min-w-0 gap-2">
-            <MiniTable
-              title={`${detail.pitcher} — Last 5 Starts`}
-              columns={startColumns}
-              rows={startRows}
-              footRows={startAvg}
-              mobileCollapsibleRows={startCollapsibleRows}
-              emptyMessage="No recent starts available."
-            />
-            {detail.pitcherVenueSplits && (
-              <MiniTable
-                title={`${detail.pitcher} — Home/Away Splits`}
-                columns={["Site", "IP", "K", "K%", "Hits", "Hit%", "IP", "K", "K%", "Hits", "Hit%"]}
-                columnWidths={["8%", "11%", "7%", "9%", "10%", "9%", "11%", "7%", "9%", "10%", "9%"]}
-                headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
-                leadingUngroupedColumns={1}
-                mobileLabels={["Site", "Season IP", "Season K", "Season K%", "Season Hits", "Season Hit%", "Last 5 IP", "Last 5 K", "Last 5 K%", "Last 5 Hits", "Last 5 Hit%"]}
-                rows={pitcherVenueRows}
-                emptyMessage="No venue splits available."
-              />
-            )}
+            {recentPerformance}
+            {detail.pitcherVenueSplits && homeAwaySplits}
           </div>
-          <MiniTable
-            title={`${detail.opponent} — Last 10 Games vs SP`}
-            columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "Game K"]}
-            columnWidths={["14%", "12%", "34%", "14%", "12%", "14%"]}
-            rows={opponentRows}
-            footRows={opponentAvg}
-            mobileCollapsibleRows={opponentCollapsibleRows}
-            emptyMessage="No recent games available."
-          />
+          {opponentLastTen}
         </div>
       </section>
+      {detail.opponentContext && (
+        <details data-testid="opponent-context-source-details" className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] text-slate-600">
+          <summary className="cursor-pointer font-black uppercase tracking-wide text-slate-500">Opponent data sources</summary>
+          <div className="mt-1.5 grid gap-1 sm:grid-cols-2">
+            <div><span className="font-black text-slate-500">K/Game:</span> {detail.opponentContext.sources?.strikeouts ?? DASH}</div>
+            <div><span className="font-black text-slate-500">xBA:</span> {detail.opponentContext.sources?.xba ?? DASH}</div>
+          </div>
+          {detail.opponentContext.samples && Object.keys(detail.opponentContext.samples).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500">
+              {Object.entries(detail.opponentContext.samples).map(([label, value]) => <span key={label}>{label}: <strong>{value}</strong></span>)}
+            </div>
+          )}
+          {detail.opponentContext.warnings && detail.opponentContext.warnings.length > 0 && (
+            <ul className="mt-1 list-disc pl-4 font-semibold text-amber-700">
+              {detail.opponentContext.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          )}
+        </details>
+      )}
       {showV2Shadow && shadowRow && (
         <div data-testid="strikeout-v2-debug-panels" className="grid min-w-0 gap-2">
           <ProjectionComparison detail={detail} shadowRow={shadowRow} row={row} />

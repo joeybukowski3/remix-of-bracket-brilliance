@@ -5,6 +5,7 @@ type StartFixture = {
   inningsPitched: string;
   strikeOuts: number;
   hits: number;
+  baseOnBalls?: number;
   numberOfPitches?: number;
   pitchesThrown?: number;
 };
@@ -21,6 +22,7 @@ function gameLogSplit(start: StartFixture) {
       inningsPitched: start.inningsPitched,
       strikeOuts: start.strikeOuts,
       hits: start.hits,
+      baseOnBalls: start.baseOnBalls ?? 2,
       numberOfPitches: start.numberOfPitches,
       pitchesThrown: start.pitchesThrown,
       battersFaced: 24,
