@@ -24,7 +24,7 @@ function StatusBadge({ entry }: { entry: NflInjuryEntry }) {
   if (!label || !tone) return null;
   return (
     <span
-      className={`inline-block rounded px-1 py-0.5 text-[9px] font-black uppercase leading-none tracking-wide ${TONE_CLASS[tone]}`}
+      className={`inline-block rounded px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide ${TONE_CLASS[tone]}`}
     >
       {label}
     </span>
@@ -46,7 +46,7 @@ function SummaryRow({ summary }: { summary: NflTeamInjuryProfile["summary"] }) {
     <dl className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-slate-200 px-2 py-1.5">
       {parts.map((part) => (
         <div key={part.label} className="flex items-baseline gap-1">
-          <dt className={`text-[11px] font-black tabular-nums ${part.tone}`}>{part.value}</dt>
+          <dt className={`text-[11px] font-bold tabular-nums ${part.tone}`}>{part.value}</dt>
           <dd className="text-[9px] font-bold uppercase tracking-wide text-slate-400">{part.label}</dd>
         </div>
       ))}
@@ -67,7 +67,7 @@ function TeamInjuryPanel({
 
   return (
     <div className="rounded-lg border border-slate-200">
-      <div className="border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] font-black uppercase tracking-wide text-slate-600">
+      <div className="border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
         {team.teamName}
       </div>
 
@@ -91,7 +91,7 @@ function TeamInjuryPanel({
               <col className="w-[46px]" />
             </colgroup>
             <thead>
-              <tr className="border-b border-slate-200 text-[9px] font-black uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-slate-200 text-[9px] font-bold uppercase tracking-wide text-slate-400">
                 <th scope="col" className="py-1 pr-1">Player</th>
                 <th scope="col" className="py-1 pr-1">Pos</th>
                 <th scope="col" className="py-1 pr-1">Status</th>
@@ -173,6 +173,14 @@ export default function MatchupInjuries({
 }) {
   const [side, setSide] = useState<"away" | "home">("away");
   const { away, home } = matchup;
+  const awayProfile = resolver(away.slug);
+  const homeProfile = resolver(home.slug);
+
+  // When neither team has a report, the reason is a property of the section,
+  // not of each team. Rendering two headed panels around the same sentence
+  // stated it twice and spent a third of the section on an empty state.
+  const sectionUnavailable =
+    (awayProfile?.entries.length ?? 0) === 0 && (homeProfile?.entries.length ?? 0) === 0;
 
   const options = [
     { value: "away" as const, label: away.abbr.toUpperCase() },
@@ -184,32 +192,38 @@ export default function MatchupInjuries({
       id="injuries"
       subtitle="Offensive and defensive contributors only. Specialists are excluded."
       headerAside={
-        <MatchupSegmentedControl
-          options={options}
-          value={side}
-          onChange={setSide}
-          ariaLabel="Injury report team"
-          size="sm"
-          className="lg:hidden"
-        />
+        sectionUnavailable ? undefined : (
+          <MatchupSegmentedControl
+            options={options}
+            value={side}
+            onChange={setSide}
+            ariaLabel="Injury report team"
+            size="sm"
+            className="lg:hidden"
+          />
+        )
       }
     >
+      {sectionUnavailable ? (
+        <p className="text-[11px] leading-4 text-slate-500">{unavailableMessage}</p>
+      ) : (
       <div className="grid gap-3 lg:grid-cols-2">
         <div className={side === "away" ? "" : "hidden lg:block"}>
           <TeamInjuryPanel
             team={away}
-            profile={resolver(away.slug)}
+            profile={awayProfile}
             unavailableMessage={unavailableMessage}
           />
         </div>
         <div className={side === "home" ? "" : "hidden lg:block"}>
           <TeamInjuryPanel
             team={home}
-            profile={resolver(home.slug)}
+            profile={homeProfile}
             unavailableMessage={unavailableMessage}
           />
         </div>
       </div>
+      )}
       {note ? <MatchupPendingNote>{note}</MatchupPendingNote> : null}
     </MatchupSection>
   );

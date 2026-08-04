@@ -175,6 +175,21 @@ export function formatTotal(value: number | null | undefined): string {
   return String(value);
 }
 
+/**
+ * The current line in favourite notation, e.g. "SEA −3.5" or "PK".
+ *
+ * Shared so the hero, the Spread & Market section and the Model Analysis
+ * comparison state the same line the same way. `spread.home` is sportsbook
+ * notation, so the negative side names the favourite.
+ */
+export function formatMarketFavoriteSpread(market: MarketCurrentGame | null | undefined): string {
+  const home = market?.spread?.home;
+  if (home == null || !Number.isFinite(home)) return NA;
+  if (home === 0) return "PK";
+  const favorite = home < 0 ? market!.homeAbbr : market!.awayAbbr;
+  return `${favorite.toUpperCase()} ${formatSpread(-Math.abs(home))}`;
+}
+
 /** Current market for one game. Absent or unpriced games return null. */
 export function currentMarketFor(
   artifact: MarketArtifact | null,

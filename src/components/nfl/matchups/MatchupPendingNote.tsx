@@ -25,9 +25,16 @@ export const PIPELINE_PENDING_COPY =
   "Detailed values populate when the matchup data pipeline is connected. No figures are estimated in the meantime.";
 
 /**
- * Used by the offense/defense sections. Kept in step with what is actually
- * connected: EPA moved from "unavailable" to sourced in Phase 6, so it is no
- * longer listed among the pending rows.
+ * Compact per-section attribution for the three statistical comparison sections.
+ *
+ * These sections previously each repeated the full four-sentence methodology
+ * paragraph, so the same text appeared three times on one page. The methodology
+ * now lives once in the page-level note below the sections
+ * (`CONVENTIONAL_STATS_METHODOLOGY`); each section keeps only its source list,
+ * which is what a reader actually needs in place.
  */
-export const CONVENTIONAL_STATS_NOTE =
+export const CONVENTIONAL_STATS_SOURCES = "Sources: nflverse team-week, nflfastR play-by-play, RBSDM.";
+
+/** Stated once per page, beneath the sections it describes. */
+export const CONVENTIONAL_STATS_METHODOLOGY =
   "Conventional stats come from nflverse team-week data and reflect the selected sample. EPA is nflfastR play-by-play, aggregated over the same sample. Success rate is published by RBSDM and uses its own period policy shown on each row. First downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";

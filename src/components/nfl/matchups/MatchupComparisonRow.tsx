@@ -32,7 +32,7 @@ function ComparisonSide({
         {teamName} {metricLabel}:{" "}
       </span>
       <span
-        className={`text-[13px] font-black leading-4 tabular-nums sm:text-sm ${
+        className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
           unavailable ? "text-slate-400" : "text-slate-900"
         }`}
       >

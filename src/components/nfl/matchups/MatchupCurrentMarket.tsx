@@ -28,11 +28,11 @@ function TeamLine({
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="w-8 shrink-0 text-[11px] font-black uppercase tracking-wide text-slate-500">
+      <span className="w-8 shrink-0 text-[11px] font-bold uppercase tracking-wide text-slate-500">
         {abbr}
       </span>
       <span
-        className={`rounded px-1.5 py-0.5 text-[12px] font-black tabular-nums ${
+        className={`rounded px-1.5 py-0.5 text-sm font-bold tabular-nums ${
           spreadText === "N/A"
             ? "bg-slate-100 text-slate-400"
             : favored
@@ -77,10 +77,10 @@ export default function MatchupCurrentMarket({
   return (
     <section
       aria-label="Current market"
-      className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2"
+      className="border-b border-slate-200 pb-2.5"
     >
       <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600">
           Current Market
         </h3>
         <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
@@ -104,11 +104,11 @@ export default function MatchupCurrentMarket({
           </div>
 
           <div className="flex items-baseline gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Total
             </span>
             <span
-              className={`rounded px-1.5 py-0.5 text-[12px] font-black tabular-nums ${
+              className={`rounded px-1.5 py-0.5 text-sm font-bold tabular-nums ${
                 market?.total == null ? "bg-slate-100 text-slate-400" : "bg-slate-100 text-slate-700"
               }`}
             >

@@ -214,7 +214,10 @@ describe("unavailable state", () => {
     renderInjuries(unavailableInjuryResolver, {
       unavailableMessage: "2026 injury and snap data has not been published yet.",
     });
-    expect(screen.getAllByText(/has not been published yet/i)).toHaveLength(2);
+    // Stated once for the section, not repeated per team: when neither side has
+    // a report the reason belongs to the section, and printing it twice spent a
+    // third of the section restating the same sentence.
+    expect(screen.getAllByText(/has not been published yet/i)).toHaveLength(1);
     expect(screen.queryByRole("table")).toBeNull();
   });
 

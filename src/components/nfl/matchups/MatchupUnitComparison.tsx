@@ -3,7 +3,7 @@ import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupComparisonGroup, { ComparisonHeader } from "@/components/nfl/matchups/MatchupComparisonGroup";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
-import MatchupPendingNote, { CONVENTIONAL_STATS_NOTE } from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
 import { formatSigned } from "@/lib/nfl/guideData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import type { NflMatchupMetricGroup, NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
@@ -107,7 +107,7 @@ export default function MatchupUnitComparison({
           key={group.id}
           className={`pt-2 ${group.id === activeGroup ? "" : "hidden lg:block"}`}
         >
-          <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+          <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
             {group.label}
           </h3>
           <MatchupComparisonGroup
@@ -149,7 +149,7 @@ export default function MatchupUnitComparison({
         </div>
       ))}
 
-      <MatchupPendingNote>{CONVENTIONAL_STATS_NOTE}</MatchupPendingNote>
+      <MatchupPendingNote>{CONVENTIONAL_STATS_SOURCES}</MatchupPendingNote>
     </MatchupSection>
   );
 }

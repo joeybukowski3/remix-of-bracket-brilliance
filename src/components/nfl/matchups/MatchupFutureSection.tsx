@@ -21,7 +21,7 @@ export default function MatchupFutureSection({
       <p className="text-xs font-semibold text-slate-500">{message}</p>
       {futureScope && futureScope.length > 0 && (
         <div className="mt-2 border-t border-dashed border-slate-200 pt-2">
-          <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
             Planned for a later phase
           </p>
           <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">

@@ -41,6 +41,22 @@ export const NFL_MATCHUP_SECTIONS: readonly NflMatchupSection[] = [
   { id: "model-analysis", label: "Model Analysis", navLabel: "Model Analysis" },
 ] as const;
 
+/**
+ * Sticky-offset contract for the analyzer, in one place so the anchors, the
+ * Jump To bar and the site header cannot drift apart.
+ *
+ * `SiteHeader` is `sticky top-0 z-[100]` and 72px tall plus a 1px border. The
+ * Jump To bar must therefore stick *below* it rather than at `top-0`, where it
+ * was rendering underneath the header and was invisible whenever the page was
+ * scrolled. Anchored sections in turn need to clear whichever bars are sticky
+ * at that breakpoint:
+ *
+ *   below lg : site header (73px) + Jump To bar (~42px) -> 8rem
+ *   lg and up: site header only, because Jump To becomes a static toolbar
+ */
+export const MATCHUP_STICKY_NAV_TOP = "top-[73px]";
+export const MATCHUP_SECTION_SCROLL_MT = "scroll-mt-32 lg:scroll-mt-24";
+
 export function getMatchupSection(id: NflMatchupSectionId): NflMatchupSection {
   const section = NFL_MATCHUP_SECTIONS.find((entry) => entry.id === id);
   // Registry is exhaustive over the id union, so this is unreachable in

@@ -2,7 +2,7 @@ import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
-import MatchupPendingNote, { CONVENTIONAL_STATS_NOTE } from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
 import {
   UNIT_BATTLE_GROUPS,
   getMetricDef,
@@ -58,14 +58,14 @@ function PossessionPanel({
     <div className="rounded-lg border border-slate-200">
       <div className="border-b border-slate-200 bg-slate-50 px-2 py-1.5">
         <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
-          <div className="truncate text-right text-[10px] font-black uppercase tracking-wide text-slate-600">
+          <div className="truncate text-right text-[10px] font-bold uppercase tracking-wide text-slate-600">
             <span className="sm:hidden">{offenseTeam.abbr.toUpperCase()} Off</span>
             <span className="hidden sm:inline">{offenseTeam.teamName} Offense</span>
           </div>
-          <div className="text-center text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">
+          <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
             vs
           </div>
-          <div className="truncate text-left text-[10px] font-black uppercase tracking-wide text-slate-600">
+          <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
             <span className="sm:hidden">{defenseTeam.abbr.toUpperCase()} Def</span>
             <span className="hidden sm:inline">{defenseTeam.teamName} Defense</span>
           </div>
@@ -75,7 +75,7 @@ function PossessionPanel({
       <div className="px-2 pb-2">
         {UNIT_BATTLE_GROUPS.map((group) => (
           <div key={group.id} className="pt-2">
-            <h4 className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+            <h4 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
               {group.label}
             </h4>
             {group.pairings.map((pairing) => {
@@ -174,7 +174,7 @@ export default function MatchupUnitBattles({
           <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} successRate={successRate} trench={trench} />
         </div>
       </div>
-      <MatchupPendingNote>{CONVENTIONAL_STATS_NOTE}</MatchupPendingNote>
+      <MatchupPendingNote>{CONVENTIONAL_STATS_SOURCES}</MatchupPendingNote>
     </MatchupSection>
   );
 }

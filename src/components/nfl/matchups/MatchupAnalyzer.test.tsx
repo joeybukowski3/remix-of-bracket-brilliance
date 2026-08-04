@@ -340,7 +340,8 @@ describe("Placeholder sections stay honest", () => {
       />
     );
 
-    expect(screen.getAllByText(/injury report not connected/i)).toHaveLength(2);
+    // Once for the section, not once per team — see MatchupInjuries.test.tsx.
+    expect(screen.getAllByText(/injury report not connected/i)).toHaveLength(1);
     // No fabricated rows, and no derived number of any kind. "Impact" survives
     // only as the pre-existing section label, never as a computed value.
     expect(screen.queryByText(/total snaps/i)).toBeNull();

@@ -12,10 +12,10 @@ export type SuccessPeriodValues = Partial<Record<SuccessPeriodKey, SuccessMetric
 /**
  * One team's value for one period.
  *
- * Stacked below `sm` and inline from `sm` up. The side columns are the same
- * 4.25rem the rest of the analyzer uses, and an inline "50.5% #26" does not fit
- * there — forcing it would push the value outside its column and break
- * alignment with every neighbouring row.
+ * Stacked value-over-rank, matching the conventional comparison rows this row
+ * is interleaved with. It previously went inline from `sm` up and pinned itself
+ * to the outer edge, so a success-rate row read as a different kind of table
+ * from the EPA row directly above it.
  */
 function PeriodSide({
   side,
@@ -35,15 +35,15 @@ function PeriodSide({
 
   return (
     <div
-      className={`flex flex-col gap-0.5 rounded px-1 py-0.5 sm:flex-row sm:items-center sm:gap-1 ${rankCellClass(
+      className={`flex flex-col gap-0.5 rounded px-1 py-0.5 ${rankCellClass(
         value?.rank ?? null
-      )} ${isAway ? "items-end text-right sm:justify-end" : "items-start text-left sm:justify-start"}`}
+      )} ${isAway ? "items-end text-right" : "items-start text-left"}`}
     >
       <span className="sr-only">
         {teamName} {metricLabel} {periodLabel}:{" "}
       </span>
       <span
-        className={`text-[12px] font-black leading-4 tabular-nums sm:text-[13px] ${
+        className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
           unavailable ? "text-slate-400" : "text-slate-900"
         }`}
       >
@@ -119,7 +119,7 @@ export default function MatchupSuccessRateRow({
               metricLabel={metricLabel}
               periodLabel={labels.label}
             />
-            <span className="text-center text-[9px] font-black uppercase tracking-wide text-slate-400">
+            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-400">
               <span className="sm:hidden">{labels.short}</span>
               <span className="hidden sm:inline">{labels.label}</span>
             </span>

@@ -61,7 +61,7 @@ export default function MatchupSegmentedControl<T extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className={`rounded-md font-black uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${padding} ${
+            className={`rounded-md font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${padding} ${
               selected
                 ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
                 : "text-slate-500 hover:text-slate-800"

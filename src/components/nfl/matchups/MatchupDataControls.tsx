@@ -37,7 +37,7 @@ export default function MatchupDataControls({
         <div className="flex items-center justify-between gap-3 sm:justify-start">
           <span
             id="matchup-data-window-label"
-            className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400"
+            className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400"
           >
             Data Window
           </span>
@@ -50,7 +50,7 @@ export default function MatchupDataControls({
         </div>
 
         <div className="flex items-center justify-between gap-3 sm:justify-start">
-          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
             Historical Blend
           </span>
           <button
@@ -58,7 +58,7 @@ export default function MatchupDataControls({
             role="switch"
             aria-checked={blendOn}
             onClick={() => onChange({ ...settings, includePriorSeason: !blendOn })}
-            className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-black uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+            className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
               blendOn
                 ? "border-emerald-300 bg-emerald-50 text-emerald-800"
                 : "border-slate-200 bg-slate-50 text-slate-500"
@@ -75,12 +75,12 @@ export default function MatchupDataControls({
 
         {sampleLabel && (
           <div className="flex items-center gap-2 sm:ml-auto">
-            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
               Sample
             </span>
             <span
               data-testid="matchup-sample-label"
-              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-black tabular-nums text-slate-700"
+              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-bold tabular-nums text-slate-700"
             >
               {sampleLabel}
             </span>

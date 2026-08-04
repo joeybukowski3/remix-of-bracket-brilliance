@@ -7,7 +7,7 @@ import {
   projectionBreakdown,
   type GameProjection,
 } from "@/lib/nfl/projectionData";
-import { formatSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
+import { formatMarketFavoriteSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
 
 const NA = "N/A";
 
@@ -18,25 +18,29 @@ const NA = "N/A";
 function HeadlineStat({
   label,
   value,
+  help,
   emphasis = false,
   unavailable = false,
 }: {
   label: string;
   value: string;
+  /** Short definition; these three terms are not self-explanatory. */
+  help: string;
   emphasis?: boolean;
   unavailable?: boolean;
 }) {
   return (
     <div
+      title={help}
       className={`rounded-lg border px-2 py-2 text-center sm:px-3 ${
         emphasis ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"
       }`}
     >
-      <p className="text-[9px] font-black uppercase leading-3 tracking-wide text-slate-500 sm:text-[10px]">
+      <p className="text-[9px] font-bold uppercase leading-3 tracking-wide text-slate-500 sm:text-[10px]">
         {label}
       </p>
       <p
-        className={`mt-1 text-[15px] font-black leading-5 tabular-nums sm:text-lg ${
+        className={`mt-1 text-[15px] font-bold leading-5 tabular-nums sm:text-lg ${
           unavailable ? "text-slate-400" : emphasis ? "text-emerald-700" : "text-slate-900"
         }`}
       >
@@ -87,15 +91,9 @@ export default function MatchupModelAnalysis({
 
   const comparison = compareToMarket(projection, market);
   const breakdown = projectionBreakdown(projection);
-  const marketLine = market?.spread?.home;
-  const marketDisplay =
-    marketLine == null || !Number.isFinite(marketLine)
-      ? NA
-      : marketLine === 0
-        ? "PK"
-        : `${(marketLine < 0 ? projection.homeTeam : projection.awayTeam).toUpperCase()} ${formatSpread(
-            marketLine < 0 ? marketLine : -marketLine
-          )}`;
+  // Shared with the hero and the Spread & Market section so one line is never
+  // stated three different ways on one page.
+  const marketDisplay = formatMarketFavoriteSpread(market);
   const differenceDisplay =
     comparison?.difference == null ? NA : formatPoints(comparison.difference);
 
@@ -107,11 +105,22 @@ export default function MatchupModelAnalysis({
       }.`}
     >
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <HeadlineStat label="JKB Projected Spread" value={formatProjectedSpread(projection)} emphasis />
-        <HeadlineStat label="Market Spread" value={marketDisplay} unavailable={marketDisplay === NA} />
+        <HeadlineStat
+          label="JKB Projected Spread"
+          value={formatProjectedSpread(projection)}
+          help="This model's own estimate of the final margin, from opponent-adjusted EPA and point differential. No market data is used to produce it."
+          emphasis
+        />
+        <HeadlineStat
+          label="Market Spread"
+          value={marketDisplay}
+          help="The currently published market line for this game, shown for comparison only."
+          unavailable={marketDisplay === NA}
+        />
         <HeadlineStat
           label="Model vs Market"
           value={differenceDisplay}
+          help="How far this model sits from the market line, in points. A description of the gap — not an edge, a pick or a betting recommendation."
           unavailable={differenceDisplay === NA}
         />
       </div>
@@ -129,7 +138,7 @@ export default function MatchupModelAnalysis({
       )}
 
       <div className="mt-3 border-t border-slate-100 pt-2">
-        <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
           How the projection is built
         </p>
         <dl className="mt-1.5 divide-y divide-slate-100">
@@ -139,7 +148,7 @@ export default function MatchupModelAnalysis({
                 <dt className="text-[11px] font-bold leading-4 text-slate-700 sm:text-xs">
                   {row.label}
                 </dt>
-                <dd className="shrink-0 text-[13px] font-black leading-4 tabular-nums text-slate-900">
+                <dd className="shrink-0 text-[13px] font-bold leading-4 tabular-nums text-slate-900">
                   {row.value}
                 </dd>
               </div>

@@ -1,6 +1,10 @@
 import { useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
-import { getMatchupSection, type NflMatchupSectionId } from "@/lib/nfl/matchupSections";
+import {
+  MATCHUP_SECTION_SCROLL_MT,
+  getMatchupSection,
+  type NflMatchupSectionId,
+} from "@/lib/nfl/matchupSections";
 
 /**
  * Standard shell for every analyzer section.
@@ -10,8 +14,9 @@ import { getMatchupSection, type NflMatchupSectionId } from "@/lib/nfl/matchupSe
  * rendered and the toggle is hidden — desktop has the width to show everything,
  * and a collapsed desktop grid cell would leave awkward holes in the layout.
  *
- * `scroll-mt-*` offsets the sticky mobile Jump To bar so an anchored heading is
- * never hidden underneath it.
+ * `MATCHUP_SECTION_SCROLL_MT` offsets whichever bars are sticky at the current
+ * breakpoint so an anchored heading is never parked underneath them — the site
+ * header plus the Jump To bar on mobile, the site header alone on desktop.
  */
 export default function MatchupSection({
   id,
@@ -53,14 +58,14 @@ export default function MatchupSection({
       // section rather than leaving it stranded at the top of the document.
       tabIndex={-1}
       aria-labelledby={headingId}
-      className={`scroll-mt-24 rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 lg:scroll-mt-6 ${className}`}
+      className={`${MATCHUP_SECTION_SCROLL_MT} rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${className}`}
     >
       <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2
               id={headingId}
-              className="text-[13px] font-black uppercase tracking-wider text-slate-800 sm:text-sm"
+              className="text-[13px] font-bold uppercase tracking-wider text-slate-800 sm:text-sm"
             >
               {heading}
             </h2>
@@ -74,7 +79,7 @@ export default function MatchupSection({
                 onClick={() => setOpen((prev) => !prev)}
                 aria-expanded={open}
                 aria-controls={bodyId}
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 lg:hidden"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 lg:hidden"
               >
                 {open ? "Hide" : "Show"}
                 <ChevronDown

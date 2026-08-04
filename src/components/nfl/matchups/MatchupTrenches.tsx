@@ -42,20 +42,26 @@ function TrenchBattle({
     : {};
 
   return (
-    <div className="rounded-lg border border-slate-200 p-2">
-      <div className="mb-1 text-center text-[10px] font-black uppercase tracking-wide text-slate-500">
+    <div className="border-t border-slate-100 pt-1.5 first:border-t-0 first:pt-0">
+      <div className="mb-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500">
         {label}
       </div>
 
       {/* Which team and metric each side represents. */}
-      <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 border-b border-slate-100 pb-1 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
-        <div className="truncate text-right text-[9px] font-black uppercase tracking-wide text-slate-500">
+      <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
+        <div
+          title={offenseDef?.help}
+          className="truncate text-right text-[9px] font-bold uppercase tracking-wide text-slate-500"
+        >
           {offenseTeam.abbr.toUpperCase()} {offenseDef?.shortLabel ?? ""}
         </div>
-        <div className="text-center text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">
+        <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
           vs
         </div>
-        <div className="truncate text-left text-[9px] font-black uppercase tracking-wide text-slate-500">
+        <div
+          title={defenseDef?.help}
+          className="truncate text-left text-[9px] font-bold uppercase tracking-wide text-slate-500"
+        >
           {defenseTeam.abbr.toUpperCase()} {defenseDef?.shortLabel ?? ""}
         </div>
       </div>
@@ -111,14 +117,17 @@ export default function MatchupTrenches({
   ];
 
   return (
-    <MatchupSection id="trenches" subtitle="Line-of-scrimmage win rates, shown side by side.">
-      <div className="space-y-3">
+    <MatchupSection
+      id="trenches"
+      subtitle="Line-of-scrimmage win rates. Context only — not an input to the JKB spread model."
+    >
+      <div className="space-y-2.5">
         {possessions.map(({ key, offense, defense }) => (
           <div key={key}>
-            <h3 className="mb-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+            <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
               {offense.teamName} has the ball
             </h3>
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               {TRENCH_BATTLES.map((battle) => (
                 <TrenchBattle
                   key={battle.id}

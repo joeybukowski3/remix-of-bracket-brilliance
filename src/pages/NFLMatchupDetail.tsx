@@ -51,6 +51,7 @@ import MatchupAngles from "@/components/nfl/matchups/MatchupAngles";
 import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
 import MatchupFutureSection from "@/components/nfl/matchups/MatchupFutureSection";
 import MatchupModelAnalysis from "@/components/nfl/matchups/MatchupModelAnalysis";
+import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupHero from "@/components/nfl/matchups/MatchupHero";
 import MatchupInjuries from "@/components/nfl/matchups/MatchupInjuries";
 import MatchupJumpNav from "@/components/nfl/matchups/MatchupJumpNav";
@@ -260,7 +261,11 @@ export default function NFLMatchupDetail() {
       <div className="site-container space-y-3">
         <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
-        <MatchupHero matchup={matchup} modelRatings={heroModelRatings} />
+        <MatchupHero
+          matchup={matchup}
+          modelRatings={heroModelRatings}
+          market={market?.current ?? null}
+        />
 
         <MatchupJumpNav />
 
@@ -272,7 +277,11 @@ export default function NFLMatchupDetail() {
 
         <MatchupRankLegend />
 
-        {/* Advantages + Things to Watch share a row on wide screens. */}
+        {/* Paired at `lg`, the same breakpoint where MatchupSection stops
+            collapsing and MatchupUnitComparison stops hiding inactive metric
+            groups. Pairing later (at `xl`) left 1024-1279px showing every group
+            expanded in a single column, which made that range the tallest
+            rendering of the page — taller even than 768px. */}
         <div className="grid items-start gap-3 lg:grid-cols-2">
           <MatchupSection id="advantages">
             <MatchupAdvantages notes={advantages} />
@@ -283,7 +292,7 @@ export default function NFLMatchupDetail() {
           </MatchupSection>
         </div>
 
-        <div className="grid items-start gap-3 xl:grid-cols-2">
+        <div className="grid items-start gap-3 lg:grid-cols-2">
           <MatchupUnitComparison
             id="offense"
             matchup={matchup}
@@ -311,7 +320,7 @@ export default function NFLMatchupDetail() {
 
         <MatchupUnitBattles matchup={matchup} resolver={metricResolver} successRate={successRate} trench={trench} />
 
-        <div className="grid items-start gap-3 xl:grid-cols-2">
+        <div className="grid items-start gap-3 lg:grid-cols-2">
           <MatchupTrenches
             matchup={matchup}
             trench={trench}
@@ -341,6 +350,11 @@ export default function NFLMatchupDetail() {
             error={projectionError}
           />
         </div>
+
+        {/* Stated once for the whole page. The offense, defense and
+            offense-vs-defense sections used to repeat this paragraph verbatim,
+            three times over. */}
+        <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
 
         {successArtifact && successRate && (
           <p className="text-[11px] leading-5 text-slate-400">

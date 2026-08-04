@@ -71,8 +71,11 @@ export default function MatchupMarketProfile({
     },
     {
       key: "modelVsMarket",
-      label: "Model vs Market Gap",
-      help: "Projected wins minus market win total. Season value, not a head-to-head edge.",
+      // Deliberately not "Model vs Market": Model Analysis uses that label for
+      // this game's spread in points. Two different units and subjects sharing
+      // one name on the same page reads as the same metric printed twice.
+      label: "Win Total Gap",
+      help: "Projected wins minus market win total, in wins. A full-season figure — unrelated to this game's spread.",
       value: (team) => (team.modelVsMarketGap == null ? NA : formatSigned(team.modelVsMarketGap)),
       rank: () => null,
     },
@@ -101,7 +104,7 @@ export default function MatchupMarketProfile({
       <MatchupCurrentMarket matchup={matchup} market={market?.current ?? null} />
 
       <div className="pt-3">
-        <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+        <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
           Team Market Profile
         </h3>
         {market?.note && <p className="mb-1 text-[11px] leading-4 text-slate-500">{market.note}</p>}
@@ -130,7 +133,7 @@ export default function MatchupMarketProfile({
       </div>
 
       <div className="pt-3">
-        <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+        <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700">
           Joe Knows Ball season context
         </h3>
         <p className="mb-1 text-[11px] leading-4 text-slate-500">

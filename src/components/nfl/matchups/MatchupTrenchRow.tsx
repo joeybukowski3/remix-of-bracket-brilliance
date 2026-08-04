@@ -21,9 +21,10 @@ export type MatchupTrenchConfig = {
 /**
  * One team's trench value for one period.
  *
- * Stacked below `sm`, inline from `sm` up — the analyzer's 4.25rem side column
- * cannot fit "71% #12" on one line at 375px without breaking alignment with
- * neighbouring rows.
+ * Stacked value-over-rank, matching the conventional comparison rows these are
+ * interleaved with in Offense vs Defense. Going inline from `sm` up pinned the
+ * value to the outer edge and made a trench row read as a different kind of
+ * table from the EPA row above it.
  *
  * Rank-tier colouring is driven by ESPN's official rank, which is the only rank
  * that exists here: ESPN publishes whole-number percentages but ranks on finer
@@ -47,15 +48,15 @@ function TrenchPeriodSide({
 
   return (
     <div
-      className={`flex flex-col gap-0.5 rounded px-1 py-0.5 sm:flex-row sm:items-center sm:gap-1 ${rankCellClass(
+      className={`flex flex-col gap-0.5 rounded px-1 py-0.5 ${rankCellClass(
         value?.espnRank ?? null
-      )} ${isAway ? "items-end text-right sm:justify-end" : "items-start text-left sm:justify-start"}`}
+      )} ${isAway ? "items-end text-right" : "items-start text-left"}`}
     >
       <span className="sr-only">
         {teamName} {metricLabel} {periodLabel}:{" "}
       </span>
       <span
-        className={`text-[12px] font-black leading-4 tabular-nums sm:text-[13px] ${
+        className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
           unavailable ? "text-slate-400" : "text-slate-900"
         }`}
       >
@@ -133,7 +134,7 @@ export default function MatchupTrenchRow({
               metricLabel={metricLabel}
               periodLabel={labels.label}
             />
-            <span className="text-center text-[9px] font-black uppercase tracking-wide text-slate-400">
+            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-400">
               <span className="sm:hidden">{labels.short}</span>
               <span className="hidden sm:inline">{labels.label}</span>
             </span>
