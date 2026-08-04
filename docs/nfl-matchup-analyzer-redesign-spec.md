@@ -1876,3 +1876,200 @@ source). None of them entered the rating.
 > target variable all remain unimplemented by design. They belong to the
 > projected-spread phase, where each can be calibrated and reviewed on its own
 > terms.
+
+# 27. Phase 9 — JKB projected spread (`nfl-spread-v0.1.0`)
+
+Phase 9 replaces the Model Analysis placeholder with a real projected spread.
+This is the first **predictive** model on the site; everything before it was
+descriptive.
+
+## 27.1 Two models, deliberately separate
+
+| | `nfl-power-v0.3.1` | `nfl-spread-v0.1.0` |
+|---|---|---|
+| Job | Describe a season | Forecast a scoring margin |
+| Weights | 40 / 40 / 20 | 45 / 35 / 20 |
+| Scale | 1–99 rating | Points |
+| Surface | Hero + `/nfl` board | Model Analysis section |
+
+`nfl-power-v0.3.1` is **unchanged by this phase**. The 45/35 split exists only
+because backtesting found offence modestly more predictive of future margin
+than defence; the public rating stays balanced because it describes rather than
+forecasts.
+
+## 27.2 Features
+
+Three, all from the Phase 6 nflfastR play-by-play EPA definition
+(`matchup-epa-v1`) and the repository's own results:
+
+- `offAdj` — opponent-adjusted offensive EPA per play
+- `defAdj` — opponent-adjusted defensive EPA per play allowed
+- `pdgAdj` — opponent-adjusted point differential per game
+
+Opponent adjustment is the validated **one-pass** v0.3 method
+(`offAdj = raw_off − (oppMeanDef − leagueDef)`). Phase 8 measured an iterative
+solve at 0.005 MAE better with slightly worse winner accuracy and kept the
+simpler method.
+
+Composite strength is `0.45·z(offAdj) + 0.35·z(−defAdj) + 0.20·z(pdgAdj)` over
+population z-scores (divisor N) across all 32 teams, unrounded and unclamped.
+Defence is negated before weighting because a lower EPA allowed is better. A
+zero-variance league is a hard failure, never a silent 0/0.
+
+## 27.3 Sample
+
+All completed regular-season games that had **finished** before the target
+kickoff: `kickoff + 3.5h <= targetKickoff`. Week numbers are never used — a
+Sunday 1pm result is not knowable to another Sunday 1pm game.
+
+EPA aggregates weighted numerators over weighted denominators; rates are never
+averaged. Point differential is a per-game observation, so it uses a weighted
+mean over games with no play denominator.
+
+**Recency weighting: none.** Every completed game carries equal weight. The
+model therefore does **not** respond to the matchup page's Season / Last 5
+control, which remains a display setting for the descriptive sections only.
+
+## 27.4 Prior season
+
+The full previous regular season, weighted `K / (K + nCurrent)` with `K = 2`.
+So `nCurrent = 0 → 1`, `1 → 2/3`, `2 → 1/2`, `4 → 1/3`, `8 → 1/5`. The weight
+never reaches zero.
+
+Phase 8 originally chose `K = 4` on a dev set that was missing 2022 Week 1
+entirely. With the 2021 EPA cache added, Phase 8B re-tested and `K = 2` wins on
+all four seasons including both holdouts.
+
+Entering 2026 there are no completed 2026 games, so every team sits on a full
+2025 prior at weight 1. No 2026 statistics are fabricated.
+
+## 27.5 Parameters
+
+- **Home-field advantage: fixed 2.0 points**, exactly 0.0 at neutral sites, and
+  **never fitted**. Phase 8B found that fixing it costs 0.0016 MAE pooled while
+  being *better* on both held-out seasons — and it reduces the model to a single
+  free parameter. A free-intercept parameterization was rejected as pathological:
+  only 23 neutral games identify the intercept, which split it into −1.91 with a
+  +4.47 home term.
+- **Beta is the only fitted parameter**, by closed form with the known HFA
+  removed from the target first: `β = Σ[d·(margin − HFA)] / Σ[d²]`. It is fitted
+  on an expanding window of **complete prior seasons only**, so no result is ever
+  in scope for the parameter that predicts it. Entering 2026, β ≈ 4.63 fitted on
+  2021–2025 (1,359 games). The generator derives this deterministically and
+  refuses to publish if it falls outside a 3.5–5.5 guard band.
+
+## 27.6 Validated accuracy
+
+Walk-forward, each season predicted with a beta fitted only on strictly earlier
+seasons:
+
+| Season | β | n | MAE | Winner |
+|---|---|---|---|---|
+| 2022 | 5.045 | 271 | 9.19 | 62.5% |
+| 2023 | 4.189 | 272 | 10.36 | 61.0% |
+| 2024 | 4.298 | 272 | 10.20 | 69.1% |
+| 2025 | 4.553 | 272 | 10.31 | 62.7% |
+| **Pooled** | — | 1,087 | **10.02** | **63.8%** |
+
+Calibration slope 0.979, intercept 0.180 — well calibrated, close to unbiased.
+
+`src/lib/nfl/spreadBacktest.test.ts` reproduces these through the same engine
+the generator runs, so a silent change to the sample rule, weights, prior,
+opponent adjustment or beta fit surfaces as a failing number.
+
+## 27.7 The model does not beat the market
+
+Measured on the 2025 holdout:
+
+| | MAE | Winner |
+|---|---|---|
+| JKB | 10.31 | 62.7% |
+| Market | 9.72 | 65.3% |
+
+The ATS diagnostic sits near 48.7% against a ~52.4% break-even, with no
+monotonic relationship between the size of the difference and the hit rate.
+
+This finding drives the product framing directly. The UI labels the gap
+**"Model vs Market"** — a description — and never "Model Edge". There is no best
+bet, value bet, strong edge, confidence level, win probability, expected value
+or stake size anywhere in the section, and `MatchupModelAnalysis.test.tsx`
+asserts their absence.
+
+## 27.8 Market independence
+
+The market is not an input at any stage. `scripts/lib/nfl-spread-model.mjs` and
+`scripts/lib/nfl-spread-dataset.mjs` contain no market identifier, and
+`scripts/generate-nfl-matchup-projections.mjs` never opens the market artifact —
+`spreadModel.test.ts` scans these sources and asserts this. The published
+artifact records `model.marketInputUsed: false` and
+`model.fittedParameters: ["beta"]`.
+
+The market line is joined only in the consumer layer, in
+`src/lib/nfl/projectionData.ts`, strictly after a projection already exists.
+`compareToMarket` returns null without a projection, so the market can never
+stand in for one.
+
+`data/nfl/benchmark/market_lines_2025.csv` holds settled 2025 lines so the
+benchmark test runs offline. It is read only by that test — never by the model
+or the generator.
+
+## 27.9 Artifact
+
+`public/data/nfl/matchup-projections.json` (~348 KB raw, ~26 KB gzipped), one
+record per 2026 regular-season game plus a `model` block recording every
+configuration value above. Written via temp file and atomic rename.
+
+Generation fails safely — leaving the previous known-good artifact untouched —
+on a missing EPA cache, malformed rows, an opponent pair that disagrees between
+the EPA and results sources, a thin league snapshot, a non-finite composite,
+zero standard deviation, an invalid beta fit, a beta outside the guard band, or
+a target game appearing inside its own feature sample.
+
+`sampleGameIds` is deliberately **not** published: it is thousands of
+identifiers the browser never reads. The leakage guard runs on the full list at
+generation time, and `lastSampleGameId` still lets a reader confirm the sample
+stops before kickoff.
+
+Commands:
+
+```
+npm run nfl:matchup-projections     # regenerate the artifact
+npm run nfl:spread-backtest         # walk-forward report
+```
+
+## 27.10 Data added
+
+The EPA cache and schedules/results were extended back to 2020 and 2021, needed
+for the expanding-window beta fit and for 2022 Week 1 to have a prior at all.
+Both follow the established Phase 6 compact-cache pattern: raw play-by-play is
+streamed and discarded, never written to disk and never committed
+(`manifest.json` records `rawPlayByPlayCommitted: false`). 2020 and 2021 are
+~48–51 KB each, a ~365x reduction from the 17–18 MB gzipped source.
+
+`NFL_V03_SOURCE_SEASONS` and `NFL_V03_PERFORMANCE_SEASONS` remain explicit
+lists, so `nfl-power-v0.3.1` does not pick up the new seasons.
+
+## 27.11 UI
+
+The Model Analysis section shows three headline figures — **JKB Projected
+Spread**, **Market Spread**, **Model vs Market** — followed by the three terms
+that actually produce the projection: Team Strength Difference, Home Field,
+Projected Margin. Nothing else is claimed.
+
+Validated at 375, 390, 430, 768, 1024, 1280, 1440 and 1720 px with no page-level
+horizontal scroll and no console errors.
+
+The projected spread is rendered from the artifact's parts rather than its
+`display` string so its typographic minus matches the market line beside it.
+
+Loading is independent of every other artifact: if the projection file is
+missing or malformed, only this section reports itself unavailable and no figure
+is estimated in its place.
+
+## 27.12 Boundaries preserved
+
+Unchanged by this phase: `nfl-power-v0.3.1` and its artifacts, Phase 2
+conventional stats, Phase 3A success rates, Phase 3B trenches, Phase 4 injuries,
+Phase 5 market profile, Phase 6 display EPA, Advantages, Things to Watch,
+existing market grading and the ATS definitions. Game Trends remains a
+placeholder.

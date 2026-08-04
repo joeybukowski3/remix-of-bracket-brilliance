@@ -8,6 +8,8 @@ import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
+import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
+import { projectionFor } from "@/lib/nfl/projectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
@@ -48,6 +50,7 @@ import MatchupAdvantages from "@/components/nfl/matchups/MatchupAdvantages";
 import MatchupAngles from "@/components/nfl/matchups/MatchupAngles";
 import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
 import MatchupFutureSection from "@/components/nfl/matchups/MatchupFutureSection";
+import MatchupModelAnalysis from "@/components/nfl/matchups/MatchupModelAnalysis";
 import MatchupHero from "@/components/nfl/matchups/MatchupHero";
 import MatchupInjuries from "@/components/nfl/matchups/MatchupInjuries";
 import MatchupJumpNav from "@/components/nfl/matchups/MatchupJumpNav";
@@ -60,13 +63,6 @@ import MatchupUnitComparison from "@/components/nfl/matchups/MatchupUnitComparis
 
 const CURRENT_SEASON = 2026;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
-
-const MODEL_ANALYSIS_SCOPE = [
-  "Projected spread",
-  "Current spread comparison",
-  "Model edge",
-  "Projected winner",
-] as const;
 
 /**
  * NFL matchup analyzer.
@@ -107,6 +103,13 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: a missing EPA artifact leaves only the six
   // EPA rows unavailable.
   const { artifact: epaArtifact } = useNflMatchupEpa();
+  // Independent optional enrichment: a missing projection artifact leaves only
+  // the Model Analysis section unavailable.
+  const {
+    artifact: projectionArtifact,
+    loading: projectionLoading,
+    error: projectionError,
+  } = useNflMatchupProjections();
   // The hero's team-strength ratings come from the active generated model, the
   // same board the /nfl landing page renders — never from the retired static
   // preseason file, so the two surfaces cannot show contradictory ratings.
@@ -205,6 +208,13 @@ export default function NFLMatchupDetail() {
       note: describeMarketPeriods(periods),
     };
   }, [matchup, marketArtifact]);
+
+  // JKB projected spread. The model is market-independent; the market line is
+  // joined here, in the consumer layer, purely for side-by-side comparison.
+  const projection = useMemo(
+    () => projectionFor(projectionArtifact, matchup?.gameId),
+    [projectionArtifact, matchup]
+  );
 
   usePageSeo({
     title: matchup
@@ -321,10 +331,14 @@ export default function NFLMatchupDetail() {
             id="game-trends"
             message="Game trend analysis will be added in a future data phase."
           />
-          <MatchupFutureSection
-            id="model-analysis"
-            message="The Joe Knows Ball matchup model will be added in a future phase."
-            futureScope={MODEL_ANALYSIS_SCOPE}
+          <MatchupModelAnalysis
+            projection={projection}
+            market={market?.current ?? null}
+            awayTeamName={matchup.away.teamName}
+            homeTeamName={matchup.home.teamName}
+            modelVersion={projectionArtifact?.modelVersion ?? null}
+            loading={projectionLoading}
+            error={projectionError}
           />
         </div>
 
