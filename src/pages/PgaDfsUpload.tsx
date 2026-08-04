@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, Search, Upload, X } from "lucide-react";
+import { ChevronDown, Download, Search, Upload, X } from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,32 @@ import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { buildPgaDfsComparisonData, type PgaDfsComparisonEntry, type PgaDfsSalaryRow } from "@/lib/pga/dfsUpload";
+import {
+  buildPgaDfsCanonicalPlayers,
+  buildPgaDfsComparisonData,
+  filterPgaDfsRows,
+  PGA_DFS_VALUE_THRESHOLD,
+  sortPgaDfsRows,
+  type PgaDfsCanonicalPlayer,
+  type PgaDfsCompareMode,
+  type PgaDfsSalaryRow,
+  type PgaDfsSortDirection,
+  type PgaDfsSortKey,
+  type PgaDfsTableRow,
+} from "@/lib/pga/dfsUpload";
 import { normalizePgaPlayerExactName, normalizePgaPlayerName } from "@/lib/pga/playerIdentity";
+import { usePgaCurrentField } from "@/hooks/usePgaCurrentField";
+import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
+import { useJkbTrendRankings } from "@/hooks/useJkbTrendRankings";
+import {
+  buildPgaCurrentFieldKeys,
+  buildPgaCurrentFieldPlayerIdMap,
+  isPgaCurrentFieldUsable,
+} from "@/lib/pga/currentField";
+import { buildCurrentPgaModelRows, normalizePlayerKey } from "@/lib/pga/historyModel";
+import { countryCodeToFlagEmojiUrl } from "@/lib/pga/playerNationality";
 import {
   EMPTY_MESSAGE,
-  type CourseWeightSet,
   type SidebarFilter,
   findCourseWeightEntry,
   findDefaultWeightEntry,
@@ -35,47 +56,23 @@ import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 type DfsPlatform = "DraftKings" | "FanDuel";
-type SortDirection = "asc" | "desc";
-type CompareMode = "model" | "tournament" | "custom";
-type SortKey =
-  | "salaryRank"
-  | "player"
-  | "salary"
-  | "modelRank"
-  | "tournamentRank"
-  | "customRank"
-  | "vsModel"
-  | "vsTournament"
-  | "vsCustom";
 
-type ComparisonRow = {
-  salaryRank: number;
-  player: string;
-  salary: number;
-  modelRank: number;
-  tournamentRank: number;
-  customRank: number;
-  vsModel: number;
-  vsTournament: number;
-  vsCustom: number;
-};
-
-const compareOptions: Array<{ key: CompareMode; label: string }> = [
+const compareOptions: Array<{ key: PgaDfsCompareMode; label: string }> = [
   { key: "model", label: "Model Rank" },
   { key: "tournament", label: "Tournament Rank" },
   { key: "custom", label: "Custom Rank" },
 ];
 
-const headerConfig: Array<{ key: SortKey; label: string; tooltip?: string }> = [
+const headerConfig: Array<{ key: PgaDfsSortKey; label: string; tooltip?: string }> = [
   { key: "salaryRank", label: "Salary Rank" },
   { key: "player", label: "Player" },
   { key: "salary", label: "Salary" },
-  { key: "modelRank", label: "Model Rank" },
-  { key: "tournamentRank", label: "Tournament Rank" },
+  { key: "modelRank", label: "Model Rank", tooltip: "The same current official-field model rank shown on /pga." },
+  { key: "tournamentRank", label: "Tournament Rank", tooltip: "Course-weight rank among modeled players in the current official field." },
   { key: "customRank", label: "Custom Rank" },
-  { key: "vsModel", label: "vs Model", tooltip: "Positive means undervalued by DFS salary compared with the selected ranking." },
-  { key: "vsTournament", label: "vs Tournament", tooltip: "Positive means undervalued by DFS salary compared with the selected ranking." },
-  { key: "vsCustom", label: "vs Custom", tooltip: "Positive means undervalued by DFS salary compared with the selected ranking." },
+  { key: "vsModel", label: "Model Value", tooltip: "Salary Rank minus Model Rank. Positive means underpriced." },
+  { key: "vsTournament", label: "Tournament Value", tooltip: "Salary Rank minus Tournament Rank. Positive means underpriced." },
+  { key: "vsCustom", label: "Custom Value", tooltip: "Salary Rank minus Custom Rank. Positive means underpriced." },
 ];
 
 function parseCsvText(text: string) {
@@ -152,11 +149,13 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function formatDifference(value: number) {
+function formatDifference(value: number | null) {
+  if (value == null) return "—";
   return value > 0 ? `+${value}` : `${value}`;
 }
 
-function getDifferenceTone(value: number) {
+function getDifferenceTone(value: number | null) {
+  if (value == null) return "bg-slate-50 text-slate-400";
   if (value >= 5) return "bg-emerald-700 text-emerald-50";
   if (value >= 2) return "bg-emerald-100 text-emerald-900";
   if (value <= -5) return "bg-rose-700 text-rose-50";
@@ -170,28 +169,12 @@ function escapeCsvValue(value: string | number) {
   return `"${stringValue.replace(/"/g, "\"\"")}"`;
 }
 
-function sortRows(rows: ComparisonRow[], sortKey: SortKey, sortDirection: SortDirection) {
-  const multiplier = sortDirection === "asc" ? 1 : -1;
-
-  return [...rows].sort((left, right) => {
-    const leftValue = left[sortKey];
-    const rightValue = right[sortKey];
-
-    if (typeof leftValue === "string" && typeof rightValue === "string") {
-      return leftValue.localeCompare(rightValue) * multiplier;
-    }
-
-    if (leftValue === rightValue) {
-      return left.player.localeCompare(right.player);
-    }
-
-    return ((leftValue as number) - (rightValue as number)) * multiplier;
-  });
-}
-
 export default function PgaDfsUpload() {
   const seo = getSeoMeta("pga-dfs");
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
+  const { playerHistoryMap, majorHistoryMap, loading: historyLoading } = usePgaPlayerHistory();
+  const { rankingMap: jkbTrendMap, loading: trendLoading } = useJkbTrendRankings();
+  const { field: currentField, loaded: fieldLoaded } = usePgaCurrentField();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const [platform, setPlatform] = useState<DfsPlatform | null>(null);
@@ -200,11 +183,12 @@ export default function PgaDfsUpload() {
   const [search, setSearch] = useState("");
   const [salaryBounds, setSalaryBounds] = useState<[number, number]>([0, 0]);
   const [showValueOnly, setShowValueOnly] = useState(false);
-  const [compareMode, setCompareMode] = useState<CompareMode>("model");
-  const [sortKey, setSortKey] = useState<SortKey>("salaryRank");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [compareMode, setCompareMode] = useState<PgaDfsCompareMode>("model");
+  const [sortKey, setSortKey] = useState<PgaDfsSortKey>("salaryRank");
+  const [sortDirection, setSortDirection] = useState<PgaDfsSortDirection>("asc");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [expandedPlayerKey, setExpandedPlayerKey] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   usePageSeo({
@@ -217,6 +201,44 @@ export default function PgaDfsUpload() {
   const selectedEvent = useMemo(
     () => schedule.find((entry) => entry.id === selectedScheduleId) ?? currentEvent ?? null,
     [currentEvent, schedule, selectedScheduleId],
+  );
+
+  const fieldUsable = isPgaCurrentFieldUsable(currentField, currentEvent);
+  const fieldKeys = useMemo(
+    () => buildPgaCurrentFieldKeys(currentField, fieldUsable, playerStats),
+    [currentField, fieldUsable, playerStats],
+  );
+  const currentFieldPlayerStats = useMemo(
+    () => fieldUsable ? playerStats.filter((player) => fieldKeys.has(normalizePlayerKey(player.player))) : playerStats,
+    [fieldKeys, fieldUsable, playerStats],
+  );
+  const currentModelWeightEntry = useMemo(
+    () => currentEvent ? findCourseWeightEntry(courseWeights, currentEvent.name, currentEvent.courseName) : null,
+    [courseWeights, currentEvent],
+  );
+  const canonicalModelRows = useMemo(
+    () => currentEvent ? buildCurrentPgaModelRows({
+      players: playerStats,
+      playerHistoryMap,
+      majorHistoryMap,
+      activeWeights: currentModelWeightEntry?.weights ?? null,
+      event: {
+        slug: currentEvent.slug,
+        name: currentEvent.shortName || currentEvent.name,
+        category: currentEvent.category,
+        yardage: currentEvent.yardage,
+      },
+      fieldKeys,
+    }) : [],
+    [currentEvent, currentModelWeightEntry, fieldKeys, majorHistoryMap, playerHistoryMap, playerStats],
+  );
+  const currentFieldPlayerIdMap = useMemo(
+    () => buildPgaCurrentFieldPlayerIdMap(currentField, canonicalModelRows),
+    [canonicalModelRows, currentField],
+  );
+  const canonicalPlayers = useMemo(
+    () => buildPgaDfsCanonicalPlayers(canonicalModelRows, currentFieldPlayerIdMap, jkbTrendMap),
+    [canonicalModelRows, currentFieldPlayerIdMap, jkbTrendMap],
   );
 
   const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
@@ -239,20 +261,19 @@ export default function PgaDfsUpload() {
         : null;
   }, [courseWeights, currentEvent?.id, currentOverride, normalizedDefaultWeights, selectedEvent]);
 
-  const modelRows = useMemo(
-    () => (normalizedDefaultWeights ? rankPlayers(playerStats, normalizedDefaultWeights) : []),
-    [normalizedDefaultWeights, playerStats],
+  const tournamentPlayerStats = useMemo(
+    () => selectedEvent?.id === currentEvent?.id ? currentFieldPlayerStats : playerStats,
+    [currentEvent?.id, currentFieldPlayerStats, playerStats, selectedEvent?.id],
   );
   const tournamentRows = useMemo(
-    () => (tournamentWeightEntry ? rankPlayers(playerStats, tournamentWeightEntry.weights) : []),
-    [playerStats, tournamentWeightEntry],
+    () => (tournamentWeightEntry ? rankPlayers(tournamentPlayerStats, tournamentWeightEntry.weights) : []),
+    [tournamentPlayerStats, tournamentWeightEntry],
   );
   const customRows = useMemo(
-    () => (customWeights ? rankPlayers(playerStats, customWeights) : modelRows),
-    [customWeights, modelRows, playerStats],
+    () => (customWeights ? rankPlayers(currentFieldPlayerStats, customWeights) : []),
+    [customWeights, currentFieldPlayerStats],
   );
 
-  const modelRankMap = useMemo(() => new Map(modelRows.map((row) => [row.player, row.rank])), [modelRows]);
   const tournamentRankMap = useMemo(() => new Map(tournamentRows.map((row) => [row.player, row.rank])), [tournamentRows]);
   const customRankMap = useMemo(() => new Map(customRows.map((row) => [row.player, row.rank])), [customRows]);
 
@@ -267,24 +288,25 @@ export default function PgaDfsUpload() {
   }, [salaryLimits]);
 
   const comparisonData = useMemo(
-    () => buildPgaDfsComparisonData(parsedPlayers, playerStats, modelRankMap, tournamentRankMap, customRankMap),
-    [customRankMap, modelRankMap, parsedPlayers, playerStats, tournamentRankMap],
+    () => buildPgaDfsComparisonData(parsedPlayers, canonicalPlayers, tournamentRankMap, customRankMap),
+    [canonicalPlayers, customRankMap, parsedPlayers, tournamentRankMap],
   );
 
   const comparisonRows = useMemo(
     () =>
       comparisonData.entries
-        .filter((entry): entry is PgaDfsComparisonEntry & { status: "matched" } => entry.status === "matched")
-        .map((entry): ComparisonRow => ({
+        .map((entry): PgaDfsTableRow => ({
           salaryRank: entry.salaryRank,
           player: entry.matchedPlayer ?? entry.uploadedPlayer,
           salary: entry.salary,
-          modelRank: entry.modelRank!,
-          tournamentRank: entry.tournamentRank!,
-          customRank: entry.customRank!,
-          vsModel: entry.vsModel!,
-          vsTournament: entry.vsTournament!,
-          vsCustom: entry.vsCustom!,
+          modelRank: entry.modelRank,
+          tournamentRank: entry.tournamentRank,
+          customRank: entry.customRank,
+          vsModel: entry.vsModel,
+          vsTournament: entry.vsTournament,
+          vsCustom: entry.vsCustom,
+          coverageState: entry.coverageState,
+          canonicalPlayer: entry.canonicalPlayer,
         })),
     [comparisonData.entries],
   );
@@ -293,19 +315,17 @@ export default function PgaDfsUpload() {
   const missingRankPlayers = comparisonData.summary.missingRankPlayers;
 
   const filteredRows = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
-
-    return comparisonRows.filter((row) => {
-      const matchesSearch = !searchValue || row.player.toLowerCase().includes(searchValue);
-      const matchesSalary = row.salary >= salaryBounds[0] && row.salary <= salaryBounds[1];
-      const matchesValueOnly = !showValueOnly || row.vsModel >= 3 || row.vsTournament >= 3;
-      return matchesSearch && matchesSalary && matchesValueOnly;
+    return filterPgaDfsRows(comparisonRows, {
+      search,
+      salaryBounds,
+      compareMode,
+      showValueOnly,
     });
-  }, [comparisonRows, salaryBounds, search, showValueOnly]);
+  }, [compareMode, comparisonRows, salaryBounds, search, showValueOnly]);
 
-  const sortedRows = useMemo(() => sortRows(filteredRows, sortKey, sortDirection), [filteredRows, sortDirection, sortKey]);
+  const sortedRows = useMemo(() => sortPgaDfsRows(filteredRows, sortKey, sortDirection), [filteredRows, sortDirection, sortKey]);
 
-  const handleSort = (key: SortKey) => {
+  const handleSort = (key: PgaDfsSortKey) => {
     if (sortKey === key) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
       return;
@@ -324,6 +344,8 @@ export default function PgaDfsUpload() {
     setShowValueOnly(false);
     setSortKey("salaryRank");
     setSortDirection("asc");
+    setCompareMode("model");
+    setExpandedPlayerKey(null);
     setSalaryBounds([0, 0]);
     if (inputRef.current) inputRef.current.value = "";
   };
@@ -392,9 +414,9 @@ export default function PgaDfsUpload() {
         row.salaryRank,
         row.player,
         row.salary,
-        row.modelRank,
-        row.tournamentRank,
-        row.customRank,
+        formatRank(row.modelRank),
+        formatRank(row.tournamentRank),
+        formatRank(row.customRank),
         formatDifference(row.vsModel),
         formatDifference(row.vsTournament),
         formatDifference(row.vsCustom),
@@ -633,7 +655,15 @@ export default function PgaDfsUpload() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Ranking to Compare</label>
-                    <Select value={compareMode} onValueChange={(value) => setCompareMode(value as CompareMode)}>
+                    <Select
+                      value={compareMode}
+                      onValueChange={(value) => {
+                        const mode = value as PgaDfsCompareMode;
+                        setCompareMode(mode);
+                        setSortKey(mode === "model" ? "vsModel" : mode === "tournament" ? "vsTournament" : "vsCustom");
+                        setSortDirection("desc");
+                      }}
+                    >
                       <SelectTrigger className="border-slate-200 bg-white text-slate-900">
                         <SelectValue />
                       </SelectTrigger>
@@ -656,14 +686,14 @@ export default function PgaDfsUpload() {
                       )}
                       onClick={() => setShowValueOnly((current) => !current)}
                     >
-                      Show Value Plays Only
+                      Show Value Plays Only (+{PGA_DFS_VALUE_THRESHOLD})
                     </Button>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-                {loading ? (
+                {loading || historyLoading || trendLoading || !fieldLoaded ? (
                   <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
                     Loading PGA data...
                   </div>
@@ -712,25 +742,56 @@ export default function PgaDfsUpload() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {sortedRows.map((row) => (
-                            <TableRow key={`${row.player}-${row.salary}`} className="border-slate-100 hover:bg-slate-50">
-                              <TableCell className="px-2 py-2 text-center font-semibold text-slate-700">{row.salaryRank}</TableCell>
-                              <TableCell className="px-2 py-2 font-medium text-slate-900">{row.player}</TableCell>
-                              <TableCell className="px-2 py-2 text-center font-semibold text-slate-900">{formatCurrency(row.salary)}</TableCell>
-                              <TableCell className="px-2 py-2 text-center">{row.modelRank}</TableCell>
-                              <TableCell className="px-2 py-2 text-center">{row.tournamentRank}</TableCell>
-                              <TableCell className="px-2 py-2 text-center">{row.customRank}</TableCell>
-                              <TableCell className={cn("px-2 py-2 text-center font-semibold", getDifferenceTone(row.vsModel), compareMode === "model" && "ring-1 ring-inset ring-slate-900/20")}>
-                                {formatDifference(row.vsModel)}
-                              </TableCell>
-                              <TableCell className={cn("px-2 py-2 text-center font-semibold", getDifferenceTone(row.vsTournament), compareMode === "tournament" && "ring-1 ring-inset ring-slate-900/20")}>
-                                {formatDifference(row.vsTournament)}
-                              </TableCell>
-                              <TableCell className={cn("px-2 py-2 text-center font-semibold", getDifferenceTone(row.vsCustom), compareMode === "custom" && "ring-1 ring-inset ring-slate-900/20")}>
-                                {formatDifference(row.vsCustom)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {sortedRows.map((row) => {
+                            const playerKey = row.canonicalPlayer?.canonicalKey ?? `salary-${row.salaryRank}-${row.player.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+                            const isExpanded = expandedPlayerKey === playerKey;
+                            const detailsId = `pga-dfs-details-${playerKey}`;
+                            const flagUrl = row.canonicalPlayer?.nationality
+                              ? countryCodeToFlagEmojiUrl(row.canonicalPlayer.nationality.countryCode)
+                              : null;
+
+                            return (
+                              <Fragment key={`${row.player}-${row.salary}`}>
+                                <TableRow className="border-slate-100 hover:bg-slate-50">
+                                  <TableCell className="px-2 py-2 text-center font-semibold text-slate-700">{row.salaryRank}</TableCell>
+                                  <TableCell className="px-2 py-2 font-medium text-slate-900">
+                                    <button
+                                      type="button"
+                                      className="flex w-full items-center gap-2 text-left"
+                                      aria-expanded={isExpanded}
+                                      aria-controls={detailsId}
+                                      onClick={() => setExpandedPlayerKey(isExpanded ? null : playerKey)}
+                                    >
+                                      {flagUrl ? <img src={flagUrl} alt="" aria-hidden="true" className="h-[13px] w-[13px] object-contain" /> : null}
+                                      <span className="min-w-0 flex-1 truncate">{row.player}</span>
+                                      <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition", isExpanded && "rotate-180")} />
+                                      <span className="sr-only">{isExpanded ? "Hide player details" : "View player details"}</span>
+                                    </button>
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2 text-center font-semibold text-slate-900">{formatCurrency(row.salary)}</TableCell>
+                                  <TableCell className="px-2 py-2 text-center">{formatRank(row.modelRank)}</TableCell>
+                                  <TableCell className="px-2 py-2 text-center">{formatRank(row.tournamentRank)}</TableCell>
+                                  <TableCell className="px-2 py-2 text-center">{formatRank(row.customRank)}</TableCell>
+                                  <TableCell className={cn("px-2 py-2 text-center font-semibold", getDifferenceTone(row.vsModel), compareMode === "model" && "ring-1 ring-inset ring-slate-900/20")}>
+                                    {formatDifference(row.vsModel)}
+                                  </TableCell>
+                                  <TableCell className={cn("px-2 py-2 text-center font-semibold", getDifferenceTone(row.vsTournament), compareMode === "tournament" && "ring-1 ring-inset ring-slate-900/20")}>
+                                    {formatDifference(row.vsTournament)}
+                                  </TableCell>
+                                  <TableCell className={cn("px-2 py-2 text-center font-semibold", getDifferenceTone(row.vsCustom), compareMode === "custom" && "ring-1 ring-inset ring-slate-900/20")}>
+                                    {formatDifference(row.vsCustom)}
+                                  </TableCell>
+                                </TableRow>
+                                {isExpanded ? (
+                                  <TableRow className="border-slate-200 bg-slate-50/80 hover:bg-slate-50/80">
+                                    <TableCell id={detailsId} colSpan={9} className="p-3">
+                                      <PgaDfsPlayerDetails row={row} />
+                                    </TableCell>
+                                  </TableRow>
+                                ) : null}
+                              </Fragment>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -743,4 +804,99 @@ export default function PgaDfsUpload() {
       </main>
     </SiteShell>
   );
+}
+
+function PgaDfsPlayerDetails({ row }: { row: PgaDfsTableRow }) {
+  const player = row.canonicalPlayer;
+  const model = player?.model ?? null;
+  const jkbTrend = player?.jkbTrend ?? null;
+  const nationality = player?.nationality ?? null;
+  const flagUrl = nationality ? countryCodeToFlagEmojiUrl(nationality.countryCode) : null;
+  const historyResults = model
+    ? model.eventResults.length > 0
+      ? model.eventResults
+      : model.specificMajorResults.length > 0
+        ? model.specificMajorResults
+        : model.allMajorResults
+    : [];
+
+  return (
+    <div className="grid gap-3 text-left xl:grid-cols-[1.1fr_1fr_1.4fr]">
+      <section className="rounded-xl border border-slate-200 bg-white p-3">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Canonical Player</div>
+        <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          {flagUrl ? <img src={flagUrl} alt="" aria-hidden="true" className="h-[13px] w-[13px] object-contain" /> : null}
+          <span>{row.player}</span>
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          {nationality?.countryName ?? "—"}
+          {player?.playerId ? ` · PGA ID ${player.playerId}` : " · PGA ID —"}
+        </div>
+        <div className="mt-2 text-[10px] font-semibold text-slate-500">Coverage: {row.coverageState}</div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <DetailMetric label="Salary rank" value={`#${row.salaryRank}`} />
+          <DetailMetric label="Model rank" value={formatRank(row.modelRank)} />
+          <DetailMetric label="Tournament rank" value={formatRank(row.tournamentRank)} />
+          <DetailMetric label="Model value" value={formatDifference(row.vsModel)} />
+          <DetailMetric label="Tournament value" value={formatDifference(row.vsTournament)} />
+          <DetailMetric label="Custom value" value={formatDifference(row.vsCustom)} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-3">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Model Components</div>
+        {model ? (
+          <>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <DetailMetric label="Model score" value={model.modelScore.toFixed(1)} />
+              <DetailMetric label="Base" value={model.baseScore.toFixed(1)} />
+              <DetailMetric label="Recent" value={formatOptionalScore(model.recentScore)} />
+              <DetailMetric label="Course fit" value={formatOptionalScore(model.courseFit)} />
+              <DetailMetric label="History" value={formatOptionalScore(model.eventHistoryScore ?? model.specificMajorScore)} />
+              <DetailMetric label="JKB trend" value={jkbTrend?.rank != null ? `#${jkbTrend.rank}` : model.trend.label} />
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <DetailMetric label="SG total" value={formatSignedStat(model.sgTotal)} />
+              <DetailMetric label="SG approach" value={formatSignedStat(model.sgApp)} />
+              <DetailMetric label="SG putting" value={formatSignedStat(model.sgPutt)} />
+            </div>
+          </>
+        ) : <div className="mt-2 text-xs text-slate-400">—</div>}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Recent Starts</div>
+            <ResultChips results={model?.recentResults ?? []} emptyLabel="—" />
+          </div>
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tournament History</div>
+            <ResultChips results={historyResults} emptyLabel="—" />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DetailMetric({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-lg bg-slate-50 px-2 py-1.5"><div className="text-[9px] font-semibold uppercase text-slate-500">{label}</div><div className="mt-0.5 text-xs font-bold text-slate-900">{value}</div></div>;
+}
+
+function ResultChips({ results, emptyLabel }: { results: PgaDfsCanonicalPlayer["model"]["recentResults"]; emptyLabel: string }) {
+  if (!results.length) return <div className="mt-2 text-xs text-slate-400">{emptyLabel}</div>;
+  return <div className="mt-2 flex flex-wrap gap-1.5">{results.map((result, index) => <span key={`${result.eventSlug ?? result.eventName ?? "event"}-${result.season ?? index}`} title={result.eventName ?? undefined} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700">{result.finishText}</span>)}</div>;
+}
+
+function formatOptionalScore(value: number | null) {
+  return value == null ? "—" : value.toFixed(1);
+}
+
+function formatRank(value: number | null) {
+  return value == null ? "—" : `#${value}`;
+}
+
+function formatSignedStat(value: number) {
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
 }

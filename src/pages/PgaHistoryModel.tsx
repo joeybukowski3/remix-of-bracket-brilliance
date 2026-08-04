@@ -10,70 +10,34 @@ import PgaFieldCoverageNote from "@/components/pga/PgaFieldCoverageNote";
 import {
   findCourseWeightEntry,
   getCurrentAndNextEvents,
-  type RawPlayerStat,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
 import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
+import { usePgaCurrentField } from "@/hooks/usePgaCurrentField";
 import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
 import {
-  assignFieldRanks,
-  buildCourseFitWeights,
-  buildMetricPercentiles,
-  calculateCourseFit,
-  calculateTournamentModelScore,
-  calculateTrend,
-  findEventHistory,
+  buildPgaCurrentFieldKeys,
+  isPgaCurrentFieldUsable,
+} from "@/lib/pga/currentField";
+import {
+  buildCurrentPgaModelRows,
   normalizePlayerKey,
   resolveMajorType,
-  scoreFourResultHistory,
-  scoreRecentResults,
-  selectAllMajorHistory,
-  selectSpecificMajorHistory,
-  type PgaTournamentModelRow,
 } from "@/lib/pga/historyModel";
-import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
 import { selectPgaScoreComparisonRows } from "@/lib/pga/pgaScoreColorScale";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
-
-const BASE_WEIGHTS = { sgTotal: .55, sgApp: .12, sgPutt: .06, sgAtG: .10, sgOTT: .07, drivingAccuracy: .05, bogeyAvoidance: .05 };
-const RECENT_START_COUNT = 5;
-
-type CurrentField = {
-  tournament: string;
-  tournamentId?: string;
-  tournamentSlug?: string;
-  localScheduleId?: string;
-  source: string;
-  sourceUrl?: string;
-  validated?: boolean;
-  fieldCount?: number;
-  alternatesExcluded?: boolean;
-  fetchedAt?: string;
-  players: string[];
-};
 
 type PlayerStatsMeta = Record<string, unknown>;
 
 export default function PgaHistoryModel() {
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const { playerHistory, playerHistoryMap, majorHistoryMap, loading: historyLoading, error: historyError } = usePgaPlayerHistory();
-  const [field, setField] = useState<unknown>(null);
-  const [fieldLoaded, setFieldLoaded] = useState(false);
+  const { payload: field, field: currentField, loaded: fieldLoaded } = usePgaCurrentField();
   const [playerStatsMeta, setPlayerStatsMeta] = useState<PlayerStatsMeta | null>(null);
   const [playerStatsMetaLoaded, setPlayerStatsMetaLoaded] = useState(false);
   const [fieldOnly, setFieldOnly] = useState(true);
   const [search, setSearch] = useState("");
   const [statView, setStatView] = useState<"percentile" | "raw">("percentile");
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/data/pga/current-field.json", { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : null)
-      .then((json) => { if (!cancelled) setField(json); })
-      .catch(() => { if (!cancelled) setField(null); })
-      .finally(() => { if (!cancelled) setFieldLoaded(true); });
-    return () => { cancelled = true; };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,28 +87,11 @@ export default function PgaHistoryModel() {
     return items;
   }, [fieldLoaded, fieldFreshness, playerStatsMetaLoaded, playerStatsFreshness]);
 
-  const currentField = isCurrentFieldPayload(field) ? field : null;
-
-  const fieldMatchesEvent = useMemo(() => {
-    if (!currentField || !event) return false;
-    const expected = new Set([event.id, event.slug, event.name, event.shortName].filter(Boolean).map(normalizeEventIdentity));
-    return [currentField.localScheduleId, currentField.tournamentSlug, currentField.tournament]
-      .filter(Boolean)
-      .map(normalizeEventIdentity)
-      .some((value) => expected.has(value));
-  }, [currentField, event]);
-
-  const fieldUsable = Boolean(
-    currentField
-    && fieldMatchesEvent
-    && currentField.validated !== false
-    && Array.isArray(currentField.players)
-    && currentField.players.length > 0,
-  );
+  const fieldUsable = isPgaCurrentFieldUsable(currentField, event ?? null);
 
   const fieldSet = useMemo(
-    () => new Set(fieldUsable ? currentField?.players.map(normalizePlayerKey) ?? [] : []),
-    [currentField, fieldUsable],
+    () => buildPgaCurrentFieldKeys(currentField, fieldUsable, playerStats),
+    [currentField, fieldUsable, playerStats],
   );
 
   const fieldCoverage = useMemo(() => {
@@ -167,76 +114,20 @@ export default function PgaHistoryModel() {
   const rankMode: PgaRankMode = fieldOnly && fieldUsable && fieldSet.size > 0 ? "field" : "tour";
 
   const modelRows = useMemo(() => {
-    const merged = playerStats.map((player) => {
-      const key = normalizePlayerKey(player.player);
-      const history = playerHistoryMap.get(key);
-      return {
-        ...player,
-        drivingDistance: history?.stats?.drivingDistance ?? null,
-        drivingAccuracy: history?.stats?.drivingAccuracy ?? player.drivingAccuracy,
-      };
+    return buildCurrentPgaModelRows({
+      players: playerStats,
+      playerHistoryMap,
+      majorHistoryMap,
+      activeWeights,
+      event: {
+        slug: eventSlug,
+        name: eventName,
+        category: event?.category,
+        yardage: event?.yardage,
+      },
+      fieldKeys: fieldUsable ? fieldSet : new Set<string>(),
     });
-    const percentiles = buildMetricPercentiles(merged);
-    const baseScores = buildBaseScores(merged);
-    const fitWeights = buildCourseFitWeights(activeWeights, {
-      slug: eventSlug,
-      name: eventName,
-      category: event?.category,
-      yardage: event?.yardage,
-    });
-
-    const rows = merged.map((player) => {
-      const key = normalizePlayerKey(player.player);
-      const history = playerHistoryMap.get(key);
-      const majorHistory = majorHistoryMap.get(key)?.results ?? [];
-      const recentResults = history?.recentResults.slice(0, RECENT_START_COUNT) ?? [];
-      const eventResults = findEventHistory(history, eventSlug, eventName);
-      const specificMajorResults = selectSpecificMajorHistory(majorHistory, majorType);
-      const allMajorResults = selectAllMajorHistory(majorHistory);
-      const displayPercentiles = percentiles.get(key) ?? {};
-      const courseFit = calculateCourseFit(displayPercentiles, fitWeights);
-      const recentScore = scoreRecentResults(recentResults);
-      const eventHistoryScore = scoreFourResultHistory(eventResults);
-      const specificMajorScore = scoreFourResultHistory(specificMajorResults);
-      const allMajorScore = scoreRecentResults(allMajorResults);
-      const trend = calculateTrend(recentResults);
-      const baseScore = baseScores.get(key) ?? 50;
-      const modelScore = calculateTournamentModelScore({
-        baseScore,
-        recentScore,
-        courseFit,
-        eventHistoryScore,
-        specificMajorScore,
-        allMajorScore,
-        trendScore: trend.score,
-        isMajor,
-      });
-      return {
-        ...player,
-        baseScore,
-        modelScore,
-        modelRank: 0,
-        fieldRank: null,
-        recentResults,
-        eventResults,
-        specificMajorResults,
-        allMajorResults,
-        recentScore,
-        eventHistoryScore,
-        specificMajorScore,
-        allMajorScore,
-        courseFit,
-        trend,
-        displayPercentiles,
-      } satisfies PgaTournamentModelRow;
-    });
-
-    const ranked = rows
-      .sort((a, b) => b.modelScore - a.modelScore || a.player.localeCompare(b.player))
-      .map((row, index) => ({ ...row, modelRank: index + 1 }));
-
-    return assignFieldRanks(ranked, fieldUsable ? fieldSet : new Set<string>());
-  }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor, fieldSet, fieldUsable]);
+  }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, fieldSet, fieldUsable]);
 
   const scoreComparisonRows = useMemo(
     () => selectPgaScoreComparisonRows(modelRows, rankMode),
@@ -309,41 +200,4 @@ export default function PgaHistoryModel() {
       </div>
     </SiteShell>
   );
-}
-
-function isCurrentFieldPayload(value: unknown): value is CurrentField {
-  return typeof value === "object"
-    && value !== null
-    && !Array.isArray(value)
-    && typeof (value as CurrentField).tournament === "string"
-    && Array.isArray((value as CurrentField).players);
-}
-
-function normalizeEventIdentity(value: unknown) {
-  return String(value ?? "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\b(the|presented by|championship|tournament|2026|picks)\b/g, " ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
-}
-
-function buildBaseScores(players: Array<RawPlayerStat & { drivingDistance: number | null }>) {
-  const metrics = Object.keys(BASE_WEIGHTS) as Array<keyof typeof BASE_WEIGHTS>;
-  const ranges = new Map(metrics.map((key) => {
-    const values = players.map((player) => Number(player[key])).filter(Number.isFinite);
-    return [key, { min: Math.min(...values), max: Math.max(...values) }];
-  }));
-  return new Map(players.map((player) => {
-    let total = 0, weight = 0;
-    metrics.forEach((key) => {
-      const value = Number(player[key]); const range = ranges.get(key); const metricWeight = BASE_WEIGHTS[key];
-      if (!Number.isFinite(value) || !range || range.max === range.min) return;
-      const percentile = isLowerBetterMetric(key) ? ((range.max - value) / (range.max - range.min)) * 100 : ((value - range.min) / (range.max - range.min)) * 100;
-      total += percentile * metricWeight; weight += metricWeight;
-    });
-    return [normalizePlayerKey(player.player), weight ? total / weight : 50];
-  }));
 }

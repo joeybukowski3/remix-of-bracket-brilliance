@@ -133,6 +133,16 @@ export type PgaTournamentModelRow = RawPlayerStat & {
 
 const RECENT_WEIGHTS = [24, 20, 16, 13, 10, 8, 5, 4];
 const FOUR_RESULT_WEIGHTS = [40, 30, 20, 10];
+const CURRENT_MODEL_RECENT_START_COUNT = 5;
+const CURRENT_MODEL_BASE_WEIGHTS = {
+  sgTotal: .55,
+  sgApp: .12,
+  sgPutt: .06,
+  sgAtG: .10,
+  sgOTT: .07,
+  drivingAccuracy: .05,
+  bogeyAvoidance: .05,
+};
 
 export function normalizePlayerKey(value: string) {
   return value
@@ -458,6 +468,119 @@ export function assignFieldRanks<T extends { player: string; modelScore: number;
   return rows.map((row) => ({
     ...row,
     fieldRank: inField(row) ? rankByKey.get(normalizePlayerKey(row.player)) ?? null : null,
+  }));
+}
+
+export function buildCurrentPgaModelRows({
+  players,
+  playerHistoryMap,
+  majorHistoryMap,
+  activeWeights,
+  event,
+  fieldKeys,
+}: {
+  players: RawPlayerStat[];
+  playerHistoryMap: ReadonlyMap<string, PgaPlayerHistoryRecord>;
+  majorHistoryMap: ReadonlyMap<string, PgaMajorHistoryPlayer>;
+  activeWeights: CourseWeightSet | null;
+  event: {
+    slug: string;
+    name: string;
+    category?: string;
+    yardage?: number | string;
+  };
+  fieldKeys: ReadonlySet<string>;
+}): PgaTournamentModelRow[] {
+  const majorType = resolveMajorType(event.name, event.slug);
+  const isMajor = event.category === "major" || majorType != null;
+  const merged = players.map((player) => {
+    const history = playerHistoryMap.get(normalizePlayerKey(player.player));
+    return {
+      ...player,
+      drivingDistance: history?.stats?.drivingDistance ?? null,
+      drivingAccuracy: history?.stats?.drivingAccuracy ?? player.drivingAccuracy,
+    };
+  });
+  const percentiles = buildMetricPercentiles(merged);
+  const baseScores = buildCurrentModelBaseScores(merged);
+  const fitWeights = buildCourseFitWeights(activeWeights, event);
+
+  const rows = merged.map((player) => {
+    const key = normalizePlayerKey(player.player);
+    const history = playerHistoryMap.get(key);
+    const majorHistory = majorHistoryMap.get(key)?.results ?? [];
+    const recentResults = history?.recentResults.slice(0, CURRENT_MODEL_RECENT_START_COUNT) ?? [];
+    const eventResults = findEventHistory(history, event.slug, event.name);
+    const specificMajorResults = selectSpecificMajorHistory(majorHistory, majorType);
+    const allMajorResults = selectAllMajorHistory(majorHistory);
+    const displayPercentiles = percentiles.get(key) ?? {};
+    const courseFit = calculateCourseFit(displayPercentiles, fitWeights);
+    const recentScore = scoreRecentResults(recentResults);
+    const eventHistoryScore = scoreFourResultHistory(eventResults);
+    const specificMajorScore = scoreFourResultHistory(specificMajorResults);
+    const allMajorScore = scoreRecentResults(allMajorResults);
+    const trend = calculateTrend(recentResults);
+    const baseScore = baseScores.get(key) ?? 50;
+    const modelScore = calculateTournamentModelScore({
+      baseScore,
+      recentScore,
+      courseFit,
+      eventHistoryScore,
+      specificMajorScore,
+      allMajorScore,
+      trendScore: trend.score,
+      isMajor,
+    });
+
+    return {
+      ...player,
+      baseScore,
+      modelScore,
+      modelRank: 0,
+      fieldRank: null,
+      recentResults,
+      eventResults,
+      specificMajorResults,
+      allMajorResults,
+      recentScore,
+      eventHistoryScore,
+      specificMajorScore,
+      allMajorScore,
+      courseFit,
+      trend,
+      displayPercentiles,
+    } satisfies PgaTournamentModelRow;
+  });
+
+  const ranked = rows
+    .sort((left, right) => right.modelScore - left.modelScore || left.player.localeCompare(right.player))
+    .map((row, index) => ({ ...row, modelRank: index + 1 }));
+
+  return assignFieldRanks(ranked, fieldKeys);
+}
+
+function buildCurrentModelBaseScores(players: Array<RawPlayerStat & { drivingDistance: number | null }>) {
+  const metrics = Object.keys(CURRENT_MODEL_BASE_WEIGHTS) as Array<keyof typeof CURRENT_MODEL_BASE_WEIGHTS>;
+  const ranges = new Map(metrics.map((key) => {
+    const values = players.map((player) => Number(player[key])).filter(Number.isFinite);
+    return [key, { min: Math.min(...values), max: Math.max(...values) }];
+  }));
+
+  return new Map(players.map((player) => {
+    let total = 0;
+    let weight = 0;
+    metrics.forEach((key) => {
+      const value = Number(player[key]);
+      const range = ranges.get(key);
+      const metricWeight = CURRENT_MODEL_BASE_WEIGHTS[key];
+      if (!Number.isFinite(value) || !range || range.max === range.min) return;
+      const percentile = isLowerBetterMetric(key)
+        ? ((range.max - value) / (range.max - range.min)) * 100
+        : ((value - range.min) / (range.max - range.min)) * 100;
+      total += percentile * metricWeight;
+      weight += metricWeight;
+    });
+    return [normalizePlayerKey(player.player), weight ? total / weight : 50];
   }));
 }
 
