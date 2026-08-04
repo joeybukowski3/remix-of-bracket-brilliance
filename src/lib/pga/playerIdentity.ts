@@ -113,6 +113,12 @@ export function getPgaPlayerNameCandidates(value: string) {
     addCandidate(normalized);
     const aliases = PLAYER_NAME_ALIASES[normalized] ?? [];
     aliases.forEach(addCandidate);
+    Object.entries(PLAYER_NAME_ALIASES).forEach(([canonicalName, knownAliases]) => {
+      if (knownAliases.includes(normalized)) {
+        addCandidate(canonicalName);
+        knownAliases.forEach(addCandidate);
+      }
+    });
   }
 
   return Array.from(candidates);
