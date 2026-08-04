@@ -1,10 +1,10 @@
 {
   "date": "2026-08-04",
-  "generatedAt": "2026-08-04T16:26:36.721Z",
+  "generatedAt": "2026-08-04T17:17:02.585Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Truist Park and Citizens Bank Park lead the slate with 1.03-1.17 park factors and right-handed pitching matchups that favor pull-side power. Wrigley Field and Chase Field offer neutral-to-slight boosts, while Yankee Stadium’s 1.18 factor and lefty matchup create a pocket for right-handed bats.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over raw opposing pitcher HR rates, elevating Olson and Conine despite moderate opposing-pitcher metrics."
+    "slateOverview": "Truist Park leads the slate with a 1.03 park factor and a favorable matchup against Miami's Ryan Gusto, while Yankee Stadium's 1.18 factor boosts Alec Burleson despite a lefty matchup. Wrigley Field and Chase Field offer neutral conditions, but the model highlights barrel rates above 14% and recent power surges as key differentiators for today's HR opportunities.",
+    "modelNote": "The model prioritizes hrScoreRank and recent HR volume, elevating Matt Olson and Griffin Conine due to their top-two scores and strong barrel/hard-hit profiles against right-handed pitching."
   },
   "bestBets": [
     {
@@ -19,10 +19,10 @@
       ],
       "bullets": [
         "park=1.03",
-        "barrel=14.8%"
+        "hrScore=76.1"
       ],
-      "hrOddsYes": "+3100",
-      "marketImpliedProbability": 0.03125,
+      "hrOddsYes": "+3200",
+      "marketImpliedProbability": 0.030303030303030304,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -38,107 +38,29 @@
       ],
       "bullets": [
         "park=1.03",
-        "HH=55.4%"
+        "hrScore=71.4"
       ],
-      "hrOddsYes": "+6000",
-      "marketImpliedProbability": 0.01639344262295082,
+      "hrOddsYes": "+531",
+      "marketImpliedProbability": 0.15847860538827258,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Bryce Harper",
-      "team": "PHI",
-      "opponent": "WSH",
-      "opposingPitcher": "Zack Littell",
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "CHC",
+      "opposingPitcher": "Javier Assad",
       "hrScoreRank": 3,
-      "topStats": [
-        "barrel=11.8%",
-        "HH=44.9%"
-      ],
-      "bullets": [
-        "park=1.17",
-        "barrel=11.8%"
-      ],
-      "hrOddsYes": "+289",
-      "marketImpliedProbability": 0.2570694087403599,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "CHC",
-      "opposingPitcher": "Javier Assad",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=59.8",
-        "Hard Hit%=53.4"
-      ],
-      "bullets": [
-        "HR score 68.9 (#4)",
-        "Pitcher HR VS 59.8 at park 1.00"
-      ],
-      "hrOddsYes": "+10000",
-      "marketImpliedProbability": 0.009900990099009901,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "WSH",
-      "opposingPitcher": "Zack Littell",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=82.2",
-        "Hard Hit%=52.4"
-      ],
-      "bullets": [
-        "HR score 68.7 (#5)",
-        "Pitcher HR VS 82.2 at park 1.17"
-      ],
-      "hrOddsYes": "+161",
-      "marketImpliedProbability": 0.3831417624521073,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "CHC",
-      "opposingPitcher": "Javier Assad",
-      "hrScoreRank": 4,
       "topStats": [
         "barrel=16.5%",
         "HH=53.4%"
       ],
       "bullets": [
         "park=1",
-        "barrel=16.5%"
+        "hrScore=68.9"
       ],
-      "hrOddsYes": "+10000",
-      "marketImpliedProbability": 0.009900990099009901,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "WSH",
-      "opposingPitcher": "Zack Littell",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=17.7%",
-        "HH=52.4%"
-      ],
-      "bullets": [
-        "park=1.17",
-        "barrel=17.7%"
-      ],
-      "hrOddsYes": "+161",
-      "marketImpliedProbability": 0.3831417624521073,
+      "hrOddsYes": "+204",
+      "marketImpliedProbability": 0.32894736842105265,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,17 +69,57 @@
       "team": "ATL",
       "opponent": "MIA",
       "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 6,
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=62.3",
+        "Hard Hit%=51.5"
+      ],
+      "bullets": [
+        "HR score 65.6 (#4)",
+        "Pitcher HR VS 62.3 at park 1.03"
+      ],
+      "hrOddsYes": "+377",
+      "marketImpliedProbability": 0.20964360587002095,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Osleivis Basabe",
+      "team": "SF",
+      "opponent": "TEX",
+      "opposingPitcher": "MacKenzie Gore",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=57.8",
+        "Hard Hit%=45.5"
+      ],
+      "bullets": [
+        "HR score 64.8 (#5)",
+        "Pitcher HR VS 57.8 at park 0.99"
+      ],
+      "hrOddsYes": "+1100",
+      "marketImpliedProbability": 0.08333333333333333,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=14.8%",
         "HH=51.5%"
       ],
       "bullets": [
         "park=1.03",
-        "HH=51.5%"
+        "hrScore=65.6"
       ],
-      "hrOddsYes": "+3800",
-      "marketImpliedProbability": 0.02564102564102564,
+      "hrOddsYes": "+377",
+      "marketImpliedProbability": 0.20964360587002095,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -166,54 +128,14 @@
       "team": "SF",
       "opponent": "TEX",
       "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=56.8",
-        "Hard Hit%=45.5"
-      ],
-      "bullets": [
-        "HR score 64.6 (#7)",
-        "Pitcher HR VS 56.8 at park 0.99"
-      ],
-      "hrOddsYes": "+1100",
-      "marketImpliedProbability": 0.08333333333333333,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Corbin Carroll",
-      "team": "AZ",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=89.7",
-        "Hard Hit%=49.3"
-      ],
-      "bullets": [
-        "HR score 64.1 (#8)",
-        "Pitcher HR VS 89.7 at park 1.01"
-      ],
-      "hrOddsYes": "+5500",
-      "marketImpliedProbability": 0.017857142857142856,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Osleivis Basabe",
-      "team": "SF",
-      "opponent": "TEX",
-      "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 7,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=27.3%",
         "HH=45.5%"
       ],
       "bullets": [
         "park=0.99",
-        "barrel=27.3%"
+        "hrScore=64.8"
       ],
       "hrOddsYes": "+1100",
       "marketImpliedProbability": 0.08333333333333333,
@@ -225,55 +147,133 @@
       "team": "AZ",
       "opponent": "SD",
       "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 8,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=12.3%",
         "HH=49.3%"
       ],
       "bullets": [
         "park=1.01",
-        "barrel=12.3%"
+        "hrScore=64.1"
       ],
-      "hrOddsYes": "+5500",
-      "marketImpliedProbability": 0.017857142857142856,
+      "hrOddsYes": "+469",
+      "marketImpliedProbability": 0.1757469244288225,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "John Rave",
-      "team": "KC",
-      "opponent": "MIN",
-      "opposingPitcher": "Joe Ryan",
-      "hrScoreRank": 25,
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "NYY",
+      "opposingPitcher": "Ryan Weathers",
+      "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=60.4",
-        "Hard Hit%=45.8"
+        "Pitcher HR VS=56.9",
+        "Hard Hit%=49.0"
       ],
       "bullets": [
-        "HR score 55.1 (#25)",
-        "Pitcher HR VS 60.4 at park 0.96"
+        "HR score 63.4 (#7)",
+        "Pitcher HR VS 56.9 at park 1.18"
       ],
-      "hrOddsYes": "+7800",
-      "marketImpliedProbability": 0.012658227848101266,
+      "hrOddsYes": "+512",
+      "marketImpliedProbability": 0.16339869281045752,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Trea Turner",
-      "team": "PHI",
-      "opponent": "WSH",
-      "opposingPitcher": "Zack Littell",
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "TOR",
+      "opposingPitcher": "Trey Yesavage",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Hard Hit%=53.8",
+        "Pitcher HR VS=36.4"
+      ],
+      "bullets": [
+        "HR score 63.3 (#8)",
+        "Pitcher HR VS 36.4 at park 1.04"
+      ],
+      "hrOddsYes": "+2100",
+      "marketImpliedProbability": 0.045454545454545456,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "NYY",
+      "opposingPitcher": "Ryan Weathers",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=11.7%",
+        "HH=49%"
+      ],
+      "bullets": [
+        "park=1.18",
+        "hrScore=63.4"
+      ],
+      "hrOddsYes": "+512",
+      "marketImpliedProbability": 0.16339869281045752,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "TOR",
+      "opposingPitcher": "Trey Yesavage",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=18.3%",
+        "HH=53.8%"
+      ],
+      "bullets": [
+        "park=1.04",
+        "hrScore=63.3"
+      ],
+      "hrOddsYes": "+2100",
+      "marketImpliedProbability": 0.045454545454545456,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
       "hrScoreRank": 21,
       "topStats": [
-        "Pitcher HR VS=82.2",
+        "Pitcher HR VS=61.2",
+        "Hard Hit%=44.6"
+      ],
+      "bullets": [
+        "HR score 56.6 (#21)",
+        "Pitcher HR VS 61.2 at park 0.93"
+      ],
+      "hrOddsYes": "+6100",
+      "marketImpliedProbability": 0.016129032258064516,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Wilyer Abreu",
+      "team": "BOS",
+      "opponent": "CWS",
+      "opposingPitcher": "Davis Martin",
+      "hrScoreRank": 25,
+      "topStats": [
+        "Pitcher HR VS=53.2",
         "Hard Hit%=41.8"
       ],
       "bullets": [
-        "HR score 57.6 (#21)",
-        "Pitcher HR VS 82.2 at park 1.17"
+        "HR score 54.5 (#25)",
+        "Pitcher HR VS 53.2 at park 0.95"
       ],
-      "hrOddsYes": "+5700",
-      "marketImpliedProbability": 0.017241379310344827,
+      "hrOddsYes": "+5600",
+      "marketImpliedProbability": 0.017543859649122806,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
