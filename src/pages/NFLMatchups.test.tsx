@@ -28,6 +28,20 @@ vi.mock("@/hooks/useNflSeasonData", () => {
   };
 });
 
+// The landing page reads the published market artifact for each card's spread.
+// Served from the committed fixture so the list renders deterministically and
+// jsdom never issues a fetch.
+vi.mock("@/hooks/useNflMatchupMarket", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { readFileSync } = require("node:fs") as typeof import("node:fs");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { join } = require("node:path") as typeof import("node:path");
+  const artifact = JSON.parse(
+    readFileSync(join(process.cwd(), "public/data/nfl/matchup-market.json"), "utf-8")
+  );
+  return { useNflMatchupMarket: () => ({ loading: false, error: null, artifact }) };
+});
+
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div data-testid="site-shell">{children}</div>,
 }));
@@ -37,6 +51,7 @@ vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import NFLMatchups from "@/pages/NFLMatchups";
 import NFLMatchupDetail from "@/pages/NFLMatchupDetail";
+import { NFL_MATCHUP_SECTIONS } from "@/lib/nfl/matchupSections";
 
 function renderRoute(path: string) {
   return render(
@@ -92,7 +107,24 @@ describe("NFLMatchupDetail", () => {
     const header = screen.getByRole("heading", { name: /Week 1 matchup/i }).closest("section")!;
     expect(within(header).getByText("New England Patriots")).toBeTruthy();
     expect(within(header).getByText("Seattle Seahawks")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: /Team comparison/i })).toBeTruthy();
+    // The single "Team comparison" table was replaced by the analyzer's
+    // dedicated offense and defense comparison sections.
+    expect(screen.getByRole("heading", { name: /Offense Comparison/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /Defense Comparison/i })).toBeTruthy();
+  });
+
+  it("renders every analyzer section anchor in page order", () => {
+    renderRoute(`/nfl/matchups/${OPENER}`);
+    for (const id of NFL_MATCHUP_SECTIONS.map((section) => section.id)) {
+      expect(document.getElementById(id), id).toBeTruthy();
+    }
+  });
+
+  it("keeps Advantages and Things to Watch on the analyzer", () => {
+    renderRoute(`/nfl/matchups/${OPENER}`);
+    expect(screen.getByRole("heading", { name: "Advantages" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Things to Watch" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: /Angles to watch/i })).toBeNull();
   });
 
   it("links each team to its canonical dashboard route", () => {

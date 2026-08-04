@@ -61,8 +61,9 @@ describe("public power board projection", () => {
     const top = board.teams[0];
     expect(top.rank).toBe(1);
     expect(top.abbr).toBe("lar");
-    expect(top.publicRating).toBeCloseTo(75.815696, 5);
-    expect(top.overallVsCenter).toBeCloseTo(25.815696, 5);
+    // v0.3.1: PBP EPA migration moved LAR +5.04 (Phase 7B).
+    expect(top.publicRating).toBeCloseTo(80.853752, 5);
+    expect(top.overallVsCenter).toBeCloseTo(30.853752, 5);
     expect(top.color).toMatch(/^#/);
     expect(top.sourceRecord).toBe("12-5");
 
@@ -84,7 +85,7 @@ describe("public power board projection", () => {
     expect(board.completedTeamGames).toBe(544);
     expect(board.teams).toHaveLength(32);
     expect(board.teams[0].abbr).toBe("lar");
-    expect(board.teams[0].publicRating).toBeCloseTo(75.815696, 5);
+    expect(board.teams[0].publicRating).toBeCloseTo(80.853752, 5);
     expect(board.teams[0].sourceRecord).toBe("12-5");
     expect(board.recordColumnLabel).toBe("2025");
     expect(board.fallbackUsed).toBe(false);

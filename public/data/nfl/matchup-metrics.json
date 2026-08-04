@@ -1,0 +1,7088 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-matchup-metrics-v1",
+    "generatedAt": "2026-08-03T00:22:26.863Z",
+    "source": "nflverse (stats_team weekly release)",
+    "sourceFiles": [
+      {
+        "season": 2025,
+        "path": "data/nfl/nflverse/stats-team-week/stats_team_week_2025.csv",
+        "rowCount": 544
+      }
+    ],
+    "scheduleSource": "public/data/nfl/<season>/{games,results}.json",
+    "currentSeason": 2026,
+    "priorSeason": 2025,
+    "seasonsUsed": [
+      2025
+    ],
+    "teamCount": 32,
+    "metricKeys": [
+      "off.yardsPerPlay",
+      "off.pointsPerGame",
+      "off.turnoversPerGame",
+      "off.passPlayRate",
+      "off.passAttemptsPerGame",
+      "off.yardsPerPassAttempt",
+      "off.passYardsPerGame",
+      "off.sacksAllowedPerGame",
+      "off.rushPlayRate",
+      "off.rushAttemptsPerGame",
+      "off.yardsPerRushAttempt",
+      "off.rushYardsPerGame",
+      "def.yardsPerPlayAllowed",
+      "def.pointsAllowedPerGame",
+      "def.takeawaysPerGame",
+      "def.opponentPasserRating",
+      "def.opponentYardsPerPassAttempt",
+      "def.opponentPassYardsPerGame",
+      "def.sacksPerGame",
+      "def.opponentYardsPerRushAttempt",
+      "def.opponentRushAttemptsPerGame",
+      "def.opponentRushYardsPerGame"
+    ],
+    "notes": [
+      "Conventional team metrics only. EPA, success rate, first downs, third down, time of possession, line-of-scrimmage win rates, ATS/O-U and injuries are NOT in this artifact.",
+      "Regular season only; postseason excluded. Samples are built from completed games, never week numbers, so byes are handled naturally.",
+      "Ratios are recomputed from summed numerators/denominators over the selected games -- never a mean of per-game rates.",
+      "Offensive plays = pass attempts + sacks taken + carries. Offensive yards = passing yards + rushing yards (gross of sack yardage, matching the existing v0.2 pipeline).",
+      "Defensive values come from the opponent's row in the same games, joined on game_id.",
+      "Opponent passer rating uses the standard NFL formula over aggregate opponent totals, each component clamped to 0-2.375.",
+      "Ranks are competition ranks (1,2,2,4) computed per window on unrounded values; values are rounded only for display.",
+      "Play-mix and volume metrics are context-only and must not be given quality-tier colouring.",
+      "No betting lines, no projected spread, no win probability, no pick."
+    ]
+  },
+  "windows": {
+    "season-blend": {
+      "mode": "season",
+      "includePriorSeason": true,
+      "teams": {
+        "ari": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_SF_ARI",
+            "2025_12_JAX_ARI",
+            "2025_13_ARI_TB",
+            "2025_14_LA_ARI",
+            "2025_15_ARI_HOU",
+            "2025_16_ATL_ARI",
+            "2025_17_ARI_CIN",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.73,
+              11
+            ],
+            "off.pointsPerGame": [
+              19.1,
+              25
+            ],
+            "off.turnoversPerGame": [
+              1.25,
+              21
+            ],
+            "off.passPlayRate": [
+              71.9,
+              1
+            ],
+            "off.passAttemptsPerGame": [
+              41.4,
+              1
+            ],
+            "off.yardsPerPassAttempt": [
+              6.87,
+              17
+            ],
+            "off.passYardsPerGame": [
+              284.3,
+              4
+            ],
+            "off.sacksAllowedPerGame": [
+              3.13,
+              25
+            ],
+            "off.rushPlayRate": [
+              28.1,
+              32
+            ],
+            "off.rushAttemptsPerGame": [
+              17.4,
+              32
+            ],
+            "off.yardsPerRushAttempt": [
+              4.04,
+              24
+            ],
+            "off.rushYardsPerGame": [
+              70.3,
+              31
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.99,
+              24
+            ],
+            "def.pointsAllowedPerGame": [
+              34.1,
+              32
+            ],
+            "def.takeawaysPerGame": [
+              0.75,
+              26
+            ],
+            "def.opponentPasserRating": [
+              111.5,
+              30
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.75,
+              27
+            ],
+            "def.opponentPassYardsPerGame": [
+              247,
+              22
+            ],
+            "def.sacksPerGame": [
+              1.5,
+              28
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.49,
+              19
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              31.5,
+              6
+            ],
+            "def.opponentRushYardsPerGame": [
+              141.4,
+              30
+            ]
+          }
+        },
+        "atl": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CAR_ATL",
+            "2025_12_ATL_NO",
+            "2025_13_ATL_NYJ",
+            "2025_14_SEA_ATL",
+            "2025_15_ATL_TB",
+            "2025_16_ATL_ARI",
+            "2025_17_LA_ATL",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.57,
+              15
+            ],
+            "off.pointsPerGame": [
+              23.1,
+              13
+            ],
+            "off.turnoversPerGame": [
+              1,
+              9
+            ],
+            "off.passPlayRate": [
+              52.3,
+              23
+            ],
+            "off.passAttemptsPerGame": [
+              30.9,
+              17
+            ],
+            "off.yardsPerPassAttempt": [
+              6.86,
+              18
+            ],
+            "off.passYardsPerGame": [
+              211.8,
+              17
+            ],
+            "off.sacksAllowedPerGame": [
+              1.5,
+              6
+            ],
+            "off.rushPlayRate": [
+              47.7,
+              10
+            ],
+            "off.rushAttemptsPerGame": [
+              29.5,
+              10
+            ],
+            "off.yardsPerRushAttempt": [
+              4.51,
+              9
+            ],
+            "off.rushYardsPerGame": [
+              133,
+              9
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.7,
+              19
+            ],
+            "def.pointsAllowedPerGame": [
+              24,
+              21
+            ],
+            "def.takeawaysPerGame": [
+              1.25,
+              13
+            ],
+            "def.opponentPasserRating": [
+              87.4,
+              15
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.29,
+              21
+            ],
+            "def.opponentPassYardsPerGame": [
+              265,
+              31
+            ],
+            "def.sacksPerGame": [
+              3.5,
+              1
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.18,
+              13
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24.8,
+              23
+            ],
+            "def.opponentRushYardsPerGame": [
+              103.5,
+              9
+            ]
+          }
+        },
+        "bal": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_BAL_CLE",
+            "2025_12_NYJ_BAL",
+            "2025_13_CIN_BAL",
+            "2025_14_PIT_BAL",
+            "2025_15_BAL_CIN",
+            "2025_16_NE_BAL",
+            "2025_17_BAL_GB",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.19,
+              4
+            ],
+            "off.pointsPerGame": [
+              24.4,
+              12
+            ],
+            "off.turnoversPerGame": [
+              1.5,
+              29
+            ],
+            "off.passPlayRate": [
+              43.8,
+              32
+            ],
+            "off.passAttemptsPerGame": [
+              23.1,
+              32
+            ],
+            "off.yardsPerPassAttempt": [
+              7.96,
+              4
+            ],
+            "off.passYardsPerGame": [
+              184,
+              27
+            ],
+            "off.sacksAllowedPerGame": [
+              2.5,
+              21
+            ],
+            "off.rushPlayRate": [
+              56.2,
+              1
+            ],
+            "off.rushAttemptsPerGame": [
+              32.9,
+              2
+            ],
+            "off.yardsPerRushAttempt": [
+              5.42,
+              1
+            ],
+            "off.rushYardsPerGame": [
+              178.3,
+              1
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.55,
+              14
+            ],
+            "def.pointsAllowedPerGame": [
+              20.4,
+              10
+            ],
+            "def.takeawaysPerGame": [
+              1.25,
+              13
+            ],
+            "def.opponentPasserRating": [
+              84.8,
+              12
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.19,
+              18
+            ],
+            "def.opponentPassYardsPerGame": [
+              259.6,
+              29
+            ],
+            "def.sacksPerGame": [
+              2.25,
+              17
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.63,
+              2
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24.3,
+              25
+            ],
+            "def.opponentRushYardsPerGame": [
+              88,
+              3
+            ]
+          }
+        },
+        "buf": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_TB_BUF",
+            "2025_12_BUF_HOU",
+            "2025_13_BUF_PIT",
+            "2025_14_CIN_BUF",
+            "2025_15_BUF_NE",
+            "2025_16_BUF_CLE",
+            "2025_17_PHI_BUF",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.06,
+              6
+            ],
+            "off.pointsPerGame": [
+              29.1,
+              5
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              47.8,
+              30
+            ],
+            "off.passAttemptsPerGame": [
+              28.3,
+              26
+            ],
+            "off.yardsPerPassAttempt": [
+              7.91,
+              6
+            ],
+            "off.passYardsPerGame": [
+              223.5,
+              13
+            ],
+            "off.sacksAllowedPerGame": [
+              2.5,
+              21
+            ],
+            "off.rushPlayRate": [
+              52.2,
+              3
+            ],
+            "off.rushAttemptsPerGame": [
+              33.6,
+              1
+            ],
+            "off.yardsPerRushAttempt": [
+              4.96,
+              5
+            ],
+            "off.rushYardsPerGame": [
+              166.9,
+              2
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.01,
+              7
+            ],
+            "def.pointsAllowedPerGame": [
+              21,
+              12
+            ],
+            "def.takeawaysPerGame": [
+              1.13,
+              17
+            ],
+            "def.opponentPasserRating": [
+              74.2,
+              6
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.5,
+              2
+            ],
+            "def.opponentPassYardsPerGame": [
+              151.1,
+              2
+            ],
+            "def.sacksPerGame": [
+              1.38,
+              29
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.77,
+              26
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              25.9,
+              20
+            ],
+            "def.opponentRushYardsPerGame": [
+              123.4,
+              18
+            ]
+          }
+        },
+        "car": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NO_CAR",
+            "2025_11_CAR_ATL",
+            "2025_12_CAR_SF",
+            "2025_13_LA_CAR",
+            "2025_15_CAR_NO",
+            "2025_16_TB_CAR",
+            "2025_17_SEA_CAR",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.31,
+              23
+            ],
+            "off.pointsPerGame": [
+              17.6,
+              28
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              56.5,
+              12
+            ],
+            "off.passAttemptsPerGame": [
+              29.3,
+              25
+            ],
+            "off.yardsPerPassAttempt": [
+              6.93,
+              15
+            ],
+            "off.passYardsPerGame": [
+              202.6,
+              20
+            ],
+            "off.sacksAllowedPerGame": [
+              1.88,
+              12
+            ],
+            "off.rushPlayRate": [
+              43.5,
+              21
+            ],
+            "off.rushAttemptsPerGame": [
+              24,
+              28
+            ],
+            "off.yardsPerRushAttempt": [
+              3.74,
+              28
+            ],
+            "off.rushYardsPerGame": [
+              89.9,
+              30
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.59,
+              16
+            ],
+            "def.pointsAllowedPerGame": [
+              21.9,
+              16
+            ],
+            "def.takeawaysPerGame": [
+              1.5,
+              7
+            ],
+            "def.opponentPasserRating": [
+              89.3,
+              18
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.56,
+              25
+            ],
+            "def.opponentPassYardsPerGame": [
+              213.5,
+              14
+            ],
+            "def.sacksPerGame": [
+              2,
+              19
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.23,
+              15
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              32.5,
+              3
+            ],
+            "def.opponentRushYardsPerGame": [
+              137.4,
+              27
+            ]
+          }
+        },
+        "chi": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CHI_MIN",
+            "2025_12_PIT_CHI",
+            "2025_13_CHI_PHI",
+            "2025_14_CHI_GB",
+            "2025_15_CLE_CHI",
+            "2025_16_GB_CHI",
+            "2025_17_CHI_SF",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.56,
+              16
+            ],
+            "off.pointsPerGame": [
+              25.3,
+              8
+            ],
+            "off.turnoversPerGame": [
+              0.63,
+              2
+            ],
+            "off.passPlayRate": [
+              54.1,
+              16
+            ],
+            "off.passAttemptsPerGame": [
+              34.4,
+              8
+            ],
+            "off.yardsPerPassAttempt": [
+              6.57,
+              22
+            ],
+            "off.passYardsPerGame": [
+              225.8,
+              11
+            ],
+            "off.sacksAllowedPerGame": [
+              1.25,
+              3
+            ],
+            "off.rushPlayRate": [
+              45.9,
+              17
+            ],
+            "off.rushAttemptsPerGame": [
+              30.3,
+              5
+            ],
+            "off.yardsPerRushAttempt": [
+              4.65,
+              7
+            ],
+            "off.rushYardsPerGame": [
+              140.6,
+              7
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.82,
+              21
+            ],
+            "def.pointsAllowedPerGame": [
+              21,
+              12
+            ],
+            "def.takeawaysPerGame": [
+              1.63,
+              4
+            ],
+            "def.opponentPasserRating": [
+              83.4,
+              10
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.01,
+              14
+            ],
+            "def.opponentPassYardsPerGame": [
+              224.3,
+              18
+            ],
+            "def.sacksPerGame": [
+              1.75,
+              25
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.82,
+              29
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              27.8,
+              14
+            ],
+            "def.opponentRushYardsPerGame": [
+              133.6,
+              24
+            ]
+          }
+        },
+        "cin": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CIN_PIT",
+            "2025_12_NE_CIN",
+            "2025_13_CIN_BAL",
+            "2025_14_CIN_BUF",
+            "2025_15_BAL_CIN",
+            "2025_16_CIN_MIA",
+            "2025_17_ARI_CIN",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.49,
+              19
+            ],
+            "off.pointsPerGame": [
+              24.8,
+              10
+            ],
+            "off.turnoversPerGame": [
+              1.25,
+              21
+            ],
+            "off.passPlayRate": [
+              60.2,
+              5
+            ],
+            "off.passAttemptsPerGame": [
+              38.4,
+              2
+            ],
+            "off.yardsPerPassAttempt": [
+              6.66,
+              21
+            ],
+            "off.passYardsPerGame": [
+              255.5,
+              7
+            ],
+            "off.sacksAllowedPerGame": [
+              1.75,
+              9
+            ],
+            "off.rushPlayRate": [
+              39.8,
+              28
+            ],
+            "off.rushAttemptsPerGame": [
+              26.5,
+              21
+            ],
+            "off.yardsPerRushAttempt": [
+              4.16,
+              20
+            ],
+            "off.rushYardsPerGame": [
+              110.3,
+              19
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.18,
+              30
+            ],
+            "def.pointsAllowedPerGame": [
+              24,
+              21
+            ],
+            "def.takeawaysPerGame": [
+              1.38,
+              11
+            ],
+            "def.opponentPasserRating": [
+              92.2,
+              22
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.78,
+              28
+            ],
+            "def.opponentPassYardsPerGame": [
+              220.9,
+              16
+            ],
+            "def.sacksPerGame": [
+              2.75,
+              8
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.04,
+              30
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24.9,
+              22
+            ],
+            "def.opponentRushYardsPerGame": [
+              125.3,
+              19
+            ]
+          }
+        },
+        "cle": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_BAL_CLE",
+            "2025_12_CLE_LV",
+            "2025_13_SF_CLE",
+            "2025_14_TEN_CLE",
+            "2025_15_CLE_CHI",
+            "2025_16_BUF_CLE",
+            "2025_17_PIT_CLE",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.01,
+              26
+            ],
+            "off.pointsPerGame": [
+              16.6,
+              29
+            ],
+            "off.turnoversPerGame": [
+              1.75,
+              32
+            ],
+            "off.passPlayRate": [
+              55.6,
+              15
+            ],
+            "off.passAttemptsPerGame": [
+              28,
+              27
+            ],
+            "off.yardsPerPassAttempt": [
+              6.55,
+              23
+            ],
+            "off.passYardsPerGame": [
+              183.5,
+              28
+            ],
+            "off.sacksAllowedPerGame": [
+              3.13,
+              25
+            ],
+            "off.rushPlayRate": [
+              44.4,
+              18
+            ],
+            "off.rushAttemptsPerGame": [
+              24.9,
+              26
+            ],
+            "off.yardsPerRushAttempt": [
+              3.89,
+              26
+            ],
+            "off.rushYardsPerGame": [
+              96.9,
+              28
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.19,
+              11
+            ],
+            "def.pointsAllowedPerGame": [
+              21,
+              12
+            ],
+            "def.takeawaysPerGame": [
+              0.88,
+              23
+            ],
+            "def.opponentPasserRating": [
+              83.4,
+              11
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.11,
+              8
+            ],
+            "def.opponentPassYardsPerGame": [
+              192.4,
+              7
+            ],
+            "def.sacksPerGame": [
+              3.25,
+              3
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.77,
+              27
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              28.8,
+              11
+            ],
+            "def.opponentRushYardsPerGame": [
+              137.3,
+              25
+            ]
+          }
+        },
+        "dal": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DAL_LV",
+            "2025_12_PHI_DAL",
+            "2025_13_KC_DAL",
+            "2025_14_DAL_DET",
+            "2025_15_MIN_DAL",
+            "2025_16_LAC_DAL",
+            "2025_17_DAL_WAS",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.24,
+              3
+            ],
+            "off.pointsPerGame": [
+              26,
+              6
+            ],
+            "off.turnoversPerGame": [
+              1.25,
+              21
+            ],
+            "off.passPlayRate": [
+              55.9,
+              13
+            ],
+            "off.passAttemptsPerGame": [
+              35.8,
+              6
+            ],
+            "off.yardsPerPassAttempt": [
+              8.1,
+              3
+            ],
+            "off.passYardsPerGame": [
+              289.6,
+              2
+            ],
+            "off.sacksAllowedPerGame": [
+              2,
+              16
+            ],
+            "off.rushPlayRate": [
+              44.1,
+              20
+            ],
+            "off.rushAttemptsPerGame": [
+              29.8,
+              8
+            ],
+            "off.yardsPerRushAttempt": [
+              4.41,
+              12
+            ],
+            "off.rushYardsPerGame": [
+              131.3,
+              10
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.39,
+              32
+            ],
+            "def.pointsAllowedPerGame": [
+              29.3,
+              30
+            ],
+            "def.takeawaysPerGame": [
+              0.63,
+              28
+            ],
+            "def.opponentPasserRating": [
+              106.3,
+              29
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              8.04,
+              30
+            ],
+            "def.opponentPassYardsPerGame": [
+              259.4,
+              28
+            ],
+            "def.sacksPerGame": [
+              1.88,
+              21
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.6,
+              23
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23,
+              29
+            ],
+            "def.opponentRushYardsPerGame": [
+              105.8,
+              10
+            ]
+          }
+        },
+        "den": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_LV_DEN",
+            "2025_11_KC_DEN",
+            "2025_13_DEN_WAS",
+            "2025_14_DEN_LV",
+            "2025_15_GB_DEN",
+            "2025_16_JAX_DEN",
+            "2025_17_DEN_KC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.35,
+              21
+            ],
+            "off.pointsPerGame": [
+              22,
+              17
+            ],
+            "off.turnoversPerGame": [
+              0.88,
+              7
+            ],
+            "off.passPlayRate": [
+              58.9,
+              7
+            ],
+            "off.passAttemptsPerGame": [
+              36.4,
+              4
+            ],
+            "off.yardsPerPassAttempt": [
+              6.72,
+              19
+            ],
+            "off.passYardsPerGame": [
+              244.4,
+              9
+            ],
+            "off.sacksAllowedPerGame": [
+              1.75,
+              9
+            ],
+            "off.rushPlayRate": [
+              41.1,
+              26
+            ],
+            "off.rushAttemptsPerGame": [
+              26.6,
+              20
+            ],
+            "off.yardsPerRushAttempt": [
+              3.83,
+              27
+            ],
+            "off.rushYardsPerGame": [
+              102,
+              25
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.83,
+              5
+            ],
+            "def.pointsAllowedPerGame": [
+              18.1,
+              6
+            ],
+            "def.takeawaysPerGame": [
+              0.88,
+              23
+            ],
+            "def.opponentPasserRating": [
+              77.6,
+              8
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.69,
+              4
+            ],
+            "def.opponentPassYardsPerGame": [
+              210.4,
+              13
+            ],
+            "def.sacksPerGame": [
+              3.5,
+              1
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.15,
+              12
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              21.4,
+              31
+            ],
+            "def.opponentRushYardsPerGame": [
+              88.8,
+              4
+            ]
+          }
+        },
+        "det": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DET_PHI",
+            "2025_12_NYG_DET",
+            "2025_13_GB_DET",
+            "2025_14_DAL_DET",
+            "2025_15_DET_LA",
+            "2025_16_PIT_DET",
+            "2025_17_DET_MIN",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.17,
+              5
+            ],
+            "off.pointsPerGame": [
+              24.8,
+              10
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              64.2,
+              3
+            ],
+            "off.passAttemptsPerGame": [
+              38.3,
+              3
+            ],
+            "off.yardsPerPassAttempt": [
+              7.61,
+              10
+            ],
+            "off.passYardsPerGame": [
+              291.1,
+              1
+            ],
+            "off.sacksAllowedPerGame": [
+              2.63,
+              23
+            ],
+            "off.rushPlayRate": [
+              35.8,
+              30
+            ],
+            "off.rushAttemptsPerGame": [
+              22.8,
+              30
+            ],
+            "off.yardsPerRushAttempt": [
+              4.47,
+              10
+            ],
+            "off.rushYardsPerGame": [
+              101.8,
+              26
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.99,
+              25
+            ],
+            "def.pointsAllowedPerGame": [
+              26.6,
+              26
+            ],
+            "def.takeawaysPerGame": [
+              0.88,
+              23
+            ],
+            "def.opponentPasserRating": [
+              91.9,
+              20
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.56,
+              26
+            ],
+            "def.opponentPassYardsPerGame": [
+              255.1,
+              27
+            ],
+            "def.sacksPerGame": [
+              2.38,
+              14
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.67,
+              24
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              29.4,
+              10
+            ],
+            "def.opponentRushYardsPerGame": [
+              137.3,
+              25
+            ]
+          }
+        },
+        "gb": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_GB_NYG",
+            "2025_12_MIN_GB",
+            "2025_13_GB_DET",
+            "2025_14_CHI_GB",
+            "2025_15_GB_DEN",
+            "2025_16_GB_CHI",
+            "2025_17_BAL_GB",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.78,
+              9
+            ],
+            "off.pointsPerGame": [
+              22.3,
+              16
+            ],
+            "off.turnoversPerGame": [
+              0.75,
+              6
+            ],
+            "off.passPlayRate": [
+              47.9,
+              29
+            ],
+            "off.passAttemptsPerGame": [
+              25.4,
+              29
+            ],
+            "off.yardsPerPassAttempt": [
+              7.87,
+              7
+            ],
+            "off.passYardsPerGame": [
+              199.8,
+              21
+            ],
+            "off.sacksAllowedPerGame": [
+              1.88,
+              12
+            ],
+            "off.rushPlayRate": [
+              52.1,
+              4
+            ],
+            "off.rushAttemptsPerGame": [
+              29.6,
+              9
+            ],
+            "off.yardsPerRushAttempt": [
+              4.35,
+              17
+            ],
+            "off.rushYardsPerGame": [
+              128.8,
+              13
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.56,
+              15
+            ],
+            "def.pointsAllowedPerGame": [
+              23,
+              19
+            ],
+            "def.takeawaysPerGame": [
+              1,
+              20
+            ],
+            "def.opponentPasserRating": [
+              94.7,
+              23
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.11,
+              16
+            ],
+            "def.opponentPassYardsPerGame": [
+              203.5,
+              11
+            ],
+            "def.sacksPerGame": [
+              1.75,
+              25
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.5,
+              20
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              32.6,
+              2
+            ],
+            "def.opponentRushYardsPerGame": [
+              146.9,
+              31
+            ]
+          }
+        },
+        "hou": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_HOU_TEN",
+            "2025_12_BUF_HOU",
+            "2025_13_HOU_IND",
+            "2025_14_HOU_KC",
+            "2025_15_ARI_HOU",
+            "2025_16_LV_HOU",
+            "2025_17_HOU_LAC",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.2,
+              24
+            ],
+            "off.pointsPerGame": [
+              25,
+              9
+            ],
+            "off.turnoversPerGame": [
+              0.38,
+              1
+            ],
+            "off.passPlayRate": [
+              53.1,
+              19
+            ],
+            "off.passAttemptsPerGame": [
+              32.6,
+              12
+            ],
+            "off.yardsPerPassAttempt": [
+              6.9,
+              16
+            ],
+            "off.passYardsPerGame": [
+              225.3,
+              12
+            ],
+            "off.sacksAllowedPerGame": [
+              1.25,
+              3
+            ],
+            "off.rushPlayRate": [
+              46.9,
+              14
+            ],
+            "off.rushAttemptsPerGame": [
+              29.9,
+              7
+            ],
+            "off.yardsPerRushAttempt": [
+              3.56,
+              31
+            ],
+            "off.rushYardsPerGame": [
+              106.4,
+              23
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.37,
+              13
+            ],
+            "def.pointsAllowedPerGame": [
+              18.1,
+              6
+            ],
+            "def.takeawaysPerGame": [
+              1.75,
+              2
+            ],
+            "def.opponentPasserRating": [
+              81.9,
+              9
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.82,
+              12
+            ],
+            "def.opponentPassYardsPerGame": [
+              222.5,
+              17
+            ],
+            "def.sacksPerGame": [
+              3.13,
+              5
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.08,
+              11
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.9,
+              26
+            ],
+            "def.opponentRushYardsPerGame": [
+              97.5,
+              7
+            ]
+          }
+        },
+        "ind": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_ATL_IND",
+            "2025_12_IND_KC",
+            "2025_13_HOU_IND",
+            "2025_14_IND_JAX",
+            "2025_15_IND_SEA",
+            "2025_16_SF_IND",
+            "2025_17_JAX_IND",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.39,
+              20
+            ],
+            "off.pointsPerGame": [
+              22,
+              17
+            ],
+            "off.turnoversPerGame": [
+              1.38,
+              26
+            ],
+            "off.passPlayRate": [
+              55.8,
+              14
+            ],
+            "off.passAttemptsPerGame": [
+              31.1,
+              15
+            ],
+            "off.yardsPerPassAttempt": [
+              6.71,
+              20
+            ],
+            "off.passYardsPerGame": [
+              209,
+              18
+            ],
+            "off.sacksAllowedPerGame": [
+              1.88,
+              12
+            ],
+            "off.rushPlayRate": [
+              44.2,
+              19
+            ],
+            "off.rushAttemptsPerGame": [
+              26.1,
+              23
+            ],
+            "off.yardsPerRushAttempt": [
+              4.2,
+              19
+            ],
+            "off.rushYardsPerGame": [
+              109.6,
+              20
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.6,
+              17
+            ],
+            "def.pointsAllowedPerGame": [
+              28.9,
+              29
+            ],
+            "def.takeawaysPerGame": [
+              1,
+              20
+            ],
+            "def.opponentPasserRating": [
+              88.2,
+              17
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.48,
+              23
+            ],
+            "def.opponentPassYardsPerGame": [
+              260.8,
+              30
+            ],
+            "def.sacksPerGame": [
+              1.63,
+              27
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.8,
+              8
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              31.3,
+              7
+            ],
+            "def.opponentRushYardsPerGame": [
+              118.6,
+              15
+            ]
+          }
+        },
+        "jax": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_LAC_JAX",
+            "2025_12_JAX_ARI",
+            "2025_13_JAX_TEN",
+            "2025_14_IND_JAX",
+            "2025_15_NYJ_JAX",
+            "2025_16_JAX_DEN",
+            "2025_17_JAX_IND",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.77,
+              10
+            ],
+            "off.pointsPerGame": [
+              33.6,
+              1
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              52.1,
+              24
+            ],
+            "off.passAttemptsPerGame": [
+              30.9,
+              17
+            ],
+            "off.yardsPerPassAttempt": [
+              8.21,
+              2
+            ],
+            "off.passYardsPerGame": [
+              253.5,
+              8
+            ],
+            "off.sacksAllowedPerGame": [
+              1.88,
+              12
+            ],
+            "off.rushPlayRate": [
+              47.9,
+              9
+            ],
+            "off.rushAttemptsPerGame": [
+              30.1,
+              6
+            ],
+            "off.yardsPerRushAttempt": [
+              3.62,
+              29
+            ],
+            "off.rushYardsPerGame": [
+              109.1,
+              21
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.6,
+              2
+            ],
+            "def.pointsAllowedPerGame": [
+              14.5,
+              1
+            ],
+            "def.takeawaysPerGame": [
+              1.75,
+              2
+            ],
+            "def.opponentPasserRating": [
+              66.1,
+              2
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.37,
+              1
+            ],
+            "def.opponentPassYardsPerGame": [
+              197.3,
+              9
+            ],
+            "def.sacksPerGame": [
+              2.5,
+              10
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.8,
+              7
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              20.8,
+              32
+            ],
+            "def.opponentRushYardsPerGame": [
+              78.8,
+              1
+            ]
+          }
+        },
+        "kc": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_KC_DEN",
+            "2025_12_IND_KC",
+            "2025_13_KC_DAL",
+            "2025_14_HOU_KC",
+            "2025_15_LAC_KC",
+            "2025_16_KC_TEN",
+            "2025_17_DEN_KC",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.8,
+              29
+            ],
+            "off.pointsPerGame": [
+              15.9,
+              30
+            ],
+            "off.turnoversPerGame": [
+              1.25,
+              21
+            ],
+            "off.passPlayRate": [
+              61.7,
+              4
+            ],
+            "off.passAttemptsPerGame": [
+              33.5,
+              11
+            ],
+            "off.yardsPerPassAttempt": [
+              5.96,
+              30
+            ],
+            "off.passYardsPerGame": [
+              199.8,
+              21
+            ],
+            "off.sacksAllowedPerGame": [
+              3.75,
+              30
+            ],
+            "off.rushPlayRate": [
+              38.3,
+              29
+            ],
+            "off.rushAttemptsPerGame": [
+              23.1,
+              29
+            ],
+            "off.yardsPerRushAttempt": [
+              3.9,
+              25
+            ],
+            "off.rushYardsPerGame": [
+              90.1,
+              29
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.11,
+              10
+            ],
+            "def.pointsAllowedPerGame": [
+              21.1,
+              15
+            ],
+            "def.takeawaysPerGame": [
+              0.63,
+              28
+            ],
+            "def.opponentPasserRating": [
+              86.8,
+              14
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.63,
+              10
+            ],
+            "def.opponentPassYardsPerGame": [
+              215.5,
+              15
+            ],
+            "def.sacksPerGame": [
+              1.88,
+              21
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.72,
+              3
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              28.8,
+              11
+            ],
+            "def.opponentRushYardsPerGame": [
+              107,
+              12
+            ]
+          }
+        },
+        "lac": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_PIT_LAC",
+            "2025_11_LAC_JAX",
+            "2025_13_LV_LAC",
+            "2025_14_PHI_LAC",
+            "2025_15_LAC_KC",
+            "2025_16_LAC_DAL",
+            "2025_17_HOU_LAC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.9,
+              28
+            ],
+            "off.pointsPerGame": [
+              19.1,
+              25
+            ],
+            "off.turnoversPerGame": [
+              1,
+              9
+            ],
+            "off.passPlayRate": [
+              53.8,
+              18
+            ],
+            "off.passAttemptsPerGame": [
+              30,
+              23
+            ],
+            "off.yardsPerPassAttempt": [
+              6.33,
+              27
+            ],
+            "off.passYardsPerGame": [
+              189.9,
+              24
+            ],
+            "off.sacksAllowedPerGame": [
+              3.88,
+              31
+            ],
+            "off.rushPlayRate": [
+              46.2,
+              15
+            ],
+            "off.rushAttemptsPerGame": [
+              29.1,
+              14
+            ],
+            "off.yardsPerRushAttempt": [
+              4.08,
+              21
+            ],
+            "off.rushYardsPerGame": [
+              118.9,
+              16
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.09,
+              8
+            ],
+            "def.pointsAllowedPerGame": [
+              18.4,
+              8
+            ],
+            "def.takeawaysPerGame": [
+              1.88,
+              1
+            ],
+            "def.opponentPasserRating": [
+              70.9,
+              5
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.77,
+              11
+            ],
+            "def.opponentPassYardsPerGame": [
+              196.3,
+              8
+            ],
+            "def.sacksPerGame": [
+              2.38,
+              14
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.74,
+              4
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              26.9,
+              18
+            ],
+            "def.opponentRushYardsPerGame": [
+              100.5,
+              8
+            ]
+          }
+        },
+        "lar": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_SEA_LA",
+            "2025_12_TB_LA",
+            "2025_13_LA_CAR",
+            "2025_14_LA_ARI",
+            "2025_15_DET_LA",
+            "2025_16_LA_SEA",
+            "2025_17_LA_ATL",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.65,
+              2
+            ],
+            "off.pointsPerGame": [
+              33.4,
+              2
+            ],
+            "off.turnoversPerGame": [
+              1,
+              9
+            ],
+            "off.passPlayRate": [
+              57.7,
+              9
+            ],
+            "off.passAttemptsPerGame": [
+              35.9,
+              5
+            ],
+            "off.yardsPerPassAttempt": [
+              7.94,
+              5
+            ],
+            "off.passYardsPerGame": [
+              285,
+              3
+            ],
+            "off.sacksAllowedPerGame": [
+              1.13,
+              1
+            ],
+            "off.rushPlayRate": [
+              42.3,
+              24
+            ],
+            "off.rushAttemptsPerGame": [
+              27.1,
+              19
+            ],
+            "off.yardsPerRushAttempt": [
+              5.21,
+              2
+            ],
+            "off.rushYardsPerGame": [
+              141.4,
+              6
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.75,
+              20
+            ],
+            "def.pointsAllowedPerGame": [
+              24.1,
+              23
+            ],
+            "def.takeawaysPerGame": [
+              1.5,
+              7
+            ],
+            "def.opponentPasserRating": [
+              85.2,
+              13
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.93,
+              13
+            ],
+            "def.opponentPassYardsPerGame": [
+              233,
+              20
+            ],
+            "def.sacksPerGame": [
+              2.5,
+              10
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.8,
+              28
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              26.4,
+              19
+            ],
+            "def.opponentRushYardsPerGame": [
+              126.5,
+              20
+            ]
+          }
+        },
+        "lv": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DAL_LV",
+            "2025_12_CLE_LV",
+            "2025_13_LV_LAC",
+            "2025_14_DEN_LV",
+            "2025_15_LV_PHI",
+            "2025_16_LV_HOU",
+            "2025_17_NYG_LV",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.56,
+              31
+            ],
+            "off.pointsPerGame": [
+              12.8,
+              32
+            ],
+            "off.turnoversPerGame": [
+              1,
+              9
+            ],
+            "off.passPlayRate": [
+              64.5,
+              2
+            ],
+            "off.passAttemptsPerGame": [
+              30.6,
+              21
+            ],
+            "off.yardsPerPassAttempt": [
+              5.97,
+              29
+            ],
+            "off.passYardsPerGame": [
+              182.9,
+              29
+            ],
+            "off.sacksAllowedPerGame": [
+              4.63,
+              32
+            ],
+            "off.rushPlayRate": [
+              35.5,
+              31
+            ],
+            "off.rushAttemptsPerGame": [
+              19.4,
+              31
+            ],
+            "off.yardsPerRushAttempt": [
+              3.42,
+              32
+            ],
+            "off.rushYardsPerGame": [
+              66.3,
+              32
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.21,
+              12
+            ],
+            "def.pointsAllowedPerGame": [
+              26.5,
+              25
+            ],
+            "def.takeawaysPerGame": [
+              0.75,
+              26
+            ],
+            "def.opponentPasserRating": [
+              103.4,
+              27
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.07,
+              15
+            ],
+            "def.opponentPassYardsPerGame": [
+              199.6,
+              10
+            ],
+            "def.sacksPerGame": [
+              2.38,
+              14
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.97,
+              10
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              32.4,
+              5
+            ],
+            "def.opponentRushYardsPerGame": [
+              128.4,
+              21
+            ]
+          }
+        },
+        "mia": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_BUF_MIA",
+            "2025_11_WAS_MIA",
+            "2025_13_NO_MIA",
+            "2025_14_MIA_NYJ",
+            "2025_15_MIA_PIT",
+            "2025_16_CIN_MIA",
+            "2025_17_TB_MIA",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.91,
+              7
+            ],
+            "off.pointsPerGame": [
+              20.9,
+              20
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              47,
+              31
+            ],
+            "off.passAttemptsPerGame": [
+              23.8,
+              31
+            ],
+            "off.yardsPerPassAttempt": [
+              7.63,
+              9
+            ],
+            "off.passYardsPerGame": [
+              181.3,
+              30
+            ],
+            "off.sacksAllowedPerGame": [
+              2.25,
+              18
+            ],
+            "off.rushPlayRate": [
+              53,
+              2
+            ],
+            "off.rushAttemptsPerGame": [
+              29.4,
+              12
+            ],
+            "off.yardsPerRushAttempt": [
+              4.97,
+              4
+            ],
+            "off.rushYardsPerGame": [
+              146.1,
+              4
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.97,
+              22
+            ],
+            "def.pointsAllowedPerGame": [
+              22.6,
+              17
+            ],
+            "def.takeawaysPerGame": [
+              1.63,
+              4
+            ],
+            "def.opponentPasserRating": [
+              97,
+              24
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.55,
+              24
+            ],
+            "def.opponentPassYardsPerGame": [
+              253,
+              24
+            ],
+            "def.sacksPerGame": [
+              2.75,
+              8
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.55,
+              22
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              25.9,
+              20
+            ],
+            "def.opponentRushYardsPerGame": [
+              117.6,
+              14
+            ]
+          }
+        },
+        "min": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CHI_MIN",
+            "2025_12_MIN_GB",
+            "2025_13_MIN_SEA",
+            "2025_14_WAS_MIN",
+            "2025_15_MIN_DAL",
+            "2025_16_MIN_NYG",
+            "2025_17_DET_MIN",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.95,
+              27
+            ],
+            "off.pointsPerGame": [
+              17.9,
+              27
+            ],
+            "off.turnoversPerGame": [
+              1.63,
+              31
+            ],
+            "off.passPlayRate": [
+              51.6,
+              26
+            ],
+            "off.passAttemptsPerGame": [
+              24.8,
+              30
+            ],
+            "off.yardsPerPassAttempt": [
+              6.19,
+              28
+            ],
+            "off.passYardsPerGame": [
+              153.3,
+              32
+            ],
+            "off.sacksAllowedPerGame": [
+              3.25,
+              27
+            ],
+            "off.rushPlayRate": [
+              48.4,
+              7
+            ],
+            "off.rushAttemptsPerGame": [
+              26.3,
+              22
+            ],
+            "off.yardsPerRushAttempt": [
+              4.39,
+              14
+            ],
+            "off.rushYardsPerGame": [
+              115.3,
+              18
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.4,
+              1
+            ],
+            "def.pointsAllowedPerGame": [
+              15,
+              2
+            ],
+            "def.takeawaysPerGame": [
+              1.5,
+              7
+            ],
+            "def.opponentPasserRating": [
+              64.3,
+              1
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.81,
+              6
+            ],
+            "def.opponentPassYardsPerGame": [
+              141.6,
+              1
+            ],
+            "def.sacksPerGame": [
+              3.13,
+              5
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.77,
+              5
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              32.5,
+              3
+            ],
+            "def.opponentRushYardsPerGame": [
+              122.5,
+              17
+            ]
+          }
+        },
+        "ne": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NE_TB",
+            "2025_11_NYJ_NE",
+            "2025_12_NE_CIN",
+            "2025_13_NYG_NE",
+            "2025_15_BUF_NE",
+            "2025_16_NE_BAL",
+            "2025_17_NE_NYJ",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.81,
+              1
+            ],
+            "off.pointsPerGame": [
+              31.6,
+              3
+            ],
+            "off.turnoversPerGame": [
+              0.63,
+              2
+            ],
+            "off.passPlayRate": [
+              52.7,
+              22
+            ],
+            "off.passAttemptsPerGame": [
+              30.6,
+              21
+            ],
+            "off.yardsPerPassAttempt": [
+              8.82,
+              1
+            ],
+            "off.passYardsPerGame": [
+              270.3,
+              5
+            ],
+            "off.sacksAllowedPerGame": [
+              1.75,
+              9
+            ],
+            "off.rushPlayRate": [
+              47.3,
+              11
+            ],
+            "off.rushAttemptsPerGame": [
+              29,
+              15
+            ],
+            "off.yardsPerRushAttempt": [
+              5.09,
+              3
+            ],
+            "off.rushYardsPerGame": [
+              147.5,
+              3
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.1,
+              9
+            ],
+            "def.pointsAllowedPerGame": [
+              18.9,
+              9
+            ],
+            "def.takeawaysPerGame": [
+              1,
+              20
+            ],
+            "def.opponentPasserRating": [
+              87.4,
+              16
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.76,
+              5
+            ],
+            "def.opponentPassYardsPerGame": [
+              172,
+              3
+            ],
+            "def.sacksPerGame": [
+              1.88,
+              21
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.73,
+              25
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              27.8,
+              14
+            ],
+            "def.opponentRushYardsPerGame": [
+              131.3,
+              23
+            ]
+          }
+        },
+        "no": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NO_CAR",
+            "2025_12_ATL_NO",
+            "2025_13_NO_MIA",
+            "2025_14_NO_TB",
+            "2025_15_CAR_NO",
+            "2025_16_NYJ_NO",
+            "2025_17_NO_TEN",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.53,
+              17
+            ],
+            "off.pointsPerGame": [
+              21,
+              19
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              57.7,
+              10
+            ],
+            "off.passAttemptsPerGame": [
+              34.5,
+              7
+            ],
+            "off.yardsPerPassAttempt": [
+              7.67,
+              8
+            ],
+            "off.passYardsPerGame": [
+              264.8,
+              6
+            ],
+            "off.sacksAllowedPerGame": [
+              3.5,
+              29
+            ],
+            "off.rushPlayRate": [
+              42.3,
+              23
+            ],
+            "off.rushAttemptsPerGame": [
+              27.9,
+              18
+            ],
+            "off.yardsPerRushAttempt": [
+              3.57,
+              30
+            ],
+            "off.rushYardsPerGame": [
+              99.6,
+              27
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.68,
+              4
+            ],
+            "def.pointsAllowedPerGame": [
+              17.5,
+              5
+            ],
+            "def.takeawaysPerGame": [
+              1.25,
+              13
+            ],
+            "def.opponentPasserRating": [
+              74.7,
+              7
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.97,
+              7
+            ],
+            "def.opponentPassYardsPerGame": [
+              173,
+              4
+            ],
+            "def.sacksPerGame": [
+              3.25,
+              3
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.9,
+              9
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              28.4,
+              13
+            ],
+            "def.opponentRushYardsPerGame": [
+              110.6,
+              13
+            ]
+          }
+        },
+        "nyg": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NYG_CHI",
+            "2025_11_GB_NYG",
+            "2025_12_NYG_DET",
+            "2025_13_NYG_NE",
+            "2025_15_WAS_NYG",
+            "2025_16_MIN_NYG",
+            "2025_17_NYG_LV",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.57,
+              14
+            ],
+            "off.pointsPerGame": [
+              23,
+              15
+            ],
+            "off.turnoversPerGame": [
+              0.88,
+              7
+            ],
+            "off.passPlayRate": [
+              50.4,
+              27
+            ],
+            "off.passAttemptsPerGame": [
+              29.9,
+              24
+            ],
+            "off.yardsPerPassAttempt": [
+              7.29,
+              12
+            ],
+            "off.passYardsPerGame": [
+              217.8,
+              16
+            ],
+            "off.sacksAllowedPerGame": [
+              2.63,
+              23
+            ],
+            "off.rushPlayRate": [
+              49.6,
+              6
+            ],
+            "off.rushAttemptsPerGame": [
+              32,
+              3
+            ],
+            "off.yardsPerRushAttempt": [
+              4.43,
+              11
+            ],
+            "off.rushYardsPerGame": [
+              141.8,
+              5
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.97,
+              23
+            ],
+            "def.pointsAllowedPerGame": [
+              23.8,
+              20
+            ],
+            "def.takeawaysPerGame": [
+              1.13,
+              17
+            ],
+            "def.opponentPasserRating": [
+              91.3,
+              19
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.22,
+              20
+            ],
+            "def.opponentPassYardsPerGame": [
+              208.4,
+              12
+            ],
+            "def.sacksPerGame": [
+              2.25,
+              17
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.14,
+              31
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              27.3,
+              16
+            ],
+            "def.opponentRushYardsPerGame": [
+              140,
+              28
+            ]
+          }
+        },
+        "nyj": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_NYJ_NE",
+            "2025_12_NYJ_BAL",
+            "2025_13_ATL_NYJ",
+            "2025_14_MIA_NYJ",
+            "2025_15_NYJ_JAX",
+            "2025_16_NYJ_NO",
+            "2025_17_NE_NYJ",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.38,
+              32
+            ],
+            "off.pointsPerGame": [
+              13.1,
+              31
+            ],
+            "off.turnoversPerGame": [
+              1.5,
+              29
+            ],
+            "off.passPlayRate": [
+              57.4,
+              11
+            ],
+            "off.passAttemptsPerGame": [
+              30.8,
+              19
+            ],
+            "off.yardsPerPassAttempt": [
+              5.11,
+              32
+            ],
+            "off.passYardsPerGame": [
+              157.3,
+              31
+            ],
+            "off.sacksAllowedPerGame": [
+              3.25,
+              27
+            ],
+            "off.rushPlayRate": [
+              42.6,
+              22
+            ],
+            "off.rushAttemptsPerGame": [
+              25.3,
+              25
+            ],
+            "off.yardsPerRushAttempt": [
+              4.06,
+              23
+            ],
+            "off.rushYardsPerGame": [
+              102.5,
+              24
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.03,
+              27
+            ],
+            "def.pointsAllowedPerGame": [
+              32.8,
+              31
+            ],
+            "def.takeawaysPerGame": [
+              0.38,
+              32
+            ],
+            "def.opponentPasserRating": [
+              118.8,
+              32
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              8.16,
+              31
+            ],
+            "def.opponentPassYardsPerGame": [
+              252,
+              23
+            ],
+            "def.sacksPerGame": [
+              1.13,
+              31
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.25,
+              16
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              33.1,
+              1
+            ],
+            "def.opponentRushYardsPerGame": [
+              140.9,
+              29
+            ]
+          }
+        },
+        "phi": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DET_PHI",
+            "2025_12_PHI_DAL",
+            "2025_13_CHI_PHI",
+            "2025_14_PHI_LAC",
+            "2025_15_LV_PHI",
+            "2025_16_PHI_WAS",
+            "2025_17_PHI_BUF",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.33,
+              22
+            ],
+            "off.pointsPerGame": [
+              20.1,
+              21
+            ],
+            "off.turnoversPerGame": [
+              1,
+              9
+            ],
+            "off.passPlayRate": [
+              54.1,
+              17
+            ],
+            "off.passAttemptsPerGame": [
+              32,
+              13
+            ],
+            "off.yardsPerPassAttempt": [
+              6.4,
+              25
+            ],
+            "off.passYardsPerGame": [
+              204.8,
+              19
+            ],
+            "off.sacksAllowedPerGame": [
+              1.25,
+              3
+            ],
+            "off.rushPlayRate": [
+              45.9,
+              16
+            ],
+            "off.rushAttemptsPerGame": [
+              28.3,
+              17
+            ],
+            "off.yardsPerRushAttempt": [
+              4.35,
+              16
+            ],
+            "off.rushYardsPerGame": [
+              123,
+              15
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.96,
+              6
+            ],
+            "def.pointsAllowedPerGame": [
+              16.6,
+              4
+            ],
+            "def.takeawaysPerGame": [
+              1.5,
+              7
+            ],
+            "def.opponentPasserRating": [
+              69.4,
+              3
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.24,
+              9
+            ],
+            "def.opponentPassYardsPerGame": [
+              187.1,
+              6
+            ],
+            "def.sacksPerGame": [
+              2.88,
+              7
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.19,
+              14
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              31.3,
+              7
+            ],
+            "def.opponentRushYardsPerGame": [
+              131,
+              22
+            ]
+          }
+        },
+        "pit": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CIN_PIT",
+            "2025_12_PIT_CHI",
+            "2025_13_BUF_PIT",
+            "2025_14_PIT_BAL",
+            "2025_15_MIA_PIT",
+            "2025_16_PIT_DET",
+            "2025_17_PIT_CLE",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.58,
+              13
+            ],
+            "off.pointsPerGame": [
+              23.1,
+              13
+            ],
+            "off.turnoversPerGame": [
+              0.63,
+              2
+            ],
+            "off.passPlayRate": [
+              58.2,
+              8
+            ],
+            "off.passAttemptsPerGame": [
+              34.3,
+              10
+            ],
+            "off.yardsPerPassAttempt": [
+              6.45,
+              24
+            ],
+            "off.passYardsPerGame": [
+              220.9,
+              15
+            ],
+            "off.sacksAllowedPerGame": [
+              1.63,
+              7
+            ],
+            "off.rushPlayRate": [
+              41.8,
+              25
+            ],
+            "off.rushAttemptsPerGame": [
+              25.8,
+              24
+            ],
+            "off.yardsPerRushAttempt": [
+              4.78,
+              6
+            ],
+            "off.rushYardsPerGame": [
+              123.1,
+              14
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.68,
+              18
+            ],
+            "def.pointsAllowedPerGame": [
+              20.9,
+              11
+            ],
+            "def.takeawaysPerGame": [
+              1.38,
+              11
+            ],
+            "def.opponentPasserRating": [
+              91.9,
+              21
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.11,
+              17
+            ],
+            "def.opponentPassYardsPerGame": [
+              227.6,
+              19
+            ],
+            "def.sacksPerGame": [
+              2,
+              19
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.42,
+              18
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              27.3,
+              16
+            ],
+            "def.opponentRushYardsPerGame": [
+              120.4,
+              16
+            ]
+          }
+        },
+        "sea": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_SEA_LA",
+            "2025_12_SEA_TEN",
+            "2025_13_MIN_SEA",
+            "2025_14_SEA_ATL",
+            "2025_15_IND_SEA",
+            "2025_16_LA_SEA",
+            "2025_17_SEA_CAR",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.69,
+              12
+            ],
+            "off.pointsPerGame": [
+              26,
+              6
+            ],
+            "off.turnoversPerGame": [
+              1.38,
+              26
+            ],
+            "off.passPlayRate": [
+              53.1,
+              20
+            ],
+            "off.passAttemptsPerGame": [
+              31.1,
+              15
+            ],
+            "off.yardsPerPassAttempt": [
+              7.17,
+              13
+            ],
+            "off.passYardsPerGame": [
+              223.3,
+              14
+            ],
+            "off.sacksAllowedPerGame": [
+              2.13,
+              17
+            ],
+            "off.rushPlayRate": [
+              46.9,
+              13
+            ],
+            "off.rushAttemptsPerGame": [
+              29.4,
+              12
+            ],
+            "off.yardsPerRushAttempt": [
+              4.54,
+              8
+            ],
+            "off.rushYardsPerGame": [
+              133.4,
+              8
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.64,
+              3
+            ],
+            "def.pointsAllowedPerGame": [
+              15,
+              2
+            ],
+            "def.takeawaysPerGame": [
+              1.63,
+              4
+            ],
+            "def.opponentPasserRating": [
+              70.7,
+              4
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.57,
+              3
+            ],
+            "def.opponentPassYardsPerGame": [
+              179,
+              5
+            ],
+            "def.sacksPerGame": [
+              1.88,
+              21
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.77,
+              6
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24.8,
+              23
+            ],
+            "def.opponentRushYardsPerGame": [
+              93.4,
+              5
+            ]
+          }
+        },
+        "sf": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_LA_SF",
+            "2025_11_SF_ARI",
+            "2025_12_CAR_SF",
+            "2025_13_SF_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_SF_IND",
+            "2025_17_CHI_SF",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.78,
+              8
+            ],
+            "off.pointsPerGame": [
+              30.4,
+              4
+            ],
+            "off.turnoversPerGame": [
+              1.13,
+              14
+            ],
+            "off.passPlayRate": [
+              52.8,
+              21
+            ],
+            "off.passAttemptsPerGame": [
+              31.4,
+              14
+            ],
+            "off.yardsPerPassAttempt": [
+              7.57,
+              11
+            ],
+            "off.passYardsPerGame": [
+              237.5,
+              10
+            ],
+            "off.sacksAllowedPerGame": [
+              1.13,
+              1
+            ],
+            "off.rushPlayRate": [
+              47.2,
+              12
+            ],
+            "off.rushAttemptsPerGame": [
+              29,
+              15
+            ],
+            "off.yardsPerRushAttempt": [
+              4.06,
+              22
+            ],
+            "off.rushYardsPerGame": [
+              117.9,
+              17
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.01,
+              26
+            ],
+            "def.pointsAllowedPerGame": [
+              22.9,
+              18
+            ],
+            "def.takeawaysPerGame": [
+              1.13,
+              17
+            ],
+            "def.opponentPasserRating": [
+              98.2,
+              26
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.21,
+              19
+            ],
+            "def.opponentPassYardsPerGame": [
+              253.1,
+              25
+            ],
+            "def.sacksPerGame": [
+              1.13,
+              31
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.51,
+              21
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.6,
+              28
+            ],
+            "def.opponentRushYardsPerGame": [
+              106.6,
+              11
+            ]
+          }
+        },
+        "tb": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_TB_BUF",
+            "2025_12_TB_LA",
+            "2025_13_ARI_TB",
+            "2025_14_NO_TB",
+            "2025_15_ATL_TB",
+            "2025_16_TB_CAR",
+            "2025_17_TB_MIA",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.1,
+              25
+            ],
+            "off.pointsPerGame": [
+              20,
+              22
+            ],
+            "off.turnoversPerGame": [
+              1.38,
+              26
+            ],
+            "off.passPlayRate": [
+              51.8,
+              25
+            ],
+            "off.passAttemptsPerGame": [
+              30.8,
+              19
+            ],
+            "off.yardsPerPassAttempt": [
+              6.35,
+              26
+            ],
+            "off.passYardsPerGame": [
+              195.4,
+              23
+            ],
+            "off.sacksAllowedPerGame": [
+              2.38,
+              20
+            ],
+            "off.rushPlayRate": [
+              48.2,
+              8
+            ],
+            "off.rushAttemptsPerGame": [
+              30.9,
+              4
+            ],
+            "off.yardsPerRushAttempt": [
+              4.25,
+              18
+            ],
+            "off.rushYardsPerGame": [
+              131.1,
+              11
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.3,
+              31
+            ],
+            "def.pointsAllowedPerGame": [
+              25.6,
+              24
+            ],
+            "def.takeawaysPerGame": [
+              1.25,
+              13
+            ],
+            "def.opponentPasserRating": [
+              105.4,
+              28
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.9,
+              29
+            ],
+            "def.opponentPassYardsPerGame": [
+              254.6,
+              26
+            ],
+            "def.sacksPerGame": [
+              1.38,
+              29
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.37,
+              17
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              22.3,
+              30
+            ],
+            "def.opponentRushYardsPerGame": [
+              97.1,
+              6
+            ]
+          }
+        },
+        "ten": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_HOU_TEN",
+            "2025_12_SEA_TEN",
+            "2025_13_JAX_TEN",
+            "2025_14_TEN_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_KC_TEN",
+            "2025_17_NO_TEN",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.79,
+              30
+            ],
+            "off.pointsPerGame": [
+              19.3,
+              24
+            ],
+            "off.turnoversPerGame": [
+              0.63,
+              2
+            ],
+            "off.passPlayRate": [
+              60,
+              6
+            ],
+            "off.passAttemptsPerGame": [
+              34.4,
+              8
+            ],
+            "off.yardsPerPassAttempt": [
+              5.39,
+              31
+            ],
+            "off.passYardsPerGame": [
+              185.1,
+              26
+            ],
+            "off.sacksAllowedPerGame": [
+              2.25,
+              18
+            ],
+            "off.rushPlayRate": [
+              40,
+              27
+            ],
+            "off.rushAttemptsPerGame": [
+              24.4,
+              27
+            ],
+            "off.yardsPerRushAttempt": [
+              4.4,
+              13
+            ],
+            "off.rushYardsPerGame": [
+              107.3,
+              22
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.13,
+              29
+            ],
+            "def.pointsAllowedPerGame": [
+              27.6,
+              28
+            ],
+            "def.takeawaysPerGame": [
+              0.5,
+              30
+            ],
+            "def.opponentPasserRating": [
+              112.5,
+              31
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              8.58,
+              32
+            ],
+            "def.opponentPassYardsPerGame": [
+              267,
+              32
+            ],
+            "def.sacksPerGame": [
+              2.5,
+              10
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.56,
+              1
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.8,
+              27
+            ],
+            "def.opponentRushYardsPerGame": [
+              84.5,
+              2
+            ]
+          }
+        },
+        "wsh": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_DET_WAS",
+            "2025_11_WAS_MIA",
+            "2025_13_DEN_WAS",
+            "2025_14_WAS_MIN",
+            "2025_15_WAS_NYG",
+            "2025_16_PHI_WAS",
+            "2025_17_DAL_WAS",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.49,
+              18
+            ],
+            "off.pointsPerGame": [
+              19.4,
+              23
+            ],
+            "off.turnoversPerGame": [
+              1.25,
+              21
+            ],
+            "off.passPlayRate": [
+              48.9,
+              28
+            ],
+            "off.passAttemptsPerGame": [
+              26.6,
+              28
+            ],
+            "off.yardsPerPassAttempt": [
+              7.07,
+              14
+            ],
+            "off.passYardsPerGame": [
+              188.3,
+              25
+            ],
+            "off.sacksAllowedPerGame": [
+              1.63,
+              7
+            ],
+            "off.rushPlayRate": [
+              51.1,
+              5
+            ],
+            "off.rushAttemptsPerGame": [
+              29.5,
+              10
+            ],
+            "off.yardsPerRushAttempt": [
+              4.37,
+              15
+            ],
+            "off.rushYardsPerGame": [
+              128.9,
+              12
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.07,
+              28
+            ],
+            "def.pointsAllowedPerGame": [
+              26.9,
+              27
+            ],
+            "def.takeawaysPerGame": [
+              0.5,
+              30
+            ],
+            "def.opponentPasserRating": [
+              97.2,
+              25
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.32,
+              22
+            ],
+            "def.opponentPassYardsPerGame": [
+              244.3,
+              21
+            ],
+            "def.sacksPerGame": [
+              2.5,
+              10
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.21,
+              32
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              30.9,
+              9
+            ],
+            "def.opponentRushYardsPerGame": [
+              161,
+              32
+            ]
+          }
+        }
+      }
+    },
+    "season-current": {
+      "mode": "season",
+      "includePriorSeason": false,
+      "teams": {}
+    },
+    "last5-blend": {
+      "mode": "last5",
+      "includePriorSeason": true,
+      "teams": {
+        "ari": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_LA_ARI",
+            "2025_15_ARI_HOU",
+            "2025_16_ATL_ARI",
+            "2025_17_ARI_CIN",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.51,
+              16
+            ],
+            "off.pointsPerGame": [
+              18,
+              28
+            ],
+            "off.turnoversPerGame": [
+              1,
+              13
+            ],
+            "off.passPlayRate": [
+              70,
+              1
+            ],
+            "off.passAttemptsPerGame": [
+              36.8,
+              4
+            ],
+            "off.yardsPerPassAttempt": [
+              6.55,
+              21
+            ],
+            "off.passYardsPerGame": [
+              241.2,
+              10
+            ],
+            "off.sacksAllowedPerGame": [
+              3.4,
+              25
+            ],
+            "off.rushPlayRate": [
+              30,
+              32
+            ],
+            "off.rushAttemptsPerGame": [
+              17.2,
+              32
+            ],
+            "off.yardsPerRushAttempt": [
+              4.37,
+              15
+            ],
+            "off.rushYardsPerGame": [
+              75.2,
+              32
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.11,
+              25
+            ],
+            "def.pointsAllowedPerGame": [
+              37,
+              31
+            ],
+            "def.takeawaysPerGame": [
+              0.4,
+              29
+            ],
+            "def.opponentPasserRating": [
+              116.3,
+              30
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.75,
+              24
+            ],
+            "def.opponentPassYardsPerGame": [
+              265.2,
+              29
+            ],
+            "def.sacksPerGame": [
+              1.2,
+              29
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.69,
+              21
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              34.4,
+              2
+            ],
+            "def.opponentRushYardsPerGame": [
+              161.4,
+              31
+            ]
+          }
+        },
+        "atl": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_SEA_ATL",
+            "2025_15_ATL_TB",
+            "2025_16_ATL_ARI",
+            "2025_17_LA_ATL",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.36,
+              20
+            ],
+            "off.pointsPerGame": [
+              22,
+              19
+            ],
+            "off.turnoversPerGame": [
+              1.4,
+              25
+            ],
+            "off.passPlayRate": [
+              53.3,
+              18
+            ],
+            "off.passAttemptsPerGame": [
+              32.2,
+              12
+            ],
+            "off.yardsPerPassAttempt": [
+              6.45,
+              24
+            ],
+            "off.passYardsPerGame": [
+              207.6,
+              17
+            ],
+            "off.sacksAllowedPerGame": [
+              1.4,
+              4
+            ],
+            "off.rushPlayRate": [
+              46.7,
+              15
+            ],
+            "off.rushAttemptsPerGame": [
+              29.4,
+              12
+            ],
+            "off.yardsPerRushAttempt": [
+              4.43,
+              14
+            ],
+            "off.rushYardsPerGame": [
+              130.2,
+              10
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.08,
+              24
+            ],
+            "def.pointsAllowedPerGame": [
+              25,
+              22
+            ],
+            "def.takeawaysPerGame": [
+              1.6,
+              5
+            ],
+            "def.opponentPasserRating": [
+              83.4,
+              11
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.48,
+              20
+            ],
+            "def.opponentPassYardsPerGame": [
+              251.4,
+              22
+            ],
+            "def.sacksPerGame": [
+              3.2,
+              7
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.89,
+              26
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.4,
+              27
+            ],
+            "def.opponentRushYardsPerGame": [
+              114.4,
+              14
+            ]
+          }
+        },
+        "bal": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PIT_BAL",
+            "2025_15_BAL_CIN",
+            "2025_16_NE_BAL",
+            "2025_17_BAL_GB",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.49,
+              3
+            ],
+            "off.pointsPerGame": [
+              27,
+              7
+            ],
+            "off.turnoversPerGame": [
+              1,
+              13
+            ],
+            "off.passPlayRate": [
+              39.6,
+              32
+            ],
+            "off.passAttemptsPerGame": [
+              21,
+              32
+            ],
+            "off.yardsPerPassAttempt": [
+              8.38,
+              2
+            ],
+            "off.passYardsPerGame": [
+              176,
+              25
+            ],
+            "off.sacksAllowedPerGame": [
+              2.2,
+              14
+            ],
+            "off.rushPlayRate": [
+              60.4,
+              1
+            ],
+            "off.rushAttemptsPerGame": [
+              35.4,
+              1
+            ],
+            "off.yardsPerRushAttempt": [
+              5.77,
+              1
+            ],
+            "off.rushYardsPerGame": [
+              204.2,
+              1
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.04,
+              21
+            ],
+            "def.pointsAllowedPerGame": [
+              21,
+              12
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              91.6,
+              18
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.83,
+              27
+            ],
+            "def.opponentPassYardsPerGame": [
+              295.8,
+              32
+            ],
+            "def.sacksPerGame": [
+              2.2,
+              19
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.56,
+              2
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              22,
+              30
+            ],
+            "def.opponentRushYardsPerGame": [
+              78.4,
+              1
+            ]
+          }
+        },
+        "buf": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CIN_BUF",
+            "2025_15_BUF_NE",
+            "2025_16_BUF_CLE",
+            "2025_17_PHI_BUF",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.03,
+              4
+            ],
+            "off.pointsPerGame": [
+              28.8,
+              5
+            ],
+            "off.turnoversPerGame": [
+              0.4,
+              2
+            ],
+            "off.passPlayRate": [
+              46.9,
+              29
+            ],
+            "off.passAttemptsPerGame": [
+              27.8,
+              24
+            ],
+            "off.yardsPerPassAttempt": [
+              7.88,
+              7
+            ],
+            "off.passYardsPerGame": [
+              219,
+              15
+            ],
+            "off.sacksAllowedPerGame": [
+              2.4,
+              18
+            ],
+            "off.rushPlayRate": [
+              53.1,
+              4
+            ],
+            "off.rushAttemptsPerGame": [
+              34.2,
+              2
+            ],
+            "off.yardsPerRushAttempt": [
+              4.95,
+              5
+            ],
+            "off.rushYardsPerGame": [
+              169.2,
+              2
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.11,
+              10
+            ],
+            "def.pointsAllowedPerGame": [
+              21.2,
+              14
+            ],
+            "def.takeawaysPerGame": [
+              1,
+              18
+            ],
+            "def.opponentPasserRating": [
+              77.1,
+              7
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.55,
+              1
+            ],
+            "def.opponentPassYardsPerGame": [
+              153.2,
+              3
+            ],
+            "def.sacksPerGame": [
+              1.8,
+              23
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.99,
+              27
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24.8,
+              23
+            ],
+            "def.opponentRushYardsPerGame": [
+              123.8,
+              19
+            ]
+          }
+        },
+        "car": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_LA_CAR",
+            "2025_15_CAR_NO",
+            "2025_16_TB_CAR",
+            "2025_17_SEA_CAR",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.09,
+              26
+            ],
+            "off.pointsPerGame": [
+              19,
+              25
+            ],
+            "off.turnoversPerGame": [
+              1,
+              13
+            ],
+            "off.passPlayRate": [
+              52,
+              22
+            ],
+            "off.passAttemptsPerGame": [
+              27,
+              27
+            ],
+            "off.yardsPerPassAttempt": [
+              6.52,
+              23
+            ],
+            "off.passYardsPerGame": [
+              176,
+              25
+            ],
+            "off.sacksAllowedPerGame": [
+              1.4,
+              4
+            ],
+            "off.rushPlayRate": [
+              48,
+              11
+            ],
+            "off.rushAttemptsPerGame": [
+              26.2,
+              22
+            ],
+            "off.yardsPerRushAttempt": [
+              3.89,
+              27
+            ],
+            "off.rushYardsPerGame": [
+              102,
+              24
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.59,
+              15
+            ],
+            "def.pointsAllowedPerGame": [
+              22.2,
+              19
+            ],
+            "def.takeawaysPerGame": [
+              1.4,
+              8
+            ],
+            "def.opponentPasserRating": [
+              90,
+              17
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.43,
+              18
+            ],
+            "def.opponentPassYardsPerGame": [
+              202,
+              14
+            ],
+            "def.sacksPerGame": [
+              2.8,
+              9
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.49,
+              17
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              31.4,
+              7
+            ],
+            "def.opponentRushYardsPerGame": [
+              141,
+              27
+            ]
+          }
+        },
+        "chi": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CHI_GB",
+            "2025_15_CLE_CHI",
+            "2025_16_GB_CHI",
+            "2025_17_CHI_SF",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.93,
+              9
+            ],
+            "off.pointsPerGame": [
+              25.6,
+              11
+            ],
+            "off.turnoversPerGame": [
+              0.4,
+              2
+            ],
+            "off.passPlayRate": [
+              57.5,
+              11
+            ],
+            "off.passAttemptsPerGame": [
+              34.4,
+              8
+            ],
+            "off.yardsPerPassAttempt": [
+              7.09,
+              15
+            ],
+            "off.passYardsPerGame": [
+              244,
+              9
+            ],
+            "off.sacksAllowedPerGame": [
+              1,
+              2
+            ],
+            "off.rushPlayRate": [
+              42.5,
+              22
+            ],
+            "off.rushAttemptsPerGame": [
+              26.2,
+              22
+            ],
+            "off.yardsPerRushAttempt": [
+              4.62,
+              9
+            ],
+            "off.rushYardsPerGame": [
+              121,
+              18
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.05,
+              22
+            ],
+            "def.pointsAllowedPerGame": [
+              21.6,
+              15
+            ],
+            "def.takeawaysPerGame": [
+              1.4,
+              8
+            ],
+            "def.opponentPasserRating": [
+              89.7,
+              16
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.82,
+              26
+            ],
+            "def.opponentPassYardsPerGame": [
+              248.6,
+              21
+            ],
+            "def.sacksPerGame": [
+              2.4,
+              17
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.63,
+              19
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              29.4,
+              10
+            ],
+            "def.opponentRushYardsPerGame": [
+              136.2,
+              25
+            ]
+          }
+        },
+        "cin": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CIN_BUF",
+            "2025_15_BAL_CIN",
+            "2025_16_CIN_MIA",
+            "2025_17_ARI_CIN",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.84,
+              12
+            ],
+            "off.pointsPerGame": [
+              26.8,
+              8
+            ],
+            "off.turnoversPerGame": [
+              1.2,
+              19
+            ],
+            "off.passPlayRate": [
+              59.1,
+              8
+            ],
+            "off.passAttemptsPerGame": [
+              36.6,
+              5
+            ],
+            "off.yardsPerPassAttempt": [
+              7.58,
+              11
+            ],
+            "off.passYardsPerGame": [
+              277.4,
+              4
+            ],
+            "off.sacksAllowedPerGame": [
+              2.2,
+              14
+            ],
+            "off.rushPlayRate": [
+              40.9,
+              25
+            ],
+            "off.rushAttemptsPerGame": [
+              26.8,
+              21
+            ],
+            "off.yardsPerRushAttempt": [
+              3.95,
+              25
+            ],
+            "off.rushYardsPerGame": [
+              105.8,
+              22
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.23,
+              27
+            ],
+            "def.pointsAllowedPerGame": [
+              23.6,
+              20
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              95.2,
+              20
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.63,
+              23
+            ],
+            "def.opponentPassYardsPerGame": [
+              196.8,
+              11
+            ],
+            "def.sacksPerGame": [
+              3.4,
+              3
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.6,
+              32
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.6,
+              26
+            ],
+            "def.opponentRushYardsPerGame": [
+              132.2,
+              23
+            ]
+          }
+        },
+        "cle": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_TEN_CLE",
+            "2025_15_CLE_CHI",
+            "2025_16_BUF_CLE",
+            "2025_17_PIT_CLE",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.11,
+              25
+            ],
+            "off.pointsPerGame": [
+              17,
+              29
+            ],
+            "off.turnoversPerGame": [
+              2,
+              32
+            ],
+            "off.passPlayRate": [
+              59.4,
+              7
+            ],
+            "off.passAttemptsPerGame": [
+              30.4,
+              21
+            ],
+            "off.yardsPerPassAttempt": [
+              6.55,
+              22
+            ],
+            "off.passYardsPerGame": [
+              199,
+              21
+            ],
+            "off.sacksAllowedPerGame": [
+              3.6,
+              28
+            ],
+            "off.rushPlayRate": [
+              40.6,
+              26
+            ],
+            "off.rushAttemptsPerGame": [
+              23.2,
+              28
+            ],
+            "off.yardsPerRushAttempt": [
+              4.03,
+              23
+            ],
+            "off.rushYardsPerGame": [
+              93.4,
+              27
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.36,
+              12
+            ],
+            "def.pointsAllowedPerGame": [
+              21.8,
+              16
+            ],
+            "def.takeawaysPerGame": [
+              0.6,
+              26
+            ],
+            "def.opponentPasserRating": [
+              86.9,
+              12
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.84,
+              7
+            ],
+            "def.opponentPassYardsPerGame": [
+              178.6,
+              5
+            ],
+            "def.sacksPerGame": [
+              2,
+              21
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.23,
+              29
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              29.2,
+              13
+            ],
+            "def.opponentRushYardsPerGame": [
+              152.6,
+              28
+            ]
+          }
+        },
+        "dal": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DAL_DET",
+            "2025_15_MIN_DAL",
+            "2025_16_LAC_DAL",
+            "2025_17_DAL_WAS",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.99,
+              5
+            ],
+            "off.pointsPerGame": [
+              24,
+              13
+            ],
+            "off.turnoversPerGame": [
+              1.2,
+              19
+            ],
+            "off.passPlayRate": [
+              56.1,
+              14
+            ],
+            "off.passAttemptsPerGame": [
+              35.6,
+              7
+            ],
+            "off.yardsPerPassAttempt": [
+              7.72,
+              8
+            ],
+            "off.passYardsPerGame": [
+              275,
+              5
+            ],
+            "off.sacksAllowedPerGame": [
+              2.8,
+              23
+            ],
+            "off.rushPlayRate": [
+              43.9,
+              19
+            ],
+            "off.rushAttemptsPerGame": [
+              30,
+              8
+            ],
+            "off.yardsPerRushAttempt": [
+              4.49,
+              12
+            ],
+            "off.rushYardsPerGame": [
+              134.8,
+              8
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.85,
+              32
+            ],
+            "def.pointsAllowedPerGame": [
+              33.8,
+              30
+            ],
+            "def.takeawaysPerGame": [
+              0.4,
+              29
+            ],
+            "def.opponentPasserRating": [
+              111.3,
+              29
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              9,
+              32
+            ],
+            "def.opponentPassYardsPerGame": [
+              257.4,
+              28
+            ],
+            "def.sacksPerGame": [
+              1.4,
+              26
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.86,
+              25
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              26.2,
+              19
+            ],
+            "def.opponentRushYardsPerGame": [
+              127.4,
+              21
+            ]
+          }
+        },
+        "den": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DEN_LV",
+            "2025_15_GB_DEN",
+            "2025_16_JAX_DEN",
+            "2025_17_DEN_KC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.36,
+              19
+            ],
+            "off.pointsPerGame": [
+              23.4,
+              15
+            ],
+            "off.turnoversPerGame": [
+              0.8,
+              8
+            ],
+            "off.passPlayRate": [
+              57.1,
+              12
+            ],
+            "off.passAttemptsPerGame": [
+              36,
+              6
+            ],
+            "off.yardsPerPassAttempt": [
+              6.61,
+              19
+            ],
+            "off.passYardsPerGame": [
+              237.8,
+              11
+            ],
+            "off.sacksAllowedPerGame": [
+              1.8,
+              11
+            ],
+            "off.rushPlayRate": [
+              42.9,
+              21
+            ],
+            "off.rushAttemptsPerGame": [
+              28.4,
+              16
+            ],
+            "off.yardsPerRushAttempt": [
+              4.13,
+              21
+            ],
+            "off.rushYardsPerGame": [
+              117.2,
+              20
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.83,
+              6
+            ],
+            "def.pointsAllowedPerGame": [
+              18.6,
+              7
+            ],
+            "def.takeawaysPerGame": [
+              0.8,
+              21
+            ],
+            "def.opponentPasserRating": [
+              79.9,
+              8
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.57,
+              2
+            ],
+            "def.opponentPassYardsPerGame": [
+              194,
+              10
+            ],
+            "def.sacksPerGame": [
+              3.4,
+              3
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.35,
+              15
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              19.8,
+              32
+            ],
+            "def.opponentRushYardsPerGame": [
+              86.2,
+              3
+            ]
+          }
+        },
+        "det": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DAL_DET",
+            "2025_15_DET_LA",
+            "2025_16_PIT_DET",
+            "2025_17_DET_MIN",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.94,
+              8
+            ],
+            "off.pointsPerGame": [
+              26.2,
+              10
+            ],
+            "off.turnoversPerGame": [
+              1.4,
+              25
+            ],
+            "off.passPlayRate": [
+              65.7,
+              2
+            ],
+            "off.passAttemptsPerGame": [
+              40,
+              1
+            ],
+            "off.yardsPerPassAttempt": [
+              7.7,
+              10
+            ],
+            "off.passYardsPerGame": [
+              307.8,
+              2
+            ],
+            "off.sacksAllowedPerGame": [
+              2.6,
+              22
+            ],
+            "off.rushPlayRate": [
+              34.3,
+              31
+            ],
+            "off.rushAttemptsPerGame": [
+              22.2,
+              29
+            ],
+            "off.yardsPerRushAttempt": [
+              3.46,
+              30
+            ],
+            "off.rushYardsPerGame": [
+              76.8,
+              31
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.21,
+              26
+            ],
+            "def.pointsAllowedPerGame": [
+              27.8,
+              27
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              87.2,
+              13
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.27,
+              17
+            ],
+            "def.opponentPassYardsPerGame": [
+              254.6,
+              25
+            ],
+            "def.sacksPerGame": [
+              3.4,
+              3
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.58,
+              31
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              25.2,
+              21
+            ],
+            "def.opponentRushYardsPerGame": [
+              140.6,
+              26
+            ]
+          }
+        },
+        "gb": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CHI_GB",
+            "2025_15_GB_DEN",
+            "2025_16_GB_CHI",
+            "2025_17_BAL_GB",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.98,
+              6
+            ],
+            "off.pointsPerGame": [
+              19.4,
+              24
+            ],
+            "off.turnoversPerGame": [
+              1.2,
+              19
+            ],
+            "off.passPlayRate": [
+              49.1,
+              28
+            ],
+            "off.passAttemptsPerGame": [
+              25,
+              29
+            ],
+            "off.yardsPerPassAttempt": [
+              8.3,
+              4
+            ],
+            "off.passYardsPerGame": [
+              207.6,
+              17
+            ],
+            "off.sacksAllowedPerGame": [
+              2.4,
+              18
+            ],
+            "off.rushPlayRate": [
+              50.9,
+              5
+            ],
+            "off.rushAttemptsPerGame": [
+              28.4,
+              16
+            ],
+            "off.yardsPerRushAttempt": [
+              4.44,
+              13
+            ],
+            "off.rushYardsPerGame": [
+              126.2,
+              13
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.76,
+              18
+            ],
+            "def.pointsAllowedPerGame": [
+              26.8,
+              24
+            ],
+            "def.takeawaysPerGame": [
+              0.6,
+              26
+            ],
+            "def.opponentPasserRating": [
+              101.2,
+              27
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.04,
+              15
+            ],
+            "def.opponentPassYardsPerGame": [
+              216.8,
+              15
+            ],
+            "def.sacksPerGame": [
+              0.8,
+              31
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.75,
+              23
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              34.6,
+              1
+            ],
+            "def.opponentRushYardsPerGame": [
+              164.2,
+              32
+            ]
+          }
+        },
+        "hou": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_HOU_KC",
+            "2025_15_ARI_HOU",
+            "2025_16_LV_HOU",
+            "2025_17_HOU_LAC",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.27,
+              23
+            ],
+            "off.pointsPerGame": [
+              28.2,
+              6
+            ],
+            "off.turnoversPerGame": [
+              0.4,
+              2
+            ],
+            "off.passPlayRate": [
+              50.5,
+              25
+            ],
+            "off.passAttemptsPerGame": [
+              31,
+              17
+            ],
+            "off.yardsPerPassAttempt": [
+              7.09,
+              16
+            ],
+            "off.passYardsPerGame": [
+              219.8,
+              14
+            ],
+            "off.sacksAllowedPerGame": [
+              0.8,
+              1
+            ],
+            "off.rushPlayRate": [
+              49.5,
+              8
+            ],
+            "off.rushAttemptsPerGame": [
+              31.2,
+              3
+            ],
+            "off.yardsPerRushAttempt": [
+              3.59,
+              29
+            ],
+            "off.rushYardsPerGame": [
+              112,
+              21
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.36,
+              13
+            ],
+            "def.pointsAllowedPerGame": [
+              19.4,
+              10
+            ],
+            "def.takeawaysPerGame": [
+              2,
+              2
+            ],
+            "def.opponentPasserRating": [
+              80.6,
+              9
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.94,
+              13
+            ],
+            "def.opponentPassYardsPerGame": [
+              226.4,
+              18
+            ],
+            "def.sacksPerGame": [
+              2.6,
+              14
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.88,
+              10
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              25.4,
+              20
+            ],
+            "def.opponentRushYardsPerGame": [
+              98.6,
+              5
+            ]
+          }
+        },
+        "ind": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_IND_JAX",
+            "2025_15_IND_SEA",
+            "2025_16_SF_IND",
+            "2025_17_JAX_IND",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.8,
+              29
+            ],
+            "off.pointsPerGame": [
+              21.8,
+              20
+            ],
+            "off.turnoversPerGame": [
+              1.8,
+              30
+            ],
+            "off.passPlayRate": [
+              57.7,
+              10
+            ],
+            "off.passAttemptsPerGame": [
+              33,
+              10
+            ],
+            "off.yardsPerPassAttempt": [
+              6.27,
+              27
+            ],
+            "off.passYardsPerGame": [
+              207,
+              19
+            ],
+            "off.sacksAllowedPerGame": [
+              1.4,
+              4
+            ],
+            "off.rushPlayRate": [
+              42.3,
+              23
+            ],
+            "off.rushAttemptsPerGame": [
+              25.2,
+              25
+            ],
+            "off.yardsPerRushAttempt": [
+              3.13,
+              32
+            ],
+            "off.rushYardsPerGame": [
+              78.8,
+              29
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.73,
+              17
+            ],
+            "def.pointsAllowedPerGame": [
+              32.6,
+              29
+            ],
+            "def.takeawaysPerGame": [
+              0.8,
+              21
+            ],
+            "def.opponentPasserRating": [
+              95.7,
+              22
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.54,
+              22
+            ],
+            "def.opponentPassYardsPerGame": [
+              256.2,
+              27
+            ],
+            "def.sacksPerGame": [
+              0.8,
+              31
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.79,
+              7
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              29.2,
+              13
+            ],
+            "def.opponentRushYardsPerGame": [
+              110.6,
+              11
+            ]
+          }
+        },
+        "jax": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_IND_JAX",
+            "2025_15_NYJ_JAX",
+            "2025_16_JAX_DEN",
+            "2025_17_JAX_IND",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.91,
+              10
+            ],
+            "off.pointsPerGame": [
+              36.4,
+              2
+            ],
+            "off.turnoversPerGame": [
+              0.8,
+              8
+            ],
+            "off.passPlayRate": [
+              56,
+              15
+            ],
+            "off.passAttemptsPerGame": [
+              33.6,
+              9
+            ],
+            "off.yardsPerPassAttempt": [
+              8.27,
+              5
+            ],
+            "off.passYardsPerGame": [
+              278,
+              3
+            ],
+            "off.sacksAllowedPerGame": [
+              1.8,
+              11
+            ],
+            "off.rushPlayRate": [
+              44,
+              18
+            ],
+            "off.rushAttemptsPerGame": [
+              27.8,
+              20
+            ],
+            "off.yardsPerRushAttempt": [
+              3.43,
+              31
+            ],
+            "off.rushYardsPerGame": [
+              95.4,
+              26
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.84,
+              7
+            ],
+            "def.pointsAllowedPerGame": [
+              16.6,
+              4
+            ],
+            "def.takeawaysPerGame": [
+              2.2,
+              1
+            ],
+            "def.opponentPasserRating": [
+              61,
+              2
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.58,
+              3
+            ],
+            "def.opponentPassYardsPerGame": [
+              200.8,
+              13
+            ],
+            "def.sacksPerGame": [
+              1.6,
+              24
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.02,
+              12
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.2,
+              29
+            ],
+            "def.opponentRushYardsPerGame": [
+              93.2,
+              4
+            ]
+          }
+        },
+        "kc": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_HOU_KC",
+            "2025_15_LAC_KC",
+            "2025_16_KC_TEN",
+            "2025_17_DEN_KC",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.08,
+              32
+            ],
+            "off.pointsPerGame": [
+              11.4,
+              31
+            ],
+            "off.turnoversPerGame": [
+              1.4,
+              25
+            ],
+            "off.passPlayRate": [
+              60.4,
+              4
+            ],
+            "off.passAttemptsPerGame": [
+              28.6,
+              23
+            ],
+            "off.yardsPerPassAttempt": [
+              4.96,
+              31
+            ],
+            "off.passYardsPerGame": [
+              141.8,
+              32
+            ],
+            "off.sacksAllowedPerGame": [
+              4,
+              31
+            ],
+            "off.rushPlayRate": [
+              39.6,
+              29
+            ],
+            "off.rushAttemptsPerGame": [
+              21.4,
+              30
+            ],
+            "off.yardsPerRushAttempt": [
+              3.66,
+              28
+            ],
+            "off.rushYardsPerGame": [
+              78.4,
+              30
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.6,
+              4
+            ],
+            "def.pointsAllowedPerGame": [
+              19.2,
+              9
+            ],
+            "def.takeawaysPerGame": [
+              0.8,
+              21
+            ],
+            "def.opponentPasserRating": [
+              80.7,
+              10
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.11,
+              10
+            ],
+            "def.opponentPassYardsPerGame": [
+              185.6,
+              8
+            ],
+            "def.sacksPerGame": [
+              2.6,
+              14
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.57,
+              3
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              32.8,
+              4
+            ],
+            "def.opponentRushYardsPerGame": [
+              117.2,
+              16
+            ]
+          }
+        },
+        "lac": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PHI_LAC",
+            "2025_15_LAC_KC",
+            "2025_16_LAC_DAL",
+            "2025_17_HOU_LAC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.02,
+              28
+            ],
+            "off.pointsPerGame": [
+              18.2,
+              27
+            ],
+            "off.turnoversPerGame": [
+              1.2,
+              19
+            ],
+            "off.passPlayRate": [
+              55.7,
+              16
+            ],
+            "off.passAttemptsPerGame": [
+              32,
+              13
+            ],
+            "off.yardsPerPassAttempt": [
+              6.38,
+              25
+            ],
+            "off.passYardsPerGame": [
+              204.2,
+              20
+            ],
+            "off.sacksAllowedPerGame": [
+              4,
+              31
+            ],
+            "off.rushPlayRate": [
+              44.3,
+              17
+            ],
+            "off.rushAttemptsPerGame": [
+              28.6,
+              14
+            ],
+            "off.yardsPerRushAttempt": [
+              4.21,
+              19
+            ],
+            "off.rushYardsPerGame": [
+              120.4,
+              19
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.31,
+              11
+            ],
+            "def.pointsAllowedPerGame": [
+              17.6,
+              5
+            ],
+            "def.takeawaysPerGame": [
+              2,
+              2
+            ],
+            "def.opponentPasserRating": [
+              68.1,
+              4
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.99,
+              14
+            ],
+            "def.opponentPassYardsPerGame": [
+              218.2,
+              16
+            ],
+            "def.sacksPerGame": [
+              2.2,
+              19
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.79,
+              8
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              26.8,
+              17
+            ],
+            "def.opponentRushYardsPerGame": [
+              101.6,
+              7
+            ]
+          }
+        },
+        "lar": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_LA_ARI",
+            "2025_15_DET_LA",
+            "2025_16_LA_SEA",
+            "2025_17_LA_ATL",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              6.79,
+              2
+            ],
+            "off.pointsPerGame": [
+              36.8,
+              1
+            ],
+            "off.turnoversPerGame": [
+              0.8,
+              8
+            ],
+            "off.passPlayRate": [
+              56.6,
+              13
+            ],
+            "off.passAttemptsPerGame": [
+              39.2,
+              2
+            ],
+            "off.yardsPerPassAttempt": [
+              8.34,
+              3
+            ],
+            "off.passYardsPerGame": [
+              326.8,
+              1
+            ],
+            "off.sacksAllowedPerGame": [
+              1.2,
+              3
+            ],
+            "off.rushPlayRate": [
+              43.4,
+              20
+            ],
+            "off.rushAttemptsPerGame": [
+              31,
+              4
+            ],
+            "off.yardsPerRushAttempt": [
+              5.1,
+              3
+            ],
+            "off.rushYardsPerGame": [
+              158,
+              4
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.39,
+              30
+            ],
+            "def.pointsAllowedPerGame": [
+              27.2,
+              25
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              95.6,
+              21
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.46,
+              19
+            ],
+            "def.opponentPassYardsPerGame": [
+              255.2,
+              26
+            ],
+            "def.sacksPerGame": [
+              2.8,
+              9
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.51,
+              30
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              21.4,
+              31
+            ],
+            "def.opponentRushYardsPerGame": [
+              118,
+              17
+            ]
+          }
+        },
+        "lv": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DEN_LV",
+            "2025_15_LV_PHI",
+            "2025_16_LV_HOU",
+            "2025_17_NYG_LV",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.6,
+              30
+            ],
+            "off.pointsPerGame": [
+              12.4,
+              30
+            ],
+            "off.turnoversPerGame": [
+              1,
+              13
+            ],
+            "off.passPlayRate": [
+              59.7,
+              5
+            ],
+            "off.passAttemptsPerGame": [
+              27.2,
+              26
+            ],
+            "off.yardsPerPassAttempt": [
+              5.7,
+              29
+            ],
+            "off.passYardsPerGame": [
+              155,
+              30
+            ],
+            "off.sacksAllowedPerGame": [
+              3.6,
+              28
+            ],
+            "off.rushPlayRate": [
+              40.3,
+              28
+            ],
+            "off.rushAttemptsPerGame": [
+              20.8,
+              31
+            ],
+            "off.yardsPerRushAttempt": [
+              3.96,
+              24
+            ],
+            "off.rushYardsPerGame": [
+              82.4,
+              28
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.99,
+              8
+            ],
+            "def.pointsAllowedPerGame": [
+              24.8,
+              21
+            ],
+            "def.takeawaysPerGame": [
+              0.4,
+              29
+            ],
+            "def.opponentPasserRating": [
+              96.9,
+              23
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.32,
+              11
+            ],
+            "def.opponentPassYardsPerGame": [
+              192,
+              9
+            ],
+            "def.sacksPerGame": [
+              2.8,
+              9
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.16,
+              13
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              31.6,
+              6
+            ],
+            "def.opponentRushYardsPerGame": [
+              131.4,
+              22
+            ]
+          }
+        },
+        "mia": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_MIA_NYJ",
+            "2025_15_MIA_PIT",
+            "2025_16_CIN_MIA",
+            "2025_17_TB_MIA",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.73,
+              15
+            ],
+            "off.pointsPerGame": [
+              20,
+              23
+            ],
+            "off.turnoversPerGame": [
+              1.2,
+              19
+            ],
+            "off.passPlayRate": [
+              49.5,
+              27
+            ],
+            "off.passAttemptsPerGame": [
+              25.2,
+              28
+            ],
+            "off.yardsPerPassAttempt": [
+              7.53,
+              12
+            ],
+            "off.passYardsPerGame": [
+              189.8,
+              23
+            ],
+            "off.sacksAllowedPerGame": [
+              2.2,
+              14
+            ],
+            "off.rushPlayRate": [
+              50.5,
+              6
+            ],
+            "off.rushAttemptsPerGame": [
+              28,
+              19
+            ],
+            "off.yardsPerRushAttempt": [
+              4.56,
+              10
+            ],
+            "off.rushYardsPerGame": [
+              127.8,
+              12
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.24,
+              28
+            ],
+            "def.pointsAllowedPerGame": [
+              27.6,
+              26
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              100.2,
+              26
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.91,
+              28
+            ],
+            "def.opponentPassYardsPerGame": [
+              253.2,
+              24
+            ],
+            "def.sacksPerGame": [
+              2.8,
+              9
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.81,
+              24
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              25,
+              22
+            ],
+            "def.opponentRushYardsPerGame": [
+              120.2,
+              18
+            ]
+          }
+        },
+        "min": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_WAS_MIN",
+            "2025_15_MIN_DAL",
+            "2025_16_MIN_NYG",
+            "2025_17_DET_MIN",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.28,
+              22
+            ],
+            "off.pointsPerGame": [
+              24,
+              13
+            ],
+            "off.turnoversPerGame": [
+              0.8,
+              8
+            ],
+            "off.passPlayRate": [
+              46.9,
+              30
+            ],
+            "off.passAttemptsPerGame": [
+              23.4,
+              30
+            ],
+            "off.yardsPerPassAttempt": [
+              7.38,
+              14
+            ],
+            "off.passYardsPerGame": [
+              172.6,
+              27
+            ],
+            "off.sacksAllowedPerGame": [
+              3.4,
+              25
+            ],
+            "off.rushPlayRate": [
+              53.1,
+              3
+            ],
+            "off.rushAttemptsPerGame": [
+              30.4,
+              5
+            ],
+            "off.yardsPerRushAttempt": [
+              4.26,
+              17
+            ],
+            "off.rushYardsPerGame": [
+              129.6,
+              11
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.41,
+              2
+            ],
+            "def.pointsAllowedPerGame": [
+              10.4,
+              1
+            ],
+            "def.takeawaysPerGame": [
+              2,
+              2
+            ],
+            "def.opponentPasserRating": [
+              58.1,
+              1
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.79,
+              6
+            ],
+            "def.opponentPassYardsPerGame": [
+              133.2,
+              1
+            ],
+            "def.sacksPerGame": [
+              3.6,
+              1
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.87,
+              9
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              29.4,
+              10
+            ],
+            "def.opponentRushYardsPerGame": [
+              113.8,
+              13
+            ]
+          }
+        },
+        "ne": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_NYG_NE",
+            "2025_15_BUF_NE",
+            "2025_16_NE_BAL",
+            "2025_17_NE_NYJ",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              7.13,
+              1
+            ],
+            "off.pointsPerGame": [
+              34.4,
+              3
+            ],
+            "off.turnoversPerGame": [
+              0.6,
+              5
+            ],
+            "off.passPlayRate": [
+              51.5,
+              24
+            ],
+            "off.passAttemptsPerGame": [
+              29,
+              22
+            ],
+            "off.yardsPerPassAttempt": [
+              9.08,
+              1
+            ],
+            "off.passYardsPerGame": [
+              263.4,
+              7
+            ],
+            "off.sacksAllowedPerGame": [
+              2.2,
+              14
+            ],
+            "off.rushPlayRate": [
+              48.5,
+              9
+            ],
+            "off.rushAttemptsPerGame": [
+              29.4,
+              12
+            ],
+            "off.yardsPerRushAttempt": [
+              5.73,
+              2
+            ],
+            "off.rushYardsPerGame": [
+              168.4,
+              3
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.04,
+              9
+            ],
+            "def.pointsAllowedPerGame": [
+              18.8,
+              8
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              89.6,
+              15
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.03,
+              9
+            ],
+            "def.opponentPassYardsPerGame": [
+              158,
+              4
+            ],
+            "def.sacksPerGame": [
+              2,
+              21
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.51,
+              18
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              30,
+              9
+            ],
+            "def.opponentRushYardsPerGame": [
+              135.4,
+              24
+            ]
+          }
+        },
+        "no": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_NO_TB",
+            "2025_15_CAR_NO",
+            "2025_16_NYJ_NO",
+            "2025_17_NO_TEN",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.97,
+              7
+            ],
+            "off.pointsPerGame": [
+              24.8,
+              12
+            ],
+            "off.turnoversPerGame": [
+              1,
+              13
+            ],
+            "off.passPlayRate": [
+              58.1,
+              9
+            ],
+            "off.passAttemptsPerGame": [
+              33,
+              10
+            ],
+            "off.yardsPerPassAttempt": [
+              8.21,
+              6
+            ],
+            "off.passYardsPerGame": [
+              270.8,
+              6
+            ],
+            "off.sacksAllowedPerGame": [
+              3.4,
+              25
+            ],
+            "off.rushPlayRate": [
+              41.9,
+              24
+            ],
+            "off.rushAttemptsPerGame": [
+              26.2,
+              22
+            ],
+            "off.yardsPerRushAttempt": [
+              3.93,
+              26
+            ],
+            "off.rushYardsPerGame": [
+              103,
+              23
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.46,
+              3
+            ],
+            "def.pointsAllowedPerGame": [
+              17.6,
+              5
+            ],
+            "def.takeawaysPerGame": [
+              1.2,
+              11
+            ],
+            "def.opponentPasserRating": [
+              74.7,
+              6
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.61,
+              5
+            ],
+            "def.opponentPassYardsPerGame": [
+              180.8,
+              6
+            ],
+            "def.sacksPerGame": [
+              3.4,
+              3
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.69,
+              5
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              28.6,
+              15
+            ],
+            "def.opponentRushYardsPerGame": [
+              105.4,
+              10
+            ]
+          }
+        },
+        "nyg": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_NYG_NE",
+            "2025_15_WAS_NYG",
+            "2025_16_MIN_NYG",
+            "2025_17_NYG_LV",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.19,
+              24
+            ],
+            "off.pointsPerGame": [
+              23.4,
+              15
+            ],
+            "off.turnoversPerGame": [
+              0.6,
+              5
+            ],
+            "off.passPlayRate": [
+              50.3,
+              26
+            ],
+            "off.passAttemptsPerGame": [
+              27.4,
+              25
+            ],
+            "off.yardsPerPassAttempt": [
+              6.24,
+              28
+            ],
+            "off.passYardsPerGame": [
+              171,
+              28
+            ],
+            "off.sacksAllowedPerGame": [
+              2.8,
+              23
+            ],
+            "off.rushPlayRate": [
+              49.7,
+              7
+            ],
+            "off.rushAttemptsPerGame": [
+              29.8,
+              9
+            ],
+            "off.yardsPerRushAttempt": [
+              4.7,
+              7
+            ],
+            "off.rushYardsPerGame": [
+              140.2,
+              5
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.48,
+              14
+            ],
+            "def.pointsAllowedPerGame": [
+              21,
+              12
+            ],
+            "def.takeawaysPerGame": [
+              1.6,
+              5
+            ],
+            "def.opponentPasserRating": [
+              88.3,
+              14
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.78,
+              25
+            ],
+            "def.opponentPassYardsPerGame": [
+              197.6,
+              12
+            ],
+            "def.sacksPerGame": [
+              2.6,
+              14
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.97,
+              11
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              29.4,
+              10
+            ],
+            "def.opponentRushYardsPerGame": [
+              116.8,
+              15
+            ]
+          }
+        },
+        "nyj": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_MIA_NYJ",
+            "2025_15_NYJ_JAX",
+            "2025_16_NYJ_NO",
+            "2025_17_NE_NYJ",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              4.18,
+              31
+            ],
+            "off.pointsPerGame": [
+              10.8,
+              32
+            ],
+            "off.turnoversPerGame": [
+              1.8,
+              30
+            ],
+            "off.passPlayRate": [
+              59.6,
+              6
+            ],
+            "off.passAttemptsPerGame": [
+              31.6,
+              14
+            ],
+            "off.yardsPerPassAttempt": [
+              4.73,
+              32
+            ],
+            "off.passYardsPerGame": [
+              149.6,
+              31
+            ],
+            "off.sacksAllowedPerGame": [
+              3.8,
+              30
+            ],
+            "off.rushPlayRate": [
+              40.4,
+              27
+            ],
+            "off.rushAttemptsPerGame": [
+              24,
+              27
+            ],
+            "off.yardsPerRushAttempt": [
+              4.1,
+              22
+            ],
+            "off.rushYardsPerGame": [
+              98.4,
+              25
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.42,
+              31
+            ],
+            "def.pointsAllowedPerGame": [
+              37.6,
+              32
+            ],
+            "def.takeawaysPerGame": [
+              0.4,
+              29
+            ],
+            "def.opponentPasserRating": [
+              132.3,
+              32
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              8.59,
+              30
+            ],
+            "def.opponentPassYardsPerGame": [
+              269.6,
+              30
+            ],
+            "def.sacksPerGame": [
+              1,
+              30
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.63,
+              20
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              34.4,
+              2
+            ],
+            "def.opponentRushYardsPerGame": [
+              159.4,
+              29
+            ]
+          }
+        },
+        "phi": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PHI_LAC",
+            "2025_15_LV_PHI",
+            "2025_16_PHI_WAS",
+            "2025_17_PHI_BUF",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.32,
+              21
+            ],
+            "off.pointsPerGame": [
+              21.8,
+              20
+            ],
+            "off.turnoversPerGame": [
+              1,
+              13
+            ],
+            "off.passPlayRate": [
+              51.9,
+              23
+            ],
+            "off.passAttemptsPerGame": [
+              31,
+              17
+            ],
+            "off.yardsPerPassAttempt": [
+              6.35,
+              26
+            ],
+            "off.passYardsPerGame": [
+              196.8,
+              22
+            ],
+            "off.sacksAllowedPerGame": [
+              1.6,
+              7
+            ],
+            "off.rushPlayRate": [
+              48.1,
+              10
+            ],
+            "off.rushAttemptsPerGame": [
+              30.2,
+              7
+            ],
+            "off.yardsPerRushAttempt": [
+              4.54,
+              11
+            ],
+            "off.rushYardsPerGame": [
+              137.2,
+              7
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.34,
+              1
+            ],
+            "def.pointsAllowedPerGame": [
+              15.2,
+              3
+            ],
+            "def.takeawaysPerGame": [
+              1.6,
+              5
+            ],
+            "def.opponentPasserRating": [
+              66.1,
+              3
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.6,
+              4
+            ],
+            "def.opponentPassYardsPerGame": [
+              146.8,
+              2
+            ],
+            "def.sacksPerGame": [
+              3.6,
+              1
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.76,
+              6
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              30.2,
+              8
+            ],
+            "def.opponentRushYardsPerGame": [
+              113.6,
+              12
+            ]
+          }
+        },
+        "pit": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PIT_BAL",
+            "2025_15_MIA_PIT",
+            "2025_16_PIT_DET",
+            "2025_17_PIT_CLE",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.81,
+              14
+            ],
+            "off.pointsPerGame": [
+              23.2,
+              17
+            ],
+            "off.turnoversPerGame": [
+              0.2,
+              1
+            ],
+            "off.passPlayRate": [
+              61.4,
+              3
+            ],
+            "off.passAttemptsPerGame": [
+              37.6,
+              3
+            ],
+            "off.yardsPerPassAttempt": [
+              6.57,
+              20
+            ],
+            "off.passYardsPerGame": [
+              247.2,
+              8
+            ],
+            "off.sacksAllowedPerGame": [
+              1.8,
+              11
+            ],
+            "off.rushPlayRate": [
+              38.6,
+              30
+            ],
+            "off.rushAttemptsPerGame": [
+              24.8,
+              26
+            ],
+            "off.yardsPerRushAttempt": [
+              5.08,
+              4
+            ],
+            "off.rushYardsPerGame": [
+              126,
+              14
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.06,
+              23
+            ],
+            "def.pointsAllowedPerGame": [
+              19.6,
+              11
+            ],
+            "def.takeawaysPerGame": [
+              1,
+              18
+            ],
+            "def.opponentPasserRating": [
+              97.5,
+              24
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.97,
+              29
+            ],
+            "def.opponentPassYardsPerGame": [
+              252,
+              23
+            ],
+            "def.sacksPerGame": [
+              2.8,
+              9
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.25,
+              14
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24,
+              24
+            ],
+            "def.opponentRushYardsPerGame": [
+              102,
+              8
+            ]
+          }
+        },
+        "sea": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_SEA_ATL",
+            "2025_15_IND_SEA",
+            "2025_16_LA_SEA",
+            "2025_17_SEA_CAR",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.84,
+              13
+            ],
+            "off.pointsPerGame": [
+              26.6,
+              9
+            ],
+            "off.turnoversPerGame": [
+              1.2,
+              19
+            ],
+            "off.passPlayRate": [
+              52.7,
+              19
+            ],
+            "off.passAttemptsPerGame": [
+              30.6,
+              20
+            ],
+            "off.yardsPerPassAttempt": [
+              7.42,
+              13
+            ],
+            "off.passYardsPerGame": [
+              227,
+              13
+            ],
+            "off.sacksAllowedPerGame": [
+              2.4,
+              18
+            ],
+            "off.rushPlayRate": [
+              47.3,
+              14
+            ],
+            "off.rushAttemptsPerGame": [
+              29.6,
+              10
+            ],
+            "off.yardsPerRushAttempt": [
+              4.68,
+              8
+            ],
+            "off.rushYardsPerGame": [
+              138.6,
+              6
+            ],
+            "def.yardsPerPlayAllowed": [
+              4.7,
+              5
+            ],
+            "def.pointsAllowedPerGame": [
+              15,
+              2
+            ],
+            "def.takeawaysPerGame": [
+              1.4,
+              8
+            ],
+            "def.opponentPasserRating": [
+              72.1,
+              5
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              5.86,
+              8
+            ],
+            "def.opponentPassYardsPerGame": [
+              184,
+              7
+            ],
+            "def.sacksPerGame": [
+              1.4,
+              26
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.61,
+              4
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              27.6,
+              16
+            ],
+            "def.opponentRushYardsPerGame": [
+              99.6,
+              6
+            ]
+          }
+        },
+        "sf": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_SF_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_SF_IND",
+            "2025_17_CHI_SF",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.85,
+              11
+            ],
+            "off.pointsPerGame": [
+              31.2,
+              4
+            ],
+            "off.turnoversPerGame": [
+              0.8,
+              8
+            ],
+            "off.passPlayRate": [
+              52.3,
+              21
+            ],
+            "off.passAttemptsPerGame": [
+              30.8,
+              19
+            ],
+            "off.yardsPerPassAttempt": [
+              7.71,
+              9
+            ],
+            "off.passYardsPerGame": [
+              237.6,
+              12
+            ],
+            "off.sacksAllowedPerGame": [
+              1.6,
+              7
+            ],
+            "off.rushPlayRate": [
+              47.7,
+              12
+            ],
+            "off.rushAttemptsPerGame": [
+              29.6,
+              10
+            ],
+            "off.yardsPerRushAttempt": [
+              4.24,
+              18
+            ],
+            "off.rushYardsPerGame": [
+              125.4,
+              16
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.86,
+              19
+            ],
+            "def.pointsAllowedPerGame": [
+              22,
+              17
+            ],
+            "def.takeawaysPerGame": [
+              0.8,
+              21
+            ],
+            "def.opponentPasserRating": [
+              97.6,
+              25
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.07,
+              16
+            ],
+            "def.opponentPassYardsPerGame": [
+              224.8,
+              17
+            ],
+            "def.sacksPerGame": [
+              1.4,
+              26
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.71,
+              22
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              26.4,
+              18
+            ],
+            "def.opponentRushYardsPerGame": [
+              124.4,
+              20
+            ]
+          }
+        },
+        "tb": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_NO_TB",
+            "2025_15_ATL_TB",
+            "2025_16_TB_CAR",
+            "2025_17_TB_MIA",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.38,
+              17
+            ],
+            "off.pointsPerGame": [
+              20.2,
+              22
+            ],
+            "off.turnoversPerGame": [
+              1.4,
+              25
+            ],
+            "off.passPlayRate": [
+              52.5,
+              20
+            ],
+            "off.passAttemptsPerGame": [
+              31.2,
+              16
+            ],
+            "off.yardsPerPassAttempt": [
+              7.01,
+              18
+            ],
+            "off.passYardsPerGame": [
+              218.6,
+              16
+            ],
+            "off.sacksAllowedPerGame": [
+              2.4,
+              18
+            ],
+            "off.rushPlayRate": [
+              47.5,
+              13
+            ],
+            "off.rushAttemptsPerGame": [
+              30.4,
+              5
+            ],
+            "off.yardsPerRushAttempt": [
+              4.14,
+              20
+            ],
+            "off.rushYardsPerGame": [
+              125.8,
+              15
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.97,
+              20
+            ],
+            "def.pointsAllowedPerGame": [
+              22,
+              17
+            ],
+            "def.takeawaysPerGame": [
+              1,
+              18
+            ],
+            "def.opponentPasserRating": [
+              103,
+              28
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              7.49,
+              21
+            ],
+            "def.opponentPassYardsPerGame": [
+              229.2,
+              20
+            ],
+            "def.sacksPerGame": [
+              1.6,
+              24
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              4.4,
+              16
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              23.4,
+              27
+            ],
+            "def.opponentRushYardsPerGame": [
+              103,
+              9
+            ]
+          }
+        },
+        "ten": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_TEN_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_KC_TEN",
+            "2025_17_NO_TEN",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.06,
+              27
+            ],
+            "off.pointsPerGame": [
+              22.8,
+              18
+            ],
+            "off.turnoversPerGame": [
+              0.6,
+              5
+            ],
+            "off.passPlayRate": [
+              53.9,
+              17
+            ],
+            "off.passAttemptsPerGame": [
+              31.6,
+              14
+            ],
+            "off.yardsPerPassAttempt": [
+              5.63,
+              30
+            ],
+            "off.passYardsPerGame": [
+              178,
+              24
+            ],
+            "off.sacksAllowedPerGame": [
+              1.6,
+              7
+            ],
+            "off.rushPlayRate": [
+              46.1,
+              16
+            ],
+            "off.rushAttemptsPerGame": [
+              28.4,
+              16
+            ],
+            "off.yardsPerRushAttempt": [
+              4.71,
+              6
+            ],
+            "off.rushYardsPerGame": [
+              133.8,
+              9
+            ],
+            "def.yardsPerPlayAllowed": [
+              6.29,
+              29
+            ],
+            "def.pointsAllowedPerGame": [
+              30,
+              28
+            ],
+            "def.takeawaysPerGame": [
+              0.8,
+              21
+            ],
+            "def.opponentPasserRating": [
+              117.4,
+              31
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              8.96,
+              31
+            ],
+            "def.opponentPassYardsPerGame": [
+              277.8,
+              31
+            ],
+            "def.sacksPerGame": [
+              2.4,
+              17
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              3.48,
+              1
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              24,
+              24
+            ],
+            "def.opponentRushYardsPerGame": [
+              83.4,
+              2
+            ]
+          }
+        },
+        "wsh": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_WAS_MIN",
+            "2025_15_WAS_NYG",
+            "2025_16_PHI_WAS",
+            "2025_17_DAL_WAS",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "metrics": {
+            "off.yardsPerPlay": [
+              5.38,
+              18
+            ],
+            "off.pointsPerGame": [
+              18.8,
+              26
+            ],
+            "off.turnoversPerGame": [
+              1.6,
+              29
+            ],
+            "off.passPlayRate": [
+              45.4,
+              31
+            ],
+            "off.passAttemptsPerGame": [
+              22.2,
+              31
+            ],
+            "off.yardsPerPassAttempt": [
+              7.08,
+              17
+            ],
+            "off.passYardsPerGame": [
+              157.2,
+              29
+            ],
+            "off.sacksAllowedPerGame": [
+              1.6,
+              7
+            ],
+            "off.rushPlayRate": [
+              54.6,
+              2
+            ],
+            "off.rushAttemptsPerGame": [
+              28.6,
+              14
+            ],
+            "off.yardsPerRushAttempt": [
+              4.36,
+              16
+            ],
+            "off.rushYardsPerGame": [
+              124.6,
+              17
+            ],
+            "def.yardsPerPlayAllowed": [
+              5.68,
+              16
+            ],
+            "def.pointsAllowedPerGame": [
+              25.6,
+              23
+            ],
+            "def.takeawaysPerGame": [
+              0.6,
+              26
+            ],
+            "def.opponentPasserRating": [
+              94.4,
+              19
+            ],
+            "def.opponentYardsPerPassAttempt": [
+              6.84,
+              12
+            ],
+            "def.opponentPassYardsPerGame": [
+              228.4,
+              19
+            ],
+            "def.sacksPerGame": [
+              3.2,
+              7
+            ],
+            "def.opponentYardsPerRushAttempt": [
+              5.04,
+              28
+            ],
+            "def.opponentRushAttemptsPerGame": [
+              32,
+              5
+            ],
+            "def.opponentRushYardsPerGame": [
+              161.2,
+              30
+            ]
+          }
+        }
+      }
+    },
+    "last5-current": {
+      "mode": "last5",
+      "includePriorSeason": false,
+      "teams": {}
+    }
+  }
+}

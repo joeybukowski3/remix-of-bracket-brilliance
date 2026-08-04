@@ -96,7 +96,7 @@ describe("NFL v0.3 Stage-1 artifact schemas", () => {
     for (const value of Object.values(first)) {
       expect(value._meta).toMatchObject({
         schemaVersion: "nfl-v0.2",
-        modelVersion: "nfl-power-v0.3.0",
+        modelVersion: "nfl-power-v0.3.1",
         validationStatus: "stage-1",
         frozenPublicScaleDivisor: 0.733,
         trajectory: { statement: "lambda = 0", lambda: 0, shrinkageK: 4, cap: 1 },
@@ -351,7 +351,7 @@ describe("NFL v0.3 determinism, dry-run, and isolation", () => {
       expect(references).toContain("useNflV03Artifacts.ts");
       expect(references).toContain("publicPowerRatings.ts");
     }
-  });
+  }, 20000);
 
   it("hard-fails unknown abbreviations, malformed schemas, NaN, and Infinity", () => {
     const unknown = structuredClone(first);

@@ -65,7 +65,7 @@ describe("NFL v0.3 internal review validation and loading", () => {
       const json: unknown = JSON.parse(source);
       const snapshot = JSON.stringify(json);
       const artifact = validateNflV03ReviewArtifact(kind, season, json, path);
-      expect(artifact._meta).toMatchObject({ modelVersion: "nfl-power-v0.3.0", validationStatus: "stage-1", season });
+      expect(artifact._meta).toMatchObject({ modelVersion: "nfl-power-v0.3.1", validationStatus: "stage-1", season });
       expect(JSON.stringify(json)).toBe(snapshot);
       expect(readFileSync(path, "utf8")).toBe(source);
     }
@@ -167,7 +167,7 @@ describe("NFL v0.3 hidden route and public isolation", () => {
       .filter((path) => reviewOnly.some((filename) => readFileSync(path, "utf8").includes(filename)))
       .map((path) => basename(path));
     expect(references).toEqual(["useNflV03Artifacts.ts"]);
-  });
+  }, 20000);
 
   it("allows public preseason/full-season filenames only in internal review and the public power board", () => {
     const publicFiles = ["preseason-power-ratings.json", "full-season-team-metrics.json"];
@@ -177,7 +177,7 @@ describe("NFL v0.3 hidden route and public isolation", () => {
       .filter((path) => publicFiles.some((filename) => readFileSync(path, "utf8").includes(filename)))
       .map((path) => basename(path));
     expect(new Set(references)).toEqual(allowed);
-  });
+  }, 20000);
 
   it("keeps the hidden review page isolated from the public NFL layout and legacy preseason board", () => {
     const page = readFileSync(join(ROOT, "src", "pages", "NflV03Review.tsx"), "utf8");

@@ -8,7 +8,15 @@
  * explicit nulls and are never converted to zero.
  */
 
-export const NFL_POWER_V03_MODEL_VERSION = "nfl-power-v0.3.0";
+/**
+ * v0.3.1 (Phase 7B) reconciles the EPA SOURCE only: the model migrated from the
+ * legacy stats_team_week EPA definition to nflfastR play-by-play EPA. The
+ * mathematics below — weights, standardization, opponent adjustment, public
+ * scale and trajectory — are byte-for-byte unchanged from v0.3.0. The patch
+ * bump exists because the same team and season can now produce a different
+ * published rating, so the version identifier must not be reused.
+ */
+export const NFL_POWER_V03_MODEL_VERSION = "nfl-power-v0.3.1";
 
 export const NFL_POWER_V03_FORMULA_WEIGHTS = Object.freeze({
   opponentAdjustedOffensiveEpaPerPlay: 0.4,
@@ -74,6 +82,15 @@ export const NFL_POWER_V03_FORMULA_METADATA = Object.freeze({
     thresholds: NFL_POWER_V03_TRAJECTORY_THRESHOLDS,
   }),
   requiredMetrics: NFL_POWER_V03_REQUIRED_METRICS,
+  epaSource: Object.freeze({
+    source: "nflverse play-by-play (nflfastR EPA)",
+    definition: "matchup-epa-v1",
+    cache: "data/nfl/nflverse/epa-team-game",
+    eligiblePlays:
+      "(pass == 1 OR rush == 1) AND epa present AND posteam present AND two_point_attempt != 1",
+    migratedIn: "nfl-power-v0.3.1",
+    previousSource: "nflverse stats_team_week (passing_epa + rushing_epa) — legacy, no longer used by the active model",
+  }),
 });
 
 const isFiniteNumber = (value) => typeof value === "number" && Number.isFinite(value);

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "nfl-injury-source-cache-v1",
+  "source": "nflverse/nflverse-data releases",
+  "files": [
+    {
+      "season": null,
+      "filename": "players.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-08-03",
+      "byteSize": 1085901,
+      "sha256": "9306840cd0503c35dc9dcf935ddc078f036867d47812d9bb78a3194b196dc5c8",
+      "rowCount": 22555,
+      "headerColumns": [
+        "gsis_id",
+        "pfr_id",
+        "espn_id",
+        "display_name",
+        "position",
+        "position_group",
+        "status"
+      ],
+      "upstream": {
+        "byteSize": 7326105,
+        "sha256": "7e198b9a5a63665817f7e86974366b836d755fd43c108a2861669f1316ad3c65",
+        "rowCount": 25039,
+        "headerColumns": [
+          "gsis_id",
+          "display_name",
+          "common_first_name",
+          "first_name",
+          "last_name",
+          "short_name",
+          "football_name",
+          "suffix",
+          "esb_id",
+          "nfl_id",
+          "pfr_id",
+          "pff_id",
+          "otc_id",
+          "espn_id",
+          "smart_id",
+          "birth_date",
+          "position_group",
+          "position",
+          "ngs_position_group",
+          "ngs_position",
+          "height",
+          "weight",
+          "headshot",
+          "college_name",
+          "college_conference",
+          "jersey_number",
+          "rookie_season",
+          "last_season",
+          "latest_team",
+          "status",
+          "ngs_status",
+          "ngs_status_short_description",
+          "years_of_experience",
+          "pff_position",
+          "pff_status",
+          "draft_year",
+          "draft_round",
+          "draft_pick",
+          "draft_team"
+        ]
+      },
+      "projectedColumns": [
+        "gsis_id",
+        "pfr_id",
+        "espn_id",
+        "display_name",
+        "position",
+        "position_group",
+        "status"
+      ],
+      "projectionFilter": "gsis_id != '' AND pfr_id != ''"
+    }
+  ],
+  "attribution": "nflverse",
+  "notPublished": []
+}

@@ -1,0 +1,4217 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-08-04T12:23:37.931Z",
+    "source": "nflverse (play-by-play, nflfastR EPA)",
+    "season": 2026,
+    "week": null,
+    "modelVersion": null,
+    "notes": [
+      "EPA is nflfastR's play-level `epa`, consumed as authoritative; expected points are never recomputed here.",
+      "Eligible plays: (pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1.",
+      "nflfastR's own pass/rush indicators are authoritative; play_type is never reinterpreted. Sacks and QB scrambles count as PASS; kneels, spikes and special teams fall out because both indicators are 0; aborted rushes count as RUSH; accepted-penalty plays carrying an indicator are included.",
+      "Two-point attempts are the one explicit exclusion.",
+      "Window values sum EPA and plays across the selected games and divide once. Per-game rates are never averaged.",
+      "Defensive values are the opponents' offensive production in the same game ids, joined exactly — never inferred from team names or schedule order.",
+      "Regular season only; postseason never enters a window and preseason does not exist in this source.",
+      "Sample windows, chronological ordering and ranking are shared with the Phase 2 conventional generator, so a control state selects the same games in both artifacts.",
+      "Success Rate remains RBSDM-sourced and is unaffected by this pipeline.",
+      "The internal power-rating EPA in scripts/lib/nfl-advanced-stats.mjs uses different stats_team_week semantics and is deliberately NOT changed by this phase.",
+      "No EPA edge, matchup score, projected spread, win probability or picked winner is produced."
+    ]
+  },
+  "schemaVersion": "nfl-matchup-epa-v1",
+  "attribution": "EPA data: nflverse / nflfastR",
+  "currentSeason": 2026,
+  "priorSeason": 2025,
+  "seasonsUsed": [
+    2025
+  ],
+  "metricKeys": [
+    "off.epaPerPlay",
+    "off.epaPerPass",
+    "off.epaPerRush",
+    "def.epaPerPlayAllowed",
+    "def.epaPerPassAllowed",
+    "def.epaPerRushAllowed"
+  ],
+  "metricDirections": {
+    "off.epaPerPlay": "higher-is-better",
+    "off.epaPerPass": "higher-is-better",
+    "off.epaPerRush": "higher-is-better",
+    "def.epaPerPlayAllowed": "lower-is-better",
+    "def.epaPerPassAllowed": "lower-is-better",
+    "def.epaPerRushAllowed": "lower-is-better"
+  },
+  "displayDecimals": 3,
+  "windows": {
+    "season-blend": {
+      "mode": "season",
+      "includePriorSeason": true,
+      "teams": {
+        "ari": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_SF_ARI",
+            "2025_12_JAX_ARI",
+            "2025_13_ARI_TB",
+            "2025_14_LA_ARI",
+            "2025_15_ARI_HOU",
+            "2025_16_ATL_ARI",
+            "2025_17_ARI_CIN",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -15.625745320957932,
+              "offPlays": 518,
+              "passEpa": 0.25756969887313264,
+              "passPlays": 383,
+              "rushEpa": -15.883315019831066,
+              "rushPlays": 135
+            },
+            "defense": {
+              "offEpa": 86.3356356059434,
+              "offPlays": 520,
+              "passEpa": 83.32625297125313,
+              "passPlays": 290,
+              "rushEpa": 3.0093826346902954,
+              "rushPlays": 230
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.03,
+              23
+            ],
+            "off.epaPerPass": [
+              0.001,
+              22
+            ],
+            "off.epaPerRush": [
+              -0.118,
+              22
+            ],
+            "def.epaPerPlayAllowed": [
+              0.166,
+              30
+            ],
+            "def.epaPerPassAllowed": [
+              0.287,
+              31
+            ],
+            "def.epaPerRushAllowed": [
+              0.013,
+              27
+            ]
+          }
+        },
+        "atl": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CAR_ATL",
+            "2025_12_ATL_NO",
+            "2025_13_ATL_NYJ",
+            "2025_14_SEA_ATL",
+            "2025_15_ATL_TB",
+            "2025_16_ATL_ARI",
+            "2025_17_LA_ATL",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 3.2273575038967817,
+              "offPlays": 507,
+              "passEpa": 24.366222076986347,
+              "passPlays": 270,
+              "rushEpa": -21.138864573089567,
+              "rushPlays": 237
+            },
+            "defense": {
+              "offEpa": -5.828618893180756,
+              "offPlays": 541,
+              "passEpa": 13.76968413770855,
+              "passPlays": 352,
+              "rushEpa": -19.598303030889298,
+              "rushPlays": 189
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.006,
+              15
+            ],
+            "off.epaPerPass": [
+              0.09,
+              12
+            ],
+            "off.epaPerRush": [
+              -0.089,
+              19
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.011,
+              15
+            ],
+            "def.epaPerPassAllowed": [
+              0.039,
+              15
+            ],
+            "def.epaPerRushAllowed": [
+              -0.104,
+              12
+            ]
+          }
+        },
+        "bal": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_BAL_CLE",
+            "2025_12_NYJ_BAL",
+            "2025_13_CIN_BAL",
+            "2025_14_PIT_BAL",
+            "2025_15_BAL_CIN",
+            "2025_16_NE_BAL",
+            "2025_17_BAL_GB",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 23.91836453202837,
+              "offPlays": 474,
+              "passEpa": -4.341868667923128,
+              "passPlays": 237,
+              "rushEpa": 28.260233199951497,
+              "rushPlays": 237
+            },
+            "defense": {
+              "offEpa": -23.819962746316843,
+              "offPlays": 516,
+              "passEpa": 21.600240032533545,
+              "passPlays": 340,
+              "rushEpa": -45.42020277885038,
+              "rushPlays": 176
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.05,
+              9
+            ],
+            "off.epaPerPass": [
+              -0.018,
+              25
+            ],
+            "off.epaPerRush": [
+              0.119,
+              1
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.046,
+              10
+            ],
+            "def.epaPerPassAllowed": [
+              0.064,
+              18
+            ],
+            "def.epaPerRushAllowed": [
+              -0.258,
+              1
+            ]
+          }
+        },
+        "buf": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_TB_BUF",
+            "2025_12_BUF_HOU",
+            "2025_13_BUF_PIT",
+            "2025_14_CIN_BUF",
+            "2025_15_BUF_NE",
+            "2025_16_BUF_CLE",
+            "2025_17_PHI_BUF",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 70.46130645131602,
+              "offPlays": 512,
+              "passEpa": 55.448064276197655,
+              "passPlays": 277,
+              "rushEpa": 15.013242175118348,
+              "rushPlays": 235
+            },
+            "defense": {
+              "offEpa": -20.342554594893286,
+              "offPlays": 446,
+              "passEpa": -26.759877608330246,
+              "passPlays": 255,
+              "rushEpa": 6.417323013436966,
+              "rushPlays": 191
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.138,
+              4
+            ],
+            "off.epaPerPass": [
+              0.2,
+              5
+            ],
+            "off.epaPerRush": [
+              0.064,
+              3
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.046,
+              11
+            ],
+            "def.epaPerPassAllowed": [
+              -0.105,
+              8
+            ],
+            "def.epaPerRushAllowed": [
+              0.034,
+              29
+            ]
+          }
+        },
+        "car": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NO_CAR",
+            "2025_11_CAR_ATL",
+            "2025_12_CAR_SF",
+            "2025_13_LA_CAR",
+            "2025_15_CAR_NO",
+            "2025_16_TB_CAR",
+            "2025_17_SEA_CAR",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -21.44987388262442,
+              "offPlays": 445,
+              "passEpa": 15.633901732311179,
+              "passPlays": 277,
+              "rushEpa": -37.08377561493558,
+              "rushPlays": 168
+            },
+            "defense": {
+              "offEpa": 33.41005691002814,
+              "offPlays": 512,
+              "passEpa": 33.663682115316846,
+              "passPlays": 267,
+              "rushEpa": -0.25362520528869226,
+              "rushPlays": 245
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.048,
+              25
+            ],
+            "off.epaPerPass": [
+              0.056,
+              15
+            ],
+            "off.epaPerRush": [
+              -0.221,
+              31
+            ],
+            "def.epaPerPlayAllowed": [
+              0.065,
+              24
+            ],
+            "def.epaPerPassAllowed": [
+              0.126,
+              22
+            ],
+            "def.epaPerRushAllowed": [
+              -0.001,
+              23
+            ]
+          }
+        },
+        "chi": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CHI_MIN",
+            "2025_12_PIT_CHI",
+            "2025_13_CHI_PHI",
+            "2025_14_CHI_GB",
+            "2025_15_CLE_CHI",
+            "2025_16_GB_CHI",
+            "2025_17_CHI_SF",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 35.72253190065668,
+              "offPlays": 540,
+              "passEpa": 30.71816816873412,
+              "passPlays": 315,
+              "rushEpa": 5.004363731922553,
+              "rushPlays": 225
+            },
+            "defense": {
+              "offEpa": 13.337627202987392,
+              "offPlays": 501,
+              "passEpa": 13.285142640308733,
+              "passPlays": 292,
+              "rushEpa": 0.05248456267867613,
+              "rushPlays": 209
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.066,
+              8
+            ],
+            "off.epaPerPass": [
+              0.098,
+              11
+            ],
+            "off.epaPerRush": [
+              0.022,
+              6
+            ],
+            "def.epaPerPlayAllowed": [
+              0.027,
+              18
+            ],
+            "def.epaPerPassAllowed": [
+              0.045,
+              16
+            ],
+            "def.epaPerRushAllowed": [
+              0,
+              24
+            ]
+          }
+        },
+        "cin": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CIN_PIT",
+            "2025_12_NE_CIN",
+            "2025_13_CIN_BAL",
+            "2025_14_CIN_BUF",
+            "2025_15_BAL_CIN",
+            "2025_16_CIN_MIA",
+            "2025_17_ARI_CIN",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 7.319472160532413,
+              "offPlays": 546,
+              "passEpa": 6.839547318451794,
+              "passPlays": 339,
+              "rushEpa": 0.479924842080627,
+              "rushPlays": 207
+            },
+            "defense": {
+              "offEpa": 4.51437954481385,
+              "offPlays": 459,
+              "passEpa": 21.046806857105842,
+              "passPlays": 283,
+              "rushEpa": -16.53242731229201,
+              "rushPlays": 176
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.013,
+              14
+            ],
+            "off.epaPerPass": [
+              0.02,
+              19
+            ],
+            "off.epaPerRush": [
+              0.002,
+              8
+            ],
+            "def.epaPerPlayAllowed": [
+              0.01,
+              17
+            ],
+            "def.epaPerPassAllowed": [
+              0.074,
+              19
+            ],
+            "def.epaPerRushAllowed": [
+              -0.094,
+              14
+            ]
+          }
+        },
+        "cle": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_BAL_CLE",
+            "2025_12_CLE_LV",
+            "2025_13_SF_CLE",
+            "2025_14_TEN_CLE",
+            "2025_15_CLE_CHI",
+            "2025_16_BUF_CLE",
+            "2025_17_PIT_CLE",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -103.2337594560131,
+              "offPlays": 461,
+              "passEpa": -68.29134892275226,
+              "passPlays": 278,
+              "rushEpa": -34.942410533260855,
+              "rushPlays": 183
+            },
+            "defense": {
+              "offEpa": -52.38436817159788,
+              "offPlays": 513,
+              "passEpa": -62.961725994303464,
+              "passPlays": 295,
+              "rushEpa": 10.577357822705597,
+              "rushPlays": 218
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.224,
+              31
+            ],
+            "off.epaPerPass": [
+              -0.246,
+              32
+            ],
+            "off.epaPerRush": [
+              -0.191,
+              30
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.102,
+              7
+            ],
+            "def.epaPerPassAllowed": [
+              -0.213,
+              2
+            ],
+            "def.epaPerRushAllowed": [
+              0.049,
+              30
+            ]
+          }
+        },
+        "dal": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DAL_LV",
+            "2025_12_PHI_DAL",
+            "2025_13_KC_DAL",
+            "2025_14_DAL_DET",
+            "2025_15_MIN_DAL",
+            "2025_16_LAC_DAL",
+            "2025_17_DAL_WAS",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 44.74933451946393,
+              "offPlays": 557,
+              "passEpa": 47.579582099173884,
+              "passPlays": 339,
+              "rushEpa": -2.830247579709951,
+              "rushPlays": 218
+            },
+            "defense": {
+              "offEpa": 72.2686296087553,
+              "offPlays": 482,
+              "passEpa": 70.28589223661359,
+              "passPlays": 315,
+              "rushEpa": 1.982737372141694,
+              "rushPlays": 167
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.08,
+              7
+            ],
+            "off.epaPerPass": [
+              0.14,
+              7
+            ],
+            "off.epaPerRush": [
+              -0.013,
+              12
+            ],
+            "def.epaPerPlayAllowed": [
+              0.15,
+              29
+            ],
+            "def.epaPerPassAllowed": [
+              0.223,
+              29
+            ],
+            "def.epaPerRushAllowed": [
+              0.012,
+              26
+            ]
+          }
+        },
+        "den": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_LV_DEN",
+            "2025_11_KC_DEN",
+            "2025_13_DEN_WAS",
+            "2025_14_DEN_LV",
+            "2025_15_GB_DEN",
+            "2025_16_JAX_DEN",
+            "2025_17_DEN_KC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 10.114263024706622,
+              "offPlays": 523,
+              "passEpa": 34.63100773119638,
+              "passPlays": 333,
+              "rushEpa": -24.516744706489753,
+              "rushPlays": 190
+            },
+            "defense": {
+              "offEpa": -28.894236385995146,
+              "offPlays": 514,
+              "passEpa": -14.630797596738258,
+              "passPlays": 360,
+              "rushEpa": -14.2634387892569,
+              "rushPlays": 154
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.019,
+              13
+            ],
+            "off.epaPerPass": [
+              0.104,
+              10
+            ],
+            "off.epaPerRush": [
+              -0.129,
+              24
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.056,
+              9
+            ],
+            "def.epaPerPassAllowed": [
+              -0.041,
+              12
+            ],
+            "def.epaPerRushAllowed": [
+              -0.093,
+              16
+            ]
+          }
+        },
+        "det": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DET_PHI",
+            "2025_12_NYG_DET",
+            "2025_13_GB_DET",
+            "2025_14_DAL_DET",
+            "2025_15_DET_LA",
+            "2025_16_PIT_DET",
+            "2025_17_DET_MIN",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 0.6829938816218508,
+              "offPlays": 523,
+              "passEpa": 28.662125699949378,
+              "passPlays": 340,
+              "rushEpa": -27.97913181832753,
+              "rushPlays": 183
+            },
+            "defense": {
+              "offEpa": 23.553157401507473,
+              "offPlays": 545,
+              "passEpa": 20.31060030420988,
+              "passPlays": 327,
+              "rushEpa": 3.242557097297576,
+              "rushPlays": 218
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.001,
+              17
+            ],
+            "off.epaPerPass": [
+              0.084,
+              14
+            ],
+            "off.epaPerRush": [
+              -0.153,
+              27
+            ],
+            "def.epaPerPlayAllowed": [
+              0.043,
+              21
+            ],
+            "def.epaPerPassAllowed": [
+              0.062,
+              17
+            ],
+            "def.epaPerRushAllowed": [
+              0.015,
+              28
+            ]
+          }
+        },
+        "gb": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_GB_NYG",
+            "2025_12_MIN_GB",
+            "2025_13_GB_DET",
+            "2025_14_CHI_GB",
+            "2025_15_GB_DEN",
+            "2025_16_GB_CHI",
+            "2025_17_BAL_GB",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 50.365970446425365,
+              "offPlays": 460,
+              "passEpa": 70.63051933361638,
+              "passPlays": 250,
+              "rushEpa": -20.264548887191,
+              "rushPlays": 210
+            },
+            "defense": {
+              "offEpa": 44.05215328798981,
+              "offPlays": 518,
+              "passEpa": 47.10056148746989,
+              "passPlays": 269,
+              "rushEpa": -3.0484081994800594,
+              "rushPlays": 249
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.109,
+              5
+            ],
+            "off.epaPerPass": [
+              0.283,
+              2
+            ],
+            "off.epaPerRush": [
+              -0.096,
+              20
+            ],
+            "def.epaPerPlayAllowed": [
+              0.085,
+              27
+            ],
+            "def.epaPerPassAllowed": [
+              0.175,
+              26
+            ],
+            "def.epaPerRushAllowed": [
+              -0.012,
+              21
+            ]
+          }
+        },
+        "hou": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_HOU_TEN",
+            "2025_12_BUF_HOU",
+            "2025_13_HOU_IND",
+            "2025_14_HOU_KC",
+            "2025_15_ARI_HOU",
+            "2025_16_LV_HOU",
+            "2025_17_HOU_LAC",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -7.191474826243458,
+              "offPlays": 530,
+              "passEpa": 25.413883747517012,
+              "passPlays": 301,
+              "rushEpa": -32.60535857376045,
+              "rushPlays": 229
+            },
+            "defense": {
+              "offEpa": -45.81454636966801,
+              "offPlays": 489,
+              "passEpa": -20.466530239825524,
+              "passPlays": 319,
+              "rushEpa": -25.348016129842485,
+              "rushPlays": 170
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.014,
+              20
+            ],
+            "off.epaPerPass": [
+              0.084,
+              13
+            ],
+            "off.epaPerRush": [
+              -0.142,
+              26
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.094,
+              8
+            ],
+            "def.epaPerPassAllowed": [
+              -0.064,
+              10
+            ],
+            "def.epaPerRushAllowed": [
+              -0.149,
+              6
+            ]
+          }
+        },
+        "ind": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_ATL_IND",
+            "2025_12_IND_KC",
+            "2025_13_HOU_IND",
+            "2025_14_IND_JAX",
+            "2025_15_IND_SEA",
+            "2025_16_SF_IND",
+            "2025_17_JAX_IND",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -16.112259498635837,
+              "offPlays": 491,
+              "passEpa": 0.8025884274920445,
+              "passPlays": 294,
+              "rushEpa": -16.914847926127873,
+              "rushPlays": 197
+            },
+            "defense": {
+              "offEpa": 29.448952414937192,
+              "offPlays": 549,
+              "passEpa": 55.33298430358003,
+              "passPlays": 319,
+              "rushEpa": -25.884031888642838,
+              "rushPlays": 230
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.033,
+              24
+            ],
+            "off.epaPerPass": [
+              0.003,
+              21
+            ],
+            "off.epaPerRush": [
+              -0.086,
+              18
+            ],
+            "def.epaPerPlayAllowed": [
+              0.054,
+              23
+            ],
+            "def.epaPerPassAllowed": [
+              0.173,
+              25
+            ],
+            "def.epaPerRushAllowed": [
+              -0.113,
+              10
+            ]
+          }
+        },
+        "jax": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_LAC_JAX",
+            "2025_12_JAX_ARI",
+            "2025_13_JAX_TEN",
+            "2025_14_IND_JAX",
+            "2025_15_NYJ_JAX",
+            "2025_16_JAX_DEN",
+            "2025_17_JAX_IND",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 44.09290844588279,
+              "offPlays": 508,
+              "passEpa": 81.61653222728444,
+              "passPlays": 297,
+              "rushEpa": -37.52362378140163,
+              "rushPlays": 211
+            },
+            "defense": {
+              "offEpa": -106.62633080105331,
+              "offPlays": 504,
+              "passEpa": -87.33145599120948,
+              "passPlays": 353,
+              "rushEpa": -19.294874809843822,
+              "rushPlays": 151
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.087,
+              6
+            ],
+            "off.epaPerPass": [
+              0.275,
+              3
+            ],
+            "off.epaPerRush": [
+              -0.178,
+              29
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.212,
+              1
+            ],
+            "def.epaPerPassAllowed": [
+              -0.247,
+              1
+            ],
+            "def.epaPerRushAllowed": [
+              -0.128,
+              8
+            ]
+          }
+        },
+        "kc": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_KC_DEN",
+            "2025_12_IND_KC",
+            "2025_13_KC_DAL",
+            "2025_14_HOU_KC",
+            "2025_15_LAC_KC",
+            "2025_16_KC_TEN",
+            "2025_17_DEN_KC",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -52.18870077947217,
+              "offPlays": 506,
+              "passEpa": -29.079765027473396,
+              "passPlays": 343,
+              "rushEpa": -23.10893575199878,
+              "rushPlays": 163
+            },
+            "defense": {
+              "offEpa": -8.375289431581603,
+              "offPlays": 519,
+              "passEpa": 31.26865203922266,
+              "passPlays": 303,
+              "rushEpa": -39.643941470804265,
+              "rushPlays": 216
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.103,
+              27
+            ],
+            "off.epaPerPass": [
+              -0.085,
+              26
+            ],
+            "off.epaPerRush": [
+              -0.142,
+              25
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.016,
+              14
+            ],
+            "def.epaPerPassAllowed": [
+              0.103,
+              20
+            ],
+            "def.epaPerRushAllowed": [
+              -0.184,
+              4
+            ]
+          }
+        },
+        "lac": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_PIT_LAC",
+            "2025_11_LAC_JAX",
+            "2025_13_LV_LAC",
+            "2025_14_PHI_LAC",
+            "2025_15_LAC_KC",
+            "2025_16_LAC_DAL",
+            "2025_17_HOU_LAC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -51.98729957456673,
+              "offPlays": 518,
+              "passEpa": -30.371639042700494,
+              "passPlays": 314,
+              "rushEpa": -21.61566053186624,
+              "rushPlays": 204
+            },
+            "defense": {
+              "offEpa": -63.02234465146761,
+              "offPlays": 478,
+              "passEpa": -30.05454498782235,
+              "passPlays": 282,
+              "rushEpa": -32.967799663645266,
+              "rushPlays": 196
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.1,
+              26
+            ],
+            "off.epaPerPass": [
+              -0.097,
+              27
+            ],
+            "off.epaPerRush": [
+              -0.106,
+              21
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.132,
+              5
+            ],
+            "def.epaPerPassAllowed": [
+              -0.107,
+              7
+            ],
+            "def.epaPerRushAllowed": [
+              -0.168,
+              5
+            ]
+          }
+        },
+        "lar": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_SEA_LA",
+            "2025_12_TB_LA",
+            "2025_13_LA_CAR",
+            "2025_14_LA_ARI",
+            "2025_15_DET_LA",
+            "2025_16_LA_SEA",
+            "2025_17_LA_ATL",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 73.46197091895904,
+              "offPlays": 525,
+              "passEpa": 56.60913791748743,
+              "passPlays": 312,
+              "rushEpa": 16.85283300147162,
+              "rushPlays": 213
+            },
+            "defense": {
+              "offEpa": -21.199262437951653,
+              "offPlays": 514,
+              "passEpa": -14.424040753465409,
+              "passPlays": 313,
+              "rushEpa": -6.775221684486246,
+              "rushPlays": 201
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.14,
+              3
+            ],
+            "off.epaPerPass": [
+              0.181,
+              6
+            ],
+            "off.epaPerRush": [
+              0.079,
+              2
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.041,
+              13
+            ],
+            "def.epaPerPassAllowed": [
+              -0.046,
+              11
+            ],
+            "def.epaPerRushAllowed": [
+              -0.034,
+              20
+            ]
+          }
+        },
+        "lv": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DAL_LV",
+            "2025_12_CLE_LV",
+            "2025_13_LV_LAC",
+            "2025_14_DEN_LV",
+            "2025_15_LV_PHI",
+            "2025_16_LV_HOU",
+            "2025_17_NYG_LV",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -110.00917014605865,
+              "offPlays": 452,
+              "passEpa": -60.52785023328055,
+              "passPlays": 307,
+              "rushEpa": -49.48131991277809,
+              "rushPlays": 145
+            },
+            "defense": {
+              "offEpa": 16.428067713242832,
+              "offPlays": 508,
+              "passEpa": 38.556657638125785,
+              "passPlays": 272,
+              "rushEpa": -22.128589924882952,
+              "rushPlays": 236
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.243,
+              32
+            ],
+            "off.epaPerPass": [
+              -0.197,
+              29
+            ],
+            "off.epaPerRush": [
+              -0.341,
+              32
+            ],
+            "def.epaPerPlayAllowed": [
+              0.032,
+              19
+            ],
+            "def.epaPerPassAllowed": [
+              0.142,
+              24
+            ],
+            "def.epaPerRushAllowed": [
+              -0.094,
+              15
+            ]
+          }
+        },
+        "mia": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_BUF_MIA",
+            "2025_11_WAS_MIA",
+            "2025_13_NO_MIA",
+            "2025_14_MIA_NYJ",
+            "2025_15_MIA_PIT",
+            "2025_16_CIN_MIA",
+            "2025_17_TB_MIA",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 2.2486861521216923,
+              "offPlays": 443,
+              "passEpa": 3.8175862022418094,
+              "passPlays": 218,
+              "rushEpa": -1.56890005012011,
+              "rushPlays": 225
+            },
+            "defense": {
+              "offEpa": 24.31745832256503,
+              "offPlays": 514,
+              "passEpa": 35.161649938500446,
+              "passPlays": 322,
+              "rushEpa": -10.844191615935411,
+              "rushPlays": 192
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.005,
+              16
+            ],
+            "off.epaPerPass": [
+              0.018,
+              20
+            ],
+            "off.epaPerRush": [
+              -0.007,
+              11
+            ],
+            "def.epaPerPlayAllowed": [
+              0.047,
+              22
+            ],
+            "def.epaPerPassAllowed": [
+              0.109,
+              21
+            ],
+            "def.epaPerRushAllowed": [
+              -0.056,
+              18
+            ]
+          }
+        },
+        "min": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CHI_MIN",
+            "2025_12_MIN_GB",
+            "2025_13_MIN_SEA",
+            "2025_14_WAS_MIN",
+            "2025_15_MIN_DAL",
+            "2025_16_MIN_NYG",
+            "2025_17_DET_MIN",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -50.19400682102318,
+              "offPlays": 443,
+              "passEpa": -50.3193921903233,
+              "passPlays": 247,
+              "rushEpa": 0.12538536930011768,
+              "rushPlays": 196
+            },
+            "defense": {
+              "offEpa": -82.06474156375191,
+              "offPlays": 499,
+              "passEpa": -48.86779737910951,
+              "passPlays": 246,
+              "rushEpa": -33.1969441846424,
+              "rushPlays": 253
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.113,
+              29
+            ],
+            "off.epaPerPass": [
+              -0.204,
+              30
+            ],
+            "off.epaPerRush": [
+              0.001,
+              9
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.164,
+              4
+            ],
+            "def.epaPerPassAllowed": [
+              -0.199,
+              3
+            ],
+            "def.epaPerRushAllowed": [
+              -0.131,
+              7
+            ]
+          }
+        },
+        "ne": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NE_TB",
+            "2025_11_NYJ_NE",
+            "2025_12_NE_CIN",
+            "2025_13_NYG_NE",
+            "2025_15_BUF_NE",
+            "2025_16_NE_BAL",
+            "2025_17_NE_NYJ",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 107.69160501345827,
+              "offPlays": 501,
+              "passEpa": 99.27281657677588,
+              "passPlays": 303,
+              "rushEpa": 8.418788436682368,
+              "rushPlays": 198
+            },
+            "defense": {
+              "offEpa": -21.882123748883394,
+              "offPlays": 484,
+              "passEpa": -22.450549035473735,
+              "passPlays": 277,
+              "rushEpa": 0.5684252865903474,
+              "rushPlays": 207
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.215,
+              1
+            ],
+            "off.epaPerPass": [
+              0.328,
+              1
+            ],
+            "off.epaPerRush": [
+              0.043,
+              4
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.045,
+              12
+            ],
+            "def.epaPerPassAllowed": [
+              -0.081,
+              9
+            ],
+            "def.epaPerRushAllowed": [
+              0.003,
+              25
+            ]
+          }
+        },
+        "no": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NO_CAR",
+            "2025_12_ATL_NO",
+            "2025_13_NO_MIA",
+            "2025_14_NO_TB",
+            "2025_15_CAR_NO",
+            "2025_16_NYJ_NO",
+            "2025_17_NO_TEN",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -9.661006917006063,
+              "offPlays": 537,
+              "passEpa": 14.226641182212399,
+              "passPlays": 335,
+              "rushEpa": -23.887648099218453,
+              "rushPlays": 202
+            },
+            "defense": {
+              "offEpa": -87.61381863975599,
+              "offPlays": 493,
+              "passEpa": -47.92431553713297,
+              "passPlays": 284,
+              "rushEpa": -39.689503102623014,
+              "rushPlays": 209
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.018,
+              21
+            ],
+            "off.epaPerPass": [
+              0.042,
+              17
+            ],
+            "off.epaPerRush": [
+              -0.118,
+              23
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.178,
+              3
+            ],
+            "def.epaPerPassAllowed": [
+              -0.169,
+              5
+            ],
+            "def.epaPerRushAllowed": [
+              -0.19,
+              2
+            ]
+          }
+        },
+        "nyg": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_NYG_CHI",
+            "2025_11_GB_NYG",
+            "2025_12_NYG_DET",
+            "2025_13_NYG_NE",
+            "2025_15_WAS_NYG",
+            "2025_16_MIN_NYG",
+            "2025_17_NYG_LV",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 27.063516329973147,
+              "offPlays": 539,
+              "passEpa": 34.40355664062281,
+              "passPlays": 303,
+              "rushEpa": -7.340040310649669,
+              "rushPlays": 236
+            },
+            "defense": {
+              "offEpa": 19.71454707426494,
+              "offPlays": 478,
+              "passEpa": 8.71297107722389,
+              "passPlays": 284,
+              "rushEpa": 11.001575997041058,
+              "rushPlays": 194
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.05,
+              10
+            ],
+            "off.epaPerPass": [
+              0.114,
+              9
+            ],
+            "off.epaPerRush": [
+              -0.031,
+              13
+            ],
+            "def.epaPerPlayAllowed": [
+              0.041,
+              20
+            ],
+            "def.epaPerPassAllowed": [
+              0.031,
+              13
+            ],
+            "def.epaPerRushAllowed": [
+              0.057,
+              31
+            ]
+          }
+        },
+        "nyj": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_NYJ_NE",
+            "2025_12_NYJ_BAL",
+            "2025_13_ATL_NYJ",
+            "2025_14_MIA_NYJ",
+            "2025_15_NYJ_JAX",
+            "2025_16_NYJ_NO",
+            "2025_17_NE_NYJ",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -100.8222756860124,
+              "offPlays": 484,
+              "passEpa": -69.53599351492457,
+              "passPlays": 299,
+              "rushEpa": -31.286282171087837,
+              "rushPlays": 185
+            },
+            "defense": {
+              "offEpa": 110.95379490310054,
+              "offPlays": 527,
+              "passEpa": 119.9601208321135,
+              "passPlays": 287,
+              "rushEpa": -9.006325929012949,
+              "rushPlays": 240
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.208,
+              30
+            ],
+            "off.epaPerPass": [
+              -0.233,
+              31
+            ],
+            "off.epaPerRush": [
+              -0.169,
+              28
+            ],
+            "def.epaPerPlayAllowed": [
+              0.211,
+              32
+            ],
+            "def.epaPerPassAllowed": [
+              0.418,
+              32
+            ],
+            "def.epaPerRushAllowed": [
+              -0.038,
+              19
+            ]
+          }
+        },
+        "phi": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_DET_PHI",
+            "2025_12_PHI_DAL",
+            "2025_13_CHI_PHI",
+            "2025_14_PHI_LAC",
+            "2025_15_LV_PHI",
+            "2025_16_PHI_WAS",
+            "2025_17_PHI_BUF",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -4.377500243325308,
+              "offPlays": 508,
+              "passEpa": 8.996962358432494,
+              "passPlays": 301,
+              "rushEpa": -13.374462601757811,
+              "rushPlays": 207
+            },
+            "defense": {
+              "offEpa": -57.18160416566285,
+              "offPlays": 525,
+              "passEpa": -33.61070851343434,
+              "passPlays": 303,
+              "rushEpa": -23.5708956522285,
+              "rushPlays": 222
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.009,
+              18
+            ],
+            "off.epaPerPass": [
+              0.03,
+              18
+            ],
+            "off.epaPerRush": [
+              -0.065,
+              16
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.109,
+              6
+            ],
+            "def.epaPerPassAllowed": [
+              -0.111,
+              6
+            ],
+            "def.epaPerRushAllowed": [
+              -0.106,
+              11
+            ]
+          }
+        },
+        "pit": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_CIN_PIT",
+            "2025_12_PIT_CHI",
+            "2025_13_BUF_PIT",
+            "2025_14_PIT_BAL",
+            "2025_15_MIA_PIT",
+            "2025_16_PIT_DET",
+            "2025_17_PIT_CLE",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 24.081698606022645,
+              "offPlays": 509,
+              "passEpa": 17.435865770704353,
+              "passPlays": 310,
+              "rushEpa": 6.645832835318306,
+              "rushPlays": 199
+            },
+            "defense": {
+              "offEpa": -1.0532638273135015,
+              "offPlays": 501,
+              "passEpa": 11.015821167543756,
+              "passPlays": 300,
+              "rushEpa": -12.069084994857267,
+              "rushPlays": 201
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.047,
+              11
+            ],
+            "off.epaPerPass": [
+              0.056,
+              16
+            ],
+            "off.epaPerRush": [
+              0.033,
+              5
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.002,
+              16
+            ],
+            "def.epaPerPassAllowed": [
+              0.037,
+              14
+            ],
+            "def.epaPerRushAllowed": [
+              -0.06,
+              17
+            ]
+          }
+        },
+        "sea": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_SEA_LA",
+            "2025_12_SEA_TEN",
+            "2025_13_MIN_SEA",
+            "2025_14_SEA_ATL",
+            "2025_15_IND_SEA",
+            "2025_16_LA_SEA",
+            "2025_17_SEA_CAR",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -5.0868504315461305,
+              "offPlays": 511,
+              "passEpa": -3.699136724540949,
+              "passPlays": 285,
+              "rushEpa": -1.387713707005171,
+              "rushPlays": 226
+            },
+            "defense": {
+              "offEpa": -86.72401338384385,
+              "offPlays": 485,
+              "passEpa": -51.168937065991706,
+              "passPlays": 297,
+              "rushEpa": -35.55507631785214,
+              "rushPlays": 188
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.01,
+              19
+            ],
+            "off.epaPerPass": [
+              -0.013,
+              24
+            ],
+            "off.epaPerRush": [
+              -0.006,
+              10
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.179,
+              2
+            ],
+            "def.epaPerPassAllowed": [
+              -0.172,
+              4
+            ],
+            "def.epaPerRushAllowed": [
+              -0.189,
+              3
+            ]
+          }
+        },
+        "sf": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_LA_SF",
+            "2025_11_SF_ARI",
+            "2025_12_CAR_SF",
+            "2025_13_SF_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_SF_IND",
+            "2025_17_CHI_SF",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 70.17383346152604,
+              "offPlays": 497,
+              "passEpa": 68.05894607602548,
+              "passPlays": 287,
+              "rushEpa": 2.11488738550059,
+              "rushPlays": 210
+            },
+            "defense": {
+              "offEpa": 38.344713278564576,
+              "offPlays": 493,
+              "passEpa": 39.5024099122516,
+              "passPlays": 313,
+              "rushEpa": -1.1576966336870207,
+              "rushPlays": 180
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.141,
+              2
+            ],
+            "off.epaPerPass": [
+              0.237,
+              4
+            ],
+            "off.epaPerRush": [
+              0.01,
+              7
+            ],
+            "def.epaPerPlayAllowed": [
+              0.078,
+              25
+            ],
+            "def.epaPerPassAllowed": [
+              0.126,
+              23
+            ],
+            "def.epaPerRushAllowed": [
+              -0.006,
+              22
+            ]
+          }
+        },
+        "tb": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_TB_BUF",
+            "2025_12_TB_LA",
+            "2025_13_ARI_TB",
+            "2025_14_NO_TB",
+            "2025_15_ATL_TB",
+            "2025_16_TB_CAR",
+            "2025_17_TB_MIA",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -16.0320968153325,
+              "offPlays": 535,
+              "passEpa": -1.9248849757216426,
+              "passPlays": 315,
+              "rushEpa": -14.107211839610864,
+              "rushPlays": 220
+            },
+            "defense": {
+              "offEpa": 40.92165039406112,
+              "offPlays": 450,
+              "passEpa": 56.80517854730352,
+              "passPlays": 284,
+              "rushEpa": -15.883528153242391,
+              "rushPlays": 166
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.03,
+              22
+            ],
+            "off.epaPerPass": [
+              -0.006,
+              23
+            ],
+            "off.epaPerRush": [
+              -0.064,
+              15
+            ],
+            "def.epaPerPlayAllowed": [
+              0.091,
+              28
+            ],
+            "def.epaPerPassAllowed": [
+              0.2,
+              28
+            ],
+            "def.epaPerRushAllowed": [
+              -0.096,
+              13
+            ]
+          }
+        },
+        "ten": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_11_HOU_TEN",
+            "2025_12_SEA_TEN",
+            "2025_13_JAX_TEN",
+            "2025_14_TEN_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_KC_TEN",
+            "2025_17_NO_TEN",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -53.94904545446984,
+              "offPlays": 511,
+              "passEpa": -39.22928818748413,
+              "passPlays": 322,
+              "rushEpa": -14.719757266985702,
+              "rushPlays": 189
+            },
+            "defense": {
+              "offEpa": 37.712139724301544,
+              "offPlays": 473,
+              "passEpa": 56.853087036665734,
+              "passPlays": 306,
+              "rushEpa": -19.14094731236419,
+              "rushPlays": 167
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.106,
+              28
+            ],
+            "off.epaPerPass": [
+              -0.122,
+              28
+            ],
+            "off.epaPerRush": [
+              -0.078,
+              17
+            ],
+            "def.epaPerPlayAllowed": [
+              0.08,
+              26
+            ],
+            "def.epaPerPassAllowed": [
+              0.186,
+              27
+            ],
+            "def.epaPerRushAllowed": [
+              -0.115,
+              9
+            ]
+          }
+        },
+        "wsh": {
+          "gamesIncluded": 8,
+          "gameIds": [
+            "2025_10_DET_WAS",
+            "2025_11_WAS_MIA",
+            "2025_13_DEN_WAS",
+            "2025_14_WAS_MIN",
+            "2025_15_WAS_NYG",
+            "2025_16_PHI_WAS",
+            "2025_17_DAL_WAS",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 19.238133916272766,
+              "offPlays": 478,
+              "passEpa": 30.860718868430684,
+              "passPlays": 269,
+              "rushEpa": -11.622584952157931,
+              "rushPlays": 209
+            },
+            "defense": {
+              "offEpa": 102.13214891420193,
+              "offPlays": 545,
+              "passEpa": 78.9971473714166,
+              "passPlays": 320,
+              "rushEpa": 23.135001542785318,
+              "rushPlays": 225
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.04,
+              12
+            ],
+            "off.epaPerPass": [
+              0.115,
+              8
+            ],
+            "off.epaPerRush": [
+              -0.056,
+              14
+            ],
+            "def.epaPerPlayAllowed": [
+              0.187,
+              31
+            ],
+            "def.epaPerPassAllowed": [
+              0.247,
+              30
+            ],
+            "def.epaPerRushAllowed": [
+              0.103,
+              32
+            ]
+          }
+        }
+      }
+    },
+    "season-current": {
+      "mode": "season",
+      "includePriorSeason": false,
+      "teams": {}
+    },
+    "last5-blend": {
+      "mode": "last5",
+      "includePriorSeason": true,
+      "teams": {
+        "ari": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_LA_ARI",
+            "2025_15_ARI_HOU",
+            "2025_16_ATL_ARI",
+            "2025_17_ARI_CIN",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -2.8927839082434335,
+              "offPlays": 297,
+              "passEpa": -3.1857303118590696,
+              "passPlays": 215,
+              "rushEpa": 0.2929464036156313,
+              "rushPlays": 82
+            },
+            "defense": {
+              "offEpa": 88.05233244638316,
+              "offPlays": 350,
+              "passEpa": 79.39909978859133,
+              "passPlays": 190,
+              "rushEpa": 8.653232657791854,
+              "rushPlays": 160
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.01,
+              21
+            ],
+            "off.epaPerPass": [
+              -0.015,
+              25
+            ],
+            "off.epaPerRush": [
+              0.004,
+              11
+            ],
+            "def.epaPerPlayAllowed": [
+              0.252,
+              31
+            ],
+            "def.epaPerPassAllowed": [
+              0.418,
+              31
+            ],
+            "def.epaPerRushAllowed": [
+              0.054,
+              27
+            ]
+          }
+        },
+        "atl": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_SEA_ATL",
+            "2025_15_ATL_TB",
+            "2025_16_ATL_ARI",
+            "2025_17_LA_ATL",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -7.9657396703960455,
+              "offPlays": 319,
+              "passEpa": 11.93548758878125,
+              "passPlays": 173,
+              "rushEpa": -19.901227259177297,
+              "rushPlays": 146
+            },
+            "defense": {
+              "offEpa": 3.8130658248642586,
+              "offPlays": 319,
+              "passEpa": 10.09921324357785,
+              "passPlays": 204,
+              "rushEpa": -6.286147418713596,
+              "rushPlays": 115
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.025,
+              25
+            ],
+            "off.epaPerPass": [
+              0.069,
+              17
+            ],
+            "off.epaPerRush": [
+              -0.136,
+              23
+            ],
+            "def.epaPerPlayAllowed": [
+              0.012,
+              15
+            ],
+            "def.epaPerPassAllowed": [
+              0.05,
+              16
+            ],
+            "def.epaPerRushAllowed": [
+              -0.055,
+              19
+            ]
+          }
+        },
+        "bal": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PIT_BAL",
+            "2025_15_BAL_CIN",
+            "2025_16_NE_BAL",
+            "2025_17_BAL_GB",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 47.154696721106596,
+              "offPlays": 295,
+              "passEpa": 23.576774920441963,
+              "passPlays": 133,
+              "rushEpa": 23.57792180066464,
+              "rushPlays": 162
+            },
+            "defense": {
+              "offEpa": 10.769771252332601,
+              "offPlays": 318,
+              "passEpa": 29.098301979607065,
+              "passPlays": 223,
+              "rushEpa": -18.328530727274448,
+              "rushPlays": 95
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.16,
+              5
+            ],
+            "off.epaPerPass": [
+              0.177,
+              7
+            ],
+            "off.epaPerRush": [
+              0.146,
+              1
+            ],
+            "def.epaPerPlayAllowed": [
+              0.034,
+              18
+            ],
+            "def.epaPerPassAllowed": [
+              0.13,
+              22
+            ],
+            "def.epaPerRushAllowed": [
+              -0.193,
+              3
+            ]
+          }
+        },
+        "buf": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CIN_BUF",
+            "2025_15_BUF_NE",
+            "2025_16_BUF_CLE",
+            "2025_17_PHI_BUF",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 57.080279497292395,
+              "offPlays": 318,
+              "passEpa": 46.34865464789273,
+              "passPlays": 171,
+              "rushEpa": 10.731624849399656,
+              "rushPlays": 147
+            },
+            "defense": {
+              "offEpa": -4.3719685266059045,
+              "offPlays": 277,
+              "passEpa": -9.01444874764855,
+              "passPlays": 162,
+              "rushEpa": 4.642480221042649,
+              "rushPlays": 115
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.179,
+              3
+            ],
+            "off.epaPerPass": [
+              0.271,
+              4
+            ],
+            "off.epaPerRush": [
+              0.073,
+              3
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.016,
+              13
+            ],
+            "def.epaPerPassAllowed": [
+              -0.056,
+              10
+            ],
+            "def.epaPerRushAllowed": [
+              0.04,
+              26
+            ]
+          }
+        },
+        "car": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_LA_CAR",
+            "2025_15_CAR_NO",
+            "2025_16_TB_CAR",
+            "2025_17_SEA_CAR",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -3.215650445112605,
+              "offPlays": 270,
+              "passEpa": 17.336630148095225,
+              "passPlays": 160,
+              "rushEpa": -20.55228059320782,
+              "rushPlays": 110
+            },
+            "defense": {
+              "offEpa": 18.391720267829413,
+              "offPlays": 313,
+              "passEpa": 16.27624443013463,
+              "passPlays": 167,
+              "rushEpa": 2.1154758376947864,
+              "rushPlays": 146
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.012,
+              22
+            ],
+            "off.epaPerPass": [
+              0.108,
+              15
+            ],
+            "off.epaPerRush": [
+              -0.187,
+              29
+            ],
+            "def.epaPerPlayAllowed": [
+              0.059,
+              21
+            ],
+            "def.epaPerPassAllowed": [
+              0.097,
+              18
+            ],
+            "def.epaPerRushAllowed": [
+              0.014,
+              23
+            ]
+          }
+        },
+        "chi": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CHI_GB",
+            "2025_15_CLE_CHI",
+            "2025_16_GB_CHI",
+            "2025_17_CHI_SF",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 36.08899815401108,
+              "offPlays": 316,
+              "passEpa": 33.91658026649546,
+              "passPlays": 196,
+              "rushEpa": 2.172417887515615,
+              "rushPlays": 120
+            },
+            "defense": {
+              "offEpa": 21.542425984563017,
+              "offPlays": 323,
+              "passEpa": 25.65668735165942,
+              "passPlays": 188,
+              "rushEpa": -4.114261367096391,
+              "rushPlays": 135
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.114,
+              7
+            ],
+            "off.epaPerPass": [
+              0.173,
+              8
+            ],
+            "off.epaPerRush": [
+              0.018,
+              10
+            ],
+            "def.epaPerPlayAllowed": [
+              0.067,
+              22
+            ],
+            "def.epaPerPassAllowed": [
+              0.136,
+              23
+            ],
+            "def.epaPerRushAllowed": [
+              -0.03,
+              20
+            ]
+          }
+        },
+        "cin": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CIN_BUF",
+            "2025_15_BAL_CIN",
+            "2025_16_CIN_MIA",
+            "2025_17_ARI_CIN",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 27.80665346834624,
+              "offPlays": 336,
+              "passEpa": 25.34599745157223,
+              "passPlays": 209,
+              "rushEpa": 2.4606560167740215,
+              "rushPlays": 127
+            },
+            "defense": {
+              "offEpa": 10.927039991510071,
+              "offPlays": 266,
+              "passEpa": 19.09111593940679,
+              "passPlays": 163,
+              "rushEpa": -8.164075947896727,
+              "rushPlays": 103
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.083,
+              8
+            ],
+            "off.epaPerPass": [
+              0.121,
+              12
+            ],
+            "off.epaPerRush": [
+              0.019,
+              9
+            ],
+            "def.epaPerPlayAllowed": [
+              0.041,
+              20
+            ],
+            "def.epaPerPassAllowed": [
+              0.117,
+              19
+            ],
+            "def.epaPerRushAllowed": [
+              -0.079,
+              16
+            ]
+          }
+        },
+        "cle": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_TEN_CLE",
+            "2025_15_CLE_CHI",
+            "2025_16_BUF_CLE",
+            "2025_17_PIT_CLE",
+            "2025_18_CLE_CIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -53.05250891435038,
+              "offPlays": 293,
+              "passEpa": -39.364181801938024,
+              "passPlays": 189,
+              "rushEpa": -13.688327112412349,
+              "rushPlays": 104
+            },
+            "defense": {
+              "offEpa": -20.723642855787347,
+              "offPlays": 310,
+              "passEpa": -36.465262927249086,
+              "passPlays": 169,
+              "rushEpa": 15.741620071461735,
+              "rushPlays": 141
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.181,
+              29
+            ],
+            "off.epaPerPass": [
+              -0.208,
+              30
+            ],
+            "off.epaPerRush": [
+              -0.132,
+              21
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.067,
+              10
+            ],
+            "def.epaPerPassAllowed": [
+              -0.216,
+              2
+            ],
+            "def.epaPerRushAllowed": [
+              0.112,
+              30
+            ]
+          }
+        },
+        "dal": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DAL_DET",
+            "2025_15_MIN_DAL",
+            "2025_16_LAC_DAL",
+            "2025_17_DAL_WAS",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 18.13721197867791,
+              "offPlays": 356,
+              "passEpa": 12.655285260140314,
+              "passPlays": 214,
+              "rushEpa": 5.481926718537593,
+              "rushPlays": 142
+            },
+            "defense": {
+              "offEpa": 72.21288552602522,
+              "offPlays": 294,
+              "passEpa": 64.12708307131298,
+              "passPlays": 171,
+              "rushEpa": 8.08580245471223,
+              "rushPlays": 123
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.051,
+              10
+            ],
+            "off.epaPerPass": [
+              0.059,
+              19
+            ],
+            "off.epaPerRush": [
+              0.039,
+              6
+            ],
+            "def.epaPerPlayAllowed": [
+              0.246,
+              30
+            ],
+            "def.epaPerPassAllowed": [
+              0.375,
+              30
+            ],
+            "def.epaPerRushAllowed": [
+              0.066,
+              29
+            ]
+          }
+        },
+        "den": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DEN_LV",
+            "2025_15_GB_DEN",
+            "2025_16_JAX_DEN",
+            "2025_17_DEN_KC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 16.553905406140544,
+              "offPlays": 333,
+              "passEpa": 33.88365803844199,
+              "passPlays": 210,
+              "rushEpa": -17.329752632301446,
+              "rushPlays": 123
+            },
+            "defense": {
+              "offEpa": -22.429929674663864,
+              "offPlays": 296,
+              "passEpa": -10.07883329029545,
+              "passPlays": 209,
+              "rushEpa": -12.351096384368423,
+              "rushPlays": 87
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.05,
+              11
+            ],
+            "off.epaPerPass": [
+              0.161,
+              10
+            ],
+            "off.epaPerRush": [
+              -0.141,
+              24
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.076,
+              9
+            ],
+            "def.epaPerPassAllowed": [
+              -0.048,
+              12
+            ],
+            "def.epaPerRushAllowed": [
+              -0.142,
+              7
+            ]
+          }
+        },
+        "det": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DAL_DET",
+            "2025_15_DET_LA",
+            "2025_16_PIT_DET",
+            "2025_17_DET_MIN",
+            "2025_18_DET_CHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 10.932436157331619,
+              "offPlays": 334,
+              "passEpa": 36.36746992820686,
+              "passPlays": 223,
+              "rushEpa": -25.435033770875233,
+              "rushPlays": 111
+            },
+            "defense": {
+              "offEpa": 6.5905792340918525,
+              "offPlays": 334,
+              "passEpa": -11.054674504251338,
+              "passPlays": 216,
+              "rushEpa": 17.64525373834319,
+              "rushPlays": 118
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.033,
+              15
+            ],
+            "off.epaPerPass": [
+              0.163,
+              9
+            ],
+            "off.epaPerRush": [
+              -0.229,
+              30
+            ],
+            "def.epaPerPlayAllowed": [
+              0.02,
+              16
+            ],
+            "def.epaPerPassAllowed": [
+              -0.051,
+              11
+            ],
+            "def.epaPerRushAllowed": [
+              0.15,
+              32
+            ]
+          }
+        },
+        "gb": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_CHI_GB",
+            "2025_15_GB_DEN",
+            "2025_16_GB_CHI",
+            "2025_17_BAL_GB",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 9.830901831895396,
+              "offPlays": 283,
+              "passEpa": 30.495525316942754,
+              "passPlays": 160,
+              "rushEpa": -20.664623485047347,
+              "rushPlays": 123
+            },
+            "defense": {
+              "offEpa": 50.2311938311934,
+              "offPlays": 340,
+              "passEpa": 43.98643636604834,
+              "passPlays": 179,
+              "rushEpa": 6.244757465145073,
+              "rushPlays": 161
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.035,
+              13
+            ],
+            "off.epaPerPass": [
+              0.191,
+              6
+            ],
+            "off.epaPerRush": [
+              -0.168,
+              28
+            ],
+            "def.epaPerPlayAllowed": [
+              0.148,
+              28
+            ],
+            "def.epaPerPassAllowed": [
+              0.246,
+              29
+            ],
+            "def.epaPerRushAllowed": [
+              0.039,
+              25
+            ]
+          }
+        },
+        "hou": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_HOU_KC",
+            "2025_15_ARI_HOU",
+            "2025_16_LV_HOU",
+            "2025_17_HOU_LAC",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -0.46284206470272976,
+              "offPlays": 326,
+              "passEpa": 21.32682160551443,
+              "passPlays": 178,
+              "rushEpa": -21.789663670217145,
+              "rushPlays": 148
+            },
+            "defense": {
+              "offEpa": -27.62718392972944,
+              "offPlays": 311,
+              "passEpa": -14.128165072473859,
+              "passPlays": 198,
+              "rushEpa": -13.499018857255582,
+              "rushPlays": 113
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.001,
+              20
+            ],
+            "off.epaPerPass": [
+              0.12,
+              13
+            ],
+            "off.epaPerRush": [
+              -0.147,
+              26
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.089,
+              7
+            ],
+            "def.epaPerPassAllowed": [
+              -0.071,
+              8
+            ],
+            "def.epaPerRushAllowed": [
+              -0.119,
+              10
+            ]
+          }
+        },
+        "ind": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_IND_JAX",
+            "2025_15_IND_SEA",
+            "2025_16_SF_IND",
+            "2025_17_JAX_IND",
+            "2025_18_IND_HOU"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -25.779010086843147,
+              "offPlays": 311,
+              "passEpa": -7.304015980826267,
+              "passPlays": 188,
+              "rushEpa": -18.47499410601688,
+              "rushPlays": 123
+            },
+            "defense": {
+              "offEpa": 26.583409371309177,
+              "offPlays": 317,
+              "passEpa": 38.71021066494753,
+              "passPlays": 187,
+              "rushEpa": -12.12680129363835,
+              "rushPlays": 130
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.083,
+              27
+            ],
+            "off.epaPerPass": [
+              -0.039,
+              26
+            ],
+            "off.epaPerRush": [
+              -0.15,
+              27
+            ],
+            "def.epaPerPlayAllowed": [
+              0.084,
+              25
+            ],
+            "def.epaPerPassAllowed": [
+              0.207,
+              27
+            ],
+            "def.epaPerRushAllowed": [
+              -0.093,
+              14
+            ]
+          }
+        },
+        "jax": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_IND_JAX",
+            "2025_15_NYJ_JAX",
+            "2025_16_JAX_DEN",
+            "2025_17_JAX_IND",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 45.73255769926134,
+              "offPlays": 317,
+              "passEpa": 75.80943684781397,
+              "passPlays": 200,
+              "rushEpa": -30.07687914855263,
+              "rushPlays": 117
+            },
+            "defense": {
+              "offEpa": -50.66636122639619,
+              "offPlays": 313,
+              "passEpa": -38.535569987492785,
+              "passPlays": 207,
+              "rushEpa": -12.130791238903404,
+              "rushPlays": 106
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.144,
+              6
+            ],
+            "off.epaPerPass": [
+              0.379,
+              2
+            ],
+            "off.epaPerRush": [
+              -0.257,
+              31
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.162,
+              3
+            ],
+            "def.epaPerPassAllowed": [
+              -0.186,
+              3
+            ],
+            "def.epaPerRushAllowed": [
+              -0.114,
+              11
+            ]
+          }
+        },
+        "kc": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_HOU_KC",
+            "2025_15_LAC_KC",
+            "2025_16_KC_TEN",
+            "2025_17_DEN_KC",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -74.00914656026575,
+              "offPlays": 275,
+              "passEpa": -63.28613331138906,
+              "passPlays": 183,
+              "rushEpa": -10.723013248876683,
+              "rushPlays": 92
+            },
+            "defense": {
+              "offEpa": -26.216306009240252,
+              "offPlays": 340,
+              "passEpa": 4.945601029269705,
+              "passPlays": 183,
+              "rushEpa": -31.161907038509952,
+              "rushPlays": 157
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.269,
+              31
+            ],
+            "off.epaPerPass": [
+              -0.346,
+              31
+            ],
+            "off.epaPerRush": [
+              -0.117,
+              18
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.077,
+              8
+            ],
+            "def.epaPerPassAllowed": [
+              0.027,
+              14
+            ],
+            "def.epaPerRushAllowed": [
+              -0.198,
+              2
+            ]
+          }
+        },
+        "lac": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PHI_LAC",
+            "2025_15_LAC_KC",
+            "2025_16_LAC_DAL",
+            "2025_17_HOU_LAC",
+            "2025_18_LAC_DEN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -30.342211722829056,
+              "offPlays": 333,
+              "passEpa": -12.382528726330117,
+              "passPlays": 209,
+              "rushEpa": -17.959682996498945,
+              "rushPlays": 124
+            },
+            "defense": {
+              "offEpa": -41.54556455165165,
+              "offPlays": 308,
+              "passEpa": -19.098316370251016,
+              "passPlays": 191,
+              "rushEpa": -22.447248181400628,
+              "rushPlays": 117
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.091,
+              28
+            ],
+            "off.epaPerPass": [
+              -0.059,
+              27
+            ],
+            "off.epaPerRush": [
+              -0.145,
+              25
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.135,
+              5
+            ],
+            "def.epaPerPassAllowed": [
+              -0.1,
+              6
+            ],
+            "def.epaPerRushAllowed": [
+              -0.192,
+              4
+            ]
+          }
+        },
+        "lar": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_LA_ARI",
+            "2025_15_DET_LA",
+            "2025_16_LA_SEA",
+            "2025_17_LA_ATL",
+            "2025_18_ARI_LA"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 71.52058368093769,
+              "offPlays": 367,
+              "passEpa": 62.36626776702203,
+              "passPlays": 217,
+              "rushEpa": 9.154315913915665,
+              "rushPlays": 150
+            },
+            "defense": {
+              "offEpa": 10.771949286811687,
+              "offPlays": 299,
+              "passEpa": 9.165290856424296,
+              "passPlays": 196,
+              "rushEpa": 1.606658430387383,
+              "rushPlays": 103
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.195,
+              2
+            ],
+            "off.epaPerPass": [
+              0.287,
+              3
+            ],
+            "off.epaPerRush": [
+              0.061,
+              5
+            ],
+            "def.epaPerPlayAllowed": [
+              0.036,
+              19
+            ],
+            "def.epaPerPassAllowed": [
+              0.047,
+              15
+            ],
+            "def.epaPerRushAllowed": [
+              0.016,
+              24
+            ]
+          }
+        },
+        "lv": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_DEN_LV",
+            "2025_15_LV_PHI",
+            "2025_16_LV_HOU",
+            "2025_17_NYG_LV",
+            "2025_18_KC_LV"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -60.03491952883778,
+              "offPlays": 267,
+              "passEpa": -33.79343602705738,
+              "passPlays": 166,
+              "rushEpa": -26.241483501780394,
+              "rushPlays": 101
+            },
+            "defense": {
+              "offEpa": 8.106381635812092,
+              "offPlays": 331,
+              "passEpa": 23.641552288067814,
+              "passPlays": 185,
+              "rushEpa": -15.53517065225572,
+              "rushPlays": 146
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.225,
+              30
+            ],
+            "off.epaPerPass": [
+              -0.204,
+              29
+            ],
+            "off.epaPerRush": [
+              -0.26,
+              32
+            ],
+            "def.epaPerPlayAllowed": [
+              0.024,
+              17
+            ],
+            "def.epaPerPassAllowed": [
+              0.128,
+              21
+            ],
+            "def.epaPerRushAllowed": [
+              -0.106,
+              13
+            ]
+          }
+        },
+        "mia": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_MIA_NYJ",
+            "2025_15_MIA_PIT",
+            "2025_16_CIN_MIA",
+            "2025_17_TB_MIA",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -5.752023669469985,
+              "offPlays": 280,
+              "passEpa": 2.0688256872293067,
+              "passPlays": 145,
+              "rushEpa": -7.820849356699285,
+              "rushPlays": 135
+            },
+            "defense": {
+              "offEpa": 33.778552592057835,
+              "offPlays": 310,
+              "passEpa": 26.99536929037525,
+              "passPlays": 194,
+              "rushEpa": 6.7831833016825875,
+              "rushPlays": 116
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.021,
+              23
+            ],
+            "off.epaPerPass": [
+              0.014,
+              24
+            ],
+            "off.epaPerRush": [
+              -0.058,
+              16
+            ],
+            "def.epaPerPlayAllowed": [
+              0.109,
+              27
+            ],
+            "def.epaPerPassAllowed": [
+              0.139,
+              24
+            ],
+            "def.epaPerRushAllowed": [
+              0.058,
+              28
+            ]
+          }
+        },
+        "min": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_WAS_MIN",
+            "2025_15_MIN_DAL",
+            "2025_16_MIN_NYG",
+            "2025_17_DET_MIN",
+            "2025_18_GB_MIN"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 12.261474394887346,
+              "offPlays": 293,
+              "passEpa": 7.5179977167261836,
+              "passPlays": 154,
+              "rushEpa": 4.7434766781611595,
+              "rushPlays": 139
+            },
+            "defense": {
+              "offEpa": -71.62207492058008,
+              "offPlays": 293,
+              "passEpa": -49.76541491920417,
+              "passPlays": 152,
+              "rushEpa": -21.856660001375907,
+              "rushPlays": 141
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.042,
+              12
+            ],
+            "off.epaPerPass": [
+              0.049,
+              20
+            ],
+            "off.epaPerRush": [
+              0.034,
+              7
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.244,
+              1
+            ],
+            "def.epaPerPassAllowed": [
+              -0.327,
+              1
+            ],
+            "def.epaPerRushAllowed": [
+              -0.155,
+              6
+            ]
+          }
+        },
+        "ne": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_NYG_NE",
+            "2025_15_BUF_NE",
+            "2025_16_NE_BAL",
+            "2025_17_NE_NYJ",
+            "2025_18_MIA_NE"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 85.60819419024989,
+              "offPlays": 307,
+              "passEpa": 70.53635353173837,
+              "passPlays": 183,
+              "rushEpa": 15.071840658511519,
+              "rushPlays": 124
+            },
+            "defense": {
+              "offEpa": -10.590158164757147,
+              "offPlays": 296,
+              "passEpa": -9.188396423467033,
+              "passPlays": 158,
+              "rushEpa": -1.401761741290116,
+              "rushPlays": 138
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.279,
+              1
+            ],
+            "off.epaPerPass": [
+              0.385,
+              1
+            ],
+            "off.epaPerRush": [
+              0.122,
+              2
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.036,
+              12
+            ],
+            "def.epaPerPassAllowed": [
+              -0.058,
+              9
+            ],
+            "def.epaPerRushAllowed": [
+              -0.01,
+              21
+            ]
+          }
+        },
+        "no": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_NO_TB",
+            "2025_15_CAR_NO",
+            "2025_16_NYJ_NO",
+            "2025_17_NO_TEN",
+            "2025_18_NO_ATL"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 10.000807106276843,
+              "offPlays": 322,
+              "passEpa": 25.83779629746298,
+              "passPlays": 203,
+              "rushEpa": -15.836989191186131,
+              "rushPlays": 119
+            },
+            "defense": {
+              "offEpa": -57.04344805395128,
+              "offPlays": 331,
+              "passEpa": -27.716158789417072,
+              "passPlays": 200,
+              "rushEpa": -29.32728926453421,
+              "rushPlays": 131
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.031,
+              16
+            ],
+            "off.epaPerPass": [
+              0.127,
+              11
+            ],
+            "off.epaPerRush": [
+              -0.133,
+              22
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.172,
+              2
+            ],
+            "def.epaPerPassAllowed": [
+              -0.139,
+              4
+            ],
+            "def.epaPerRushAllowed": [
+              -0.224,
+              1
+            ]
+          }
+        },
+        "nyg": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_NYG_NE",
+            "2025_15_WAS_NYG",
+            "2025_16_MIN_NYG",
+            "2025_17_NYG_LV",
+            "2025_18_DAL_NYG"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 6.020424043180059,
+              "offPlays": 314,
+              "passEpa": 6.95471317095739,
+              "passPlays": 182,
+              "rushEpa": -0.9342891277773343,
+              "rushPlays": 132
+            },
+            "defense": {
+              "offEpa": -13.939869661414157,
+              "offPlays": 291,
+              "passEpa": -3.6351048035201003,
+              "passPlays": 162,
+              "rushEpa": -10.304764857894055,
+              "rushPlays": 129
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.019,
+              19
+            ],
+            "off.epaPerPass": [
+              0.038,
+              22
+            ],
+            "off.epaPerRush": [
+              -0.007,
+              13
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.048,
+              11
+            ],
+            "def.epaPerPassAllowed": [
+              -0.022,
+              13
+            ],
+            "def.epaPerRushAllowed": [
+              -0.08,
+              15
+            ]
+          }
+        },
+        "nyj": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_MIA_NYJ",
+            "2025_15_NYJ_JAX",
+            "2025_16_NYJ_NO",
+            "2025_17_NE_NYJ",
+            "2025_18_NYJ_BUF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -85.67195742227375,
+              "offPlays": 303,
+              "passEpa": -71.87988414341119,
+              "passPlays": 188,
+              "rushEpa": -13.792073278862542,
+              "rushPlays": 115
+            },
+            "defense": {
+              "offEpa": 86.209545402362,
+              "offPlays": 333,
+              "passEpa": 95.34885896424015,
+              "passPlays": 179,
+              "rushEpa": -9.139313561878135,
+              "rushPlays": 154
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.283,
+              32
+            ],
+            "off.epaPerPass": [
+              -0.382,
+              32
+            ],
+            "off.epaPerRush": [
+              -0.12,
+              19
+            ],
+            "def.epaPerPlayAllowed": [
+              0.259,
+              32
+            ],
+            "def.epaPerPassAllowed": [
+              0.533,
+              32
+            ],
+            "def.epaPerRushAllowed": [
+              -0.059,
+              18
+            ]
+          }
+        },
+        "phi": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PHI_LAC",
+            "2025_15_LV_PHI",
+            "2025_16_PHI_WAS",
+            "2025_17_PHI_BUF",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 10.98397180635521,
+              "offPlays": 323,
+              "passEpa": 12.304498303240774,
+              "passPlays": 186,
+              "rushEpa": -1.3205264968855759,
+              "rushPlays": 137
+            },
+            "defense": {
+              "offEpa": -35.457107016306594,
+              "offPlays": 309,
+              "passEpa": -19.332465710394068,
+              "passPlays": 177,
+              "rushEpa": -16.124641305912526,
+              "rushPlays": 132
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.034,
+              14
+            ],
+            "off.epaPerPass": [
+              0.066,
+              18
+            ],
+            "off.epaPerRush": [
+              -0.01,
+              15
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.115,
+              6
+            ],
+            "def.epaPerPassAllowed": [
+              -0.109,
+              5
+            ],
+            "def.epaPerRushAllowed": [
+              -0.122,
+              9
+            ]
+          }
+        },
+        "pit": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_PIT_BAL",
+            "2025_15_MIA_PIT",
+            "2025_16_PIT_DET",
+            "2025_17_PIT_CLE",
+            "2025_18_BAL_PIT"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-05T01:20:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 27.11032245412017,
+              "offPlays": 330,
+              "passEpa": 19.08501431918365,
+              "passPlays": 210,
+              "rushEpa": 8.025308134936525,
+              "rushPlays": 120
+            },
+            "defense": {
+              "offEpa": 1.8397661308955024,
+              "offPlays": 300,
+              "passEpa": 17.29661910095943,
+              "passPlays": 191,
+              "rushEpa": -15.456852970063931,
+              "rushPlays": 109
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.082,
+              9
+            ],
+            "off.epaPerPass": [
+              0.091,
+              16
+            ],
+            "off.epaPerRush": [
+              0.067,
+              4
+            ],
+            "def.epaPerPlayAllowed": [
+              0.006,
+              14
+            ],
+            "def.epaPerPassAllowed": [
+              0.091,
+              17
+            ],
+            "def.epaPerRushAllowed": [
+              -0.142,
+              8
+            ]
+          }
+        },
+        "sea": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_SEA_ATL",
+            "2025_15_IND_SEA",
+            "2025_16_LA_SEA",
+            "2025_17_SEA_CAR",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 7.046773178828246,
+              "offPlays": 313,
+              "passEpa": 6.820466462568261,
+              "passPlays": 177,
+              "rushEpa": 0.22630671625999232,
+              "rushPlays": 136
+            },
+            "defense": {
+              "offEpa": -42.23447455393605,
+              "offPlays": 308,
+              "passEpa": -17.79946647134853,
+              "passPlays": 179,
+              "rushEpa": -24.435008082587512,
+              "rushPlays": 129
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.023,
+              17
+            ],
+            "off.epaPerPass": [
+              0.039,
+              21
+            ],
+            "off.epaPerRush": [
+              0.002,
+              12
+            ],
+            "def.epaPerPlayAllowed": [
+              -0.137,
+              4
+            ],
+            "def.epaPerPassAllowed": [
+              -0.099,
+              7
+            ],
+            "def.epaPerRushAllowed": [
+              -0.189,
+              5
+            ]
+          }
+        },
+        "sf": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_13_SF_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_SF_IND",
+            "2025_17_CHI_SF",
+            "2025_18_SEA_SF"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T01:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 51.31860430743544,
+              "offPlays": 316,
+              "passEpa": 48.058220451786404,
+              "passPlays": 184,
+              "rushEpa": 3.260383855649053,
+              "rushPlays": 132
+            },
+            "defense": {
+              "offEpa": 21.332942612899885,
+              "offPlays": 306,
+              "passEpa": 21.966977347759485,
+              "passPlays": 181,
+              "rushEpa": -0.6340347348596025,
+              "rushPlays": 125
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.162,
+              4
+            ],
+            "off.epaPerPass": [
+              0.261,
+              5
+            ],
+            "off.epaPerRush": [
+              0.025,
+              8
+            ],
+            "def.epaPerPlayAllowed": [
+              0.07,
+              23
+            ],
+            "def.epaPerPassAllowed": [
+              0.121,
+              20
+            ],
+            "def.epaPerRushAllowed": [
+              -0.005,
+              22
+            ]
+          }
+        },
+        "tb": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_NO_TB",
+            "2025_15_ATL_TB",
+            "2025_16_TB_CAR",
+            "2025_17_TB_MIA",
+            "2025_18_CAR_TB"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-03T21:30:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": 6.6150054873198965,
+              "offPlays": 339,
+              "passEpa": 23.89757365832853,
+              "passPlays": 201,
+              "rushEpa": -17.282568171008634,
+              "rushPlays": 138
+            },
+            "defense": {
+              "offEpa": 21.593527225728028,
+              "offPlays": 279,
+              "passEpa": 29.793662371244018,
+              "passPlays": 169,
+              "rushEpa": -8.200135145515985,
+              "rushPlays": 110
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              0.02,
+              18
+            ],
+            "off.epaPerPass": [
+              0.119,
+              14
+            ],
+            "off.epaPerRush": [
+              -0.125,
+              20
+            ],
+            "def.epaPerPlayAllowed": [
+              0.077,
+              24
+            ],
+            "def.epaPerPassAllowed": [
+              0.176,
+              25
+            ],
+            "def.epaPerRushAllowed": [
+              -0.075,
+              17
+            ]
+          }
+        },
+        "ten": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_TEN_CLE",
+            "2025_15_TEN_SF",
+            "2025_16_KC_TEN",
+            "2025_17_NO_TEN",
+            "2025_18_TEN_JAX"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T18:00:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -25.28171477804454,
+              "offPlays": 318,
+              "passEpa": -24.168576863976938,
+              "passPlays": 176,
+              "rushEpa": -1.1131379140676025,
+              "rushPlays": 142
+            },
+            "defense": {
+              "offEpa": 29.68808689351679,
+              "offPlays": 297,
+              "passEpa": 40.54202104811948,
+              "passPlays": 195,
+              "rushEpa": -10.853934154602683,
+              "rushPlays": 102
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.08,
+              26
+            ],
+            "off.epaPerPass": [
+              -0.137,
+              28
+            ],
+            "off.epaPerRush": [
+              -0.008,
+              14
+            ],
+            "def.epaPerPlayAllowed": [
+              0.1,
+              26
+            ],
+            "def.epaPerPassAllowed": [
+              0.208,
+              28
+            ],
+            "def.epaPerRushAllowed": [
+              -0.106,
+              12
+            ]
+          }
+        },
+        "wsh": {
+          "gamesIncluded": 5,
+          "gameIds": [
+            "2025_14_WAS_MIN",
+            "2025_15_WAS_NYG",
+            "2025_16_PHI_WAS",
+            "2025_17_DAL_WAS",
+            "2025_18_WAS_PHI"
+          ],
+          "seasons": [
+            2025
+          ],
+          "through": {
+            "season": 2025,
+            "week": 18,
+            "dateUtc": "2026-01-04T21:25:00.000Z"
+          },
+          "totals": {
+            "offense": {
+              "offEpa": -5.941451881245635,
+              "offPlays": 272,
+              "passEpa": 2.3795071860175447,
+              "passPlays": 149,
+              "rushEpa": -8.320959067263185,
+              "rushPlays": 123
+            },
+            "defense": {
+              "offEpa": 58.99564956126305,
+              "offPlays": 351,
+              "passEpa": 42.1261181741304,
+              "passPlays": 211,
+              "rushEpa": 16.869531387132653,
+              "rushPlays": 140
+            }
+          },
+          "metrics": {
+            "off.epaPerPlay": [
+              -0.022,
+              24
+            ],
+            "off.epaPerPass": [
+              0.016,
+              23
+            ],
+            "off.epaPerRush": [
+              -0.068,
+              17
+            ],
+            "def.epaPerPlayAllowed": [
+              0.168,
+              29
+            ],
+            "def.epaPerPassAllowed": [
+              0.2,
+              26
+            ],
+            "def.epaPerRushAllowed": [
+              0.12,
+              31
+            ]
+          }
+        }
+      }
+    },
+    "last5-current": {
+      "mode": "last5",
+      "includePriorSeason": false,
+      "teams": {}
+    }
+  },
+  "provenance": {
+    "generatedAt": "2026-08-04T12:23:37.932Z",
+    "sourceUrlPattern": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz",
+    "eligiblePlayFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+    "rawPlayByPlayCommitted": false,
+    "cachedSeasons": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "cacheFiles": [
+      {
+        "season": 2020,
+        "filename": "epa_team_game_2020.csv",
+        "rowCount": 512,
+        "sha256": "0dbcaac5b782278c0020737e4d7db47f3f579b97a8770ed7e60bec111355ca8e",
+        "eligiblePlays": 33761,
+        "upstreamSourceRows": 47705,
+        "retrievedDateUtc": "2026-08-04",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2020.csv.gz"
+      },
+      {
+        "season": 2021,
+        "filename": "epa_team_game_2021.csv",
+        "rowCount": 544,
+        "sha256": "1f37e481db182e58284bf3aa2169879ab4c6f76fb94a637bfa8245fc5fb5ba96",
+        "eligiblePlays": 35484,
+        "upstreamSourceRows": 49922,
+        "retrievedDateUtc": "2026-08-04",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2021.csv.gz"
+      },
+      {
+        "season": 2022,
+        "filename": "epa_team_game_2022.csv",
+        "rowCount": 542,
+        "sha256": "bf12cefe702a2dfb575253d8d452f04af7f7b927fd2405d342eea3df223a6f1f",
+        "eligiblePlays": 35045,
+        "upstreamSourceRows": 49434,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.csv.gz"
+      },
+      {
+        "season": 2023,
+        "filename": "epa_team_game_2023.csv",
+        "rowCount": 544,
+        "sha256": "a9a0c22ffb0f88db18be2778a1be31ec30defabff1044079544e9658394e253b",
+        "eligiblePlays": 35227,
+        "upstreamSourceRows": 49665,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz"
+      },
+      {
+        "season": 2024,
+        "filename": "epa_team_game_2024.csv",
+        "rowCount": 544,
+        "sha256": "8890f0665aec8503b33f61dd87618686710a6b522c0f7bfe4818de50e68baf26",
+        "eligiblePlays": 34948,
+        "upstreamSourceRows": 49492,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz"
+      },
+      {
+        "season": 2025,
+        "filename": "epa_team_game_2025.csv",
+        "rowCount": 544,
+        "sha256": "1f8ccc5715f598e63fca6e90fe770b3118dae58d44806046c1461ed1e3415c99",
+        "eligiblePlays": 34301,
+        "upstreamSourceRows": 48771,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz"
+      }
+    ],
+    "cacheNotPublished": [],
+    "opponentJoinCoverage": {
+      "requestedTeamGames": 416,
+      "resolvedTeamGames": 416,
+      "teamsOmittedForMissingEpa": []
+    }
+  }
+}

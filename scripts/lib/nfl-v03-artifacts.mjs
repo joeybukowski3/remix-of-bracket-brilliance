@@ -7,10 +7,12 @@
  */
 
 import {
-  aggregateAdvancedTeamMetrics,
-  computeAdvancedTeamMetricsForTeamWeeks,
-  parseAdvancedTeamStatRows,
-} from "./nfl-advanced-stats.mjs";
+  NFL_MODEL_EPA_CACHE_DIR,
+  NFL_MODEL_EPA_DEFINITION,
+  NFL_MODEL_EPA_SOURCE,
+  aggregatePbpTeamMetrics,
+  computePbpTeamMetricsForTeamWeeks,
+} from "./nfl-epa-team-metrics.mjs";
 import {
   NFL_POWER_V03_FORMULA_WEIGHTS,
   NFL_POWER_V03_MODEL_VERSION,
@@ -61,7 +63,7 @@ export const NFL_V03_ADJUSTMENT_METHODS = Object.freeze({
 });
 
 const SOURCE_LABEL =
-  "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only";
+  "checked-in NFL results and the committed nflverse play-by-play EPA cache, regular season only";
 const FORBIDDEN_ARTIFACT_LANGUAGE =
   /\b(betting|odds?|moneyline|spread|markets?|picks?|probabilit(?:y|ies)|edge)\b/i;
 const PYTHAGOREAN_EXPONENT = 2.37;
@@ -110,6 +112,12 @@ function metadata({ season, generatedAt, artifact, notes = [], knownLimitations 
     notes: [`Internal Stage-1 ${artifact} artifact.`, ...notes],
     knownLimitations: [...knownLimitations],
     formulaWeights: { ...NFL_POWER_V03_FORMULA_WEIGHTS },
+    epaSource: {
+      source: NFL_MODEL_EPA_SOURCE,
+      definition: NFL_MODEL_EPA_DEFINITION,
+      cache: NFL_MODEL_EPA_CACHE_DIR,
+      migratedIn: "nfl-power-v0.3.1",
+    },
     frozenPublicScaleDivisor: NFL_POWER_V03_POOLED_DIVISOR,
     trajectory: {
       statement: "lambda = 0",
@@ -274,7 +282,7 @@ function calculateRawComposite(raw, stats) {
   });
 }
 
-function buildFullSeason({ season, teams, games, results, weeklyCsvText, generatedAt }) {
+function buildFullSeason({ season, teams, games, results, epaRecords, generatedAt }) {
   const teamAbbrs = new Set(teams.map((team) => team.abbr));
   const completedGames = joinCompletedGames(games, results, teamAbbrs, season);
   const commonMeta = metadata({
@@ -294,7 +302,7 @@ function buildFullSeason({ season, teams, games, results, weeklyCsvText, generat
           : [],
   });
   if (completedGames.length === 0) {
-    if (weeklyCsvText) {
+    if (Array.isArray(epaRecords) && epaRecords.length > 0) {
       throw new Error(`${season} has weekly source text but no completed regular-season results`);
     }
     return {
@@ -307,20 +315,12 @@ function buildFullSeason({ season, teams, games, results, weeklyCsvText, generat
       internal: { completedGames, teams: [], fullDistributions: null },
     };
   }
-  if (typeof weeklyCsvText !== "string" || weeklyCsvText.length === 0) {
-    throw new Error(`${season} completed results require a committed weekly source CSV`);
+  if (!Array.isArray(epaRecords) || epaRecords.length === 0) {
+    throw new Error(`${season} completed results require the committed PBP EPA cache`);
   }
 
-  const parsedRows = parseAdvancedTeamStatRows(weeklyCsvText, { teams }, {
-    season,
-    seasonType: "REG",
-  });
-  const advanced = aggregateAdvancedTeamMetrics(parsedRows, {
-    season,
-    teamsJson: { teams },
-    seasonType: "REG",
-  });
-  if (advanced.size !== 32) throw new Error(`${season} weekly source did not aggregate to 32 teams`);
+  const advanced = aggregatePbpTeamMetrics(epaRecords, { season });
+  if (advanced.size !== 32) throw new Error(`${season} EPA cache did not aggregate to 32 teams`);
 
   const records = recordRows(teams, completedGames, season);
   const rawRows = teams.map((team) => {
@@ -477,7 +477,7 @@ function buildFullSeason({ season, teams, games, results, weeklyCsvText, generat
         defensiveEpaPerPlay: leagueDefensiveMean,
         pointDifferentialPerGame: leagueMarginMean,
       },
-      weeklyCsvText,
+      epaRecords,
     },
   };
 }
@@ -485,10 +485,9 @@ function buildFullSeason({ season, teams, games, results, weeklyCsvText, generat
 function metricsForGames({ season, team, selectedGames, fullInternal, teamsJson }) {
   if (selectedGames.length === 0) return { metrics: missingMetrics(), rawComposite: null, adjustedComposite: null };
   const keys = selectedGames.map((game) => ({ season, week: game.week, team }));
-  const advanced = computeAdvancedTeamMetricsForTeamWeeks(
-    fullInternal.weeklyCsvText,
+  const advanced = computePbpTeamMetricsForTeamWeeks(
+    fullInternal.epaRecords,
     season,
-    teamsJson,
     keys
   ).get(team);
   if (!advanced) throw new Error(`${season} final window did not aggregate ${team}`);
@@ -789,11 +788,22 @@ function movementFromPrior(row, prior) {
   };
 }
 
+/**
+ * Previously published ratings, but only when they came from the SAME model
+ * version.
+ *
+ * A model-version change is not team movement. After the v0.3.1 EPA-source
+ * migration every team's rating shifted by up to five points; reporting that as
+ * rank/rating movement would present a definition change as though a team had
+ * actually improved or declined. A version mismatch therefore yields no prior,
+ * so the first publication under a new version is honestly labelled as one.
+ */
 function priorRatings(existing, targetSeason) {
   if (existing == null) return new Map();
   if (!existing || typeof existing !== "object" || !Array.isArray(existing.ratings)) {
     throw new Error(`Malformed ${targetSeason} preseason-power-ratings artifact`);
   }
+  if (existing._meta?.modelVersion !== NFL_POWER_V03_MODEL_VERSION) return new Map();
   const map = new Map();
   for (const row of existing.ratings) {
     if (!row || typeof row.abbr !== "string" || map.has(row.abbr)) {
@@ -929,7 +939,7 @@ export function buildNflV03ArtifactSet({
       teams,
       games: input.games,
       results: input.results,
-      weeklyCsvText: input.weeklyCsvText ?? null,
+      epaRecords: input.epaRecords ?? null,
       generatedAt,
     });
     fullBySeason.set(season, full);
