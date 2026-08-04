@@ -88,6 +88,13 @@ Show, when available:
 
 Do not fabricate spread/total if not available. Existing `SpreadPlaceholder` behavior may be reused until sportsbook ingestion exists.
 
+> **Resolved.** Phase 5 added the published nflverse market artifact, so the
+> "until ingestion exists" condition no longer applies. Both the hero and the
+> matchup-list card now read that artifact through the shared
+> `formatMarketFavoriteSpread` helper, and `SpreadPlaceholder` — which could
+> only ever render N/A — has been removed. A game the source has not priced
+> still shows N/A; nothing is fabricated.
+
 Joe Knows Ball proprietary power information should visually stand out from public-data context.
 
 ---

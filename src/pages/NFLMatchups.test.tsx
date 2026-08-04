@@ -28,6 +28,20 @@ vi.mock("@/hooks/useNflSeasonData", () => {
   };
 });
 
+// The landing page reads the published market artifact for each card's spread.
+// Served from the committed fixture so the list renders deterministically and
+// jsdom never issues a fetch.
+vi.mock("@/hooks/useNflMatchupMarket", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { readFileSync } = require("node:fs") as typeof import("node:fs");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { join } = require("node:path") as typeof import("node:path");
+  const artifact = JSON.parse(
+    readFileSync(join(process.cwd(), "public/data/nfl/matchup-market.json"), "utf-8")
+  );
+  return { useNflMatchupMarket: () => ({ loading: false, error: null, artifact }) };
+});
+
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div data-testid="site-shell">{children}</div>,
 }));

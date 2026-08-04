@@ -7,6 +7,8 @@ import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildWeekMatchups, getAvailableWeeks, type NflMatchup } from "@/lib/nfl/matchups";
 import MatchupCard from "@/components/nfl/matchups/MatchupCard";
+import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
+import { currentMarketFor } from "@/lib/nfl/marketData";
 
 const CURRENT_SEASON = 2026;
 const DEFAULT_WEEK = 1;
@@ -48,6 +50,10 @@ function groupByDay(matchups: NflMatchup[]): DayGroup[] {
 export default function NFLMatchups() {
   const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
+  // Optional enrichment, loaded independently of the schedule: a missing or
+  // malformed market artifact leaves each card's spread at N/A and changes
+  // nothing else on the page.
+  const { artifact: marketArtifact } = useNflMatchupMarket();
   const [selectedWeek, setSelectedWeek] = useState(DEFAULT_WEEK);
 
   usePageSeo({
@@ -114,7 +120,11 @@ export default function NFLMatchups() {
             <h2 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-500">{group.label}</h2>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {group.matchups.map((matchup) => (
-                <MatchupCard key={matchup.gameId} matchup={matchup} />
+                <MatchupCard
+                  key={matchup.gameId}
+                  matchup={matchup}
+                  market={currentMarketFor(marketArtifact, matchup.gameId)}
+                />
               ))}
             </div>
           </section>
