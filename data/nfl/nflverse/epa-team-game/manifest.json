@@ -17,6 +17,126 @@
   ],
   "files": [
     {
+      "season": 2020,
+      "filename": "epa_team_game_2020.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2020.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-08-04",
+      "byteSize": 49415,
+      "sha256": "0dbcaac5b782278c0020737e4d7db47f3f579b97a8770ed7e60bec111355ca8e",
+      "rowCount": 512,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 18146399,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 47705,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "epa",
+          "pass",
+          "rush",
+          "two_point_attempt"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+      "upstreamCompressedBytes": 18146399,
+      "upstreamSourceRows": 47705,
+      "upstreamColumnCount": 372,
+      "eligiblePlays": 33761,
+      "compactRowCount": 512,
+      "reductionRatio": 367.2
+    },
+    {
+      "season": 2021,
+      "filename": "epa_team_game_2021.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2021.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-08-04",
+      "byteSize": 52615,
+      "sha256": "1f37e481db182e58284bf3aa2169879ab4c6f76fb94a637bfa8245fc5fb5ba96",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19022201,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 49922,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "epa",
+          "pass",
+          "rush",
+          "two_point_attempt"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+      "upstreamCompressedBytes": 19022201,
+      "upstreamSourceRows": 49922,
+      "upstreamColumnCount": 372,
+      "eligiblePlays": 35484,
+      "compactRowCount": 544,
+      "reductionRatio": 361.5
+    },
+    {
       "season": 2022,
       "filename": "epa_team_game_2022.csv",
       "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.csv.gz",
@@ -257,11 +377,6 @@
       "reductionRatio": 363.1
     }
   ],
-  "notPublished": [
-    {
-      "season": 2026,
-      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz"
-    }
-  ],
+  "notPublished": [],
   "rawPlayByPlayCommitted": false
 }
