@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupHero from "@/components/nfl/matchups/MatchupHero";
 import MatchupJumpNav from "@/components/nfl/matchups/MatchupJumpNav";
+import MatchupFutureSection from "@/components/nfl/matchups/MatchupFutureSection";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
 import {
   MATCHUP_SECTION_SCROLL_MT,
@@ -171,5 +172,47 @@ describe("rank chips", () => {
   it("marks a context-only rank as descriptive rather than a quality tier", () => {
     render(<MatchupRankBadge rank={22} neutral />);
     expect(screen.getByText(/descriptive only/i)).toBeInTheDocument();
+  });
+});
+
+describe("Game Trends placeholder", () => {
+  const renderTrends = () =>
+    render(
+      <MemoryRouter>
+        <MatchupFutureSection
+          id="game-trends"
+          message="Additional matchup trends will be added here."
+        />
+      </MemoryRouter>
+    );
+
+  it("keeps the stable anchor and heading the Jump To nav depends on", () => {
+    renderTrends();
+    const section = document.getElementById("game-trends");
+    expect(section).not.toBeNull();
+    expect(within(section as HTMLElement).getByRole("heading", { name: /game trends/i })).toBeInTheDocument();
+  });
+
+  it("says only that trends are coming, with no data and no scope list", () => {
+    renderTrends();
+    const section = document.getElementById("game-trends") as HTMLElement;
+    expect(within(section).getByText("Additional matchup trends will be added here.")).toBeInTheDocument();
+    // No fabricated example data, definitions or marketing treatment.
+    const text = section.textContent ?? "";
+    for (const banned of [/coming soon/i, /planned for/i, /\bATS\b/, /over\/under/i, /streak/i, /\d/]) {
+      expect(text).not.toMatch(banned);
+    }
+  });
+
+  it("offers no collapse control, which would be noise for a single line", () => {
+    renderTrends();
+    const section = document.getElementById("game-trends") as HTMLElement;
+    expect(within(section).queryByRole("button", { name: /hide|show/i })).toBeNull();
+  });
+
+  it("renders no dashed placeholder box or empty card", () => {
+    renderTrends();
+    const section = document.getElementById("game-trends") as HTMLElement;
+    expect(section.querySelector("[class*='border-dashed']")).toBeNull();
   });
 });

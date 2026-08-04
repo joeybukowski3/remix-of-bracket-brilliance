@@ -4,6 +4,22 @@ Status: PR-1 foundation. This document is the single reference for what NFL data
 exists in the repo, what free external sources the pipeline uses, and the
 schema conventions every generated NFL file must follow.
 
+> **Superseded for the matchup analyzer.** The tables and model notes below
+> describe the original PR-1 to PR-8 pipeline (`nfl-power-v0.1` / `v0.2`, legacy
+> `stats_team_week` EPA). They are retained as the schema and mandate reference
+> and are accurate for that scope, but they are **not** the current state of the
+> matchup analyzer. Two statements in particular no longer hold: the active
+> public rating is `nfl-power-v0.3.1` on nflfastR play-by-play EPA, and success
+> rates are published rather than null. Play-by-play also turned out to be
+> tractable in CI via a compact team-game cache (~51 KB/season, raw never
+> committed).
+>
+> For the current system — conventional stats, success rates, trenches,
+> injuries, market, PBP EPA, `nfl-power-v0.3.1` and the `nfl-spread-v0.1.0`
+> projected spread — see
+> [`nfl-matchup-analyzer-redesign-spec.md`](nfl-matchup-analyzer-redesign-spec.md)
+> and [`nfl-power-v0.3.1-epa-migration.md`](nfl-power-v0.3.1-epa-migration.md).
+
 ## Mandate
 
 The NFL pipeline is **free-first**:

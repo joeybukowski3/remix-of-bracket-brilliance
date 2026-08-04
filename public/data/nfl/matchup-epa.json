@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-08-03T19:48:02.089Z",
+    "generatedAt": "2026-08-04T12:23:37.931Z",
     "source": "nflverse (play-by-play, nflfastR EPA)",
     "season": 2026,
     "week": null,
@@ -4133,11 +4133,69 @@
     }
   },
   "provenance": {
-    "generatedAt": "2026-08-03T19:48:02.090Z",
+    "generatedAt": "2026-08-04T12:23:37.932Z",
     "sourceUrlPattern": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz",
     "eligiblePlayFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
     "rawPlayByPlayCommitted": false,
+    "cachedSeasons": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
     "cacheFiles": [
+      {
+        "season": 2020,
+        "filename": "epa_team_game_2020.csv",
+        "rowCount": 512,
+        "sha256": "0dbcaac5b782278c0020737e4d7db47f3f579b97a8770ed7e60bec111355ca8e",
+        "eligiblePlays": 33761,
+        "upstreamSourceRows": 47705,
+        "retrievedDateUtc": "2026-08-04",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2020.csv.gz"
+      },
+      {
+        "season": 2021,
+        "filename": "epa_team_game_2021.csv",
+        "rowCount": 544,
+        "sha256": "1f37e481db182e58284bf3aa2169879ab4c6f76fb94a637bfa8245fc5fb5ba96",
+        "eligiblePlays": 35484,
+        "upstreamSourceRows": 49922,
+        "retrievedDateUtc": "2026-08-04",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2021.csv.gz"
+      },
+      {
+        "season": 2022,
+        "filename": "epa_team_game_2022.csv",
+        "rowCount": 542,
+        "sha256": "bf12cefe702a2dfb575253d8d452f04af7f7b927fd2405d342eea3df223a6f1f",
+        "eligiblePlays": 35045,
+        "upstreamSourceRows": 49434,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.csv.gz"
+      },
+      {
+        "season": 2023,
+        "filename": "epa_team_game_2023.csv",
+        "rowCount": 544,
+        "sha256": "a9a0c22ffb0f88db18be2778a1be31ec30defabff1044079544e9658394e253b",
+        "eligiblePlays": 35227,
+        "upstreamSourceRows": 49665,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz"
+      },
+      {
+        "season": 2024,
+        "filename": "epa_team_game_2024.csv",
+        "rowCount": 544,
+        "sha256": "8890f0665aec8503b33f61dd87618686710a6b522c0f7bfe4818de50e68baf26",
+        "eligiblePlays": 34948,
+        "upstreamSourceRows": 49492,
+        "retrievedDateUtc": "2026-08-03",
+        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz"
+      },
       {
         "season": 2025,
         "filename": "epa_team_game_2025.csv",
@@ -4149,12 +4207,7 @@
         "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz"
       }
     ],
-    "cacheNotPublished": [
-      {
-        "season": 2026,
-        "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz"
-      }
-    ],
+    "cacheNotPublished": [],
     "opponentJoinCoverage": {
       "requestedTeamGames": 416,
       "resolvedTeamGames": 416,

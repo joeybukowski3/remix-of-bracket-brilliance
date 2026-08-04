@@ -338,7 +338,7 @@ export default function NFLMatchupDetail() {
         <div className="grid items-start gap-3 lg:grid-cols-2">
           <MatchupFutureSection
             id="game-trends"
-            message="Game trend analysis will be added in a future data phase."
+            message="Additional matchup trends will be added here."
           />
           <MatchupModelAnalysis
             projection={projection}

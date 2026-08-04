@@ -20,10 +20,6 @@ export default function MatchupPendingNote({
   );
 }
 
-/** Standard sentence for sections whose rows are scaffolded but unpopulated. */
-export const PIPELINE_PENDING_COPY =
-  "Detailed values populate when the matchup data pipeline is connected. No figures are estimated in the meantime.";
-
 /**
  * Compact per-section attribution for the three statistical comparison sections.
  *

@@ -143,6 +143,7 @@ function main() {
   // repository schedule/results — so window membership cannot drift apart.
   const seasons = [PRIOR_SEASON, CURRENT_SEASON].map(loadSeason).filter(Boolean);
   if (seasons.length === 0) throw new Error("no season schedule/results found");
+  const displaySeasons = new Set(seasons.map((s) => s.season));
   const completedByTeam = buildCompletedGameIndex(seasons);
 
   const windows = {};
@@ -254,7 +255,12 @@ function main() {
     attribution: NFL_EPA_ATTRIBUTION,
     currentSeason: CURRENT_SEASON,
     priorSeason: PRIOR_SEASON,
-    seasonsUsed: cachedSeasons,
+    // Seasons that actually feed the display windows, matching what
+    // `seasonsUsed` means in the sibling conventional-metrics generator. The
+    // cache also holds 2020-2021 for the projected-spread model's beta fit;
+    // reporting those here would claim this artifact's EPA rows were built from
+    // seasons they never touch.
+    seasonsUsed: cachedSeasons.filter((season) => displaySeasons.has(season)),
     metricKeys: [...EPA_METRIC_KEYS],
     metricDirections: EPA_METRIC_DIRECTIONS,
     displayDecimals: EPA_DISPLAY_DECIMALS,
@@ -264,6 +270,8 @@ function main() {
       sourceUrlPattern: "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_{season}.csv.gz",
       eligiblePlayFilter: EPA_ELIGIBLE_PLAY_FILTER,
       rawPlayByPlayCommitted: false,
+      /** Every season in the committed cache, including those only the spread model reads. */
+      cachedSeasons,
       cacheFiles: files,
       cacheNotPublished: manifest.notPublished ?? [],
       opponentJoinCoverage: {
