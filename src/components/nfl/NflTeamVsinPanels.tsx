@@ -1,4 +1,5 @@
 import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
+import NflProvenanceDetails from "@/components/nfl/provenance/NflProvenanceDetails";
 import {
   NFL_VSIN_GUIDE_SOURCE,
   getNflVsinGuideTeam,
@@ -50,14 +51,21 @@ export function NflTeamStatsSidebar({ team }: { team: NflGuideTeamNormalized }) 
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">Last season</div>
           <h2 className="mt-1 text-xl font-black">2025 team statistics</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-300">Values and NFL ranks from the team page in the {NFL_VSIN_GUIDE_SOURCE.title}.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-300">Values and NFL ranks from the source team page.</p>
         </div>
 
         <StatsGroup title="Offensive statistics" rows={guideTeam.statistics.offense} />
         <StatsGroup title="Defensive statistics" rows={guideTeam.statistics.defense} />
 
         <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 text-[10px] leading-4 text-slate-500">
-          Source: {NFL_VSIN_GUIDE_SOURCE.title}, page {guideTeam.sourcePage}. Rank 1 is best. Values are displayed exactly as listed in the guide.
+          <NflProvenanceDetails
+            provenance={{
+              sourceKind: "external",
+              sourceLabel: `${NFL_VSIN_GUIDE_SOURCE.title}, page ${guideTeam.sourcePage}`,
+              season: NFL_VSIN_GUIDE_SOURCE.statsSeason,
+            }}
+          />
+          <p className="mt-1">Rank 1 is best. Values are displayed exactly as listed in the guide.</p>
         </div>
       </div>
     </aside>

@@ -6,8 +6,10 @@ import { join, resolve } from "node:path";
 import { NFL_GUIDE_TEAMS, NFL_GUIDE_TEAM_BY_SLUG } from "@/lib/nfl/guide2026";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getNflVsinGuideTeam } from "@/lib/nfl/vsinGuide2026";
+import { getNflOffseasonProfile } from "@/data/nflOffseason2026";
 import { NflTeamHeaderOdds, NflTeamStatsSidebar } from "@/components/nfl/NflTeamVsinPanels";
 import NflCoachOfYearCase from "@/components/nfl/NflCoachOfYearCase";
+import NflOffseasonSection from "@/components/nfl/team-dashboard/NflOffseasonSection";
 import NflScheduleGameCard from "@/components/nfl/team-dashboard/NflScheduleGameCard";
 import type { NflScheduleGame } from "@/lib/nfl/teamSchedule";
 
@@ -48,6 +50,13 @@ describe("VSiN panels on the normalized type", () => {
     expect(screen.getByLabelText(`${kc.teamName} futures odds from the VSiN guide`)).toBeTruthy();
     render(<NflTeamStatsSidebar team={kc} />);
     expect(screen.getByLabelText(`${kc.teamName} 2025 statistics`)).toBeTruthy();
+    expect(screen.getByText("External source")).toBeTruthy();
+    expect(screen.getByText("Season 2025")).toBeTruthy();
+
+    const firstStat = vsin.statistics.offense[0];
+    expect(screen.getByText(firstStat.label)).toBeTruthy();
+    expect(screen.getAllByText(firstStat.displayValue).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(`#${firstStat.rank}`).length).toBeGreaterThan(0);
   });
 
   it("fail gracefully (render nothing) when VSiN data is missing", () => {
@@ -56,6 +65,23 @@ describe("VSiN panels on the normalized type", () => {
     expect(header.container.firstChild).toBeNull();
     const sidebar = render(<NflTeamStatsSidebar team={ghost} />);
     expect(sidebar.container.firstChild).toBeNull();
+  });
+});
+
+describe("offseason provenance on the normalized type", () => {
+  it("adds source metadata without changing curated personnel values", () => {
+    const kc = GUIDE.teamBySlug.get("kansas-city-chiefs")!;
+    const offseason = getNflOffseasonProfile(kc.abbr);
+
+    render(<NflOffseasonSection team={kc} />);
+
+    expect(screen.getByText("Editorial")).toBeTruthy();
+    expect(screen.getByText("JoeKnowsBall offseason snapshot")).toBeTruthy();
+    expect(screen.getByText("Season 2026")).toBeTruthy();
+    expect(screen.getAllByText(offseason.headCoach2026).length).toBeGreaterThan(0);
+    for (const move of [...offseason.additions, ...offseason.departures].slice(0, 3)) {
+      expect(screen.getByText(move.player)).toBeTruthy();
+    }
   });
 });
 
