@@ -1,4 +1,5 @@
 import { getNflOffseasonProfile, type NflPlayerMove } from "@/data/nflOffseason2026";
+import NflProvenanceDetails from "@/components/nfl/provenance/NflProvenanceDetails";
 import { getNflSeasonGuide, type NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import { SectionHeading } from "./NflDashboardUi";
 
@@ -33,9 +34,19 @@ export default function NflOffseasonSection({ team }: { team: NflGuideTeamNormal
           <MoveCard title="Key departures" moves={offseason.departures} direction="out" />
         </div>
       </div>
-      <p className="mt-3 text-[11px] leading-5 text-slate-400">
-        Offseason snapshot updated through {formatVerifiedDate(offseason.verifiedAt)}. Draft picks and minor transactions are not included.
-      </p>
+      <div className="mt-3">
+        <NflProvenanceDetails
+          provenance={{
+            sourceKind: "editorial",
+            sourceLabel: "JoeKnowsBall offseason snapshot",
+            sourceUpdatedAt: offseason.verifiedAt,
+            season: 2026,
+          }}
+        />
+        <p className="mt-1 text-[11px] leading-5 text-slate-400">
+          Draft picks and minor transactions are not included.
+        </p>
+      </div>
     </section>
   );
 }
@@ -94,15 +105,4 @@ function MoveCard({
       </div>
     </article>
   );
-}
-
-function formatVerifiedDate(value: string) {
-  const date = new Date(`${value}T12:00:00Z`);
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }).format(date);
 }
