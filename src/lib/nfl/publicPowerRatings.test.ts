@@ -45,6 +45,8 @@ describe("public power board projection", () => {
   it("loads 2026 as preseason because the current-season full-season artifact is empty", async () => {
     const board = await loadPublicPowerBoard(NFL_V03_PUBLIC_PRESEASON_SEASON, committedFetch);
     expect(board.modelVersion).toBe(NFL_V03_PUBLIC_MODEL_VERSION);
+    expect(board.source).toMatch(/NFL results/i);
+    expect(board.validationStatus).toBe("stage-1");
     expect(board.season).toBe(2026);
     expect(board.selectedState).toBe("preseason");
     expect(board.windowType).toBe("preseason");
