@@ -1,0 +1,151 @@
+name: Validate MLB Prop Odds (live, temporary)
+run-name: Live MLB prop odds validation • ${{ inputs.ref }}
+
+# TEMPORARY, dispatch-only validation of the MLB prop line-selection fix against
+# the live ParlayAPI payload.
+#
+# This workflow is deliberately incapable of changing the repository:
+#   - `permissions: contents: read` only
+#   - `persist-credentials: false`, so no usable push token is left on disk
+#   - no commit, push, PR, deployment or workflow-chaining step
+#   - refuses to run against main
+#
+# It writes generated odds data inside the ephemeral runner workspace only.
+# Delete this file once live validation has passed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or SHA to validate (must not be main)
+        type: string
+        required: true
+        default: fix/mlb-odds-primary-market-selection
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-mlb-prop-odds-live
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Refuse to run against main
+        env:
+          SELECTED_REF: ${{ inputs.ref }}
+        run: |
+          case "$SELECTED_REF" in
+            main|refs/heads/main|origin/main|master)
+              echo "::error::This validation workflow must never run against main."
+              exit 1
+              ;;
+          esac
+          echo "Validating ref: $SELECTED_REF"
+
+      - name: Checkout selected ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch live MLB odds
+        env:
+          PARLAYAPI: ${{ secrets.PARLAYAPI }}
+          MLB_ODDS_DEBUG_PLAYERS: "bryan woo,paul skenes,shohei ohtani,yordan alvarez"
+        run: |
+          mkdir -p artifacts/live-validation
+          if [ -z "$PARLAYAPI" ]; then
+            echo "::error::secrets.PARLAYAPI is not available to this run."
+            exit 1
+          fi
+          node scripts/fetch-mlb-odds.mjs 2>&1 | tee artifacts/live-validation/fetch.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Run integrity validator
+        id: validator
+        if: always()
+        run: |
+          mkdir -p artifacts/live-validation
+          set +e
+          node scripts/validate-mlb-prop-odds.mjs 2>&1 | tee artifacts/live-validation/validator.log
+          code="${PIPESTATUS[0]}"
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "Validator exit code: $code"
+
+      - name: Build sanitized diagnostics report
+        id: report
+        if: always()
+        env:
+          MLB_ODDS_DEBUG_PLAYERS: "bryan woo,paul skenes,shohei ohtani,yordan alvarez"
+        run: |
+          mkdir -p artifacts/live-validation
+          set +e
+          node scripts/report-mlb-live-validation.mjs 2>&1 | tee artifacts/live-validation/report.log
+          code="${PIPESTATUS[0]}"
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "Report exit code: $code"
+
+      - name: Run focused odds-selection tests
+        id: tests
+        if: always()
+        run: |
+          mkdir -p artifacts/live-validation
+          set +e
+          npx vitest run \
+            scripts/lib/mlb-prop-line-selection.test.mjs \
+            scripts/lib/mlb-prop-odds-integrity.test.mjs 2>&1 | tee artifacts/live-validation/focused-tests.log
+          code="${PIPESTATUS[0]}"
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "Focused tests exit code: $code"
+
+      - name: Report generated-file changes (diagnostic only, never committed)
+        if: always()
+        run: |
+          mkdir -p artifacts/live-validation
+          {
+            echo "## git status --short"
+            git status --short
+            echo
+            echo "## git diff --stat"
+            git diff --stat
+          } | tee artifacts/live-validation/generated-file-changes.log
+
+      - name: Upload sanitized artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-live-validation
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            artifacts/live-validation/
+            artifacts/mlb-prop-line-selection.json
+
+      - name: Enforce validation result
+        if: always()
+        run: |
+          validator="${{ steps.validator.outputs.exit_code }}"
+          report="${{ steps.report.outputs.exit_code }}"
+          tests="${{ steps.tests.outputs.exit_code }}"
+          echo "validator=$validator report=$report focused-tests=$tests"
+          failed=0
+          [ "$validator" = "0" ] || { echo "::error::Integrity validator exited $validator"; failed=1; }
+          [ "$report" = "0" ] || { echo "::error::Sanitized report exited $report"; failed=1; }
+          [ "$tests" = "0" ] || { echo "::error::Focused tests exited $tests"; failed=1; }
+          exit "$failed"
