@@ -7,7 +7,7 @@ import NflWarrenSharpAdvancedMetrics from "@/components/nfl/team-dashboard/NflWa
 
 export default function NflTeamDashboardExtras({ team }: { team: NflGuideTeamNormalized }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <NflMarketValueSection team={team} />
       <NflScheduleSection team={team} />
       <NflOffseasonSection team={team} />

@@ -5,6 +5,9 @@ import { getSeoMeta } from "@/lib/seo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
+import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
+import { NflFilterChips, NflSeasonPicker } from "@/components/nfl/ui/NflFilterBar";
+import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import type { NflGameRecord, NflResultRecord } from "@/lib/nfl/standings";
 
@@ -32,25 +35,25 @@ export function kickoffLabel(dateUtc: string | null): string {
 function GameRow({ game, result }: { game: NflGameRecord; result: NflResultRecord | undefined }) {
   const isFinal = game.status === "final" && result;
   return (
-    <tr className="border-t border-slate-100 hover:bg-blue-50/40">
+    <tr className={NFL_TABLE_ROW}>
       <td className="whitespace-nowrap px-2 py-2 text-slate-500">{kickoffLabel(game.dateUtc)}</td>
       <td className="px-2 py-2">
-        <span className="flex items-center gap-1.5 font-black text-slate-800">
+        <span className="flex items-center gap-1.5 font-semibold text-slate-800">
           <img src={nflLogoUrl(game.awayAbbr)} alt="" className="h-5 w-5 object-contain" loading="lazy" />
           {game.awayTeam}
-          <span className="font-semibold text-slate-400">at</span>
+          <span className="font-normal text-slate-400">at</span>
           <img src={nflLogoUrl(game.homeAbbr)} alt="" className="h-5 w-5 object-contain" loading="lazy" />
           {game.homeTeam}
         </span>
       </td>
       <td className="whitespace-nowrap px-2 py-2 text-center">
         {isFinal ? (
-          <span className="font-black text-slate-900">
+          <span className="font-semibold tabular-nums text-slate-900">
             {result!.awayScore}–{result!.homeScore}
-            <span className="ml-1 rounded bg-slate-100 px-1 py-0.5 text-[9px] font-black uppercase text-slate-500">Final</span>
+            <span className="ml-1 rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold uppercase text-slate-500">Final</span>
           </span>
         ) : (
-          <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-blue-700">Scheduled</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Scheduled</span>
         )}
       </td>
       <td className="whitespace-nowrap px-2 py-2 text-slate-500">{game.stadium ?? "—"}</td>
@@ -93,69 +96,57 @@ export default function NFLSchedule() {
   const activeGames = weeks.find(([label]) => label === activeWeek)?.[1] ?? [];
 
   return (
-    <main className="site-page pb-16 pt-8">
-      <div className="site-container site-stack">
-          <section>
-            <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Schedule</div>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">{season} NFL Schedule</h1>
-            <p className="mt-2 text-sm text-slate-500">Kickoff times shown in Eastern Time · Refreshed automatically from free public data</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {SEASONS.map((y) => (
-                <button
-                  key={y}
-                  onClick={() => { setSeason(y); setOpenWeek(null); }}
-                  className={`rounded-full border px-3 py-1 text-xs font-black transition ${y === season ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"}`}
-                >
-                  {y}
-                </button>
-              ))}
-            </div>
-          </section>
+    <>
+      <NflPageHeader
+        eyebrow="NFL · Schedule"
+        title={`${season} NFL Schedule`}
+        description="Kickoff times shown in Eastern Time. Refreshed automatically from free public data."
+      >
+        <NflSeasonPicker
+          seasons={SEASONS}
+          value={season}
+          onChange={(next) => { setSeason(next); setOpenWeek(null); }}
+        />
+      </NflPageHeader>
 
-          <div className="mt-3">
-            <StaleWarning meta={data?.gamesMeta} maxAgeHours={72} enabled={isCurrent && hasResults} />
-          </div>
-          {loading && <p className="mt-6 text-sm text-slate-500">Loading schedule…</p>}
-          {error && <p className="mt-6 text-sm font-semibold text-red-700">Could not load the {season} schedule. Please try again later.</p>}
+      <StaleWarning meta={data?.gamesMeta} maxAgeHours={72} enabled={isCurrent && hasResults} />
+      {loading && <p className="text-sm text-slate-500">Loading schedule…</p>}
+      {error && <p className="text-sm font-semibold text-red-700">Could not load the {season} schedule. Please try again later.</p>}
 
-          {!loading && !error && weeks.length > 0 && (
-            <>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {weeks.map(([label]) => (
-                  <button
-                    key={label}
-                    onClick={() => setOpenWeek(label)}
-                    className={`rounded border px-2 py-1 text-[10px] font-black uppercase tracking-wide transition ${label === activeWeek ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-500 hover:border-slate-400"}`}
-                  >
-                    {label.replace("Week ", "W")}
-                  </button>
-                ))}
-              </div>
-              <article className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <h2 className="bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-wider text-white">{activeWeek}</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[560px] text-xs">
-                    <thead>
-                      <tr className="bg-slate-50 text-[9px] font-black uppercase tracking-wider text-slate-500">
-                        <th className="px-2 py-2 text-left">Kickoff (ET)</th>
-                        <th className="px-2 py-2 text-left">Matchup</th>
-                        <th className="px-2 py-2">Score</th>
-                        <th className="px-2 py-2 text-left">Stadium</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeGames.map((game) => (
-                        <GameRow key={game.gameId} game={game} result={resultsById.get(game.gameId)} />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </article>
-            </>
-          )}
+      {!loading && !error && weeks.length > 0 && activeWeek && (
+        <>
+          <NflFilterChips
+            label="Select week"
+            size="sm"
+            options={weeks.map(([label]) => label)}
+            value={activeWeek}
+            onChange={setOpenWeek}
+            formatOption={(label) => label.replace("Week ", "W")}
+          />
+          <article className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <h2 className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">{activeWeek}</h2>
+            <NflTableScroller label={`${activeWeek} games`}>
+              <table className="w-full min-w-[560px] text-xs">
+                <thead>
+                  <tr className={NFL_TABLE_HEAD_ROW}>
+                    <th scope="col" className="px-2 py-2 text-left">Kickoff (ET)</th>
+                    <th scope="col" className="px-2 py-2 text-left">Matchup</th>
+                    <th scope="col" className="px-2 py-2">Score</th>
+                    <th scope="col" className="px-2 py-2 text-left">Stadium</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeGames.map((game) => (
+                    <GameRow key={game.gameId} game={game} result={resultsById.get(game.gameId)} />
+                  ))}
+                </tbody>
+              </table>
+            </NflTableScroller>
+          </article>
+        </>
+      )}
 
-          <LastUpdated meta={data?.gamesMeta} className="mt-4" />
-      </div>
-    </main>
+      <LastUpdated meta={data?.gamesMeta} />
+    </>
   );
 }

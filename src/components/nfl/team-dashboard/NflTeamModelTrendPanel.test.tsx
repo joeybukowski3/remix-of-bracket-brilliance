@@ -71,7 +71,8 @@ describe("NFL team model trend presentation", () => {
   it("renders an unknown future trajectory label neutrally without dropping the panel", () => {
     render(<NflTeamModelTrendView trend={trend({ trajectoryLabel: "Future Context Label" })} />);
 
-    expect(screen.getByRole("heading", { name: "Current Model Trend" })).toBeTruthy();
+    // Sentence case, matching the shared NFL section-heading convention.
+    expect(screen.getByRole("heading", { name: "Current model trend" })).toBeTruthy();
     expect(screen.getByText("Future Context Label").getAttribute("data-trajectory-tone")).toBe("neutral");
     expect(screen.getByText("Artifact-supplied trajectory context.")).toBeTruthy();
   });

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
+import NflSection from "@/components/nfl/ui/NflSection";
 
 const COY_CASES: Record<string, {
   odds: string;
@@ -83,48 +84,45 @@ export default function NflCoachOfYearCase({ team }: { team: NflGuideTeamNormali
   if (!profile) return null;
 
   return (
-    <section id="coach-of-year-case" className="scroll-mt-24 overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-sm">
-      <div className="border-b border-amber-200 bg-gradient-to-r from-amber-50 to-white p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Coach of the Year Case</div>
-            <h2 className="mt-1 text-2xl font-black text-slate-900">{profile.title}</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{profile.intro}</p>
-          </div>
-          <div className="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-right shadow-sm">
-            <div className="text-[9px] font-black uppercase tracking-wider text-slate-400">Current COY odds</div>
-            <div className="mt-1 text-2xl font-black text-amber-700">{profile.odds}</div>
-          </div>
+    <NflSection
+      id="coach-of-year-case"
+      eyebrow="Coach of the Year Case"
+      title={profile.title}
+      subtitle={profile.intro}
+      collapse="mobile"
+      className="scroll-mt-24"
+      headerAside={
+        <div className="text-right">
+          <div className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">COY odds</div>
+          <div className="text-base font-bold tabular-nums text-slate-900">{profile.odds}</div>
         </div>
+      }
+    >
+      <div className="grid gap-4 md:grid-cols-2">
+        {profile.pillars.map((pillar) => (
+          <article key={pillar.title} className="rounded border border-slate-200 bg-slate-50 p-3">
+            <h3 className="text-sm font-semibold text-slate-900">{pillar.title}</h3>
+            <p className="mt-1 text-[13px] leading-6 text-slate-600">{pillar.body}</p>
+          </article>
+        ))}
       </div>
 
-      <div className="p-6">
-        <div className="grid gap-5 md:grid-cols-2">
-          {profile.pillars.map((pillar) => (
-            <article key={pillar.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <h3 className="font-black text-slate-900">{pillar.title}</h3>
-              <p className="mt-2 text-sm leading-7 text-slate-600">{pillar.body}</p>
-            </article>
+      <div className="mt-4 border-l-2 border-l-red-500 pl-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-red-800">What could prevent the award</h3>
+        <ul className="mt-2 space-y-2">
+          {profile.against.map((item) => (
+            <li key={item} className="flex gap-2 text-[13px] leading-6 text-slate-600">
+              <span className="text-red-600" aria-hidden>•</span>
+              <span>{item}</span>
+            </li>
           ))}
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-          <div className="text-[10px] font-black uppercase tracking-wider text-red-700">What could prevent the award</div>
-          <div className="mt-3 space-y-3">
-            {profile.against.map((item) => (
-              <div key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
-                <span className="font-black text-red-600">•</span>
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link to="/nfl/coach-of-year" className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-black text-white hover:bg-slate-700">Back to Coach of the Year board</Link>
-          <a href="#top" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">Back to top</a>
-        </div>
+        </ul>
       </div>
-    </section>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link to="/nfl/coach-of-year" className="rounded border border-slate-900 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1">Back to Coach of the Year board</Link>
+        <a href="#top" className="rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Back to top</a>
+      </div>
+    </NflSection>
   );
 }

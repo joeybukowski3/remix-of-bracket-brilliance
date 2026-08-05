@@ -5,7 +5,8 @@ import {
   getRankGapSignal,
   type SuperBowlMarketTeam,
 } from "@/lib/nfl/superBowlMarkets";
-import { SectionHeading, ValueCard } from "./NflDashboardUi";
+import NflSection from "@/components/nfl/ui/NflSection";
+import NflMetricStrip from "@/components/nfl/ui/NflMetricStrip";
 
 type LoadStatus = "loading" | "success" | "error";
 
@@ -51,41 +52,44 @@ export default function NflMarketValueSection({ team }: { team: NflGuideTeamNorm
   const rankSignal = getRankGapSignal(rankGap);
 
   return (
-    <section>
-      <SectionHeading
-        eyebrow="Odds & value"
-        title="Market comparison"
-        description="Win-total value comes from the preseason model. Super Bowl value compares the live prediction-market rank with the Joe Knows Ball power rank."
+    <NflSection
+      eyebrow="Odds & value"
+      title="Market comparison"
+      subtitle="Win-total value comes from the preseason model. Super Bowl value compares the live prediction-market rank with the Joe Knows Ball power rank."
+    >
+      <NflMetricStrip
+        ariaLabel="Market comparison"
+        columns={5}
+        metrics={[
+          { label: "Win total", value: team.marketWinTotal?.toFixed(1) ?? "—" },
+          { label: "Projected wins", value: team.projectedWins.toFixed(1), tone: "model", primary: true },
+          {
+            label: "Win-total edge",
+            value: team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap),
+            tone: team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral",
+          },
+          {
+            label: "Super Bowl prob.",
+            value: status === "loading" ? "Loading…" : market?.probability == null ? "—" : `${market.probability.toFixed(1)}%`,
+          },
+          {
+            label: "Market rank gap",
+            value: rankGap == null ? "—" : `${formatSigned(rankGap, 0)} spots`,
+            detail: rankGap == null ? "No matched market" : rankSignal,
+            tone: rankGap == null ? "neutral" : rankGap > 1 ? "good" : rankGap < -1 ? "bad" : "neutral",
+          },
+        ]}
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <ValueCard label="Win total" value={team.marketWinTotal?.toFixed(1) ?? "—"} />
-        <ValueCard label="Projected wins" value={team.projectedWins.toFixed(1)} tone="blue" />
-        <ValueCard
-          label="Win-total edge"
-          value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}
-          tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"}
-        />
-        <ValueCard
-          label="Super Bowl probability"
-          value={status === "loading" ? "Loading…" : market?.probability == null ? "—" : `${market.probability.toFixed(1)}%`}
-        />
-        <ValueCard
-          label="Market rank gap"
-          value={rankGap == null ? "—" : `${formatSigned(rankGap, 0)} spots`}
-          detail={rankGap == null ? "No matched market" : rankSignal}
-          tone={rankGap == null ? "neutral" : rankGap > 1 ? "good" : rankGap < -1 ? "bad" : "neutral"}
-        />
-      </div>
       {status === "error" && (
         <p className="mt-3 text-xs leading-5 text-slate-500">
           Live Super Bowl market data is unavailable; the team model and win-total value remain available.
         </p>
       )}
       {response?.stale && (
-        <p className="mt-3 text-xs font-bold text-amber-700">
+        <p className="mt-3 text-xs font-semibold text-amber-700">
           Showing the most recent cached Super Bowl market response.
         </p>
       )}
-    </section>
+    </NflSection>
   );
 }

@@ -64,19 +64,22 @@ export function NflTeamModelTrendView({
     ? "text-slate-900"
     : trend.delta > 0
       ? "text-emerald-700"
-      : "text-red-600";
+      : "text-red-700";
 
   return (
+    // Keeps a leading rule so the generated model panel stays distinguishable
+    // from the curated Guide content around it, but otherwise adopts the shared
+    // section chrome instead of a tinted, shadowed, heavier-typography card.
     <section
       aria-labelledby="nfl-current-model-trend-heading"
-      className="overflow-hidden rounded-2xl border border-blue-200 border-l-4 border-l-blue-600 bg-white shadow-sm"
+      className="overflow-hidden rounded-lg border border-slate-200 border-l-2 border-l-sky-600 bg-white"
     >
-      <div className="border-b border-slate-200 bg-blue-50/60 px-4 py-4 sm:px-6">
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">Current model</div>
-        <h2 id="nfl-current-model-trend-heading" className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">
-          Current Model Trend
+      <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Current model</div>
+        <h2 id="nfl-current-model-trend-heading" className="text-sm font-semibold tracking-tight text-slate-900">
+          Current model trend
         </h2>
-        <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
+        <p className="mt-0.5 max-w-4xl text-[11px] leading-4 text-slate-500">
           The generated public rating is separate from the curated Guide outlook. Historical windows use the same frozen public scale for a like-for-like comparison.
         </p>
       </div>
@@ -87,7 +90,7 @@ export function NflTeamModelTrendView({
           value={formatRating(trend.currentPublicRating)}
           unavailableLabel={missingLabel}
           detail={ratingStateDetail}
-          className="bg-blue-50/40 text-blue-800"
+          className="bg-sky-50/60 text-sky-800"
         />
         <TrendMetric
           label="Full season"
@@ -117,12 +120,12 @@ export function NflTeamModelTrendView({
         />
       </div>
 
-      <div className="space-y-3 px-4 py-4 sm:px-6">
+      <div className="space-y-2 px-3 py-3 sm:px-4">
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Trajectory</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Trajectory</span>
           <span
             className={cn(
-              "inline-flex min-w-0 max-w-full self-start whitespace-normal break-words rounded-full border px-2.5 py-1 text-[10px] font-black uppercase leading-4 tracking-wider",
+              "inline-flex min-w-0 max-w-full self-start whitespace-normal break-words rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-4 tracking-wide",
               TRAJECTORY_CLASSES[trajectory.tone],
             )}
             data-trajectory-tone={trajectory.tone}
@@ -168,12 +171,12 @@ function TrendMetric({
   valueClassName?: string;
 }) {
   return (
-    <div className={cn("min-w-0 border-b border-r border-slate-100 p-4 last:border-r-0 lg:border-b-0", className)}>
-      <div className="text-[9px] font-black uppercase leading-4 tracking-wider text-slate-500">{label}</div>
+    <div className={cn("min-w-0 border-b border-r border-slate-100 px-3 py-2.5 last:border-r-0 lg:border-b-0", className)}>
+      <div className="text-[10px] font-semibold uppercase leading-4 tracking-wide text-slate-500">{label}</div>
       <NflOptionalValue
         value={value}
         unavailableLabel={unavailableLabel}
-        className={cn("mt-1 block break-words text-xl font-black tabular-nums text-slate-950 sm:text-2xl", valueClassName)}
+        className={cn("mt-0.5 block break-words text-lg font-bold tabular-nums leading-tight text-slate-900", valueClassName)}
       />
       {detail ? <div className="mt-1 break-words text-[10px] leading-4 text-slate-500">{detail}</div> : null}
     </div>

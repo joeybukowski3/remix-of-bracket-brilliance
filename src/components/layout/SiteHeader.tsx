@@ -6,6 +6,7 @@ const navItems = [
   { to: "/mlb", label: "MLB" },
   { to: "/ncaa", label: "NCAA Football" },
   { to: "/nfl/guide", label: "NFL" },
+  { to: "/fantasy-football", label: "Fantasy" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
   { to: "/support", label: "Support the Site" },
@@ -14,7 +15,10 @@ const navItems = [
 function isActive(pathname: string, item: { to: string | null; label: string }) {
   if (item.label === "Home") return pathname === "/";
   if (item.label === "PGA") return pathname === "/pga" || pathname.startsWith("/pga/") || pathname === "/rbc-heritage-2026-picks";
+  // Fantasy Football is its own product area, not an NFL sub-page, so the two
+  // never highlight together.
   if (item.label === "NFL") return pathname === "/nfl" || pathname.startsWith("/nfl/");
+  if (item.label === "Fantasy") return pathname === "/fantasy-football" || pathname.startsWith("/fantasy-football/");
   if (item.label === "NBA" || !item.to) return false;
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }

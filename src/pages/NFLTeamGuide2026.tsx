@@ -6,6 +6,9 @@ import {
   NflTeamHeaderOdds,
   NflTeamStatsSidebar,
 } from "@/components/nfl/NflTeamVsinPanels";
+import NflSection from "@/components/nfl/ui/NflSection";
+import NflMetricStrip from "@/components/nfl/ui/NflMetricStrip";
+import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
@@ -32,145 +35,223 @@ export default function NFLTeamGuide2026() {
   const divisionTeams = GUIDE.divisions.find((entry) => entry.division === team.division)?.teams ?? [];
 
   return (
-    <main id="top" className="min-h-screen bg-slate-50 pb-16">
-        <section className="border-b border-slate-800 text-white" style={{ background: `linear-gradient(125deg, #020617 0%, ${team.color} 135%)` }}>
-          <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-9 lg:px-8">
-            <Link to="/nfl/guide" className="text-xs font-black text-sky-200 hover:text-white">← Back to 2026 guide</Link>
+    <>
+      {/*
+        Team identity block. It keeps a dark surface because that is what makes a
+        team page feel like a team page — but the old version bled a 125deg
+        gradient from #020617 all the way into the team colour across the whole
+        banner, which read as decoration rather than identity. The colour is now
+        a deliberate accent: a rule on the leading edge plus a soft wash behind
+        the logo.
+      */}
+      <section
+        id="top"
+        className="relative overflow-hidden rounded-lg border-l-4 bg-slate-950 text-white"
+        style={{ borderLeftColor: team.color }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/2 opacity-25"
+          style={{ background: `radial-gradient(circle at left center, ${team.color} 0%, transparent 70%)` }}
+        />
+        <div className="relative px-3 py-4 sm:px-5 sm:py-5">
+          <Link
+            to="/nfl/guide"
+            className="text-[11px] font-semibold text-sky-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          >
+            ← Back to 2026 guide
+          </Link>
 
-            <div className="mt-4 flex flex-col gap-5 sm:mt-5 lg:flex-row lg:items-end lg:justify-between lg:gap-7">
-              <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 p-2 sm:h-24 sm:w-24 sm:rounded-2xl sm:p-3">
-                  <img src={nflLogoUrl(team.abbr)} alt={`${team.teamName} logo`} className="h-full w-full object-contain" />
+          <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <img
+                src={nflLogoUrl(team.abbr)}
+                alt={`${team.teamName} logo`}
+                className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
+              />
+              <div className="min-w-0">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-300">
+                  {team.division} · 2026 Team Dashboard
                 </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200 sm:text-xs">{team.division} · 2026 Team Dashboard</div>
-                  <h1 className="mt-0.5 text-3xl font-black tracking-tight sm:mt-1 sm:text-5xl">{team.teamName}</h1>
-                  <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-200 sm:mt-2 sm:text-sm sm:leading-6">{team.headline}</p>
+                <h1 className="mt-0.5 text-2xl font-bold tracking-tight sm:text-3xl">{team.teamName}</h1>
+                <p className="mt-1 max-w-2xl text-[13px] leading-5 text-slate-300">{team.headline}</p>
+              </div>
+            </div>
+
+            <NflTeamHeaderOdds team={team} />
+          </div>
+        </div>
+      </section>
+
+      {/*
+        The headline figures. Previously eight individually bordered, shadowed
+        cards in a four-across grid at 390px, which forced 7px labels. One strip,
+        two columns on mobile, readable labels.
+      */}
+      <NflMetricStrip
+        ariaLabel="Guide outlook metrics"
+        columns={8}
+        metrics={[
+          { label: "2025 record", value: team.record2025 },
+          { label: "Guide wins", value: team.projectedWins.toFixed(1), tone: "model", primary: true },
+          { label: "Win total", value: team.marketWinTotal?.toFixed(1) ?? "—" },
+          {
+            label: "Guide edge",
+            value: team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap),
+            tone: team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral",
+          },
+          { label: "Guide rank", value: `#${team.powerRank}` },
+          { label: "Offense", value: `#${team.offenseRank}`, tone: team.offenseRank <= 10 ? "good" : team.offenseRank >= 24 ? "bad" : "neutral" },
+          { label: "Defense", value: `#${team.defenseRank}`, tone: team.defenseRank <= 10 ? "good" : team.defenseRank >= 24 ? "bad" : "neutral" },
+          { label: "Schedule", value: team.scheduleRank == null ? "—" : `#${team.scheduleRank}` },
+        ]}
+      />
+
+      <NflTeamModelTrendPanel teamSlug={team.slug} />
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+        <div className="min-w-0 space-y-5">
+          <NflTeamDashboardExtras team={team} />
+          <NflCoachOfYearCase team={team} />
+
+          <NflSection
+            eyebrow="Team outlook"
+            title="Model analysis"
+            subtitle="The model overview and key questions sit below the schedule so the week-by-week matchup view stays the primary team-page content."
+            collapse="mobile"
+            bodyClassName="space-y-4"
+          >
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge label={team.regressionSignal} tone={team.regressionSignal === "Bounce Back" ? "green" : team.regressionSignal === "Regression" ? "red" : "gray"} />
+              <Badge label={`${team.recommendationLabel} lean`} tone={team.recommendationLabel === "Over" ? "green" : team.recommendationLabel === "Under" ? "red" : "gray"} />
+              <Badge label={`${team.confidenceLabel} confidence`} tone="blue" />
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Model overview</h3>
+                  <p className="mt-1.5 text-[13px] leading-6 text-slate-600">{team.editorialSummary}</p>
+                  <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Projection formula</div>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">8.5 league-average wins + composite strength adjustment + schedule adjustment. Schedule rank uses #1 as hardest and #32 as easiest. The model is a baseline for comparison, not a replacement for injury, quarterback or price analysis.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Three burning questions</h3>
+                  <div className="mt-2 divide-y divide-slate-100">
+                    {team.keyQuestions.map((question, index) => (
+                      <div key={question.title} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">{index + 1}</span>
+                        <div>
+                          <h4 className="text-[13px] font-semibold text-slate-900">{question.title}</h4>
+                          <p className="mt-1 text-[13px] leading-6 text-slate-600">{question.answer}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <NflTeamHeaderOdds team={team} />
-            </div>
-          </div>
-        </section>
-
-        <div className="mx-auto max-w-[1400px] space-y-5 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
-          <section aria-label="Guide outlook metrics" className="grid grid-cols-4 gap-2 sm:gap-4 lg:grid-cols-8">
-            <Metric label="2025 record" value={team.record2025} />
-            <Metric label="Guide wins" value={team.projectedWins.toFixed(1)} emphasis />
-            <Metric label="Win total" value={team.marketWinTotal?.toFixed(1) ?? "—"} />
-            <Metric label="Guide edge" value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)} tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"} />
-            <Metric label="Guide rank" value={`#${team.powerRank}`} />
-            <Metric label="Offense" value={`#${team.offenseRank}`} tone={team.offenseRank <= 10 ? "good" : team.offenseRank >= 24 ? "bad" : "neutral"} />
-            <Metric label="Defense" value={`#${team.defenseRank}`} tone={team.defenseRank <= 10 ? "good" : team.defenseRank >= 24 ? "bad" : "neutral"} />
-            <Metric label="Schedule" value={team.scheduleRank == null ? "—" : `#${team.scheduleRank}`} />
-          </section>
-
-          <NflTeamModelTrendPanel teamSlug={team.slug} />
-
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-            <div className="min-w-0 space-y-8">
-              <NflTeamDashboardExtras team={team} />
-              <NflCoachOfYearCase team={team} />
-
-              <section className="space-y-6">
+              <div className="space-y-4">
+                <ListCard title="Why the case can work" items={team.strengths} tone="green" />
+                <ListCard title="What can break the case" items={team.concerns} tone="red" />
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600">Team outlook</div>
-                  <h2 className="mt-1 text-2xl font-black text-slate-900">Model analysis</h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">The model overview and key questions are positioned below the schedule so the week-by-week matchup view remains the primary team-page content.</p>
-                </div>
-
-                <div className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
-                  <div className="space-y-6">
-                    <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge label={team.regressionSignal} tone={team.regressionSignal === "Bounce Back" ? "green" : team.regressionSignal === "Regression" ? "red" : "gray"} />
-                        <Badge label={`${team.recommendationLabel} lean`} tone={team.recommendationLabel === "Over" ? "green" : team.recommendationLabel === "Under" ? "red" : "gray"} />
-                        <Badge label={`${team.confidenceLabel} confidence`} tone="blue" />
-                      </div>
-                      <h3 className="mt-4 text-2xl font-black text-slate-900">Model overview</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-600">{team.editorialSummary}</p>
-                      <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Projection formula</div>
-                        <p className="mt-1 text-xs leading-5 text-slate-600">8.5 league-average wins + composite strength adjustment + schedule adjustment. Schedule rank uses #1 as hardest and #32 as easiest. The model is a baseline for comparison, not a replacement for injury, quarterback or price analysis.</p>
-                      </div>
-                    </article>
-
-                    <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Three burning questions</div>
-                      <div className="mt-4 divide-y divide-slate-100">
-                        {team.keyQuestions.map((question, index) => (
-                          <div key={question.title} className="py-5 first:pt-0 last:pb-0">
-                            <div className="flex gap-3">
-                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{index + 1}</span>
-                              <div>
-                                <h3 className="text-lg font-black text-slate-900">{question.title}</h3>
-                                <p className="mt-2 text-sm leading-7 text-slate-600">{question.answer}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </article>
+                  <h3 className="text-sm font-semibold text-slate-900">Schedule context</h3>
+                  <p className="mt-1 text-[13px] leading-6 text-slate-600">{getScheduleDescription(team.scheduleRank)}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-sky-600" style={{ width: `${team.scheduleRank == null ? 50 : (team.scheduleRank / 32) * 100}%` }} />
                   </div>
-
-                  <aside className="space-y-6">
-                    <ListCard title="Why the case can work" items={team.strengths} tone="green" />
-                    <ListCard title="What can break the case" items={team.concerns} tone="red" />
-                    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <h3 className="font-black text-slate-900">Schedule context</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{getScheduleDescription(team.scheduleRank)}</p>
-                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-blue-600" style={{ width: `${team.scheduleRank == null ? 50 : (team.scheduleRank / 32) * 100}%` }} />
-                      </div>
-                      <div className="mt-2 flex justify-between text-[10px] font-bold text-slate-400"><span>Hardest</span><span>Easiest</span></div>
-                    </article>
-                  </aside>
+                  <div className="mt-1 flex justify-between text-[10px] text-slate-500"><span>Hardest</span><span>Easiest</span></div>
                 </div>
-              </section>
-
-              <section>
-                <div className="mb-4">
-                  <h2 className="text-2xl font-black text-slate-900">{team.division} model board</h2>
-                  <p className="mt-1 text-sm text-slate-500">Compare the team directly with its three division rivals.</p>
-                </div>
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[520px] text-sm">
-                      <thead><tr className="bg-slate-900 text-[10px] font-black uppercase tracking-wider text-white"><th className="sticky left-0 z-10 bg-slate-900 px-3 py-3 text-left sm:px-4">Team</th><th className="px-2 py-3 sm:px-3">Model W</th><th className="px-2 py-3 sm:px-3">Market</th><th className="px-2 py-3 sm:px-3">Edge</th><th className="px-2 py-3 sm:px-3">Pwr</th><th className="px-2 py-3 sm:px-3">Off</th><th className="px-2 py-3 sm:px-3">Def</th><th className="px-2 py-3 sm:px-3">Sch</th></tr></thead>
-                      <tbody>{divisionTeams.map((rival) => <DivisionRow key={rival.abbr} team={rival} active={rival.abbr === team.abbr} />)}</tbody>
-                    </table>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
-                <div className="font-black">Preseason status</div>
-                <p className="mt-1">Ratings use the site's 2025 performance model and June preseason totals as the baseline. The VSiN statistics and listed futures odds are displayed as source material and do not overwrite the Joe Knows Ball model.</p>
-              </section>
+              </div>
             </div>
+          </NflSection>
 
-            <NflTeamStatsSidebar team={team} />
-          </div>
+          <NflSection
+            title={`${team.division} model board`}
+            subtitle="Compare the team directly with its three division rivals."
+            collapse="mobile"
+            bodyClassName="!px-0"
+          >
+            <NflTableScroller label={`${team.division} model comparison`}>
+              <table className="w-full min-w-[520px] text-sm">
+                <thead>
+                  <tr className={NFL_TABLE_HEAD_ROW}>
+                    <th scope="col" className="sticky left-0 z-10 bg-slate-100 px-3 py-2 text-left">Team</th>
+                    <th scope="col" className="px-2 py-2">Model W</th>
+                    <th scope="col" className="px-2 py-2">Market</th>
+                    <th scope="col" className="px-2 py-2">Edge</th>
+                    <th scope="col" className="px-2 py-2">Pwr</th>
+                    <th scope="col" className="px-2 py-2">Off</th>
+                    <th scope="col" className="px-2 py-2">Def</th>
+                    <th scope="col" className="px-2 py-2">Sch</th>
+                  </tr>
+                </thead>
+                <tbody>{divisionTeams.map((rival) => <DivisionRow key={rival.abbr} team={rival} active={rival.abbr === team.abbr} />)}</tbody>
+              </table>
+            </NflTableScroller>
+          </NflSection>
+
+          <p className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[13px] leading-6 text-slate-600">
+            <span className="font-semibold text-slate-900">Preseason status. </span>
+            Ratings use the site's 2025 performance model and June preseason totals as the baseline. The VSiN statistics and listed futures odds are displayed as source material and do not overwrite the Joe Knows Ball model.
+          </p>
         </div>
-    </main>
+
+        <NflTeamStatsSidebar team={team} />
+      </div>
+    </>
   );
 }
 
-function Metric({ label, value, emphasis = false, tone = "neutral" }: { label: string; value: string; emphasis?: boolean; tone?: "good" | "bad" | "neutral" }) {
-  const color = tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-red-600" : "text-slate-900";
-  return <div className={`rounded-xl border p-2 shadow-sm sm:rounded-2xl sm:p-4 ${emphasis ? "border-blue-200 bg-blue-50" : "border-slate-200 bg-white"}`}><div className="text-[7px] font-black uppercase leading-tight tracking-wider text-slate-400 sm:text-[9px]">{label}</div><div className={`mt-0.5 text-base font-black sm:mt-1 sm:text-2xl ${color}`}>{value}</div></div>;
-}
-
 function Badge({ label, tone }: { label: string; tone: "green" | "red" | "blue" | "gray" }) {
-  const cls = tone === "green" ? "bg-emerald-100 text-emerald-800" : tone === "red" ? "bg-red-100 text-red-700" : tone === "blue" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-600";
-  return <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${cls}`}>{label}</span>;
+  // Each badge states its own word, so colour reinforces rather than encodes.
+  const cls = tone === "green"
+    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+    : tone === "red"
+      ? "border-red-300 bg-red-50 text-red-800"
+      : tone === "blue"
+        ? "border-sky-300 bg-sky-50 text-sky-800"
+        : "border-slate-300 bg-slate-50 text-slate-600";
+  return <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>{label}</span>;
 }
 
 function ListCard({ title, items, tone }: { title: string; items: string[]; tone: "green" | "red" }) {
-  return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 className={`font-black ${tone === "green" ? "text-emerald-800" : "text-red-700"}`}>{title}</h3><div className="mt-3 space-y-3">{items.map((item) => <div key={item} className="flex gap-2 text-sm leading-6 text-slate-600"><span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${tone === "green" ? "bg-emerald-500" : "bg-red-500"}`} />{item}</div>)}</div></article>;
+  return (
+    <div>
+      <h3 className={`text-sm font-semibold ${tone === "green" ? "text-emerald-800" : "text-red-800"}`}>{title}</h3>
+      <ul className="mt-2 space-y-2">
+        {items.map((item) => (
+          <li key={item} className="flex gap-2 text-[13px] leading-6 text-slate-600">
+            <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${tone === "green" ? "bg-emerald-500" : "bg-red-500"}`} aria-hidden />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function DivisionRow({ team, active }: { team: NflGuideTeamNormalized; active: boolean }) {
-  return <tr className={`border-b border-slate-100 last:border-0 ${active ? "bg-blue-50" : "bg-white"}`}><td className={`sticky left-0 z-10 px-3 py-2 sm:px-4 sm:py-3 ${active ? "bg-blue-50" : "bg-white"}`}><Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-2 font-black text-slate-900 sm:gap-3"><img src={nflLogoUrl(team.abbr)} alt="" className="h-6 w-6 object-contain sm:h-8 sm:w-8" /><span className="text-xs sm:text-sm">{team.teamName}</span>{active && <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[9px] text-white">You</span>}</Link></td><td className="px-2 py-2 text-center font-black sm:px-3 sm:py-3">{team.projectedWins.toFixed(1)}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">{team.marketWinTotal?.toFixed(1) ?? "—"}</td><td className="px-2 py-2 text-center font-black sm:px-3 sm:py-3">{team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.powerRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.offenseRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.defenseRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.scheduleRank ?? "—"}</td></tr>;
+  const surface = active ? "bg-sky-50" : "bg-white";
+  return (
+    <tr className={`${NFL_TABLE_ROW} ${surface}`}>
+      <td className={`sticky left-0 z-10 px-3 py-2 ${surface}`}>
+        <Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-2 font-semibold text-slate-900 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500">
+          <img src={nflLogoUrl(team.abbr)} alt="" className="h-6 w-6 shrink-0 object-contain" />
+          <span className="text-xs sm:text-sm">{team.teamName}</span>
+          {active && <span className="rounded bg-sky-600 px-1 py-0.5 text-[9px] font-semibold text-white">You</span>}
+        </Link>
+      </td>
+      <td className="px-2 py-2 text-center font-semibold tabular-nums">{team.projectedWins.toFixed(1)}</td>
+      <td className="px-2 py-2 text-center tabular-nums text-slate-700">{team.marketWinTotal?.toFixed(1) ?? "—"}</td>
+      <td className="px-2 py-2 text-center font-semibold tabular-nums">{team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}</td>
+      <td className="px-2 py-2 text-center tabular-nums text-slate-700">#{team.powerRank}</td>
+      <td className="px-2 py-2 text-center tabular-nums text-slate-700">#{team.offenseRank}</td>
+      <td className="px-2 py-2 text-center tabular-nums text-slate-700">#{team.defenseRank}</td>
+      <td className="px-2 py-2 text-center tabular-nums text-slate-700">#{team.scheduleRank ?? "—"}</td>
+    </tr>
+  );
 }

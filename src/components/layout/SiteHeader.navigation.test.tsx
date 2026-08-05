@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import SiteHeader from "./SiteHeader";
 
-const EXPECTED_ITEMS = ["Home", "MLB", "NCAA Football", "NFL", "NBA", "PGA", "Support the Site"];
+const EXPECTED_ITEMS = ["Home", "MLB", "NCAA Football", "NFL", "Fantasy", "NBA", "PGA", "Support the Site"];
 
 function renderHeader(path = "/pga") {
   return render(
