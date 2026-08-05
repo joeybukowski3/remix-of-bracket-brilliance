@@ -71,6 +71,8 @@ export type NflPublicPowerBoard = {
   selectedState: NflPublicRatingState;
   windowType: NflPublicWindowType;
   modelVersion: string;
+  source: string;
+  validationStatus: string;
   generatedAt: string;
   formula: string;
   completedTeamGames: number;
@@ -252,7 +254,8 @@ function projectFullSeasonTeam(
 
 function attachSelectionMeta(
   selection: PublicRatingSelection,
-  teams: NflPublicPowerTeam[]
+  teams: NflPublicPowerTeam[],
+  artifactMeta: Pick<NflV03PreseasonArtifact["_meta"], "source" | "validationStatus">
 ): NflPublicPowerBoard {
   if (!selection.modelVersion || !selection.generatedAt) {
     throw new Error("Selected rating state is missing model metadata");
@@ -263,6 +266,8 @@ function attachSelectionMeta(
     selectedState: selection.selectedState,
     windowType: selection.windowType,
     modelVersion: selection.modelVersion,
+    source: artifactMeta.source,
+    validationStatus: artifactMeta.validationStatus,
     generatedAt: selection.generatedAt,
     formula: NFL_V03_PUBLIC_FORMULA,
     completedTeamGames: selection.completedTeamGames,
@@ -333,7 +338,8 @@ export function buildPublicPowerBoard(input: {
       generatedAt: preseason._meta.generatedAt,
       ratedTeamCount: teams.length,
     },
-    teams
+    teams,
+    preseason._meta
   );
 }
 
@@ -391,7 +397,8 @@ export function buildFullSeasonPublicPowerBoard(input: {
       fallbackUsed: false,
       fallbackExplanation: null,
     },
-    teams
+    teams,
+    fullSeason._meta
   );
 }
 

@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import NflTeamDashboardExtras from "@/components/nfl/NflTeamDashboardExtras";
 import NflCoachOfYearCase from "@/components/nfl/NflCoachOfYearCase";
+import NflTeamModelTrendPanel from "@/components/nfl/team-dashboard/NflTeamModelTrendPanel";
 import {
   NflTeamHeaderOdds,
   NflTeamStatsSidebar,
@@ -54,16 +55,18 @@ export default function NFLTeamGuide2026() {
         </section>
 
         <div className="mx-auto max-w-[1400px] space-y-5 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8 lg:px-8">
-          <section className="grid grid-cols-4 gap-2 sm:gap-4 lg:grid-cols-8">
+          <section aria-label="Guide outlook metrics" className="grid grid-cols-4 gap-2 sm:gap-4 lg:grid-cols-8">
             <Metric label="2025 record" value={team.record2025} />
-            <Metric label="Model wins" value={team.projectedWins.toFixed(1)} emphasis />
+            <Metric label="Guide wins" value={team.projectedWins.toFixed(1)} emphasis />
             <Metric label="Win total" value={team.marketWinTotal?.toFixed(1) ?? "—"} />
-            <Metric label="Model edge" value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)} tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"} />
-            <Metric label="Power rank" value={`#${team.powerRank}`} />
+            <Metric label="Guide edge" value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)} tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"} />
+            <Metric label="Guide rank" value={`#${team.powerRank}`} />
             <Metric label="Offense" value={`#${team.offenseRank}`} tone={team.offenseRank <= 10 ? "good" : team.offenseRank >= 24 ? "bad" : "neutral"} />
             <Metric label="Defense" value={`#${team.defenseRank}`} tone={team.defenseRank <= 10 ? "good" : team.defenseRank >= 24 ? "bad" : "neutral"} />
             <Metric label="Schedule" value={team.scheduleRank == null ? "—" : `#${team.scheduleRank}`} />
           </section>
+
+          <NflTeamModelTrendPanel teamSlug={team.slug} />
 
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <div className="min-w-0 space-y-8">

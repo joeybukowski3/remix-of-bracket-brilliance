@@ -28,6 +28,9 @@ vi.mock("@/components/nfl/NflTeamDashboardExtras", () => ({
 vi.mock("@/components/nfl/NflCoachOfYearCase", () => ({
   default: ({ team }: { team: { abbr: string } }) => <div data-testid="coy" data-abbr={team.abbr} />,
 }));
+vi.mock("@/components/nfl/team-dashboard/NflTeamModelTrendPanel", () => ({
+  default: ({ teamSlug }: { teamSlug: string }) => <div data-testid="current-model-trend" data-slug={teamSlug} />,
+}));
 vi.mock("@/components/nfl/NflTeamVsinPanels", () => ({
   NflTeamHeaderOdds: ({ team }: { team: { abbr: string } }) => <div data-testid="header-odds" data-abbr={team.abbr} />,
   NflTeamStatsSidebar: ({ team }: { team: { abbr: string } }) => <div data-testid="sidebar" data-abbr={team.abbr} />,
@@ -71,6 +74,9 @@ describe("/nfl/guide/team/:teamSlug renders from normalized data", () => {
       expect(screen.getAllByText(legacy.headline).length).toBeGreaterThan(0);
       expect(screen.getByText(legacy.record2025)).toBeTruthy();
       expect(screen.getAllByText(legacy.projectedWins.toFixed(1)).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(legacy.winTotal?.toFixed(1) ?? "—").length).toBeGreaterThan(0);
+      expect(screen.getByLabelText("Guide outlook metrics")).toBeTruthy();
+      expect(screen.getByTestId("current-model-trend").getAttribute("data-slug")).toBe(slug);
       // Deep dashboard children still receive the legacy team object.
       expect(screen.getByTestId("extras").getAttribute("data-abbr")).toBe(legacy.abbr);
       expect(screen.getByTestId("sidebar").getAttribute("data-abbr")).toBe(legacy.abbr);
