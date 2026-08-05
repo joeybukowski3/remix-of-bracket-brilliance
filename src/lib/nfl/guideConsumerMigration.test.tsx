@@ -21,7 +21,6 @@ vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
-vi.mock("@/components/nfl/NflGuideNav", () => ({ default: () => <nav /> }));
 vi.mock("@/components/nfl/NflTeamDashboardExtras", () => ({
   default: ({ team }: { team: { abbr: string } }) => <div data-testid="extras" data-abbr={team.abbr} />,
 }));

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import NflSection from "@/components/nfl/ui/NflSection";
 import {
   getWsOffensiveEfficiency,
   getWsRushingEfficiency,
@@ -227,8 +226,6 @@ function HealthPanel({ data }: { data: WsHealthByUnit }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function NflWarrenSharpAdvancedMetrics({ team }: { team: NflGuideTeamNormalized }) {
-  const [open, setOpen] = useState(false);
-
   const offEff = getWsOffensiveEfficiency(team.abbr);
   const rushEff = getWsRushingEfficiency(team.abbr);
   const health = getWsHealthByUnit(team.abbr);
@@ -238,73 +235,42 @@ export default function NflWarrenSharpAdvancedMetrics({ team }: { team: NflGuide
   if (!offEff && !rushEff && !health) return null;
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-white shadow-sm overflow-hidden">
-      {/* Accordion header */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-4 border-b border-amber-200 bg-gradient-to-r from-amber-50 to-white px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-        aria-expanded={open}
-      >
+    // Uses the shared collapsible instead of its own chevron accordion, so the
+    // team page has one expand/collapse behaviour rather than two.
+    <NflSection
+      eyebrow="Warren Sharp 2026 Football Preview"
+      title="2025 Advanced Efficiency & Health Metrics"
+      subtitle="pp.42–46 + chapter p.3"
+      collapse="always"
+      defaultOpen={false}
+      bodyClassName="divide-y divide-slate-100 space-y-6"
+    >
+      {offEff && <OffensiveEfficiencyPanel data={offEff} />}
+      {rushEff && <RushingEfficiencyPanel data={rushEff} />}
+
+      {qbMetrics && qbName && (
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
-            Warren Sharp 2026 Football Preview
-          </div>
-          <div className="mt-0.5 text-base font-black text-slate-900">
-            2025 Advanced Efficiency &amp; Health Metrics
-          </div>
+          <QbMetricsPanel qbData={qbMetrics} qbName={qbName} />
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="hidden text-[10px] font-bold text-slate-400 sm:block">
-            pp.42–46 + chapter p.3
-          </span>
-          {open
-            ? <ChevronUp className="h-4 w-4 text-amber-600" />
-            : <ChevronDown className="h-4 w-4 text-amber-600" />
-          }
-        </div>
-      </button>
-
-      {open && (
-        <div className="divide-y divide-slate-100 p-5 space-y-6">
-          {/* Offensive efficiency */}
-          {offEff && <OffensiveEfficiencyPanel data={offEff} />}
-
-          {/* Rushing efficiency */}
-          {rushEff && <RushingEfficiencyPanel data={rushEff} />}
-
-          {/* QB metrics */}
-          {qbMetrics && qbName && (
-            <div>
-              {qbName && WS_PROJECTED_QB_2026[team.abbr] && !qbMetrics && (
-                <p className="text-xs text-slate-400 italic">
-                  {qbName} did not have qualifying 2025 data in Sharp's QB metrics table.
-                </p>
-              )}
-              <QbMetricsPanel qbData={qbMetrics} qbName={qbName} />
-            </div>
-          )}
-          {!qbMetrics && qbName && (
-            <div>
-              <div className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-slate-400">
-                QB Metrics (pp.42–43)
-              </div>
-              <p className="text-xs text-slate-400 italic">
-                {qbName} did not have qualifying 2025 data in Sharp's QB metrics table (new starter or limited sample).
-              </p>
-            </div>
-          )}
-
-          {/* Health */}
-          {health && <HealthPanel data={health} />}
-
-          <p className="text-[10px] leading-4 text-slate-400">
-            All metrics reflect 2025 season performance. Presented as context for 2026 projections.
-            Health data based on FTN Adjusted Games Lost, as presented in the Warren Sharp 2026 Football Preview.
-            Separate from Joe Knows Ball model, VSiN data, and Vegas markets.
+      )}
+      {!qbMetrics && qbName && (
+        <div>
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            QB Metrics (pp.42–43)
+          </div>
+          <p className="text-xs italic text-slate-500">
+            {qbName} did not have qualifying 2025 data in Sharp's QB metrics table (new starter or limited sample).
           </p>
         </div>
       )}
-    </div>
+
+      {health && <HealthPanel data={health} />}
+
+      <p className="text-[10px] leading-4 text-slate-500">
+        All metrics reflect 2025 season performance. Presented as context for 2026 projections.
+        Health data based on FTN Adjusted Games Lost, as presented in the Warren Sharp 2026 Football Preview.
+        Separate from Joe Knows Ball model, VSiN data, and Vegas markets.
+      </p>
+    </NflSection>
   );
 }

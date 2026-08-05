@@ -11,6 +11,7 @@ export type SeoPage =
   | "pga-best-bets"
   | "pga-model"
   | "nfl"
+  | "fantasy-football"
   | "nba"
   | "ncaa"
   | "world-cup";
@@ -94,6 +95,15 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "NFL matchup analytics, efficiency metrics, and betting context. Advanced football models coming soon.",
     path: "/nfl",
+    noindex: true,
+  },
+  "fantasy-football": {
+    title: "Fantasy Football Rankings & Draft Research | Joe Knows Ball",
+    description:
+      "Customized Joe Knows Ball fantasy football rankings, position filters and draft research, built on the same NFL model that powers our power ratings and team guide.",
+    path: "/fantasy-football",
+    // Indexed only once the customized ranking list is published; an empty
+    // rankings table is not a page worth ranking for fantasy queries.
     noindex: true,
   },
   nba: {

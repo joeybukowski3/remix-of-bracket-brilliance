@@ -8,6 +8,7 @@ import {
 } from "@/data/nflWarrenSharpTeams2026";
 import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import { POSITIONAL_ORDER } from "@/lib/nfl/warrenSharpTeams2026";
+import NflSection from "@/components/nfl/ui/NflSection";
 
 // ── Positional rank card ──────────────────────────────────────────────────────
 
@@ -98,26 +99,14 @@ export default function NflWarrenSharpTeamProfile({
     .slice(0, 3);
 
   return (
-    <section className="rounded-2xl border border-amber-200 bg-white shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-amber-200 bg-gradient-to-r from-amber-50 to-white p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
-              Warren Sharp 2026 Football Preview
-            </div>
-            <h2 className="mt-0.5 text-xl font-black text-slate-900">
-              2026 Personnel &amp; Positional Outlook
-            </h2>
-          </div>
-          <div className="text-right text-[10px] font-semibold text-slate-400">
-            <div>Chapter p.{profile.chapterStartPage}</div>
-            <div>Rankings p.{positionalRatings.sourcePage}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-5 space-y-6">
+    <NflSection
+      eyebrow="Warren Sharp 2026 Football Preview"
+      title="2026 Personnel & Positional Outlook"
+      subtitle={`Chapter p.${profile.chapterStartPage} · Rankings p.${positionalRatings.sourcePage}`}
+      collapse="mobile"
+      bodyClassName="space-y-6"
+    >
+      <>
 
         {/* Coaching */}
         <div className="grid gap-4 sm:grid-cols-3">
@@ -313,7 +302,7 @@ export default function NflWarrenSharpTeamProfile({
           Do not confuse with schedule strength (where #1 = hardest).
           Sharp data is kept separate from Joe Knows Ball model, VSiN, and Vegas market data.
         </p>
-      </div>
-    </section>
+      </>
+    </NflSection>
   );
 }

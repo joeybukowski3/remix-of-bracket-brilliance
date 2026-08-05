@@ -282,7 +282,7 @@ export default function NFLMatchupDetail() {
             groups. Pairing later (at `xl`) left 1024-1279px showing every group
             expanded in a single column, which made that range the tallest
             rendering of the page — taller even than 768px. */}
-        <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
           <MatchupSection id="advantages">
             <MatchupAdvantages notes={advantages} />
           </MatchupSection>
@@ -292,7 +292,7 @@ export default function NFLMatchupDetail() {
           </MatchupSection>
         </div>
 
-        <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
           <MatchupUnitComparison
             id="offense"
             matchup={matchup}
@@ -320,7 +320,7 @@ export default function NFLMatchupDetail() {
 
         <MatchupUnitBattles matchup={matchup} resolver={metricResolver} successRate={successRate} trench={trench} />
 
-        <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
           <MatchupTrenches
             matchup={matchup}
             trench={trench}
@@ -335,7 +335,7 @@ export default function NFLMatchupDetail() {
           unavailableMessage={describeUnavailable(injuryArtifact)}
         />
 
-        <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
           <MatchupFutureSection
             id="game-trends"
             message="Additional matchup trends will be added here."

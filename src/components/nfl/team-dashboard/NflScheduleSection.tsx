@@ -6,7 +6,7 @@ import {
   getWarrenSharpRestEdgeForGame,
   getWarrenSharpScheduleProfile,
 } from "@/lib/nfl/warrenSharpSchedule2026";
-import { SectionHeading } from "./NflDashboardUi";
+import NflSection from "@/components/nfl/ui/NflSection";
 import NflScheduleGameCard from "./NflScheduleGameCard";
 import NflWarrenSharpScheduleSummary from "./NflWarrenSharpScheduleSummary";
 
@@ -48,54 +48,57 @@ export default function NflScheduleSection({ team }: { team: NflGuideTeamNormali
   }, [team.abbr]);
 
   return (
-    <section>
-      <SectionHeading
-        eyebrow="Week by week"
-        title="2026 regular-season schedule"
-        description="Each matchup includes the opponent's current power rating, model matchup edges and Warren Sharp's relative-rest edge. Away games use a blue background."
-      />
+    // The schedule is the main reason a visitor opens a team page, so it stays
+    // expanded on mobile rather than collapsing with the deeper sections.
+    <NflSection
+      eyebrow="Week by week"
+      title="2026 regular-season schedule"
+      subtitle="Each matchup includes the opponent's current power rating, model matchup edges and Warren Sharp's relative-rest edge. Away games use a tinted background."
+      bodyClassName="!px-0 !py-0"
+    >
+      {sharpSchedule && (
+        <div className="border-b border-slate-100 px-3 py-3 sm:px-4">
+          <NflWarrenSharpScheduleSummary profile={sharpSchedule} />
+        </div>
+      )}
 
-      {sharpSchedule && <NflWarrenSharpScheduleSummary profile={sharpSchedule} />}
-
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {status === "loading" && <ScheduleLoading />}
-        {status === "error" && (
-          <div className="p-6 text-sm leading-6 text-red-700">
-            The schedule feed is unavailable right now. {error}
-          </div>
-        )}
-        {status === "success" && data && (
-          <>
-            {data.stale && (
-              <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-xs font-bold text-amber-800">
-                Showing the most recent cached schedule.
-              </div>
-            )}
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3">
-              {data.games.map((game, index) => (
-                <NflScheduleGameCard
-                  key={game.id}
-                  team={team}
-                  game={game}
-                  fallbackWeek={index + 1}
-                  restEdge={getWarrenSharpRestEdgeForGame(
-                    sharpSchedule,
-                    game.week,
-                    game.opponentAbbr,
-                  )}
-                />
-              ))}
+      {status === "loading" && <ScheduleLoading />}
+      {status === "error" && (
+        <div className="p-4 text-sm leading-6 text-red-700">
+          The schedule feed is unavailable right now. {error}
+        </div>
+      )}
+      {status === "success" && data && (
+        <>
+          {data.stale && (
+            <div className="border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              Showing the most recent cached schedule.
             </div>
-          </>
-        )}
-      </div>
+          )}
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3">
+            {data.games.map((game, index) => (
+              <NflScheduleGameCard
+                key={game.id}
+                team={team}
+                game={game}
+                fallbackWeek={index + 1}
+                restEdge={getWarrenSharpRestEdgeForGame(
+                  sharpSchedule,
+                  game.week,
+                  game.opponentAbbr,
+                )}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {sharpSchedule && (
-        <p className="mt-3 text-[11px] leading-5 text-slate-400">
+        <p className="border-t border-slate-100 px-3 py-3 text-[11px] leading-5 text-slate-500 sm:px-4">
           Schedule-strength and rest data are derived from {WARREN_SHARP_SCHEDULE_SOURCE.title}, pages {sharpSchedule.sourcePages.strengthOfSchedule}, {sharpSchedule.sourcePages.weeklySchedule} and {sharpSchedule.sourcePages.timingSummary}. Sharp SOS is displayed with #1 as hardest for consistency with this site.
         </p>
       )}
-    </section>
+    </NflSection>
   );
 }
 

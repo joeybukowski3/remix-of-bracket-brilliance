@@ -1,5 +1,5 @@
-import { useId, useState, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { type ReactNode } from "react";
+import NflSection from "@/components/nfl/ui/NflSection";
 import {
   MATCHUP_SECTION_SCROLL_MT,
   getMatchupSection,
@@ -9,14 +9,19 @@ import {
 /**
  * Standard shell for every analyzer section.
  *
- * Carries the stable anchor id used by the Jump To control, a consistent
- * header, and a mobile-only collapse affordance. Above `lg` the body is always
- * rendered and the toggle is hidden — desktop has the width to show everything,
- * and a collapsed desktop grid cell would leave awkward holes in the layout.
+ * The analyzer's own concerns live here — the stable anchor id used by the Jump
+ * To control, the registry label lookup, and the scroll offset that keeps an
+ * anchored heading clear of whichever bars are sticky at the current breakpoint
+ * (the site header plus the Jump To bar on mobile, the site header alone on
+ * desktop).
  *
- * `MATCHUP_SECTION_SCROLL_MT` offsets whichever bars are sticky at the current
- * breakpoint so an anchored heading is never parked underneath them — the site
- * header plus the Jump To bar on mobile, the site header alone on desktop.
+ * Everything else — the header layout, the mobile-only collapse affordance and
+ * its accessible wiring — is delegated to the shared `NflSection`, so the
+ * analyzer and the rest of the NFL platform expand and collapse identically
+ * instead of maintaining two accordion implementations.
+ *
+ * Every analyzer section is `focusable`, because every one of them is a Jump To
+ * destination.
  */
 export default function MatchupSection({
   id,
@@ -42,64 +47,22 @@ export default function MatchupSection({
   children: ReactNode;
 }) {
   const section = getMatchupSection(id);
-  const heading = title ?? section.label;
-  const [open, setOpen] = useState(defaultOpen);
-  const bodyId = `${useId()}-${id}-body`;
-  const headingId = `${id}-heading`;
-
-  // Collapsed state only applies below `lg`; the desktop grid always shows the
-  // body so side-by-side sections keep equal visual weight.
-  const bodyVisibility = !collapsible || open ? "block" : "hidden lg:block";
 
   return (
-    <section
+    <NflSection
       id={id}
-      // Focusable so a Jump To anchor moves screen-reader focus onto the
-      // section rather than leaving it stranded at the top of the document.
-      tabIndex={-1}
-      aria-labelledby={headingId}
-      className={`${MATCHUP_SECTION_SCROLL_MT} rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${className}`}
+      title={title ?? section.label}
+      subtitle={subtitle}
+      // Sub-group controls get their own full-width row: at 375px they do not
+      // fit beside the heading without squeezing it to two or three lines.
+      headerExtra={headerAside}
+      collapse={collapsible ? "mobile" : "never"}
+      defaultOpen={defaultOpen}
+      focusable
+      className={`${MATCHUP_SECTION_SCROLL_MT} ${className}`}
+      bodyClassName={bodyClassName}
     >
-      <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2
-              id={headingId}
-              className="text-[13px] font-bold uppercase tracking-wider text-slate-800 sm:text-sm"
-            >
-              {heading}
-            </h2>
-            {subtitle && <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{subtitle}</p>}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {collapsible && (
-              <button
-                type="button"
-                onClick={() => setOpen((prev) => !prev)}
-                aria-expanded={open}
-                aria-controls={bodyId}
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 lg:hidden"
-              >
-                {open ? "Hide" : "Show"}
-                <ChevronDown
-                  aria-hidden
-                  className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
-                />
-                <span className="sr-only"> {heading}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Subgroup controls get their own full-width row: at 375px they do not
-            fit beside the heading without squeezing it to two or three lines. */}
-        {headerAside && <div className="mt-2">{headerAside}</div>}
-      </div>
-
-      <div id={bodyId} className={`${bodyVisibility} px-3 py-3 sm:px-4 ${bodyClassName}`}>
-        {children}
-      </div>
-    </section>
+      {children}
+    </NflSection>
   );
 }

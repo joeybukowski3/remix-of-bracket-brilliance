@@ -4,6 +4,8 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { NFL_POWER_RATINGS, nflLogoUrl, type NflPowerTeam } from "@/data/nflPreseason2026";
 import { slugifyNflTeam } from "@/lib/nfl/guide2026";
 import { calculateRankGap, getRankGapSignal, type SuperBowlMarketTeam } from "@/lib/nfl/superBowlMarkets";
+import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
+import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
 
 type SuperBowlOddsResponse = {
   source: "polymarket";
@@ -35,7 +37,7 @@ function gapTone(gap: number | null) {
 
 function SummaryCard({ label, primary, secondary, tone = "neutral" }: { label: string; primary: string; secondary: string; tone?: "positive" | "negative" | "neutral" }) {
   const color = tone === "positive" ? "text-emerald-700" : tone === "negative" ? "text-red-700" : "text-slate-600";
-  return <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 truncate text-lg font-black text-slate-950">{primary}</div><div className={`mt-1 text-xs font-bold ${color}`}>{secondary}</div></div>;
+  return <div className="bg-white px-3 py-2.5"><div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div><div className="mt-0.5 truncate text-base font-bold text-slate-900">{primary}</div><div className={`mt-0.5 truncate text-xs ${color}`}>{secondary}</div></div>;
 }
 
 export default function NFLSuperBowlOdds() {
@@ -88,53 +90,51 @@ export default function NFLSuperBowlOdds() {
   const updatedAt = data?.updatedAt ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.updatedAt)) : "—";
 
   return (
-    <main className="site-page pb-16 pt-8">
-      <div className="site-container site-stack">
-          <section>
-            <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Prediction Markets</div>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">Super Bowl Odds Tracker</h1>
-            <p className="mt-2 text-sm text-slate-500">Live Super Bowl market prices compared with the Joe Knows Ball power rankings · Select a team for its complete dashboard</p>
-          </section>
+    <>
+      <NflPageHeader
+        eyebrow="NFL · Prediction Markets"
+        title="Super Bowl Odds Tracker"
+        description="Live Super Bowl market prices compared with the Joe Knows Ball power rankings. Select a team for its complete dashboard."
+      />
 
-          <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Super Bowl market summary">
-            <SummaryCard label="Market favorite" primary={favorite?.team ?? "—"} secondary={favorite?.probability == null ? "No market price" : `${favorite.probability.toFixed(1)}%`} />
-            <SummaryCard label="Best rank value" primary={bestValue?.team ?? "—"} secondary={bestValue ? `${formatGap(bestValue.gap)} spots` : "No positive gap"} tone="positive" />
-            <SummaryCard label="Largest market premium" primary={premium?.team ?? "—"} secondary={premium ? `${formatGap(premium.gap)} spots` : "No negative gap"} tone="negative" />
-            <SummaryCard label="Last updated" primary={updatedAt} secondary={data?.stale ? "Polymarket · cached response" : "Polymarket"} />
-          </section>
-
-          {status === "error" ? (
-            <section className="mt-5 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">Live Super Bowl market prices are unavailable right now. {error}</section>
-          ) : (
-            <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              {data?.stale && <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-xs font-bold text-amber-800">Showing the most recent cached market response.</div>}
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
-                  <thead><tr className="bg-slate-950 text-[10px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3">Odds rank</th><th className="px-3 py-3 text-left">Team</th><th>Market probability</th><th>Power rank</th><th>Rank gap</th><th>Signal</th></tr></thead>
-                  <tbody>
-                    {status === "loading" ? Array.from({ length: 10 }, (_, index) => <tr key={index} className="animate-pulse border-t border-slate-100"><td className="p-4" colSpan={6}><div className="h-5 rounded bg-slate-100" /></td></tr>) : rows.map((row) => (
-                      <tr key={row.abbr} className="border-t border-slate-100 hover:bg-blue-50/40">
-                        <td className="text-center font-black text-slate-900">{row.marketRank ?? "—"}</td>
-                        <td className="p-0">
-                          <Link to={`/nfl/guide/team/${slugifyNflTeam(row.team)}`} className="flex items-center gap-3 px-3 py-3 font-black text-slate-900 hover:text-blue-700 hover:underline" aria-label={`Open ${row.team} team dashboard`}>
-                            <span className="h-7 w-1 rounded-full" style={{ background: row.color }} aria-hidden />
-                            <TeamLogo team={row} />
-                            <span>{row.team}</span>
-                          </Link>
-                        </td>
-                        <td className="text-center"><span className="font-black text-slate-900">{row.probability == null ? "—" : `${row.probability.toFixed(1)}%`}</span></td>
-                        <td className="text-center font-black text-slate-900">{row.rank}</td>
-                        <td className={`text-center font-black ${gapTone(row.gap)}`}>{formatGap(row.gap)}</td>
-                        <td className={`text-center text-xs font-black ${gapTone(row.gap)}`}>{getRankGapSignal(row.gap)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="border-t border-slate-100 px-5 py-4 text-[11px] leading-5 text-slate-400">Rank Gap compares prediction-market rank with Joe Knows Ball power rank. A positive number means the model rates the team higher than the market does; it is a rank comparison, not a guaranteed betting edge.</p>
-            </section>
-          )}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200 xl:grid-cols-4" aria-label="Super Bowl market summary" role="group">
+        <SummaryCard label="Market favorite" primary={favorite?.team ?? "—"} secondary={favorite?.probability == null ? "No market price" : `${favorite.probability.toFixed(1)}%`} />
+        <SummaryCard label="Best rank value" primary={bestValue?.team ?? "—"} secondary={bestValue ? `${formatGap(bestValue.gap)} spots` : "No positive gap"} tone="positive" />
+        <SummaryCard label="Largest market premium" primary={premium?.team ?? "—"} secondary={premium ? `${formatGap(premium.gap)} spots` : "No negative gap"} tone="negative" />
+        <SummaryCard label="Last updated" primary={updatedAt} secondary={data?.stale ? "Polymarket · cached response" : "Polymarket"} />
       </div>
-    </main>
+
+      {status === "error" ? (
+        <section className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">Live Super Bowl market prices are unavailable right now. {error}</section>
+      ) : (
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          {data?.stale && <div className="border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Showing the most recent cached market response.</div>}
+          <NflTableScroller label="Super Bowl odds versus power rank">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead><tr className={NFL_TABLE_HEAD_ROW}><th scope="col" className="px-3 py-2">Odds rank</th><th scope="col" className="px-3 py-2 text-left">Team</th><th scope="col" className="px-3 py-2">Market probability</th><th scope="col" className="px-3 py-2">Power rank</th><th scope="col" className="px-3 py-2">Rank gap</th><th scope="col" className="px-3 py-2">Signal</th></tr></thead>
+              <tbody>
+                {status === "loading" ? Array.from({ length: 10 }, (_, index) => <tr key={index} className="animate-pulse border-t border-slate-100"><td className="p-3" colSpan={6}><div className="h-5 rounded bg-slate-100" /></td></tr>) : rows.map((row) => (
+                  <tr key={row.abbr} className={NFL_TABLE_ROW}>
+                    <td className="text-center font-semibold tabular-nums text-slate-900">{row.marketRank ?? "—"}</td>
+                    <td className="p-0">
+                      <Link to={`/nfl/guide/team/${slugifyNflTeam(row.team)}`} className="flex items-center gap-2.5 px-3 py-2 font-semibold text-slate-900 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" aria-label={`Open ${row.team} team dashboard`}>
+                        <span className="h-6 w-[3px] rounded-full" style={{ background: row.color }} aria-hidden />
+                        <TeamLogo team={row} />
+                        <span>{row.team}</span>
+                      </Link>
+                    </td>
+                    <td className="text-center"><span className="font-semibold tabular-nums text-slate-900">{row.probability == null ? "—" : `${row.probability.toFixed(1)}%`}</span></td>
+                    <td className="text-center tabular-nums text-slate-700">{row.rank}</td>
+                    <td className={`text-center font-semibold tabular-nums ${gapTone(row.gap)}`}>{formatGap(row.gap)}</td>
+                    <td className={`text-center text-xs font-semibold ${gapTone(row.gap)}`}>{getRankGapSignal(row.gap)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </NflTableScroller>
+          <p className="border-t border-slate-100 px-3 py-3 text-[11px] leading-5 text-slate-500">Rank Gap compares prediction-market rank with Joe Knows Ball power rank. A positive number means the model rates the team higher than the market does; it is a rank comparison, not a guaranteed betting edge.</p>
+        </section>
+      )}
+    </>
   );
 }

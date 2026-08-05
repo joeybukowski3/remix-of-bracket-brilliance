@@ -7,6 +7,8 @@ import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildWeekMatchups, getAvailableWeeks, type NflMatchup } from "@/lib/nfl/matchups";
 import MatchupCard from "@/components/nfl/matchups/MatchupCard";
+import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
+import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { currentMarketFor } from "@/lib/nfl/marketData";
 
@@ -73,65 +75,52 @@ export default function NFLMatchups() {
   const hasResults = (data?.results.length ?? 0) > 0;
 
   return (
-    <main className="site-page pb-16 pt-8">
-      <div className="site-container site-stack">
-        <section>
-          <div className="text-[11px] font-bold uppercase tracking-[.16em] text-emerald-600">NFL · Weekly Matchups</div>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">{CURRENT_SEASON} NFL Weekly Matchups</h1>
-          <p className="mt-2 text-sm text-slate-500">Week 1 schedule, team power ratings and matchup previews. Kickoff times in Eastern Time.</p>
+    <>
+      <NflPageHeader
+        eyebrow="NFL · Weekly Matchups"
+        title={`${CURRENT_SEASON} NFL Weekly Matchups`}
+        description="Week-by-week schedule, team power ratings and matchup previews. Kickoff times in Eastern Time."
+      >
+        {weeks.length > 0 && (
+          <NflFilterChips
+            label="Select week"
+            size="sm"
+            options={weeks}
+            value={activeWeek}
+            onChange={setSelectedWeek}
+            formatOption={(week) => `W${week}`}
+          />
+        )}
+      </NflPageHeader>
 
-          {weeks.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-1.5" role="group" aria-label="Select week">
-              {weeks.map((week) => (
-                <button
-                  key={week}
-                  type="button"
-                  onClick={() => setSelectedWeek(week)}
-                  aria-pressed={week === activeWeek}
-                  className={`rounded border px-2.5 py-1 text-[11px] font-black uppercase tracking-wide transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-                    week === activeWeek
-                      ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-slate-200 bg-white text-slate-500 hover:border-emerald-400"
-                  }`}
-                >
-                  W{week}
-                </button>
-              ))}
-            </div>
-          )}
+      <StaleWarning meta={data?.gamesMeta} maxAgeHours={72} enabled={hasResults} />
+
+      {loading && <p className="text-sm text-slate-500">Loading matchups…</p>}
+      {error && (
+        <p className="text-sm font-semibold text-red-700">
+          Could not load the {CURRENT_SEASON} schedule. Please try again later.
+        </p>
+      )}
+      {!loading && !error && matchups.length === 0 && (
+        <p className="text-sm text-slate-500">No games are scheduled for this week yet.</p>
+      )}
+
+      {!loading && !error && dayGroups.map((group) => (
+        <section key={group.key} aria-label={group.label}>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{group.label}</h2>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {group.matchups.map((matchup) => (
+              <MatchupCard
+                key={matchup.gameId}
+                matchup={matchup}
+                market={currentMarketFor(marketArtifact, matchup.gameId)}
+              />
+            ))}
+          </div>
         </section>
+      ))}
 
-        <div className="mt-2">
-          <StaleWarning meta={data?.gamesMeta} maxAgeHours={72} enabled={hasResults} />
-        </div>
-
-        {loading && <p className="mt-6 text-sm text-slate-500">Loading matchups…</p>}
-        {error && (
-          <p className="mt-6 text-sm font-semibold text-red-700">
-            Could not load the {CURRENT_SEASON} schedule. Please try again later.
-          </p>
-        )}
-        {!loading && !error && matchups.length === 0 && (
-          <p className="mt-6 text-sm text-slate-500">No games are scheduled for this week yet.</p>
-        )}
-
-        {!loading && !error && dayGroups.map((group) => (
-          <section key={group.key} aria-label={group.label}>
-            <h2 className="mb-3 text-xs font-black uppercase tracking-wider text-slate-500">{group.label}</h2>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {group.matchups.map((matchup) => (
-                <MatchupCard
-                  key={matchup.gameId}
-                  matchup={matchup}
-                  market={currentMarketFor(marketArtifact, matchup.gameId)}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-
-        <LastUpdated meta={data?.gamesMeta} className="mt-4" />
-      </div>
-    </main>
+      <LastUpdated meta={data?.gamesMeta} />
+    </>
   );
 }

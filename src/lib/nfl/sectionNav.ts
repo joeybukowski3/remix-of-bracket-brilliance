@@ -1,64 +1,3 @@
-export type NflSectionThemeId = "blue" | "emerald" | "violet" | "amber";
-
-export type NflSectionTheme = {
-  border: string;
-  background: string;
-  heading: string;
-  activeBorder: string;
-  activeBackground: string;
-  iconBackground: string;
-  linkActiveBorder: string;
-  linkActiveBackground: string;
-  linkActiveText: string;
-};
-
-export const NFL_SECTION_THEMES: Record<NflSectionThemeId, NflSectionTheme> = {
-  blue: {
-    border: "border-blue-300",
-    background: "bg-blue-50/50",
-    heading: "text-blue-800",
-    activeBorder: "border-blue-400",
-    activeBackground: "bg-blue-50",
-    iconBackground: "bg-blue-100",
-    linkActiveBorder: "border-blue-300",
-    linkActiveBackground: "bg-white",
-    linkActiveText: "text-blue-950",
-  },
-  emerald: {
-    border: "border-emerald-300",
-    background: "bg-emerald-50/40",
-    heading: "text-emerald-800",
-    activeBorder: "border-emerald-400",
-    activeBackground: "bg-emerald-50",
-    iconBackground: "bg-emerald-100",
-    linkActiveBorder: "border-emerald-300",
-    linkActiveBackground: "bg-white",
-    linkActiveText: "text-emerald-950",
-  },
-  violet: {
-    border: "border-violet-300",
-    background: "bg-violet-50/40",
-    heading: "text-violet-800",
-    activeBorder: "border-violet-400",
-    activeBackground: "bg-violet-50",
-    iconBackground: "bg-violet-100",
-    linkActiveBorder: "border-violet-300",
-    linkActiveBackground: "bg-white",
-    linkActiveText: "text-violet-950",
-  },
-  amber: {
-    border: "border-amber-300",
-    background: "bg-amber-50/40",
-    heading: "text-amber-800",
-    activeBorder: "border-amber-400",
-    activeBackground: "bg-amber-50",
-    iconBackground: "bg-amber-100",
-    linkActiveBorder: "border-amber-300",
-    linkActiveBackground: "bg-white",
-    linkActiveText: "text-amber-950",
-  },
-};
-
 export type NflSectionNavItem = {
   to: string;
   label: string;
@@ -74,16 +13,24 @@ export type NflSectionNavCategory = {
   id: string;
   label: string;
   description: string;
-  themeId: NflSectionThemeId;
   items: NflSectionNavItem[];
 };
 
+/**
+ * The NFL platform sitemap.
+ *
+ * Categories used to each carry their own colour theme (blue / emerald /
+ * violet / amber), which turned the sidebar into a four-colour card stack where
+ * the colour carried no information — a division rival was not "more emerald"
+ * than a futures market. Grouping is now expressed by position and heading
+ * weight alone, and colour is reserved for state (active route) and for the
+ * semantic accents used inside the pages.
+ */
 export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
   {
     id: "overview",
     label: "NFL Overview",
     description: "Platform home and core team ratings.",
-    themeId: "blue",
     items: [
       {
         to: "/nfl",
@@ -106,7 +53,6 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
     id: "season",
     label: "Season",
     description: "Standings and schedule intelligence.",
-    themeId: "emerald",
     items: [
       {
         to: "/nfl/standings",
@@ -136,7 +82,6 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
     id: "markets",
     label: "Markets & Predictions",
     description: "Futures markets and awards research.",
-    themeId: "violet",
     items: [
       {
         to: "/nfl/super-bowl",
@@ -150,7 +95,7 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         label: "Coach of the Year",
         shortLabel: "Coach of Year",
         description: "Historical winner profile and 2026 candidate elimination model.",
-        icon: "🏆",
+        icon: "🏅",
       },
     ],
   },
@@ -158,7 +103,6 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
     id: "team-intelligence",
     label: "Team Intelligence",
     description: "Guide hub, team dashboards and regression screens.",
-    themeId: "amber",
     items: [
       {
         to: "/nfl/guide",
@@ -174,6 +118,21 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         shortLabel: "Fluke or Real",
         description: "Bounce-back and regression candidates from the model.",
         icon: "🔎",
+      },
+    ],
+  },
+  {
+    id: "fantasy",
+    label: "Fantasy",
+    description: "Fantasy football rankings and draft research.",
+    items: [
+      {
+        to: "/fantasy-football",
+        label: "Fantasy Football",
+        shortLabel: "Fantasy",
+        description: "Customized Joe Knows Ball rankings and draft tools.",
+        icon: "🧮",
+        match: "prefix",
       },
     ],
   },
@@ -203,4 +162,9 @@ export function getActiveNflSectionCategoryId(pathname: string) {
 
 export function getUniqueNflSectionNavPaths() {
   return [...new Set(NFL_SECTION_NAV_ITEMS.map((item) => item.to))];
+}
+
+/** Label of the current destination, for the mobile menu's "you are here" row. */
+export function getActiveNflSectionLabel(pathname: string): string | null {
+  return NFL_SECTION_NAV_ITEMS.find((item) => isNflSectionPathActive(pathname, item.to))?.label ?? null;
 }

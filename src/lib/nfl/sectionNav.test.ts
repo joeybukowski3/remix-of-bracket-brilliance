@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   NFL_SECTION_NAV_CATEGORIES,
   NFL_SECTION_NAV_ITEMS,
-  NFL_SECTION_THEMES,
   getActiveNflSectionCategoryId,
+  getActiveNflSectionLabel,
   getUniqueNflSectionNavPaths,
   isNflSectionPathActive,
 } from "@/lib/nfl/sectionNav";
@@ -18,6 +18,7 @@ const LIVE_NFL_ROUTES = new Set([
   "/nfl/coach-of-year",
   "/nfl/guide",
   "/nfl/guide/regression",
+  "/fantasy-football",
 ]);
 
 describe("NFL section navigation", () => {
@@ -32,7 +33,22 @@ describe("NFL section navigation", () => {
       "/nfl/coach-of-year",
       "/nfl/guide",
       "/nfl/guide/regression",
+      "/fantasy-football",
     ]);
+  });
+
+  it("exposes Fantasy Football as its own category, active on nested routes", () => {
+    expect(getActiveNflSectionCategoryId("/fantasy-football")).toBe("fantasy");
+    expect(isNflSectionPathActive("/fantasy-football", "/fantasy-football")).toBe(true);
+    expect(isNflSectionPathActive("/fantasy-football/rankings", "/fantasy-football")).toBe(true);
+    expect(isNflSectionPathActive("/nfl", "/fantasy-football")).toBe(false);
+  });
+
+  it("names the current destination for the mobile menu trigger", () => {
+    expect(getActiveNflSectionLabel("/nfl/standings")).toBe("Standings by Division");
+    expect(getActiveNflSectionLabel("/nfl/guide/team/seattle-seahawks")).toBe("2026 Team Guide");
+    expect(getActiveNflSectionLabel("/fantasy-football")).toBe("Fantasy Football");
+    expect(getActiveNflSectionLabel("/mlb")).toBeNull();
   });
 
   it("keeps Weekly Matchups in the Season category and active on detail routes", () => {
@@ -89,11 +105,20 @@ describe("NFL section navigation", () => {
     }
   });
 
-  it("gives each category a distinct, resolvable theme identifier", () => {
-    const themeIds = NFL_SECTION_NAV_CATEGORIES.map((category) => category.themeId);
-    expect(new Set(themeIds).size).toBe(themeIds.length);
-    for (const themeId of themeIds) {
-      expect(NFL_SECTION_THEMES[themeId]).toBeTruthy();
+  it("carries no per-category colour theme", () => {
+    // Categories used to each own a colour (blue / emerald / violet / amber),
+    // which made the sidebar a four-colour card stack where the colour encoded
+    // nothing. Grouping is positional now; colour is reserved for state.
+    for (const category of NFL_SECTION_NAV_CATEGORIES) {
+      expect(category as Record<string, unknown>).not.toHaveProperty("themeId");
+    }
+  });
+
+  it("gives every category a distinct id and a non-empty label", () => {
+    const ids = NFL_SECTION_NAV_CATEGORIES.map((category) => category.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const category of NFL_SECTION_NAV_CATEGORIES) {
+      expect(category.label, category.id).toBeTruthy();
     }
   });
 });
