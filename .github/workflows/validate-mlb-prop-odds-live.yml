@@ -1,8 +1,9 @@
 name: Validate MLB Prop Odds (live, temporary)
-run-name: Live MLB prop odds validation • ${{ inputs.ref }}
+run-name: Live MLB prop odds validation • ${{ inputs.ref || github.ref_name }}
 
-# TEMPORARY, dispatch-only validation of the MLB prop line-selection fix against
-# the live ParlayAPI payload.
+# TEMPORARY, branch-scoped validation of the MLB prop line-selection fix against
+# the live ParlayAPI payload. It runs only on manual dispatch or on a push to
+# the single temporary fix branch -- never on a schedule and never on main.
 #
 # This workflow is deliberately incapable of changing the repository:
 #   - `permissions: contents: read` only
@@ -21,6 +22,13 @@ on:
         type: string
         required: true
         default: fix/mlb-odds-primary-market-selection
+  # GitHub only registers a `workflow_dispatch` workflow once the file exists on
+  # the default branch, and this fix must not touch main. This push trigger is
+  # scoped to the single temporary branch so the validation can run at all; it
+  # can never fire on main, and it is removed with the rest of this file.
+  push:
+    branches:
+      - fix/mlb-odds-primary-market-selection
 
 permissions:
   contents: read
@@ -36,7 +44,7 @@ jobs:
     steps:
       - name: Refuse to run against main
         env:
-          SELECTED_REF: ${{ inputs.ref }}
+          SELECTED_REF: ${{ inputs.ref || github.ref_name }}
         run: |
           case "$SELECTED_REF" in
             main|refs/heads/main|origin/main|master)
@@ -49,7 +57,7 @@ jobs:
       - name: Checkout selected ref
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.ref || github.ref_name }}
           persist-credentials: false
 
       - name: Set up Node
