@@ -40,14 +40,20 @@ describe("public NFL power page v0.3 integration", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Based on 2025 regular-season performance/)).toBeInTheDocument();
     expect(screen.getByText(/Joe Knows Ball model v0\.3/)).toBeInTheDocument();
-    expect(screen.getByText(/nfl-power-v0\.3\.0/)).toBeInTheDocument();
+    // v0.3.1 since the PBP-EPA migration (9628125d). `loadPublicPowerBoard`
+    // rejects any artifact whose _meta.modelVersion is not the canonical
+    // NFL_V03_MODEL_VERSION, so this is the only version the board can render.
+    expect(screen.getByText(/nfl-power-v0\.3\.1/)).toBeInTheDocument();
     expect(screen.getByText(/40% opponent-adjusted offensive EPA/)).toBeInTheDocument();
     expect(screen.getByText(/Window: preseason/)).toBeInTheDocument();
 
     const ramsRow = screen.getByText("LA Rams").closest("tr");
     expect(ramsRow).toBeTruthy();
     expect(ramsRow?.textContent).toMatch(/12-5/);
-    expect(ramsRow?.textContent).toMatch(/75\.8/);
+    // Overall public rating. Stale for the same reason as the version above:
+    // the PBP-EPA migration moved the Rams from publicRating 75.815696 (v0.3.0)
+    // to 80.853752 (v0.3.1) in the committed preseason artifact.
+    expect(ramsRow?.textContent).toMatch(/80\.9/);
 
     expect(screen.queryByText(/'26 Win Total/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Composite weighting: EPA/)).not.toBeInTheDocument();
