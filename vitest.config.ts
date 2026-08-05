@@ -21,6 +21,8 @@ export default defineConfig({
       "scripts/lib/pga-best-bets-selection.test.mjs",
       "scripts/lib/pga-best-bets-schema.test.mjs",
       "scripts/lib/mlb-opponent-k-context.test.mjs",
+      "scripts/lib/mlb-prop-line-selection.test.mjs",
+      "scripts/lib/mlb-prop-odds-integrity.test.mjs",
       "tests/social-cards.test.mjs",
       "scripts/lib/social-cards/adapters/mlb-daily-card-adapters.test.mjs",
       "scripts/lib/social-cards/adapters/no-legacy-selection.test.mjs",

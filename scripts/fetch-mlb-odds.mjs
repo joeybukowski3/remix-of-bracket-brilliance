@@ -4,19 +4,74 @@ import { fileURLToPath } from "node:url";
 import process from "node:process";
 import {
   americanToImplied,
-  formatAmerican,
   getMlbMoneylinesWithFallbacks,
 } from "./lib/mlb-moneyline-providers.mjs";
-import { normalizeMlbPropName } from "./lib/mlb-prop-name-normalizer.mjs";
+import {
+  HR_MARKET,
+  K_MARKET,
+  buildPropQuotes,
+  selectPrimaryLines,
+} from "./lib/mlb-prop-line-selection.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.resolve(__dirname, "../public/data/mlb/mlb-odds.json");
+const DIAGNOSTICS_OUTPUT = path.resolve(__dirname, "../artifacts/mlb-prop-line-selection.json");
 const ODDS_BASE = "https://api.the-odds-api.com/v4";
 const PARLAY_BASE = "https://parlay-api.com/v1";
 const SPORT = "baseball_mlb";
 const TIMEOUT_MS = 20000;
-const PARLAY_HR_MARKET = "player_home_runs";
-const PARLAY_K_MARKET = "player_strikeouts";
+const PARLAY_HR_MARKET = HR_MARKET;
+const PARLAY_K_MARKET = K_MARKET;
+
+const PREFERRED_BOOKS = ["draftkings", "fanduel", "betmgm", "caesars", "pinnacle", "bovada"];
+// K props only: bet365 is a real sportsbook that was missing from the shared
+// `PREFERRED_BOOKS` list above, so it was ranked identically to an unranked/DFS
+// source and could lose a book-preference tie by iteration order alone. Kept
+// separate from `PREFERRED_BOOKS` (used for HR) so this never affects HR book
+// ranking. DFS pick'em products (Underdog, PrizePicks, Sleeper) have different
+// market structure/limits than a real two-sided sportsbook line and are
+// excluded entirely from sourcing a strikeout prop line.
+const K_PREFERRED_BOOKS = [...PREFERRED_BOOKS, "bet365"];
+const K_DISALLOWED_BOOKS = new Set(["underdog", "prizepicks", "sleeper"]);
+
+// A posted strikeout prop is a two-sided Over/Under market. The provider packs
+// one-sided "N+ strikeouts" milestone rungs into the same `player_strikeouts`
+// market key, so a pitcher with no two-sided market anywhere in the payload is
+// omitted rather than published with a ladder rung as their line.
+const K_REQUIRE_TWO_SIDED = true;
+
+// Home runs are routinely priced Yes-only, so a one-sided HR market is normal
+// and must not be rejected -- the ladder rungs are separated by threshold
+// consensus instead.
+const HR_REQUIRE_TWO_SIDED = false;
+
+/** Per-player diagnostics are opt-in via `MLB_ODDS_DEBUG_PLAYERS=name,name`. */
+function debugPlayerFilter() {
+  return String(process.env.MLB_ODDS_DEBUG_PLAYERS ?? "")
+    .split(",")
+    .map((name) => name.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function logSelectionDiagnostics(label, { diagnostics, rejections }) {
+  const watched = debugPlayerFilter();
+  const suspicious = diagnostics.filter((entry) => entry.warnings.length > 0);
+  console.log(
+    `  [${label}] selected=${diagnostics.length} rejected=${rejections.length} flagged=${suspicious.length}`,
+  );
+  for (const entry of rejections.slice(0, 5)) {
+    console.warn(`  [${label}] rejected ${entry.player}: ${entry.rejected} (${entry.warnings.join(",") || "no warnings"})`);
+  }
+  if (rejections.length > 5) console.warn(`  [${label}] ...and ${rejections.length - 5} more rejected`);
+  for (const entry of [...diagnostics, ...rejections]) {
+    if (!watched.includes(entry.player)) continue;
+    console.log(
+      `  [${label}] ${entry.player} market=${entry.providerMarket} point=${entry.selectedPoint} alt=${entry.isAlternate}` +
+        ` twoSided=${entry.twoSided} books=${(entry.booksAtPoint ?? []).join("/")} reason=${entry.reason}` +
+        ` offered=${(entry.pointsOffered ?? []).map((p) => `${p.point}x${p.books}`).join(",")}`,
+    );
+  }
+}
 
 const HEADERS = {
   Accept: "application/json",
@@ -46,13 +101,6 @@ async function fetchJson(url, { extraHeaders = {}, label = url } = {}) {
   }
 }
 
-function canonicalPropMarket(value) {
-  const market = String(value ?? "").toLowerCase();
-  if (market === PARLAY_HR_MARKET || market === "batter_home_runs") return PARLAY_HR_MARKET;
-  if (market === PARLAY_K_MARKET || market === "pitcher_strikeouts") return PARLAY_K_MARKET;
-  return market;
-}
-
 async function fetchParlayApiProps(parlayKey) {
   const markets = `${PARLAY_HR_MARKET},${PARLAY_K_MARKET}`;
   const url = `${PARLAY_BASE}/sports/${SPORT}/props?markets=${markets}&limit=10000`;
@@ -75,57 +123,83 @@ async function fetchParlayApiProps(parlayKey) {
   console.log(`  ParlayAPI rows=${props.length}`);
   if (detectedMarkets.length) console.log(`  ParlayAPI markets=${detectedMarkets.join(",")}`);
 
-  const preferred = ["draftkings", "fanduel", "betmgm", "caesars", "pinnacle", "bovada"];
-  // K props only: bet365 is a real sportsbook that was missing from the
-  // shared `preferred` list above, so it was ranked identically to an
-  // unranked/DFS source and could lose a book-preference tie by iteration
-  // order alone. Kept separate from `preferred` (used for HR) so this
-  // change never affects HR book ranking. DFS pick'em products (Underdog,
-  // PrizePicks, Sleeper) have different market structure/limits than a
-  // real two-sided sportsbook line and are excluded entirely from sourcing
-  // a strikeout prop line, rather than merely deprioritized.
-  const K_PREFERRED_BOOKS = [...preferred, "bet365"];
-  const K_DISALLOWED_BOOKS = new Set(["underdog", "prizepicks", "sleeper"]);
-  const grouped = {};
+  // Threshold first, price second. Every provider row is kept as a distinct
+  // quote (event + player + market + threshold + side + bookmaker) so that the
+  // primary line is resolved from market structure rather than from whichever
+  // ladder rung happened to appear first in the payload.
+  const { quotes, rejected } = buildPropQuotes(props);
+  const hrResult = selectPrimaryLines(quotes.filter((quote) => quote.canonicalMarket === PARLAY_HR_MARKET), {
+    bookRanking: PREFERRED_BOOKS,
+    requireTwoSided: HR_REQUIRE_TWO_SIDED,
+  });
+  const kResult = selectPrimaryLines(quotes.filter((quote) => quote.canonicalMarket === PARLAY_K_MARKET), {
+    bookRanking: K_PREFERRED_BOOKS,
+    disallowedBooks: K_DISALLOWED_BOOKS,
+    requireTwoSided: K_REQUIRE_TWO_SIDED,
+  });
 
-  for (const row of props) {
-    const market = canonicalPropMarket(row?.market_key);
-    if (market !== PARLAY_HR_MARKET && market !== PARLAY_K_MARKET) continue;
-    const player = normalizeMlbPropName(row?.player);
-    if (!player) continue;
-    const bookmaker = String(row?.bookmaker ?? row?.source ?? "").toLowerCase();
-    if (market === PARLAY_K_MARKET && K_DISALLOWED_BOOKS.has(bookmaker)) continue;
-    const key = `${player}|${market}`;
-    const bookList = market === PARLAY_K_MARKET ? K_PREFERRED_BOOKS : preferred;
-    const bookRank = bookList.indexOf(bookmaker);
-    const rank = bookRank === -1 ? bookList.length : bookRank;
-    if (!grouped[key] || rank < grouped[key].rank) grouped[key] = { row, market, rank };
+  console.log(`  ParlayAPI quotes=${quotes.length} unusableRows=${rejected}`);
+  logSelectionDiagnostics("hr", hrResult);
+  logSelectionDiagnostics("k", kResult);
+
+  for (const [player, selection] of hrResult.selections) {
+    hrOdds[player] = {
+      yes: selection.over,
+      no: selection.under,
+      line: selection.point,
+      impliedYes: americanToImplied(selection.overPrice),
+      bookmaker: selection.bookmaker,
+      providerPlayerName: selection.providerPlayerName,
+      providerMarket: selection.providerMarket,
+      isAlternate: selection.isAlternate,
+      twoSided: selection.twoSided,
+      booksAtLine: selection.booksAtPoint,
+      selectionReason: selection.reason,
+    };
   }
 
-  for (const { row, market } of Object.values(grouped)) {
-    const playerKey = normalizeMlbPropName(row.player);
-    if (market === PARLAY_HR_MARKET) {
-      hrOdds[playerKey] = {
-        yes: formatAmerican(row.over_price),
-        no: formatAmerican(row.under_price),
-        line: row.line ?? 0.5,
-        impliedYes: americanToImplied(row.over_price),
-        bookmaker: row.bookmaker ?? row.source ?? null,
-        providerPlayerName: row.player ?? null,
-      };
-    } else if (market === PARLAY_K_MARKET) {
-      kOdds[playerKey] = {
-        line: row.line ?? null,
-        over: formatAmerican(row.over_price),
-        under: formatAmerican(row.under_price),
-        impliedOver: americanToImplied(row.over_price),
-        bookmaker: row.bookmaker ?? row.source ?? null,
-        providerPlayerName: row.player ?? null,
-      };
-    }
+  for (const [player, selection] of kResult.selections) {
+    kOdds[player] = {
+      line: selection.point,
+      over: selection.over,
+      under: selection.under,
+      impliedOver: americanToImplied(selection.overPrice),
+      bookmaker: selection.bookmaker,
+      providerPlayerName: selection.providerPlayerName,
+      providerMarket: selection.providerMarket,
+      isAlternate: selection.isAlternate,
+      twoSided: selection.twoSided,
+      booksAtLine: selection.booksAtPoint,
+      selectionReason: selection.reason,
+    };
   }
 
-  return { hrOdds, kOdds, rowCount: props.length, detectedMarkets };
+  return {
+    hrOdds,
+    kOdds,
+    rowCount: props.length,
+    detectedMarkets,
+    selection: {
+      quotes: quotes.length,
+      unusableRows: rejected,
+      hr: { selected: hrResult.diagnostics.length, rejected: hrResult.rejections.length },
+      k: { selected: kResult.diagnostics.length, rejected: kResult.rejections.length },
+    },
+    diagnostics: { hr: hrResult, k: kResult },
+  };
+}
+
+function writeSelectionDiagnostics(result) {
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    summary: result.selection,
+    detectedMarkets: result.detectedMarkets,
+    hr: { selected: result.diagnostics.hr.diagnostics, rejected: result.diagnostics.hr.rejections },
+    k: { selected: result.diagnostics.k.diagnostics, rejected: result.diagnostics.k.rejections },
+  };
+  mkdirSync(path.dirname(DIAGNOSTICS_OUTPUT), { recursive: true });
+  writeFileSync(DIAGNOSTICS_OUTPUT, JSON.stringify(payload, null, 2), "utf8");
+  console.log(`  Wrote selection diagnostics ${DIAGNOSTICS_OUTPUT}`);
 }
 
 async function main() {
@@ -200,6 +274,8 @@ async function main() {
       kOdds = result.kOdds;
       fetchStatus.propsRows = result.rowCount;
       fetchStatus.detectedMarkets = result.detectedMarkets;
+      fetchStatus.lineSelection = result.selection;
+      writeSelectionDiagnostics(result);
       console.log(`✅ HR odds: ${Object.keys(hrOdds).length} players`);
       console.log(`✅ K odds: ${Object.keys(kOdds).length} pitchers`);
       fetchStatus.hrProps = `${result.rowCount > 0 ? "ok" : "empty"}:${Object.keys(hrOdds).length}`;

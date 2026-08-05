@@ -106,3 +106,58 @@ test("HR odds preserve same-slate rows on empty or partial responses and reject 
   assert.equal(stale.status.status, "slate_mismatch");
   assert.ok(stale.data.batters.every((batter) => batter.hrOddsYes == null));
 });
+
+// --- Stale-row preservation must not resurrect ladder markets -------------
+// A stored row is only preserved when it would still pass primary-market
+// integrity. Rows written by the pre-fix pipeline (one-sided K rungs, 2+/3+ HR
+// ladder prices) are cleared instead of carried forward on a slate-date match.
+
+const ladderCarryover = {
+  date: "2026-08-05",
+  pitchers: [
+    { pitcher: "Bryan Woo", kLine: 11, kOddsOver: "+1540", kOddsUnder: null, kOddsSlateDate: "2026-08-05" },
+    { pitcher: "Reid Detmers", kLine: 7.5, kOddsOver: "+109", kOddsUnder: "-139", kOddsSlateDate: "2026-08-05" },
+  ],
+  batters: [
+    { player: "Yordan Alvarez", hrLine: 2, hrOddsYes: "+2700", hrOddsNo: null, hrOddsSlateDate: "2026-08-05" },
+    { player: "Aaron Judge", hrLine: 0.5, hrOddsYes: "+260", hrOddsNo: null, hrOddsSlateDate: "2026-08-05" },
+  ],
+};
+
+test("K odds clear a stale one-sided ladder rung instead of preserving it", () => {
+  // Neither pitcher is in the provider response, so both take the preserve path.
+  const result = injectKOdds(ladderCarryover, {
+    date: "2026-08-05",
+    kOdds: { "someone else": { line: 5.5, over: "-120", under: "-110" } },
+  });
+  const woo = result.data.pitchers.find((row) => row.pitcher === "Bryan Woo");
+  const detmers = result.data.pitchers.find((row) => row.pitcher === "Reid Detmers");
+
+  assert.equal(woo.kLine, null, "one-sided 11.0 rung must be cleared");
+  assert.equal(woo.kOddsOver, null);
+  assert.equal(detmers.kLine, 7.5, "a valid two-sided row is still preserved");
+  assert.equal(detmers.kOddsUnder, "-139");
+});
+
+test("HR odds clear a stale ladder threshold but keep the canonical market", () => {
+  const result = injectHrOdds(ladderCarryover, {
+    date: "2026-08-05",
+    hrOdds: {
+      "mookie betts": { line: 0.5, yes: "+330" },
+      "juan soto": { line: 0.5, yes: "+300" },
+    },
+  });
+  const alvarez = result.data.batters.find((row) => row.player === "Yordan Alvarez");
+  const judge = result.data.batters.find((row) => row.player === "Aaron Judge");
+
+  assert.equal(alvarez.hrLine, null, "2+ HR ladder price must be cleared");
+  assert.equal(alvarez.hrOddsYes, null);
+  assert.equal(judge.hrLine, 0.5, "canonical 0.5 row is still preserved");
+  assert.equal(judge.hrOddsYes, "+260");
+});
+
+test("HR preservation is unchanged when the provider gives no threshold to derive", () => {
+  const result = injectHrOdds(ladderCarryover, { date: "2026-08-05", hrOdds: {} });
+  const alvarez = result.data.batters.find((row) => row.player === "Yordan Alvarez");
+  assert.equal(alvarez.hrLine, 2, "without provider data the canonical check is skipped");
+});

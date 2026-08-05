@@ -1,5 +1,6 @@
 import { getEtDate, isAmericanOdds, isValidPropLine, normalizeMlbPropName } from "./mlb-prop-name-normalizer.mjs";
 import { americanToImplied, parseAmericanOdds } from "./mlb-moneyline-providers.mjs";
+import { modalValue } from "./mlb-prop-odds-integrity.mjs";
 
 export function resolveOddsSlateDate(oddsData) {
   return String(oddsData?.date ?? "").trim() || getEtDate(oddsData?.fetchedAt) || getEtDate(oddsData?.generatedAt);
@@ -23,16 +24,37 @@ function isCoherentKMarket(entry) {
   return impliedOver + impliedUnder >= MIN_COMBINED_IMPLIED_PROBABILITY;
 }
 
-function isSameSlateHrOdds(batter, slateDate) {
-  return batter?.hrOddsSlateDate === slateDate && isAmericanOdds(batter?.hrOddsYes);
+/**
+ * A stored row is only worth preserving if it would still pass primary-market
+ * integrity today. A row sitting on a ladder threshold (2+/3+ HR) was written
+ * before canonical-market selection existed; preserving it because the slate
+ * date happens to match would quietly reintroduce a long-odds ladder price for
+ * any batter missing from the current provider response.
+ *
+ * The canonical threshold is derived from the current provider data, so no
+ * threshold is hard-coded, and the constraint is skipped entirely when the
+ * provider gave us nothing to derive it from.
+ */
+function isSameSlateHrOdds(batter, slateDate, canonicalLine) {
+  if (batter?.hrOddsSlateDate !== slateDate || !isAmericanOdds(batter?.hrOddsYes)) return false;
+  if (canonicalLine == null || batter?.hrLine == null) return true;
+  return Number(batter.hrLine) === canonicalLine;
 }
 
 function clearHrOdds(batter) {
   return { ...batter, hrLine: null, hrOddsYes: null, hrOddsNo: null, hrOddsBook: null, hrOddsSlateDate: null, hrOddsCapturedAt: null };
 }
 
+/**
+ * Ingestion only publishes two-sided strikeout markets, so a stored one-sided
+ * row is a ladder rung left over from an earlier pipeline. Preserving it would
+ * put an "N+ strikeouts" price back on the board, so it is cleared instead.
+ */
 function isSameSlateKOdds(pitcher, slateDate) {
-  return pitcher?.kOddsSlateDate === slateDate && isValidPropLine(pitcher?.kLine) && (isAmericanOdds(pitcher?.kOddsOver) || isAmericanOdds(pitcher?.kOddsUnder));
+  return pitcher?.kOddsSlateDate === slateDate
+    && isValidPropLine(pitcher?.kLine)
+    && isAmericanOdds(pitcher?.kOddsOver)
+    && isAmericanOdds(pitcher?.kOddsUnder);
 }
 
 function clearKOdds(pitcher) {
@@ -54,8 +76,14 @@ export function injectHrOdds(rawData, oddsData) {
   if (!sameSlate) status = "slate_mismatch";
   else if (usefulEntries.size === 0) status = "no_useful_provider_records";
 
+  // Canonical HR threshold for this slate, derived from the current provider
+  // response rather than assumed.
+  const canonicalLine = modalValue(
+    [...usefulEntries.values()].map((entry) => Number(entry.line)).filter((value) => Number.isFinite(value)),
+  );
+
   const batters = (rawData?.batters ?? []).map((batter) => {
-    const existingCurrent = isSameSlateHrOdds(batter, slateDate);
+    const existingCurrent = isSameSlateHrOdds(batter, slateDate, canonicalLine);
     if (!sameSlate) {
       if (batter?.hrOddsYes || batter?.hrOddsNo || batter?.hrLine != null) counts.staleRecordsCleared += 1;
       return clearHrOdds(batter);
