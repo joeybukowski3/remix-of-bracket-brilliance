@@ -82,6 +82,20 @@ jobs:
           node scripts/fetch-mlb-odds.mjs 2>&1 | tee artifacts/live-validation/fetch.log
           exit "${PIPESTATUS[0]}"
 
+      # The validator grades the injected model file, so the injectors must run
+      # first exactly as they do in production (generate-mlb-hr-props.yml runs
+      # inject-batter-hr-odds -> inject-k-odds -> validate). Without them the
+      # validator would grade the committed hr-props-raw.json, which still
+      # carries values produced by the pre-fix pipeline.
+      - name: Inject odds into the model file
+        if: always()
+        run: |
+          mkdir -p artifacts/live-validation
+          {
+            node scripts/inject-batter-hr-odds.mjs
+            node scripts/inject-k-odds.mjs
+          } 2>&1 | tee artifacts/live-validation/inject.log
+
       - name: Run integrity validator
         id: validator
         if: always()
