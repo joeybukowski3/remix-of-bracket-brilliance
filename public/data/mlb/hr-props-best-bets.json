@@ -1,28 +1,28 @@
 {
   "date": "2026-08-06",
-  "generatedAt": "2026-08-06T10:04:05.709Z",
+  "generatedAt": "2026-08-06T14:42:57.880Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features three strong HR environments: Chase Field (1.01), Camden Yards (1.10), and Citizens Bank Park (1.17) all play above average for power. The top three model plays face right-handed pitchers in those parks, with Kohl Drake (L) in Arizona and Ryan Johnson (R) in Baltimore both allowing elevated HR rates. Warm, dry conditions across the East Coast add a slight tailwind to fly balls.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, with Tatis and Abreu rising to the top due to their combination of elite exit velocity and favorable park/pitcher matchups."
+    "slateOverview": "Camden Yards (1.1) and Citizens Bank (1.17) are the primary power parks today, while Chase Field (1.01) offers a neutral boost for the Padres stack. The model is keying on favorable right-handed pitching matchups for Alonso and Encarnacion-Strand against Ryan Johnson, plus the lefty Kohl Drake facing a loaded San Diego lineup.",
+    "modelNote": "The model is overweighting park factors and recent barrel trends, elevating Alonso to the top spot despite modest last-30 HR volume, while discounting Schwarber's strikeout rate in a plus park."
   },
   "bestBets": [
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "AZ",
-      "opposingPitcher": "Kohl Drake",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "LAA",
+      "opposingPitcher": "Ryan Johnson",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=10.5%",
-        "HH=52.7%"
+        "barrel=12.7%",
+        "HH=54.9%"
       ],
       "bullets": [
         "hrScore=70.6",
-        "park=1.01"
+        "park=1.1"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+305",
+      "marketImpliedProbability": 0.24691358024691357,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,7 +37,7 @@
         "HH=42.5%"
       ],
       "bullets": [
-        "hrScore=70",
+        "hrScore=70.2",
         "park=0.95"
       ],
       "hrOddsYes": "+319",
@@ -46,40 +46,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "LAA",
-      "opposingPitcher": "Ryan Johnson",
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=12.7%",
-        "HH=54.9%"
+        "barrel=10.5%",
+        "HH=52.7%"
       ],
       "bullets": [
-        "hrScore=68.8",
-        "park=1.1"
+        "hrScore=68.7",
+        "park=1.01"
       ],
-      "hrOddsYes": "+307",
-      "marketImpliedProbability": 0.2457002457002457,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Bryce Harper",
-      "team": "PHI",
-      "opponent": "WSH",
-      "opposingPitcher": "Miles Mikolas",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=11.7%",
-        "HH=45%"
-      ],
-      "bullets": [
-        "hrScore=67.2",
-        "park=1.17"
-      ],
-      "hrOddsYes": "+301",
-      "marketImpliedProbability": 0.24937655860349128,
+      "hrOddsYes": "+512",
+      "marketImpliedProbability": 0.16339869281045752,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -88,38 +69,17 @@
       "team": "ATL",
       "opponent": "MIA",
       "opposingPitcher": "Janson Junk",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=14.6%",
-        "HH=50.2%"
+        "Pitcher HR VS=51.0",
+        "Hard Hit%=50.2"
       ],
       "bullets": [
-        "hrScore=67.1",
-        "park=1.03"
+        "HR score 67.5 (#4)",
+        "Pitcher HR VS 51.0 at park 1.03"
       ],
       "hrOddsYes": "+319",
       "marketImpliedProbability": 0.2386634844868735,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Ty France",
-      "team": "SD",
-      "opponent": "AZ",
-      "opposingPitcher": "Kohl Drake",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=10.8%",
-        "HH=49.5%"
-      ],
-      "bullets": [
-        "hrScore=65.9",
-        "park=1.01"
-      ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,17 +88,135 @@
       "team": "BAL",
       "opponent": "LAA",
       "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 7,
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=65.2",
+        "Hard Hit%=41.7"
+      ],
+      "bullets": [
+        "HR score 67.3 (#5)",
+        "Pitcher HR VS 65.2 at park 1.10"
+      ],
+      "hrOddsYes": "+356",
+      "marketImpliedProbability": 0.21929824561403508,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "MIA",
+      "opposingPitcher": "Janson Junk",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=14.6%",
+        "HH=50.2%"
+      ],
+      "bullets": [
+        "hrScore=67.5",
+        "park=1.03"
+      ],
+      "hrOddsYes": "+319",
+      "marketImpliedProbability": 0.2386634844868735,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Christian Encarnacion-Strand",
+      "team": "BAL",
+      "opponent": "LAA",
+      "opposingPitcher": "Ryan Johnson",
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=22.2%",
         "HH=41.7%"
       ],
       "bullets": [
-        "hrScore=65.6",
+        "hrScore=67.3",
         "park=1.1"
       ],
       "hrOddsYes": "+356",
       "marketImpliedProbability": 0.21929824561403508,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Bryce Harper",
+      "team": "PHI",
+      "opponent": "WSH",
+      "opposingPitcher": "Miles Mikolas",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=11.7%",
+        "HH=45%"
+      ],
+      "bullets": [
+        "hrScore=67.1",
+        "park=1.17"
+      ],
+      "hrOddsYes": "+301",
+      "marketImpliedProbability": 0.24937655860349128,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ty France",
+      "team": "SD",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=98.6",
+        "Hard Hit%=49.5"
+      ],
+      "bullets": [
+        "HR score 64.2 (#7)",
+        "Pitcher HR VS 98.6 at park 1.01"
+      ],
+      "hrOddsYes": "+480",
+      "marketImpliedProbability": 0.1724137931034483,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=98.6",
+        "Hard Hit%=46.2"
+      ],
+      "bullets": [
+        "HR score 63.9 (#8)",
+        "Pitcher HR VS 98.6 at park 1.01"
+      ],
+      "hrOddsYes": "+670",
+      "marketImpliedProbability": 0.12987012987012986,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Ty France",
+      "team": "SD",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=10.8%",
+        "HH=49.5%"
+      ],
+      "bullets": [
+        "hrScore=64.2",
+        "park=1.01"
+      ],
+      "hrOddsYes": "+480",
+      "marketImpliedProbability": 0.1724137931034483,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -153,32 +231,11 @@
         "HH=46.2%"
       ],
       "bullets": [
-        "hrScore=65.6",
+        "hrScore=63.9",
         "park=1.01"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Jesús Sánchez",
-      "team": "TOR",
-      "opponent": "CHC",
-      "opposingPitcher": "David Peterson",
-      "hrScoreRank": 25,
-      "topStats": [
-        "barrel=10.9%",
-        "HH=46.3%"
-      ],
-      "bullets": [
-        "hrScore=54.3",
-        "park=1"
-      ],
-      "hrOddsYes": "+635",
-      "marketImpliedProbability": 0.1360544217687075,
+      "hrOddsYes": "+670",
+      "marketImpliedProbability": 0.12987012987012986,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -187,17 +244,36 @@
       "team": "KC",
       "opponent": "MIN",
       "opposingPitcher": "Bailey Ober",
-      "hrScoreRank": 15,
+      "hrScoreRank": 18,
       "topStats": [
-        "barrel=20.7%",
-        "HH=41.4%"
+        "Pitcher HR VS=54.6",
+        "Hard Hit%=41.4"
       ],
       "bullets": [
-        "hrScore=57.5",
-        "park=0.96"
+        "HR score 57.3 (#18)",
+        "Pitcher HR VS 54.6 at park 0.96"
       ],
       "hrOddsYes": "+625",
       "marketImpliedProbability": 0.13793103448275862,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jesús Sánchez",
+      "team": "TOR",
+      "opponent": "CHC",
+      "opposingPitcher": "David Peterson",
+      "hrScoreRank": 23,
+      "topStats": [
+        "Pitcher HR VS=52.1",
+        "Hard Hit%=46.3"
+      ],
+      "bullets": [
+        "HR score 54.5 (#23)",
+        "Pitcher HR VS 52.1 at park 1.00"
+      ],
+      "hrOddsYes": "+610",
+      "marketImpliedProbability": 0.14084507042253522,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
