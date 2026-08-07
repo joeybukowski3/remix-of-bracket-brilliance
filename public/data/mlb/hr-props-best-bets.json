@@ -1,10 +1,10 @@
 {
   "date": "2026-08-07",
-  "generatedAt": "2026-08-07T08:33:38.499Z",
+  "generatedAt": "2026-08-07T13:45:50.377Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Chase Field (1.01) and Rate Field (1.07) standing out, while several right-handed pitchers like Merrill Kelly and Kyle Leahy are being targeted by lefty power bats. Ohtani draws the top spot against Kelly in Arizona, and the model is also keying on Burleson and Goodman in the Coors-adjacent Busch matchup where park factors and recent barrel trends align.",
-    "modelNote": "The model is weighting barrel rate, hard-hit rate, and park-adjusted hrFBRatio most heavily, with recent 30-day HR volume and opposing pitcher HR vulnerability serving as secondary boosters for the top-ranked plays."
+    "slateOverview": "Today's slate features a handful of hitter-friendly venues with Chase Field (1.01) and Rate Field (1.07) leading the way, while Busch Stadium (0.92) and Petco Park (0.89) suppress power. Ohtani draws the top spot against Merrill Kelly in Arizona, and Burleson benefits from a Coors-like boost in St. Louis despite the park factor downgrade.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over park factors, elevating Ohtani and Burleson to the top two ranks despite mixed venue conditions."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=16.8%",
         "park=1.01"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -59,8 +59,8 @@
         "barrel=18.3%",
         "park=0.89"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -75,7 +75,7 @@
         "Hard Hit%=50.7"
       ],
       "bullets": [
-        "HR score 68.1 (#4)",
+        "HR score 67.9 (#4)",
         "Pitcher HR VS 59.2 at park 0.93"
       ],
       "hrOddsYes": "+280",
@@ -84,21 +84,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "STL",
-      "opposingPitcher": "Kyle Leahy",
+      "player": "Wilyer Abreu",
+      "team": "BOS",
+      "opponent": "ATH",
+      "opposingPitcher": "Jack Perkins",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=70.7",
-        "Hard Hit%=45.4"
+        "Pitcher HR VS=51.8",
+        "Hard Hit%=43.2"
       ],
       "bullets": [
-        "HR score 65.5 (#5)",
-        "Pitcher HR VS 70.7 at park 0.92"
+        "HR score 66.8 (#5)",
+        "Pitcher HR VS 51.8 at park 0.95"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -124,11 +124,30 @@
       "hrValueEdge": null
     },
     {
+      "player": "Wilyer Abreu",
+      "team": "BOS",
+      "opponent": "ATH",
+      "opposingPitcher": "Jack Perkins",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=12.8%",
+        "HH=43.2%"
+      ],
+      "bullets": [
+        "barrel=12.8%",
+        "park=0.95"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Hunter Goodman",
       "team": "COL",
       "opponent": "STL",
       "opposingPitcher": "Kyle Leahy",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=16.6%",
         "HH=45.4%"
@@ -143,21 +162,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Wilyer Abreu",
-      "team": "BOS",
-      "opponent": "ATH",
-      "opposingPitcher": "Jack Perkins",
-      "hrScoreRank": 6,
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=13%",
-        "HH=42.5%"
+        "Pitcher HR VS=63.6",
+        "Hard Hit%=47.6"
       ],
       "bullets": [
-        "barrel=13%",
-        "park=0.95"
+        "HR score 62.3 (#8)",
+        "Pitcher HR VS 63.6 at park 1.10"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -166,53 +185,53 @@
       "team": "MIA",
       "opponent": "LAA",
       "opposingPitcher": "George Klassen",
-      "hrScoreRank": 7,
+      "hrScoreRank": 9,
       "topStats": [
         "Pitcher HR VS=87.2",
         "Hard Hit%=50.3"
       ],
       "bullets": [
-        "HR score 62.0 (#7)",
+        "HR score 61.2 (#9)",
         "Pitcher HR VS 87.2 at park 0.88"
       ],
       "hrOddsYes": "+450",
       "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
-    {
-      "player": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "CWS",
-      "opposingPitcher": "Noah Schultz",
-      "hrScoreRank": 9,
-      "topStats": [
-        "Pitcher HR VS=68.5",
-        "Hard Hit%=45.6"
-      ],
-      "bullets": [
-        "HR score 61.1 (#9)",
-        "Pitcher HR VS 68.5 at park 1.07"
-      ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
     }
   ],
   "longshots": [
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=13.7%",
+        "HH=47.6%"
+      ],
+      "bullets": [
+        "barrel=13.7%",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Heriberto Hernández",
       "team": "MIA",
       "opponent": "LAA",
       "opposingPitcher": "George Klassen",
-      "hrScoreRank": 7,
+      "hrScoreRank": 9,
       "topStats": [
-        "barrel=12.4%",
+        "barrel=12.3%",
         "HH=50.3%"
       ],
       "bullets": [
-        "barrel=12.4%",
+        "barrel=12.3%",
         "park=0.88"
       ],
       "hrOddsYes": "+450",
@@ -221,36 +240,17 @@
       "hrValueEdge": null
     },
     {
-      "player": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "CWS",
-      "opposingPitcher": "Noah Schultz",
-      "hrScoreRank": 9,
-      "topStats": [
-        "barrel=6.5%",
-        "HH=45.6%"
-      ],
-      "bullets": [
-        "barrel=6.5%",
-        "park=1.07"
-      ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Mookie Betts",
       "team": "LAD",
       "opponent": "AZ",
       "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 21,
+      "hrScoreRank": 24,
       "topStats": [
         "Pitcher HR VS=88.2",
         "Hard Hit%=38.6"
       ],
       "bullets": [
-        "HR score 57.8 (#21)",
+        "HR score 56.8 (#24)",
         "Pitcher HR VS 88.2 at park 1.01"
       ],
       "hrOddsYes": "+700",
@@ -259,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Francisco Lindor",
-      "team": "NYM",
-      "opponent": "PIT",
-      "opposingPitcher": "Carmen Mlodzinski",
-      "hrScoreRank": 22,
+      "player": "Jimmy Crooks",
+      "team": "STL",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 25,
       "topStats": [
-        "Pitcher HR VS=63.3",
-        "Hard Hit%=48.3"
+        "Pitcher HR VS=70.1",
+        "Hard Hit%=54.1"
       ],
       "bullets": [
-        "HR score 56.5 (#22)",
-        "Pitcher HR VS 63.3 at park 0.90"
+        "HR score 56.2 (#25)",
+        "Pitcher HR VS 70.1 at park 0.92"
       ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
+      "hrOddsYes": "+575",
+      "marketImpliedProbability": 0.14814814814814814,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
