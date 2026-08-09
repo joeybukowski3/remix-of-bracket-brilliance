@@ -1,10 +1,10 @@
 {
   "date": "2026-08-09",
-  "generatedAt": "2026-08-09T13:29:09.580Z",
+  "generatedAt": "2026-08-09T14:58:30.479Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features three hitter-friendly parks (Yankee Stadium 1.18, Citizens Bank 1.17, American Family 1.10) paired with right-handers Grant Holmes and Shane Bieber who have surrendered 64-78 HR per 100 fly balls. Busch Stadium (0.92) and loanDepot (0.88) suppress power but still appear on the board due to favorable pitcher matchups against Lorenzen and Rodriguez.",
-    "modelNote": "The model is overweighting barrel rate and hard-hit rate while discounting park suppression when opposing pitchers post HR/FB rates above 70, elevating Burleson and Harper to the top two spots despite their venues."
+    "slateOverview": "Today's slate features three hitter-friendly parks: Citizens Bank Park (1.17), Yankee Stadium (1.18), and Chase Field (1.01), while Busch Stadium (0.92) and loanDepot park (0.88) suppress power. Key pitching matchups include Shane Bieber vs. PHI and Eduardo Rodriguez vs. LAD, both right-handers allowing elevated HR rates. Weather angles are neutral across the board.",
+    "modelNote": "The model is overweighting barrel rate and hard-hit rate in today's environment, with park factor and opposing pitcher HR vulnerability as secondary levers."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
         "HH=49%"
       ],
       "bullets": [
-        "hrScore=80.4",
+        "barrel=11.5%",
         "park=0.92"
       ],
       "hrOddsYes": "+360",
@@ -37,7 +37,7 @@
         "HH=44.8%"
       ],
       "bullets": [
-        "hrScore=75.1",
+        "barrel=11.6%",
         "park=1.17"
       ],
       "hrOddsYes": "+360",
@@ -52,15 +52,15 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=93.3",
-        "Hard Hit%=52.7"
+        "barrel=15.1%",
+        "HH=52.7%"
       ],
       "bullets": [
-        "HR score 73.5 (#3)",
-        "Pitcher HR VS 93.3 at park 0.88"
+        "barrel=15.1%",
+        "park=0.88"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -71,12 +71,12 @@
       "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=64.3",
+        "Pitcher HR VS=64.2",
         "Hard Hit%=55.6"
       ],
       "bullets": [
-        "HR score 72.6 (#4)",
-        "Pitcher HR VS 64.3 at park 1.18"
+        "HR score 72.3 (#4)",
+        "Pitcher HR VS 64.2 at park 1.18"
       ],
       "hrOddsYes": "+750",
       "marketImpliedProbability": 0.11764705882352941,
@@ -90,12 +90,12 @@
       "opposingPitcher": "Eduardo Rodriguez",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=54.6",
+        "Pitcher HR VS=54.7",
         "Hard Hit%=52.6"
       ],
       "bullets": [
-        "HR score 72.4 (#5)",
-        "Pitcher HR VS 54.6 at park 1.01"
+        "HR score 71.9 (#5)",
+        "Pitcher HR VS 54.7 at park 1.01"
       ],
       "hrOddsYes": "+307",
       "marketImpliedProbability": 0.2457002457002457,
@@ -104,25 +104,6 @@
     }
   ],
   "valueBets": [
-    {
-      "player": "Griffin Conine",
-      "team": "MIA",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=15.1%",
-        "HH=52.7%"
-      ],
-      "bullets": [
-        "hrScore=73.5",
-        "park=0.88"
-      ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "George Lombard Jr.",
       "team": "NYY",
@@ -134,7 +115,7 @@
         "HH=55.6%"
       ],
       "bullets": [
-        "hrScore=72.6",
+        "barrel=22.2%",
         "park=1.18"
       ],
       "hrOddsYes": "+750",
@@ -153,7 +134,7 @@
         "HH=52.6%"
       ],
       "bullets": [
-        "hrScore=72.4",
+        "barrel=16.6%",
         "park=1.01"
       ],
       "hrOddsYes": "+307",
@@ -162,21 +143,40 @@
       "hrValueEdge": null
     },
     {
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=13.8%",
+        "HH=50.7%"
+      ],
+      "bullets": [
+        "barrel=13.8%",
+        "park=0.93"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Jac Caglianone",
       "team": "KC",
       "opponent": "CHC",
       "opposingPitcher": "Matthew Boyd",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=55.6",
-        "Pitcher HR VS=55.0"
+        "Pitcher HR VS=56.2",
+        "Hard Hit%=55.6"
       ],
       "bullets": [
-        "HR score 69.5 (#6)",
-        "Pitcher HR VS 55.0 at park 0.96"
+        "HR score 69.2 (#7)",
+        "Pitcher HR VS 56.2 at park 0.96"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,57 +185,57 @@
       "team": "NYY",
       "opponent": "ATL",
       "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=64.3",
+        "Pitcher HR VS=64.2",
         "Hard Hit%=48.0"
       ],
       "bullets": [
-        "HR score 68.6 (#7)",
-        "Pitcher HR VS 64.3 at park 1.18"
+        "HR score 68.4 (#8)",
+        "Pitcher HR VS 64.2 at park 1.18"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=78.1",
-        "Hard Hit%=51.6"
-      ],
-      "bullets": [
-        "HR score 65.9 (#8)",
-        "Pitcher HR VS 78.1 at park 1.17"
-      ],
-      "hrOddsYes": "+200",
-      "marketImpliedProbability": 0.3333333333333333,
+      "hrOddsYes": "+279",
+      "marketImpliedProbability": 0.2638522427440633,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 8,
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "CHC",
+      "opposingPitcher": "Matthew Boyd",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=16.9%",
-        "HH=51.6%"
+        "barrel=14.7%",
+        "HH=55.6%"
       ],
       "bullets": [
-        "hrScore=65.9",
-        "park=1.17"
+        "barrel=14.7%",
+        "park=0.96"
       ],
-      "hrOddsYes": "+200",
-      "marketImpliedProbability": 0.3333333333333333,
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=15.8%",
+        "HH=48%"
+      ],
+      "bullets": [
+        "barrel=15.8%",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+279",
+      "marketImpliedProbability": 0.2638522427440633,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,14 +244,14 @@
       "team": "DET",
       "opponent": "SF",
       "opposingPitcher": "Logan Webb",
-      "hrScoreRank": 13,
+      "hrScoreRank": 16,
       "topStats": [
-        "barrel=11.5%",
-        "HH=44.8%"
+        "Hard Hit%=44.8",
+        "Pitcher HR VS=29.8"
       ],
       "bullets": [
-        "hrScore=62.6",
-        "park=0.85"
+        "HR score 62.0 (#16)",
+        "Pitcher HR VS 29.8 at park 0.85"
       ],
       "hrOddsYes": "+625",
       "marketImpliedProbability": 0.13793103448275862,
@@ -259,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Brandon Nimmo",
-      "team": "TEX",
-      "opponent": "BAL",
-      "opposingPitcher": "Cade Povich",
-      "hrScoreRank": 14,
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 23,
       "topStats": [
-        "Pitcher HR VS=62.2",
-        "Hard Hit%=51.2"
+        "Pitcher HR VS=60.9",
+        "Hard Hit%=46.7"
       ],
       "bullets": [
-        "HR score 62.5 (#14)",
-        "Pitcher HR VS 62.2 at park 0.99"
+        "HR score 60.2 (#23)",
+        "Pitcher HR VS 60.9 at park 0.98"
       ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
