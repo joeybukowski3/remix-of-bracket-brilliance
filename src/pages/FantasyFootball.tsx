@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { ChevronDown, Search } from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -10,22 +9,24 @@ import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
 import {
   FANTASY_POSITION_FILTERS,
+  FANTASY_POSITION_METRIC_LABELS,
   FANTASY_RANKINGS,
   countByPosition,
   filterFantasyRankings,
-  getPopulatedColumns,
+  getFantasyMetricValues,
   type FantasyPositionFilter,
+  type FantasyRankingRow,
 } from "@/lib/fantasy/rankings";
 
 /**
  * Fantasy Football landing page.
  *
- * This is the section's architecture, not its content. The customized Joe Knows
- * Ball rankings have not been supplied, so the table renders its real empty
- * state rather than sample players — and the page links only to routes that
- * exist. Draft tools, player analysis and draft strategy are described as
- * planned in prose; they are deliberately not rendered as tabs or links,
- * because a tab that goes nowhere is worse than no tab.
+ * The published 2026 list (250 players, verbatim from the supplied workbook) is
+ * rendered as a compact board — Rank, Player, Team, Pos, Pos Rank, draft
+ * Rd/Pick and the workbook's AVG composite. The deeper fields live in an
+ * expandable row per player so the primary view stays scannable. Draft tools,
+ * player analysis and draft strategy remain planned and are described in prose,
+ * not rendered as tabs that go nowhere.
  */
 export default function FantasyFootball() {
   const seo = getSeoMeta("fantasy-football");
@@ -45,180 +46,220 @@ export default function FantasyFootball() {
     () => filterFantasyRankings(rows, position, query),
     [rows, position, query],
   );
-  const columns = useMemo(() => getPopulatedColumns(rows), [rows]);
-  const hasRankings = rows.length > 0;
+
+  const formattedDate = updatedAt
+    ? new Date(updatedAt).toLocaleDateString("en-US", { dateStyle: "medium" })
+    : null;
 
   return (
     <SiteShell>
-      <div className="min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 lg:px-8 xl:py-7">
-          <main className="space-y-5 pb-10">
-            <NflPageHeader
-              eyebrow="Joe Knows Ball · Fantasy Football"
-              title={`${season} Fantasy Football Rankings`}
-              description={`Customized Joe Knows Ball ${scoring} rankings and draft research. This is the home for our own ranking list — we do not republish another site's board.`}
-              actions={
-                <Link
-                  to="/16-0"
-                  className="inline-flex items-center rounded border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-                >
-                  Try the 16-0 Draft Simulator →
-                </Link>
-              }
-            />
-
-            <NflSection
-              title={`${season} overall rankings`}
-              subtitle={
-                updatedAt
-                  ? `${scoring} scoring · updated ${new Date(updatedAt).toLocaleDateString("en-US", { dateStyle: "medium" })}`
-                  : `${scoring} scoring · the ranking list has not been published yet`
-              }
-              headerExtra={
-                <div className="flex flex-wrap items-center gap-3">
-                  <NflFilterChips
-                    label="Filter by position"
-                    size="sm"
-                    options={FANTASY_POSITION_FILTERS}
-                    value={position}
-                    onChange={setPosition}
-                    formatOption={(option) => {
-                      const label = option === "ALL" ? "Overall" : option;
-                      // The count is only meaningful once rows exist; showing
-                      // "QB (0)" before publication reads as a broken filter.
-                      return hasRankings ? `${label} (${counts[option] ?? 0})` : label;
-                    }}
-                  />
-                  <div className="relative min-w-0 flex-1 sm:max-w-[220px]">
-                    <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden />
-                    <input
-                      type="search"
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      disabled={!hasRankings}
-                      placeholder="Search player or team"
-                      aria-label="Search rankings by player or team"
-                      className="w-full rounded border border-slate-200 bg-white py-1 pl-7 pr-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 disabled:cursor-not-allowed disabled:bg-slate-50"
-                    />
-                  </div>
-                </div>
-              }
-              bodyClassName={hasRankings ? "!px-0" : ""}
-            >
-              {!hasRankings ? (
-                <RankingsEmptyState season={season} scoring={scoring} />
-              ) : (
-                <NflTableScroller label={`${season} fantasy football rankings`}>
-                  <table className="w-full min-w-[640px] text-sm">
-                    <thead>
-                      <tr className={NFL_TABLE_HEAD_ROW}>
-                        <th scope="col" className="px-3 py-2 text-right">#</th>
-                        <th scope="col" className="px-3 py-2 text-left">Player</th>
-                        <th scope="col" className="px-2 py-2 text-left">Team</th>
-                        <th scope="col" className="px-2 py-2 text-center">Pos</th>
-                        {columns.map((column) => (
-                          <th
-                            key={column.key}
-                            scope="col"
-                            className={`px-2 py-2 ${column.align === "left" ? "text-left" : "text-center"}`}
-                          >
-                            {column.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleRows.map((row) => (
-                        <tr key={`${row.overallRank}-${row.player}`} className={NFL_TABLE_ROW}>
-                          <td className="px-3 py-2 text-right font-semibold tabular-nums text-slate-900">{row.overallRank}</td>
-                          <td className="px-3 py-2 font-semibold text-slate-900">{row.player}</td>
-                          <td className="px-2 py-2 uppercase text-slate-600">{row.team}</td>
-                          <td className="px-2 py-2 text-center text-slate-600">{row.position}</td>
-                          {columns.map((column) => (
-                            <td
-                              key={column.key}
-                              className={`px-2 py-2 tabular-nums text-slate-700 ${column.align === "left" ? "text-left" : "text-center"}`}
-                            >
-                              {row[column.key] ?? "—"}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                      {visibleRows.length === 0 && (
-                        <tr>
-                          <td colSpan={4 + columns.length} className="px-3 py-6 text-center text-sm text-slate-500">
-                            No player matches that filter.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </NflTableScroller>
-              )}
-            </NflSection>
-
-            <NflSection title="What is coming to this section" collapse="mobile">
-              <p className="text-[13px] leading-6 text-slate-600">
-                Fantasy Football is being built as its own product area rather than another
-                team-analysis page. The rankings table above is the foundation: it already
-                understands position ranks, tiers, bye weeks, ADP, projected points, strength of
-                schedule and a Joe Knows Ball score, and renders whichever of those the published
-                list carries.
-              </p>
-              <p className="mt-3 text-[13px] leading-6 text-slate-600">
-                Position rankings, draft tools, player analysis and draft strategy will follow once
-                the ranking list is published. They are named here so the direction is clear — they
-                are intentionally not linked yet, because nothing on Joe Knows Ball should link to a
-                page that does not exist.
-              </p>
-            </NflSection>
-
-            <NflSection title="Related NFL research" collapse="mobile">
-              <ul className="grid gap-2 sm:grid-cols-2">
-                <RelatedLink to="/nfl" title="NFL Power Ratings" detail="Model offense, defense and overall ratings for all 32 teams." />
-                <RelatedLink to="/nfl/schedule" title="NFL Schedule" detail="Full season schedule, kickoff times and results." />
-                <RelatedLink to="/nfl/guide" title="2026 Team Guide" detail="Team dashboards, projections and offseason movement." />
-                <RelatedLink to="/16-0" title="16-0 Draft Simulator" detail="Draft a 17-player roster and simulate the season." />
-              </ul>
-            </NflSection>
-          </main>
+      <NflPageHeader
+        eyebrow="Fantasy Football"
+        title="Fantasy Football Rankings"
+        description="Customized Joe Knows Ball PPR rankings — a 12-team, 1-QB mock draft board from the 2026 workbook."
+      />
+      <NflSection
+        title="2026 Rankings"
+        subtitle={`${scoring} scoring · ${formattedDate ? `updated ${formattedDate}` : "not yet updated"} · ${rows.length} players. Click a row for metrics, playoff schedule and deeper ranks.`}
+      >
+        <NflFilterChips
+          label="Position"
+          options={FANTASY_POSITION_FILTERS}
+          value={position}
+          onChange={setPosition}
+          formatOption={(option) => (option === "ALL" ? "Overall" : option)}
+        />
+        <div className="relative mb-4 max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            aria-label="Search players"
+            placeholder="Search players or teams"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
         </div>
-      </div>
+        {visibleRows.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <RankingsTable rows={visibleRows} />
+        )}
+        <WhatIsComing />
+      </NflSection>
     </SiteShell>
   );
 }
 
-function RankingsEmptyState({ season, scoring }: { season: number; scoring: string }) {
+function EmptyState() {
   return (
-    <div className="py-8 text-center">
-      <h3 className="text-sm font-semibold text-slate-900">
-        The {season} rankings have not been published yet
-      </h3>
-      <p className="mx-auto mt-2 max-w-md text-[13px] leading-6 text-slate-600">
-        This table will fill with the customized Joe Knows Ball {scoring} board — our own rankings,
-        not a consensus list republished from elsewhere. Position filters and search are wired and
-        will work the moment the list lands.
+    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+      <p className="text-sm font-semibold text-slate-700">No matching players</p>
+      <p className="mt-1 text-sm text-slate-600">
+        Try a different search or position filter.
       </p>
-      <Link
-        to="/nfl/guide"
-        className="mt-4 inline-flex rounded border border-slate-900 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1"
-      >
-        Browse the 2026 NFL Team Guide
-      </Link>
     </div>
   );
 }
 
-function RelatedLink({ to, title, detail }: { to: string; title: string; detail: string }) {
+function RankingsTable({ rows }: { rows: readonly FantasyRankingRow[] }) {
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  const toggle = (key: string) =>
+    setExpandedKey((current) => (current === key ? null : key));
+
   return (
-    <li>
-      <Link
-        to={to}
-        className="block rounded border border-slate-200 px-3 py-2 transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
-      >
-        <span className="block text-sm font-semibold text-slate-900">{title}</span>
-        <span className="mt-0.5 block text-[12px] leading-5 text-slate-500">{detail}</span>
-      </Link>
-    </li>
+    <NflTableScroller label="Overall rankings">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className={NFL_TABLE_HEAD_ROW}>
+            <th className="px-2 py-2 text-left">Rank</th>
+            <th className="px-2 py-2 text-left">Player</th>
+            <th className="px-2 py-2 text-left">Team</th>
+            <th className="px-2 py-2 text-left">Pos</th>
+            <th className="px-2 py-2 text-right">Pos Rank</th>
+            <th className="px-2 py-2 text-right">Rd/Pick</th>
+            <th className="px-2 py-2 text-right">AVG</th>
+            <th className="px-2 py-2 text-right">
+              <span className="sr-only">Details</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const key = row.player;
+            const open = expandedKey === key;
+            const detailId = `fantasy-detail-${row.overallRank}`;
+            return (
+              <Fragment key={key}>
+                <tr
+                  onClick={() => toggle(key)}
+                  className={`${NFL_TABLE_ROW} cursor-pointer`}
+                  aria-expanded={open}
+                >
+                  <td className="px-2 py-2 font-semibold tabular-nums">{row.overallRank}</td>
+                  <td className="px-2 py-2 font-medium">{row.player}</td>
+                  <td className="px-2 py-2 uppercase text-slate-600">{row.team?.toUpperCase() ?? "FA"}</td>
+                  <td className="px-2 py-2 text-slate-600">{row.position}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{row.positionRank ?? "—"}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">
+                    {row.draftRound != null && row.roundPick != null
+                      ? `${row.draftRound}/${row.roundPick}`
+                      : "—"}
+                  </td>
+                  <td className="px-2 py-2 text-right tabular-nums">{row.averageRank ?? "—"}</td>
+                  <td className="px-2 py-2 text-right">
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      aria-controls={detailId}
+                      aria-label={`${open ? "Hide" : "Show"} details for ${row.player}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggle(key);
+                      }}
+                      className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                  </td>
+                </tr>
+                {open && (
+                  <tr key={`${key}-detail`}>
+                    <td colSpan={8} id={detailId} className="border-b border-slate-200 bg-slate-50 px-4 py-4">
+                      <DetailPanel row={row} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </NflTableScroller>
+  );
+}
+
+function DetailPanel({ row }: { row: FantasyRankingRow }) {
+  const labels = FANTASY_POSITION_METRIC_LABELS[row.position];
+  const metricValues = getFantasyMetricValues(row);
+
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          {row.position} Metrics
+        </h3>
+        <dl className="mt-2 space-y-1 text-sm">
+          {labels.map((label, index) => (
+            <RowDetail key={label} label={label} value={metricValues[index]} rank />
+          ))}
+        </dl>
+      </div>
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ranks</h3>
+        <dl className="mt-2 space-y-1 text-sm">
+          <RowDetail label="WAR" value={row.warRank} rank />
+          <RowDetail label="Late" value={row.lateSeasonRank} rank />
+          <RowDetail label="Proj" value={row.projectionRank} rank />
+          <RowDetail label="Vegas" value={row.vegasRank} rank />
+        </dl>
+      </div>
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Team Context</h3>
+        <dl className="mt-2 space-y-1 text-sm">
+          <RowDetail label="SOS" value={row.strengthOfSchedule} />
+          <RowDetail label="O-Line" value={row.offensiveLineRank} rank />
+        </dl>
+      </div>
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Playoff Schedule</h3>
+        <dl className="mt-2 space-y-1 text-sm">
+          <RowDetail label="Week 15" value={row.playoffWeek15Opponent} />
+          <RowDetail label="Week 16" value={row.playoffWeek16Opponent} />
+          <RowDetail label="Week 17" value={row.playoffWeek17Opponent} />
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+function RowDetail({
+  label,
+  value,
+  rank = false,
+}: {
+  label: string;
+  value: number | string | undefined;
+  rank?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-slate-600">{label}</dt>
+      <dd className="font-semibold tabular-nums text-slate-900">
+        {value == null ? "—" : rank ? `#${value}` : String(value)}
+      </dd>
+    </div>
+  );
+}
+
+function WhatIsComing() {
+  return (
+    <section className="mt-8 rounded-lg border border-slate-200 bg-white p-5">
+      <h2 className="text-lg font-bold text-slate-900">What's coming</h2>
+      <p className="mt-2 text-sm text-slate-600">
+        The board above is the foundation of the fantasy football section. Joe
+        plans to add draft tools, player analysis and draft strategy over the
+        next few weeks.
+      </p>
+      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <li>Draft simulator with AI-powered pick suggestions</li>
+        <li>Player analysis pages with advanced stats</li>
+        <li>Draft strategy guides by pick position</li>
+        <li>Strength-of-schedule and bye-week planning tools</li>
+      </ul>
+    </section>
   );
 }

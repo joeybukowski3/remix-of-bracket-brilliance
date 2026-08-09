@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 import type { ReactNode } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -16,7 +16,10 @@ import {
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
-vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
+vi.mock("@/hooks/usePageSeo", async () => ({
+  ...(await vi.importActual<typeof import("@/hooks/usePageSeo")>("@/hooks/usePageSeo")),
+  usePageSeo: vi.fn(),
+}));
 
 function renderPage() {
   return render(
@@ -28,115 +31,145 @@ function renderPage() {
   );
 }
 
+afterEach(() => {
+  window.history.pushState({}, "", "/");
+});
+
 describe("/fantasy-football", () => {
   it("renders the section header and rankings shell", () => {
     renderPage();
     expect(screen.getByRole("heading", { level: 1, name: /Fantasy Football Rankings/i })).toBeTruthy();
-    expect(screen.getByRole("region", { name: /overall rankings/i })).toBeTruthy();
+    expect(screen.getByRole("region", { name: /Overall rankings/i })).toBeTruthy();
   });
 
-  it("shows an intentional empty state instead of invented player rows", () => {
+  it("renders the published 250-row rankings instead of an empty state", () => {
     renderPage();
-    expect(screen.getByText(/have not been published yet/i)).toBeTruthy();
-    // No rankings table is rendered while the list is empty, so there is no
-    // chance of a placeholder row reading as a real ranking.
-    expect(screen.queryByRole("table")).toBeNull();
-  });
+    const table = screen.getByRole("table");
+    const playerRows = within(table)
+      .getAllByRole("button")
+      .filter((button) => button.getAttribute("aria-label")?.startsWith("Show details for"));
+    expect(playerRows.length).toBe(250);
+    expect(screen.getByText("Jahmyr Gibbs")).toBeTruthy();
+    expect(screen.getByText("Devin Singletary")).toBeTruthy();
+    expect(screen.queryByText(/No matching players/i)).toBeNull();
+  }, 30000);
 
   it("exposes the position filter architecture with Overall selected", () => {
     renderPage();
-    const group = screen.getByRole("group", { name: "Filter by position" });
-    for (const label of ["Overall", "QB", "RB", "WR", "TE"]) {
-      expect(within(group).getByRole("button", { name: label })).toBeTruthy();
+    const group = screen.getByRole("group", { name: "Position" });
+    expect(group).toBeTruthy();
+    expect(within(group).getByRole("button", { name: "Overall" })).toHaveAttribute("aria-pressed", "true");
+    for (const name of ["QB", "RB", "WR", "TE"]) {
+      expect(within(group).getByRole("button", { name })).toHaveAttribute("aria-pressed", "false");
     }
-    expect(within(group).getByRole("button", { name: "Overall" }).getAttribute("aria-pressed")).toBe("true");
-  });
-
-  it("changes the selected position on click", () => {
-    renderPage();
-    const group = screen.getByRole("group", { name: "Filter by position" });
-    fireEvent.click(within(group).getByRole("button", { name: "RB" }));
-    expect(within(group).getByRole("button", { name: "RB" }).getAttribute("aria-pressed")).toBe("true");
-    expect(within(group).getByRole("button", { name: "Overall" }).getAttribute("aria-pressed")).toBe("false");
-  });
-
-  it("disables player search while there is nothing to search", () => {
-    renderPage();
-    expect(screen.getByLabelText(/Search rankings/i)).toHaveProperty("disabled", true);
-  });
-
-  it("introduces no dead links — every link targets a live route", () => {
-    const { container } = renderPage();
-    const live = new Set(["/16-0", "/nfl", "/nfl/schedule", "/nfl/guide"]);
-    const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href"));
-    expect(hrefs.length).toBeGreaterThan(0);
-    for (const href of hrefs) {
-      expect(live.has(href ?? ""), `unexpected link target: ${href}`).toBe(true);
-    }
-  });
-
-  it("is reachable at /fantasy-football through the app router", async () => {
-    // App owns its own BrowserRouter, so the route is exercised through history
-    // rather than by nesting a second router.
-    window.history.pushState({}, "", "/fantasy-football");
-    try {
-      render(<App />);
-      expect(
-        await screen.findByRole("heading", { level: 1, name: /Fantasy Football Rankings/i }),
-      ).toBeTruthy();
-    } finally {
-      window.history.pushState({}, "", "/");
-    }
-  });
-});
-
-describe("fantasy ranking schema", () => {
-  it("ships with no invented rankings", () => {
-    expect(FANTASY_RANKINGS.rows).toHaveLength(0);
-    expect(FANTASY_RANKINGS.updatedAt).toBeNull();
-    expect(FANTASY_RANKINGS.source).toBe("JoeKnowsBall");
-  });
-
-  it("offers Overall plus the four skill positions", () => {
     expect(FANTASY_POSITION_FILTERS).toEqual(["ALL", "QB", "RB", "WR", "TE"]);
   });
 
-  it("renders only the optional columns a dataset actually populates", () => {
-    expect(getPopulatedColumns([])).toHaveLength(0);
-    expect(
-      getPopulatedColumns([
-        { overallRank: 1, player: "A", team: "kc", position: "QB", adp: 2.4 },
-      ]).map((column) => column.key),
-    ).toEqual(["adp"]);
+  it("keeps the primary view compact with draft-context columns", () => {
+    renderPage();
+    const table = screen.getByRole("table");
+    const headerCells = within(table).getAllByRole("columnheader");
+    const headerLabels = headerCells.map((cell) => cell.textContent ?? "");
+    expect(headerLabels).toContain("Pos Rank");
+    expect(headerLabels).toContain("Rd/Pick");
+    expect(headerLabels).toContain("AVG");
+    // Deeper workbook fields are not default columns; they live in the expandable row.
+    expect(headerLabels).not.toContain("SOS");
+    expect(headerLabels).not.toContain("Late");
+    expect(headerLabels).not.toContain("Vegas");
+    expect(headerLabels).not.toContain("Notes");
+    expect(headerLabels).not.toContain("Bye");
+    expect(headerLabels).not.toContain("ADP");
+  });
+
+  it("expands a player row to reveal metrics, ranks and playoff schedule", () => {
+    renderPage();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search players" }), {
+      target: { value: "gibbs" },
+    });
+    const expander = screen.getByRole("button", { name: "Show details for Jahmyr Gibbs" });
+    fireEvent.click(expander);
+    expect(screen.getByText("RB Metrics")).toBeTruthy();
+    expect(screen.getByText("Touches")).toBeTruthy();
+    expect(screen.getByText("Red Zone Touches")).toBeTruthy();
+    expect(screen.getByText("YPC")).toBeTruthy();
+    expect(screen.getByText("WAR")).toBeTruthy();
+    expect(screen.getByText("Vegas")).toBeTruthy();
+    expect(screen.getByText("Playoff Schedule")).toBeTruthy();
+    expect(screen.getByText("Week 15")).toBeTruthy();
+    expect(screen.getByText("@MIN")).toBeTruthy();
+  });
+
+  it("collapses the expanded row when the expander is clicked again", () => {
+    renderPage();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search players" }), {
+      target: { value: "gibbs" },
+    });
+    const expander = screen.getByRole("button", { name: "Show details for Jahmyr Gibbs" });
+    fireEvent.click(expander);
+    expect(screen.getByText("RB Metrics")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Hide details for Jahmyr Gibbs" }));
+    expect(screen.queryByText("RB Metrics")).toBeNull();
+  });
+
+  it("filters the table by free-text query and shows the empty state for no matches", () => {
+    renderPage();
+    const search = screen.getByRole("searchbox", { name: "Search players" });
+    fireEvent.change(search, { target: { value: "mahomes" } });
+    expect(screen.getByText("Patrick Mahomes")).toBeTruthy();
+    expect(screen.queryByText("Jahmyr Gibbs")).toBeNull();
+    fireEvent.change(search, { target: { value: "zzz-no-player" } });
+    expect(screen.getByText(/No matching players/i)).toBeTruthy();
+  });
+
+  it("counts by position across the full ranking set", () => {
+    expect(countByPosition(FANTASY_RANKINGS.rows)).toEqual({ QB: 31, RB: 85, WR: 100, TE: 34 });
+    expect(Object.values(countByPosition(FANTASY_RANKINGS.rows)).reduce((a, b) => a + b, 0)).toBe(250);
+  });
+
+  it("filters the ranking set by position and free-text query", () => {
+    const te = filterFantasyRankings(FANTASY_RANKINGS.rows, "TE", "");
+    expect(te.length).toBe(34);
+    expect(te.every((row) => row.position === "TE")).toBe(true);
+    expect(filterFantasyRankings(FANTASY_RANKINGS.rows, "ALL", "mahomes").map((row) => row.player)).toEqual([
+      "Patrick Mahomes",
+    ]);
+  });
+
+  it("reports which optional columns a dataset actually populates", () => {
+    const populated = getPopulatedColumns(FANTASY_RANKINGS.rows);
+    expect(populated).toContain("positionRank");
+    expect(populated).toContain("warRank");
+    expect(populated).toContain("vegasRank");
+    expect(populated).toContain("strengthOfSchedule");
+    expect(populated).toContain("offensiveLineRank");
+    expect(populated).not.toContain("adp");
+    expect(populated).not.toContain("byeWeek");
+    expect(populated).not.toContain("notes");
+  });
+
+  it("is reachable at /fantasy-football through the app router", async () => {
+    window.history.pushState({}, "", "/fantasy-football");
+    render(<App />);
+    expect(await screen.findByText(/Fantasy Football Rankings/i)).toBeTruthy();
   });
 
   it("anticipates the full field set without requiring any of it", () => {
     const keys = FANTASY_OPTIONAL_COLUMNS.map((column) => column.key);
-    for (const expected of ["positionRank", "byeWeek", "customScore", "adp", "consensusRank", "projectedPoints", "priorSeasonRank", "lateSeasonRank", "strengthOfSchedule", "tier", "notes"]) {
-      expect(keys, expected).toContain(expected);
-    }
-  });
-
-  it("filters by position and by player or team text", () => {
-    const rows = [
-      { overallRank: 1, player: "Alpha Back", team: "kc", position: "RB" as const },
-      { overallRank: 2, player: "Beta Wide", team: "sf", position: "WR" as const },
-    ];
-    expect(filterFantasyRankings(rows, "RB", "")).toHaveLength(1);
-    expect(filterFantasyRankings(rows, "ALL", "beta")).toHaveLength(1);
-    expect(filterFantasyRankings(rows, "ALL", "sf")).toHaveLength(1);
-    expect(filterFantasyRankings(rows, "QB", "")).toHaveLength(0);
-  });
-
-  it("counts each position plus the overall total", () => {
-    const counts = countByPosition([
-      { overallRank: 1, player: "A", team: "kc", position: "RB" },
-      { overallRank: 2, player: "B", team: "sf", position: "RB" },
-      { overallRank: 3, player: "C", team: "buf", position: "QB" },
-    ]);
-    expect(counts.ALL).toBe(3);
-    expect(counts.RB).toBe(2);
-    expect(counts.QB).toBe(1);
-    expect(counts.TE).toBe(0);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        "positionRank",
+        "byeWeek",
+        "customScore",
+        "adp",
+        "consensusRank",
+        "projectedPoints",
+        "priorSeasonRank",
+        "lateSeasonRank",
+        "strengthOfSchedule",
+        "tier",
+        "notes",
+      ]),
+    );
   });
 });
