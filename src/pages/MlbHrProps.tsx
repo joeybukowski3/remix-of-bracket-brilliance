@@ -490,7 +490,11 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 function normalizeText(v: unknown) { return typeof v === "string" ? v.trim() : ""; }
 function normalizeTeamValue(v: unknown) { return normalizeText(v).toUpperCase(); }
-function normalizeNumber(v: unknown) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+function normalizeNumber(v: unknown) {
+  if (v == null || (typeof v === "string" && v.trim() === "")) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 function normalizeStringList(v: unknown) {
   return Array.isArray(v) ? v.map((e) => normalizeText(e)).filter(Boolean) : [];
 }

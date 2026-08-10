@@ -480,6 +480,7 @@ export default function MlbStrikeoutProps() {
   const gameOptions = useMemo(() => games.map((game) => ({ value: game.gameKey, label: game.matchup })), [games]);
   const bestScore = mainRows[0]?.strikeoutMatchupScore ?? null;
   const hasKOdds = useMemo(() => mainRows.some((row) => (row.kLine != null && row.kLine > 0) || Boolean(row.kOddsOver) || Boolean(row.kOddsUnder)), [mainRows]);
+  const marketsUnavailable = mainRows.length > 0 && !hasKOdds;
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -633,8 +634,8 @@ export default function MlbStrikeoutProps() {
                     <button type="button" aria-label="Most Strikeouts" onClick={() => { setSortKey("strikeoutMatchupScore"); setSortDir("desc"); }} aria-pressed={sortKey === "strikeoutMatchupScore"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", sortKey === "strikeoutMatchupScore" ? "border-emerald-600 bg-emerald-600 text-white" : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400")}>
                       Most Strikeouts<span className={cn("mt-0.5 block text-[9px] font-semibold", sortKey === "strikeoutMatchupScore" ? "text-emerald-50" : "text-emerald-600")}>K Score ↓</span>
                     </button>
-                    <button type="button" aria-label="Best Value" onClick={() => { setSortKey("absoluteProjectionEdge"); setSortDir("desc"); }} aria-pressed={sortKey === "absoluteProjectionEdge"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", sortKey === "absoluteProjectionEdge" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-violet-50 text-violet-800 hover:border-violet-400")}>
-                      Best Value<span className={cn("mt-0.5 block text-[9px] font-semibold", sortKey === "absoluteProjectionEdge" ? "text-violet-50" : "text-violet-600")}>Largest edge</span>
+                    <button type="button" aria-label="Best Value" disabled={marketsUnavailable} onClick={() => { setSortKey("absoluteProjectionEdge"); setSortDir("desc"); }} aria-pressed={sortKey === "absoluteProjectionEdge"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", marketsUnavailable ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400" : sortKey === "absoluteProjectionEdge" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-violet-50 text-violet-800 hover:border-violet-400")}>
+                      Best Value<span className={cn("mt-0.5 block text-[9px] font-semibold", marketsUnavailable ? "text-slate-400" : sortKey === "absoluteProjectionEdge" ? "text-violet-50" : "text-violet-600")}>{marketsUnavailable ? "Unavailable" : "Largest edge"}</span>
                     </button>
                     <button type="button" aria-label="Game Time" onClick={() => { setSortKey("gameStartTime"); setSortDir("asc"); }} aria-pressed={sortKey === "gameStartTime"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", sortKey === "gameStartTime" ? "border-slate-700 bg-slate-700 text-white" : "border-sky-200 bg-sky-50 text-sky-800 hover:border-sky-400")}>
                       Game Time<span className={cn("mt-0.5 block text-[9px] font-semibold", sortKey === "gameStartTime" ? "text-slate-100" : "text-sky-600")}>Earliest first</span>
@@ -644,6 +645,12 @@ export default function MlbStrikeoutProps() {
                 <p className="mt-2 text-xs leading-5 text-slate-500">Most Strikeouts ranks K Score descending. Best Value ranks the largest model-to-line differences. Game Time shows the earliest starts first.</p>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500"><span>{filteredRows.length} pitchers shown</span><Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB</Link></div>
               </section>
+
+              {marketsUnavailable && (
+                <p role="status" className="rounded-xl border border-sky-100 bg-sky-50/70 px-3 py-2 text-xs leading-5 text-sky-900">
+                  Strikeout markets are currently unavailable. Model rankings and projections remain available and will update automatically when sportsbook lines return.
+                </p>
+              )}
 
               <section data-x-export="mlb-strikeout-props" className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
                 {isCompactLayout ? (
@@ -655,7 +662,6 @@ export default function MlbStrikeoutProps() {
                       const panelId = compactRowPanelId("strikeout-row-detail", rowKey);
                       const edgeInfo = getProjectionEdgeInfo(row);
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
-                      const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
                       const tintClass = edgeInfo.direction === "over" ? "bg-orange-50/70" : edgeInfo.direction === "under" ? "bg-blue-50/70" : "bg-white";
                       const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
                       const venueIndicator = resolveVenueIndicator(row);
@@ -682,12 +688,10 @@ export default function MlbStrikeoutProps() {
                               </div>
                               <span className={cn("shrink-0 rounded-md border px-1.5 py-1 text-[8px] font-black uppercase tracking-wide", venueTileClass(venueIndicator))}>{venueIndicator}</span>
                               <div className="flex shrink-0 flex-col items-end gap-1">
-                                {hasKOdds && (
-                                  <span className="whitespace-nowrap text-[10px] font-bold text-slate-600">
-                                    {hasPostedLine ? `${fmt(row.kLine)} K` : "No line yet"}
-                                    {hasPostedOdds && <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>}
-                                  </span>
-                                )}
+                                <span className="whitespace-nowrap text-[10px] font-bold text-slate-600">
+                                  {hasPostedLine ? `${fmt(row.kLine)} K` : DASH}
+                                  <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>
+                                </span>
                                 <PercentileCell
                                   value={row.strikeoutMatchupScore}
                                   display={row.strikeoutMatchupScore.toFixed(1)}
@@ -763,14 +767,14 @@ export default function MlbStrikeoutProps() {
                   <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-xs">
                     <colgroup>
                       <col className="w-8" /><col className="w-[210px]" /><col className="w-[68px]" />
-                      {hasKOdds && <><col className="w-[84px]" /><col className="w-[56px]" /><col className="w-[56px]" /></>}
+                      <col className="w-[84px]" /><col className="w-[56px]" /><col className="w-[56px]" />
                       <col className="w-[64px]" />
                       {Array.from({ length: 4 }, (_, index) => <col key={`pitcher-stat-col-${index}`} className="w-[68px]" />)}
                       {Array.from({ length: 5 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[72px]" />)}
                     </colgroup>
                     <thead className="sticky top-0 z-20">
                     <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
-                      <th colSpan={hasKOdds ? 7 : 4} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
+                      <th colSpan={7} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
                       <th colSpan={4} data-table-group="pitcher-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
                       <th colSpan={5} data-table-group="opposing-team-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
                     </tr>
@@ -782,17 +786,16 @@ export default function MlbStrikeoutProps() {
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
                       <SortTh k="gameStartTime" label="Game Time" />
-                      {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" />
+                      <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th><SortTh k="projectedKs" label="Proj K" /><SortTh k="absoluteProjectionEdge" label="Edge" /><SortTh k="strikeoutMatchupScore" label="K Score" />
                       {["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"].map((label, index) => <th key={label} data-table-group={index === 0 ? "pitcher-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
                       {["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"].map((label, index) => <th key={label} data-table-group={index === 0 ? "opposing-team-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
                     </tr></thead>
                     <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
                       const isExpanded = expandedRowKey === rowKey;
-                      const desktopColumnCount = hasKOdds ? 16 : 13;
+                      const desktopColumnCount = 16;
                       const edgeInfo = getProjectionEdgeInfo(row);
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
-                      const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
                       const rowLabel = `${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`;
                       const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
                       const venueIndicator = resolveVenueIndicator(row);
@@ -828,18 +831,16 @@ export default function MlbStrikeoutProps() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap border-b border-slate-100 px-1.5 py-2 text-center align-middle text-[11px] font-semibold tabular-nums text-slate-600">{formatGameTime(row.gameStartTime)}</td>
-                      {hasKOdds && <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle tabular-nums"><div className="font-semibold text-slate-900">{hasPostedLine ? fmt(row.kLine) : "No line posted yet"}</div>{hasPostedOdds ? <div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div> : hasPostedLine ? <div className="text-[9px] leading-3 text-slate-500">Odds not yet available for this slate.</div> : null}</td>}
-                      {hasKOdds && <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle font-semibold tabular-nums text-slate-900">{fmt(edgeInfo.projectedKs)}</td>}
-                      {hasKOdds && (
-                        <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle">
-                          <span className={cn(
-                            "inline-block rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
-                            edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
-                          )}>
-                            {formatEdgeLabel(row)}
-                          </span>
-                        </td>
-                      )}
+                      <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle tabular-nums"><div className="font-semibold text-slate-900">{hasPostedLine ? fmt(row.kLine) : DASH}</div><div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div></td>
+                      <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle font-semibold tabular-nums text-slate-900">{fmt(edgeInfo.projectedKs)}</td>
+                      <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle">
+                        <span className={cn(
+                          "inline-block rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
+                          edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
+                        )}>
+                          {formatEdgeLabel(row)}
+                        </span>
+                      </td>
                       <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle">
                         <PercentileCell
                           value={row.strikeoutMatchupScore}
@@ -875,7 +876,7 @@ export default function MlbStrikeoutProps() {
                       )}
                       </Fragment>
                       );
-                    }) : <tr><td colSpan={hasKOdds ? 16 : 13} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
+                    }) : <tr><td colSpan={16} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
                   </table>
                   </div>
                 )}

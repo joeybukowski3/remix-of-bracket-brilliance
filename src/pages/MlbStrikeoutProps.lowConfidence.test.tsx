@@ -69,6 +69,19 @@ const perkinsRow: PitcherStrikeoutTeamRow = {
   projectedKs: 10.2,
 };
 
+const noMarketRow: PitcherStrikeoutTeamRow = {
+  ...baseRow,
+  rank: 4,
+  pitcher: "No Market Starter",
+  team: "NYY",
+  opponent: "TB",
+  gameKey: "TB@NYY",
+  kLine: null,
+  kOddsOver: null,
+  kOddsUnder: null,
+  kOddsBook: null,
+};
+
 // Patrick Sandoval audit regression: no real workload data (grade D, zero
 // K%/Whiff%) with a real market line still posted.
 const sandovalRow: PitcherStrikeoutTeamRow = {
@@ -145,6 +158,21 @@ describe("MlbStrikeoutProps Low Confidence table", () => {
     const lowConfidenceSection = screen.getByText("Low Confidence").closest("details") as HTMLElement;
     expect(within(lowConfidenceSection).getAllByText(/Invalid odds/i).length).toBeGreaterThan(0);
     expect(within(lowConfidenceSection).getAllByText(/Insufficient data/i).length).toBeGreaterThan(0);
+  });
+
+  it("keeps a healthy no-market pitcher in the main table and out of Low Confidence", async () => {
+    vi.resetModules();
+    mockPropsData([noMarketRow, perkinsRow]);
+    await renderPage();
+
+    const mainTable = screen.getAllByRole("table")[0];
+    expect(within(mainTable).getAllByText("No Market Starter").length).toBeGreaterThan(0);
+    expect(within(mainTable).getAllByText("—").length).toBeGreaterThan(0);
+
+    const lowConfidenceSection = screen.getByText("Low Confidence").closest("details") as HTMLElement;
+    expect(within(lowConfidenceSection).queryByText("No Market Starter")).toBeNull();
+    expect(within(lowConfidenceSection).getAllByText("Jack Perkins").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Strikeout markets are currently unavailable/i)).toBeInTheDocument();
   });
 
   it("shows N/A (not a fabricated number) for Sandoval's missing K%/Whiff%", async () => {

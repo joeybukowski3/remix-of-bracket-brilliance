@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { injectHrOdds, injectKOdds } from "./mlb-prop-odds-core.mjs";
+import { injectHrOdds, injectKOdds, preserveSameSlateKOdds } from "./mlb-prop-odds-core.mjs";
 
 const raw = {
   date: "2026-06-28",
@@ -70,6 +70,40 @@ test("K odds accept a coherent two-sided market from the same book", () => {
   assert.equal(result.status.status, "partial_success");
   assert.equal(result.data.pitchers[0].kLine, 5.5);
   assert.equal(result.data.pitchers[0].kOddsBook, "draftkings");
+});
+
+test("K odds retain capture provenance from a fresh provider market", () => {
+  const result = injectKOdds(raw, { date: "2026-06-28", fetchedAt: "2026-06-28T13:00:00Z", kOdds: {
+    "jose berrios": { line: 5.5, over: "-115", under: "-115", bookmaker: "draftkings" },
+  }});
+  assert.equal(result.data.pitchers[0].kOddsSlateDate, "2026-06-28");
+  assert.equal(result.data.pitchers[0].kOddsCapturedAt, "2026-06-28T13:00:00Z");
+});
+
+test("generator bridge preserves only trustworthy same-slate K markets", () => {
+  const fresh = {
+    date: "2026-08-10",
+    pitchers: [
+      { pitcher: "Valid Starter", team: "BOS", gameKey: "BOS@TOR", kLine: null, kOddsOver: null, kOddsUnder: null },
+      { pitcher: "Jack Perkins", team: "ATH", gameKey: "ATH@DET", kLine: null, kOddsOver: null, kOddsUnder: null },
+      { pitcher: "Prior Day", team: "SEA", gameKey: "SEA@LAD", kLine: null, kOddsOver: null, kOddsUnder: null },
+    ],
+  };
+  const previous = {
+    date: "2026-08-10",
+    pitchers: [
+      { pitcher: "Valid Starter", team: "BOS", gameKey: "BOS@TOR", kLine: 5.5, kOddsOver: "-115", kOddsUnder: "-115", kOddsBook: "draftkings", kOddsSlateDate: "2026-08-10", kOddsCapturedAt: "2026-08-10T14:00:00Z" },
+      { pitcher: "Jack Perkins", team: "ATH", gameKey: "ATH@DET", kLine: 2.5, kOddsOver: "+881", kOddsUnder: "-100", kOddsBook: "underdog", kOddsSlateDate: "2026-08-10" },
+      { pitcher: "Prior Day", team: "SEA", gameKey: "SEA@LAD", kLine: 6.5, kOddsOver: "-110", kOddsUnder: "-110", kOddsBook: "fanduel", kOddsSlateDate: "2026-08-09" },
+    ],
+  };
+
+  const result = preserveSameSlateKOdds(fresh, previous);
+  assert.equal(result.preserved, 1);
+  assert.equal(result.data.pitchers[0].kLine, 5.5);
+  assert.equal(result.data.pitchers[0].kOddsCapturedAt, "2026-08-10T14:00:00Z");
+  assert.equal(result.data.pitchers[1].kLine, null);
+  assert.equal(result.data.pitchers[2].kLine, null);
 });
 
 test("K odds allow a one-sided market through unchecked for coherence", () => {

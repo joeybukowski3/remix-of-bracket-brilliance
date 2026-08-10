@@ -13,6 +13,7 @@ export function resolveOddsSlateDate(oddsData) {
 // see the Jack Perkins K-props audit case (+881 over / -100 under implied
 // ~60.2% combined, from a book-fallback mismatch).
 const MIN_COMBINED_IMPLIED_PROBABILITY = 0.85;
+const DISALLOWED_K_ODDS_BOOKS = new Set(["underdog", "prizepicks", "sleeper"]);
 
 function isCoherentKMarket(entry) {
   const over = parseAmericanOdds(entry?.over);
@@ -50,15 +51,61 @@ function clearHrOdds(batter) {
  * row is a ladder rung left over from an earlier pipeline. Preserving it would
  * put an "N+ strikeouts" price back on the board, so it is cleared instead.
  */
-function isSameSlateKOdds(pitcher, slateDate) {
-  return pitcher?.kOddsSlateDate === slateDate
-    && isValidPropLine(pitcher?.kLine)
+function isTrustworthyTwoSidedKMarket(pitcher) {
+  const book = String(pitcher?.kOddsBook ?? "").trim().toLowerCase();
+  return isValidPropLine(pitcher?.kLine)
     && isAmericanOdds(pitcher?.kOddsOver)
-    && isAmericanOdds(pitcher?.kOddsUnder);
+    && isAmericanOdds(pitcher?.kOddsUnder)
+    && isCoherentKMarket({ over: pitcher.kOddsOver, under: pitcher.kOddsUnder })
+    && !DISALLOWED_K_ODDS_BOOKS.has(book);
+}
+
+function isSameSlateKOdds(pitcher, slateDate) {
+  return pitcher?.kOddsSlateDate === slateDate && isTrustworthyTwoSidedKMarket(pitcher);
 }
 
 function clearKOdds(pitcher) {
-  return { ...pitcher, kLine: null, kOddsOver: null, kOddsUnder: null, kOddsBook: null, kOddsSlateDate: null };
+  return { ...pitcher, kLine: null, kOddsOver: null, kOddsUnder: null, kOddsBook: null, kOddsSlateDate: null, kOddsCapturedAt: null };
+}
+
+/**
+ * Carries a previously validated K market across a same-slate model rebuild.
+ * The generator writes a fresh model payload before injectKOdds runs, so this
+ * bridge prevents that write from erasing the only copy the injector could
+ * preserve during a temporary provider outage. Prior-day, one-sided,
+ * incoherent, DFS, and mismatched-game rows are never retained.
+ */
+export function preserveSameSlateKOdds(rawData, previousData) {
+  const slateDate = String(rawData?.date ?? "").trim();
+  const previousSlateDate = String(previousData?.date ?? "").trim();
+  if (!slateDate || previousSlateDate !== slateDate) {
+    return { data: rawData, preserved: 0 };
+  }
+
+  const previousPitchers = Array.isArray(previousData?.pitchers) ? previousData.pitchers : [];
+  const freshPitchers = Array.isArray(rawData?.pitchers) ? rawData.pitchers : [];
+  const previousByPitcher = new Map(previousPitchers.map((pitcher) => [normalizeMlbPropName(pitcher?.pitcher), pitcher]));
+  let preserved = 0;
+  const pitchers = freshPitchers.map((pitcher) => {
+    if (isTrustworthyTwoSidedKMarket(pitcher)) return pitcher;
+    const previous = previousByPitcher.get(normalizeMlbPropName(pitcher?.pitcher));
+    if (!previous || !isSameSlateKOdds(previous, slateDate)) return pitcher;
+    if (pitcher?.gameKey && previous?.gameKey && pitcher.gameKey !== previous.gameKey) return pitcher;
+    if (pitcher?.team && previous?.team && pitcher.team !== previous.team) return pitcher;
+
+    preserved += 1;
+    return {
+      ...pitcher,
+      kLine: previous.kLine,
+      kOddsOver: previous.kOddsOver,
+      kOddsUnder: previous.kOddsUnder,
+      kOddsBook: previous.kOddsBook ?? null,
+      kOddsSlateDate: previous.kOddsSlateDate,
+      kOddsCapturedAt: previous.kOddsCapturedAt ?? null,
+    };
+  });
+
+  return { data: { ...rawData, pitchers }, preserved };
 }
 
 export function injectHrOdds(rawData, oddsData) {
@@ -113,6 +160,7 @@ export function injectKOdds(rawData, oddsData) {
   const oddsSlateDate = resolveOddsSlateDate(oddsData);
   const sameSlate = Boolean(slateDate && oddsSlateDate && slateDate === oddsSlateDate);
   const source = oddsData?.kOdds && typeof oddsData.kOdds === "object" ? oddsData.kOdds : {};
+  const oddsCapturedAt = String(oddsData?.fetchedAt ?? oddsData?.generatedAt ?? "").trim() || null;
   const usefulEntries = new Map(Object.entries(source)
     .filter(([, entry]) => entry && isValidPropLine(entry.line) && (isAmericanOdds(entry.over) || isAmericanOdds(entry.under)) && isCoherentKMarket(entry))
     .map(([name, entry]) => [normalizeMlbPropName(name), entry]));
@@ -132,7 +180,7 @@ export function injectKOdds(rawData, oddsData) {
     if (entry) {
       counts.pitchersMatched += 1;
       counts.pitchersUpdated += 1;
-      const updated = { ...pitcher, kLine: Number(entry.line), kOddsOver: isAmericanOdds(entry.over) ? entry.over : null, kOddsUnder: isAmericanOdds(entry.under) ? entry.under : null, kOddsBook: entry.bookmaker ?? null, kOddsSlateDate: slateDate };
+      const updated = { ...pitcher, kLine: Number(entry.line), kOddsOver: isAmericanOdds(entry.over) ? entry.over : null, kOddsUnder: isAmericanOdds(entry.under) ? entry.under : null, kOddsBook: entry.bookmaker ?? null, kOddsSlateDate: slateDate, kOddsCapturedAt: oddsCapturedAt };
       if (isValidPropLine(updated.kLine)) counts.withLine += 1;
       if (isAmericanOdds(updated.kOddsOver)) counts.withOverPrice += 1;
       if (isAmericanOdds(updated.kOddsUnder)) counts.withUnderPrice += 1;

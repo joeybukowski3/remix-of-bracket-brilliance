@@ -12,7 +12,7 @@ import { classifyPitcherRole, calculateProjectedInnings } from "./lib/mlb-projec
 import { getPhase2Flags } from "./lib/mlb-phase2-flags.mjs";
 import { computeHrPhase2Shadow } from "./lib/mlb-hr-phase2-shadow.mjs";
 import { computeShadowRanks } from "./lib/mlb-phase2-shadow-comparison.mjs";
-import { resolveOddsSlateDate } from "./lib/mlb-prop-odds-core.mjs";
+import { preserveSameSlateKOdds, resolveOddsSlateDate } from "./lib/mlb-prop-odds-core.mjs";
 import {
   HAND_FREQ_SCORE_WEIGHT,
   buildHandednessSplits,
@@ -2238,7 +2238,21 @@ async function main() {
     };
   }).sort((a, b) => (b.gameHrEnvironmentScore ?? -1) - (a.gameHrEnvironmentScore ?? -1));
 
-  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify({ ...validatedPayload, gameEnvironments }, null, 2)}\n`, "utf8");
+  let publishPayload = { ...validatedPayload, gameEnvironments };
+  try {
+    if (existsSync(RAW_OUTPUT_PATH)) {
+      const previousPayload = JSON.parse(readFileSync(RAW_OUTPUT_PATH, "utf8"));
+      const preservation = preserveSameSlateKOdds(publishPayload, previousPayload);
+      publishPayload = preservation.data;
+      if (preservation.preserved > 0) {
+        console.log(`Preserved ${preservation.preserved} previously validated same-slate K markets.`);
+      }
+    }
+  } catch (error) {
+    console.warn(`Could not inspect prior K markets for same-slate preservation: ${error instanceof Error ? error.message : error}`);
+  }
+
+  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(publishPayload, null, 2)}\n`, "utf8");
   writeFileSync(BEST_BETS_OUTPUT_PATH, `${JSON.stringify(bestBetsPayload, null, 2)}\n`, "utf8");
   console.log(`Wrote ${RAW_OUTPUT_PATH}`);
   console.log(`Wrote ${BEST_BETS_OUTPUT_PATH}`);
