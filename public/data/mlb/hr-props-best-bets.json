@@ -1,10 +1,10 @@
 {
   "date": "2026-08-10",
-  "generatedAt": "2026-08-10T16:28:49.345Z",
+  "generatedAt": "2026-08-10T18:55:20.737Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rogers Centre and Dodger Stadium lead the slate with park factors of 1.08 and 1.10, while Taillon and Cameron both carry elevated HR/FB rates against today’s power bats. Barrel rates above 14% and hard-hit rates above 50% for Ohtani, Olson, and Alvarez align with favorable park and pitcher conditions, creating a concentrated set of HR edges in the top tier.",
-    "modelNote": "The model is weighting recent barrel and hard-hit trends most heavily, with park factor and opposing pitcher HR/FB rates serving as secondary multipliers to separate the top-five names."
+    "slateOverview": "Rogers Centre and Dodger Stadium are the primary HR-friendly venues today with park factors of 1.08 and 1.10 respectively, while Busch Stadium and Oracle Park suppress power at 0.92 and 0.85. Jameson Taillon's 84.6 HR/9 allowed to opposing hitters creates a massive edge for BOS bats at Rogers, and Noah Cameron's 56.1 HR/9 vs LAD presents a favorable lefty-lefty matchup for Ohtani.",
+    "modelNote": "The model heavily weights opposing pitcher HR vulnerability and recent barrel trends, elevating Abreu and Burleson despite modest park factors due to their elite opposing pitcher metrics and strong barrel/hard-hit combinations."
   },
   "bestBets": [
     {
@@ -14,35 +14,16 @@
       "opposingPitcher": "Jameson Taillon",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=80.5",
-        "barrel=12.9%"
-      ],
-      "bullets": [
-        "hrScore=80.5",
+        "barrel=12.9%",
         "park=1.08"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "KC",
-      "opposingPitcher": "Noah Cameron",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=69.8",
-        "barrel=16.4%"
-      ],
       "bullets": [
-        "barrel=16.4%",
-        "HH=52.3%"
+        "barrel=12.9%",
+        "park=1.08"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+289",
+      "marketImpliedProbability": 0.2570694087403599,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -50,18 +31,37 @@
       "team": "STL",
       "opponent": "PHI",
       "opposingPitcher": "Andrew Painter",
-      "hrScoreRank": 3,
+      "hrScoreRank": 2,
       "topStats": [
-        "hrScore=69.6",
-        "barrel=11.7%"
-      ],
-      "bullets": [
-        "hrScore=69.6",
+        "barrel=11.7%",
         "HH=49.1%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "barrel=11.7%",
+        "HH=49.1%"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "KC",
+      "opposingPitcher": "Noah Cameron",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=16.4%",
+        "HH=52.3%"
+      ],
+      "bullets": [
+        "barrel=16.4%",
+        "HH=52.3%"
+      ],
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -78,9 +78,9 @@
         "HR score 68.9 (#4)",
         "Pitcher HR VS 47.5 at park 0.97"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -97,108 +97,184 @@
         "HR score 67.8 (#5)",
         "Pitcher HR VS 84.6 at park 1.08"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Wilyer Abreu",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "MIN",
+      "opposingPitcher": "Dean Kremer",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=13.8%",
+        "HH=55.8%"
+      ],
+      "bullets": [
+        "barrel=13.8%",
+        "HH=55.8%"
+      ],
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Willson Contreras",
       "team": "BOS",
       "opponent": "TOR",
       "opposingPitcher": "Jameson Taillon",
-      "hrScoreRank": 1,
+      "hrScoreRank": 5,
       "topStats": [
-        "hrScore=80.5",
-        "barrel=12.9%"
-      ],
-      "bullets": [
-        "hrScore=80.5",
+        "barrel=14.4%",
         "park=1.08"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "barrel=14.4%",
+        "park=1.08"
+      ],
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "KC",
-      "opposingPitcher": "Noah Cameron",
-      "hrScoreRank": 2,
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "NYM",
+      "opposingPitcher": "Christian Scott",
+      "hrScoreRank": 6,
       "topStats": [
-        "hrScore=69.8",
-        "barrel=16.4%"
+        "barrel=15.7%",
+        "HH=50.6%"
       ],
       "bullets": [
-        "barrel=16.4%",
-        "HH=52.3%"
+        "barrel=15.7%",
+        "HH=50.6%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "PHI",
-      "opposingPitcher": "Andrew Painter",
-      "hrScoreRank": 3,
+      "player": "Osleivis Basabe",
+      "team": "SF",
+      "opponent": "HOU",
+      "opposingPitcher": "Hayden Wesneski",
+      "hrScoreRank": 7,
       "topStats": [
-        "hrScore=69.6",
-        "barrel=11.7%"
+        "Pitcher HR VS=48.7",
+        "Hard Hit%=38.5"
       ],
       "bullets": [
-        "hrScore=69.6",
-        "HH=49.1%"
+        "HR score 61.4 (#7)",
+        "Pitcher HR VS 48.7 at park 0.85"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+900",
+      "marketImpliedProbability": 0.1,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "SF",
+      "opposingPitcher": "Blade Tidwell",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Hard Hit%=53.7",
+        "Pitcher HR VS=37.7"
+      ],
+      "bullets": [
+        "HR score 61.1 (#8)",
+        "Pitcher HR VS 37.7 at park 0.85"
+      ],
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Wilyer Abreu",
-      "team": "BOS",
-      "opponent": "TOR",
-      "opposingPitcher": "Jameson Taillon",
-      "hrScoreRank": 1,
+      "player": "Osleivis Basabe",
+      "team": "SF",
+      "opponent": "HOU",
+      "opposingPitcher": "Hayden Wesneski",
+      "hrScoreRank": 7,
       "topStats": [
-        "hrScore=80.5",
-        "barrel=12.9%"
+        "barrel=16%",
+        "HH=38.5%"
       ],
       "bullets": [
-        "hrScore=80.5",
-        "park=1.08"
+        "barrel=16%",
+        "HH=38.5%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+900",
+      "marketImpliedProbability": 0.1,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "KC",
-      "opposingPitcher": "Noah Cameron",
-      "hrScoreRank": 2,
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "SF",
+      "opposingPitcher": "Blade Tidwell",
+      "hrScoreRank": 8,
       "topStats": [
-        "hrScore=69.8",
-        "barrel=16.4%"
+        "barrel=17.8%",
+        "HH=53.7%"
       ],
       "bullets": [
-        "barrel=16.4%",
-        "HH=52.3%"
+        "barrel=17.8%",
+        "HH=53.7%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "JJ Wetherholt",
+      "team": "STL",
+      "opponent": "PHI",
+      "opposingPitcher": "Andrew Painter",
+      "hrScoreRank": 24,
+      "topStats": [
+        "Pitcher HR VS=63.2",
+        "Hard Hit%=44.1"
+      ],
+      "bullets": [
+        "HR score 53.5 (#24)",
+        "Pitcher HR VS 63.2 at park 0.92"
+      ],
+      "hrOddsYes": "+575",
+      "marketImpliedProbability": 0.14814814814814814,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "LAD",
+      "opposingPitcher": "Tarik Skubal",
+      "hrScoreRank": 25,
+      "topStats": [
+        "Hard Hit%=55.3",
+        "Pitcher HR VS=31.5"
+      ],
+      "bullets": [
+        "HR score 53.2 (#25)",
+        "Pitcher HR VS 31.5 at park 1.10"
+      ],
+      "hrOddsYes": "+510",
+      "marketImpliedProbability": 0.16393442622950818,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ]
