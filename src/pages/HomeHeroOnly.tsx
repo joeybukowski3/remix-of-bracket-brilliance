@@ -5,22 +5,28 @@ import { getSeoMeta } from "@/lib/seo";
 import SiteShell from "@/components/layout/SiteShell";
 
 const sports = [
-  { id: "mlb", name: "MLB", route: "/mlb", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png" },
-  { id: "cfb", name: "College Football", route: "/college-football", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/ncaa.png" },
-  { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" },
-  { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", locked: true },
-  { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg" },
+  { id: "mlb", name: "MLB", route: "/mlb", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png", logoAlt: "MLB logo" },
+  { id: "cfb", name: "College Football", route: "/college-football", logo: "/images/leagues/ncaa.svg", logoAlt: "NCAA logo", logoClassName: "h-16 w-16 object-contain", hideLogoFallback: true },
+  { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png", logoAlt: "NFL logo" },
+  { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", logoAlt: "NBA logo", locked: true },
+  { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg", logoAlt: "PGA logo" },
 ] as const;
 
 function SportCard({
   locked = false,
   logo,
+  logoAlt,
+  logoClassName,
+  hideLogoFallback = false,
   name,
   route,
   gated = false,
 }: {
   locked?: boolean;
   logo: string;
+  logoAlt: string;
+  logoClassName?: string;
+  hideLogoFallback?: boolean;
   name: string;
   route: string;
   gated?: boolean;
@@ -37,17 +43,19 @@ function SportCard({
       <div className="flex h-[84px] w-full items-center justify-center rounded-[8px]">
         <img
           src={logo}
-          alt={`${name} logo`}
-          className="max-h-[72px] w-auto object-contain"
+          alt={logoAlt}
+          className={logoClassName ?? "max-h-[72px] w-auto object-contain"}
           onError={(event) => {
             event.currentTarget.style.display = "none";
             const fallback = event.currentTarget.nextElementSibling as HTMLDivElement | null;
             if (fallback) fallback.style.display = "flex";
           }}
         />
-        <div style={{ display: "none" }} className="hidden h-[72px] items-center justify-center text-[24px] font-bold tracking-[0.02em] text-[#111111]">
-          {name}
-        </div>
+        {!hideLogoFallback && (
+          <div style={{ display: "none" }} className="hidden h-[72px] items-center justify-center text-[24px] font-bold tracking-[0.02em] text-[#111111]">
+            {name}
+          </div>
+        )}
       </div>
       <span className="mt-3 text-[16px] font-bold text-[#111111]">{name}</span>
       <span className="mt-2 text-[12px] font-semibold text-[#111111]">{unavailable ? "Coming Soon" : "Open"}</span>
@@ -112,6 +120,9 @@ export default function HomeHeroOnly() {
                       key={sport.id}
                       locked={Boolean("locked" in sport && sport.locked)}
                       logo={sport.logo}
+                      logoAlt={sport.logoAlt}
+                      logoClassName={"logoClassName" in sport ? sport.logoClassName : undefined}
+                      hideLogoFallback={"hideLogoFallback" in sport && sport.hideLogoFallback}
                       name={sport.name}
                       route={sport.route}
                       gated={Boolean("gated" in sport && sport.gated)}
