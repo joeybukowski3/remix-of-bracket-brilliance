@@ -7,6 +7,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MlbMobileHubEnhancements from "@/components/mlb/MlbMobileHubEnhancements";
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
+import CollegeFootballLayout from "@/components/cfb/CollegeFootballLayout";
+import CollegeFootballLanding from "./pages/cfb/CollegeFootballLanding";
+import CollegeFootballRankings from "./pages/cfb/CollegeFootballRankings";
+import CollegeFootballSchedule from "./pages/cfb/CollegeFootballSchedule";
+import CollegeFootballTeamPage from "./pages/cfb/CollegeFootballTeamPage";
+import CollegeFootballMatchup from "./pages/cfb/CollegeFootballMatchup";
+import CollegeFootballConference from "./pages/cfb/CollegeFootballConference";
 import Home from "./pages/Home";
 import Schedule from "./pages/Schedule";
 import GameDetail from "./pages/GameDetail";
@@ -95,6 +102,14 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/rankings" element={<Navigate to={NCAA_BASE_PATH} replace />} />
+          <Route path="/college-football" element={<CollegeFootballLayout />}>
+            <Route index element={<CollegeFootballLanding />} />
+            <Route path="rankings" element={<CollegeFootballRankings />} />
+            <Route path="schedule" element={<CollegeFootballSchedule />} />
+            <Route path="team/:teamSlug" element={<CollegeFootballTeamPage />} />
+            <Route path="matchup/:gameId" element={<CollegeFootballMatchup />} />
+            <Route path="conference/:conferenceSlug" element={<CollegeFootballConference />} />
+          </Route>
           <Route
             path={NCAA_BASE_PATH}
             element={

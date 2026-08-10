@@ -27,6 +27,13 @@ dist-ssr
 # Runtime-generated screenshots and X-post duplicate-protection state
 artifacts/
 
+# Reproducible College Football API caches and review-only model artifacts
+data/cfb/cfbd/raw/
+data/generated/cfb/*
+!data/generated/cfb/2026-preseason-ratings-v1.csv
+!data/generated/cfb/2026-preseason-ratings-v1.json
+!data/generated/cfb/2026-schedule-v1.json
+
 # Local MLB Numerology email previews
 public/data/mlb/numerology/email-preview.html
 public/data/mlb/numerology/email-preview.txt
