@@ -23,6 +23,13 @@ describe("CollegeFootballRankings", () => {
     expect(screen.getByText(new RegExp(`Showing ${total} teams`))).toBeInTheDocument();
   }, 20_000);
 
+  it("shows the AP comparison column without fabricating preseason ranks", () => {
+    const { container } = renderPage();
+    expect(screen.getByRole("columnheader", { name: "AP" })).toBeInTheDocument();
+    expect(getAllTeams().every((team) => team.ratings.apRank === null)).toBe(true);
+    expect(container.textContent).toContain("—");
+  }, 20_000);
+
   it("filters by conference", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: "SEC" }));

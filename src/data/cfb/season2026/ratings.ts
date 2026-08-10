@@ -1,9 +1,10 @@
-import generated from "../../../../data/generated/cfb/2026-preseason-ratings-v1.json";
+import generated from "../../../../data/generated/cfb/2026-preseason-ratings-v1.1.json";
 import type { CfbJkbRatings } from "../types";
 
-type GeneratedV1Row = {
+type GeneratedV11Row = {
   teamId: string;
   rank: number;
+  apRank: number | null;
   jkbPower: number;
   jkbOffense: number;
   jkbDefense: number;
@@ -13,13 +14,14 @@ type GeneratedV1Row = {
   sosRemainingRank: number;
 };
 
-const rows = generated.rows as GeneratedV1Row[];
+const rows = generated.rows as GeneratedV11Row[];
 
-/** Generated JKB preseason v1 ratings. Do not hand-edit; run npm run cfb:build-v1. */
+/** Generated market-anchored preseason ratings. Do not hand-edit; run npm run cfb:build-market-anchor. */
 export const CFB_V1_RATINGS_2026: CfbJkbRatings[] = rows.map((row) => ({
   teamId: row.teamId,
   jkbRank: row.rank,
   previousJkbRank: null,
+  apRank: row.apRank,
   jkbPowerRating: row.jkbPower,
   offensiveRating: row.jkbOffense,
   defensiveRating: row.jkbDefense,

@@ -3,6 +3,7 @@ import { getConferenceMeta } from "@/data/cfb/conferences";
 import type { RankingsSortKey } from "@/lib/cfb/rankings";
 import { formatRecord, formatRank } from "@/lib/cfb/format";
 import { getCfbTeamPath } from "@/lib/cfb/routes";
+import { getSosRemainingHeatClass } from "@/lib/cfb/sosPresentation";
 import { Link } from "react-router-dom";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "./CollegeFootballRatingCell";
@@ -77,6 +78,7 @@ export default function CollegeFootballRankingsTable({
               <th scope="col" className="px-2 py-2 text-left">Conf</th>
             )}
             <th scope="col" className="px-2 py-2 text-center">Record</th>
+            <th scope="col" className="px-1 py-2 text-center">AP</th>
             <th scope="col" className="px-1 py-2 text-center">
               <SortButton label="JKB Power" active={sortKey === "jkbPowerRating"} onClick={onSort ? () => onSort("jkbPowerRating") : undefined} />
             </th>
@@ -123,6 +125,9 @@ export default function CollegeFootballRankingsTable({
                 <td className="px-2 py-1.5 text-center font-semibold tabular-nums">
                   {formatRecord(team.record.wins, team.record.losses, team.record.ties)}
                 </td>
+                <td className="px-1 py-1.5 text-center font-semibold tabular-nums text-slate-700">
+                  {formatRank(team.ratings.apRank)}
+                </td>
                 <td className="px-1 py-1.5 text-center">
                   <CollegeFootballRatingCell
                     value={team.ratings.jkbPowerRating}
@@ -138,7 +143,7 @@ export default function CollegeFootballRankingsTable({
                 <td className="px-1 py-1.5 text-center tabular-nums text-slate-600">
                   {formatRank(team.ratings.sosPlayedRank)}
                 </td>
-                <td className="px-1 py-1.5 text-center tabular-nums text-slate-600">
+                <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosRemainingHeatClass(team.ratings.sosRemainingRank))}>
                   {formatRank(team.ratings.sosRemainingRank)}
                 </td>
               </tr>
@@ -180,8 +185,11 @@ export default function CollegeFootballRankingsTable({
                     <span className="font-semibold text-slate-700">
                       {formatRecord(team.record.wins, team.record.losses, team.record.ties)}
                     </span>
+                    <span>AP {formatRank(team.ratings.apRank)}</span>
                     <span>SOS {formatRank(team.ratings.sosPlayedRank)}</span>
-                    <span>Rem {formatRank(team.ratings.sosRemainingRank)}</span>
+                    <span className={cn("rounded px-1 font-semibold", getSosRemainingHeatClass(team.ratings.sosRemainingRank))}>
+                      Rem {formatRank(team.ratings.sosRemainingRank)}
+                    </span>
                   </span>
                 </span>
               </Link>

@@ -131,7 +131,7 @@ describe("CFB 2026 FBS data integrity", () => {
   });
 
   it("marks generated ratings and authenticated schedule provenance explicitly", () => {
-    expect(CFB_PROVENANCE.ratingsSource).toBe("generated-v1");
+    expect(CFB_PROVENANCE.ratingsSource).toBe("generated-v1.1-market-anchor");
     expect(CFB_PROVENANCE.scheduleSource).toBe("live");
   });
 });

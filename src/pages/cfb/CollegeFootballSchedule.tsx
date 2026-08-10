@@ -36,7 +36,7 @@ function externalParticipant(id: string, name: string | undefined): CfbScheduleP
     primaryColor: "#64748b",
     logo: "",
     record: { teamId: id, wins: 0, losses: 0, ties: 0, conferenceWins: 0, conferenceLosses: 0, conferenceTies: 0, atsWins: null, atsLosses: null, overs: null, unders: null },
-    ratings: { teamId: id, jkbRank: null, previousJkbRank: null, jkbPowerRating: null, offensiveRating: null, defensiveRating: null, sosPlayedRating: null, sosPlayedRank: null, sosRemainingRating: null, sosRemainingRank: null },
+    ratings: { teamId: id, jkbRank: null, previousJkbRank: null, apRank: null, jkbPowerRating: null, offensiveRating: null, defensiveRating: null, sosPlayedRating: null, sosPlayedRank: null, sosRemainingRating: null, sosRemainingRank: null },
   };
 }
 

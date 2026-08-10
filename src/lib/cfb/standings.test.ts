@@ -27,6 +27,7 @@ function makeTeam(
       teamId: id,
       jkbRank: null,
       previousJkbRank: null,
+      apRank: null,
       jkbPowerRating: power,
       offensiveRating: power,
       defensiveRating: power,
