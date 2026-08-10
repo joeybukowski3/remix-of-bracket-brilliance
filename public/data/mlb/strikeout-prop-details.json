@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-08-10T09:07:50.036Z",
+  "generatedAt": "2026-08-10T14:04:58.235Z",
   "source": "mlb_stats_api+baseball_savant",
   "sources": {
     "pitcherAndTeamStrikeouts": "MLB Stats API",
@@ -530,7 +530,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -545,36 +547,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:55:22.865Z",
+      "generatedAt": "2026-08-10T13:52:18.100Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.75,
-          "xba": 0.23734181818181835
+          "xba": null
         },
         "away": {
           "kPerNine": 8.701754385964913,
-          "xba": 0.24735457348407008
+          "xba": null
         },
         "last10": {
           "kPerNine": 7.8,
-          "xba": 0.26022981366459635
+          "xba": null
         },
         "samples": {
           "season": 117,
           "home": 60,
           "away": 57,
-          "last10": 10,
-          "homeAtBats": 1925,
-          "awayAtBats": 1946,
-          "last10AtBats": 322,
-          "last10Games": 9
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -1099,9 +1099,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -1116,34 +1114,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:56:03.383Z",
+      "generatedAt": "2026-08-10T13:52:57.749Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 6.984126984126984,
-          "xba": null
+          "xba": 0.2526328928046985
         },
         "away": {
           "kPerNine": 8.454545454545455,
-          "xba": null
+          "xba": 0.24954171066525835
         },
         "last10": {
           "kPerNine": 7.6,
-          "xba": null
+          "xba": 0.2619473684210525
         },
         "samples": {
           "season": 118,
           "home": 63,
           "away": 55,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 2043,
+          "awayAtBats": 1894,
+          "last10AtBats": 342,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -1683,7 +1683,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:56:43.546Z",
+      "generatedAt": "2026-08-10T13:53:36.697Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -1692,11 +1692,11 @@
         },
         "away": {
           "kPerNine": 9.516666666666667,
-          "xba": 0.23781386138613833
+          "xba": 0.23664688715953283
         },
         "last10": {
           "kPerNine": 10,
-          "xba": 0.22278596491228073
+          "xba": 0.2169968847352026
         },
         "samples": {
           "season": 118,
@@ -1704,9 +1704,9 @@
           "away": 60,
           "last10": 10,
           "homeAtBats": 1883,
-          "awayAtBats": 2020,
-          "last10AtBats": 285,
-          "last10Games": 9
+          "awayAtBats": 2056,
+          "last10AtBats": 321,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
@@ -2237,7 +2237,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -2252,36 +2254,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:57:24.137Z",
+      "generatedAt": "2026-08-10T13:54:17.110Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.375,
-          "xba": 0.260967439293598
+          "xba": null
         },
         "away": {
           "kPerNine": 8.274193548387096,
-          "xba": 0.2678197647058822
+          "xba": null
         },
         "last10": {
           "kPerNine": 7.5,
-          "xba": 0.2546303630363036
+          "xba": null
         },
         "samples": {
           "season": 118,
           "home": 56,
           "away": 62,
-          "last10": 10,
-          "homeAtBats": 1812,
-          "awayAtBats": 2125,
-          "last10AtBats": 303,
-          "last10Games": 9
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -2821,12 +2821,12 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:58:03.295Z",
+      "generatedAt": "2026-08-10T13:54:57.173Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.915254237288136,
-          "xba": 0.23631169527896959
+          "xba": 0.2354033701948391
         },
         "away": {
           "kPerNine": 9.067796610169491,
@@ -2834,17 +2834,17 @@
         },
         "last10": {
           "kPerNine": 9,
-          "xba": 0.19783214285714304
+          "xba": 0.1966317460317462
         },
         "samples": {
           "season": 118,
           "home": 59,
           "away": 59,
           "last10": 10,
-          "homeAtBats": 1864,
+          "homeAtBats": 1899,
           "awayAtBats": 2017,
-          "last10AtBats": 280,
-          "last10Games": 9
+          "last10AtBats": 315,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
@@ -3267,7 +3267,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 2,
@@ -3282,36 +3284,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:58:42.672Z",
+      "generatedAt": "2026-08-10T13:55:37.492Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.660714285714286,
-          "xba": 0.2442797985450475
+          "xba": null
         },
         "away": {
           "kPerNine": 8.080645161290322,
-          "xba": 0.2515662373505057
+          "xba": null
         },
         "last10": {
           "kPerNine": 8,
-          "xba": 0.21456055363321808
+          "xba": null
         },
         "samples": {
           "season": 118,
           "home": 56,
           "away": 62,
-          "last10": 10,
-          "homeAtBats": 1787,
-          "awayAtBats": 2174,
-          "last10AtBats": 289,
-          "last10Games": 9
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -3836,7 +3836,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -3851,36 +3853,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T08:59:22.881Z",
+      "generatedAt": "2026-08-10T13:56:17.715Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.693548387096774,
-          "xba": 0.2459830084957519
+          "xba": null
         },
         "away": {
           "kPerNine": 9.75,
-          "xba": 0.23719093851132683
+          "xba": null
         },
         "last10": {
           "kPerNine": 9.5,
-          "xba": 0.22337453183520595
+          "xba": null
         },
         "samples": {
           "season": 118,
           "home": 62,
           "away": 56,
-          "last10": 10,
-          "homeAtBats": 2001,
-          "awayAtBats": 1854,
-          "last10AtBats": 267,
-          "last10Games": 9
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -4420,7 +4420,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:00:03.189Z",
+      "generatedAt": "2026-08-10T13:56:56.769Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -4429,11 +4429,11 @@
         },
         "away": {
           "kPerNine": 8.935483870967742,
-          "xba": 0.22753036053130926
+          "xba": 0.2255897435897435
         },
         "last10": {
           "kPerNine": 7.7,
-          "xba": 0.23630508474576278
+          "xba": 0.22278915662650597
         },
         "samples": {
           "season": 119,
@@ -4441,578 +4441,9 @@
           "away": 62,
           "last10": 10,
           "homeAtBats": 1858,
-          "awayAtBats": 2108,
-          "last10AtBats": 295,
-          "last10Games": 9
-        },
-        "sources": {
-          "strikeouts": "mlb_stats_api",
-          "xba": "baseball_savant_statcast"
-        },
-        "warnings": []
-      }
-    },
-    {
-      "key": "michael-soroka|az|col|2026-08-10",
-      "legacyKey": "michael-soroka|az|col|2026-08-10",
-      "stableKey": "2026-08-10|825048|647336",
-      "stableKeys": [
-        "2026-08-10|825048|647336",
-        "2026-08-10|647336|109|115"
-      ],
-      "slateDate": "2026-08-10",
-      "gamePk": 825048,
-      "pitcherId": 647336,
-      "teamId": 109,
-      "opponentId": 115,
-      "pitcher": "Michael Soroka",
-      "team": "AZ",
-      "opponent": "COL",
-      "gameDate": "2026-08-10",
-      "pitcherLastFiveStarts": [
-        {
-          "gamePk": 825069,
-          "season": 2026,
-          "date": "2026-06-19",
-          "opponentId": 142,
-          "opponentAbbr": "MIN",
-          "opponent": "MIN",
-          "isHome": true,
-          "site": "home",
-          "inningsPitched": "1.0",
-          "outsRecorded": 3,
-          "strikeouts": 0,
-          "hitsAllowed": 2,
-          "walksAllowed": 0,
-          "pitchCount": 9,
-          "battersFaced": 4,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 824508,
-          "season": 2026,
-          "date": "2026-06-13",
-          "opponentId": 113,
-          "opponentAbbr": "CIN",
-          "opponent": "CIN",
-          "isHome": false,
-          "site": "away",
-          "inningsPitched": "7.0",
-          "outsRecorded": 21,
-          "strikeouts": 7,
-          "hitsAllowed": 2,
-          "walksAllowed": 0,
-          "pitchCount": 93,
-          "battersFaced": 23,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 825074,
-          "season": 2026,
-          "date": "2026-06-07",
-          "opponentId": 120,
-          "opponentAbbr": "WSH",
-          "opponent": "WSH",
-          "isHome": true,
-          "site": "home",
-          "inningsPitched": "7.0",
-          "outsRecorded": 21,
-          "strikeouts": 6,
-          "hitsAllowed": 3,
-          "walksAllowed": 2,
-          "pitchCount": 100,
-          "battersFaced": 26,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 825079,
-          "season": 2026,
-          "date": "2026-06-02",
-          "opponentId": 119,
-          "opponentAbbr": "LAD",
-          "opponent": "LAD",
-          "isHome": true,
-          "site": "home",
-          "inningsPitched": "6.0",
-          "outsRecorded": 18,
-          "strikeouts": 6,
-          "hitsAllowed": 6,
-          "walksAllowed": 1,
-          "pitchCount": 100,
-          "battersFaced": 25,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 823217,
-          "season": 2026,
-          "date": "2026-05-27",
-          "opponentId": 137,
-          "opponentAbbr": "SF",
-          "opponent": "SF",
-          "isHome": false,
-          "site": "away",
-          "inningsPitched": "6.0",
-          "outsRecorded": 18,
-          "strikeouts": 3,
-          "hitsAllowed": 4,
-          "walksAllowed": 0,
-          "pitchCount": 83,
-          "battersFaced": 22,
-          "gamesStarted": 1
-        }
-      ],
-      "pitcherRecentStarts": [
-        {
-          "gamePk": 825069,
-          "season": 2026,
-          "date": "2026-06-19",
-          "opponentId": 142,
-          "opponentAbbr": "MIN",
-          "opponent": "MIN",
-          "isHome": true,
-          "site": "home",
-          "inningsPitched": "1.0",
-          "outsRecorded": 3,
-          "strikeouts": 0,
-          "hitsAllowed": 2,
-          "walksAllowed": 0,
-          "pitchCount": 9,
-          "battersFaced": 4,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 824508,
-          "season": 2026,
-          "date": "2026-06-13",
-          "opponentId": 113,
-          "opponentAbbr": "CIN",
-          "opponent": "CIN",
-          "isHome": false,
-          "site": "away",
-          "inningsPitched": "7.0",
-          "outsRecorded": 21,
-          "strikeouts": 7,
-          "hitsAllowed": 2,
-          "walksAllowed": 0,
-          "pitchCount": 93,
-          "battersFaced": 23,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 825074,
-          "season": 2026,
-          "date": "2026-06-07",
-          "opponentId": 120,
-          "opponentAbbr": "WSH",
-          "opponent": "WSH",
-          "isHome": true,
-          "site": "home",
-          "inningsPitched": "7.0",
-          "outsRecorded": 21,
-          "strikeouts": 6,
-          "hitsAllowed": 3,
-          "walksAllowed": 2,
-          "pitchCount": 100,
-          "battersFaced": 26,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 825079,
-          "season": 2026,
-          "date": "2026-06-02",
-          "opponentId": 119,
-          "opponentAbbr": "LAD",
-          "opponent": "LAD",
-          "isHome": true,
-          "site": "home",
-          "inningsPitched": "6.0",
-          "outsRecorded": 18,
-          "strikeouts": 6,
-          "hitsAllowed": 6,
-          "walksAllowed": 1,
-          "pitchCount": 100,
-          "battersFaced": 25,
-          "gamesStarted": 1
-        },
-        {
-          "gamePk": 823217,
-          "season": 2026,
-          "date": "2026-05-27",
-          "opponentId": 137,
-          "opponentAbbr": "SF",
-          "opponent": "SF",
-          "isHome": false,
-          "site": "away",
-          "inningsPitched": "6.0",
-          "outsRecorded": 18,
-          "strikeouts": 3,
-          "hitsAllowed": 4,
-          "walksAllowed": 0,
-          "pitchCount": 83,
-          "battersFaced": 22,
-          "gamesStarted": 1
-        }
-      ],
-      "pitcherLastFiveSummary": {
-        "gamesUsed": 5,
-        "totalOuts": 81,
-        "averageInningsOuts": 16.2,
-        "totalStrikeouts": 22,
-        "averageStrikeouts": 4.4,
-        "totalHitsAllowed": 17,
-        "totalWalksAllowed": 3,
-        "hitsPerNine": 5.666666666666667,
-        "strikeoutsPerNine": 7.333333333333333,
-        "hitsPerInning": 0.6296296296296297,
-        "strikeoutsPerInning": 0.8148148148148148,
-        "walksPerInning": 0.1111111111111111,
-        "averagePitchCount": 77
-      },
-      "pitcherVenueSplits": {
-        "home": {
-          "site": "home",
-          "season": {
-            "gamesUsed": 9,
-            "totalOuts": 145,
-            "inningsPitched": "48.1",
-            "strikeouts": 44,
-            "hitsAllowed": 42,
-            "battersFaced": 195,
-            "strikeoutRate": 22.564102564102566,
-            "hitRate": 21.53846153846154
-          },
-          "lastFiveAtSite": {
-            "gamesUsed": 5,
-            "totalOuts": 79,
-            "inningsPitched": "26.1",
-            "strikeouts": 20,
-            "hitsAllowed": 22,
-            "battersFaced": 105,
-            "strikeoutRate": 19.047619047619047,
-            "hitRate": 20.952380952380953
-          }
-        },
-        "away": {
-          "site": "away",
-          "season": {
-            "gamesUsed": 6,
-            "totalOuts": 101,
-            "inningsPitched": "33.2",
-            "strikeouts": 35,
-            "hitsAllowed": 30,
-            "battersFaced": 138,
-            "strikeoutRate": 25.36231884057971,
-            "hitRate": 21.73913043478261
-          },
-          "lastFiveAtSite": {
-            "gamesUsed": 5,
-            "totalOuts": 84,
-            "inningsPitched": "28.0",
-            "strikeouts": 25,
-            "hitsAllowed": 25,
-            "battersFaced": 113,
-            "strikeoutRate": 22.123893805309734,
-            "hitRate": 22.123893805309734
-          }
-        }
-      },
-      "opponentLastFiveGames": [
-        {
-          "date": "2026-08-09",
-          "opponent": "STL",
-          "opposingStartingPitcher": "Michael McGreevy",
-          "opposingStarterInningsPitched": "5.2",
-          "opposingStarterStrikeouts": 4,
-          "opposingStarterWalks": 2,
-          "teamTotalStrikeouts": 5
-        },
-        {
-          "date": "2026-08-08",
-          "opponent": "STL",
-          "opposingStartingPitcher": "Matthew Liberatore",
-          "opposingStarterInningsPitched": "5.0",
-          "opposingStarterStrikeouts": 3,
-          "opposingStarterWalks": 2,
-          "teamTotalStrikeouts": 5
-        },
-        {
-          "date": "2026-08-07",
-          "opponent": "STL",
-          "opposingStartingPitcher": "Kyle Leahy",
-          "opposingStarterInningsPitched": "5.0",
-          "opposingStarterStrikeouts": 8,
-          "opposingStarterWalks": 0,
-          "teamTotalStrikeouts": 10
-        },
-        {
-          "date": "2026-08-05",
-          "opponent": "TB",
-          "opposingStartingPitcher": "Nick Martinez",
-          "opposingStarterInningsPitched": "5.2",
-          "opposingStarterStrikeouts": 4,
-          "opposingStarterWalks": 0,
-          "teamTotalStrikeouts": 10
-        },
-        {
-          "date": "2026-08-04",
-          "opponent": "TB",
-          "opposingStartingPitcher": "Freddy Peralta",
-          "opposingStarterInningsPitched": "3.2",
-          "opposingStarterStrikeouts": 3,
-          "opposingStarterWalks": 1,
-          "teamTotalStrikeouts": 8
-        },
-        {
-          "date": "2026-08-03",
-          "opponent": "TB",
-          "opposingStartingPitcher": "Ian Seymour",
-          "opposingStarterInningsPitched": "6.0",
-          "opposingStarterStrikeouts": 9,
-          "opposingStarterWalks": 0,
-          "teamTotalStrikeouts": 9
-        },
-        {
-          "date": "2026-08-02",
-          "opponent": "KC",
-          "opposingStartingPitcher": "Seth Lugo",
-          "opposingStarterInningsPitched": "5.0",
-          "opposingStarterStrikeouts": 3,
-          "opposingStarterWalks": 5,
-          "teamTotalStrikeouts": 5
-        },
-        {
-          "date": "2026-08-01",
-          "opponent": "KC",
-          "opposingStartingPitcher": "Luinder Avila",
-          "opposingStarterInningsPitched": "2.2",
-          "opposingStarterStrikeouts": 2,
-          "opposingStarterWalks": 3,
-          "teamTotalStrikeouts": 8
-        },
-        {
-          "date": "2026-07-31",
-          "opponent": "KC",
-          "opposingStartingPitcher": "Michael Wacha",
-          "opposingStarterInningsPitched": "6.0",
-          "opposingStarterStrikeouts": 7,
-          "opposingStarterWalks": 0,
-          "teamTotalStrikeouts": 8
-        },
-        {
-          "date": "2026-07-29",
-          "opponent": "SD",
-          "opposingStartingPitcher": "Kyle Hart",
-          "opposingStarterInningsPitched": "2.2",
-          "opposingStarterStrikeouts": 3,
-          "opposingStarterWalks": 1,
-          "teamTotalStrikeouts": 14
-        }
-      ],
-      "opponentLastFiveVsStartersSummary": {
-        "gamesAvailable": 10,
-        "gamesUsed": 10,
-        "sampleCounts": {
-          "opposingStarterInnings": 10,
-          "opposingStarterStrikeouts": 10,
-          "opposingStarterWalks": 10,
-          "teamStrikeouts": 10,
-          "plateAppearances": 0,
-          "whiffRate": 0
-        },
-        "totalOpposingStarterOuts": 142,
-        "averageOpposingStarterInnings": 4.733333333333333,
-        "averageOpposingStarterStrikeouts": 4.6,
-        "totalOpposingStarterStrikeouts": 46,
-        "totalOpposingStarterWalks": 14,
-        "opposingStarterStrikeoutsPerInning": 0.971830985915493,
-        "opposingStarterWalksPerInning": 0.29577464788732394,
-        "averageTeamStrikeouts": 8.2,
-        "totalTeamStrikeouts": 82,
-        "teamStrikeoutsPerInning": 0.9111111111111111,
-        "recentTeamKRate": null,
-        "recentWhiffRate": null,
-        "rows": [
-          {
-            "index": 0,
-            "date": "2026-08-09",
-            "opponent": "STL",
-            "opposingStartingPitcher": "Michael McGreevy",
-            "opposingStarterOuts": 17,
-            "opposingStarterInnings": 5.666666666666667,
-            "opposingStarterStrikeouts": 4,
-            "opposingStarterWalks": 2,
-            "teamStrikeouts": 5,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 1,
-            "date": "2026-08-08",
-            "opponent": "STL",
-            "opposingStartingPitcher": "Matthew Liberatore",
-            "opposingStarterOuts": 15,
-            "opposingStarterInnings": 5,
-            "opposingStarterStrikeouts": 3,
-            "opposingStarterWalks": 2,
-            "teamStrikeouts": 5,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 2,
-            "date": "2026-08-07",
-            "opponent": "STL",
-            "opposingStartingPitcher": "Kyle Leahy",
-            "opposingStarterOuts": 15,
-            "opposingStarterInnings": 5,
-            "opposingStarterStrikeouts": 8,
-            "opposingStarterWalks": 0,
-            "teamStrikeouts": 10,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 3,
-            "date": "2026-08-05",
-            "opponent": "TB",
-            "opposingStartingPitcher": "Nick Martinez",
-            "opposingStarterOuts": 17,
-            "opposingStarterInnings": 5.666666666666667,
-            "opposingStarterStrikeouts": 4,
-            "opposingStarterWalks": 0,
-            "teamStrikeouts": 10,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 4,
-            "date": "2026-08-04",
-            "opponent": "TB",
-            "opposingStartingPitcher": "Freddy Peralta",
-            "opposingStarterOuts": 11,
-            "opposingStarterInnings": 3.6666666666666665,
-            "opposingStarterStrikeouts": 3,
-            "opposingStarterWalks": 1,
-            "teamStrikeouts": 8,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 5,
-            "date": "2026-08-03",
-            "opponent": "TB",
-            "opposingStartingPitcher": "Ian Seymour",
-            "opposingStarterOuts": 18,
-            "opposingStarterInnings": 6,
-            "opposingStarterStrikeouts": 9,
-            "opposingStarterWalks": 0,
-            "teamStrikeouts": 9,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 6,
-            "date": "2026-08-02",
-            "opponent": "KC",
-            "opposingStartingPitcher": "Seth Lugo",
-            "opposingStarterOuts": 15,
-            "opposingStarterInnings": 5,
-            "opposingStarterStrikeouts": 3,
-            "opposingStarterWalks": 5,
-            "teamStrikeouts": 5,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 7,
-            "date": "2026-08-01",
-            "opponent": "KC",
-            "opposingStartingPitcher": "Luinder Avila",
-            "opposingStarterOuts": 8,
-            "opposingStarterInnings": 2.6666666666666665,
-            "opposingStarterStrikeouts": 2,
-            "opposingStarterWalks": 3,
-            "teamStrikeouts": 8,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 8,
-            "date": "2026-07-31",
-            "opponent": "KC",
-            "opposingStartingPitcher": "Michael Wacha",
-            "opposingStarterOuts": 18,
-            "opposingStarterInnings": 6,
-            "opposingStarterStrikeouts": 7,
-            "opposingStarterWalks": 0,
-            "teamStrikeouts": 8,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          },
-          {
-            "index": 9,
-            "date": "2026-07-29",
-            "opponent": "SD",
-            "opposingStartingPitcher": "Kyle Hart",
-            "opposingStarterOuts": 8,
-            "opposingStarterInnings": 2.6666666666666665,
-            "opposingStarterStrikeouts": 3,
-            "opposingStarterWalks": 1,
-            "teamStrikeouts": 14,
-            "plateAppearances": null,
-            "whiffRate": null,
-            "valid": true
-          }
-        ]
-      },
-      "sourceWarnings": [],
-      "completeness": {
-        "recentStartsRequested": 5,
-        "recentStartsFound": 5,
-        "rowsWithHitsAllowed": 5,
-        "rowsWithWalksAllowed": 5,
-        "rowsWithPitchCount": 5,
-        "rowsWithSite": 5,
-        "homeSeasonGames": 9,
-        "awaySeasonGames": 6,
-        "homeLastFiveGames": 5,
-        "awayLastFiveGames": 5,
-        "duplicateGameLogs": 0,
-        "warnings": []
-      },
-      "generatedAt": "2026-08-10T09:00:23.747Z",
-      "source": "mlb_stats_api+baseball_savant",
-      "opponentContext": {
-        "home": {
-          "kPerNine": 8.067796610169491,
-          "xba": 0.24832812499999965
-        },
-        "away": {
-          "kPerNine": 9.203389830508474,
-          "xba": 0.23424608388074733
-        },
-        "last10": {
-          "kPerNine": 8.2,
-          "xba": 0.2601146496815287
-        },
-        "samples": {
-          "season": 118,
-          "home": 59,
-          "away": 59,
-          "last10": 10,
-          "homeAtBats": 1984,
-          "awayAtBats": 1979,
-          "last10AtBats": 314,
-          "last10Games": 9
+          "awayAtBats": 2145,
+          "last10AtBats": 332,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
@@ -5560,7 +4991,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:01:04.299Z",
+      "generatedAt": "2026-08-10T13:57:37.153Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -5588,6 +5019,575 @@
         "warnings": [
           "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
         ]
+      }
+    },
+    {
+      "key": "michael-soroka|az|col|2026-08-10",
+      "legacyKey": "michael-soroka|az|col|2026-08-10",
+      "stableKey": "2026-08-10|825048|647336",
+      "stableKeys": [
+        "2026-08-10|825048|647336",
+        "2026-08-10|647336|109|115"
+      ],
+      "slateDate": "2026-08-10",
+      "gamePk": 825048,
+      "pitcherId": 647336,
+      "teamId": 109,
+      "opponentId": 115,
+      "pitcher": "Michael Soroka",
+      "team": "AZ",
+      "opponent": "COL",
+      "gameDate": "2026-08-10",
+      "pitcherLastFiveStarts": [
+        {
+          "gamePk": 825069,
+          "season": 2026,
+          "date": "2026-06-19",
+          "opponentId": 142,
+          "opponentAbbr": "MIN",
+          "opponent": "MIN",
+          "isHome": true,
+          "site": "home",
+          "inningsPitched": "1.0",
+          "outsRecorded": 3,
+          "strikeouts": 0,
+          "hitsAllowed": 2,
+          "walksAllowed": 0,
+          "pitchCount": 9,
+          "battersFaced": 4,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 824508,
+          "season": 2026,
+          "date": "2026-06-13",
+          "opponentId": 113,
+          "opponentAbbr": "CIN",
+          "opponent": "CIN",
+          "isHome": false,
+          "site": "away",
+          "inningsPitched": "7.0",
+          "outsRecorded": 21,
+          "strikeouts": 7,
+          "hitsAllowed": 2,
+          "walksAllowed": 0,
+          "pitchCount": 93,
+          "battersFaced": 23,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 825074,
+          "season": 2026,
+          "date": "2026-06-07",
+          "opponentId": 120,
+          "opponentAbbr": "WSH",
+          "opponent": "WSH",
+          "isHome": true,
+          "site": "home",
+          "inningsPitched": "7.0",
+          "outsRecorded": 21,
+          "strikeouts": 6,
+          "hitsAllowed": 3,
+          "walksAllowed": 2,
+          "pitchCount": 100,
+          "battersFaced": 26,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 825079,
+          "season": 2026,
+          "date": "2026-06-02",
+          "opponentId": 119,
+          "opponentAbbr": "LAD",
+          "opponent": "LAD",
+          "isHome": true,
+          "site": "home",
+          "inningsPitched": "6.0",
+          "outsRecorded": 18,
+          "strikeouts": 6,
+          "hitsAllowed": 6,
+          "walksAllowed": 1,
+          "pitchCount": 100,
+          "battersFaced": 25,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 823217,
+          "season": 2026,
+          "date": "2026-05-27",
+          "opponentId": 137,
+          "opponentAbbr": "SF",
+          "opponent": "SF",
+          "isHome": false,
+          "site": "away",
+          "inningsPitched": "6.0",
+          "outsRecorded": 18,
+          "strikeouts": 3,
+          "hitsAllowed": 4,
+          "walksAllowed": 0,
+          "pitchCount": 83,
+          "battersFaced": 22,
+          "gamesStarted": 1
+        }
+      ],
+      "pitcherRecentStarts": [
+        {
+          "gamePk": 825069,
+          "season": 2026,
+          "date": "2026-06-19",
+          "opponentId": 142,
+          "opponentAbbr": "MIN",
+          "opponent": "MIN",
+          "isHome": true,
+          "site": "home",
+          "inningsPitched": "1.0",
+          "outsRecorded": 3,
+          "strikeouts": 0,
+          "hitsAllowed": 2,
+          "walksAllowed": 0,
+          "pitchCount": 9,
+          "battersFaced": 4,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 824508,
+          "season": 2026,
+          "date": "2026-06-13",
+          "opponentId": 113,
+          "opponentAbbr": "CIN",
+          "opponent": "CIN",
+          "isHome": false,
+          "site": "away",
+          "inningsPitched": "7.0",
+          "outsRecorded": 21,
+          "strikeouts": 7,
+          "hitsAllowed": 2,
+          "walksAllowed": 0,
+          "pitchCount": 93,
+          "battersFaced": 23,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 825074,
+          "season": 2026,
+          "date": "2026-06-07",
+          "opponentId": 120,
+          "opponentAbbr": "WSH",
+          "opponent": "WSH",
+          "isHome": true,
+          "site": "home",
+          "inningsPitched": "7.0",
+          "outsRecorded": 21,
+          "strikeouts": 6,
+          "hitsAllowed": 3,
+          "walksAllowed": 2,
+          "pitchCount": 100,
+          "battersFaced": 26,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 825079,
+          "season": 2026,
+          "date": "2026-06-02",
+          "opponentId": 119,
+          "opponentAbbr": "LAD",
+          "opponent": "LAD",
+          "isHome": true,
+          "site": "home",
+          "inningsPitched": "6.0",
+          "outsRecorded": 18,
+          "strikeouts": 6,
+          "hitsAllowed": 6,
+          "walksAllowed": 1,
+          "pitchCount": 100,
+          "battersFaced": 25,
+          "gamesStarted": 1
+        },
+        {
+          "gamePk": 823217,
+          "season": 2026,
+          "date": "2026-05-27",
+          "opponentId": 137,
+          "opponentAbbr": "SF",
+          "opponent": "SF",
+          "isHome": false,
+          "site": "away",
+          "inningsPitched": "6.0",
+          "outsRecorded": 18,
+          "strikeouts": 3,
+          "hitsAllowed": 4,
+          "walksAllowed": 0,
+          "pitchCount": 83,
+          "battersFaced": 22,
+          "gamesStarted": 1
+        }
+      ],
+      "pitcherLastFiveSummary": {
+        "gamesUsed": 5,
+        "totalOuts": 81,
+        "averageInningsOuts": 16.2,
+        "totalStrikeouts": 22,
+        "averageStrikeouts": 4.4,
+        "totalHitsAllowed": 17,
+        "totalWalksAllowed": 3,
+        "hitsPerNine": 5.666666666666667,
+        "strikeoutsPerNine": 7.333333333333333,
+        "hitsPerInning": 0.6296296296296297,
+        "strikeoutsPerInning": 0.8148148148148148,
+        "walksPerInning": 0.1111111111111111,
+        "averagePitchCount": 77
+      },
+      "pitcherVenueSplits": {
+        "home": {
+          "site": "home",
+          "season": {
+            "gamesUsed": 9,
+            "totalOuts": 145,
+            "inningsPitched": "48.1",
+            "strikeouts": 44,
+            "hitsAllowed": 42,
+            "battersFaced": 195,
+            "strikeoutRate": 22.564102564102566,
+            "hitRate": 21.53846153846154
+          },
+          "lastFiveAtSite": {
+            "gamesUsed": 5,
+            "totalOuts": 79,
+            "inningsPitched": "26.1",
+            "strikeouts": 20,
+            "hitsAllowed": 22,
+            "battersFaced": 105,
+            "strikeoutRate": 19.047619047619047,
+            "hitRate": 20.952380952380953
+          }
+        },
+        "away": {
+          "site": "away",
+          "season": {
+            "gamesUsed": 6,
+            "totalOuts": 101,
+            "inningsPitched": "33.2",
+            "strikeouts": 35,
+            "hitsAllowed": 30,
+            "battersFaced": 138,
+            "strikeoutRate": 25.36231884057971,
+            "hitRate": 21.73913043478261
+          },
+          "lastFiveAtSite": {
+            "gamesUsed": 5,
+            "totalOuts": 84,
+            "inningsPitched": "28.0",
+            "strikeouts": 25,
+            "hitsAllowed": 25,
+            "battersFaced": 113,
+            "strikeoutRate": 22.123893805309734,
+            "hitRate": 22.123893805309734
+          }
+        }
+      },
+      "opponentLastFiveGames": [
+        {
+          "date": "2026-08-09",
+          "opponent": "STL",
+          "opposingStartingPitcher": "Michael McGreevy",
+          "opposingStarterInningsPitched": "5.2",
+          "opposingStarterStrikeouts": 4,
+          "opposingStarterWalks": 2,
+          "teamTotalStrikeouts": 5
+        },
+        {
+          "date": "2026-08-08",
+          "opponent": "STL",
+          "opposingStartingPitcher": "Matthew Liberatore",
+          "opposingStarterInningsPitched": "5.0",
+          "opposingStarterStrikeouts": 3,
+          "opposingStarterWalks": 2,
+          "teamTotalStrikeouts": 5
+        },
+        {
+          "date": "2026-08-07",
+          "opponent": "STL",
+          "opposingStartingPitcher": "Kyle Leahy",
+          "opposingStarterInningsPitched": "5.0",
+          "opposingStarterStrikeouts": 8,
+          "opposingStarterWalks": 0,
+          "teamTotalStrikeouts": 10
+        },
+        {
+          "date": "2026-08-05",
+          "opponent": "TB",
+          "opposingStartingPitcher": "Nick Martinez",
+          "opposingStarterInningsPitched": "5.2",
+          "opposingStarterStrikeouts": 4,
+          "opposingStarterWalks": 0,
+          "teamTotalStrikeouts": 10
+        },
+        {
+          "date": "2026-08-04",
+          "opponent": "TB",
+          "opposingStartingPitcher": "Freddy Peralta",
+          "opposingStarterInningsPitched": "3.2",
+          "opposingStarterStrikeouts": 3,
+          "opposingStarterWalks": 1,
+          "teamTotalStrikeouts": 8
+        },
+        {
+          "date": "2026-08-03",
+          "opponent": "TB",
+          "opposingStartingPitcher": "Ian Seymour",
+          "opposingStarterInningsPitched": "6.0",
+          "opposingStarterStrikeouts": 9,
+          "opposingStarterWalks": 0,
+          "teamTotalStrikeouts": 9
+        },
+        {
+          "date": "2026-08-02",
+          "opponent": "KC",
+          "opposingStartingPitcher": "Seth Lugo",
+          "opposingStarterInningsPitched": "5.0",
+          "opposingStarterStrikeouts": 3,
+          "opposingStarterWalks": 5,
+          "teamTotalStrikeouts": 5
+        },
+        {
+          "date": "2026-08-01",
+          "opponent": "KC",
+          "opposingStartingPitcher": "Luinder Avila",
+          "opposingStarterInningsPitched": "2.2",
+          "opposingStarterStrikeouts": 2,
+          "opposingStarterWalks": 3,
+          "teamTotalStrikeouts": 8
+        },
+        {
+          "date": "2026-07-31",
+          "opponent": "KC",
+          "opposingStartingPitcher": "Michael Wacha",
+          "opposingStarterInningsPitched": "6.0",
+          "opposingStarterStrikeouts": 7,
+          "opposingStarterWalks": 0,
+          "teamTotalStrikeouts": 8
+        },
+        {
+          "date": "2026-07-29",
+          "opponent": "SD",
+          "opposingStartingPitcher": "Kyle Hart",
+          "opposingStarterInningsPitched": "2.2",
+          "opposingStarterStrikeouts": 3,
+          "opposingStarterWalks": 1,
+          "teamTotalStrikeouts": 14
+        }
+      ],
+      "opponentLastFiveVsStartersSummary": {
+        "gamesAvailable": 10,
+        "gamesUsed": 10,
+        "sampleCounts": {
+          "opposingStarterInnings": 10,
+          "opposingStarterStrikeouts": 10,
+          "opposingStarterWalks": 10,
+          "teamStrikeouts": 10,
+          "plateAppearances": 0,
+          "whiffRate": 0
+        },
+        "totalOpposingStarterOuts": 142,
+        "averageOpposingStarterInnings": 4.733333333333333,
+        "averageOpposingStarterStrikeouts": 4.6,
+        "totalOpposingStarterStrikeouts": 46,
+        "totalOpposingStarterWalks": 14,
+        "opposingStarterStrikeoutsPerInning": 0.971830985915493,
+        "opposingStarterWalksPerInning": 0.29577464788732394,
+        "averageTeamStrikeouts": 8.2,
+        "totalTeamStrikeouts": 82,
+        "teamStrikeoutsPerInning": 0.9111111111111111,
+        "recentTeamKRate": null,
+        "recentWhiffRate": null,
+        "rows": [
+          {
+            "index": 0,
+            "date": "2026-08-09",
+            "opponent": "STL",
+            "opposingStartingPitcher": "Michael McGreevy",
+            "opposingStarterOuts": 17,
+            "opposingStarterInnings": 5.666666666666667,
+            "opposingStarterStrikeouts": 4,
+            "opposingStarterWalks": 2,
+            "teamStrikeouts": 5,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 1,
+            "date": "2026-08-08",
+            "opponent": "STL",
+            "opposingStartingPitcher": "Matthew Liberatore",
+            "opposingStarterOuts": 15,
+            "opposingStarterInnings": 5,
+            "opposingStarterStrikeouts": 3,
+            "opposingStarterWalks": 2,
+            "teamStrikeouts": 5,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 2,
+            "date": "2026-08-07",
+            "opponent": "STL",
+            "opposingStartingPitcher": "Kyle Leahy",
+            "opposingStarterOuts": 15,
+            "opposingStarterInnings": 5,
+            "opposingStarterStrikeouts": 8,
+            "opposingStarterWalks": 0,
+            "teamStrikeouts": 10,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 3,
+            "date": "2026-08-05",
+            "opponent": "TB",
+            "opposingStartingPitcher": "Nick Martinez",
+            "opposingStarterOuts": 17,
+            "opposingStarterInnings": 5.666666666666667,
+            "opposingStarterStrikeouts": 4,
+            "opposingStarterWalks": 0,
+            "teamStrikeouts": 10,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 4,
+            "date": "2026-08-04",
+            "opponent": "TB",
+            "opposingStartingPitcher": "Freddy Peralta",
+            "opposingStarterOuts": 11,
+            "opposingStarterInnings": 3.6666666666666665,
+            "opposingStarterStrikeouts": 3,
+            "opposingStarterWalks": 1,
+            "teamStrikeouts": 8,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 5,
+            "date": "2026-08-03",
+            "opponent": "TB",
+            "opposingStartingPitcher": "Ian Seymour",
+            "opposingStarterOuts": 18,
+            "opposingStarterInnings": 6,
+            "opposingStarterStrikeouts": 9,
+            "opposingStarterWalks": 0,
+            "teamStrikeouts": 9,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 6,
+            "date": "2026-08-02",
+            "opponent": "KC",
+            "opposingStartingPitcher": "Seth Lugo",
+            "opposingStarterOuts": 15,
+            "opposingStarterInnings": 5,
+            "opposingStarterStrikeouts": 3,
+            "opposingStarterWalks": 5,
+            "teamStrikeouts": 5,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 7,
+            "date": "2026-08-01",
+            "opponent": "KC",
+            "opposingStartingPitcher": "Luinder Avila",
+            "opposingStarterOuts": 8,
+            "opposingStarterInnings": 2.6666666666666665,
+            "opposingStarterStrikeouts": 2,
+            "opposingStarterWalks": 3,
+            "teamStrikeouts": 8,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 8,
+            "date": "2026-07-31",
+            "opponent": "KC",
+            "opposingStartingPitcher": "Michael Wacha",
+            "opposingStarterOuts": 18,
+            "opposingStarterInnings": 6,
+            "opposingStarterStrikeouts": 7,
+            "opposingStarterWalks": 0,
+            "teamStrikeouts": 8,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          },
+          {
+            "index": 9,
+            "date": "2026-07-29",
+            "opponent": "SD",
+            "opposingStartingPitcher": "Kyle Hart",
+            "opposingStarterOuts": 8,
+            "opposingStarterInnings": 2.6666666666666665,
+            "opposingStarterStrikeouts": 3,
+            "opposingStarterWalks": 1,
+            "teamStrikeouts": 14,
+            "plateAppearances": null,
+            "whiffRate": null,
+            "valid": true
+          }
+        ]
+      },
+      "sourceWarnings": [],
+      "completeness": {
+        "recentStartsRequested": 5,
+        "recentStartsFound": 5,
+        "rowsWithHitsAllowed": 5,
+        "rowsWithWalksAllowed": 5,
+        "rowsWithPitchCount": 5,
+        "rowsWithSite": 5,
+        "homeSeasonGames": 9,
+        "awaySeasonGames": 6,
+        "homeLastFiveGames": 5,
+        "awayLastFiveGames": 5,
+        "duplicateGameLogs": 0,
+        "warnings": []
+      },
+      "generatedAt": "2026-08-10T13:58:17.898Z",
+      "source": "mlb_stats_api+baseball_savant",
+      "opponentContext": {
+        "home": {
+          "kPerNine": 8.067796610169491,
+          "xba": 0.24832812499999965
+        },
+        "away": {
+          "kPerNine": 9.203389830508474,
+          "xba": 0.23514441687344867
+        },
+        "last10": {
+          "kPerNine": 8.2,
+          "xba": 0.26262571428571435
+        },
+        "samples": {
+          "season": 118,
+          "home": 59,
+          "away": 59,
+          "last10": 10,
+          "homeAtBats": 1984,
+          "awayAtBats": 2015,
+          "last10AtBats": 350,
+          "last10Games": 10
+        },
+        "sources": {
+          "strikeouts": "mlb_stats_api",
+          "xba": "baseball_savant_statcast"
+        },
+        "warnings": []
       }
     },
     {
@@ -6112,7 +6112,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -6127,36 +6129,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:01:45.316Z",
+      "generatedAt": "2026-08-10T13:58:58.209Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.23728813559322,
-          "xba": 0.2453441524987116
+          "xba": null
         },
         "away": {
           "kPerNine": 8.816666666666666,
-          "xba": 0.24779435084241838
+          "xba": null
         },
         "last10": {
           "kPerNine": 9.5,
-          "xba": 0.23932154340836015
+          "xba": null
         },
         "samples": {
           "season": 119,
           "home": 59,
           "away": 60,
-          "last10": 10,
-          "homeAtBats": 1941,
-          "awayAtBats": 2018,
-          "last10AtBats": 311,
-          "last10Games": 9
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -6698,7 +6698,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:02:25.770Z",
+      "generatedAt": "2026-08-10T13:59:38.455Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -7265,7 +7265,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:03:06.504Z",
+      "generatedAt": "2026-08-10T14:00:17.166Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -7274,11 +7274,11 @@
         },
         "away": {
           "kPerNine": 9.114754098360656,
-          "xba": 0.23902973240832479
+          "xba": 0.23806575742815367
         },
         "last10": {
           "kPerNine": 8.7,
-          "xba": 0.2335484949832776
+          "xba": 0.22819760479041926
         },
         "samples": {
           "season": 118,
@@ -7286,9 +7286,9 @@
           "away": 61,
           "last10": 10,
           "homeAtBats": 1943,
-          "awayAtBats": 2018,
-          "last10AtBats": 299,
-          "last10Games": 9
+          "awayAtBats": 2053,
+          "last10AtBats": 334,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
@@ -7836,7 +7836,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:03:47.002Z",
+      "generatedAt": "2026-08-10T14:00:57.483Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -8405,7 +8405,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:04:27.350Z",
+      "generatedAt": "2026-08-10T14:01:37.591Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -8974,7 +8974,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:05:07.857Z",
+      "generatedAt": "2026-08-10T14:02:17.767Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -9397,7 +9397,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:05:48.093Z",
+      "generatedAt": "2026-08-10T14:02:57.662Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -9968,7 +9968,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:06:28.549Z",
+      "generatedAt": "2026-08-10T14:03:37.818Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -10520,7 +10520,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -10535,36 +10537,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:07:09.630Z",
+      "generatedAt": "2026-08-10T14:04:17.999Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.271186440677966,
-          "xba": 0.2514859335038362
+          "xba": null
         },
         "away": {
           "kPerNine": 8.383333333333333,
-          "xba": 0.23917202174987584
+          "xba": null
         },
         "last10": {
           "kPerNine": 4.9,
-          "xba": 0.24909687499999986
+          "xba": null
         },
         "samples": {
           "season": 119,
           "home": 59,
           "away": 60,
-          "last10": 10,
-          "homeAtBats": 1955,
-          "awayAtBats": 2023,
-          "last10AtBats": 320,
-          "last10Games": 10
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -11106,7 +11106,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-10T09:07:50.035Z",
+      "generatedAt": "2026-08-10T14:04:58.235Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {

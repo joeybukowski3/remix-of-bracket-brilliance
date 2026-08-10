@@ -1,10 +1,10 @@
 {
   "date": "2026-08-10",
-  "generatedAt": "2026-08-10T08:54:38.945Z",
+  "generatedAt": "2026-08-10T13:51:33.932Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rogers Centre and Truist Park lead the slate with park factors above 1.03, while Oracle Park suppresses power at 0.85. Taillon and Cameron are the most vulnerable starters, allowing 84.3 and 56 HR per 100 fly balls respectively, setting up favorable matchups for Abreu and Ohtani. Wind and humidity data are neutral, so park and pitcher metrics drive the edge.",
-    "modelNote": "The model is overweighting barrel rate and opposing pitcher HR vulnerability, pushing Abreu to the top despite a modest 13.1% barrel rate because Taillon's 84.3 HR/100 FB creates a massive multiplier."
+    "slateOverview": "Rogers Centre's 1.08 park factor and Taillon's 84.6 HR/9 rate create the day's clearest edge for Abreu and Contreras, while Dodger Stadium's 1.1 factor and Cameron's left-handed delivery set up Ohtani's pull-side power. Target Field and Busch Stadium play neutral, but Kremer and Painter's elevated HR rates still give Alonso and Burleson viable spots despite the modest park factors.",
+    "modelNote": "The model is prioritizing opposing pitcher HR vulnerability and park factor over recent hot streaks, which is why Abreu leads despite only three HR in his last seven games."
   },
   "bestBets": [
     {
@@ -14,15 +14,15 @@
       "opposingPitcher": "Jameson Taillon",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=13.1%",
-        "HH=43.5%"
+        "barrel=12.9%",
+        "HH=43.4%"
       ],
       "bullets": [
-        "hrScore=80",
-        "park=1.08"
+        "park=1.08",
+        "hrScore=80.5"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -33,34 +33,15 @@
       "opposingPitcher": "Noah Cameron",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=16.6%",
-        "HH=52.6%"
+        "barrel=16.4%",
+        "HH=52.3%"
       ],
       "bullets": [
-        "hrScore=70.4",
-        "park=1.1"
+        "park=1.1",
+        "hrScore=69.8"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Osleivis Basabe",
-      "team": "SF",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 3,
-      "topStats": [
-        "Pitcher HR VS=48.5",
-        "Hard Hit%=41.7"
-      ],
-      "bullets": [
-        "HR score 68.7 (#3)",
-        "Pitcher HR VS 48.5 at park 0.85"
-      ],
-      "hrOddsYes": "+950",
-      "marketImpliedProbability": 0.09523809523809523,
+      "hrOddsYes": "+245",
+      "marketImpliedProbability": 0.2898550724637681,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -69,17 +50,36 @@
       "team": "STL",
       "opponent": "PHI",
       "opposingPitcher": "Andrew Painter",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=62.9",
-        "Hard Hit%=49.0"
+        "barrel=11.7%",
+        "HH=49.1%"
       ],
       "bullets": [
-        "HR score 67.9 (#4)",
-        "Pitcher HR VS 62.9 at park 0.92"
+        "park=0.92",
+        "hrScore=69.6"
       ],
       "hrOddsYes": "+400",
       "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "MIN",
+      "opposingPitcher": "Dean Kremer",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Hard Hit%=55.8",
+        "Pitcher HR VS=47.5"
+      ],
+      "bullets": [
+        "HR score 68.9 (#4)",
+        "Pitcher HR VS 47.5 at park 0.97"
+      ],
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -90,12 +90,12 @@
       "opposingPitcher": "Jameson Taillon",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=84.3",
-        "Hard Hit%=46.1"
+        "Pitcher HR VS=84.6",
+        "Hard Hit%=46.3"
       ],
       "bullets": [
-        "HR score 67.2 (#5)",
-        "Pitcher HR VS 84.3 at park 1.08"
+        "HR score 67.9 (#5)",
+        "Pitcher HR VS 84.6 at park 1.08"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -105,40 +105,21 @@
   ],
   "valueBets": [
     {
-      "player": "Osleivis Basabe",
-      "team": "SF",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=17.4%",
-        "HH=41.7%"
-      ],
-      "bullets": [
-        "hrScore=68.7",
-        "park=0.85"
-      ],
-      "hrOddsYes": "+950",
-      "marketImpliedProbability": 0.09523809523809523,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "PHI",
-      "opposingPitcher": "Andrew Painter",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "MIN",
+      "opposingPitcher": "Dean Kremer",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=11.5%",
-        "HH=49%"
+        "barrel=13.8%",
+        "HH=55.8%"
       ],
       "bullets": [
-        "hrScore=67.9",
-        "park=0.92"
+        "park=0.97",
+        "hrScore=68.9"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,12 +130,12 @@
       "opposingPitcher": "Jameson Taillon",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=14.5%",
-        "HH=46.1%"
+        "barrel=14.4%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "hrScore=67.2",
-        "park=1.08"
+        "park=1.08",
+        "hrScore=67.9"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -168,34 +149,34 @@
       "opposingPitcher": "Christian Scott",
       "hrScoreRank": 6,
       "topStats": [
-        "Hard Hit%=50.5",
-        "Pitcher HR VS=37.9"
+        "barrel=15.7%",
+        "HH=50.6%"
       ],
       "bullets": [
-        "HR score 66.9 (#6)",
-        "Pitcher HR VS 37.9 at park 1.03"
+        "park=1.03",
+        "hrScore=66.7"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "MIN",
-      "opposingPitcher": "Dean Kremer",
+      "player": "Osleivis Basabe",
+      "team": "SF",
+      "opponent": "HOU",
+      "opposingPitcher": "Hayden Wesneski",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=55.4",
-        "Pitcher HR VS=47.3"
+        "Pitcher HR VS=48.7",
+        "Hard Hit%=38.5"
       ],
       "bullets": [
-        "HR score 66.5 (#7)",
-        "Pitcher HR VS 47.3 at park 0.97"
+        "HR score 61.2 (#7)",
+        "Pitcher HR VS 48.7 at park 0.85"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+950",
+      "marketImpliedProbability": 0.09523809523809523,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -206,12 +187,12 @@
       "opposingPitcher": "Blade Tidwell",
       "hrScoreRank": 8,
       "topStats": [
-        "Hard Hit%=53.6",
-        "Pitcher HR VS=37.5"
+        "Hard Hit%=53.7",
+        "Pitcher HR VS=37.7"
       ],
       "bullets": [
-        "HR score 61.5 (#8)",
-        "Pitcher HR VS 37.5 at park 0.85"
+        "HR score 61.1 (#8)",
+        "Pitcher HR VS 37.7 at park 0.85"
       ],
       "hrOddsYes": "+290",
       "marketImpliedProbability": 0.2564102564102564,
@@ -221,18 +202,37 @@
   ],
   "longshots": [
     {
+      "player": "Osleivis Basabe",
+      "team": "SF",
+      "opponent": "HOU",
+      "opposingPitcher": "Hayden Wesneski",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=16%",
+        "HH=38.5%"
+      ],
+      "bullets": [
+        "park=0.85",
+        "hrScore=61.2"
+      ],
+      "hrOddsYes": "+950",
+      "marketImpliedProbability": 0.09523809523809523,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "SF",
       "opposingPitcher": "Blade Tidwell",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=18%",
-        "HH=53.6%"
+        "barrel=17.8%",
+        "HH=53.7%"
       ],
       "bullets": [
-        "hrScore=61.5",
-        "park=0.85"
+        "park=0.85",
+        "hrScore=61.1"
       ],
       "hrOddsYes": "+290",
       "marketImpliedProbability": 0.2564102564102564,
@@ -244,14 +244,14 @@
       "team": "KC",
       "opponent": "LAD",
       "opposingPitcher": "Tarik Skubal",
-      "hrScoreRank": 24,
+      "hrScoreRank": 25,
       "topStats": [
-        "barrel=14.7%",
-        "HH=55.6%"
+        "Hard Hit%=55.3",
+        "Pitcher HR VS=31.5"
       ],
       "bullets": [
-        "hrScore=53.5",
-        "park=1.1"
+        "HR score 53.2 (#25)",
+        "Pitcher HR VS 31.5 at park 1.10"
       ],
       "hrOddsYes": "+600",
       "marketImpliedProbability": 0.14285714285714285,
@@ -259,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Bryce Eldridge",
-      "team": "SF",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 13,
+      "player": "JJ Wetherholt",
+      "team": "STL",
+      "opponent": "PHI",
+      "opposingPitcher": "Andrew Painter",
+      "hrScoreRank": 24,
       "topStats": [
-        "Hard Hit%=52.5",
-        "Pitcher HR VS=48.5"
+        "Pitcher HR VS=63.2",
+        "Hard Hit%=44.1"
       ],
       "bullets": [
-        "HR score 57.6 (#13)",
-        "Pitcher HR VS 48.5 at park 0.85"
+        "HR score 53.5 (#24)",
+        "Pitcher HR VS 63.2 at park 0.92"
       ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }

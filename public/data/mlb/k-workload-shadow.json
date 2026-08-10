@@ -4,23 +4,23 @@
   "teamKAdjustmentModelVersion": "team-k-adjustment-v1",
   "mode": "shadow",
   "date": "2026-08-10",
-  "generatedAt": "2026-08-10T08:53:52.500Z",
+  "generatedAt": "2026-08-10T13:51:03.962Z",
   "summary": {
     "gameCount": 10,
     "pitcherCount": 20,
     "successfulWorkloadFetches": 20,
     "workloadOnlyKsAvailable": 20,
     "teamAdjustedKsAvailable": 20,
-    "averageSignedKsChange": -0.051,
-    "averageAbsoluteKsChange": 0.237,
-    "generatedAt": "2026-08-10T08:53:52.500Z"
+    "averageSignedKsChange": -0.017,
+    "averageAbsoluteKsChange": 0.169,
+    "generatedAt": "2026-08-10T13:51:03.962Z"
   },
   "leagueContext": {
     "pitchesPerPA": 3.873,
     "kRate": 0.2169,
-    "whiffRate": 0.25,
+    "whiffRate": 0.2414,
     "bbRate": 0.0864,
-    "contactRate": 0.75
+    "contactRate": 0.7586
   },
   "pitchers": [
     {
@@ -43,11 +43,11 @@
         "seasonBattersFaced": 484,
         "recentKRate": 0.2109,
         "recentBattersFaced": 147,
-        "bbRate": 0.0661,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.066,
+        "whiffRate": 0.232,
+        "xera": 3.68,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.81,
@@ -74,11 +74,11 @@
         "expectedPitchLimit": 86.07,
         "expectedBF": 23.338,
         "expectedInnings": 5.914,
-        "temporaryKRate": 0.2168,
-        "workloadOnlyProjectedKs": 5.061,
-        "teamAdjustedKRate": 0.2111,
-        "fullShadowProjectedKs": 4.927,
-        "teamAdjustmentKsDelta": -0.134
+        "temporaryKRate": 0.2161,
+        "workloadOnlyProjectedKs": 5.043,
+        "teamAdjustedKRate": 0.2101,
+        "fullShadowProjectedKs": 4.903,
+        "teamAdjustmentKsDelta": -0.14
       },
       "confidence": {
         "score": 1,
@@ -86,20 +86,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2111,
+        "adjustedKRate": 0.2101,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
             "observedSeasonKRate": 0.219,
             "regressedSeasonKRate": 0.2184,
             "recentAdjustment": -0.0015,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2169
+            "whiffAdjustment": -0.0009,
+            "baselineKRate": 0.2159
           },
           "opponent": {
             "observedSeasonKRate": 0.1968,
@@ -116,7 +115,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "difficult",
           "hardBounds": [
             0.12,
@@ -128,14 +127,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -154,15 +151,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2081,
+        "seasonKRate": 0.208,
         "seasonBattersFaced": 346,
         "recentKRate": 0.2212,
         "recentBattersFaced": 113,
-        "bbRate": 0.0838,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.084,
+        "whiffRate": 0.266,
+        "xera": 6.03,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.816,
@@ -189,11 +186,11 @@
         "expectedPitchLimit": 75.61,
         "expectedBF": 19.389,
         "expectedInnings": 4.129,
-        "temporaryKRate": 0.2122,
-        "workloadOnlyProjectedKs": 4.115,
-        "teamAdjustedKRate": 0.2127,
-        "fullShadowProjectedKs": 4.124,
-        "teamAdjustmentKsDelta": 0.009
+        "temporaryKRate": 0.2149,
+        "workloadOnlyProjectedKs": 4.167,
+        "teamAdjustedKRate": 0.2151,
+        "fullShadowProjectedKs": 4.171,
+        "teamAdjustmentKsDelta": 0.004
       },
       "confidence": {
         "score": 1,
@@ -201,20 +198,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2127,
+        "adjustedKRate": 0.2151,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2081,
+            "observedSeasonKRate": 0.208,
             "regressedSeasonKRate": 0.2113,
             "recentAdjustment": 0.002,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2133
+            "whiffAdjustment": 0.0025,
+            "baselineKRate": 0.2157
           },
           "opponent": {
             "observedSeasonKRate": 0.2177,
@@ -231,7 +227,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -243,14 +239,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -269,15 +263,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2884,
+        "seasonKRate": 0.288,
         "seasonBattersFaced": 319,
         "recentKRate": 0.3171,
         "recentBattersFaced": 123,
-        "bbRate": 0.1003,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.1,
+        "whiffRate": 0.26,
+        "xera": 3.76,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.882,
@@ -304,11 +298,11 @@
         "expectedPitchLimit": 89.94,
         "expectedBF": 22.689,
         "expectedInnings": 5.156,
-        "temporaryKRate": 0.2867,
-        "workloadOnlyProjectedKs": 6.506,
-        "teamAdjustedKRate": 0.2687,
-        "fullShadowProjectedKs": 6.097,
-        "teamAdjustmentKsDelta": -0.409
+        "temporaryKRate": 0.2776,
+        "workloadOnlyProjectedKs": 6.298,
+        "teamAdjustedKRate": 0.2703,
+        "fullShadowProjectedKs": 6.133,
+        "teamAdjustmentKsDelta": -0.165
       },
       "confidence": {
         "score": 1,
@@ -316,20 +310,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2687,
+        "adjustedKRate": 0.2703,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2884,
-            "regressedSeasonKRate": 0.2608,
+            "observedSeasonKRate": 0.288,
+            "regressedSeasonKRate": 0.2606,
             "recentAdjustment": 0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2688
+            "whiffAdjustment": 0.0019,
+            "baselineKRate": 0.2705
           },
           "opponent": {
             "observedSeasonKRate": 0.2147,
@@ -346,7 +339,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -358,14 +351,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -384,15 +375,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.1966,
+        "seasonKRate": 0.197,
         "seasonBattersFaced": 529,
         "recentKRate": 0.1908,
         "recentBattersFaced": 131,
-        "bbRate": 0.0794,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.079,
+        "whiffRate": 0.218,
+        "xera": 3.9,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.929,
@@ -419,11 +410,11 @@
         "expectedPitchLimit": 85.76,
         "expectedBF": 22.215,
         "expectedInnings": 5.666,
-        "temporaryKRate": 0.1976,
-        "workloadOnlyProjectedKs": 4.39,
-        "teamAdjustedKRate": 0.2048,
-        "fullShadowProjectedKs": 4.55,
-        "teamAdjustmentKsDelta": 0.16
+        "temporaryKRate": 0.1988,
+        "workloadOnlyProjectedKs": 4.417,
+        "teamAdjustedKRate": 0.2026,
+        "fullShadowProjectedKs": 4.501,
+        "teamAdjustmentKsDelta": 0.084
       },
       "confidence": {
         "score": 1,
@@ -431,20 +422,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2048,
+        "adjustedKRate": 0.2026,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.1966,
-            "regressedSeasonKRate": 0.2022,
+            "observedSeasonKRate": 0.197,
+            "regressedSeasonKRate": 0.2025,
             "recentAdjustment": -0.0023,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.1999
+            "whiffAdjustment": -0.0023,
+            "baselineKRate": 0.1978
           },
           "opponent": {
             "observedSeasonKRate": 0.2265,
@@ -461,7 +451,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -473,14 +463,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -499,15 +487,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2025,
+        "seasonKRate": 0.202,
         "seasonBattersFaced": 484,
         "recentKRate": 0.2517,
         "recentBattersFaced": 147,
-        "bbRate": 0.0661,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.066,
+        "whiffRate": 0.236,
+        "xera": 3.73,
+        "hand": "L",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.873,
@@ -534,11 +522,11 @@
         "expectedPitchLimit": 90.87,
         "expectedBF": 23.909,
         "expectedInnings": 6.055,
-        "temporaryKRate": 0.2158,
-        "workloadOnlyProjectedKs": 5.158,
-        "teamAdjustedKRate": 0.2124,
-        "fullShadowProjectedKs": 5.078,
-        "teamAdjustmentKsDelta": -0.08
+        "temporaryKRate": 0.2152,
+        "workloadOnlyProjectedKs": 5.146,
+        "teamAdjustedKRate": 0.2115,
+        "fullShadowProjectedKs": 5.057,
+        "teamAdjustmentKsDelta": -0.089
       },
       "confidence": {
         "score": 1,
@@ -546,20 +534,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2124,
+        "adjustedKRate": 0.2115,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2025,
-            "regressedSeasonKRate": 0.2067,
+            "observedSeasonKRate": 0.202,
+            "regressedSeasonKRate": 0.2064,
             "recentAdjustment": 0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2147
+            "whiffAdjustment": -0.0005,
+            "baselineKRate": 0.2138
           },
           "opponent": {
             "observedSeasonKRate": 0.214,
@@ -576,7 +563,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "L",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -588,14 +575,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -614,15 +599,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2326,
+        "seasonKRate": 0.233,
         "seasonBattersFaced": 172,
         "recentKRate": 0.186,
         "recentBattersFaced": 129,
-        "bbRate": 0.0756,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.076,
+        "whiffRate": 0.262,
+        "xera": 4.54,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.991,
@@ -649,11 +634,11 @@
         "expectedPitchLimit": 85.55,
         "expectedBF": 21.361,
         "expectedInnings": 4.938,
-        "temporaryKRate": 0.2198,
-        "workloadOnlyProjectedKs": 4.695,
-        "teamAdjustedKRate": 0.2262,
-        "fullShadowProjectedKs": 4.832,
-        "teamAdjustmentKsDelta": 0.137
+        "temporaryKRate": 0.2213,
+        "workloadOnlyProjectedKs": 4.727,
+        "teamAdjustedKRate": 0.2285,
+        "fullShadowProjectedKs": 4.881,
+        "teamAdjustmentKsDelta": 0.154
       },
       "confidence": {
         "score": 1,
@@ -661,20 +646,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2262,
+        "adjustedKRate": 0.2285,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2326,
-            "regressedSeasonKRate": 0.2241,
-            "recentAdjustment": -0.0076,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2165
+            "observedSeasonKRate": 0.233,
+            "regressedSeasonKRate": 0.2243,
+            "recentAdjustment": -0.0077,
+            "whiffAdjustment": 0.0021,
+            "baselineKRate": 0.2187
           },
           "opponent": {
             "observedSeasonKRate": 0.2434,
@@ -691,7 +675,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -703,14 +687,12 @@
           "grade": "B"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -729,15 +711,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.1791,
+        "seasonKRate": 0.186,
         "seasonBattersFaced": 296,
         "recentKRate": 0.1901,
         "recentBattersFaced": 121,
-        "bbRate": 0.0811,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.083,
+        "whiffRate": 0.232,
+        "xera": 5.12,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.857,
@@ -764,11 +746,11 @@
         "expectedPitchLimit": 76.64,
         "expectedBF": 19.649,
         "expectedInnings": 4.381,
-        "temporaryKRate": 0.1861,
-        "workloadOnlyProjectedKs": 3.657,
-        "teamAdjustedKRate": 0.1882,
-        "fullShadowProjectedKs": 3.698,
-        "teamAdjustmentKsDelta": 0.041
+        "temporaryKRate": 0.1938,
+        "workloadOnlyProjectedKs": 3.807,
+        "teamAdjustedKRate": 0.1905,
+        "fullShadowProjectedKs": 3.743,
+        "teamAdjustmentKsDelta": -0.064
       },
       "confidence": {
         "score": 1,
@@ -776,20 +758,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1882,
+        "adjustedKRate": 0.1905,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.1791,
-            "regressedSeasonKRate": 0.1943,
-            "recentAdjustment": -0.0008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.1935
+            "observedSeasonKRate": 0.186,
+            "regressedSeasonKRate": 0.1985,
+            "recentAdjustment": -0.0017,
+            "whiffAdjustment": -0.0009,
+            "baselineKRate": 0.1958
           },
           "opponent": {
             "observedSeasonKRate": 0.2026,
@@ -806,7 +787,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "difficult",
           "hardBounds": [
             0.12,
@@ -818,14 +799,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -844,15 +823,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.1982,
+        "seasonKRate": 0.213,
         "seasonBattersFaced": 111,
         "recentKRate": 0.2017,
         "recentBattersFaced": 119,
-        "bbRate": 0.0991,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.083,
+        "whiffRate": 0.229,
+        "xera": 3.65,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.89,
@@ -879,11 +858,11 @@
         "expectedPitchLimit": 85.76,
         "expectedBF": 22.213,
         "expectedInnings": 5.31,
-        "temporaryKRate": 0.2012,
-        "workloadOnlyProjectedKs": 4.47,
-        "teamAdjustedKRate": 0.2078,
-        "fullShadowProjectedKs": 4.616,
-        "teamAdjustmentKsDelta": 0.146
+        "temporaryKRate": 0.2107,
+        "workloadOnlyProjectedKs": 4.68,
+        "teamAdjustedKRate": 0.2108,
+        "fullShadowProjectedKs": 4.683,
+        "teamAdjustmentKsDelta": 0.003
       },
       "confidence": {
         "score": 1,
@@ -892,20 +871,19 @@
       },
       "flags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2078,
+        "adjustedKRate": 0.2108,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.1982,
-            "regressedSeasonKRate": 0.2102,
-            "recentAdjustment": -0.0017,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2085
+            "observedSeasonKRate": 0.213,
+            "regressedSeasonKRate": 0.2155,
+            "recentAdjustment": -0.0028,
+            "whiffAdjustment": -0.0012,
+            "baselineKRate": 0.2115
           },
           "opponent": {
             "observedSeasonKRate": 0.2296,
@@ -922,7 +900,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -935,15 +913,13 @@
         },
         "flags": [
           "LOW_PITCHER_SAMPLE",
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -962,15 +938,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2559,
+        "seasonKRate": 0.256,
         "seasonBattersFaced": 547,
         "recentKRate": 0.259,
         "recentBattersFaced": 139,
-        "bbRate": 0.0859,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.086,
+        "whiffRate": 0.256,
+        "xera": 3.81,
+        "hand": "L",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.89,
@@ -997,11 +973,11 @@
         "expectedPitchLimit": 90.39,
         "expectedBF": 23.368,
         "expectedInnings": 5.716,
-        "temporaryKRate": 0.2521,
-        "workloadOnlyProjectedKs": 5.89,
-        "teamAdjustedKRate": 0.2618,
-        "fullShadowProjectedKs": 6.118,
-        "teamAdjustmentKsDelta": 0.228
+        "temporaryKRate": 0.248,
+        "workloadOnlyProjectedKs": 5.796,
+        "teamAdjustedKRate": 0.2632,
+        "fullShadowProjectedKs": 6.15,
+        "teamAdjustmentKsDelta": 0.354
       },
       "confidence": {
         "score": 1,
@@ -1009,20 +985,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2618,
+        "adjustedKRate": 0.2632,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2559,
+            "observedSeasonKRate": 0.256,
             "regressedSeasonKRate": 0.2455,
             "recentAdjustment": 0.0027,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2482
+            "whiffAdjustment": 0.0015,
+            "baselineKRate": 0.2497
           },
           "opponent": {
             "observedSeasonKRate": 0.2534,
@@ -1039,7 +1014,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "L",
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -1051,14 +1026,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1081,11 +1054,11 @@
         "seasonBattersFaced": 530,
         "recentKRate": 0.3065,
         "recentBattersFaced": 124,
-        "bbRate": 0.0736,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.074,
+        "whiffRate": 0.288,
+        "xera": 3.5,
+        "hand": "L",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.854,
@@ -1112,11 +1085,11 @@
         "expectedPitchLimit": 84.83,
         "expectedBF": 20.973,
         "expectedInnings": 4.888,
-        "temporaryKRate": 0.2808,
-        "workloadOnlyProjectedKs": 5.888,
-        "teamAdjustedKRate": 0.2783,
-        "fullShadowProjectedKs": 5.837,
-        "teamAdjustmentKsDelta": -0.051
+        "temporaryKRate": 0.275,
+        "workloadOnlyProjectedKs": 5.768,
+        "teamAdjustedKRate": 0.2829,
+        "fullShadowProjectedKs": 5.933,
+        "teamAdjustmentKsDelta": 0.165
       },
       "confidence": {
         "score": 1,
@@ -1124,20 +1097,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2783,
+        "adjustedKRate": 0.2829,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
             "observedSeasonKRate": 0.283,
             "regressedSeasonKRate": 0.2649,
             "recentAdjustment": 0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2729
+            "whiffAdjustment": 0.0047,
+            "baselineKRate": 0.2776
           },
           "opponent": {
             "observedSeasonKRate": 0.2276,
@@ -1154,7 +1126,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "L",
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -1166,14 +1138,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1192,15 +1162,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2455,
+        "seasonKRate": 0.231,
         "seasonBattersFaced": 110,
         "recentKRate": 0.2455,
         "recentBattersFaced": 110,
-        "bbRate": 0.0727,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.074,
+        "whiffRate": 0.201,
+        "xera": 2.4,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.93,
@@ -1227,11 +1197,11 @@
         "expectedPitchLimit": 82.21,
         "expectedBF": 21.209,
         "expectedInnings": 5.183,
-        "temporaryKRate": 0.2421,
-        "workloadOnlyProjectedKs": 5.135,
-        "teamAdjustedKRate": 0.2236,
-        "fullShadowProjectedKs": 4.742,
-        "teamAdjustmentKsDelta": -0.393
+        "temporaryKRate": 0.227,
+        "workloadOnlyProjectedKs": 4.815,
+        "teamAdjustedKRate": 0.2155,
+        "fullShadowProjectedKs": 4.571,
+        "teamAdjustmentKsDelta": -0.244
       },
       "confidence": {
         "score": 0.917,
@@ -1240,20 +1210,19 @@
       },
       "flags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2236,
+        "adjustedKRate": 0.2155,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2455,
-            "regressedSeasonKRate": 0.227,
-            "recentAdjustment": 0.0037,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2307
+            "observedSeasonKRate": 0.231,
+            "regressedSeasonKRate": 0.2219,
+            "recentAdjustment": 0.0047,
+            "whiffAdjustment": -0.004,
+            "baselineKRate": 0.2226
           },
           "opponent": {
             "observedSeasonKRate": 0.1934,
@@ -1270,7 +1239,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "difficult",
           "hardBounds": [
             0.12,
@@ -1283,15 +1252,13 @@
         },
         "flags": [
           "LOW_PITCHER_SAMPLE",
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1310,15 +1277,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2372,
+        "seasonKRate": 0.237,
         "seasonBattersFaced": 333,
         "recentKRate": 0.1951,
         "recentBattersFaced": 123,
-        "bbRate": 0.0511,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.051,
+        "whiffRate": 0.222,
+        "xera": 3.98,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.734,
@@ -1345,11 +1312,11 @@
         "expectedPitchLimit": 74.24,
         "expectedBF": 19.371,
         "expectedInnings": 4.895,
-        "temporaryKRate": 0.2249,
-        "workloadOnlyProjectedKs": 4.357,
-        "teamAdjustedKRate": 0.2254,
-        "fullShadowProjectedKs": 4.366,
-        "teamAdjustmentKsDelta": 0.009
+        "temporaryKRate": 0.222,
+        "workloadOnlyProjectedKs": 4.3,
+        "teamAdjustedKRate": 0.2234,
+        "fullShadowProjectedKs": 4.327,
+        "teamAdjustmentKsDelta": 0.027
       },
       "confidence": {
         "score": 1,
@@ -1357,20 +1324,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2254,
+        "adjustedKRate": 0.2234,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2372,
-            "regressedSeasonKRate": 0.2296,
+            "observedSeasonKRate": 0.237,
+            "regressedSeasonKRate": 0.2295,
             "recentAdjustment": -0.0069,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2227
+            "whiffAdjustment": -0.0019,
+            "baselineKRate": 0.2207
           },
           "opponent": {
             "observedSeasonKRate": 0.2268,
@@ -1387,7 +1353,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -1399,14 +1365,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1425,15 +1389,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2185,
+        "seasonKRate": 0.218,
         "seasonBattersFaced": 531,
         "recentKRate": 0.2137,
         "recentBattersFaced": 131,
-        "bbRate": 0.0923,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.092,
+        "whiffRate": 0.265,
+        "xera": 3.92,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.808,
@@ -1460,11 +1424,11 @@
         "expectedPitchLimit": 88.95,
         "expectedBF": 22.81,
         "expectedInnings": 4.631,
-        "temporaryKRate": 0.2172,
-        "workloadOnlyProjectedKs": 4.953,
-        "teamAdjustedKRate": 0.2218,
-        "fullShadowProjectedKs": 5.059,
-        "teamAdjustmentKsDelta": 0.106
+        "temporaryKRate": 0.2188,
+        "workloadOnlyProjectedKs": 4.991,
+        "teamAdjustedKRate": 0.2239,
+        "fullShadowProjectedKs": 5.107,
+        "teamAdjustmentKsDelta": 0.116
       },
       "confidence": {
         "score": 1,
@@ -1472,20 +1436,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2218,
+        "adjustedKRate": 0.2239,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2185,
-            "regressedSeasonKRate": 0.218,
-            "recentAdjustment": -0.0009,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2172
+            "observedSeasonKRate": 0.218,
+            "regressedSeasonKRate": 0.2177,
+            "recentAdjustment": -0.0008,
+            "whiffAdjustment": 0.0024,
+            "baselineKRate": 0.2193
           },
           "opponent": {
             "observedSeasonKRate": 0.2289,
@@ -1502,7 +1465,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -1514,14 +1477,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1540,15 +1501,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2033,
+        "seasonKRate": 0.203,
         "seasonBattersFaced": 305,
         "recentKRate": 0.3069,
         "recentBattersFaced": 101,
-        "bbRate": 0.1279,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.125,
+        "whiffRate": 0.239,
+        "xera": 3.5,
+        "hand": "L",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.791,
@@ -1575,11 +1536,11 @@
         "expectedPitchLimit": 82.47,
         "expectedBF": 20.852,
         "expectedInnings": 4.668,
-        "temporaryKRate": 0.2293,
-        "workloadOnlyProjectedKs": 4.781,
-        "teamAdjustedKRate": 0.2081,
-        "fullShadowProjectedKs": 4.339,
-        "teamAdjustmentKsDelta": -0.442
+        "temporaryKRate": 0.2271,
+        "workloadOnlyProjectedKs": 4.735,
+        "teamAdjustedKRate": 0.2077,
+        "fullShadowProjectedKs": 4.331,
+        "teamAdjustmentKsDelta": -0.404
       },
       "confidence": {
         "score": 1,
@@ -1587,20 +1548,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2081,
+        "adjustedKRate": 0.2077,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2033,
-            "regressedSeasonKRate": 0.2087,
+            "observedSeasonKRate": 0.203,
+            "regressedSeasonKRate": 0.2085,
             "recentAdjustment": 0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2167
+            "whiffAdjustment": -0.0002,
+            "baselineKRate": 0.2163
           },
           "opponent": {
             "observedSeasonKRate": 0.1902,
@@ -1617,7 +1577,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "L",
           "opponentKEnvironment": "difficult",
           "hardBounds": [
             0.12,
@@ -1629,14 +1589,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1655,15 +1613,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.3229,
+        "seasonKRate": 0.323,
         "seasonBattersFaced": 192,
         "recentKRate": 0.3223,
         "recentBattersFaced": 121,
-        "bbRate": 0.0521,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.052,
+        "whiffRate": 0.287,
+        "xera": 2.6,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.931,
@@ -1690,11 +1648,11 @@
         "expectedPitchLimit": 83.7,
         "expectedBF": 21.094,
         "expectedInnings": 5.352,
-        "temporaryKRate": 0.3103,
-        "workloadOnlyProjectedKs": 6.546,
-        "teamAdjustedKRate": 0.2751,
-        "fullShadowProjectedKs": 5.803,
-        "teamAdjustmentKsDelta": -0.743
+        "temporaryKRate": 0.3001,
+        "workloadOnlyProjectedKs": 6.33,
+        "teamAdjustedKRate": 0.2797,
+        "fullShadowProjectedKs": 5.9,
+        "teamAdjustmentKsDelta": -0.43
       },
       "confidence": {
         "score": 1,
@@ -1702,20 +1660,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2751,
+        "adjustedKRate": 0.2797,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.3229,
-            "regressedSeasonKRate": 0.2688,
+            "observedSeasonKRate": 0.323,
+            "regressedSeasonKRate": 0.2689,
             "recentAdjustment": 0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2768
+            "whiffAdjustment": 0.0046,
+            "baselineKRate": 0.2814
           },
           "opponent": {
             "observedSeasonKRate": 0.2189,
@@ -1732,7 +1689,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -1744,14 +1701,12 @@
           "grade": "B"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1770,15 +1725,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2369,
+        "seasonKRate": 0.237,
         "seasonBattersFaced": 363,
         "recentKRate": 0.2121,
         "recentBattersFaced": 132,
-        "bbRate": 0.0606,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.061,
+        "whiffRate": 0.265,
+        "xera": 3.32,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.986,
@@ -1805,11 +1760,11 @@
         "expectedPitchLimit": 84.08,
         "expectedBF": 21.1,
         "expectedInnings": 4.875,
-        "temporaryKRate": 0.2287,
-        "workloadOnlyProjectedKs": 4.826,
-        "teamAdjustedKRate": 0.2275,
-        "fullShadowProjectedKs": 4.8,
-        "teamAdjustmentKsDelta": -0.026
+        "temporaryKRate": 0.2289,
+        "workloadOnlyProjectedKs": 4.831,
+        "teamAdjustedKRate": 0.2299,
+        "fullShadowProjectedKs": 4.851,
+        "teamAdjustmentKsDelta": 0.02
       },
       "confidence": {
         "score": 1,
@@ -1817,20 +1772,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2275,
+        "adjustedKRate": 0.2299,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2369,
-            "regressedSeasonKRate": 0.2298,
+            "observedSeasonKRate": 0.237,
+            "regressedSeasonKRate": 0.2299,
             "recentAdjustment": -0.0035,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2263
+            "whiffAdjustment": 0.0024,
+            "baselineKRate": 0.2287
           },
           "opponent": {
             "observedSeasonKRate": 0.2143,
@@ -1847,7 +1801,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -1859,14 +1813,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -1885,15 +1837,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.1667,
+        "seasonKRate": 0.167,
         "seasonBattersFaced": 48,
         "recentKRate": 0.194,
         "recentBattersFaced": 134,
-        "bbRate": 0.0833,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.083,
+        "whiffRate": 0.266,
+        "xera": 5.62,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.859,
@@ -1920,11 +1872,11 @@
         "expectedPitchLimit": 81.89,
         "expectedBF": 21.55,
         "expectedInnings": 5.263,
-        "temporaryKRate": 0.179,
-        "workloadOnlyProjectedKs": 3.858,
-        "teamAdjustedKRate": 0.2025,
-        "fullShadowProjectedKs": 4.364,
-        "teamAdjustmentKsDelta": 0.506
+        "temporaryKRate": 0.1869,
+        "workloadOnlyProjectedKs": 4.028,
+        "teamAdjustedKRate": 0.205,
+        "fullShadowProjectedKs": 4.418,
+        "teamAdjustmentKsDelta": 0.39
       },
       "confidence": {
         "score": 1,
@@ -1933,20 +1885,19 @@
       },
       "flags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2025,
+        "adjustedKRate": 0.205,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.1667,
+            "observedSeasonKRate": 0.167,
             "regressedSeasonKRate": 0.2072,
             "recentAdjustment": -0.0026,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2045
+            "whiffAdjustment": 0.0025,
+            "baselineKRate": 0.2071
           },
           "opponent": {
             "observedSeasonKRate": 0.2105,
@@ -1963,7 +1914,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -1976,15 +1927,13 @@
         },
         "flags": [
           "LOW_PITCHER_SAMPLE",
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -2003,15 +1952,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.1364,
+        "seasonKRate": 0.188,
         "seasonBattersFaced": 22,
         "recentKRate": 0.1364,
         "recentBattersFaced": 22,
-        "bbRate": 0.0455,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.058,
+        "whiffRate": 0.271,
+        "xera": 3.28,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.883,
@@ -2038,11 +1987,11 @@
         "expectedPitchLimit": 35.76,
         "expectedBF": 9.479,
         "expectedInnings": 2.258,
-        "temporaryKRate": 0.1458,
-        "workloadOnlyProjectedKs": 1.382,
-        "teamAdjustedKRate": 0.1998,
-        "fullShadowProjectedKs": 1.894,
-        "teamAdjustmentKsDelta": 0.512
+        "temporaryKRate": 0.1873,
+        "workloadOnlyProjectedKs": 1.776,
+        "teamAdjustedKRate": 0.2078,
+        "fullShadowProjectedKs": 1.97,
+        "teamAdjustmentKsDelta": 0.194
       },
       "confidence": {
         "score": 1,
@@ -2053,20 +2002,19 @@
         "RELIEVER_PROFILE",
         "RELIEVER_WORKLOAD_CAP",
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1998,
+        "adjustedKRate": 0.2078,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.1364,
-            "regressedSeasonKRate": 0.2089,
+            "observedSeasonKRate": 0.188,
+            "regressedSeasonKRate": 0.214,
             "recentAdjustment": -0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2009
+            "whiffAdjustment": 0.003,
+            "baselineKRate": 0.209
           },
           "opponent": {
             "observedSeasonKRate": 0.2146,
@@ -2083,7 +2031,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -2096,8 +2044,7 @@
         },
         "flags": [
           "LOW_PITCHER_SAMPLE",
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [
@@ -2106,8 +2053,7 @@
       ],
       "teamKFlags": [
         "LOW_PITCHER_SAMPLE",
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -2126,15 +2072,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.2147,
+        "seasonKRate": 0.22,
         "seasonBattersFaced": 503,
         "recentKRate": 0.2143,
         "recentBattersFaced": 154,
-        "bbRate": 0.0736,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.076,
+        "whiffRate": 0.257,
+        "xera": 4.39,
+        "hand": "L",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.936,
@@ -2161,11 +2107,11 @@
         "expectedPitchLimit": 95.29,
         "expectedBF": 25.11,
         "expectedInnings": 6.563,
-        "temporaryKRate": 0.2149,
-        "workloadOnlyProjectedKs": 5.395,
-        "teamAdjustedKRate": 0.2108,
-        "fullShadowProjectedKs": 5.293,
-        "teamAdjustmentKsDelta": -0.102
+        "temporaryKRate": 0.2194,
+        "workloadOnlyProjectedKs": 5.508,
+        "teamAdjustedKRate": 0.2154,
+        "fullShadowProjectedKs": 5.409,
+        "teamAdjustmentKsDelta": -0.099
       },
       "confidence": {
         "score": 1,
@@ -2173,20 +2119,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2108,
+        "adjustedKRate": 0.2154,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.2147,
-            "regressedSeasonKRate": 0.2153,
-            "recentAdjustment": -0.0002,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2151
+            "observedSeasonKRate": 0.22,
+            "regressedSeasonKRate": 0.2191,
+            "recentAdjustment": -0.001,
+            "whiffAdjustment": 0.0016,
+            "baselineKRate": 0.2197
           },
           "opponent": {
             "observedSeasonKRate": 0.2051,
@@ -2203,7 +2148,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "L",
           "opponentKEnvironment": "difficult",
           "hardBounds": [
             0.12,
@@ -2215,14 +2160,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
@@ -2241,15 +2184,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.3065,
+        "seasonKRate": 0.307,
         "seasonBattersFaced": 398,
         "recentKRate": 0.3264,
         "recentBattersFaced": 144,
-        "bbRate": 0.0402,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.04,
+        "whiffRate": 0.325,
+        "xera": 2.97,
+        "hand": "L",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.802,
@@ -2276,11 +2219,11 @@
         "expectedPitchLimit": 88.43,
         "expectedBF": 23.77,
         "expectedInnings": 6.2,
-        "temporaryKRate": 0.3007,
-        "workloadOnlyProjectedKs": 7.147,
-        "teamAdjustedKRate": 0.2795,
-        "fullShadowProjectedKs": 6.644,
-        "teamAdjustmentKsDelta": -0.503
+        "temporaryKRate": 0.2953,
+        "workloadOnlyProjectedKs": 7.018,
+        "teamAdjustedKRate": 0.2858,
+        "fullShadowProjectedKs": 6.793,
+        "teamAdjustmentKsDelta": -0.225
       },
       "confidence": {
         "score": 1,
@@ -2288,20 +2231,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2795,
+        "adjustedKRate": 0.2858,
         "components": {
           "leagueKRate": 0.2169,
           "pitcher": {
-            "observedSeasonKRate": 0.3065,
-            "regressedSeasonKRate": 0.2766,
+            "observedSeasonKRate": 0.307,
+            "regressedSeasonKRate": 0.2769,
             "recentAdjustment": 0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.2846
+            "whiffAdjustment": 0.006,
+            "baselineKRate": 0.2909
           },
           "opponent": {
             "observedSeasonKRate": 0.2093,
@@ -2318,7 +2260,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "L",
           "opponentKEnvironment": "difficult",
           "hardBounds": [
             0.12,
@@ -2330,14 +2272,12 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     }
   ]
