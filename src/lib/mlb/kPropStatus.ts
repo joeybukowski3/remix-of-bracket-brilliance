@@ -182,8 +182,20 @@ export type KPropStatusInput = Pick<
  */
 export function resolveKPropStatus(row: KPropStatusInput): KPropStatusResult {
   const kLine = toFiniteOrNull(row.kLine);
-  if (kLine == null) {
+  const hasOddsOver = Boolean(String(row.kOddsOver ?? "").trim());
+  const hasOddsUnder = Boolean(String(row.kOddsUnder ?? "").trim());
+  const hasOddsBook = Boolean(String(row.kOddsBook ?? "").trim());
+  const hasMeaningfulMarket = (kLine != null && kLine > 0) || hasOddsOver || hasOddsUnder || hasOddsBook;
+
+  if (!hasMeaningfulMarket) {
     return { status: "NO_MARKET", reasons: ["NO_MARKET_LINE"] };
+  }
+
+  // A partial/malformed market is different from a complete provider outage.
+  // Once any market field is present, a missing or nonpositive line must still
+  // fail closed instead of being treated as a normal NO_MARKET row.
+  if (kLine == null || kLine <= 0) {
+    return { status: "INVALID_ODDS", reasons: ["K_LINE_OUTSIDE_PLAUSIBLE_RANGE"] };
   }
 
   const oddsIssues = evaluateKOddsPlausibility(row);

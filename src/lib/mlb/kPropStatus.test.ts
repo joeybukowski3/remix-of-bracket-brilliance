@@ -41,9 +41,27 @@ describe("resolveKPropStatus", () => {
     expect(resolveKPropStatus(makeRow()).status).toBe("VALID");
   });
 
-  it("returns NO_MARKET when there is no K line at all (not a data-quality problem)", () => {
-    const result = resolveKPropStatus(makeRow({ kLine: null }));
+  it("returns NO_MARKET when the complete sportsbook market is absent (not a data-quality problem)", () => {
+    const result = resolveKPropStatus(makeRow({
+      kLine: null,
+      kOddsOver: null,
+      kOddsUnder: null,
+      kOddsBook: null,
+    }));
     expect(result.status).toBe("NO_MARKET");
+    expect(result.reasons).toEqual(["NO_MARKET_LINE"]);
+  });
+
+  it("keeps a partial market with a missing line classified as INVALID_ODDS", () => {
+    const result = resolveKPropStatus(makeRow({ kLine: null, kOddsOver: "-110" }));
+    expect(result.status).toBe("INVALID_ODDS");
+    expect(result.reasons).toContain("K_LINE_OUTSIDE_PLAUSIBLE_RANGE");
+  });
+
+  it("treats a nonpositive line with every other market field absent as NO_MARKET", () => {
+    const result = resolveKPropStatus(makeRow({ kLine: 0, kOddsOver: null, kOddsUnder: null, kOddsBook: null }));
+    expect(result.status).toBe("NO_MARKET");
+    expect(result.reasons).toEqual(["NO_MARKET_LINE"]);
   });
 
   it("Jack Perkins regression: rejects an incoherent two-sided market from an unranked book", () => {
@@ -182,7 +200,7 @@ describe("resolveKPropStatus", () => {
     });
 
     it("a missing/null K line remains NO_MARKET, never LOW_K_LINE", () => {
-      const result = resolveKPropStatus(makeRow({ kLine: null }));
+      const result = resolveKPropStatus(makeRow({ kLine: null, kOddsOver: null, kOddsUnder: null, kOddsBook: null }));
       expect(result.status).toBe("NO_MARKET");
       expect(result.reasons).not.toContain("LOW_K_LINE");
     });

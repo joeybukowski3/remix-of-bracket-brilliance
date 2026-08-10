@@ -142,6 +142,44 @@ describe("MLB HR props dashboard guards", () => {
     expect(payload?.games[0].windDirection).toBe("SW");
   });
 
+  it.each([null, undefined, ""])("preserves a missing K line (%p) as null during normalization", (kLine) => {
+    const payload = normalizeHrDashboardPayload({
+      date: "2026-08-10",
+      generatedAt: "2026-08-10T16:30:00Z",
+      games: [],
+      batters: [],
+      pitchers: [{
+        gameKey: "BOS@TOR",
+        pitcher: "Healthy Starter",
+        team: "BOS",
+        opponent: "TOR",
+        hrVs: 40,
+        hitsVs: 45,
+        kVs: 75,
+        kLine,
+        kOddsOver: null,
+        kOddsUnder: null,
+        kOddsBook: null,
+      }],
+    });
+
+    expect(payload?.pitchers[0].kLine).toBeNull();
+  });
+
+  it("normalizes numeric K lines without fabricating invalid values", () => {
+    const makePayload = (kLine: unknown) => normalizeHrDashboardPayload({
+      date: "2026-08-10",
+      generatedAt: "2026-08-10T16:30:00Z",
+      games: [],
+      batters: [],
+      pitchers: [{ pitcher: "Starter", team: "BOS", opponent: "TOR", hrVs: 40, hitsVs: 45, kVs: 75, kLine }],
+    });
+
+    expect(makePayload("5.5")?.pitchers[0].kLine).toBe(5.5);
+    expect(makePayload(5.5)?.pitchers[0].kLine).toBe(5.5);
+    expect(makePayload("invalid")?.pitchers[0].kLine).toBeNull();
+  });
+
   it("keeps legacy raw-array fallback support for batter rows", () => {
     const rows = normalizeHrPropRows([
       {
