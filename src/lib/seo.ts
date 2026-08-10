@@ -14,6 +14,7 @@ export type SeoPage =
   | "fantasy-football"
   | "nba"
   | "ncaa"
+  | "college-football"
   | "world-cup";
 
 type SeoMeta = {
@@ -116,6 +117,12 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
       "NCAA Football power rankings, matchup analysis, betting models, and team insights are being developed.",
     path: "/ncaa",
     noindex: true,
+  },
+  "college-football": {
+    title: "College Football Rankings & Matchups | Joe Knows Ball",
+    description:
+      "JoeKnowsBall Top 25, conference standings, FBS rankings, weekly schedule, and matchup comparisons for College Football.",
+    path: "/college-football",
   },
   "world-cup": {
     title: "FIFA World Cup 2026 Power Rankings & Bracket Predictions | Joe Knows Ball",

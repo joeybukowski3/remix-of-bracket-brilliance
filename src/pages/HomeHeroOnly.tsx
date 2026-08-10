@@ -6,7 +6,7 @@ import SiteShell from "@/components/layout/SiteShell";
 
 const sports = [
   { id: "mlb", name: "MLB", route: "/mlb", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png" },
-  { id: "ncaa", name: "NCAA Football", route: "/ncaa", logo: "https://cdn.worldvectorlogo.com/logos/ncaa-4.svg", gated: true },
+  { id: "cfb", name: "College Football", route: "/college-football", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/ncaa.png" },
   { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" },
   { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", locked: true },
   { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg" },

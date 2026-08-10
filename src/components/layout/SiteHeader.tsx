@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 const navItems = [
   { to: "/", label: "Home" },
   { to: "/mlb", label: "MLB" },
-  { to: "/ncaa", label: "NCAA Football" },
+  { to: "/college-football", label: "College Football" },
   { to: "/nfl/guide", label: "NFL" },
   { to: "/fantasy-football", label: "Fantasy" },
   { to: "/nba", label: "NBA" },
@@ -19,6 +19,9 @@ function isActive(pathname: string, item: { to: string | null; label: string }) 
   // never highlight together.
   if (item.label === "NFL") return pathname === "/nfl" || pathname.startsWith("/nfl/");
   if (item.label === "Fantasy") return pathname === "/fantasy-football" || pathname.startsWith("/fantasy-football/");
+  if (item.label === "College Football") {
+    return pathname === "/college-football" || pathname.startsWith("/college-football/");
+  }
   if (item.label === "NBA" || !item.to) return false;
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }

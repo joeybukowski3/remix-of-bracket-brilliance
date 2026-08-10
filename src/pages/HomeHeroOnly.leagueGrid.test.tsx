@@ -27,14 +27,20 @@ describe("HomeHeroOnly league grid", () => {
     expect(screen.queryByRole("link", { name: /world cup/i })).not.toBeInTheDocument();
   });
 
-  it("keeps MLB, NCAA Football, NFL, NBA, and PGA tiles in the same logical order", () => {
+  it("keeps MLB, College Football, NFL, NBA, and PGA tiles in the same logical order", () => {
     renderHome();
     const heading = screen.getByRole("heading", { name: "Select a League" });
     const grid = heading.nextElementSibling as HTMLElement;
     const cardNames = Array.from(grid.children).map((card) =>
       card.querySelector("img")?.getAttribute("alt")?.replace(" logo", ""),
     );
-    expect(cardNames).toEqual(["MLB", "NCAA Football", "NFL", "NBA", "PGA"]);
+    expect(cardNames).toEqual(["MLB", "College Football", "NFL", "NBA", "PGA"]);
+  });
+
+  it("links College Football to /college-football", () => {
+    renderHome();
+    const link = screen.getAllByRole("link").find((node) => node.getAttribute("href") === "/college-football");
+    expect(link).toBeTruthy();
   });
 
   it("still links the NFL tile to its route", () => {
