@@ -102,9 +102,6 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "Customized Joe Knows Ball fantasy football rankings, position filters and draft research, built on the same NFL model that powers our power ratings and team guide.",
     path: "/fantasy-football",
-    // Indexed only once the customized ranking list is published; an empty
-    // rankings table is not a page worth ranking for fantasy queries.
-    noindex: true,
   },
   nba: {
     title: "NBA Analytics & Betting Models | Joe Knows Ball",

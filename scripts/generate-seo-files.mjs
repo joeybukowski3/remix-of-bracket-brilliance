@@ -17,6 +17,7 @@ const pages = [
   { path: "/pga/model", changefreq: "daily", priority: "0.88" },
   { path: "/pga/top-40-golf-picks", changefreq: "weekly", priority: "0.82" },
   { path: "/nfl", changefreq: "weekly", priority: "0.7" },
+  { path: "/fantasy-football", changefreq: "weekly", priority: "0.75" },
   { path: "/donate", changefreq: "monthly", priority: "0.3" },
 ];
 
