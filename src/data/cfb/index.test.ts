@@ -12,14 +12,15 @@ describe("CFB data architecture", () => {
     expect(uga).toBeDefined();
     expect(uga!.logo).toContain("espncdn.com");
     expect(uga!.ratings.jkbRank).toBeGreaterThanOrEqual(1);
+    expect(uga!.ratings.apRank).toBeNull();
     expect(uga!.ratings.sosPlayedRank).toBeNull();
     expect(uga!.ratings.sosRemainingRank).not.toBeNull();
     expect(uga!.record.wins).toBe(0);
     expect(uga!.stats.pointsPerGame).toBeNull();
   });
 
-  it("marks generated v1 ratings and live schedule provenance explicitly", () => {
-    expect(CFB_PROVENANCE.ratingsSource).toBe("generated-v1");
+  it("marks generated market-anchor ratings and live schedule provenance explicitly", () => {
+    expect(CFB_PROVENANCE.ratingsSource).toBe("generated-v1.1-market-anchor");
     expect(CFB_PROVENANCE.scheduleSource).toBe("live");
     expect(isPreseasonPhase()).toBe(true);
   });

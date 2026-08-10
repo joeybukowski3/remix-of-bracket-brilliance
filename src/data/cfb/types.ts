@@ -48,6 +48,8 @@ export type CfbJkbRatings = {
   teamId: string;
   jkbRank: number | null;
   previousJkbRank: number | null;
+  /** Independent AP poll reference; never an input into JKB Power. */
+  apRank: number | null;
   jkbPowerRating: number | null;
   offensiveRating: number | null;
   defensiveRating: number | null;
@@ -178,7 +180,7 @@ export type CfbDataProvenance = {
   season: number;
   phase: CfbSeasonPhase;
   label: string;
-  ratingsSource: "generated-v1" | "live";
+  ratingsSource: "generated-v1" | "generated-v1.1-market-anchor" | "live";
   scheduleSource: "live";
   /** Season statistics dataset status (points/yards per play, etc). */
   statsSource: CfbDataSourceStatus;
