@@ -6,18 +6,30 @@ import {
   formatNullableNumber,
   formatRank,
   formatSpread,
+  getTeamPerspectiveSpread,
 } from "@/lib/cfb/format";
+import { getCfbRatingHeatClass } from "@/lib/cfb/ratingPresentation";
+import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
 import { getCfbMatchupPath, CFB_BASE_PATH } from "@/lib/cfb/routes";
+import { cn } from "@/lib/utils";
 import CollegeFootballTeamHeader from "@/components/cfb/CollegeFootballTeamHeader";
 import CollegeFootballTeamLogo from "@/components/cfb/CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "@/components/cfb/CollegeFootballRatingCell";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
 
-function StatCell({ label, value }: { label: string; value: string }) {
+function StatCell({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
   return (
-    <div className="rounded border border-slate-200 bg-white px-2.5 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">{value}</div>
+    <div className={cn("rounded border border-slate-200 bg-white px-2.5 py-2 text-slate-900", className)}>
+      <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -60,13 +72,22 @@ export default function CollegeFootballTeamPage() {
         <h2 id="team-ratings-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Ratings
         </h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <StatCell
             label="Power"
             value={`${formatNullableNumber(ratings.jkbPowerRating)} · ${formatRank(ratings.jkbRank)}`}
+            className={getCfbRatingHeatClass(ratings.jkbPowerRating)}
           />
-          <StatCell label="Offense" value={formatNullableNumber(ratings.offensiveRating)} />
-          <StatCell label="Defense" value={formatNullableNumber(ratings.defensiveRating)} />
+          <StatCell
+            label="Offense"
+            value={formatNullableNumber(ratings.offensiveRating)}
+            className={getCfbRatingHeatClass(ratings.offensiveRating)}
+          />
+          <StatCell
+            label="Defense"
+            value={formatNullableNumber(ratings.defensiveRating)}
+            className={getCfbRatingHeatClass(ratings.defensiveRating)}
+          />
           <StatCell
             label="SOS Played"
             value={
@@ -74,6 +95,7 @@ export default function CollegeFootballTeamPage() {
                 ? formatRank(ratings.sosPlayedRank)
                 : "—"
             }
+            className={getSosHeatClass(ratings.sosPlayedRank)}
           />
           <StatCell
             label="SOS Remaining"
@@ -82,7 +104,9 @@ export default function CollegeFootballTeamPage() {
                 ? formatRank(ratings.sosRemainingRank)
                 : formatNullableNumber(ratings.sosRemainingRating)
             }
+            className={getSosHeatClass(ratings.sosRemainingRank)}
           />
+          <StatCell label="AP Rank" value={ratings.apRank == null ? "NR" : formatRank(ratings.apRank)} />
         </div>
         {ratings.sosPlayedRank == null && (
           <p className="mt-2 text-[11px] text-slate-500">
@@ -180,9 +204,10 @@ export default function CollegeFootballTeamPage() {
           <div
             role="region"
             aria-label={`${team.name} schedule`}
-            className="overflow-hidden rounded-lg border border-slate-200 bg-white"
+            tabIndex={0}
+            className="overflow-x-auto rounded-lg border border-slate-200 bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
           >
-            <table className="w-full text-xs">
+            <table className="w-full min-w-[640px] text-xs">
               <thead>
                 <tr className="bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                   <th scope="col" className="px-2 py-2 text-left">Date</th>
@@ -201,19 +226,24 @@ export default function CollegeFootballTeamPage() {
                   const opponentName = opp?.shortName ??
                     (isHome ? game.awayTeamName : game.homeTeamName) ??
                     oppId;
-                  const site = game.neutralSite ? "N" : isHome ? "H" : "A";
+                  const site = game.neutralSite ? "Neutral" : isHome ? "Home" : "Away";
                   const result =
                     game.gameStatus === "final" &&
                     game.awayScore != null &&
                     game.homeScore != null
-                      ? `${game.awayScore}–${game.homeScore}`
+                      ? (() => {
+                          const teamScore = isHome ? game.homeScore : game.awayScore;
+                          const opponentScore = isHome ? game.awayScore : game.homeScore;
+                          const outcome = teamScore === opponentScore ? "T" : teamScore > opponentScore ? "W" : "L";
+                          return `${outcome} ${teamScore}–${opponentScore}`;
+                        })()
                       : "—";
-                  const spread = formatSpread(
-                    game.odds.currentSpread ?? game.odds.openingSpread,
-                  );
+                  const spread = formatSpread(getTeamPerspectiveSpread(game, team.id));
                   return (
                     <tr key={game.id} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="px-2 py-2 tabular-nums text-slate-600">{game.date}</td>
+                      <td className="px-2 py-2 tabular-nums text-slate-600">
+                        {game.date}{game.time ? ` · ${game.time} ET` : ""}
+                      </td>
                       <td className="p-0">
                         {opp ? <Link
                           to={getCfbMatchupPath(game.id)}

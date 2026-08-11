@@ -18,9 +18,9 @@ export default function CollegeFootballDataNotice({ kind }: Props) {
     <div className="space-y-2" role="status">
       {showRatings && (
         <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-5 text-sky-950">
-          <span className="font-semibold">JKB Preseason Power Ratings v1:</span>{" "}
-          Generated team-strength summaries for {CFB_PROVENANCE.season}. They compare power,
-          offense, defense, and schedule strength; they are not projected spreads or picks.
+          <span className="font-semibold">JKB Preseason Power:</span>{" "}
+          Market-informed preseason ratings adjusted by JoeKnowsBall efficiency data for{" "}
+          {CFB_PROVENANCE.season}. These are team-strength ratings, not projected spreads or picks.
         </p>
       )}
       {showSchedule && (

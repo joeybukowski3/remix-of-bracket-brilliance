@@ -49,7 +49,7 @@ export default function CollegeFootballRankings() {
       <CollegeFootballPageHeader
         eyebrow="College Football · Rankings"
         title={`${CFB_PROVENANCE.label} FBS Rankings`}
-        description="All 138 FBS teams, ordered by JKB Power Rating v1. Click column headers to re-sort."
+        description="All 138 FBS teams, ordered by JKB Preseason Power v1.1. Click column headers to re-sort."
       />
 
       <CollegeFootballDataNotice kind="ratings" />

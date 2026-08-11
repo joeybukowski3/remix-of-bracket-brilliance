@@ -3,7 +3,7 @@ import type { CfbConferenceMeta, CfbTeam } from "@/data/cfb/types";
 import { sortConferenceStandings } from "@/lib/cfb/standings";
 import { formatRank, formatRecord } from "@/lib/cfb/format";
 import { getCfbConferencePath, getCfbTeamPath } from "@/lib/cfb/routes";
-import { getSosRemainingHeatClass } from "@/lib/cfb/sosPresentation";
+import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
 import { cn } from "@/lib/utils";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "./CollegeFootballRatingCell";
@@ -90,10 +90,10 @@ export default function ConferenceStandingsCard({ conference, teams }: Props) {
                       rank={team.ratings.jkbRank}
                     />
                   </td>
-                  <td className="px-1 text-center tabular-nums text-slate-500">
+                  <td className={cn("px-1 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosPlayedRank))}>
                     {formatRank(team.ratings.sosPlayedRank)}
                   </td>
-                  <td className={cn("px-1 text-center font-semibold tabular-nums", getSosRemainingHeatClass(team.ratings.sosRemainingRank))}>
+                  <td className={cn("px-1 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosRemainingRank))}>
                     {formatRank(team.ratings.sosRemainingRank)}
                   </td>
                 </tr>
@@ -140,8 +140,10 @@ export default function ConferenceStandingsCard({ conference, teams }: Props) {
                   <span className="mt-0.5 flex flex-wrap gap-x-3 text-[11px] text-slate-500">
                     <span className="font-medium text-slate-700">{confRec} conf</span>
                     <span>{overall}</span>
-                    <span>SOS {formatRank(team.ratings.sosPlayedRank)}</span>
-                    <span className={cn("rounded px-1 font-semibold", getSosRemainingHeatClass(team.ratings.sosRemainingRank))}>
+                    <span className={cn("rounded px-1 font-semibold", getSosHeatClass(team.ratings.sosPlayedRank))}>
+                      SOS {formatRank(team.ratings.sosPlayedRank)}
+                    </span>
+                    <span className={cn("rounded px-1 font-semibold", getSosHeatClass(team.ratings.sosRemainingRank))}>
                       Rem {formatRank(team.ratings.sosRemainingRank)}
                     </span>
                   </span>

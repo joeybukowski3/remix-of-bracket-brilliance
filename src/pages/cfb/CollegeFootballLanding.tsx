@@ -39,7 +39,7 @@ export default function CollegeFootballLanding() {
             ? `${CFB_PROVENANCE.label} Dashboard`
             : "College Football Dashboard"
         }
-        description="JKB Preseason Power Ratings, conference standings, and strength of schedule. SOS Played populates after games are completed."
+        description="JKB Preseason Power, conference standings, and strength of schedule. SOS Played populates after games are completed."
         actions={<CollegeFootballViewToggle value={view} onChange={setView} />}
       />
 

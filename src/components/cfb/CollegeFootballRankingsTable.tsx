@@ -3,7 +3,7 @@ import { getConferenceMeta } from "@/data/cfb/conferences";
 import type { RankingsSortKey } from "@/lib/cfb/rankings";
 import { formatRecord, formatRank } from "@/lib/cfb/format";
 import { getCfbTeamPath } from "@/lib/cfb/routes";
-import { getSosRemainingHeatClass } from "@/lib/cfb/sosPresentation";
+import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
 import { Link } from "react-router-dom";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "./CollegeFootballRatingCell";
@@ -135,15 +135,15 @@ export default function CollegeFootballRankingsTable({
                   />
                 </td>
                 <td className="px-1 py-1.5 text-center">
-                  <CollegeFootballRatingCell value={team.ratings.offensiveRating} heat={false} />
+                  <CollegeFootballRatingCell value={team.ratings.offensiveRating} heatByValue />
                 </td>
                 <td className="px-1 py-1.5 text-center">
-                  <CollegeFootballRatingCell value={team.ratings.defensiveRating} heat={false} />
+                  <CollegeFootballRatingCell value={team.ratings.defensiveRating} heatByValue />
                 </td>
-                <td className="px-1 py-1.5 text-center tabular-nums text-slate-600">
+                <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosPlayedRank))}>
                   {formatRank(team.ratings.sosPlayedRank)}
                 </td>
-                <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosRemainingHeatClass(team.ratings.sosRemainingRank))}>
+                <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosRemainingRank))}>
                   {formatRank(team.ratings.sosRemainingRank)}
                 </td>
               </tr>
@@ -186,8 +186,10 @@ export default function CollegeFootballRankingsTable({
                       {formatRecord(team.record.wins, team.record.losses, team.record.ties)}
                     </span>
                     <span>AP {formatRank(team.ratings.apRank)}</span>
-                    <span>SOS {formatRank(team.ratings.sosPlayedRank)}</span>
-                    <span className={cn("rounded px-1 font-semibold", getSosRemainingHeatClass(team.ratings.sosRemainingRank))}>
+                    <span className={cn("rounded px-1 font-semibold", getSosHeatClass(team.ratings.sosPlayedRank))}>
+                      SOS {formatRank(team.ratings.sosPlayedRank)}
+                    </span>
+                    <span className={cn("rounded px-1 font-semibold", getSosHeatClass(team.ratings.sosRemainingRank))}>
                       Rem {formatRank(team.ratings.sosRemainingRank)}
                     </span>
                   </span>

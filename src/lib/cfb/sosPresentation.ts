@@ -6,7 +6,7 @@ export type SosRemainingBand =
   | "strong-easy"
   | "unavailable";
 
-export function getSosRemainingBand(rank: number | null | undefined): SosRemainingBand {
+export function getSosBand(rank: number | null | undefined): SosRemainingBand {
   if (rank == null || !Number.isFinite(rank)) return "unavailable";
   if (rank <= 25) return "strong-difficult";
   if (rank <= 50) return "moderate-difficult";
@@ -15,8 +15,8 @@ export function getSosRemainingBand(rank: number | null | undefined): SosRemaini
   return "strong-easy";
 }
 
-export function getSosRemainingHeatClass(rank: number | null | undefined): string {
-  switch (getSosRemainingBand(rank)) {
+export function getSosHeatClass(rank: number | null | undefined): string {
+  switch (getSosBand(rank)) {
     case "strong-difficult":
       return "bg-rose-100/80 text-rose-900";
     case "moderate-difficult":
@@ -31,3 +31,7 @@ export function getSosRemainingHeatClass(rank: number | null | undefined): strin
       return "text-slate-500";
   }
 }
+
+/** Backward-compatible aliases for existing consumers. */
+export const getSosRemainingBand = getSosBand;
+export const getSosRemainingHeatClass = getSosHeatClass;
