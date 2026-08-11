@@ -9,7 +9,7 @@ const SEVERITY_STYLE: Record<AngleSeverity, string> = {
 function SeverityBadge({ severity }: { severity?: AngleSeverity }) {
   if (!severity) {
     return (
-      <span className="shrink-0 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-slate-500">
+      <span className="shrink-0 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-slate-600">
         Context
       </span>
     );
@@ -31,7 +31,7 @@ function SeverityBadge({ severity }: { severity?: AngleSeverity }) {
  */
 export default function MatchupAngles({ angles }: { angles: MatchupAngle[] }) {
   if (angles.length === 0) {
-    return <p className="text-sm text-slate-500">{NO_ANGLE_MESSAGE}</p>;
+    return <p className="text-sm text-slate-600">{NO_ANGLE_MESSAGE}</p>;
   }
   return (
     <ul className="divide-y divide-slate-100">

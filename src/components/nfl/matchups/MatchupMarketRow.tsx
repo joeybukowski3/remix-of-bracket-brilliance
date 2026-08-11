@@ -40,7 +40,7 @@ function PeriodSide({
       </span>
       <span
         className={`text-[12px] font-bold leading-4 tabular-nums sm:text-[13px] ${
-          unavailable ? "text-slate-400" : "text-slate-900"
+          unavailable ? "text-slate-600" : "text-slate-900"
         }`}
       >
         {text}
@@ -115,7 +115,7 @@ export default function MatchupMarketRow({
               metricLabel={metricLabel}
               periodLabel={labels.label}
             />
-            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-400">
+            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-600">
               <span className="sm:hidden">{labels.short}</span>
               <span className="hidden sm:inline">{labels.label}</span>
             </span>

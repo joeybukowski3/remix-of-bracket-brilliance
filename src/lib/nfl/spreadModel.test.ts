@@ -431,17 +431,19 @@ describe("market independence", () => {
 
 describe("independence from the display sample control", () => {
   const pageSource = readFileSync(resolve(process.cwd(), "src/pages/NFLMatchupDetail.tsx"), "utf-8");
+  // The projection surface is the Model Details tab; the invariant follows the
+  // surface that is actually rendered, not the name it used to have.
   const componentSource = readFileSync(
-    resolve(process.cwd(), "src/components/nfl/matchups/MatchupModelAnalysis.tsx"),
+    resolve(process.cwd(), "src/components/nfl/matchups/MatchupModelDetails.tsx"),
     "utf-8"
   );
 
-  it("never passes the Season / Last 5 setting into the Model Analysis section", () => {
+  it("never passes the Season / Last 5 setting into the model projection surface", () => {
     const usage = pageSource.slice(
-      pageSource.indexOf("<MatchupModelAnalysis"),
-      pageSource.indexOf("/>", pageSource.indexOf("<MatchupModelAnalysis"))
+      pageSource.indexOf("<MatchupModelDetails"),
+      pageSource.indexOf("/>", pageSource.indexOf("<MatchupModelDetails"))
     );
-    expect(usage).toContain("<MatchupModelAnalysis");
+    expect(usage).toContain("<MatchupModelDetails");
     expect(usage).not.toContain("sampleSettings");
     expect(usage).not.toContain("window");
   });

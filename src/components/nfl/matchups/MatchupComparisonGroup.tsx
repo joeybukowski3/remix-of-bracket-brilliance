@@ -10,14 +10,14 @@ import type { NflMatchup } from "@/lib/nfl/matchups";
 export function ComparisonHeader({ matchup }: { matchup: NflMatchup }) {
   return (
     <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 border-b border-slate-200 pb-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
-      <div className="truncate text-right text-[10px] font-bold uppercase tracking-wide text-slate-500">
+      <div className="truncate text-right text-[10px] font-bold uppercase tracking-wide text-slate-600">
         <span className="sm:hidden">{matchup.away.abbr.toUpperCase()}</span>
         <span className="hidden sm:inline">{matchup.away.teamName}</span>
       </div>
-      <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+      <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
         Metric
       </div>
-      <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">
+      <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
         <span className="sm:hidden">{matchup.home.abbr.toUpperCase()}</span>
         <span className="hidden sm:inline">{matchup.home.teamName}</span>
       </div>

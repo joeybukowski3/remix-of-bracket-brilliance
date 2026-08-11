@@ -27,7 +27,12 @@ export default function MatchupSegmentedControl<T extends string>({
   size?: "sm" | "md";
   className?: string;
 }) {
-  const padding = size === "sm" ? "px-2 py-1 text-[10px]" : "px-2.5 py-1.5 text-[11px]";
+  // Minimum heights match the approved reference's segmented control (32px),
+  // which the previous 24-30px buttons sat under at the narrowest breakpoints.
+  const padding =
+    size === "sm"
+      ? "min-h-[32px] px-2.5 py-1 text-[10px]"
+      : "min-h-[36px] px-3 py-1.5 text-[11px]";
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
@@ -64,7 +69,7 @@ export default function MatchupSegmentedControl<T extends string>({
             className={`rounded-md font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${padding} ${
               selected
                 ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                : "text-slate-500 hover:text-slate-800"
+                : "text-slate-600 hover:text-slate-800"
             }`}
           >
             {hasDistinctShortLabel ? (

@@ -9,7 +9,7 @@ import { NFL_RANK_TIERS } from "@/lib/nfl/rankTier";
 export default function MatchupRankLegend() {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
         Rank tiers
       </span>
       <ul className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
@@ -21,7 +21,7 @@ export default function MatchupRankLegend() {
             />
             <span className="text-[10px] font-bold text-slate-600">
               {tier.label}
-              <span className="ml-1 tabular-nums text-slate-400">
+              <span className="ml-1 tabular-nums text-slate-600">
                 {tier.min}–{tier.max}
               </span>
             </span>

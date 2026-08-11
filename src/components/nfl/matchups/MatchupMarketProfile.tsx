@@ -104,15 +104,15 @@ export default function MatchupMarketProfile({
       <MatchupCurrentMarket matchup={matchup} market={market?.current ?? null} />
 
       <div className="pt-3">
-        <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+        <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
           Team Market Profile
         </h3>
-        {market?.note && <p className="mb-1 text-[11px] leading-4 text-slate-500">{market.note}</p>}
+        {market?.note && <p className="mb-1 text-[11px] leading-4 text-slate-600">{market.note}</p>}
 
         <ComparisonHeader matchup={matchup} />
 
         {periods.length === 0 ? (
-          <p className="py-3 text-center text-[11px] font-semibold text-slate-400">
+          <p className="py-3 text-center text-[11px] font-semibold text-slate-600">
             Market profile not connected.
           </p>
         ) : (
@@ -136,7 +136,7 @@ export default function MatchupMarketProfile({
         <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700">
           Joe Knows Ball season context
         </h3>
-        <p className="mb-1 text-[11px] leading-4 text-slate-500">
+        <p className="mb-1 text-[11px] leading-4 text-slate-600">
           Full-season win-total figures. These describe the season, not this matchup&apos;s spread.
         </p>
         {seasonRows.map((row) => (

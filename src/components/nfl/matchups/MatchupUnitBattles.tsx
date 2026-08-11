@@ -62,7 +62,7 @@ function PossessionPanel({
             <span className="sm:hidden">{offenseTeam.abbr.toUpperCase()} Off</span>
             <span className="hidden sm:inline">{offenseTeam.teamName} Offense</span>
           </div>
-          <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
             vs
           </div>
           <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
@@ -75,7 +75,7 @@ function PossessionPanel({
       <div className="px-2 pb-2">
         {UNIT_BATTLE_GROUPS.map((group) => (
           <div key={group.id} className="pt-2">
-            <h4 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <h4 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
               {group.label}
             </h4>
             {group.pairings.map((pairing) => {

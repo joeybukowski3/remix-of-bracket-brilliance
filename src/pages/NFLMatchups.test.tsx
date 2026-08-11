@@ -51,7 +51,11 @@ vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import NFLMatchups from "@/pages/NFLMatchups";
 import NFLMatchupDetail from "@/pages/NFLMatchupDetail";
-import { NFL_MATCHUP_SECTIONS } from "@/lib/nfl/matchupSections";
+import { MATCHUP_CATEGORIES } from "@/lib/nfl/matchupCategoryAdvantage";
+import {
+  MATCHUP_TABS,
+  matchupPanelId,
+} from "@/components/nfl/matchups/matchupNavigation";
 
 function renderRoute(path: string) {
   return render(
@@ -98,6 +102,14 @@ describe("NFLMatchups landing", () => {
   });
 });
 
+/**
+ * Each test here renders the whole analyzer, which now mounts all four tab
+ * panels so in-page anchors and find-in-page still reach every section. That is
+ * slow under jsdom, so the suite is given headroom over the 5s default and
+ * reports real failures rather than timeouts on a loaded machine.
+ */
+const FULL_PAGE_RENDER_TIMEOUT_MS = 30_000;
+
 describe("NFLMatchupDetail", () => {
   it("renders the correct teams and comparison", () => {
     renderRoute(`/nfl/matchups/${OPENER}`);
@@ -107,17 +119,38 @@ describe("NFLMatchupDetail", () => {
     const header = screen.getByRole("heading", { name: /Week 1 matchup/i }).closest("section")!;
     expect(within(header).getByText("New England Patriots")).toBeTruthy();
     expect(within(header).getByText("Seattle Seahawks")).toBeTruthy();
-    // The single "Team comparison" table was replaced by the analyzer's
-    // dedicated offense and defense comparison sections.
-    expect(screen.getByRole("heading", { name: /Offense Comparison/i })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: /Defense Comparison/i })).toBeTruthy();
+    // The offense and defense comparison sections became categories inside the
+    // Team Comparison tab; both are still addressable by name.
+    expect(screen.getByRole("button", { name: /^Offense:/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Defense:/ })).toBeTruthy();
+    // Inside the unselected Team Comparison panel, so it is deliberately hidden
+    // from the accessibility tree until that tab is chosen; addressed by id
+    // rather than by role for exactly that reason.
+    expect(document.getElementById("statistical-comparison-heading")).toBeTruthy();
   });
 
-  it("renders every analyzer section anchor in page order", () => {
+  it("renders every tab and its panel, in order", () => {
     renderRoute(`/nfl/matchups/${OPENER}`);
-    for (const id of NFL_MATCHUP_SECTIONS.map((section) => section.id)) {
-      expect(document.getElementById(id), id).toBeTruthy();
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual(MATCHUP_TABS.map((tab) => tab.label));
+    for (const tab of MATCHUP_TABS) {
+      expect(document.getElementById(matchupPanelId(tab.id)), tab.id).toBeTruthy();
     }
+  });
+
+  it("renders every comparison category anchor, in registry order", () => {
+    renderRoute(`/nfl/matchups/${OPENER}`);
+    const anchors = MATCHUP_CATEGORIES.map((category) =>
+      document.getElementById(category.hash)
+    );
+    anchors.forEach((anchor, index) => {
+      expect(anchor, MATCHUP_CATEGORIES[index].hash).toBeTruthy();
+    });
+    // Order on the page must match the registry the Overview table reads.
+    const rendered = [...document.querySelectorAll('[id^="comparison-"]')]
+      .map((node) => node.id)
+      .filter((id) => MATCHUP_CATEGORIES.some((category) => category.hash === id));
+    expect(rendered).toEqual(MATCHUP_CATEGORIES.map((category) => category.hash));
   });
 
   it("keeps Advantages and Things to Watch on the analyzer", () => {
@@ -144,7 +177,7 @@ describe("NFLMatchupDetail", () => {
     renderRoute("/nfl/matchups/not-a-real-game");
     expect(screen.getByRole("heading", { name: /2026 NFL Weekly Matchups/i })).toBeTruthy();
   });
-});
+}, FULL_PAGE_RENDER_TIMEOUT_MS);
 
 describe("NFL matchups scope", () => {
   it("does not render the NFL sidebar on non-NFL routes", () => {
