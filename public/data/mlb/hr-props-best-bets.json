@@ -1,10 +1,10 @@
 {
   "date": "2026-08-11",
-  "generatedAt": "2026-08-11T15:28:29.341Z",
+  "generatedAt": "2026-08-11T16:30:36.629Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field (1.07) and Dodger Stadium (1.10) stand out as the most HR-friendly parks today, while Sutter Health Park (0.96) and Petco Park (0.89) suppress power. Lodolo and Wacha both carry elevated HR/9 rates, setting up favorable conditions for Murakami and Ohtani, respectively.",
-    "modelNote": "The model is prioritizing barrel rate and recent HR volume over park factors, elevating Murakami to the top spot despite a neutral park and Lodolo's left-handedness."
+    "slateOverview": "Rate Field (1.07) and Dodger Stadium (1.10) stand out as the most HR-friendly parks today, while Sutter Health Park (0.96) and Petco Park (0.89) suppress power. Lodolo vs. CWS and Wacha vs. LAD create the strongest pitcher-hitter mismatches, with Murakami and Ohtani both seeing elevated barrel rates and favorable park factors.",
+    "modelNote": "The model is overweighting barrel rate and park factor for Murakami and Ohtani, while discounting recent HR volume for players like Olson and Chourio who face tougher pitcher or park environments."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=20.6%",
         "park=1.07"
       ],
-      "hrOddsYes": "+425",
-      "marketImpliedProbability": 0.19047619047619047,
+      "hrOddsYes": "+349",
+      "marketImpliedProbability": 0.22271714922049,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "HH=51.8%",
         "park=1.02"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -64,46 +64,6 @@
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
-    {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "NYM",
-      "opposingPitcher": "Nolan McLean",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Hard Hit%=50.6",
-        "Pitcher HR VS=33.5"
-      ],
-      "bullets": [
-        "HR score 68.4 (#4)",
-        "Pitcher HR VS 33.5 at park 1.03"
-      ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "CIN",
-      "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=66.2",
-        "Hard Hit%=45.6"
-      ],
-      "bullets": [
-        "HR score 67.1 (#5)",
-        "Pitcher HR VS 66.2 at park 1.07"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
     {
       "player": "Matt Olson",
       "team": "ATL",
@@ -137,11 +97,13 @@
         "barrel=14%",
         "park=1.07"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+343",
+      "marketImpliedProbability": 0.22573363431151242,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Shohei Ohtani",
       "team": "LAD",
@@ -156,51 +118,11 @@
         "barrel=16.6%",
         "park=1.1"
       ],
-      "hrOddsYes": "+204",
-      "marketImpliedProbability": 0.32894736842105265,
+      "hrOddsYes": "+220",
+      "marketImpliedProbability": 0.3125,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "MIN",
-      "opposingPitcher": "Bailey Ober",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Hard Hit%=56.0",
-        "Pitcher HR VS=53.8"
-      ],
-      "bullets": [
-        "HR score 66.4 (#7)",
-        "Pitcher HR VS 53.8 at park 0.97"
-      ],
-      "hrOddsYes": "+287",
-      "marketImpliedProbability": 0.25839793281653745,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "CLE",
-      "opposingPitcher": "Tanner Bibee",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=59.9",
-        "Hard Hit%=44.3"
-      ],
-      "bullets": [
-        "HR score 65.5 (#8)",
-        "Pitcher HR VS 59.9 at park 0.95"
-      ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
     {
       "player": "Pete Alonso",
       "team": "BAL",
@@ -215,8 +137,8 @@
         "HH=56%",
         "park=0.97"
       ],
-      "hrOddsYes": "+287",
-      "marketImpliedProbability": 0.25839793281653745,
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -234,11 +156,13 @@
         "barrel=11.4%",
         "park=0.95"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+430",
+      "marketImpliedProbability": 0.18867924528301888,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "longshots": [
     {
       "player": "Griffin Conine",
       "team": "MIA",
@@ -246,12 +170,12 @@
       "opposingPitcher": "Paul Skenes",
       "hrScoreRank": 19,
       "topStats": [
-        "Hard Hit%=53.7",
-        "Pitcher HR VS=40.2"
+        "barrel=15.8%",
+        "HH=53.7%"
       ],
       "bullets": [
-        "HR score 58.5 (#19)",
-        "Pitcher HR VS 40.2 at park 0.88"
+        "barrel=15.8%",
+        "park=0.88"
       ],
       "hrOddsYes": "+550",
       "marketImpliedProbability": 0.15384615384615385,
@@ -259,21 +183,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "SD",
-      "opposingPitcher": "Walker Buehler",
-      "hrScoreRank": 9,
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 13,
       "topStats": [
-        "Pitcher HR VS=56.0",
-        "Hard Hit%=48.2"
+        "barrel=14.3%",
+        "HH=51.1%"
       ],
       "bullets": [
-        "HR score 65.1 (#9)",
-        "Pitcher HR VS 56.0 at park 0.89"
+        "barrel=14.3%",
+        "park=1.07"
       ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
