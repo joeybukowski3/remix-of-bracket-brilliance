@@ -1,3 +1,5 @@
+import type { CfbGame } from "@/data/cfb/types";
+
 /** Safe display helpers — never render NaN/undefined/null as fake zeros. */
 
 export function formatNullableNumber(
@@ -34,8 +36,20 @@ export function formatMoneyline(value: number | null | undefined): string {
 
 export function formatSpread(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
-  if (value === 0) return "PK";
+  if (value === 0) return "PICK";
   return value > 0 ? `+${value}` : String(value);
+}
+
+/** Existing CFBD spread fields are stored from the home team's perspective. */
+export function getTeamPerspectiveSpread(
+  game: Pick<CfbGame, "homeTeamId" | "awayTeamId" | "odds">,
+  teamId: string,
+): number | null {
+  const spread = game.odds.currentSpread ?? game.odds.openingSpread;
+  if (spread == null || Number.isNaN(spread)) return null;
+  if (teamId === game.homeTeamId) return spread;
+  if (teamId === game.awayTeamId) return spread === 0 ? 0 : -spread;
+  return null;
 }
 
 export function formatTotal(value: number | null | undefined): string {

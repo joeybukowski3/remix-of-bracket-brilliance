@@ -4,3 +4,5 @@ export * from "./standings";
 export * from "./rankings";
 export * from "./sectionNav";
 export * from "./marketAnchor";
+export * from "./ratingPresentation";
+export * from "./sosPresentation";

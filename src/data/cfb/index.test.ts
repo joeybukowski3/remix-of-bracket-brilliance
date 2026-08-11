@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   CFB_PROVENANCE,
@@ -23,6 +25,13 @@ describe("CFB data architecture", () => {
     expect(CFB_PROVENANCE.ratingsSource).toBe("generated-v1.1-market-anchor");
     expect(CFB_PROVENANCE.scheduleSource).toBe("live");
     expect(isPreseasonPhase()).toBe(true);
+  });
+
+  it("loads AP only from the independent typed source", () => {
+    const loader = readFileSync(resolve("src/data/cfb/season2026/ratings.ts"), "utf8");
+    expect(loader).toContain("CFB_AP_RANKS_2026[row.teamId] ?? null");
+    expect(loader).not.toContain("apRank: row.apRank");
+    expect(getAllTeams().every((team) => team.ratings.apRank === null)).toBe(true);
   });
 
   it("includes exactly 138 FBS teams across required conferences", () => {

@@ -36,9 +36,12 @@ describe("CollegeFootballLanding", () => {
     expect(first?.getAttribute("href")).toMatch(/^\/college-football\/team\//);
   }, 15_000);
 
-  it("uses generated v1 ratings without sample-data wording", () => {
+  it("uses current market-informed ratings copy without stale v1 wording", () => {
     const { container } = renderLanding();
-    expect(container.textContent).toContain("JKB Preseason Power Ratings v1");
+    expect(container.textContent).toContain("JKB Preseason Power");
+    expect(container.textContent).toContain("Market-informed preseason ratings adjusted by JoeKnowsBall efficiency data");
+    expect(container.textContent).toContain("team-strength ratings, not projected spreads or picks");
+    expect(container.textContent).not.toContain("JKB Preseason Power Ratings v1:");
     expect(container.textContent).not.toMatch(/sample preseason|placeholder/i);
   }, 15_000);
 

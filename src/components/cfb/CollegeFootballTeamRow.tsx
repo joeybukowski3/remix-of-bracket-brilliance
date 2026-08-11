@@ -10,6 +10,8 @@ import {
 import { getCfbTeamPath } from "@/lib/cfb/routes";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "./CollegeFootballRatingCell";
+import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
+import { cn } from "@/lib/utils";
 
 type Props = {
   team: CfbTeam;
@@ -75,17 +77,17 @@ export default function CollegeFootballTeamRow({
         />
       </td>
       <td className="hidden px-1 py-1.5 text-center sm:table-cell">
-        <CollegeFootballRatingCell value={team.ratings.offensiveRating} heat={false} />
+        <CollegeFootballRatingCell value={team.ratings.offensiveRating} heatByValue />
       </td>
       <td className="hidden px-1 py-1.5 text-center sm:table-cell">
-        <CollegeFootballRatingCell value={team.ratings.defensiveRating} heat={false} />
+        <CollegeFootballRatingCell value={team.ratings.defensiveRating} heatByValue />
       </td>
-      <td className="px-1 py-1.5 text-center text-slate-600">
+      <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosPlayedRank))}>
         {team.ratings.sosPlayedRank != null
           ? formatRank(team.ratings.sosPlayedRank)
           : "—"}
       </td>
-      <td className="px-1 py-1.5 text-center text-slate-600">
+      <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosRemainingRank))}>
         {team.ratings.sosRemainingRank != null
           ? formatRank(team.ratings.sosRemainingRank)
           : formatNullableNumber(team.ratings.sosRemainingRating)}

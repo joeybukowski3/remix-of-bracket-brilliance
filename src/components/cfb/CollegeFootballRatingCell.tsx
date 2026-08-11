@@ -3,6 +3,7 @@ import {
   formatRank,
   rankHeatStyle,
 } from "@/lib/cfb/format";
+import { getCfbRatingHeatClass } from "@/lib/cfb/ratingPresentation";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
   teamCount?: number;
   className?: string;
   heat?: boolean;
+  heatByValue?: boolean;
 };
 
 export default function CollegeFootballRatingCell({
@@ -24,17 +26,19 @@ export default function CollegeFootballRatingCell({
   teamCount = 138,
   className,
   heat = true,
+  heatByValue = false,
 }: Props) {
   const display = asRank
     ? formatRank(rank ?? value)
     : formatNullableNumber(value, digits);
   const heatRank = asRank ? (rank ?? value) : rank;
-  const style = heat ? rankHeatStyle(heatRank, teamCount) : undefined;
+  const style = heat && !heatByValue ? rankHeatStyle(heatRank, teamCount) : undefined;
 
   return (
     <span
       className={cn(
         "inline-flex min-w-[2.25rem] items-center justify-center rounded px-1 py-0.5 font-semibold tabular-nums",
+        heat && heatByValue && getCfbRatingHeatClass(value),
         className,
       )}
       style={style}

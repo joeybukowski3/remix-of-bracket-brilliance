@@ -108,7 +108,9 @@ export type CfbSeasonStats = {
 
 /** Market odds for a game (null when not posted). */
 export type CfbGameOdds = {
+  /** Point spreads are stored from the home team's perspective. */
   openingSpread: number | null;
+  /** Point spreads are stored from the home team's perspective. */
   currentSpread: number | null;
   awayMoneyline: number | null;
   homeMoneyline: number | null;
