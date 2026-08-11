@@ -2,8 +2,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import {
+  assertExpectedEventCoverage,
   extractScopeNames,
   mergePartialScopedHistory,
+  partitionExpectedEventCoverage,
   refreshScopedPlayer,
   validateScopedRefresh,
 } from "./lib/pga-player-history-refresh.mjs";
@@ -66,11 +68,10 @@ async function main() {
     console.log(`::warning title=PGA player history not refreshed::${failure.player} — unable to resolve or fetch current history`);
   }
 
-  const successResults = [];
+  let successResults = [];
   const fetchFailures = [];
   let requestCount = 0;
   let cacheHits = 0;
-
   async function fetchProfile(playerId) {
     const cached = readCache(playerId);
     if (cached) {
@@ -83,6 +84,9 @@ async function main() {
     if (delayMs > 0) await wait(delayMs);
     return { data, requestSource: "api" };
   }
+
+  const requiredParticipantIds = computeRequiredParticipantIds(participantPayload, resolvedList);
+  const expectedEvent = buildExpectedEvent(asOfDate, requiredParticipantIds);
 
   for (let index = 0; index < resolvedList.length; index += 1) {
     const player = resolvedList[index];
@@ -97,12 +101,19 @@ async function main() {
     }
   }
 
+  const partitioned = partitionExpectedEventCoverage(successResults, { requiredParticipantIds, expectedEvent });
+  for (const failure of partitioned.expectedEventFailures) {
+    fetchFailures.push(failure);
+    console.error(`[pga-history-scoped] ${failure.player} (${failure.playerId}) failed at expected-event-validation: ${failure.message}`);
+    console.log(`::warning title=PGA player history not refreshed::${failure.player} — refreshed history is missing expected event ${expectedEvent.eventId}`);
+  }
+  if (expectedEvent) assertExpectedEventCoverage(partitioned, expectedEvent.eventId);
+  successResults = partitioned.successResults;
+
   if (successResults.length === 0) {
     throw new Error(`PGA Tour history refresh failed for every scoped player (${resolvedList.length} resolved, ${identityFailures.length + fetchFailures.length} failed); aborting without writing output.`);
   }
 
-  const requiredParticipantIds = computeRequiredParticipantIds(participantPayload, resolvedList);
-  const expectedEvent = buildExpectedEvent(asOfDate, requiredParticipantIds);
   const allowedEventIdentities = expectedEvent
     ? [`${expectedEvent.season}:${expectedEvent.eventId}`]
     : null;

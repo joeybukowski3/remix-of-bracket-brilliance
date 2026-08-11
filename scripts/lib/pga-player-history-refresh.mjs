@@ -299,6 +299,73 @@ export function validatePublishedExpectedEvent(payload, scopePlayerIds, expected
   return participants.map((player) => player.player);
 }
 
+export const MIN_EXPECTED_EVENT_COVERAGE = 0.9;
+
+// Required participants are the players in BOTH the scoped pool and the
+// completed prior-event field, so their refreshed history must contain that
+// event. An isolated missing result is reclassified as a per-player
+// EXPECTED_EVENT_MISSING failure (fault isolation) rather than failing the
+// whole run: the script records it in lastRefresh and emits a warning, and
+// only aborts when usable coverage drops below MIN_EXPECTED_EVENT_COVERAGE.
+export function partitionExpectedEventCoverage(playerRefreshResults, { requiredParticipantIds = [], expectedEvent }) {
+  if (!expectedEvent || !requiredParticipantIds.length) {
+    return {
+      successResults: playerRefreshResults.filter((result) => result.status === "success"),
+      expectedEventFailures: [],
+      coverage: 1,
+      covered: 0,
+      missing: 0,
+      required: 0,
+    };
+  }
+
+  const required = new Set(requiredParticipantIds.map(String));
+  const expectedIdentity = `${Number(expectedEvent.season)}:${String(expectedEvent.eventId)}`;
+  const successResults = [];
+  const expectedEventFailures = [];
+  let covered = 0;
+  let missing = 0;
+
+  for (const result of playerRefreshResults) {
+    if (result.status !== "success") continue;
+    const playerId = String(result.playerId);
+    if (required.has(playerId) && !result.results.some((item) => resultIdentity(item) === expectedIdentity)) {
+      missing += 1;
+      expectedEventFailures.push({
+        status: "failed",
+        scopeName: result.scopeName,
+        player: result.player,
+        playerId: result.playerId,
+        resolutionMethod: result.resolutionMethod,
+        stage: "expected-event-validation",
+        errorCode: "EXPECTED_EVENT_MISSING",
+        message: `Expected event ${expectedIdentity} is missing from the refreshed history of ${result.player}.`,
+      });
+      continue;
+    }
+    if (required.has(playerId)) covered += 1;
+    successResults.push(result);
+  }
+
+  const requiredCount = covered + missing;
+  return {
+    successResults,
+    expectedEventFailures,
+    coverage: requiredCount > 0 ? covered / requiredCount : 1,
+    covered,
+    missing,
+    required: requiredCount,
+  };
+}
+
+export function assertExpectedEventCoverage(partitioned, eventId) {
+  if (partitioned.required > 0 && partitioned.coverage < MIN_EXPECTED_EVENT_COVERAGE) {
+    throw new Error(
+      `Expected event ${eventId} coverage is ${Math.round(partitioned.coverage * 100)}% (${partitioned.covered}/${partitioned.required}), below the required ${Math.round(MIN_EXPECTED_EVENT_COVERAGE * 100)}%; aborting.`,
+    );
+  }
+}
+
 // fetchProfile is injected so this per-player fault-isolation step is testable
 // without real network access: it must resolve { data, requestSource } or
 // reject. A rejection or a structurally malformed response both become a

@@ -9,15 +9,17 @@ on:
     branches:
       - main
   schedule:
-    # Monday is dependency-triggered only after player history finishes.
-    # Tue/Wed 12:00 UTC runs keep the provisional upcoming field current and
-    # retry naturally after delayed field or statistics publication.
+    # Monday 12:00 UTC runs the field sync independently of the player-history
+    # workflow so a failed or delayed history refresh never blocks the site
+    # advancing to the next tournament. Tue/Wed 12:00 UTC retries keep the
+    # provisional upcoming field current after delayed field or statistics
+    # publication.
     #
     # IMPORTANT: no runtime hour gate. The previous design skipped every step
     # unless the run started in the 8 AM ET hour — GitHub regularly delays
     # cron runs by hours, so scheduled runs silently no-opped (all steps
     # skipped, run reported success) and PGA data went stale for weeks.
-    - cron: "0 12 * * 2,3"
+    - cron: "0 12 * * 1,2,3"
   workflow_dispatch:
   push:
     branches:
