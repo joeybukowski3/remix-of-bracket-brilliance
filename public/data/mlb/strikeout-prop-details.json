@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-08-11T14:06:55.212Z",
+  "generatedAt": "2026-08-11T15:42:31.740Z",
   "source": "mlb_stats_api+baseball_savant",
   "sources": {
     "pitcherAndTeamStrikeouts": "MLB Stats API",
@@ -530,9 +530,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -547,34 +545,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:50:32.640Z",
+      "generatedAt": "2026-08-11T15:29:01.364Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 6.442622950819672,
-          "xba": null
+          "xba": 0.2544748995983934
         },
         "away": {
           "kPerNine": 8.152542372881356,
-          "xba": null
+          "xba": 0.23811668321747725
         },
         "last10": {
           "kPerNine": 7.8,
-          "xba": null
+          "xba": 0.23715727002967374
         },
         "samples": {
           "season": 120,
           "home": 61,
           "away": 59,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1992,
+          "awayAtBats": 2014,
+          "last10AtBats": 337,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -1099,9 +1099,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -1116,34 +1114,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:51:12.809Z",
+      "generatedAt": "2026-08-11T15:29:21.735Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.915254237288136,
-          "xba": null
+          "xba": 0.2354033701948391
         },
         "away": {
           "kPerNine": 9.083333333333334,
-          "xba": null
+          "xba": 0.2398149050170475
         },
         "last10": {
           "kPerNine": 8.7,
-          "xba": null
+          "xba": 0.200956386292835
         },
         "samples": {
           "season": 119,
           "home": 59,
           "away": 60,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1899,
+          "awayAtBats": 2053,
+          "last10AtBats": 321,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -1668,7 +1668,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -1683,36 +1685,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:51:52.529Z",
+      "generatedAt": "2026-08-11T15:30:02.113Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.46551724137931,
-          "xba": 0.2435181102362204
+          "xba": null
         },
         "away": {
           "kPerNine": 9.76271186440678,
-          "xba": 0.23521260630315133
+          "xba": null
         },
         "last10": {
           "kPerNine": 10.6,
-          "xba": 0.2069205882352942
+          "xba": null
         },
         "samples": {
           "season": 117,
           "home": 58,
           "away": 59,
-          "last10": 10,
-          "homeAtBats": 1905,
-          "awayAtBats": 1999,
-          "last10AtBats": 340,
-          "last10Games": 10
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -2146,7 +2146,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:52:32.882Z",
+      "generatedAt": "2026-08-11T15:30:42.582Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -2715,7 +2715,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:53:13.164Z",
+      "generatedAt": "2026-08-11T15:31:23.039Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -3284,7 +3284,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:53:53.465Z",
+      "generatedAt": "2026-08-11T15:32:03.456Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -3853,7 +3853,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:54:33.631Z",
+      "generatedAt": "2026-08-11T15:32:43.846Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -4261,7 +4261,9 @@
           }
         ]
       },
-      "sourceWarnings": [],
+      "sourceWarnings": [
+        "OPPONENT_XBA_CONTEXT_FAILED"
+      ],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 1,
@@ -4276,36 +4278,34 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:54:53.011Z",
+      "generatedAt": "2026-08-11T15:33:24.254Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 9.542372881355933,
-          "xba": 0.2268633993743484
+          "xba": null
         },
         "away": {
           "kPerNine": 9.516666666666667,
-          "xba": 0.23664688715953283
+          "xba": null
         },
         "last10": {
           "kPerNine": 10.7,
-          "xba": 0.19985185185185192
+          "xba": null
         },
         "samples": {
           "season": 119,
           "home": 59,
           "away": 60,
-          "last10": 10,
-          "homeAtBats": 1918,
-          "awayAtBats": 2056,
-          "last10AtBats": 324,
-          "last10Games": 10
+          "last10": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": []
+        "warnings": [
+          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
+        ]
       }
     },
     {
@@ -4847,7 +4847,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:55:33.173Z",
+      "generatedAt": "2026-08-11T15:34:04.617Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -5416,7 +5416,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:56:13.370Z",
+      "generatedAt": "2026-08-11T15:34:45.052Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -5985,7 +5985,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:56:53.604Z",
+      "generatedAt": "2026-08-11T15:35:25.458Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -6537,9 +6537,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -6554,34 +6552,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:57:33.793Z",
+      "generatedAt": "2026-08-11T15:36:05.469Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.067796610169491,
-          "xba": null
+          "xba": 0.24832812499999965
         },
         "away": {
           "kPerNine": 9.15,
-          "xba": null
+          "xba": 0.23588154674498252
         },
         "last10": {
           "kPerNine": 7.4,
-          "xba": null
+          "xba": 0.2755317919075145
         },
         "samples": {
           "season": 119,
           "home": 59,
           "away": 60,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1984,
+          "awayAtBats": 2043,
+          "last10AtBats": 346,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -7123,7 +7123,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:58:14.070Z",
+      "generatedAt": "2026-08-11T15:36:45.849Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -7620,7 +7620,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:58:54.325Z",
+      "generatedAt": "2026-08-11T15:37:26.225Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -8187,7 +8187,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T13:59:33.466Z",
+      "generatedAt": "2026-08-11T15:37:47.640Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -8741,9 +8741,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -8758,34 +8756,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:00:13.650Z",
+      "generatedAt": "2026-08-11T15:38:28.594Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.275862068965518,
-          "xba": null
+          "xba": 0.24531749241658207
         },
         "away": {
           "kPerNine": 9.114754098360656,
-          "xba": null
+          "xba": 0.23806575742815367
         },
         "last10": {
           "kPerNine": 8.7,
-          "xba": null
+          "xba": 0.22477313432835813
         },
         "samples": {
           "season": 119,
           "home": 58,
           "away": 61,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1978,
+          "awayAtBats": 2053,
+          "last10AtBats": 335,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -9327,7 +9327,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:00:53.868Z",
+      "generatedAt": "2026-08-11T15:39:08.975Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -9879,9 +9879,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -9896,34 +9894,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:01:33.976Z",
+      "generatedAt": "2026-08-11T15:39:29.429Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.03125,
-          "xba": null
+          "xba": 0.2521515880654471
         },
         "away": {
           "kPerNine": 8.454545454545455,
-          "xba": null
+          "xba": 0.24954171066525835
         },
         "last10": {
           "kPerNine": 7.7,
-          "xba": null
+          "xba": 0.2590176991150442
         },
         "samples": {
           "season": 119,
           "home": 64,
           "away": 55,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 2078,
+          "awayAtBats": 1894,
+          "last10AtBats": 339,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -10463,7 +10463,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:02:13.856Z",
+      "generatedAt": "2026-08-11T15:39:49.067Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -11017,9 +11017,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -11034,34 +11032,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:02:53.955Z",
+      "generatedAt": "2026-08-11T15:40:09.875Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.683333333333334,
-          "xba": null
+          "xba": 0.24201396070320524
         },
         "away": {
           "kPerNine": 8.559322033898304,
-          "xba": null
+          "xba": 0.2363057071960296
         },
         "last10": {
           "kPerNine": 7.6,
-          "xba": null
+          "xba": 0.23696735905044525
         },
         "samples": {
           "season": 119,
           "home": 60,
           "away": 59,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1934,
+          "awayAtBats": 2015,
+          "last10AtBats": 337,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -11586,9 +11586,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -11603,34 +11601,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:03:33.997Z",
+      "generatedAt": "2026-08-11T15:40:30.588Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.23728813559322,
-          "xba": null
+          "xba": 0.24534415249871158
         },
         "away": {
           "kPerNine": 8.80327868852459,
-          "xba": null
+          "xba": 0.24846418338108883
         },
         "last10": {
           "kPerNine": 9.5,
-          "xba": null
+          "xba": 0.25137359550561805
         },
         "samples": {
           "season": 120,
           "home": 59,
           "away": 61,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1941,
+          "awayAtBats": 2094,
+          "last10AtBats": 356,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -12155,9 +12155,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -12172,34 +12170,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:04:14.121Z",
+      "generatedAt": "2026-08-11T15:40:51.736Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.8,
-          "xba": null
+          "xba": 0.24776278836509466
         },
         "away": {
           "kPerNine": 8.423728813559322,
-          "xba": null
+          "xba": 0.24437739557739505
         },
         "last10": {
           "kPerNine": 8.5,
-          "xba": null
+          "xba": 0.25402958579881657
         },
         "samples": {
           "season": 119,
           "home": 60,
           "away": 59,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1994,
+          "awayAtBats": 2035,
+          "last10AtBats": 338,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -12739,7 +12739,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:04:53.992Z",
+      "generatedAt": "2026-08-11T15:41:12.623Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -13293,9 +13293,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 5,
@@ -13310,34 +13308,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:05:34.218Z",
+      "generatedAt": "2026-08-11T15:41:31.684Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 8.32258064516129,
-          "xba": null
+          "xba": 0.25573592233009734
         },
         "away": {
           "kPerNine": 8.931034482758621,
-          "xba": null
+          "xba": 0.24468769230769238
         },
         "last10": {
           "kPerNine": 6.1,
-          "xba": null
+          "xba": 0.27916216216216205
         },
         "samples": {
           "season": 120,
           "home": 62,
           "away": 58,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 2060,
+          "awayAtBats": 1950,
+          "last10AtBats": 333,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     },
     {
@@ -13877,7 +13877,7 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:06:15.042Z",
+      "generatedAt": "2026-08-11T15:41:51.387Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
@@ -14287,9 +14287,7 @@
           }
         ]
       },
-      "sourceWarnings": [
-        "OPPONENT_XBA_CONTEXT_FAILED"
-      ],
+      "sourceWarnings": [],
       "completeness": {
         "recentStartsRequested": 5,
         "recentStartsFound": 1,
@@ -14304,34 +14302,36 @@
         "duplicateGameLogs": 0,
         "warnings": []
       },
-      "generatedAt": "2026-08-11T14:06:55.212Z",
+      "generatedAt": "2026-08-11T15:42:31.740Z",
       "source": "mlb_stats_api+baseball_savant",
       "opponentContext": {
         "home": {
           "kPerNine": 7.271186440677966,
-          "xba": null
+          "xba": 0.2514859335038362
         },
         "away": {
           "kPerNine": 8.39344262295082,
-          "xba": null
+          "xba": 0.23868695228821757
         },
         "last10": {
           "kPerNine": 5.3,
-          "xba": null
+          "xba": 0.24276729559748428
         },
         "samples": {
           "season": 120,
           "home": 59,
           "away": 61,
-          "last10": 10
+          "last10": 10,
+          "homeAtBats": 1955,
+          "awayAtBats": 2054,
+          "last10AtBats": 318,
+          "last10Games": 10
         },
         "sources": {
           "strikeouts": "mlb_stats_api",
           "xba": "baseball_savant_statcast"
         },
-        "warnings": [
-          "OPPONENT_XBA_CONTEXT_FAILED:This operation was aborted"
-        ]
+        "warnings": []
       }
     }
   ]
