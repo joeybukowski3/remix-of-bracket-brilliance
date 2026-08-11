@@ -1,31 +1,55 @@
 import { describe, expect, it } from "vitest";
-import { getCfbRatingBand, getCfbRatingHeatClass } from "./ratingPresentation";
+import {
+  CFB_RATING_TIERS,
+  getCfbRatingBand,
+  getCfbRatingHeatClass,
+  getCfbRatingPresentation,
+} from "./ratingPresentation";
 
 const BANDS = [
-  [90, "strongest", "bg-emerald-200/80 text-emerald-950"],
-  [99, "strongest", "bg-emerald-200/80 text-emerald-950"],
-  [80, "strong", "bg-emerald-100 text-emerald-900"],
-  [89.9, "strong", "bg-emerald-100 text-emerald-900"],
-  [70, "positive", "bg-emerald-50 text-emerald-800"],
-  [79.9, "positive", "bg-emerald-50 text-emerald-800"],
-  [60, "neutral", "bg-slate-50 text-slate-700"],
-  [69.9, "neutral", "bg-slate-50 text-slate-700"],
-  [50, "soft", "bg-amber-50 text-amber-900"],
-  [59.9, "soft", "bg-amber-50 text-amber-900"],
-  [40, "weak", "bg-rose-100/80 text-rose-900"],
-  [49.9, "weak", "bg-rose-100/80 text-rose-900"],
+  [95, "elite", "bg-amber-200 text-amber-950"],
+  [100, "elite", "bg-amber-200 text-amber-950"],
+  [90, "great", "bg-emerald-700 text-white"],
+  [94.9, "great", "bg-emerald-700 text-white"],
+  [85, "strong", "bg-emerald-200 text-emerald-950"],
+  [89.9, "strong", "bg-emerald-200 text-emerald-950"],
+  [80, "good", "bg-emerald-50 text-emerald-800"],
+  [84.9, "good", "bg-emerald-50 text-emerald-800"],
+  [70, "average", "bg-lime-100 text-lime-900"],
+  [79.9, "average", "bg-lime-100 text-lime-900"],
+  [60, "below-average", "bg-amber-100 text-amber-900"],
+  [69.9, "below-average", "bg-amber-100 text-amber-900"],
+  [50, "weak", "bg-orange-100 text-orange-900"],
+  [59.9, "weak", "bg-orange-100 text-orange-900"],
+  [49.9, "poor", "bg-rose-100 text-rose-900"],
 ] as const;
 
-describe.each(["offense", "defense"])("CFB %s rating presentation", () => {
+describe.each(["JKB Power", "offense", "defense"])("CFB %s rating presentation", () => {
   it.each(BANDS)("maps %s to the %s band", (value, band, className) => {
     expect(getCfbRatingBand(value)).toBe(band);
     expect(getCfbRatingHeatClass(value)).toBe(className);
   });
 });
 
-describe("unavailable CFB rating presentation", () => {
-  it("uses neutral text without a heatmap background", () => {
-    expect(getCfbRatingBand(null)).toBe("unavailable");
-    expect(getCfbRatingHeatClass(null)).toBe("text-slate-500");
+describe("shared CFB rating presentation", () => {
+  it("makes an elite 98.6 visually distinct from a good 83.2", () => {
+    expect(getCfbRatingHeatClass(98.6)).not.toBe(getCfbRatingHeatClass(83.2));
+    expect(getCfbRatingBand(98.6)).toBe("elite");
+    expect(getCfbRatingBand(83.2)).toBe("good");
+  });
+
+  it("exposes all eight tiers for the shared legend", () => {
+    expect(CFB_RATING_TIERS.map(({ label }) => label)).toEqual([
+      "Elite", "Great", "Strong", "Good", "Average", "Below Avg", "Weak", "Poor",
+    ]);
+  });
+
+  it("uses neutral text without heatmap emphasis for unavailable ratings", () => {
+    expect(getCfbRatingPresentation(null)).toEqual({
+      band: "unavailable",
+      label: "Unavailable",
+      range: "—",
+      className: "text-slate-500",
+    });
   });
 });

@@ -15,6 +15,7 @@ import CollegeFootballViewToggle, {
 import CollegeFootballRankingsTable from "@/components/cfb/CollegeFootballRankingsTable";
 import ConferenceStandingsGrid from "@/components/cfb/ConferenceStandingsGrid";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
+import CollegeFootballRatingLegend from "@/components/cfb/CollegeFootballRatingLegend";
 
 export default function CollegeFootballLanding() {
   const [view, setView] = useState<CfbLandingView>("top25");
@@ -57,6 +58,8 @@ export default function CollegeFootballLanding() {
               </p>
             </div>
           </div>
+
+          <CollegeFootballRatingLegend />
 
           <CollegeFootballRankingsTable
             teams={top25}

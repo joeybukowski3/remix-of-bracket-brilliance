@@ -1,37 +1,50 @@
 export type CfbRatingBand =
-  | "strongest"
+  | "elite"
+  | "great"
   | "strong"
-  | "positive"
-  | "neutral"
-  | "soft"
+  | "good"
+  | "average"
+  | "below-average"
   | "weak"
+  | "poor"
   | "unavailable";
 
+export type CfbRatingPresentation = {
+  band: CfbRatingBand;
+  label: string;
+  range: string;
+  className: string;
+};
+
+export const CFB_RATING_TIERS: ReadonlyArray<CfbRatingPresentation & { minimum: number }> = [
+  { band: "elite", label: "Elite", range: "95+", minimum: 95, className: "bg-amber-200 text-amber-950" },
+  { band: "great", label: "Great", range: "90–94", minimum: 90, className: "bg-emerald-700 text-white" },
+  { band: "strong", label: "Strong", range: "85–89", minimum: 85, className: "bg-emerald-200 text-emerald-950" },
+  { band: "good", label: "Good", range: "80–84", minimum: 80, className: "bg-emerald-50 text-emerald-800" },
+  { band: "average", label: "Average", range: "70–79", minimum: 70, className: "bg-lime-100 text-lime-900" },
+  { band: "below-average", label: "Below Avg", range: "60–69", minimum: 60, className: "bg-amber-100 text-amber-900" },
+  { band: "weak", label: "Weak", range: "50–59", minimum: 50, className: "bg-orange-100 text-orange-900" },
+  { band: "poor", label: "Poor", range: "<50", minimum: Number.NEGATIVE_INFINITY, className: "bg-rose-100 text-rose-900" },
+];
+
+const UNAVAILABLE_PRESENTATION: CfbRatingPresentation = {
+  band: "unavailable",
+  label: "Unavailable",
+  range: "—",
+  className: "text-slate-500",
+};
+
+export function getCfbRatingPresentation(
+  value: number | null | undefined,
+): CfbRatingPresentation {
+  if (value == null || Number.isNaN(value)) return UNAVAILABLE_PRESENTATION;
+  return CFB_RATING_TIERS.find((tier) => value >= tier.minimum) ?? UNAVAILABLE_PRESENTATION;
+}
+
 export function getCfbRatingBand(value: number | null | undefined): CfbRatingBand {
-  if (value == null || !Number.isFinite(value)) return "unavailable";
-  if (value >= 90) return "strongest";
-  if (value >= 80) return "strong";
-  if (value >= 70) return "positive";
-  if (value >= 60) return "neutral";
-  if (value >= 50) return "soft";
-  return "weak";
+  return getCfbRatingPresentation(value).band;
 }
 
 export function getCfbRatingHeatClass(value: number | null | undefined): string {
-  switch (getCfbRatingBand(value)) {
-    case "strongest":
-      return "bg-emerald-200/80 text-emerald-950";
-    case "strong":
-      return "bg-emerald-100 text-emerald-900";
-    case "positive":
-      return "bg-emerald-50 text-emerald-800";
-    case "neutral":
-      return "bg-slate-50 text-slate-700";
-    case "soft":
-      return "bg-amber-50 text-amber-900";
-    case "weak":
-      return "bg-rose-100/80 text-rose-900";
-    default:
-      return "text-slate-500";
-  }
+  return getCfbRatingPresentation(value).className;
 }

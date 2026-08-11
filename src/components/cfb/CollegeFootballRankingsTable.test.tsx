@@ -11,6 +11,7 @@ function teamFixture(apRank: number | null) {
     ratings: {
       ...team.ratings,
       jkbRank: 99,
+      jkbPowerRating: 98.6,
       apRank,
       offensiveRating: 95,
       defensiveRating: 85,
@@ -29,11 +30,12 @@ function renderTable(apRank: number | null) {
 }
 
 describe("CollegeFootballRankingsTable presentation", () => {
-  it("renders offense, defense, and both SOS heatmap classes", () => {
+  it("renders JKB Power, offense, defense, and both SOS heatmap classes", () => {
     const { container } = renderTable(1);
     const cells = container.querySelector("tbody tr")?.children;
-    expect(cells?.[6].querySelector("span")).toHaveClass("bg-emerald-200/80", "text-emerald-950");
-    expect(cells?.[7].querySelector("span")).toHaveClass("bg-emerald-100", "text-emerald-900");
+    expect(cells?.[5].querySelector("span")).toHaveClass("bg-amber-200", "text-amber-950");
+    expect(cells?.[6].querySelector("span")).toHaveClass("bg-amber-200", "text-amber-950");
+    expect(cells?.[7].querySelector("span")).toHaveClass("bg-emerald-200", "text-emerald-950");
     expect(cells?.[8]).toHaveClass("bg-rose-100/80", "text-rose-900");
     expect(cells?.[9]).toHaveClass("bg-emerald-100/80", "text-emerald-900");
   });

@@ -9,6 +9,11 @@ import {
   getTeamPerspectiveSpread,
 } from "@/lib/cfb/format";
 import { getCfbRatingHeatClass } from "@/lib/cfb/ratingPresentation";
+import {
+  formatCfbOpponentRecord,
+  formatCfbScheduleDateTime,
+  type CfbScheduleSite,
+} from "@/lib/cfb/schedulePresentation";
 import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
 import { getCfbMatchupPath, CFB_BASE_PATH } from "@/lib/cfb/routes";
 import { cn } from "@/lib/utils";
@@ -16,6 +21,7 @@ import CollegeFootballTeamHeader from "@/components/cfb/CollegeFootballTeamHeade
 import CollegeFootballTeamLogo from "@/components/cfb/CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "@/components/cfb/CollegeFootballRatingCell";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
+import CollegeFootballSitePill from "@/components/cfb/CollegeFootballSitePill";
 
 function StatCell({
   label,
@@ -207,11 +213,12 @@ export default function CollegeFootballTeamPage() {
             tabIndex={0}
             className="overflow-x-auto rounded-lg border border-slate-200 bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
           >
-            <table className="w-full min-w-[640px] text-xs">
+            <table className="w-full min-w-[760px] text-xs">
               <thead>
                 <tr className="bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                   <th scope="col" className="px-2 py-2 text-left">Date</th>
                   <th scope="col" className="px-2 py-2 text-left">Opponent</th>
+                  <th scope="col" className="px-2 py-2 text-center">Opp Record</th>
                   <th scope="col" className="px-2 py-2 text-center">Site</th>
                   <th scope="col" className="px-2 py-2 text-center">Opp Pwr</th>
                   <th scope="col" className="px-2 py-2 text-center">Spread</th>
@@ -226,7 +233,7 @@ export default function CollegeFootballTeamPage() {
                   const opponentName = opp?.shortName ??
                     (isHome ? game.awayTeamName : game.homeTeamName) ??
                     oppId;
-                  const site = game.neutralSite ? "Neutral" : isHome ? "Home" : "Away";
+                  const site: CfbScheduleSite = game.neutralSite ? "Neutral" : isHome ? "Home" : "Away";
                   const result =
                     game.gameStatus === "final" &&
                     game.awayScore != null &&
@@ -241,8 +248,8 @@ export default function CollegeFootballTeamPage() {
                   const spread = formatSpread(getTeamPerspectiveSpread(game, team.id));
                   return (
                     <tr key={game.id} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="px-2 py-2 tabular-nums text-slate-600">
-                        {game.date}{game.time ? ` · ${game.time} ET` : ""}
+                      <td className="whitespace-nowrap px-2 py-2 tabular-nums text-slate-600">
+                        {formatCfbScheduleDateTime(game.date, game.time)}
                       </td>
                       <td className="p-0">
                         {opp ? <Link
@@ -263,7 +270,10 @@ export default function CollegeFootballTeamPage() {
                           {opponentName}
                         </span>}
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-600">{site}</td>
+                      <td className="px-2 py-2 text-center tabular-nums text-slate-600">
+                        {formatCfbOpponentRecord(opp?.record)}
+                      </td>
+                      <td className="px-2 py-2 text-center"><CollegeFootballSitePill site={site} /></td>
                       <td className="px-2 py-2 text-center">
                         <CollegeFootballRatingCell
                           value={opp?.ratings.jkbPowerRating}

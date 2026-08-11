@@ -1,17 +1,22 @@
 import { cn } from "@/lib/utils";
+import type { CfbComparisonEdge } from "@/lib/cfb/comparison";
 
 type Props = {
   label: string;
   awayValue: string;
   homeValue: string;
+  awayValueClassName?: string;
+  homeValueClassName?: string;
   /** Which side has the edge for display only — not a bet recommendation. */
-  edge?: "away" | "home" | "even" | "none";
+  edge?: CfbComparisonEdge;
 };
 
 export default function CollegeFootballComparisonRow({
   label,
   awayValue,
   homeValue,
+  awayValueClassName,
+  homeValueClassName,
   edge = "none",
 }: Props) {
   return (
@@ -20,6 +25,8 @@ export default function CollegeFootballComparisonRow({
         className={cn(
           "text-right font-semibold tabular-nums",
           edge === "away" ? "text-emerald-800" : "text-slate-800",
+          awayValueClassName && "justify-self-end rounded px-1.5 py-0.5",
+          awayValueClassName,
         )}
       >
         {awayValue}
@@ -34,6 +41,8 @@ export default function CollegeFootballComparisonRow({
         className={cn(
           "text-left font-semibold tabular-nums",
           edge === "home" ? "text-emerald-800" : "text-slate-800",
+          homeValueClassName && "justify-self-start rounded px-1.5 py-0.5",
+          homeValueClassName,
         )}
       >
         {edge === "home" && (
@@ -43,28 +52,4 @@ export default function CollegeFootballComparisonRow({
       </div>
     </div>
   );
-}
-
-/** Higher is better edge helper. */
-export function higherIsBetterEdge(
-  away: number | null | undefined,
-  home: number | null | undefined,
-): "away" | "home" | "even" | "none" {
-  if (away == null || home == null || Number.isNaN(away) || Number.isNaN(home)) {
-    return "none";
-  }
-  if (away === home) return "even";
-  return away > home ? "away" : "home";
-}
-
-/** Lower is better (e.g. rank, points allowed). */
-export function lowerIsBetterEdge(
-  away: number | null | undefined,
-  home: number | null | undefined,
-): "away" | "home" | "even" | "none" {
-  if (away == null || home == null || Number.isNaN(away) || Number.isNaN(home)) {
-    return "none";
-  }
-  if (away === home) return "even";
-  return away < home ? "away" : "home";
 }

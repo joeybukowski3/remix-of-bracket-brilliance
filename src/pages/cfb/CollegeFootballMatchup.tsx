@@ -9,12 +9,11 @@ import {
   formatTotal,
 } from "@/lib/cfb/format";
 import { CFB_SCHEDULE_PATH, getCfbTeamPath } from "@/lib/cfb/routes";
+import { getCfbRatingHeatClass } from "@/lib/cfb/ratingPresentation";
 import CollegeFootballTeamLogo from "@/components/cfb/CollegeFootballTeamLogo";
 import CollegeFootballOddsDisplay from "@/components/cfb/CollegeFootballOddsDisplay";
-import CollegeFootballComparisonRow, {
-  higherIsBetterEdge,
-  lowerIsBetterEdge,
-} from "@/components/cfb/CollegeFootballComparisonRow";
+import CollegeFootballComparisonRow from "@/components/cfb/CollegeFootballComparisonRow";
+import { higherIsBetterEdge, lowerIsBetterEdge } from "@/lib/cfb/comparison";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
 
 export default function CollegeFootballMatchup() {
@@ -153,6 +152,8 @@ export default function CollegeFootballMatchup() {
             label="JKB Power"
             awayValue={formatNullableNumber(away.ratings.jkbPowerRating)}
             homeValue={formatNullableNumber(home.ratings.jkbPowerRating)}
+            awayValueClassName={getCfbRatingHeatClass(away.ratings.jkbPowerRating)}
+            homeValueClassName={getCfbRatingHeatClass(home.ratings.jkbPowerRating)}
             edge={higherIsBetterEdge(away.ratings.jkbPowerRating, home.ratings.jkbPowerRating)}
           />
           <CollegeFootballComparisonRow
@@ -165,12 +166,16 @@ export default function CollegeFootballMatchup() {
             label="Offense"
             awayValue={formatNullableNumber(away.ratings.offensiveRating)}
             homeValue={formatNullableNumber(home.ratings.offensiveRating)}
+            awayValueClassName={getCfbRatingHeatClass(away.ratings.offensiveRating)}
+            homeValueClassName={getCfbRatingHeatClass(home.ratings.offensiveRating)}
             edge={higherIsBetterEdge(away.ratings.offensiveRating, home.ratings.offensiveRating)}
           />
           <CollegeFootballComparisonRow
             label="Defense"
             awayValue={formatNullableNumber(away.ratings.defensiveRating)}
             homeValue={formatNullableNumber(home.ratings.defensiveRating)}
+            awayValueClassName={getCfbRatingHeatClass(away.ratings.defensiveRating)}
+            homeValueClassName={getCfbRatingHeatClass(home.ratings.defensiveRating)}
             edge={higherIsBetterEdge(away.ratings.defensiveRating, home.ratings.defensiveRating)}
           />
           <CollegeFootballComparisonRow
