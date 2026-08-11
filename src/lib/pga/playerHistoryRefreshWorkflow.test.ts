@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 const workflow: string = readFileSync(".github/workflows/refresh-pga-player-history.yml", "utf8");
 const rollover: string = readFileSync(".github/workflows/sync-pga-data.yml", "utf8");
 const trendGenerator: string = readFileSync("scripts/generate-jkb-trend-rank.mjs", "utf8");
-const historyPage: string = readFileSync("src/pages/PgaHistoryModel.tsx", "utf8");
+const historyModelSource: string = readFileSync("src/lib/pga/historyModel.ts", "utf8");
 
 describe("PGA scoped player-history workflow", () => {
   it("supports manual dispatch and one weekly Monday schedule", () => {
@@ -54,12 +54,11 @@ describe("PGA scoped player-history workflow", () => {
     }
   });
 
-  it("dependency-triggers the Monday rollover only after history completes successfully", () => {
+  it("keeps the history-completion dependency trigger but schedules Monday field sync independently", () => {
     expect(rollover).toContain("workflow_run:");
     expect(rollover).toContain("Refresh PGA Player History");
     expect(rollover).toContain("github.event.workflow_run.conclusion == 'success'");
-    expect(rollover).toContain('cron: "0 12 * * 2,3"');
-    expect(rollover).not.toContain('cron: "0 12 * * 1,2,3"');
+    expect(rollover).toContain('cron: "0 12 * * 1,2,3"');
   });
 
   it("checks out the committed history before stats, trend, rankings, and transition", () => {
@@ -100,8 +99,8 @@ describe("PGA scoped player-history workflow", () => {
     expect(trendGenerator).toContain('"player-history.json"');
     expect(trendGenerator).toContain("flattenPgaHistory(payloads.pgaHistory");
     expect(trendGenerator).toContain("Object.values(player.eventHistory ?? {}).flat()");
-    expect(historyPage).toContain("scoreRecentResults(recentResults)");
-    expect(historyPage).toContain("calculateTrend(recentResults)");
-    expect(historyPage).not.toContain("modelRecentResults");
+    expect(historyModelSource).toContain("scoreRecentResults(recentResults)");
+    expect(historyModelSource).toContain("calculateTrend(recentResults)");
+    expect(historyModelSource).not.toContain("modelRecentResults");
   });
 });

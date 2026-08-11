@@ -24,6 +24,16 @@ pool and the validated prior-event metadata in `current-field.json`. It uses the
 shared main-data-writer lock and stages only `player-history.json`. A successful
 completion triggers `sync-pga-data.yml`, which checks out the resulting `main`,
 refreshes the provisional field and player statistics, generates JKB Trend,
-generates rankings/models, and commits the upcoming-tournament transition. Its
-Tuesday/Wednesday fallback runs update provisional entries without staging or
-overwriting `player-history.json`.
+generates rankings/models, and commits the upcoming-tournament transition.
+`sync-pga-data.yml` is additionally scheduled Monday 12:00 UTC (with the
+existing Tuesday/Wednesday retries) so a failed or delayed history refresh does
+not block the site from advancing to the next tournament.
+
+When the expected-event arguments are supplied, every required participant (a
+scoped player who also appeared in the completed prior-event field) must have
+that event in their refreshed history. An isolated missing result is recorded
+as a player-level `EXPECTED_EVENT_MISSING` failure in `lastRefresh` and emits a
+workflow warning without failing the run, as long as usable expected-event
+coverage stays at or above 90%. Below 90% coverage — or any invalid output,
+tournament identity mismatch, or official-field validation failure — the run
+fails without writing output.

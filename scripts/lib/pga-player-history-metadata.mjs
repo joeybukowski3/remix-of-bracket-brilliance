@@ -77,6 +77,7 @@ const PUBLIC_ERROR_MESSAGES = {
   PGA_HISTORY_FETCH_FAILED: "Recent player history could not be refreshed.",
   PGA_MALFORMED_RESPONSE: "PGA Tour returned an unexpected response shape.",
   PGA_MERGE_VALIDATION_FAILED: "Refreshed history failed validation and was not applied.",
+  EXPECTED_EVENT_MISSING: "A completed-event result is missing from this player's refreshed history.",
 };
 
 export function publicFailureMessage(errorCode) {
