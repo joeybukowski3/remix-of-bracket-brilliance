@@ -77,10 +77,10 @@ export default function CollegeFootballTeamRow({
         />
       </td>
       <td className="hidden px-1 py-1.5 text-center sm:table-cell">
-        <CollegeFootballRatingCell value={team.ratings.offensiveRating} heatByValue />
+        <CollegeFootballRatingCell value={team.ratings.offensiveRating} />
       </td>
       <td className="hidden px-1 py-1.5 text-center sm:table-cell">
-        <CollegeFootballRatingCell value={team.ratings.defensiveRating} heatByValue />
+        <CollegeFootballRatingCell value={team.ratings.defensiveRating} />
       </td>
       <td className={cn("px-1 py-1.5 text-center font-semibold tabular-nums", getSosHeatClass(team.ratings.sosPlayedRank))}>
         {team.ratings.sosPlayedRank != null

@@ -134,7 +134,7 @@ export type CfbGame = {
   season: number;
   week: number;
   date: string; // YYYY-MM-DD
-  time: string | null; // HH:mm local or ET label
+  time: string | null; // UTC HH:mm derived from the canonical scheduled timestamp
   awayTeamId: string;
   homeTeamId: string;
   /** Source names/classification support non-FBS opponents without fabricating JKB metadata. */

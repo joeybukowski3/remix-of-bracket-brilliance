@@ -15,6 +15,7 @@ import {
 import CollegeFootballPageHeader from "@/components/cfb/CollegeFootballPageHeader";
 import CollegeFootballRankingsTable from "@/components/cfb/CollegeFootballRankingsTable";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
+import CollegeFootballRatingLegend from "@/components/cfb/CollegeFootballRatingLegend";
 import { cn } from "@/lib/utils";
 
 type ConfFilter = CfbConferenceId | "all";
@@ -53,6 +54,8 @@ export default function CollegeFootballRankings() {
       />
 
       <CollegeFootballDataNotice kind="ratings" />
+
+      <CollegeFootballRatingLegend />
 
       <div role="group" aria-label="Filter by conference" className="flex flex-wrap gap-1.5">
         {filters.map((f) => {

@@ -35,9 +35,21 @@ describe("CollegeFootballTeamPage ratings and schedule", () => {
     expect(container.querySelector('[aria-label="Georgia schedule"]')).toHaveClass("overflow-x-auto");
   });
 
+  it("renders compact schedule presentation from canonical team and game data", () => {
+    const { container } = renderTeamPage();
+    const schedule = container.querySelector('[aria-label="Georgia schedule"]');
+    expect(screen.getByRole("columnheader", { name: "Opp Record" })).toBeInTheDocument();
+    expect(schedule?.querySelector("tbody tr td:nth-child(3)")).toHaveTextContent(/^(0-0|—)$/);
+    expect(schedule?.querySelector("tbody tr td:first-child")).toHaveTextContent(
+      /^(August|September|October|November|December|January) \d{1,2}( · \d{1,2}:\d{2} (AM|PM) ET)?$/,
+    );
+    expect(schedule?.querySelector("tbody tr td:first-child")?.textContent).not.toMatch(/^2026-/);
+    expect(schedule?.querySelector("tbody tr td:nth-child(4) span")).toHaveClass("uppercase");
+  });
+
   it("shows missing market spreads as em dashes despite available JKB Power", () => {
     const { container } = renderTeamPage();
-    const spreadCells = container.querySelectorAll('[aria-label="Georgia schedule"] tbody tr td:nth-child(5)');
+    const spreadCells = container.querySelectorAll('[aria-label="Georgia schedule"] tbody tr td:nth-child(6)');
     expect(spreadCells.length).toBeGreaterThan(0);
     for (const cell of spreadCells) {
       expect(cell).toHaveTextContent("—");
