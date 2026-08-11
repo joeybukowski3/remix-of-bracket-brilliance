@@ -4,7 +4,7 @@
   "tournamentId": "R2026027",
   "localScheduleId": "fedex-st-jude-championship-2026",
   "course": "TPC Southwind",
-  "generatedAt": "2026-08-11T13:18:29.140Z",
+  "generatedAt": "2026-08-11T16:46:58.409Z",
   "status": "model-leans-only",
   "reason": "Verified exact-market prices were unavailable this week (no event matched tournament \"FedEx St. Jude Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship).",
   "sourceStatus": {
@@ -28,10 +28,10 @@
       "top20"
     ],
     "marketsAvailable": [],
-    "fetchedAt": "2026-08-11T13:18:13.395Z",
+    "fetchedAt": "2026-08-11T16:46:41.097Z",
     "quotaDiagnostics": {
-      "requestsRemaining": 410,
-      "requestsUsed": 90
+      "requestsRemaining": 403,
+      "requestsUsed": 97
     },
     "errors": [
       "no event matched tournament \"FedEx St. Jude Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship"
@@ -329,82 +329,82 @@
     }
   ],
   "preview": {
-    "tournamentOverview": "TPC Southwind is a par-70, 7,244-yard course that rewards ball-striking and scrambling. Approach play 3%) and total strokes gained 0%) dominate the model, while putting 5%) and around-the-green 0%) remain critical for scoring. The FedEx St. Jude Championship is the first playoff event, so top-70 players are fighting for FedEx Cup points and a $15 million top prize.",
-    "modelExplainer": "Approach play carries the heaviest weight at 3%, followed by total strokes gained at 0% and putting at 5%. Off-the-tee 0%) and around-the-green 0%) round out the core metrics, while driving accuracy 2%), bogey avoidance 0%), and birdie/bogey ratio 0%) add smaller edges. The model prioritizes players who gain strokes on approach and total strokes gained, with secondary emphasis on short-game and putting efficiency.",
-    "pickApproach": "Tier 1 targets players ranked 1-5 in the tournament model with strong approach and total SG marks. Tier 2 looks at ranks 6-12 who post elite approach numbers or balanced SG profiles."
+    "tournamentOverview": "TPC Southwind is a par-70, 7,244-yard course that places a premium on approach play and total strokes gained. The event is the first leg of the FedExCup Playoffs, awarding 2,000 FedExCup points and a $15 million purse. Strong ball-striking and bogey avoidance are rewarded on its narrow fairways and firm, undulating greens.",
+    "modelExplainer": "SG Approach 3%) and SG Total 0%) carry the heaviest weight, followed by SG Putting 5%) and SG Around-the-Green 0%). Driving Accuracy 2%) and Bogey Avoidance 0%) round out the model, emphasizing precision over distance. The weights tilt the model toward players who consistently hit greens and limit mistakes.",
+    "pickApproach": "We tier bets by model rank versus power rank gaps, targeting players whose SG profile aligns with the course weights. Tier 1 includes top-5 model names with positive SG App and SG Total; Tier 2 targets mid-tier risers with strong SG App or SG Putt. Exposure is capped at 5 units per golfer, with outrights and top-20 matchups prioritized."
   },
   "article": {
-    "title": "FedEx St. Jude Championship Model Targets: Knapp, Scheffler, Bridgeman Lead",
-    "dek": "Model ranks Jake Knapp #1, Scottie Scheffler #2, and Jacob Bridgeman #3 for TPC Southwind with SG Total marks of 002, 868, and 933 respectively.",
-    "introduction": "The 69-player FedEx St. Jude Championship field at TPC Southwind shows Jake Knapp, Scottie Scheffler, and Jacob Bridgeman as the top three model ranks with SG Total values of 002, 868, and 933. All three players carry the same contextual profile: skipped the Scottish Open, zero tracked rounds in the major swing workload window, and safe FedExCup top-50 status. The model weights SG APP at 3% and SG Total at 0%, aligning with the strengths shown by these three.",
+    "title": "FedEx St. Jude Championship Model Targets: Knapp, Scheffler, Bridgeman",
+    "dek": "Model ranks Jake Knapp #1, Scottie Scheffler #2, and Jacob Bridgeman #3 for TPC Southwind.",
+    "introduction": "The tournament model places Jake Knapp at rank 1 with 002 SG Total, Scottie Scheffler at rank 2 with 868 SG Total, and Jacob Bridgeman at rank 3 with 933 SG Total. All three players skipped the Scottish Open and carry zero tracked rounds in the major-swing workload block. Their FedExCup positions remain inside the top 50, preserving full playoff eligibility.",
     "sections": [
       {
         "heading": "Tournament Overview",
-        "body": "The 69-player FedEx St. Jude Championship at TPC Southwind carries course weights of SG APP 3%, SG Total 0%, and SG PUTT 5%. The top 20 model ranks show SG Total values ranging from 002 (Knapp) to 238 (Hisatsune)."
+        "body": "TPC Southwind weights SG App at 3 percent and SG Total at 0 percent, making approach play and overall ball-striking the primary drivers. The 69-player field compresses the margin for error compared with standard PGA Tour events."
       },
       {
         "heading": "Course Fit",
-        "body": "TPC Southwind's emphasis on SG APP 3%) and SG Total 0%) favors players with strong approach and overall ball-striking numbers. Knapp's SG APP 342, Scheffler's SG APP 08, and Bridgeman's SG APP 501 align with the course weight distribution."
+        "body": "Knapp's 342 SG App and 002 SG Total align with the course emphasis on approach and total strokes gained. Scheffler's 623 SG OTT and 618 SG ATG fit the 0 percent off-the-tee and 0 percent around-the-green weights. Bridgeman's 501 SG App and 933 SG Total also map directly to the top two course categories."
       },
       {
         "heading": "Recent Form",
-        "body": "Knapp enters with model rank #1 and power rank #3. Scheffler enters with model rank #2 and power rank #1. Bridgeman enters with model rank #3 and power rank #4. These ranks are derived from the supplied SG Total, SG OTT, SG APP, SG ATG, and SG PUTT values."
+        "body": "Knapp enters with the highest model SG Total at 002. Scheffler's 868 SG Total ranks second, while Bridgeman's 933 SG Total sits between them. These three figures represent the top three values in the supplied model table."
       },
       {
         "heading": "Post-Open Workload",
-        "body": "Knapp, Scheffler, and Bridgeman each show zero tracked rounds in the major swing workload window. The classifications list each player as DID_NOT_PLAY at the Open and SKIPPED the Scottish Open."
+        "body": "Each player recorded zero tracked rounds in the major-swing workload block. The classification states explicitly that NO_TRACKED_ROUNDS does not equate to rest; it simply indicates no data were captured in the monitored events."
       },
       {
         "heading": "FedExCup Motivation",
-        "body": "Knapp enters at FedExCup rank #40, Scheffler at #1, and Bridgeman at #13. All three are classified as SAFE_TOP_50, removing relegation pressure from their profiles."
+        "body": "Knapp holds FedExCup rank 40, Scheffler rank 1, and Bridgeman rank 13. All three remain safely inside the top 50, keeping their playoff positions intact regardless of this week's result."
       },
       {
         "heading": "Crossover Research Angles",
-        "body": "Each of the three targets carries the same crossover note: skipped the Scottish Open plus top-10 model rank. This shared profile distinguishes them from the rest of the top 20 model ranks."
+        "body": "The shared profile—skipped Scottish Open plus top-10 model rank—applies uniformly to Knapp (model rank 1), Scheffler (model rank 2), and Bridgeman (model rank 3). No additional post-Open participation data are supplied."
       },
       {
         "heading": "Outright Targets",
-        "body": "Model rank #1 Jake Knapp (SG Total 002) and model rank #2 Scottie Scheffler (SG Total 868) are the two outright targets. Both carry the skipped-Scottish, zero-tracked-rounds, safe-FedExCup profile."
+        "body": "Model rank 1 Jake Knapp 002 SG Total) and model rank 2 Scottie Scheffler 868 SG Total) constitute the outright targets. Both players also lead the power ranking inside the top three."
       },
       {
         "heading": "Top-10 Targets",
-        "body": "Knapp (model rank #1), Scheffler (model rank #2), and Bridgeman (model rank #3) form the top-10 card. Bridgeman adds SG PUTT 339, the highest putting mark among the three."
+        "body": "Knapp (model rank 1), Scheffler (model rank 2), and Bridgeman (model rank 3) form the top-10 targets. Their SG Total values of 002, 868, and 933 are the three highest in the model output."
       },
       {
         "heading": "Top-20 Targets",
-        "body": "The same three players—Knapp, Scheffler, and Bridgeman—extend to the top-20 card. Their model ranks of 1-2-3 and shared contextual profile provide the model-supported tier for this range."
+        "body": "The same trio—Knapp, Scheffler, and Bridgeman—extends to top-20 targets. Their model ranks 1-3 and SG Total figures above 868 provide the quantitative backing."
       },
       {
         "heading": "Data Limitations",
-        "body": "Weather and tee-time data are not available in this pipeline. The article does not make weather- or tee-time-specific claims."
+        "body": "Weather and tee-time data are not available in this pipeline; the article does not make weather- or tee-time-specific claims."
       },
       {
         "heading": "Final Betting Card",
-        "body": "Strong model-supported tier: Knapp (model rank #1) and Scheffler (model rank #2). Secondary tier: Bridgeman (model rank #3). All three share the skipped-Scottish, zero-tracked-rounds, safe-FedExCup profile."
+        "body": "Tier 1 (model-supported): Jake Knapp outright/top-5/top-10/top-20. Tier 2 (model-supported): Scottie Scheffler outright/top-5/top-10/top-20. Tier 3 (model-supported): Jacob Bridgeman top-10/top-20."
       }
     ],
-    "conclusion": "Strong model-supported tier: Knapp and Scheffler. Secondary tier: Bridgeman. All three carry the same contextual profile of skipped Scottish Open, zero tracked major-swing rounds, and safe FedExCup top-50 status.",
+    "conclusion": "Model-supported outrights: Jake Knapp, Scottie Scheffler. Model-supported top-10/top-20: Jake Knapp, Scottie Scheffler, Jacob Bridgeman.",
     "keyTakeaways": [
       {
-        "text": "Jake Knapp leads the model at rank #1 with SG Total 2.002 and SG PUTT 1.285, the highest putting mark in the top 20.",
+        "text": "Knapp leads the model at rank 1 with 2.002 SG Total and 1.285 SG Putt.",
         "players": [
           "Jake Knapp"
         ]
       },
       {
-        "text": "Scottie Scheffler sits at model rank #2 with SG Total 1.868 and SG OTT 0.623, the second-highest off-the-tee mark among the top 20.",
+        "text": "Scheffler sits at model rank 2 with 1.868 SG Total and 0.623 SG OTT.",
         "players": [
           "Scottie Scheffler"
         ]
       },
       {
-        "text": "Jacob Bridgeman ranks #3 in the model with SG Total 1.933 and SG PUTT 1.339, the highest putting figure in the top 20.",
+        "text": "Bridgeman ranks third in the model at 1.933 SG Total and 0.501 SG App.",
         "players": [
           "Jacob Bridgeman"
         ]
       },
       {
-        "text": "All three targets share the same research profile: skipped Scottish Open, zero tracked major-swing rounds, and safe FedExCup top-50 positions.",
+        "text": "All three players share the same post-Open research profile: skipped Scottish Open, zero tracked major-swing rounds, and safe FedExCup standing.",
         "players": [
           "Jake Knapp",
           "Scottie Scheffler",
