@@ -57,7 +57,7 @@ function TrenchPeriodSide({
       </span>
       <span
         className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
-          unavailable ? "text-slate-400" : "text-slate-900"
+          unavailable ? "text-slate-600" : "text-slate-900"
         }`}
       >
         {formatTrenchValue(value)}
@@ -134,7 +134,7 @@ export default function MatchupTrenchRow({
               metricLabel={metricLabel}
               periodLabel={labels.label}
             />
-            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-400">
+            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-600">
               <span className="sm:hidden">{labels.short}</span>
               <span className="hidden sm:inline">{labels.label}</span>
             </span>

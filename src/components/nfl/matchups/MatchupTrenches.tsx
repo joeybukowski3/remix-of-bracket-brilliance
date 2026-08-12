@@ -43,7 +43,7 @@ function TrenchBattle({
 
   return (
     <div className="border-t border-slate-100 pt-1.5 first:border-t-0 first:pt-0">
-      <div className="mb-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500">
+      <div className="mb-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-600">
         {label}
       </div>
 
@@ -51,16 +51,16 @@ function TrenchBattle({
       <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
         <div
           title={offenseDef?.help}
-          className="truncate text-right text-[9px] font-bold uppercase tracking-wide text-slate-500"
+          className="truncate text-right text-[9px] font-bold uppercase tracking-wide text-slate-600"
         >
           {offenseTeam.abbr.toUpperCase()} {offenseDef?.shortLabel ?? ""}
         </div>
-        <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+        <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
           vs
         </div>
         <div
           title={defenseDef?.help}
-          className="truncate text-left text-[9px] font-bold uppercase tracking-wide text-slate-500"
+          className="truncate text-left text-[9px] font-bold uppercase tracking-wide text-slate-600"
         >
           {defenseTeam.abbr.toUpperCase()} {defenseDef?.shortLabel ?? ""}
         </div>
@@ -79,7 +79,7 @@ function TrenchBattle({
           homeTeamName={`${defenseTeam.teamName} ${defenseDef?.label ?? ""}`.trim()}
         />
       ) : (
-        <p className="py-2 text-center text-[11px] font-semibold text-slate-400">N/A</p>
+        <p className="py-2 text-center text-[11px] font-semibold text-slate-600">N/A</p>
       )}
     </div>
   );
@@ -124,7 +124,7 @@ export default function MatchupTrenches({
       <div className="space-y-2.5">
         {possessions.map(({ key, offense, defense }) => (
           <div key={key}>
-            <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
               {offense.teamName} has the ball
             </h3>
             <div className="grid gap-1.5">

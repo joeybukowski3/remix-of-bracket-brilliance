@@ -28,13 +28,13 @@ function TeamLine({
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="w-8 shrink-0 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+      <span className="w-8 shrink-0 text-[11px] font-bold uppercase tracking-wide text-slate-600">
         {abbr}
       </span>
       <span
         className={`rounded px-1.5 py-0.5 text-sm font-bold tabular-nums ${
           spreadText === "N/A"
-            ? "bg-slate-100 text-slate-400"
+            ? "bg-slate-100 text-slate-600"
             : favored
               ? "bg-slate-900 text-white"
               : "bg-slate-100 text-slate-700"
@@ -44,7 +44,7 @@ function TeamLine({
       </span>
       <span
         className={`text-[11px] font-bold tabular-nums ${
-          mlText === "N/A" ? "text-slate-400" : "text-slate-600"
+          mlText === "N/A" ? "text-slate-600" : "text-slate-600"
         }`}
       >
         {mlText}
@@ -83,7 +83,7 @@ export default function MatchupCurrentMarket({
         <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600">
           Current Market
         </h3>
-        <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+        <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-600">
           Market Line · Source: nflverse
         </span>
       </div>
@@ -104,12 +104,12 @@ export default function MatchupCurrentMarket({
           </div>
 
           <div className="flex items-baseline gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
               Total
             </span>
             <span
               className={`rounded px-1.5 py-0.5 text-sm font-bold tabular-nums ${
-                market?.total == null ? "bg-slate-100 text-slate-400" : "bg-slate-100 text-slate-700"
+                market?.total == null ? "bg-slate-100 text-slate-600" : "bg-slate-100 text-slate-700"
               }`}
             >
               {formatTotal(market?.total)}
@@ -117,7 +117,7 @@ export default function MatchupCurrentMarket({
           </div>
         </div>
       ) : (
-        <p className="text-[11px] font-semibold text-slate-400">
+        <p className="text-[11px] font-semibold text-slate-600">
           No market line published for this game yet.
         </p>
       )}

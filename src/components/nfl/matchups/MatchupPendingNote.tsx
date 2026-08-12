@@ -13,7 +13,7 @@ export default function MatchupPendingNote({
 }) {
   return (
     <p
-      className={`mt-2 border-t border-dashed border-slate-200 pt-2 text-[11px] leading-4 text-slate-400 ${className}`}
+      className={`mt-2 border-t border-dashed border-slate-200 pt-2 text-[11px] leading-4 text-slate-600 ${className}`}
     >
       {children}
     </p>

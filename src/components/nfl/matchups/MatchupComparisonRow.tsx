@@ -33,7 +33,7 @@ function ComparisonSide({
       </span>
       <span
         className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
-          unavailable ? "text-slate-400" : "text-slate-900"
+          unavailable ? "text-slate-600" : "text-slate-900"
         }`}
       >
         {value.formattedValue}

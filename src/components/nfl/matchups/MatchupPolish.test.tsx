@@ -81,12 +81,13 @@ describe("sticky offsets", () => {
   });
 
   it("offsets anchored sections by more than the site header at every breakpoint", () => {
-    // scroll-mt-32 = 8rem = 128px clears header (73px) + Jump To bar (~42px).
-    // lg:scroll-mt-24 = 6rem = 96px clears the header alone, since Jump To
-    // becomes static on desktop. The previous lg:scroll-mt-6 was 24px, which
-    // parked every desktop heading behind the header.
+    // scroll-mt-32 = 8rem = 128px clears header (73px) + tab row (~48px).
+    // The live MatchupTabRow stays sticky at every breakpoint (unlike the
+    // retired Jump To bar, which went static at lg), so this offset applies
+    // uniformly rather than easing off above lg. The previous lg:scroll-mt-6
+    // was 24px, which parked every desktop heading behind the header.
     expect(MATCHUP_SECTION_SCROLL_MT).toContain("scroll-mt-32");
-    expect(MATCHUP_SECTION_SCROLL_MT).toContain("lg:scroll-mt-24");
+    expect(MATCHUP_SECTION_SCROLL_MT).not.toContain("lg:scroll-mt-24");
     expect(MATCHUP_SECTION_SCROLL_MT).not.toContain("lg:scroll-mt-6");
   });
 

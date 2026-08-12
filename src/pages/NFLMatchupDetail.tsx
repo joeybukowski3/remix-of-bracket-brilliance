@@ -12,13 +12,17 @@ import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings";
+import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
-import { DEFENSE_METRIC_GROUPS, OFFENSE_METRIC_GROUPS } from "@/lib/nfl/matchupMetrics";
+import {
+  MATCHUP_CATEGORIES,
+  type CategoryAdvantageResult,
+  type MatchupCategoryId,
+} from "@/lib/nfl/matchupCategoryAdvantage";
 import { createInjuryResolver, describeUnavailable } from "@/lib/nfl/injuryData";
 import { composeMetricResolvers, createEpaResolver } from "@/lib/nfl/epaData";
-import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import {
   completedGamesFor as marketCompletedGamesFor,
   createMarketResolver,
@@ -46,21 +50,30 @@ import {
   DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
   type NflMatchupSampleSettings,
 } from "@/lib/nfl/matchupSampleWindow";
-import MatchupAdvantages from "@/components/nfl/matchups/MatchupAdvantages";
-import MatchupAngles from "@/components/nfl/matchups/MatchupAngles";
+import MatchupAvailabilityPanel from "@/components/nfl/matchups/MatchupAvailabilityPanel";
+import MatchupComparisonPanel from "@/components/nfl/matchups/MatchupComparisonPanel";
 import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
-import MatchupFutureSection from "@/components/nfl/matchups/MatchupFutureSection";
-import MatchupModelAnalysis from "@/components/nfl/matchups/MatchupModelAnalysis";
-import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
-import MatchupHero from "@/components/nfl/matchups/MatchupHero";
-import MatchupInjuries from "@/components/nfl/matchups/MatchupInjuries";
-import MatchupJumpNav from "@/components/nfl/matchups/MatchupJumpNav";
+import MatchupIdentityHeader from "@/components/nfl/matchups/MatchupIdentityHeader";
 import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile";
-import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
-import MatchupSection from "@/components/nfl/matchups/MatchupSection";
+import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
+import MatchupOverviewPanel from "@/components/nfl/matchups/MatchupOverviewPanel";
+import MatchupPeriodComparison from "@/components/nfl/matchups/MatchupPeriodComparison";
+import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupTabRow from "@/components/nfl/matchups/MatchupTabRow";
 import MatchupTrenches from "@/components/nfl/matchups/MatchupTrenches";
 import MatchupUnitBattles from "@/components/nfl/matchups/MatchupUnitBattles";
-import MatchupUnitComparison from "@/components/nfl/matchups/MatchupUnitComparison";
+import {
+  MATCHUP_TABS,
+  matchupPanelId,
+  matchupTabId,
+  useMatchupNavigation,
+} from "@/components/nfl/matchups/matchupNavigation";
+import {
+  categoryResultFrom,
+  resolveCategoryMetrics,
+  type MatchupDisplayMetric,
+  type MatchupMetricSources,
+} from "@/components/nfl/matchups/matchupDisplayMetrics";
 
 const CURRENT_SEASON = 2026;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
@@ -68,19 +81,24 @@ const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
 /**
  * NFL matchup analyzer.
  *
- * This page owns routing, SEO, data loading and section composition only. All
+ * This page owns routing, SEO, data loading and tab composition only. All
  * presentation lives in src/components/nfl/matchups/*, and every statistic is
  * supplied by an injected resolver.
  *
- * Phase 2 wires the conventional-stat resolver over the generated nflverse
- * artifact, so the Season / Last 5 / historical-blend controls select real
- * samples. Metrics absent from that artifact (EPA, success rate, first downs,
- * third down, time of possession, line-of-scrimmage win rates, ATS) resolve to
- * null and keep rendering "N/A" — nothing is ever estimated to fill a cell.
+ * The page is a shared template: nothing below branches on a team, an
+ * abbreviation, a slug or a game id. Teams, crests, records, metrics, ranks,
+ * market figures, availability, projections and metadata all resolve from the
+ * matchup the route selected, so every generated matchup URL renders through
+ * exactly this code path.
  *
- * Injuries remain on the unavailable resolver. The Joe Knows Ball power model,
- * Advantages and Things to Watch keep their existing logic untouched, and the
- * hero's preseason ratings deliberately do not respond to the sample controls.
+ * Four content tabs replace the former jump navigation. There is deliberately
+ * no Trends tab: the only genuine multi-period data is `resolveSuccessPeriods()`
+ * — no home/away splits and no week-indexed series exist in any artifact — so
+ * that comparison lives inside Team Comparison instead.
+ *
+ * Metrics absent from the artifacts (first downs, third down, time of
+ * possession) resolve to null and keep rendering "N/A". Nothing is ever
+ * estimated to fill a cell.
  */
 export default function NFLMatchupDetail() {
   const { gameSlug = "" } = useParams();
@@ -96,7 +114,7 @@ export default function NFLMatchupDetail() {
   // unavailable.
   const { artifact: trenchArtifact } = useNflTrenchMetrics();
   // Independent optional enrichment: a missing or not-yet-published injury
-  // artifact leaves only the Injuries section in an unavailable state.
+  // artifact leaves only the Availability tab in an unavailable state.
   const { artifact: injuryArtifact } = useNflMatchupInjuries();
   // Independent optional enrichment: a missing market artifact leaves only the
   // market rows unavailable.
@@ -105,19 +123,21 @@ export default function NFLMatchupDetail() {
   // EPA rows unavailable.
   const { artifact: epaArtifact } = useNflMatchupEpa();
   // Independent optional enrichment: a missing projection artifact leaves only
-  // the Model Analysis section unavailable.
+  // the projection surfaces unavailable.
   const {
     artifact: projectionArtifact,
     loading: projectionLoading,
     error: projectionError,
   } = useNflMatchupProjections();
-  // The hero's team-strength ratings come from the active generated model, the
-  // same board the /nfl landing page renders — never from the retired static
+  // The JKB team-strength rows come from the active generated model, the same
+  // board the /nfl landing page renders — never from the retired static
   // preseason file, so the two surfaces cannot show contradictory ratings.
   const { data: powerBoard } = useNflV03PublicPowerRatings(CURRENT_SEASON);
+
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
+  const navigation = useMatchupNavigation();
 
   const matchup = useMemo(
     () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
@@ -161,9 +181,9 @@ export default function NFLMatchupDetail() {
     return { periods, resolve: createSuccessRateResolver(successArtifact) };
   }, [matchup, successArtifact]);
 
-  // ESPN publishes cumulative season figures only, so the Trenches section uses
-  // its own season policy. Completed-game counts come from the repository's own
-  // results, independent of any generated artifact.
+  // ESPN publishes cumulative season figures only, so the trench metrics use
+  // their own season policy. Completed-game counts come from the repository's
+  // own results, independent of any generated artifact.
   const trench = useMemo(() => {
     if (!matchup || !trenchArtifact) return undefined;
     const periods = resolveTrenchPeriods(
@@ -186,9 +206,9 @@ export default function NFLMatchupDetail() {
     return createInjuryResolver(injuryArtifact, slugToAbbr);
   }, [matchup, injuryArtifact]);
 
-  // Descriptive market profile. Windows follow their own completed-game policy
-  // like Phase 3A/3B, not the conventional sample controls, and the current
-  // line is kept entirely separate from the historical ATS profile.
+  // Descriptive market profile. Windows follow their own completed-game policy,
+  // not the conventional sample controls, and the current line is kept entirely
+  // separate from the historical ATS profile.
   const market = useMemo(() => {
     if (!matchup || !marketArtifact) return undefined;
     const slugToAbbr = new Map([
@@ -217,6 +237,35 @@ export default function NFLMatchupDetail() {
     [projectionArtifact, matchup]
   );
 
+  /**
+   * Every comparison category, resolved once for this matchup and shared by the
+   * Overview table and the Team Comparison accordions, so the two surfaces can
+   * never disagree about what a category contains or which team leads it.
+   */
+  const modelRatings = useMemo(
+    () => createHeroModelRatingResolver(powerBoard),
+    [powerBoard]
+  );
+
+  const { categoryMetrics, categoryResults } = useMemo(() => {
+    const metrics = {} as Record<MatchupCategoryId, MatchupDisplayMetric[]>;
+    const results = {} as Record<MatchupCategoryId, CategoryAdvantageResult>;
+    if (!matchup) return { categoryMetrics: metrics, categoryResults: results };
+
+    const sources: MatchupMetricSources = {
+      resolver: metricResolver,
+      successRate,
+      trench,
+      modelRatings,
+    };
+    for (const category of MATCHUP_CATEGORIES) {
+      const rows = resolveCategoryMetrics(category, matchup, sources);
+      metrics[category.id] = rows;
+      results[category.id] = categoryResultFrom(category.id, rows);
+    }
+    return { categoryMetrics: metrics, categoryResults: results };
+  }, [matchup, metricResolver, successRate, trench, modelRatings]);
+
   usePageSeo({
     title: matchup
       ? `${matchup.away.teamName} at ${matchup.home.teamName} — Week ${matchup.week} Matchup | Joe Knows Ball`
@@ -228,163 +277,150 @@ export default function NFLMatchupDetail() {
     noindex: seo.noindex ?? !matchup,
   });
 
-  const heroModelRatings = useMemo(
-    () => createHeroModelRatingResolver(powerBoard),
-    [powerBoard]
-  );
-
   const advantages = useMemo(() => (matchup ? deriveAdvantages(matchup) : []), [matchup]);
   const angles = useMemo(() => (matchup ? deriveAngles(matchup) : []), [matchup]);
 
   if (loading) {
-    return (
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container"><p className="text-sm text-slate-500">Loading matchup…</p></div>
-      </main>
-    );
+    return <p className="text-sm text-slate-500">Loading matchup…</p>;
   }
   if (error) {
     return (
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container">
-          <p className="text-sm font-semibold text-red-700">Could not load matchup data. Please try again later.</p>
-          <Link to="/nfl/matchups" className="mt-3 inline-block text-sm font-black text-emerald-700 hover:underline">← All matchups</Link>
-        </div>
-      </main>
+      <>
+        <p className="text-sm font-semibold text-red-700">Could not load matchup data. Please try again later.</p>
+        <Link to="/nfl/matchups" className="mt-3 inline-block text-sm font-black text-emerald-700 hover:underline">← All matchups</Link>
+      </>
     );
   }
   // Loaded but no matching game → safe redirect (invalid/unknown slug).
   if (!matchup) return <Navigate to="/nfl/matchups" replace />;
 
+  const panelProps = (tab: (typeof MATCHUP_TABS)[number]["id"]) => ({
+    role: "tabpanel" as const,
+    id: matchupPanelId(tab),
+    "aria-labelledby": matchupTabId(tab),
+    tabIndex: 0,
+    hidden: navigation.tab !== tab,
+  });
+
   return (
-    <main className="site-page pb-16 pt-6">
-      <div className="site-container space-y-3">
-        <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
+    <div className="space-y-3">
+      <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
-        <MatchupHero
+      <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
+
+      <MatchupTabRow
+        activeTab={navigation.tab}
+        onSelect={navigation.selectTab}
+        token={navigation.token}
+      />
+
+      <div {...panelProps("overview")}>
+        <MatchupOverviewPanel
           matchup={matchup}
-          modelRatings={heroModelRatings}
+          categoryResults={categoryResults}
+          onOpenCategory={navigation.openCategory}
+          projection={projection}
           market={market?.current ?? null}
+          projectionLoading={projectionLoading}
+          advantages={advantages}
+          angles={angles}
+          sampleLabel={sample?.label}
+          sampleSettings={sampleSettings}
         />
+      </div>
 
-        <MatchupJumpNav />
-
+      <div {...panelProps("comparison")} className="space-y-3">
         <MatchupDataControls
           settings={sampleSettings}
           onChange={setSampleSettings}
           sampleLabel={sample?.label}
         />
 
-        <MatchupRankLegend />
-
-        {/* Paired at `lg`, the same breakpoint where MatchupSection stops
-            collapsing and MatchupUnitComparison stops hiding inactive metric
-            groups. Pairing later (at `xl`) left 1024-1279px showing every group
-            expanded in a single column, which made that range the tallest
-            rendering of the page — taller even than 768px. */}
-        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
-          <MatchupSection id="advantages">
-            <MatchupAdvantages notes={advantages} />
-          </MatchupSection>
-
-          <MatchupSection id="things-to-watch">
-            <MatchupAngles angles={angles} />
-          </MatchupSection>
-        </div>
-
-        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
-          <MatchupUnitComparison
-            id="offense"
+        <MatchupComparisonPanel
+          matchup={matchup}
+          categoryMetrics={categoryMetrics}
+          pendingCategory={navigation.category}
+          navigationToken={navigation.token}
+          periodComparison={
+            successArtifact && successRate ? (
+              <MatchupPeriodComparison
+                matchup={matchup}
+                successRate={successRate}
+                note={describeSuccessPeriods([...successRate.periods])}
+              />
+            ) : undefined
+          }
+        >
+          <MatchupUnitBattles
             matchup={matchup}
-            groups={OFFENSE_METRIC_GROUPS}
             resolver={metricResolver}
-            baselineLabel="JKB Offense Rating"
-            baselineRank={(team) => team.offenseRank}
-            baselineValue={(team) => team.offensePct}
             successRate={successRate}
             trench={trench}
           />
 
-          <MatchupUnitComparison
-            id="defense"
-            matchup={matchup}
-            groups={DEFENSE_METRIC_GROUPS}
-            resolver={metricResolver}
-            baselineLabel="JKB Defense Rating"
-            baselineRank={(team) => team.defenseRank}
-            baselineValue={(team) => team.defensePct}
-            successRate={successRate}
-            trench={trench}
-          />
-        </div>
+          <div className="grid grid-cols-1 items-start gap-3 @[1080px]:grid-cols-2">
+            <MatchupTrenches
+              matchup={matchup}
+              trench={trench}
+              note={trench ? describeTrenchPeriods(trench.periods) : undefined}
+            />
 
-        <MatchupUnitBattles matchup={matchup} resolver={metricResolver} successRate={successRate} trench={trench} />
+            <MatchupMarketProfile matchup={matchup} market={market} />
+          </div>
+        </MatchupComparisonPanel>
+      </div>
 
-        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
-          <MatchupTrenches
-            matchup={matchup}
-            trench={trench}
-            note={trench ? describeTrenchPeriods(trench.periods) : undefined}
-          />
-          <MatchupMarketProfile matchup={matchup} market={market} />
-        </div>
-
-        <MatchupInjuries
+      <div {...panelProps("availability")}>
+        <MatchupAvailabilityPanel
           matchup={matchup}
           resolver={injuryResolver}
           unavailableMessage={describeUnavailable(injuryArtifact)}
         />
-
-        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
-          <MatchupFutureSection
-            id="game-trends"
-            message="Additional matchup trends will be added here."
-          />
-          <MatchupModelAnalysis
-            projection={projection}
-            market={market?.current ?? null}
-            awayTeamName={matchup.away.teamName}
-            homeTeamName={matchup.home.teamName}
-            modelVersion={projectionArtifact?.modelVersion ?? null}
-            loading={projectionLoading}
-            error={projectionError}
-          />
-        </div>
-
-        {/* Stated once for the whole page. The offense, defense and
-            offense-vs-defense sections used to repeat this paragraph verbatim,
-            three times over. */}
-        <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
-
-        {successArtifact && successRate && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
-          </p>
-        )}
-
-        {injuryArtifact && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            Injury and snap data: nflverse; snap counts via Pro-Football-Reference.
-          </p>
-        )}
-
-        {marketArtifact && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            Market data: nflverse / nfldata. A single source-published market line; the underlying
-            sportsbook composition is not disclosed.
-          </p>
-        )}
-
-        {epaArtifact && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            EPA data: nflverse / nflfastR.
-          </p>
-        )}
-
-        <p className="text-[11px] leading-5 text-slate-400">
-          Informational model preview only — not betting advice. Spreads are not yet available and are never derived from the power ratings.
-        </p>
       </div>
-    </main>
+
+      <div {...panelProps("model")}>
+        <MatchupModelDetails
+          matchup={matchup}
+          projection={projection}
+          modelVersion={projectionArtifact?.modelVersion ?? null}
+          generatedAt={projectionArtifact?._meta?.generatedAt ?? null}
+          loading={projectionLoading}
+          error={projectionError}
+        />
+      </div>
+
+      {/* Stated once for the whole page, beneath every tab. */}
+      <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
+
+      {successArtifact && successRate && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
+        </p>
+      )}
+
+      {injuryArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          Injury and snap data: nflverse; snap counts via Pro-Football-Reference.
+        </p>
+      )}
+
+      {marketArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          Market data: nflverse / nfldata. A single source-published market line; the underlying
+          sportsbook composition is not disclosed.
+        </p>
+      )}
+
+      {epaArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          EPA data: nflverse / nflfastR.
+        </p>
+      )}
+
+      <p className="text-[11px] leading-5 text-slate-400">
+        Informational model preview only — not betting advice. No pick, best bet, confidence
+        rating or stake size is produced anywhere on this page.
+      </p>
+    </div>
   );
 }

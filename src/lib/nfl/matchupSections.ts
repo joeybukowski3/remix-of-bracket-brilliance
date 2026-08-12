@@ -43,19 +43,20 @@ export const NFL_MATCHUP_SECTIONS: readonly NflMatchupSection[] = [
 
 /**
  * Sticky-offset contract for the analyzer, in one place so the anchors, the
- * Jump To bar and the site header cannot drift apart.
+ * tab row and the site header cannot drift apart.
  *
  * `SiteHeader` is `sticky top-0 z-[100]` and 72px tall plus a 1px border. The
- * Jump To bar must therefore stick *below* it rather than at `top-0`, where it
+ * tab row must therefore stick *below* it rather than at `top-0`, where it
  * was rendering underneath the header and was invisible whenever the page was
- * scrolled. Anchored sections in turn need to clear whichever bars are sticky
- * at that breakpoint:
- *
- *   below lg : site header (73px) + Jump To bar (~42px) -> 8rem
- *   lg and up: site header only, because Jump To becomes a static toolbar
+ * scrolled. `MatchupTabRow` stays sticky at every breakpoint (it never goes
+ * static on desktop the way the retired Jump To bar did), so anchored
+ * sections need the same clearance — header (73px) + tab row (~48px) — at
+ * every width. `scroll-mt-32` (8rem = 128px) covers that with a small margin
+ * at both the narrowest and widest breakpoints, so it applies uniformly
+ * rather than easing off at `lg`.
  */
 export const MATCHUP_STICKY_NAV_TOP = "top-[73px]";
-export const MATCHUP_SECTION_SCROLL_MT = "scroll-mt-32 lg:scroll-mt-24";
+export const MATCHUP_SECTION_SCROLL_MT = "scroll-mt-32";
 
 export function getMatchupSection(id: NflMatchupSectionId): NflMatchupSection {
   const section = NFL_MATCHUP_SECTIONS.find((entry) => entry.id === id);

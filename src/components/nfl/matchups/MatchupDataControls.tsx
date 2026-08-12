@@ -37,7 +37,7 @@ export default function MatchupDataControls({
         <div className="flex items-center justify-between gap-3 sm:justify-start">
           <span
             id="matchup-data-window-label"
-            className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400"
+            className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
           >
             Data Window
           </span>
@@ -50,7 +50,7 @@ export default function MatchupDataControls({
         </div>
 
         <div className="flex items-center justify-between gap-3 sm:justify-start">
-          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
             Historical Blend
           </span>
           <button
@@ -61,7 +61,7 @@ export default function MatchupDataControls({
             className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
               blendOn
                 ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                : "border-slate-200 bg-slate-50 text-slate-500"
+                : "border-slate-200 bg-slate-50 text-slate-600"
             }`}
           >
             <span
@@ -75,7 +75,7 @@ export default function MatchupDataControls({
 
         {sampleLabel && (
           <div className="flex items-center gap-2 sm:ml-auto">
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
               Sample
             </span>
             <span
@@ -88,10 +88,10 @@ export default function MatchupDataControls({
         )}
       </div>
 
-      <p className="mt-2.5 border-t border-slate-100 pt-2 text-[11px] leading-4 text-slate-500">
+      <p className="mt-2.5 border-t border-slate-100 pt-2 text-[11px] leading-4 text-slate-600">
         <span className="font-bold text-slate-600">Active sample rule:</span>{" "}
         {describeSampleRule(settings)}{" "}
-        <span className="text-slate-400">
+        <span className="text-slate-600">
           Conventional team stats respond to these controls. The Joe Knows Ball power baseline in
           the header is a separate preseason model and is unaffected.
         </span>

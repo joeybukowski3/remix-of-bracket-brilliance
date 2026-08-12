@@ -13,7 +13,7 @@ export default function MatchupAdvantages({ notes }: { notes: MatchupAdvantageNo
     <ul className="space-y-2">
       {notes.map((note) => (
         <li key={note.key} className="flex items-start gap-2 text-sm leading-5 text-slate-700">
-          <span aria-hidden className="mt-0.5 text-emerald-600">▸</span>
+          <span aria-hidden className="mt-0.5 text-emerald-700">▸</span>
           <span>
             <span className="sr-only">Advantage {note.teamName}: </span>
             {note.text}
