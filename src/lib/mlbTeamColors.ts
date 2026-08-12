@@ -6,6 +6,7 @@ export type MlbTeamColorEntry = {
 
 const TEAM_COLORS: Record<string, MlbTeamColorEntry> = {
   ARI: { primary: "#A71930", tint: "rgba(167,25,48,0.12)", secondary: "#E3D4AD" },
+  AZ: { primary: "#A71930", tint: "rgba(167,25,48,0.12)", secondary: "#E3D4AD" },
   ATL: { primary: "#CE1141", tint: "rgba(206,17,65,0.12)", secondary: "#13274F" },
   ATH: { primary: "#003831", tint: "rgba(0,56,49,0.12)", secondary: "#EFB21E" },
   OAK: { primary: "#003831", tint: "rgba(0,56,49,0.12)", secondary: "#EFB21E" },

@@ -1,5 +1,6 @@
 export const MLB_TEAM_LOGOS: Record<string, string> = {
   ARI: "/logos/mlb/ari.svg",  // ESPN CDN broken for ARI after 2023 rebrand — served locally
+  AZ: "/logos/mlb/ari.svg",   // MLB Stats API abbreviates Arizona as "AZ" — alias to the same asset
   ATL: "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
   ATH: "https://a.espncdn.com/i/teamlogos/mlb/500/oak.png",
   BAL: "https://a.espncdn.com/i/teamlogos/mlb/500/bal.png",
