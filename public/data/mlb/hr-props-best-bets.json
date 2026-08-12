@@ -1,25 +1,44 @@
 {
   "date": "2026-08-12",
-  "generatedAt": "2026-08-12T13:54:31.054Z",
+  "generatedAt": "2026-08-12T15:26:26.356Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with Truist Park (1.03) and UNIQLO Field at Dodger Stadium (1.10) leading the way, while Target Field (0.97) and Sutter Health Park (0.96) play more neutral. Left-handed Zac Thornton faces Matt Olson in Atlanta, and Eric Lauer draws Jac Caglianone in LA, creating favorable platoon advantages for the top two model picks.",
-    "modelNote": "The model heavily weights barrel rate, hard-hit rate, and recent HR form, elevating Olson and Alonso despite modest park factors due to their elite exit velocity and opposing pitcher vulnerabilities."
+    "slateOverview": "Oracle Park's 0.85 park factor caps Yordan Alvarez's upside despite elite barrel and exit velo marks, while Truist Park's 1.03 factor and Zac Thornton's left-handed delivery give Matt Olson a favorable power lane. Target Field's 0.97 factor and Zebby Matthews' 68.2 HR/9 rate create a neutral-to-slightly positive environment for Pete Alonso, with the rest of the slate featuring modest park boosts and right-handed pitching that favors pull-side power.",
+    "modelNote": "The model is prioritizing barrel rate, exit velocity, and opposing pitcher HR vulnerability over recent HR volume, elevating players like Alvarez and Olson who post elite quality-of-contact metrics even in tougher venues."
   },
   "bestBets": [
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "SF",
+      "opposingPitcher": "Adrian Houser",
+      "hrScoreRank": 1,
+      "topStats": [
+        "barrel=18%",
+        "HH=53.5%"
+      ],
+      "bullets": [
+        "hrScore=77.2",
+        "park=0.85"
+      ],
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Matt Olson",
       "team": "ATL",
       "opponent": "NYM",
       "opposingPitcher": "Zac Thornton",
-      "hrScoreRank": 1,
+      "hrScoreRank": 2,
       "topStats": [
         "barrel=15.8%",
         "HH=50.4%"
       ],
       "bullets": [
-        "park=1.03",
-        "barrel=15.8%"
+        "hrScore=75.8",
+        "park=1.03"
       ],
       "hrOddsYes": "+290",
       "marketImpliedProbability": 0.2564102564102564,
@@ -31,17 +50,36 @@
       "team": "BAL",
       "opponent": "MIN",
       "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 2,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=14.1%",
         "HH=56.4%"
       ],
       "bullets": [
-        "park=0.97",
-        "HH=56.4%"
+        "hrScore=74.5",
+        "park=0.97"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=63.2",
+        "Hard Hit%=59.6"
+      ],
+      "bullets": [
+        "HR score 73.6 (#4)",
+        "Pitcher HR VS 63.2 at park 1.07"
+      ],
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,20 +88,22 @@
       "team": "KC",
       "opponent": "LAD",
       "opposingPitcher": "Eric Lauer",
-      "hrScoreRank": 3,
+      "hrScoreRank": 5,
       "topStats": [
-        "barrel=14.6%",
-        "HH=55.2%"
+        "Pitcher HR VS=65.3",
+        "Hard Hit%=55.2"
       ],
       "bullets": [
-        "park=1.1",
-        "HH=55.2%"
+        "HR score 73.5 (#5)",
+        "Pitcher HR VS 65.3 at park 1.10"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+315",
+      "marketImpliedProbability": 0.24096385542168675,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
@@ -75,11 +115,30 @@
         "HH=59.6%"
       ],
       "bullets": [
-        "park=1.07",
-        "barrel=20.8%"
+        "hrScore=73.6",
+        "park=1.07"
       ],
-      "hrOddsYes": "+240",
-      "marketImpliedProbability": 0.29411764705882354,
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "LAD",
+      "opposingPitcher": "Eric Lauer",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=14.6%",
+        "HH=55.2%"
+      ],
+      "bullets": [
+        "hrScore=73.5",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+315",
+      "marketImpliedProbability": 0.24096385542168675,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -88,38 +147,36 @@
       "team": "TEX",
       "opponent": "LAA",
       "opposingPitcher": "George Klassen",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=11.6%",
         "HH=50%"
       ],
       "bullets": [
-        "park=1.02",
-        "HH=50%"
+        "hrScore=72.9",
+        "park=1.02"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
       "player": "Junior Caminero",
       "team": "TB",
       "opponent": "ATH",
       "opposingPitcher": "Jack Perkins",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=14%",
-        "HH=51.1%"
+        "Pitcher HR VS=59.4",
+        "Hard Hit%=51.1"
       ],
       "bullets": [
-        "park=0.96",
-        "barrel=14%"
+        "HR score 71.2 (#7)",
+        "Pitcher HR VS 59.4 at park 0.96"
       ],
-      "hrOddsYes": "+260",
-      "marketImpliedProbability": 0.2777777777777778,
+      "hrOddsYes": "+210",
+      "marketImpliedProbability": 0.3225806451612903,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,76 +185,95 @@
       "team": "COL",
       "opponent": "AZ",
       "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=16.9%",
-        "HH=46%"
-      ],
-      "bullets": [
-        "park=1.01",
-        "barrel=16.9%"
-      ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Griffin Conine",
-      "team": "MIA",
-      "opponent": "PIT",
-      "opposingPitcher": "Carmen Mlodzinski",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=17.3%",
-        "HH=55.1%"
+        "Pitcher HR VS=87.4",
+        "Hard Hit%=46.0"
       ],
       "bullets": [
-        "park=0.88",
-        "barrel=17.3%"
+        "HR score 70.3 (#8)",
+        "Pitcher HR VS 87.4 at park 1.01"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+399",
+      "marketImpliedProbability": 0.20040080160320642,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "SD",
-      "opposingPitcher": "Robbie Ray",
-      "hrScoreRank": 24,
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "ATH",
+      "opposingPitcher": "Jack Perkins",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=14.3%",
-        "HH=53.5%"
+        "barrel=14%",
+        "HH=51.1%"
       ],
       "bullets": [
-        "park=0.89",
-        "barrel=14.3%"
+        "hrScore=71.2",
+        "park=0.96"
       ],
-      "hrOddsYes": "+575",
-      "marketImpliedProbability": 0.14814814814814814,
+      "hrOddsYes": "+210",
+      "marketImpliedProbability": 0.3225806451612903,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=16.9%",
+        "HH=46%"
+      ],
+      "bullets": [
+        "hrScore=70.3",
+        "park=1.01"
+      ],
+      "hrOddsYes": "+399",
+      "marketImpliedProbability": 0.20040080160320642,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Merrill",
       "team": "SD",
       "opponent": "MIL",
       "opposingPitcher": "Dustin May",
-      "hrScoreRank": 17,
+      "hrScoreRank": 19,
       "topStats": [
-        "barrel=11.5%",
-        "HH=52.8%"
+        "Pitcher HR VS=55.7",
+        "Hard Hit%=47.1"
       ],
       "bullets": [
-        "park=0.89",
-        "HH=52.8%"
+        "HR score 62.3 (#19)",
+        "Pitcher HR VS 55.7 at park 0.89"
       ],
       "hrOddsYes": "+550",
       "marketImpliedProbability": 0.15384615384615385,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ketel Marte",
+      "team": "AZ",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 21,
+      "topStats": [
+        "Pitcher HR VS=68.9",
+        "Hard Hit%=42.4"
+      ],
+      "bullets": [
+        "HR score 62.1 (#21)",
+        "Pitcher HR VS 68.9 at park 1.01"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
