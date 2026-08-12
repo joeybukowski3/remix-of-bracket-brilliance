@@ -19,6 +19,7 @@ const SITE_ORIGIN = "https://www.joeknowsball.com";
 // (ARI) made absolute against SITE_ORIGIN for email use.
 const MLB_TEAM_LOGOS = {
   ARI: `${SITE_ORIGIN}/logos/mlb/ari.svg`,
+  AZ: `${SITE_ORIGIN}/logos/mlb/ari.svg`,
   ATL: "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
   ATH: "https://a.espncdn.com/i/teamlogos/mlb/500/oak.png",
   BAL: "https://a.espncdn.com/i/teamlogos/mlb/500/bal.png",
@@ -55,6 +56,7 @@ const MLB_TEAM_LOGOS = {
 // unused here; the email uses solid low-opacity backgrounds computed below).
 const MLB_TEAM_COLORS = {
   ARI: { primary: "#A71930", secondary: "#E3D4AD" },
+  AZ: { primary: "#A71930", secondary: "#E3D4AD" },
   ATL: { primary: "#CE1141", secondary: "#13274F" },
   ATH: { primary: "#003831", secondary: "#EFB21E" },
   OAK: { primary: "#003831", secondary: "#EFB21E" },
