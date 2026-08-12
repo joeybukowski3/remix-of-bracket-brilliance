@@ -1,10 +1,10 @@
 {
   "date": "2026-08-12",
-  "generatedAt": "2026-08-12T16:32:21.009Z",
+  "generatedAt": "2026-08-12T20:28:05.179Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Oracle Park's 0.85 park factor caps Yordan Alvarez's top-ranked hrScore despite elite barrel and exit velo metrics, while Truist Park's 1.03 factor and Zac Thornton's left-handed delivery create favorable conditions for Matt Olson's power surge. Target Field's neutral 0.97 factor and Zebby Matthews' 68.2 HR/9 rate against righties give Pete Alonso a strong park-neutral matchup, with Rate Field's 1.07 factor boosting Munetaka Murakami's already elite 20.8 barrel rate.",
-    "modelNote": "The model heavily weights barrel rate and hard-hit metrics over recent HR volume, elevating players like Alvarez and Murakami despite their lower last-7 HR counts, while incorporating opposing pitcher HR vulnerability as a key secondary factor."
+    "slateOverview": "Oracle Park's 0.85 park factor caps Yordan Alvarez's top-ranked hrScore despite elite barrel and exit-velo marks, while Truist Park (1.03) and Rate Field (1.07) provide neutral-to-positive environments for Olson and Murakami. Left-handed pitching (Thornton, Lauer) against right-handed power bats creates platoon edges for Olson and Caglianone, and several mid-tier parks (Target, Angel, Chase) sit near 1.00, keeping fly-ball outcomes in play.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent 30-day HR volume over park suppression, elevating Alvarez to #1 despite Oracle while still crediting Olson's hot streak and platoon advantage for the #2 slot."
   },
   "bestBets": [
     {
@@ -18,11 +18,11 @@
         "HH=53.5%"
       ],
       "bullets": [
-        "park=0.85",
-        "barrel=18%"
+        "barrel=18%",
+        "park=0.85"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,11 +37,11 @@
         "HH=50.4%"
       ],
       "bullets": [
-        "park=1.03",
-        "HH=50.4%"
+        "barrel=15.8%",
+        "park=1.03"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
+      "hrOddsYes": "+280",
+      "marketImpliedProbability": 0.2631578947368421,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -56,8 +56,8 @@
         "HH=56.4%"
       ],
       "bullets": [
-        "park=0.97",
-        "HH=56.4%"
+        "barrel=14.1%",
+        "park=0.97"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
@@ -94,7 +94,7 @@
         "Hard Hit%=55.2"
       ],
       "bullets": [
-        "HR score 73.5 (#5)",
+        "HR score 73.2 (#5)",
         "Pitcher HR VS 65.3 at park 1.10"
       ],
       "hrOddsYes": "+315",
@@ -115,8 +115,8 @@
         "HH=59.6%"
       ],
       "bullets": [
-        "park=1.07",
-        "barrel=20.8%"
+        "barrel=20.8%",
+        "park=1.07"
       ],
       "hrOddsYes": "+254",
       "marketImpliedProbability": 0.2824858757062147,
@@ -134,8 +134,8 @@
         "HH=55.2%"
       ],
       "bullets": [
-        "park=1.1",
-        "HH=55.2%"
+        "barrel=14.6%",
+        "park=1.1"
       ],
       "hrOddsYes": "+315",
       "marketImpliedProbability": 0.24096385542168675,
@@ -153,11 +153,11 @@
         "HH=50%"
       ],
       "bullets": [
-        "park=1.02",
-        "HH=50%"
+        "barrel=11.6%",
+        "park=1.02"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -168,15 +168,15 @@
       "opposingPitcher": "Jack Perkins",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=59.4",
+        "Pitcher HR VS=59.1",
         "Hard Hit%=51.1"
       ],
       "bullets": [
         "HR score 71.2 (#7)",
-        "Pitcher HR VS 59.4 at park 0.96"
+        "Pitcher HR VS 59.1 at park 0.96"
       ],
-      "hrOddsYes": "+210",
-      "marketImpliedProbability": 0.3225806451612903,
+      "hrOddsYes": "+205",
+      "marketImpliedProbability": 0.32786885245901637,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -187,15 +187,15 @@
       "opposingPitcher": "Merrill Kelly",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=87.4",
+        "Pitcher HR VS=87.6",
         "Hard Hit%=46.0"
       ],
       "bullets": [
         "HR score 70.3 (#8)",
-        "Pitcher HR VS 87.4 at park 1.01"
+        "Pitcher HR VS 87.6 at park 1.01"
       ],
-      "hrOddsYes": "+372",
-      "marketImpliedProbability": 0.211864406779661,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -212,11 +212,11 @@
         "HH=51.1%"
       ],
       "bullets": [
-        "park=0.96",
-        "HH=51.1%"
+        "barrel=14%",
+        "park=0.96"
       ],
-      "hrOddsYes": "+210",
-      "marketImpliedProbability": 0.3225806451612903,
+      "hrOddsYes": "+205",
+      "marketImpliedProbability": 0.32786885245901637,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -231,49 +231,49 @@
         "HH=46%"
       ],
       "bullets": [
-        "park=1.01",
-        "barrel=16.9%"
+        "barrel=16.9%",
+        "park=1.01"
       ],
-      "hrOddsYes": "+372",
-      "marketImpliedProbability": 0.211864406779661,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "MIL",
-      "opposingPitcher": "Dustin May",
+      "player": "Angel Genao",
+      "team": "CLE",
+      "opponent": "DET",
+      "opposingPitcher": "Framber Valdez",
+      "hrScoreRank": 23,
+      "topStats": [
+        "Hard Hit%=64.7",
+        "Pitcher HR VS=44.2"
+      ],
+      "bullets": [
+        "HR score 59.7 (#23)",
+        "Pitcher HR VS 44.2 at park 0.95"
+      ],
+      "hrOddsYes": "+715",
+      "marketImpliedProbability": 0.12269938650306748,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ketel Marte",
+      "team": "AZ",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 18,
       "topStats": [
-        "Pitcher HR VS=55.7",
-        "Hard Hit%=52.8"
+        "Pitcher HR VS=68.8",
+        "Hard Hit%=42.4"
       ],
       "bullets": [
-        "HR score 62.5 (#18)",
-        "Pitcher HR VS 55.7 at park 0.89"
+        "HR score 62.3 (#18)",
+        "Pitcher HR VS 68.8 at park 1.01"
       ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "SD",
-      "opposingPitcher": "Robbie Ray",
-      "hrScoreRank": 25,
-      "topStats": [
-        "Pitcher HR VS=56.5",
-        "Hard Hit%=53.5"
-      ],
-      "bullets": [
-        "HR score 60.2 (#25)",
-        "Pitcher HR VS 56.5 at park 0.89"
-      ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
