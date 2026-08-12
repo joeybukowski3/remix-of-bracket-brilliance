@@ -1,10 +1,10 @@
 {
   "date": "2026-08-12",
-  "generatedAt": "2026-08-12T15:26:26.356Z",
+  "generatedAt": "2026-08-12T16:32:21.009Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Oracle Park's 0.85 park factor caps Yordan Alvarez's upside despite elite barrel and exit velo marks, while Truist Park's 1.03 factor and Zac Thornton's left-handed delivery give Matt Olson a favorable power lane. Target Field's 0.97 factor and Zebby Matthews' 68.2 HR/9 rate create a neutral-to-slightly positive environment for Pete Alonso, with the rest of the slate featuring modest park boosts and right-handed pitching that favors pull-side power.",
-    "modelNote": "The model is prioritizing barrel rate, exit velocity, and opposing pitcher HR vulnerability over recent HR volume, elevating players like Alvarez and Olson who post elite quality-of-contact metrics even in tougher venues."
+    "slateOverview": "Oracle Park's 0.85 park factor caps Yordan Alvarez's top-ranked hrScore despite elite barrel and exit velo metrics, while Truist Park's 1.03 factor and Zac Thornton's left-handed delivery create favorable conditions for Matt Olson's power surge. Target Field's neutral 0.97 factor and Zebby Matthews' 68.2 HR/9 rate against righties give Pete Alonso a strong park-neutral matchup, with Rate Field's 1.07 factor boosting Munetaka Murakami's already elite 20.8 barrel rate.",
+    "modelNote": "The model heavily weights barrel rate and hard-hit metrics over recent HR volume, elevating players like Alvarez and Murakami despite their lower last-7 HR counts, while incorporating opposing pitcher HR vulnerability as a key secondary factor."
   },
   "bestBets": [
     {
@@ -18,8 +18,8 @@
         "HH=53.5%"
       ],
       "bullets": [
-        "hrScore=77.2",
-        "park=0.85"
+        "park=0.85",
+        "barrel=18%"
       ],
       "hrOddsYes": "+300",
       "marketImpliedProbability": 0.25,
@@ -37,8 +37,8 @@
         "HH=50.4%"
       ],
       "bullets": [
-        "hrScore=75.8",
-        "park=1.03"
+        "park=1.03",
+        "HH=50.4%"
       ],
       "hrOddsYes": "+290",
       "marketImpliedProbability": 0.2564102564102564,
@@ -56,11 +56,11 @@
         "HH=56.4%"
       ],
       "bullets": [
-        "hrScore=74.5",
-        "park=0.97"
+        "park=0.97",
+        "HH=56.4%"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -78,8 +78,8 @@
         "HR score 73.6 (#4)",
         "Pitcher HR VS 63.2 at park 1.07"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
+      "hrOddsYes": "+254",
+      "marketImpliedProbability": 0.2824858757062147,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -115,11 +115,11 @@
         "HH=59.6%"
       ],
       "bullets": [
-        "hrScore=73.6",
-        "park=1.07"
+        "park=1.07",
+        "barrel=20.8%"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
+      "hrOddsYes": "+254",
+      "marketImpliedProbability": 0.2824858757062147,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -134,8 +134,8 @@
         "HH=55.2%"
       ],
       "bullets": [
-        "hrScore=73.5",
-        "park=1.1"
+        "park=1.1",
+        "HH=55.2%"
       ],
       "hrOddsYes": "+315",
       "marketImpliedProbability": 0.24096385542168675,
@@ -153,11 +153,11 @@
         "HH=50%"
       ],
       "bullets": [
-        "hrScore=72.9",
-        "park=1.02"
+        "park=1.02",
+        "HH=50%"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
+      "hrOddsYes": "+280",
+      "marketImpliedProbability": 0.2631578947368421,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -194,8 +194,8 @@
         "HR score 70.3 (#8)",
         "Pitcher HR VS 87.4 at park 1.01"
       ],
-      "hrOddsYes": "+399",
-      "marketImpliedProbability": 0.20040080160320642,
+      "hrOddsYes": "+372",
+      "marketImpliedProbability": 0.211864406779661,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -212,8 +212,8 @@
         "HH=51.1%"
       ],
       "bullets": [
-        "hrScore=71.2",
-        "park=0.96"
+        "park=0.96",
+        "HH=51.1%"
       ],
       "hrOddsYes": "+210",
       "marketImpliedProbability": 0.3225806451612903,
@@ -231,26 +231,26 @@
         "HH=46%"
       ],
       "bullets": [
-        "hrScore=70.3",
-        "park=1.01"
+        "park=1.01",
+        "barrel=16.9%"
       ],
-      "hrOddsYes": "+399",
-      "marketImpliedProbability": 0.20040080160320642,
+      "hrOddsYes": "+372",
+      "marketImpliedProbability": 0.211864406779661,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Jackson Merrill",
+      "player": "Fernando Tatis Jr.",
       "team": "SD",
       "opponent": "MIL",
       "opposingPitcher": "Dustin May",
-      "hrScoreRank": 19,
+      "hrScoreRank": 18,
       "topStats": [
         "Pitcher HR VS=55.7",
-        "Hard Hit%=47.1"
+        "Hard Hit%=52.8"
       ],
       "bullets": [
-        "HR score 62.3 (#19)",
+        "HR score 62.5 (#18)",
         "Pitcher HR VS 55.7 at park 0.89"
       ],
       "hrOddsYes": "+550",
@@ -259,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Ketel Marte",
-      "team": "AZ",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 21,
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "SD",
+      "opposingPitcher": "Robbie Ray",
+      "hrScoreRank": 25,
       "topStats": [
-        "Pitcher HR VS=68.9",
-        "Hard Hit%=42.4"
+        "Pitcher HR VS=56.5",
+        "Hard Hit%=53.5"
       ],
       "bullets": [
-        "HR score 62.1 (#21)",
-        "Pitcher HR VS 68.9 at park 1.01"
+        "HR score 60.2 (#25)",
+        "Pitcher HR VS 56.5 at park 0.89"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
