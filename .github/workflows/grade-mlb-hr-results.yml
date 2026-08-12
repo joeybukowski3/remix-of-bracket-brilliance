@@ -75,11 +75,22 @@ jobs:
         if: inputs.dry_run != 'true'
         run: node scripts/build-mlb-hr-performance-summary.mjs
 
+      # Postgame grading for the hidden /mlb/performance-preview Sin City
+      # section: grades any pending Sin City picks persisted pregame by
+      # scripts/persist-sin-city-picks.mjs and rebuilds the Sin City
+      # performance summary. Runs after HR grading so the same boxscore
+      # fetches that just happened are warm; failures here never block the
+      # HR grading results above.
+      - name: Grade Sin City picks
+        if: inputs.dry_run != 'true'
+        continue-on-error: true
+        run: node scripts/grade-sin-city-picks.mjs
+
       - name: Detect meaningful grading changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json)" ]; then
+          if [ -z "$(git status --porcelain -- public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json public/data/mlb/sin-city-performance.json public/data/mlb/sin-city-performance-summary.json)" ]; then
             echo "No meaningful grading changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -94,6 +105,12 @@ jobs:
           if [ -f public/data/mlb/hr-model-performance.json ]; then
             node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/hr-model-performance.json','utf8')); console.log('Performance summary JSON valid');"
           fi
+          if [ -f public/data/mlb/sin-city-performance.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/sin-city-performance.json','utf8')); console.log('Sin City performance JSON valid');"
+          fi
+          if [ -f public/data/mlb/sin-city-performance-summary.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/sin-city-performance-summary.json','utf8')); console.log('Sin City summary JSON valid');"
+          fi
 
       - name: Commit and push grading results
         if: steps.changes.outputs.changed == 'true'
@@ -102,7 +119,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json
+          git add public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json public/data/mlb/sin-city-performance.json public/data/mlb/sin-city-performance-summary.json
 
           if git diff --cached --quiet; then
             echo "No staged grading changes."

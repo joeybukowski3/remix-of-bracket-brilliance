@@ -417,6 +417,40 @@ jobs:
         continue-on-error: true
         run: node scripts/validate-mlb-prop-odds.mjs
 
+      # Pregame snapshot for the hidden /mlb/performance-preview Sin City
+      # section: persists today's 4/5 and 5/5 qualifiers (per the existing
+      # rules in src/lib/mlb/mlbHrFilter.ts) before first pitch, so they can
+      # be graded against the actual result once games are final. Does not
+      # affect the live /mlb/sin-city page, which still reads
+      # hr-props-raw.json directly at request time.
+      #
+      # continue-on-error is intentional here: this step sits mid-pipeline,
+      # before K-props resolution, the site build, and the commit of
+      # hr-props-raw.json/other production data below -- a Sin City-only
+      # failure must never block those. But UNLIKE most other soft-failing
+      # steps in this workflow, a missed snapshot here is NOT recoverable
+      # later: the "Wind Out" factor is never archived anywhere else, so a
+      # missed day can never be backfilled (see performance-preview report).
+      # "Verify Sin City pregame snapshot" below surfaces the failure
+      # immediately in the log, and "Enforce Sin City pregame snapshot
+      # success" at the end of this job fails the whole run (after every
+      # critical step has already completed) so this can never pass silently.
+      - name: Persist Sin City pregame snapshot
+        id: persist_sin_city
+        continue-on-error: true
+        run: node scripts/persist-sin-city-picks.mjs
+
+      - name: Verify Sin City pregame snapshot
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ "${{ steps.persist_sin_city.outcome }}" != "success" ]; then
+            echo "::error::Sin City pregame snapshot failed (outcome=${{ steps.persist_sin_city.outcome }}). This is NOT recoverable later -- the Wind Out factor is never archived elsewhere, so today's Sin City qualifiers are permanently lost if this step failed. The rest of this workflow will continue (core HR/K props publishing must not be blocked), but the job will be marked failed at the end so this cannot pass silently."
+          else
+            echo "Sin City pregame snapshot persisted successfully."
+          fi
+
       # test/mlb-strikeout-prop-row-details: generates the pitcher/opponent
       # last-5-games detail data for the /mlb/strikeout-props expandable
       # rows. Reads the now-finalized hr-props-raw.json; fails softly per
@@ -671,3 +705,18 @@ jobs:
           echo ""
           echo "-- Phase 2 file git status --"
           git status --porcelain -- public/data/mlb/team-bullpen-stats.json public/data/mlb/batter-hand-splits-cache.json public/data/mlb/ml-phase2-shadow-comparison.json || true
+
+      # Runs last, after every critical step (K-props resolution, build,
+      # commit/push) has already completed -- so a Sin City persistence
+      # failure never blocks core prop publishing. But it deliberately does
+      # NOT continue-on-error: if today's pregame snapshot failed, that data
+      # is permanently unrecoverable (see the two steps above), so this job
+      # must end in a failed state rather than pass silently.
+      - name: Enforce Sin City pregame snapshot success
+        if: always()
+        run: |
+          if [ "${{ steps.persist_sin_city.outcome }}" != "success" ]; then
+            echo "::error::Failing this job because the Sin City pregame snapshot did not succeed (outcome=${{ steps.persist_sin_city.outcome }}). Core MLB data above was already committed and is unaffected -- only today's Sin City tracking data is missing and cannot be backfilled later."
+            exit 1
+          fi
+          echo "Sin City pregame snapshot succeeded -- nothing to enforce."

@@ -32,6 +32,7 @@ import MlbPropsHub from "./pages/MlbPropsHub";
 import MlbStrikeoutProps from "./pages/MlbStrikeoutPropsWithDebug";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
+import MlbPerformancePreview from "./pages/MlbPerformancePreview";
 import MlbNumerologyPage from "./pages/MlbNumerologyPage";
 import MlbNumerologyXExport from "./pages/MlbNumerologyXExport";
 import MlbHrPropsXExport from "./pages/MlbHrPropsXExport";
@@ -188,6 +189,8 @@ const App = () => (
             <Route path="vulnerable-pitchers" element={<MlbVulnerablePitchers />} />
           </Route>
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
+          {/* Hidden internal review page -- intentionally not linked from MlbLayout nav or any sidebar. */}
+          <Route path="/mlb/performance-preview" element={<MlbPerformancePreview />} />
           <Route path="/pga" element={<PgaHistoryModelWithArticles />} />
           <Route path="/pga/legacy" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
