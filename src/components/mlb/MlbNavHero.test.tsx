@@ -17,6 +17,7 @@ const EXISTING_TILE_LABELS = [
   "Power Rankings",
   "Sin City",
   "Vulnerable Pitchers",
+  "Numerology",
 ];
 
 function renderAt(path: string) {
@@ -114,5 +115,47 @@ describe("MlbNavHero — Numerology pill", () => {
     renderAt("/mlb");
     const tileStrip = screen.getByRole("link", { name: /Numerology/ }).parentElement;
     expect(tileStrip?.className).toMatch(/flex-wrap/);
+  });
+});
+
+describe("MlbNavHero — Results Tracker pill", () => {
+  it("renders a Results Tracker pill", () => {
+    renderAt("/mlb");
+    expect(screen.getByRole("link", { name: /Results Tracker/ })).toBeInTheDocument();
+  });
+
+  it("links to /mlb/performance-preview", () => {
+    renderAt("/mlb");
+    expect(screen.getByRole("link", { name: /Results Tracker/ })).toHaveAttribute("href", "/mlb/performance-preview");
+  });
+
+  it("is marked active (ring styling) on /mlb/performance-preview", () => {
+    renderAt("/mlb/performance-preview");
+    const link = screen.getByRole("link", { name: /Results Tracker/ });
+    expect(link.className).toMatch(/ring-2/);
+  });
+
+  it("is not marked active on a different route", () => {
+    renderAt("/mlb/power-rankings");
+    const link = screen.getByRole("link", { name: /Results Tracker/ });
+    expect(link.className).not.toMatch(/ring-2/);
+  });
+
+  it("preserves every existing MLB Hub pill", () => {
+    renderAt("/mlb");
+    for (const label of EXISTING_TILE_LABELS) {
+      expect(screen.getByRole("link", { name: new RegExp(label) })).toBeInTheDocument();
+    }
+  });
+
+  it("keeps the strip wrapping (flex-wrap) with the 10th tile added", () => {
+    renderAt("/mlb");
+    const tileStrip = screen.getByRole("link", { name: /Results Tracker/ }).parentElement;
+    expect(tileStrip?.className).toMatch(/flex-wrap/);
+  });
+
+  it("is present on the HR Props page as well as the MLB hub, since both render this shared component", () => {
+    renderAt("/mlb/hr-props");
+    expect(screen.getByRole("link", { name: /Results Tracker/ })).toHaveAttribute("href", "/mlb/performance-preview");
   });
 });

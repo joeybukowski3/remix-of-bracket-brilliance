@@ -27,6 +27,9 @@ export default defineConfig({
       "scripts/lib/social-cards/adapters/mlb-daily-card-adapters.test.mjs",
       "scripts/lib/social-cards/adapters/no-legacy-selection.test.mjs",
       "scripts/lib/social-cards/workflow-summary.test.mjs",
+      "scripts/lib/mlb-top-hr-tracking.test.mjs",
+      "scripts/lib/mlb-top-k-tracking.test.mjs",
+      "scripts/lib/mlb-numerology-tracking.test.mjs",
     ],
   },
   resolve: {

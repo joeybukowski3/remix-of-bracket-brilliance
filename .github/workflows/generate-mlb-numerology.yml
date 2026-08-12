@@ -195,6 +195,28 @@ jobs:
           fi
           node scripts/filter-mlb-numerology-active.mjs $DATE_FLAG
 
+      # Persists today's Top Play / Score 50+ selections for the
+      # /mlb/performance-preview Results Tracker. This is part of the NORMAL
+      # generation lifecycle (not the email pipeline) -- it runs on every
+      # phase (morning and lineup-confirmed) and is idempotent, so a rerun
+      # later the same day safely refreshes still-pending records instead of
+      # duplicating them. continue-on-error because this must never block
+      # the core numerology-daily.json publish below; "Enforce" at the end
+      # of the job fails the run afterward if this was lost.
+      - name: Persist Numerology performance tracking
+        id: persist_numerology_tracking
+        if: >-
+          steps.gate.outputs.run == 'true' &&
+          inputs.dry_run != 'true' &&
+          inputs.use_fixture != 'true'
+        continue-on-error: true
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+          node scripts/persist-mlb-numerology-performance.mjs $DATE_FLAG
+
       - name: Commit and push
         if: >-
           steps.gate.outputs.run == 'true' &&
@@ -237,3 +259,18 @@ jobs:
             echo "ERROR: All push attempts failed." >&2
             exit 1
           fi
+
+      # Runs last, after the core numerology-daily.json publish above has
+      # already completed -- so a tracking-only failure never blocks the
+      # live board. But it does NOT continue-on-error: if persistence
+      # failed, today's Top Play/Score 50+ selections are gone for good
+      # (see the root-cause note in persist-mlb-numerology-performance.mjs),
+      # so the job must end in a failed state rather than pass silently.
+      - name: Enforce Numerology performance persistence
+        if: steps.gate.outputs.run == 'true' && inputs.dry_run != 'true' && inputs.use_fixture != 'true'
+        run: |
+          if [ "${{ steps.persist_numerology_tracking.outcome }}" != "success" ]; then
+            echo "::error::Numerology performance tracking persistence failed (outcome=${{ steps.persist_numerology_tracking.outcome }}). Today's Top Play/Score 50+ selections were not recorded and cannot be reconstructed later."
+            exit 1
+          fi
+          echo "Numerology performance tracking persisted successfully."
