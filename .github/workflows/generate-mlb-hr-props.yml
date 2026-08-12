@@ -451,6 +451,18 @@ jobs:
             echo "Sin City pregame snapshot persisted successfully."
           fi
 
+      # Pregame snapshot for the hidden /mlb/performance-preview "Top HR
+      # Props Performance" section: persists the exact players shown under
+      # "Top HR Props Today" on /mlb/hr-props (same continue-on-error +
+      # end-of-job enforcement pattern as Sin City above, since a missed
+      # snapshot here means that day's actual surfaced picks can only be
+      # reconstructed later from hr-prediction-history.json with the caveat
+      # documented in scripts/backfill-top-hr-picks.mjs).
+      - name: Persist Top HR Props snapshot
+        id: persist_top_hr
+        continue-on-error: true
+        run: node scripts/persist-top-hr-picks.mjs
+
       # test/mlb-strikeout-prop-row-details: generates the pitcher/opponent
       # last-5-games detail data for the /mlb/strikeout-props expandable
       # rows. Reads the now-finalized hr-props-raw.json; fails softly per
@@ -479,6 +491,18 @@ jobs:
       # itself is unusable and must not be published.
       - name: Resolve production K projection
         run: npm run mlb:k-production-projection
+
+      # Pregame snapshot for the hidden /mlb/performance-preview "Top K
+      # Props Performance" section: persists the exact pitchers shown under
+      # "Best K Prop Bets" on /mlb/strikeout-props. Runs via tsx so it can
+      # import the live page's own selection functions directly (no ported
+      # logic) -- see scripts/persist-top-k-picks.ts. No historical archive
+      # exists for K props, so unlike Top HR, a missed day here is
+      # permanently unrecoverable; enforced at the end of this job.
+      - name: Persist Top K Props snapshot
+        id: persist_top_k
+        continue-on-error: true
+        run: npx tsx scripts/persist-top-k-picks.ts
 
       - name: Audit production K projection
         continue-on-error: true
@@ -720,3 +744,21 @@ jobs:
             exit 1
           fi
           echo "Sin City pregame snapshot succeeded -- nothing to enforce."
+
+      - name: Enforce Top HR Props snapshot success
+        if: always()
+        run: |
+          if [ "${{ steps.persist_top_hr.outcome }}" != "success" ]; then
+            echo "::error::Failing this job because the Top HR Props snapshot did not succeed (outcome=${{ steps.persist_top_hr.outcome }}). Core MLB data above was already committed and is unaffected -- today's Top HR Props tracking data may need to be reconstructed later from hr-prediction-history.json (see scripts/backfill-top-hr-picks.mjs)."
+            exit 1
+          fi
+          echo "Top HR Props snapshot succeeded -- nothing to enforce."
+
+      - name: Enforce Top K Props snapshot success
+        if: always()
+        run: |
+          if [ "${{ steps.persist_top_k.outcome }}" != "success" ]; then
+            echo "::error::Failing this job because the Top K Props snapshot did not succeed (outcome=${{ steps.persist_top_k.outcome }}). Core MLB data above was already committed and is unaffected -- but no historical archive exists for K props, so today's Top K Props tracking data is permanently unrecoverable if this step failed."
+            exit 1
+          fi
+          echo "Top K Props snapshot succeeded -- nothing to enforce."

@@ -89,6 +89,11 @@ function summarizeLevel(records, level) {
     hrHits: hits.length,
     hrHitRate: graded.length ? Number(((hits.length / graded.length) * 100).toFixed(1)) : null,
     averageOdds: withOdds.length ? Number((withOdds.reduce((a, b) => a + b, 0) / withOdds.length * 100).toFixed(1)) : null,
+    gradedPlays: graded.length,
+    // roiEligiblePlays/oddsCoveragePercent/flatBetRoi are derived ONLY from
+    // graded records with a valid persisted odds value -- missing odds are
+    // excluded from ROI entirely, never treated as 0-profit/loss/+100.
+    roiEligiblePlays: withOdds.length,
     oddsCoveragePercent: graded.length ? Number(((withOdds.length / graded.length) * 100).toFixed(1)) : 0,
     flatBetRoi: withOdds.length ? Number(((roiUnits / withOdds.length) * 100).toFixed(1)) : null,
   };

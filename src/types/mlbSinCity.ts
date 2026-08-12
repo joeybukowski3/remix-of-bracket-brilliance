@@ -71,7 +71,12 @@ export interface SinCityLevelSummary {
   hrHits: number;
   hrHitRate: number | null;
   averageOdds: number | null;
+  /** Graded (hit/miss) records -- the denominator odds coverage is measured against. */
+  gradedPlays: number;
+  /** Of gradedPlays, how many carried a valid persisted odds value and were actually used in flatBetRoi. */
+  roiEligiblePlays: number;
   oddsCoveragePercent: number;
+  /** Computed ONLY from roiEligiblePlays -- missing odds are excluded, never treated as 0/loss/+100. */
   flatBetRoi: number | null;
 }
 

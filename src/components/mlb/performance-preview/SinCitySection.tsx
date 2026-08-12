@@ -4,6 +4,7 @@ import { getEtDateString, isDateInWindow, type TimeWindowId } from "@/lib/mlb/pe
 import { aggregateBoxScore } from "./aggregateBoxScore";
 import BoxScoreStrip from "./BoxScoreStrip";
 import ExpandableGroup from "./ExpandableGroup";
+import RoiCoverageNote from "./RoiCoverageNote";
 import SinCityPerformanceTable from "./SinCityPerformanceTable";
 import StatTile from "./StatTile";
 import TimeWindowToggle from "./TimeWindowToggle";
@@ -20,6 +21,7 @@ function LevelSummary({ title, summary, accentClassName }: { title: string; summ
         <StatTile label="Avg Odds" value={summary.averageOdds != null ? `${summary.averageOdds >= 0 ? "+" : ""}${summary.averageOdds}` : "—"} surfaceClassName="border-rose-100 bg-white" />
         <StatTile label="Flat-Bet ROI" value={summary.flatBetRoi != null ? `${summary.flatBetRoi}%` : "—"} tone={(summary.flatBetRoi ?? 0) >= 0 ? "positive" : "negative"} surfaceClassName="border-rose-100 bg-white" />
       </div>
+      <RoiCoverageNote roiEligible={summary.roiEligiblePlays} graded={summary.gradedPlays} unit="plays" />
     </div>
   );
 }

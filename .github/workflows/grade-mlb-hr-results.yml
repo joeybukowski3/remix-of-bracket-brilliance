@@ -86,11 +86,26 @@ jobs:
         continue-on-error: true
         run: node scripts/grade-sin-city-picks.mjs
 
+      # Postgame grading for the "Top HR Props Performance" and "Top K
+      # Props Performance" tracker sections: grades whatever was persisted
+      # pregame by persist-top-hr-picks.mjs / persist-top-k-picks.ts. Both
+      # reuse the same boxscore fetches already warm from HR grading above;
+      # failures here never block the core HR grading results.
+      - name: Grade Top HR Props picks
+        if: inputs.dry_run != 'true'
+        continue-on-error: true
+        run: node scripts/grade-top-hr-picks.mjs
+
+      - name: Grade Top K Props picks
+        if: inputs.dry_run != 'true'
+        continue-on-error: true
+        run: node scripts/grade-top-k-picks.mjs
+
       - name: Detect meaningful grading changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json public/data/mlb/sin-city-performance.json public/data/mlb/sin-city-performance-summary.json)" ]; then
+          if [ -z "$(git status --porcelain -- public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json public/data/mlb/sin-city-performance.json public/data/mlb/sin-city-performance-summary.json public/data/mlb/top-hr-performance.json public/data/mlb/top-hr-performance-summary.json public/data/mlb/top-k-performance.json public/data/mlb/top-k-performance-summary.json)" ]; then
             echo "No meaningful grading changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -111,6 +126,18 @@ jobs:
           if [ -f public/data/mlb/sin-city-performance-summary.json ]; then
             node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/sin-city-performance-summary.json','utf8')); console.log('Sin City summary JSON valid');"
           fi
+          if [ -f public/data/mlb/top-hr-performance.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/top-hr-performance.json','utf8')); console.log('Top HR performance JSON valid');"
+          fi
+          if [ -f public/data/mlb/top-hr-performance-summary.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/top-hr-performance-summary.json','utf8')); console.log('Top HR summary JSON valid');"
+          fi
+          if [ -f public/data/mlb/top-k-performance.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/top-k-performance.json','utf8')); console.log('Top K performance JSON valid');"
+          fi
+          if [ -f public/data/mlb/top-k-performance-summary.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/top-k-performance-summary.json','utf8')); console.log('Top K summary JSON valid');"
+          fi
 
       - name: Commit and push grading results
         if: steps.changes.outputs.changed == 'true'
@@ -119,7 +146,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json public/data/mlb/sin-city-performance.json public/data/mlb/sin-city-performance-summary.json
+          git add public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json public/data/mlb/sin-city-performance.json public/data/mlb/sin-city-performance-summary.json public/data/mlb/top-hr-performance.json public/data/mlb/top-hr-performance-summary.json public/data/mlb/top-k-performance.json public/data/mlb/top-k-performance-summary.json
 
           if git diff --cached --quiet; then
             echo "No staged grading changes."
