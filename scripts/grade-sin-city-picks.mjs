@@ -59,6 +59,7 @@ async function gradeRecord(record, loader) {
   const battingLine = {
     atBats: stat.atBats ?? null,
     hits: stat.hits ?? null,
+    doubles: stat.doubles ?? null,
     homeRuns: stat.homeRuns ?? null,
     totalBases: stat.totalBases ?? null,
     rbi: stat.rbi ?? null,

@@ -29,6 +29,7 @@ export type SinCityQualificationLevel = "5/5" | "4/5";
 export interface SinCityResultLine {
   atBats: number | null;
   hits: number | null;
+  doubles: number | null;
   homeRuns: number | null;
   totalBases: number | null;
   rbi: number | null;

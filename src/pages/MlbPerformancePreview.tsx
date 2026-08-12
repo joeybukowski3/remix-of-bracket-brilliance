@@ -38,7 +38,7 @@ export default function MlbPerformancePreview() {
         <p className="mt-1 text-sm text-slate-500">HR model, numerology, and Sin City grading history from the automated tracking workflows.</p>
         <p className="mt-2 text-xs text-slate-400">Read-only -- all figures below come directly from the generated model/grading data files.</p>
 
-        <div className="mt-6 space-y-10">
+        <div className="mt-6 space-y-6">
           {hr.loading && <p className="text-sm text-slate-500">Loading HR model performance…</p>}
           {hr.error && <p className="text-sm text-rose-600">Failed to load HR model performance: {hr.error}</p>}
           {hr.summary && hr.history && <HrModelSection summary={hr.summary} records={hr.history.records} />}

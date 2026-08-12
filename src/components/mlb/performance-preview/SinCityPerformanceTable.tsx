@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import type { SinCityPickRecord } from "@/types/mlbSinCity";
+import MobileAccordionRows from "./MobileAccordionRows";
+import type { PerformanceRow } from "./PerformanceRow";
 import PlayerCell from "./PlayerCell";
 import ResultBadge, { classifyResultStatus } from "./ResultBadge";
 import ResultFilter, { type ResultFilterValue } from "./ResultFilter";
@@ -19,6 +21,33 @@ function matchesFilter(record: SinCityPickRecord, filter: ResultFilterValue): bo
   return true;
 }
 
+function toPerformanceRow(record: SinCityPickRecord): PerformanceRow {
+  const line = record.battingLine;
+  return {
+    key: `${record.date}-${record.playerId}-${record.gameId}`,
+    date: record.date,
+    player: record.playerName,
+    team: record.team,
+    resultKind: classifyResultStatus(record.resultStatus),
+    compactLabel: "Qual.",
+    compactValue: record.qualificationLevel,
+    details: [
+      { label: "Opponent", value: textOrDash(record.opponent) },
+      { label: "Factors", value: factorsSummary(record) },
+      { label: "Odds", value: textOrDash(record.hrOddsYes) },
+      { label: "AB", value: numOrDash(line?.atBats ?? null) },
+      { label: "H", value: numOrDash(line?.hits ?? null) },
+      { label: "2B", value: numOrDash(line?.doubles ?? null) },
+      { label: "HR", value: numOrDash(line?.homeRuns ?? null) },
+      { label: "TB", value: numOrDash(line?.totalBases ?? null) },
+      { label: "RBI", value: numOrDash(line?.rbi ?? null) },
+      { label: "R", value: numOrDash(line?.runs ?? null) },
+      { label: "BB", value: numOrDash(line?.baseOnBalls ?? null) },
+      { label: "K", value: numOrDash(line?.strikeOuts ?? null) },
+    ],
+  };
+}
+
 export default function SinCityPerformanceTable({ records }: { records: SinCityPickRecord[] }) {
   const [filter, setFilter] = useState<ResultFilterValue>("all");
 
@@ -30,14 +59,20 @@ export default function SinCityPerformanceTable({ records }: { records: SinCityP
   }, [records, filter]);
 
   const { visibleRows, visibleCount, totalCount, hasMore, canShowAll, showMore, showAll } = usePaginatedRows(sortedFiltered);
+  const mobileRows = useMemo(() => visibleRows.map(toPerformanceRow), [visibleRows]);
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <ResultFilter value={filter} onChange={setFilter} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[920px] text-left text-xs">
+
+      <div className="sm:hidden">
+        <MobileAccordionRows rows={mobileRows} />
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-lg border border-slate-200 sm:block">
+        <table className="w-full min-w-[940px] text-left text-xs">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-400">
             <tr>
               <th className="px-3 py-2">Date</th>
@@ -49,6 +84,7 @@ export default function SinCityPerformanceTable({ records }: { records: SinCityP
               <th className="px-3 py-2">Result</th>
               <th className="px-3 py-2 text-right">AB</th>
               <th className="px-3 py-2 text-right">H</th>
+              <th className="px-3 py-2 text-right">2B</th>
               <th className="px-3 py-2 text-right">HR</th>
               <th className="px-3 py-2 text-right">TB</th>
               <th className="px-3 py-2 text-right">RBI</th>
@@ -61,7 +97,7 @@ export default function SinCityPerformanceTable({ records }: { records: SinCityP
             {visibleRows.map((record) => {
               const line = record.battingLine;
               return (
-                <tr key={`${record.date}-${record.playerId}-${record.gameId}`} className="hover:bg-slate-50">
+                <tr key={`${record.date}-${record.playerId}-${record.gameId}`} className="hover:bg-rose-50/60">
                   <td className="whitespace-nowrap px-3 py-2 text-slate-500">{record.date}</td>
                   <td className="px-3 py-2"><PlayerCell name={record.playerName} team={record.team} /></td>
                   <td className="px-3 py-2 text-slate-600">{record.opponent}</td>
@@ -71,6 +107,7 @@ export default function SinCityPerformanceTable({ records }: { records: SinCityP
                   <td className="px-3 py-2"><ResultBadge kind={classifyResultStatus(record.resultStatus)} /></td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.atBats ?? null)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.hits ?? null)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.doubles ?? null)}</td>
                   <td className="px-3 py-2 text-right tabular-nums font-bold">{numOrDash(line?.homeRuns ?? null)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.totalBases ?? null)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.rbi ?? null)}</td>
@@ -81,7 +118,7 @@ export default function SinCityPerformanceTable({ records }: { records: SinCityP
               );
             })}
             {visibleRows.length === 0 && (
-              <tr><td colSpan={15} className="px-3 py-6 text-center text-slate-400">No qualified plays match this filter yet.</td></tr>
+              <tr><td colSpan={16} className="px-3 py-6 text-center text-slate-400">No qualified plays match this filter yet.</td></tr>
             )}
           </tbody>
         </table>

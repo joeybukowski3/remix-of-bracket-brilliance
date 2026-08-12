@@ -40,6 +40,8 @@ export interface HrModelPerformanceSummary {
 export interface HrBattingLine {
   atBats: number | null;
   hits: number | null;
+  /** Present only for records backfilled after doubles capture was added; older-backfilled records may still be missing it until re-run. */
+  doubles?: number | null;
   totalBases: number | null;
   rbi: number | null;
   runs: number | null;

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import type { NumerologyPerformanceRecord } from "@/types/mlbNumerologyPerformance";
+import MobileAccordionRows from "./MobileAccordionRows";
+import type { PerformanceRow } from "./PerformanceRow";
 import PlayerCell from "./PlayerCell";
 import ResultBadge, { classifyResultStatus } from "./ResultBadge";
 import ResultFilter, { type ResultFilterValue } from "./ResultFilter";
@@ -28,6 +30,34 @@ function matchesFilter(record: NumerologyPerformanceRecord, filter: ResultFilter
   return true;
 }
 
+function toPerformanceRow(record: NumerologyPerformanceRecord): PerformanceRow {
+  const s = record.stats;
+  return {
+    key: record.id,
+    date: record.date,
+    player: record.player,
+    team: record.team,
+    resultKind: classifyResultStatus(record.resultStatus, record.hitHomeRun),
+    compactLabel: "Score",
+    compactValue: numOrDash(record.numerologyScore, 1),
+    details: [
+      { label: "Opponent", value: record.opponent || "—" },
+      { label: "Category", value: categoryLabel(record) },
+      { label: "Odds", value: record.hrOddsYes || "—" },
+      { label: "AB", value: numOrDash(s?.atBats ?? null) },
+      { label: "H", value: numOrDash(s?.hits ?? null) },
+      { label: "AVG", value: average(s?.hits ?? null, s?.atBats ?? null) },
+      { label: "2B", value: "—" },
+      { label: "HR", value: numOrDash(s?.homeRuns ?? null) },
+      { label: "TB", value: numOrDash(s?.totalBases ?? null) },
+      { label: "RBI", value: numOrDash(s?.rbi ?? null) },
+      { label: "R", value: numOrDash(s?.runs ?? null) },
+      { label: "BB", value: numOrDash(s?.baseOnBalls ?? null) },
+      { label: "K", value: numOrDash(s?.strikeOuts ?? null) },
+    ],
+  };
+}
+
 export default function NumerologyPerformanceTable({ records }: { records: NumerologyPerformanceRecord[] }) {
   const [filter, setFilter] = useState<ResultFilterValue>("all");
 
@@ -39,14 +69,20 @@ export default function NumerologyPerformanceTable({ records }: { records: Numer
   }, [records, filter]);
 
   const { visibleRows, visibleCount, totalCount, hasMore, canShowAll, showMore, showAll } = usePaginatedRows(sortedFiltered);
+  const mobileRows = useMemo(() => visibleRows.map(toPerformanceRow), [visibleRows]);
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <ResultFilter value={filter} onChange={setFilter} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[880px] text-left text-xs">
+
+      <div className="sm:hidden">
+        <MobileAccordionRows rows={mobileRows} />
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-lg border border-slate-200 sm:block">
+        <table className="w-full min-w-[900px] text-left text-xs">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-400">
             <tr>
               <th className="px-3 py-2">Date</th>
@@ -70,7 +106,7 @@ export default function NumerologyPerformanceTable({ records }: { records: Numer
             {visibleRows.map((record) => {
               const s = record.stats;
               return (
-                <tr key={record.id} className="hover:bg-slate-50">
+                <tr key={record.id} className="hover:bg-fuchsia-50/60">
                   <td className="whitespace-nowrap px-3 py-2 text-slate-500">{record.date}</td>
                   <td className="px-3 py-2"><PlayerCell name={record.player} team={record.team} /></td>
                   <td className="px-3 py-2 text-slate-600">{record.opponent}</td>

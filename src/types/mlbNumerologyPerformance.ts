@@ -48,6 +48,18 @@ export interface NumerologyPerformanceSummary {
   };
 }
 
+export interface NumerologySignal {
+  label: string;
+  matched: boolean;
+  points: number | null;
+  weight: number | null;
+  detail: string;
+  field: string;
+  type: string;
+  value: number | null;
+  root: number | null;
+}
+
 export interface NumerologyStatLine {
   atBats: number | null;
   hits: number | null;
@@ -77,6 +89,7 @@ export interface NumerologyPerformanceRecord {
   hrScoreRank: number | null;
   hrOddsYes: string | null;
   hrOddsBook: string | null;
+  numerologySignals: NumerologySignal[];
   resultStatus: "final" | "pending" | "missing-data" | string;
   hitHomeRun: boolean;
   stats: NumerologyStatLine | null;

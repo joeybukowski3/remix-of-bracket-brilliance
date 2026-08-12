@@ -56,6 +56,7 @@ function extractBattingLine(stat) {
   return {
     atBats: stat.atBats ?? null,
     hits: stat.hits ?? null,
+    doubles: stat.doubles ?? null,
     totalBases: stat.totalBases ?? null,
     rbi: stat.rbi ?? null,
     runs: stat.runs ?? null,
@@ -98,7 +99,14 @@ async function main() {
   // of the battingLineBackfilledAt marker key, not by battingLine truthiness
   // -- checking truthiness alone made did_not_play records look like
   // candidates on every subsequent run (null is falsy), breaking idempotency.
-  const isAlreadyBackfilled = (r) => Object.prototype.hasOwnProperty.call(r.result ?? {}, "battingLineBackfilledAt");
+  // Records backfilled before "doubles" capture was added won't have that
+  // key on their battingLine object -- treat those as still-candidates too,
+  // so a schema addition like this one gets picked up without --force.
+  const isAlreadyBackfilled = (r) => {
+    if (!Object.prototype.hasOwnProperty.call(r.result ?? {}, "battingLineBackfilledAt")) return false;
+    if (r.result.battingLine === null) return true;
+    return Object.prototype.hasOwnProperty.call(r.result.battingLine ?? {}, "doubles");
+  };
 
   const coverageBefore = records.filter((r) => FINALIZED_STATUSES.has(r.result?.status) && isAlreadyBackfilled(r)).length;
   const finalizedTotal = records.filter((r) => FINALIZED_STATUSES.has(r.result?.status)).length;

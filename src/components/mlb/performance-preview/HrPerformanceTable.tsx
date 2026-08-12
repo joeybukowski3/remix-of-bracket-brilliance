@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import type { HrPredictionRecord } from "@/types/mlbHrModelPerformance";
+import MobileAccordionRows from "./MobileAccordionRows";
+import type { PerformanceRow } from "./PerformanceRow";
 import PlayerCell from "./PlayerCell";
 import ResultBadge, { classifyResultStatus } from "./ResultBadge";
 import ResultFilter, { type ResultFilterValue } from "./ResultFilter";
@@ -15,6 +17,35 @@ function matchesFilter(record: HrPredictionRecord, filter: ResultFilterValue): b
   return true;
 }
 
+function toPerformanceRow(record: HrPredictionRecord): PerformanceRow {
+  const line = record.result.battingLine;
+  return {
+    key: `${record.date}-${record.playerId}-${record.gameId}`,
+    date: record.date,
+    player: record.playerName,
+    team: record.team,
+    resultKind: classifyResultStatus(record.result.status),
+    compactLabel: "HR Score",
+    compactValue: numOrDash(record.hrQualityScore, 1),
+    details: [
+      { label: "Opponent", value: textOrDash(record.opponent) },
+      { label: "Rank", value: numOrDash(record.hrRank) },
+      { label: "Confidence", value: textOrDash(record.confidenceLevel) },
+      { label: "Lineup", value: textOrDash(record.lineupStatus) },
+      { label: "Odds", value: textOrDash(record.hrOddsYes) },
+      { label: "AB", value: numOrDash(line?.atBats) },
+      { label: "H", value: numOrDash(line?.hits) },
+      { label: "2B", value: numOrDash(line?.doubles) },
+      { label: "HR", value: numOrDash(record.result.hrCount) },
+      { label: "TB", value: numOrDash(line?.totalBases) },
+      { label: "RBI", value: numOrDash(line?.rbi) },
+      { label: "R", value: numOrDash(line?.runs) },
+      { label: "BB", value: numOrDash(line?.baseOnBalls) },
+      { label: "K", value: numOrDash(line?.strikeOuts) },
+    ],
+  };
+}
+
 export default function HrPerformanceTable({ records }: { records: HrPredictionRecord[] }) {
   const [filter, setFilter] = useState<ResultFilterValue>("all");
 
@@ -26,14 +57,22 @@ export default function HrPerformanceTable({ records }: { records: HrPredictionR
   }, [records, filter]);
 
   const { visibleRows, visibleCount, totalCount, hasMore, canShowAll, showMore, showAll } = usePaginatedRows(sortedFiltered);
+  const mobileRows = useMemo(() => visibleRows.map(toPerformanceRow), [visibleRows]);
 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <ResultFilter value={filter} onChange={setFilter} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[960px] text-left text-xs">
+
+      {/* Mobile: compact accordion rows, no horizontal scroll. */}
+      <div className="sm:hidden">
+        <MobileAccordionRows rows={mobileRows} />
+      </div>
+
+      {/* Desktop: table. */}
+      <div className="hidden overflow-x-auto rounded-lg border border-slate-200 sm:block">
+        <table className="w-full min-w-[980px] text-left text-xs">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-400">
             <tr>
               <th className="px-3 py-2">Date</th>
@@ -47,6 +86,7 @@ export default function HrPerformanceTable({ records }: { records: HrPredictionR
               <th className="px-3 py-2">Result</th>
               <th className="px-3 py-2 text-right">AB</th>
               <th className="px-3 py-2 text-right">H</th>
+              <th className="px-3 py-2 text-right">2B</th>
               <th className="px-3 py-2 text-right">HR</th>
               <th className="px-3 py-2 text-right">TB</th>
               <th className="px-3 py-2 text-right">RBI</th>
@@ -59,7 +99,7 @@ export default function HrPerformanceTable({ records }: { records: HrPredictionR
             {visibleRows.map((record) => {
               const line = record.result.battingLine;
               return (
-                <tr key={`${record.date}-${record.playerId}-${record.gameId}`} className="hover:bg-slate-50">
+                <tr key={`${record.date}-${record.playerId}-${record.gameId}`} className="hover:bg-sky-50/60">
                   <td className="whitespace-nowrap px-3 py-2 text-slate-500">{record.date}</td>
                   <td className="px-3 py-2"><PlayerCell name={record.playerName} team={record.team} /></td>
                   <td className="px-3 py-2 text-slate-600">{record.opponent}</td>
@@ -71,6 +111,7 @@ export default function HrPerformanceTable({ records }: { records: HrPredictionR
                   <td className="px-3 py-2"><ResultBadge kind={classifyResultStatus(record.result.status)} /></td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.atBats)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.hits)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.doubles)}</td>
                   <td className="px-3 py-2 text-right tabular-nums font-bold">{numOrDash(record.result.hrCount)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.totalBases)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{numOrDash(line?.rbi)}</td>
@@ -81,7 +122,7 @@ export default function HrPerformanceTable({ records }: { records: HrPredictionR
               );
             })}
             {visibleRows.length === 0 && (
-              <tr><td colSpan={17} className="px-3 py-6 text-center text-slate-400">No graded plays match this filter.</td></tr>
+              <tr><td colSpan={18} className="px-3 py-6 text-center text-slate-400">No graded plays match this filter.</td></tr>
             )}
           </tbody>
         </table>

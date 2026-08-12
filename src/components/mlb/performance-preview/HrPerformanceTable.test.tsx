@@ -1,7 +1,18 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { HrPredictionRecord } from "@/types/mlbHrModelPerformance";
 import HrPerformanceTable from "./HrPerformanceTable";
+
+// jsdom does not evaluate CSS media queries, so both the "sm:hidden" mobile
+// accordion and the "hidden sm:block" desktop table are present in the DOM
+// simultaneously during tests -- helpers below scope queries to one or the
+// other rather than relying on document-wide uniqueness.
+function desktopTable(container: HTMLElement) {
+  return container.querySelector("table") as HTMLTableElement;
+}
+function mobileList(container: HTMLElement) {
+  return container.querySelector("ul") as HTMLUListElement;
+}
 
 function record(overrides: Partial<HrPredictionRecord> & { result?: Partial<HrPredictionRecord["result"]> } = {}, index = 0): HrPredictionRecord {
   return {
@@ -34,25 +45,25 @@ function record(overrides: Partial<HrPredictionRecord> & { result?: Partial<HrPr
       gradedAt: "2026-08-02T00:00:00Z",
       resolutionReason: null,
       attemptCount: 1,
-      battingLine: { atBats: 4, hits: 1, totalBases: 1, rbi: 0, runs: 0, baseOnBalls: 0, strikeOuts: 1 },
+      battingLine: { atBats: 4, hits: 1, doubles: 0, totalBases: 1, rbi: 0, runs: 0, baseOnBalls: 0, strikeOuts: 1 },
       ...overrides.result,
     },
   };
 }
 
-describe("HrPerformanceTable", () => {
+describe("HrPerformanceTable — desktop table", () => {
   it("renders exactly one row per record", () => {
     const records = [record({}, 0), record({}, 1), record({}, 2)];
-    render(<HrPerformanceTable records={records} />);
-    const rows = screen.getAllByText(/^Player \d$/);
+    const { container } = render(<HrPerformanceTable records={records} />);
+    const rows = within(desktopTable(container)).getAllByText(/^Player \d$/);
     expect(rows).toHaveLength(3);
   });
 
   it("defaults to the latest 20 records and reports the total count", () => {
     const records = Array.from({ length: 45 }, (_, i) => record({}, i));
-    render(<HrPerformanceTable records={records} />);
+    const { container } = render(<HrPerformanceTable records={records} />);
     expect(screen.getByText("Showing 20 of 45 graded plays")).toBeInTheDocument();
-    expect(screen.getAllByText(/^Player \d+$/)).toHaveLength(20);
+    expect(within(desktopTable(container)).getAllByText(/^Player \d+$/)).toHaveLength(20);
   });
 
   it("expands the visible count when Show More is clicked", () => {
@@ -67,10 +78,10 @@ describe("HrPerformanceTable", () => {
       record({ result: { status: "hit", hrCount: 1 } }, 0),
       record({ result: { status: "miss", hrCount: 0 } }, 1),
     ];
-    render(<HrPerformanceTable records={records} />);
+    const { container } = render(<HrPerformanceTable records={records} />);
     fireEvent.click(screen.getByRole("button", { name: "Hit" }));
-    expect(screen.getByText("Player 0")).toBeInTheDocument();
-    expect(screen.queryByText("Player 1")).not.toBeInTheDocument();
+    expect(within(desktopTable(container)).getByText("Player 0")).toBeInTheDocument();
+    expect(within(desktopTable(container)).queryByText("Player 1")).not.toBeInTheDocument();
   });
 
   it("renders missing batting-line stats as an em dash instead of blank or zero", () => {
@@ -83,7 +94,7 @@ describe("HrPerformanceTable", () => {
   it("does not break rendering for an unsupported team abbreviation", () => {
     const records = [record({ team: "ZZZ" }, 0)];
     expect(() => render(<HrPerformanceTable records={records} />)).not.toThrow();
-    expect(screen.getByText("Player 0")).toBeInTheDocument();
+    expect(screen.getAllByText("Player 0").length).toBeGreaterThan(0);
   });
 
   it("maps each result status to the correct badge text", () => {
@@ -94,11 +105,54 @@ describe("HrPerformanceTable", () => {
       record({ result: { status: "pending", battingLine: undefined } }, 3),
       record({ result: { status: "unresolved_retryable" } }, 4),
     ];
-    render(<HrPerformanceTable records={records} />);
-    expect(screen.getByText("HIT")).toBeInTheDocument();
-    expect(screen.getByText("MISS")).toBeInTheDocument();
-    expect(screen.getByText("DNP")).toBeInTheDocument();
-    expect(screen.getByText("PENDING")).toBeInTheDocument();
-    expect(screen.getByText("UNRESOLVED")).toBeInTheDocument();
+    const { container } = render(<HrPerformanceTable records={records} />);
+    const table = desktopTable(container);
+    expect(within(table).getByText("HIT")).toBeInTheDocument();
+    expect(within(table).getByText("MISS")).toBeInTheDocument();
+    expect(within(table).getByText("DNP")).toBeInTheDocument();
+    expect(within(table).getByText("PENDING")).toBeInTheDocument();
+    expect(within(table).getByText("UNRESOLVED")).toBeInTheDocument();
+  });
+
+  it("includes a 2B (doubles) column", () => {
+    const records = [record({}, 0)];
+    const { container } = render(<HrPerformanceTable records={records} />);
+    expect(within(desktopTable(container)).getByText("2B")).toBeInTheDocument();
+  });
+});
+
+describe("HrPerformanceTable — mobile accordion rows", () => {
+  it("renders one compact row per player, not a table", () => {
+    const records = [record({}, 0), record({}, 1), record({}, 2)];
+    const { container } = render(<HrPerformanceTable records={records} />);
+    const list = mobileList(container);
+    expect(list).toBeTruthy();
+    expect(within(list).getAllByRole("button")).toHaveLength(3);
+  });
+
+  it("does not expand any row by default", () => {
+    const records = [record({}, 0), record({}, 1)];
+    const { container } = render(<HrPerformanceTable records={records} />);
+    const buttons = within(mobileList(container)).getAllByRole("button");
+    for (const button of buttons) {
+      expect(button).toHaveAttribute("aria-expanded", "false");
+    }
+  });
+
+  it("expands a row to reveal detail stats when tapped, and collapses others", () => {
+    const records = [record({ playerName: "Alpha" }, 0), record({ playerName: "Beta" }, 1)];
+    const { container } = render(<HrPerformanceTable records={records} />);
+    const list = mobileList(container);
+    const alphaButton = within(list).getByText("Alpha").closest("button") as HTMLButtonElement;
+    fireEvent.click(alphaButton);
+    expect(alphaButton).toHaveAttribute("aria-expanded", "true");
+    expect(within(list).getByText("Opponent")).toBeInTheDocument();
+    expect(within(list).getByText("2B")).toBeInTheDocument();
+  });
+
+  it("shows the player's team logo in the mobile row", () => {
+    const records = [record({ team: "BOS" }, 0)];
+    const { container } = render(<HrPerformanceTable records={records} />);
+    expect(within(mobileList(container)).getByAltText("BOS logo")).toBeInTheDocument();
   });
 });
