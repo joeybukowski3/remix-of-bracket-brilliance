@@ -281,20 +281,14 @@ export default function NFLMatchupDetail() {
   const angles = useMemo(() => (matchup ? deriveAngles(matchup) : []), [matchup]);
 
   if (loading) {
-    return (
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container"><p className="text-sm text-slate-500">Loading matchup…</p></div>
-      </main>
-    );
+    return <p className="text-sm text-slate-500">Loading matchup…</p>;
   }
   if (error) {
     return (
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container">
-          <p className="text-sm font-semibold text-red-700">Could not load matchup data. Please try again later.</p>
-          <Link to="/nfl/matchups" className="mt-3 inline-block text-sm font-black text-emerald-700 hover:underline">← All matchups</Link>
-        </div>
-      </main>
+      <>
+        <p className="text-sm font-semibold text-red-700">Could not load matchup data. Please try again later.</p>
+        <Link to="/nfl/matchups" className="mt-3 inline-block text-sm font-black text-emerald-700 hover:underline">← All matchups</Link>
+      </>
     );
   }
   // Loaded but no matching game → safe redirect (invalid/unknown slug).
@@ -309,61 +303,62 @@ export default function NFLMatchupDetail() {
   });
 
   return (
-    <main className="site-page pb-16 pt-6">
-      <div className="site-container space-y-3">
-        <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
+    <div className="space-y-3">
+      <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
-        <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
+      <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
 
-        <MatchupTabRow
-          activeTab={navigation.tab}
-          onSelect={navigation.selectTab}
-          token={navigation.token}
+      <MatchupTabRow
+        activeTab={navigation.tab}
+        onSelect={navigation.selectTab}
+        token={navigation.token}
+      />
+
+      <div {...panelProps("overview")}>
+        <MatchupOverviewPanel
+          matchup={matchup}
+          categoryResults={categoryResults}
+          onOpenCategory={navigation.openCategory}
+          projection={projection}
+          market={market?.current ?? null}
+          projectionLoading={projectionLoading}
+          advantages={advantages}
+          angles={angles}
+          sampleLabel={sample?.label}
+          sampleSettings={sampleSettings}
+        />
+      </div>
+
+      <div {...panelProps("comparison")} className="space-y-3">
+        <MatchupDataControls
+          settings={sampleSettings}
+          onChange={setSampleSettings}
+          sampleLabel={sample?.label}
         />
 
-        <div {...panelProps("overview")}>
-          <MatchupOverviewPanel
-            matchup={matchup}
-            categoryResults={categoryResults}
-            onOpenCategory={navigation.openCategory}
-            projection={projection}
-            market={market?.current ?? null}
-            projectionLoading={projectionLoading}
-            advantages={advantages}
-            angles={angles}
-            sampleLabel={sample?.label}
-            sampleSettings={sampleSettings}
-          />
-        </div>
-
-        <div {...panelProps("comparison")} className="space-y-3">
-          <MatchupDataControls
-            settings={sampleSettings}
-            onChange={setSampleSettings}
-            sampleLabel={sample?.label}
-          />
-
-          <MatchupComparisonPanel
-            matchup={matchup}
-            categoryMetrics={categoryMetrics}
-            pendingCategory={navigation.category}
-            navigationToken={navigation.token}
-          >
-            {successArtifact && successRate && (
+        <MatchupComparisonPanel
+          matchup={matchup}
+          categoryMetrics={categoryMetrics}
+          pendingCategory={navigation.category}
+          navigationToken={navigation.token}
+          periodComparison={
+            successArtifact && successRate ? (
               <MatchupPeriodComparison
                 matchup={matchup}
                 successRate={successRate}
                 note={describeSuccessPeriods([...successRate.periods])}
               />
-            )}
+            ) : undefined
+          }
+        >
+          <MatchupUnitBattles
+            matchup={matchup}
+            resolver={metricResolver}
+            successRate={successRate}
+            trench={trench}
+          />
 
-            <MatchupUnitBattles
-              matchup={matchup}
-              resolver={metricResolver}
-              successRate={successRate}
-              trench={trench}
-            />
-
+          <div className="grid grid-cols-1 items-start gap-3 @[1080px]:grid-cols-2">
             <MatchupTrenches
               matchup={matchup}
               trench={trench}
@@ -371,61 +366,61 @@ export default function NFLMatchupDetail() {
             />
 
             <MatchupMarketProfile matchup={matchup} market={market} />
-          </MatchupComparisonPanel>
-        </div>
-
-        <div {...panelProps("availability")}>
-          <MatchupAvailabilityPanel
-            matchup={matchup}
-            resolver={injuryResolver}
-            unavailableMessage={describeUnavailable(injuryArtifact)}
-          />
-        </div>
-
-        <div {...panelProps("model")}>
-          <MatchupModelDetails
-            matchup={matchup}
-            projection={projection}
-            modelVersion={projectionArtifact?.modelVersion ?? null}
-            generatedAt={projectionArtifact?._meta?.generatedAt ?? null}
-            loading={projectionLoading}
-            error={projectionError}
-          />
-        </div>
-
-        {/* Stated once for the whole page, beneath every tab. */}
-        <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
-
-        {successArtifact && successRate && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
-          </p>
-        )}
-
-        {injuryArtifact && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            Injury and snap data: nflverse; snap counts via Pro-Football-Reference.
-          </p>
-        )}
-
-        {marketArtifact && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            Market data: nflverse / nfldata. A single source-published market line; the underlying
-            sportsbook composition is not disclosed.
-          </p>
-        )}
-
-        {epaArtifact && (
-          <p className="text-[11px] leading-5 text-slate-400">
-            EPA data: nflverse / nflfastR.
-          </p>
-        )}
-
-        <p className="text-[11px] leading-5 text-slate-400">
-          Informational model preview only — not betting advice. No pick, best bet, confidence
-          rating or stake size is produced anywhere on this page.
-        </p>
+          </div>
+        </MatchupComparisonPanel>
       </div>
-    </main>
+
+      <div {...panelProps("availability")}>
+        <MatchupAvailabilityPanel
+          matchup={matchup}
+          resolver={injuryResolver}
+          unavailableMessage={describeUnavailable(injuryArtifact)}
+        />
+      </div>
+
+      <div {...panelProps("model")}>
+        <MatchupModelDetails
+          matchup={matchup}
+          projection={projection}
+          modelVersion={projectionArtifact?.modelVersion ?? null}
+          generatedAt={projectionArtifact?._meta?.generatedAt ?? null}
+          loading={projectionLoading}
+          error={projectionError}
+        />
+      </div>
+
+      {/* Stated once for the whole page, beneath every tab. */}
+      <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
+
+      {successArtifact && successRate && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
+        </p>
+      )}
+
+      {injuryArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          Injury and snap data: nflverse; snap counts via Pro-Football-Reference.
+        </p>
+      )}
+
+      {marketArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          Market data: nflverse / nfldata. A single source-published market line; the underlying
+          sportsbook composition is not disclosed.
+        </p>
+      )}
+
+      {epaArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          EPA data: nflverse / nflfastR.
+        </p>
+      )}
+
+      <p className="text-[11px] leading-5 text-slate-400">
+        Informational model preview only — not betting advice. No pick, best bet, confidence
+        rating or stake size is produced anywhere on this page.
+      </p>
+    </div>
   );
 }

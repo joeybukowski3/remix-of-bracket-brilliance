@@ -51,6 +51,7 @@ export default function MatchupComparisonPanel({
   categoryMetrics,
   pendingCategory,
   navigationToken,
+  periodComparison,
   children,
 }: {
   matchup: NflMatchup;
@@ -59,7 +60,14 @@ export default function MatchupComparisonPanel({
   pendingCategory: MatchupCategoryId | null;
   /** Changes on every navigation so a repeat jump re-runs the sequence. */
   navigationToken: number;
-  /** Sections rendered beneath the statistical comparison. */
+  /**
+   * Success Rate by Period, paired beside Statistical Comparison once the
+   * surrounding container is wide enough for both to stay readable. Kept as
+   * its own prop rather than folded into `children` so this component can
+   * place it in the same row without guessing at children order.
+   */
+  periodComparison?: React.ReactNode;
+  /** Sections rendered beneath the statistical comparison row. */
   children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState<Partial<Record<MatchupCategoryId, boolean>>>(() => ({
@@ -92,66 +100,70 @@ export default function MatchupComparisonPanel({
   }, [pendingCategory, navigationToken]);
 
   return (
-    <div className="space-y-3">
-      <section
-        aria-labelledby="statistical-comparison-heading"
-        className="rounded-lg border border-slate-200 bg-white"
-      >
-        <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-          <h2
-            id="statistical-comparison-heading"
-            className="text-sm font-semibold text-slate-900"
-          >
-            Statistical Comparison
-          </h2>
-          <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-            League rank out of 32 — 1 is best. Every row states its advantage in words.
-          </p>
-        </div>
-
-        {MATCHUP_CATEGORIES.map((category) => {
-          const rows = categoryMetrics[category.id] ?? [];
-          return (
-            <MatchupCollapsibleGroup
-              key={category.id}
-              id={category.hash}
-              triggerId={matchupCategoryTriggerId(category.id)}
-              title={category.label}
-              meta={`${rows.length} metric${rows.length === 1 ? "" : "s"}`}
-              open={open[category.id] === true}
-              highlighted={highlighted === category.id}
-              triggerRef={(node) => {
-                if (node) triggerRefs.current.set(category.id, node);
-                else triggerRefs.current.delete(category.id);
-              }}
-              onToggle={() =>
-                setOpen((current) => ({ ...current, [category.id]: !current[category.id] }))
-              }
+    <div className="@container space-y-3">
+      <div className="grid grid-cols-1 items-start gap-3 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
+        <section
+          aria-labelledby="statistical-comparison-heading"
+          className="rounded-lg border border-slate-200 bg-white"
+        >
+          <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
+            <h2
+              id="statistical-comparison-heading"
+              className="text-sm font-semibold text-slate-900"
             >
-              <ComparisonColumnHeader matchup={matchup} />
-              {rows.map((metric) => (
-                <MatchupMetricRow
-                  key={metric.key}
-                  metric={metric}
-                  awayAbbr={matchup.away.abbr}
-                  homeAbbr={matchup.home.abbr}
-                  awayTeamName={matchup.away.teamName}
-                  homeTeamName={matchup.home.teamName}
-                />
-              ))}
-            </MatchupCollapsibleGroup>
-          );
-        })}
+              Statistical Comparison
+            </h2>
+            <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+              League rank out of 32 — 1 is best. Every row states its advantage in words.
+            </p>
+          </div>
 
-        {/* Rendered once per page, at the foot of the section it describes. */}
-        <div className="border-t border-slate-200 p-3 sm:p-4">
-          <MatchupRankLegend />
-          <p className="mt-2 text-[11px] leading-4 text-slate-600">
-            Colour is secondary — every value carries its numeric rank and every row states the
-            advantage in words.
-          </p>
-        </div>
-      </section>
+          {MATCHUP_CATEGORIES.map((category) => {
+            const rows = categoryMetrics[category.id] ?? [];
+            return (
+              <MatchupCollapsibleGroup
+                key={category.id}
+                id={category.hash}
+                triggerId={matchupCategoryTriggerId(category.id)}
+                title={category.label}
+                meta={`${rows.length} metric${rows.length === 1 ? "" : "s"}`}
+                open={open[category.id] === true}
+                highlighted={highlighted === category.id}
+                triggerRef={(node) => {
+                  if (node) triggerRefs.current.set(category.id, node);
+                  else triggerRefs.current.delete(category.id);
+                }}
+                onToggle={() =>
+                  setOpen((current) => ({ ...current, [category.id]: !current[category.id] }))
+                }
+              >
+                <ComparisonColumnHeader matchup={matchup} />
+                {rows.map((metric) => (
+                  <MatchupMetricRow
+                    key={metric.key}
+                    metric={metric}
+                    awayAbbr={matchup.away.abbr}
+                    homeAbbr={matchup.home.abbr}
+                    awayTeamName={matchup.away.teamName}
+                    homeTeamName={matchup.home.teamName}
+                  />
+                ))}
+              </MatchupCollapsibleGroup>
+            );
+          })}
+
+          {/* Rendered once per page, at the foot of the section it describes. */}
+          <div className="border-t border-slate-200 p-3 sm:p-4">
+            <MatchupRankLegend />
+            <p className="mt-2 text-[11px] leading-4 text-slate-600">
+              Colour is secondary — every value carries its numeric rank and every row states the
+              advantage in words.
+            </p>
+          </div>
+        </section>
+
+        {periodComparison}
+      </div>
 
       {children}
     </div>

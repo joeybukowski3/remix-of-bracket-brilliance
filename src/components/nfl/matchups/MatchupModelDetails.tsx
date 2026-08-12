@@ -110,90 +110,94 @@ export default function MatchupModelDetails({
 
   return (
     <div className="space-y-3">
-      <section
-        aria-labelledby="projection-breakdown-heading"
-        className="rounded-lg border border-slate-200 bg-white"
-      >
-        <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-          <h2 id="projection-breakdown-heading" className="text-sm font-semibold text-slate-900">
-            Projection Breakdown
-          </h2>
-          <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-            The three terms the model computes, in the order they are applied.
-          </p>
-        </div>
-
-        <div className="px-3 py-3 sm:px-4">
-          {loading ? (
-            <p className="text-[12px] font-semibold text-slate-600">
-              Loading the JKB projected spread…
-            </p>
-          ) : !projection ? (
-            <div>
-              <p className="rounded border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-[12px] font-semibold text-slate-600">
-                {error
-                  ? "The projection artifact could not be loaded for this matchup."
-                  : "Model projection not available for this matchup."}
-              </p>
-              <p className="mt-2 text-[11px] leading-4 text-slate-600">
-                No spread has been estimated to fill the gap.
+      <div className="@container">
+        <div className="grid grid-cols-1 items-start gap-3 @[960px]:grid-cols-[minmax(420px,44%)_minmax(460px,56%)]">
+          <section
+            aria-labelledby="projection-breakdown-heading"
+            className="rounded-lg border border-slate-200 bg-white"
+          >
+            <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
+              <h2 id="projection-breakdown-heading" className="text-sm font-semibold text-slate-900">
+                Projection Breakdown
+              </h2>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+                The three terms the model computes, in the order they are applied.
               </p>
             </div>
-          ) : (
-            <dl className="divide-y divide-slate-100">
-              {breakdown.map((row) => (
-                <div key={row.label} className="py-2 first:pt-0 last:pb-0">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[12px] font-semibold text-slate-800">{row.label}</dt>
-                    <dd className="shrink-0 text-[14px] font-bold tabular-nums text-slate-900">
-                      {row.value}
-                    </dd>
-                  </div>
-                  <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{row.detail}</p>
+
+            <div className="px-3 py-3 sm:px-4">
+              {loading ? (
+                <p className="text-[12px] font-semibold text-slate-600">
+                  Loading the JKB projected spread…
+                </p>
+              ) : !projection ? (
+                <div>
+                  <p className="rounded border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-[12px] font-semibold text-slate-600">
+                    {error
+                      ? "The projection artifact could not be loaded for this matchup."
+                      : "Model projection not available for this matchup."}
+                  </p>
+                  <p className="mt-2 text-[11px] leading-4 text-slate-600">
+                    No spread has been estimated to fill the gap.
+                  </p>
                 </div>
-              ))}
-            </dl>
+              ) : (
+                <dl className="divide-y divide-slate-100">
+                  {breakdown.map((row) => (
+                    <div key={row.label} className="py-2 first:pt-0 last:pb-0">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <dt className="text-[12px] font-semibold text-slate-800">{row.label}</dt>
+                        <dd className="shrink-0 text-[14px] font-bold tabular-nums text-slate-900">
+                          {row.value}
+                        </dd>
+                      </div>
+                      <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{row.detail}</p>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          </section>
+
+          {projection && (
+            <section
+              aria-labelledby="team-components-heading"
+              className="rounded-lg border border-slate-200 bg-white"
+            >
+              <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
+                <h2 id="team-components-heading" className="text-sm font-semibold text-slate-900">
+                  Team Components
+                </h2>
+                <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+                  Opponent-adjusted inputs behind each side&apos;s composite.
+                </p>
+              </div>
+
+              <div className="px-3 py-3 sm:px-4">
+                <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem] items-center gap-2 border-b border-slate-200 pb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-slate-600">
+                  <span>Component</span>
+                  <span className="text-right">{matchup.away.abbr.toUpperCase()}</span>
+                  <span className="text-right">{matchup.home.abbr.toUpperCase()}</span>
+                </div>
+                {TEAM_COMPONENT_ROWS.map((row) => (
+                  <div
+                    key={String(row.key)}
+                    className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem] items-center gap-2 border-b border-slate-100 py-1.5 last:border-0"
+                  >
+                    <span className="text-[11px] font-semibold text-slate-700">{row.label}</span>
+                    <span className="text-right text-[12px] font-bold tabular-nums text-slate-900">
+                      {row.format(projection.away)}
+                    </span>
+                    <span className="text-right text-[12px] font-bold tabular-nums text-slate-900">
+                      {row.format(projection.home)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
         </div>
-      </section>
-
-      {projection && (
-        <section
-          aria-labelledby="team-components-heading"
-          className="rounded-lg border border-slate-200 bg-white"
-        >
-          <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-            <h2 id="team-components-heading" className="text-sm font-semibold text-slate-900">
-              Team Components
-            </h2>
-            <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-              Opponent-adjusted inputs behind each side&apos;s composite.
-            </p>
-          </div>
-
-          <div className="px-3 py-3 sm:px-4">
-            <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem] items-center gap-2 border-b border-slate-200 pb-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-slate-600">
-              <span>Component</span>
-              <span className="text-right">{matchup.away.abbr.toUpperCase()}</span>
-              <span className="text-right">{matchup.home.abbr.toUpperCase()}</span>
-            </div>
-            {TEAM_COMPONENT_ROWS.map((row) => (
-              <div
-                key={String(row.key)}
-                className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem] items-center gap-2 border-b border-slate-100 py-1.5 last:border-0"
-              >
-                <span className="text-[11px] font-semibold text-slate-700">{row.label}</span>
-                <span className="text-right text-[12px] font-bold tabular-nums text-slate-900">
-                  {row.format(projection.away)}
-                </span>
-                <span className="text-right text-[12px] font-bold tabular-nums text-slate-900">
-                  {row.format(projection.home)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      </div>
 
       <section
         aria-labelledby="model-reference-heading"
