@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import type { HrModelPerformanceSummary, HrPredictionHistoryFile } from "@/types/mlbHrModelPerformance";
 import type { NumerologyPerformanceFile, NumerologyPerformanceSummary } from "@/types/mlbNumerologyPerformance";
@@ -105,33 +106,55 @@ vi.mock("@/hooks/useSinCityPerformance", () => ({
 
 const { default: MlbPerformancePreview } = await import("./MlbPerformancePreview");
 
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <MlbPerformancePreview />
+    </MemoryRouter>,
+  );
+}
+
 describe("MlbPerformancePreview", () => {
   it("renders all three section headings from real schema data", () => {
-    render(<MlbPerformancePreview />);
+    renderPage();
     expect(screen.getByText("HR Model Performance")).toBeInTheDocument();
     expect(screen.getByText("Numerology Performance")).toBeInTheDocument();
     expect(screen.getByText("Sin City Performance")).toBeInTheDocument();
   });
 
-  it("renders the internal-only banner", () => {
-    render(<MlbPerformancePreview />);
-    expect(screen.getByText(/Internal review page/)).toBeInTheDocument();
+  it("renders a return link to the MLB Hub", () => {
+    renderPage();
+    const backLink = screen.getByRole("link", { name: /MLB Hub/ });
+    expect(backLink).toHaveAttribute("href", "/mlb");
+  });
+
+  it("renders contextual links to HR Props and Numerology", () => {
+    renderPage();
+    expect(screen.getByRole("link", { name: "HR Props" })).toHaveAttribute("href", "/mlb/hr-props");
+    expect(screen.getByRole("link", { name: "Numerology" })).toHaveAttribute("href", "/mlb/numerology");
+  });
+
+  it("no longer describes itself as a hidden/internal-only preview", () => {
+    renderPage();
+    expect(screen.queryByText(/Internal review page/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/not linked from site navigation/)).not.toBeInTheDocument();
+    expect(screen.getByText("MLB Results Tracker")).toBeInTheDocument();
   });
 
   it("renders HR summary stat tiles from the summary schema", () => {
-    render(<MlbPerformancePreview />);
+    renderPage();
     expect(screen.getByText("Graded Predictions")).toBeInTheDocument();
     expect(screen.getByText("Overall HR Rate")).toBeInTheDocument();
   });
 
   it("renders numerology summary stat tiles from the summary schema", () => {
-    render(<MlbPerformancePreview />);
+    renderPage();
     expect(screen.getByText("Total Finalized")).toBeInTheDocument();
     expect(screen.getByText("Avg Total Bases")).toBeInTheDocument();
   });
 
   it("explains why Sin City has no fabricated historical data", () => {
-    render(<MlbPerformancePreview />);
+    renderPage();
     expect(screen.getByText(/could not be safely reconstructed/)).toBeInTheDocument();
   });
 });

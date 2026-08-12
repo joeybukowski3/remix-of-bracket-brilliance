@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AlertTriangle, BarChart3, CalendarDays, Dice5, Flame, Radar, Sparkles, Swords, TrendingUp } from "lucide-react";
+import { AlertTriangle, BarChart3, CalendarDays, Dice5, Flame, History, Radar, Sparkles, Swords, TrendingUp } from "lucide-react";
 import MlbHrBestBets from "@/components/mlb/MlbHrBestBets";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ const NAV_TILES = [
   { label: "Sin City", to: "/mlb/sin-city", bg: "bg-rose-500 hover:bg-rose-600", icon: <Dice5 className="h-3 w-3" /> },
   { label: "Vulnerable Pitchers", to: "/mlb/vulnerable-pitchers", bg: "bg-orange-500 hover:bg-orange-600", icon: <AlertTriangle className="h-3 w-3" /> },
   { label: "Numerology", to: "/mlb/numerology", bg: "bg-fuchsia-500 hover:bg-fuchsia-600", icon: <Sparkles className="h-3 w-3" /> },
+  { label: "Results Tracker", to: "/mlb/performance-preview", bg: "bg-teal-500 hover:bg-teal-600", icon: <History className="h-3 w-3" /> },
 ];
 
 const MLB_MAIN_DESKTOP_STYLES = `

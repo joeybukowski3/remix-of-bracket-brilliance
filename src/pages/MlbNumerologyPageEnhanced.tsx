@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Home, Search, Star, BookOpen } from "lucide-react";
+import { Calculator, History, Home, Search, Star, BookOpen } from "lucide-react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
 import { useMlbLiveLineups } from "@/hooks/useMlbLiveLineups";
@@ -97,6 +97,7 @@ export default function MlbNumerologyPageEnhanced() {
               <a className={desktopLink} href="#explorer"><Search className="h-4 w-4" />Explorer</a>
               <a className={desktopLink} href="#exact-matches"><Star className="h-4 w-4" />Exact Matches</a>
               <a className={desktopLink} href="#root-matches"><Calculator className="h-4 w-4" />Root Matches</a>
+              <a className={desktopLink} href="/mlb/performance-preview"><History className="h-4 w-4" />Results Tracker</a>
             </nav>
             <NumerologyKey />
           </aside>
@@ -131,6 +132,7 @@ export default function MlbNumerologyPageEnhanced() {
               <a className={mobileLink} href="#root-matches">Root</a>
               <a className={mobileLink} href="#methodology">Method</a>
               <a className={mobileLink} href="/mlb">MLB Home</a>
+              <a className={mobileLink} href="/mlb/performance-preview">Results Tracker</a>
               <button type="button" onClick={() => setKeySheetOpen(true)} className={`${mobileLink} col-span-3 flex items-center justify-center gap-1.5`}>
                 <BookOpen className="h-3.5 w-3.5" />
                 Numerology Key
