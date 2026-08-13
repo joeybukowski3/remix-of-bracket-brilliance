@@ -1,17 +1,9 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import FantasyFootball from "@/pages/FantasyFootball";
 import App from "@/App";
-import {
-  FANTASY_OPTIONAL_COLUMNS,
-  FANTASY_POSITION_FILTERS,
-  FANTASY_RANKINGS,
-  countByPosition,
-  filterFantasyRankings,
-  getPopulatedColumns,
-} from "@/lib/fantasy/rankings";
+import FantasyFootball from "@/pages/FantasyFootball";
 
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -24,152 +16,100 @@ vi.mock("@/hooks/usePageSeo", async () => ({
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={["/fantasy-football"]}>
-      <Routes>
-        <Route path="/fantasy-football" element={<FantasyFootball />} />
-      </Routes>
+      <Routes><Route path="/fantasy-football" element={<FantasyFootball />} /></Routes>
     </MemoryRouter>,
   );
 }
 
-afterEach(() => {
-  window.history.pushState({}, "", "/");
-});
+afterEach(() => window.history.pushState({}, "", "/"));
 
-describe("/fantasy-football", () => {
-  it("renders the section header and rankings shell", () => {
+describe("/fantasy-football research board", () => {
+  it("uses the approved historical replacement labels", () => {
     renderPage();
-    expect(screen.getByRole("heading", { level: 1, name: /Fantasy Football Rankings/i })).toBeTruthy();
-    expect(screen.getByRole("region", { name: /Overall rankings/i })).toBeTruthy();
-  });
-
-  it("renders the published 250-row rankings instead of an empty state", () => {
-    renderPage();
-    const table = screen.getByRole("table");
-    const playerRows = within(table)
-      .getAllByRole("button")
-      .filter((button) => button.getAttribute("aria-label")?.startsWith("Show details for"));
-    expect(playerRows.length).toBe(250);
-    expect(screen.getByText("Jahmyr Gibbs")).toBeTruthy();
-    expect(screen.getByText("Devin Singletary")).toBeTruthy();
-    expect(screen.queryByText(/No matching players/i)).toBeNull();
+    for (const [button, label] of [
+      ["QB 31", "QB13"],
+      ["RB 85", "RB25"],
+      ["WR 100", "WR37"],
+      ["TE 34", "TE13"],
+    ] as const) {
+      fireEvent.click(screen.getByRole("button", { name: button }));
+      expect(screen.getByText(/PAR baseline:/i)).toHaveTextContent(label);
+    }
   }, 30000);
 
-  it("exposes the position filter architecture with Overall selected", () => {
+  it("renders the full JKB board and PAR methodology", () => {
+    renderPage();
+    expect(screen.getByRole("heading", { level: 1, name: "2026 Fantasy PAR Rankings" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Overall fantasy rankings" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "How this board is built" })).toBeTruthy();
+    expect(screen.getByText(/Consensus position rank never assigns a tier/i)).toBeTruthy();
+  });
+
+  it("preserves the compact 250-player overall board", () => {
+    renderPage();
+    expect(screen.getAllByRole("button", { name: /Show details for/i })).toHaveLength(250);
+    expect(screen.queryByText("Tier 1")).toBeNull();
+  }, 30000);
+
+  it("labels filters with full JKB position-board sizes", () => {
     renderPage();
     const group = screen.getByRole("group", { name: "Position" });
-    expect(group).toBeTruthy();
-    expect(within(group).getByRole("button", { name: "Overall" })).toHaveAttribute("aria-pressed", "true");
-    for (const name of ["QB", "RB", "WR", "TE"]) {
+    expect(within(group).getByRole("button", { name: "Overall 250" })).toHaveAttribute("aria-pressed", "true");
+    for (const name of ["QB 31", "RB 85", "WR 100", "TE 34"]) {
       expect(within(group).getByRole("button", { name })).toHaveAttribute("aria-pressed", "false");
     }
-    expect(FANTASY_POSITION_FILTERS).toEqual(["ALL", "QB", "RB", "WR", "TE"]);
   });
 
-  it("keeps the primary view compact with draft-context columns", () => {
+  it("shows approved tiers followed by the untiered outside pool", () => {
     renderPage();
-    const table = screen.getByRole("table");
-    const headerCells = within(table).getAllByRole("columnheader");
-    const headerLabels = headerCells.map((cell) => cell.textContent ?? "");
-    expect(headerLabels).toContain("Pos Rank");
-    expect(headerLabels).toContain("Rd/Pick");
-    expect(headerLabels).toContain("AVG");
-    // Deeper workbook fields are not default columns; they live in the expandable row.
-    expect(headerLabels).not.toContain("SOS");
-    expect(headerLabels).not.toContain("Late");
-    expect(headerLabels).not.toContain("Vegas");
-    expect(headerLabels).not.toContain("Notes");
-    expect(headerLabels).not.toContain("Bye");
-    expect(headerLabels).not.toContain("ADP");
-  });
+    fireEvent.click(screen.getByRole("button", { name: "QB 31" }));
+    expect(screen.getByRole("heading", { level: 3, name: "Quarterbacks" })).toBeTruthy();
+    expect(screen.getByText("Tier 1")).toBeTruthy();
+    expect(screen.getByText("Tier 6")).toBeTruthy();
+    expect(screen.getByText("Outside Draft Pool")).toBeTruthy();
+    expect(screen.getByText(/18 tier eligible/i)).toBeTruthy();
+    expect(screen.getByText(/QB13 = 17.57 PPG/i)).toBeTruthy();
+  }, 30000);
 
-  it("expands a player row to reveal metrics, ranks and playoff schedule", () => {
+  it("searches players outside the PAR tier universe", () => {
     renderPage();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search players" }), {
-      target: { value: "gibbs" },
-    });
-    const expander = screen.getByRole("button", { name: "Show details for Jahmyr Gibbs" });
-    fireEvent.click(expander);
-    expect(screen.getByText("RB Metrics")).toBeTruthy();
-    expect(screen.getByText("Touches")).toBeTruthy();
-    expect(screen.getByText("Red Zone Touches")).toBeTruthy();
-    expect(screen.getByText("YPC")).toBeTruthy();
-    expect(screen.getByText("WAR")).toBeTruthy();
-    expect(screen.getByText("Vegas")).toBeTruthy();
-    expect(screen.getByText("Playoff Schedule")).toBeTruthy();
-    expect(screen.getByText("Week 15")).toBeTruthy();
-    expect(screen.getByText("@MIN")).toBeTruthy();
-  });
-
-  it("collapses the expanded row when the expander is clicked again", () => {
-    renderPage();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search players" }), {
-      target: { value: "gibbs" },
-    });
-    const expander = screen.getByRole("button", { name: "Show details for Jahmyr Gibbs" });
-    fireEvent.click(expander);
-    expect(screen.getByText("RB Metrics")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Hide details for Jahmyr Gibbs" }));
-    expect(screen.queryByText("RB Metrics")).toBeNull();
-  });
-
-  it("filters the table by free-text query and shows the empty state for no matches", () => {
-    renderPage();
-    const search = screen.getByRole("searchbox", { name: "Search players" });
-    fireEvent.change(search, { target: { value: "mahomes" } });
-    expect(screen.getByText("Patrick Mahomes")).toBeTruthy();
-    expect(screen.queryByText("Jahmyr Gibbs")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "RB 85" }));
+    const search = screen.getByRole("searchbox", { name: "Search fantasy rankings" });
+    fireEvent.change(search, { target: { value: "Devin Singletary" } });
+    expect(screen.getByText("Devin Singletary")).toBeTruthy();
+    expect(screen.getByText("Outside Draft Pool")).toBeTruthy();
     fireEvent.change(search, { target: { value: "zzz-no-player" } });
-    expect(screen.getByText(/No matching players/i)).toBeTruthy();
-  });
+    expect(screen.getByText(/No players match/i)).toBeTruthy();
+  }, 30000);
 
-  it("counts by position across the full ranking set", () => {
-    expect(countByPosition(FANTASY_RANKINGS.rows)).toEqual({ QB: 31, RB: 85, WR: 100, TE: 34 });
-    expect(Object.values(countByPosition(FANTASY_RANKINGS.rows)).reduce((a, b) => a + b, 0)).toBe(250);
-  });
+  it("renders position columns and omits empty WR and TE Vegas columns", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "RB 85" }));
+    expect(screen.getByText("Touches Rk")).toBeTruthy();
+    expect(screen.getByText("Red Zone Touches Rk")).toBeTruthy();
+    expect(screen.getByText("Vegas Rk")).toBeTruthy();
+    for (const week of ["W15", "W16", "W17"]) expect(screen.getByText(week)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "WR 100" }));
+    expect(screen.getByText("Target % Rk")).toBeTruthy();
+    expect(screen.queryByText("Vegas Rk")).toBeNull();
+  }, 30000);
 
-  it("filters the ranking set by position and free-text query", () => {
-    const te = filterFantasyRankings(FANTASY_RANKINGS.rows, "TE", "");
-    expect(te.length).toBe(34);
-    expect(te.every((row) => row.position === "TE")).toBe(true);
-    expect(filterFantasyRankings(FANTASY_RANKINGS.rows, "ALL", "mahomes").map((row) => row.player)).toEqual([
-      "Patrick Mahomes",
-    ]);
-  });
+  it("renders logos, conditional cells, mobile modes, and expandable PAR details", () => {
+    const { container } = renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "QB 31" }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search fantasy rankings" }), { target: { value: "Josh Allen" } });
+    expect(screen.getByRole("img", { name: "BUF" })).toBeTruthy();
+    expect(container.querySelector(".bg-emerald-50, .bg-rose-50")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Model" }));
+    expect(screen.getByRole("button", { name: "Model" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Show details for Josh Allen" }));
+    expect(screen.getByText("23.27")).toBeTruthy();
+    expect(screen.getByText("17.57")).toBeTruthy();
+  }, 30000);
 
-  it("reports which optional columns a dataset actually populates", () => {
-    const populated = getPopulatedColumns(FANTASY_RANKINGS.rows);
-    expect(populated).toContain("positionRank");
-    expect(populated).toContain("warRank");
-    expect(populated).toContain("vegasRank");
-    expect(populated).toContain("strengthOfSchedule");
-    expect(populated).toContain("offensiveLineRank");
-    expect(populated).not.toContain("adp");
-    expect(populated).not.toContain("byeWeek");
-    expect(populated).not.toContain("notes");
-  });
-
-  it("is reachable at /fantasy-football through the app router", async () => {
+  it("is reachable through the existing app route", async () => {
     window.history.pushState({}, "", "/fantasy-football");
     render(<App />);
-    expect(await screen.findByText(/Fantasy Football Rankings/i)).toBeTruthy();
-  });
-
-  it("anticipates the full field set without requiring any of it", () => {
-    const keys = FANTASY_OPTIONAL_COLUMNS.map((column) => column.key);
-    expect(keys).toEqual(
-      expect.arrayContaining([
-        "positionRank",
-        "byeWeek",
-        "customScore",
-        "adp",
-        "consensusRank",
-        "projectedPoints",
-        "priorSeasonRank",
-        "lateSeasonRank",
-        "strengthOfSchedule",
-        "tier",
-        "notes",
-      ]),
-    );
+    expect(await screen.findByRole("heading", { level: 1, name: "2026 Fantasy PAR Rankings" })).toBeTruthy();
   });
 });
