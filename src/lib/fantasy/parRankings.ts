@@ -39,6 +39,26 @@ export type FantasyParRankingRow = {
   jkbOverallRank?: number;
 };
 
+export type FantasyResearchBoardRow = {
+  key: string;
+  player: string;
+  team?: string;
+  position: FantasyPosition;
+  jkb?: FantasyRankingRow;
+  par?: FantasyParRankingRow;
+  tier?: number;
+};
+
+export type FantasyPositionResearchBoard = {
+  position: FantasyPosition;
+  jkbRowCount: number;
+  tierGroups: ReadonlyArray<{
+    tier: number;
+    rows: readonly FantasyResearchBoardRow[];
+  }>;
+  outsideDraftPool: readonly FantasyResearchBoardRow[];
+};
+
 type TierBoundary = {
   tier: number;
   start: number;
@@ -242,6 +262,70 @@ export const FANTASY_PAR_RANKINGS = buildFantasyParRankings(rawRows, FANTASY_RAN
 
 export const FANTASY_PAR_ROWS: readonly FantasyParRankingRow[] = PAR_POSITIONS.flatMap(
   (position) => FANTASY_PAR_RANKINGS[position],
+);
+
+export function buildFantasyPositionResearchBoards(
+  parRankings: Record<FantasyPosition, readonly FantasyParRankingRow[]>,
+  jkbRows: readonly FantasyRankingRow[],
+): Record<FantasyPosition, FantasyPositionResearchBoard> {
+  return Object.fromEntries(
+    PAR_POSITIONS.map((position) => {
+      const positionJkbRows = jkbRows
+        .filter((row) => row.position === position)
+        .sort((a, b) => (a.positionRank ?? Number.POSITIVE_INFINITY) - (b.positionRank ?? Number.POSITIVE_INFINITY));
+      const jkbByOverallRank = new Map(positionJkbRows.map((row) => [row.overallRank, row]));
+      const tieredJkbOverallRanks = new Set<number>();
+
+      const tierGroups = PAR_TIER_BOUNDARIES[position].map(({ tier }) => {
+        const rows = parRankings[position]
+          .filter((row) => row.tier === tier)
+          .map((par): FantasyResearchBoardRow => {
+            const jkb = par.jkbOverallRank == null ? undefined : jkbByOverallRank.get(par.jkbOverallRank);
+            if (jkb) {
+              if (tieredJkbOverallRanks.has(jkb.overallRank)) {
+                throw new Error(`JKB player ${jkb.player} joined more than one approved PAR row.`);
+              }
+              tieredJkbOverallRanks.add(jkb.overallRank);
+            }
+            return {
+              key: par.sourceId,
+              player: jkb?.player ?? par.player,
+              team: jkb?.team ?? par.team.toLowerCase(),
+              position,
+              jkb,
+              par,
+              tier,
+            };
+          });
+        return { tier, rows };
+      });
+
+      const outsideDraftPool = positionJkbRows
+        .filter((row) => !tieredJkbOverallRanks.has(row.overallRank))
+        .map((jkb): FantasyResearchBoardRow => ({
+          key: `jkb-${jkb.overallRank}`,
+          player: jkb.player,
+          team: jkb.team,
+          position,
+          jkb,
+        }));
+
+      return [
+        position,
+        {
+          position,
+          jkbRowCount: positionJkbRows.length,
+          tierGroups,
+          outsideDraftPool,
+        },
+      ];
+    }),
+  ) as Record<FantasyPosition, FantasyPositionResearchBoard>;
+}
+
+export const FANTASY_POSITION_RESEARCH_BOARDS = buildFantasyPositionResearchBoards(
+  FANTASY_PAR_RANKINGS,
+  FANTASY_RANKINGS.rows,
 );
 
 export function filterFantasyParRankings(

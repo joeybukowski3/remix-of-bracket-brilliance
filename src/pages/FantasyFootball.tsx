@@ -4,7 +4,7 @@ import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 
-/** 2026 fantasy rankings built from the approved consensus points-above-replacement source. */
+/** 2026 JKB fantasy research board with PAR-derived position tiers. */
 export default function FantasyFootball() {
   const seo = getSeoMeta("fantasy-football");
   usePageSeo({
@@ -19,7 +19,7 @@ export default function FantasyFootball() {
       <NflPageHeader
         eyebrow="Fantasy Football"
         title="2026 Fantasy PAR Rankings"
-        description="Position-by-position draft tiers built from projected points above a historical replacement baseline, with Joe Knows Ball rank preserving the draft-board order inside each tier."
+        description="The full Joe Knows Ball research board, organized by position evidence, model ranks, team context and fantasy-playoff schedule. Approved PAR/G drives draft-pool tiers only."
       />
 
       <div className="mt-4 space-y-4">
@@ -29,13 +29,13 @@ export default function FantasyFootball() {
           <h2 id="par-method-heading" className="text-sm font-bold text-slate-900">How this board is built</h2>
           <div className="mt-2 grid gap-3 text-xs leading-5 text-slate-600 md:grid-cols-3">
             <p>
-              <strong className="text-slate-900">Universe:</strong> QB18, RB66, WR78 and TE18 from the approved 2026 consensus projection source. Kicker and defense projections are excluded.
+              <strong className="text-slate-900">Board universe:</strong> Every existing JKB-ranked QB, RB, WR and TE remains visible. Kicker and defense projections are excluded from validated PAR logic.
             </p>
             <p>
-              <strong className="text-slate-900">Tier signal:</strong> Players are ranked by PAR/G within their position universe. The approved PAR-rank boundaries determine tier membership.
+              <strong className="text-slate-900">Tier signal:</strong> QB18, RB66, WR78 and TE18 are ranked by PAR/G within position. The approved PAR-rank boundaries determine tier membership.
             </p>
             <p>
-              <strong className="text-slate-900">Board order:</strong> JKB position rank orders players inside each tier when available. Consensus position rank never assigns a tier.
+              <strong className="text-slate-900">Board order:</strong> JKB position rank orders players inside tiers and the untiered outside pool. Consensus position rank never assigns a tier.
             </p>
           </div>
         </section>

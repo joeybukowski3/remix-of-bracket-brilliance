@@ -3,11 +3,13 @@ import parConsensusSource from "../../../data/fantasy/2026-par-consensus.json";
 import {
   FANTASY_PAR_RANKINGS,
   FANTASY_PAR_ROWS,
+  FANTASY_POSITION_RESEARCH_BOARDS,
   PAR_POSITION_LIMITS,
   PAR_POSITIONS,
   PAR_TIER_BOUNDARIES,
   type FantasyParSourceRow,
 } from "@/lib/fantasy/parRankings";
+import { FANTASY_RANKINGS, countByPosition } from "@/lib/fantasy/rankings";
 
 const sourceRows = parConsensusSource as readonly FantasyParSourceRow[];
 
@@ -107,5 +109,29 @@ describe("2026 consensus PAR rankings", () => {
         );
       }
     }
+  });
+
+  it("keeps every JKB position row accessible while limiting tiers to approved universes", () => {
+    const expectedCounts = countByPosition(FANTASY_RANKINGS.rows);
+    for (const position of PAR_POSITIONS) {
+      const board = FANTASY_POSITION_RESEARCH_BOARDS[position];
+      const tierRows = board.tierGroups.flatMap((group) => group.rows);
+      const visibleJkbRows = [
+        ...tierRows.flatMap((row) => row.jkb ? [row.jkb] : []),
+        ...board.outsideDraftPool.map((row) => row.jkb!),
+      ];
+      expect(tierRows).toHaveLength(PAR_POSITION_LIMITS[position]);
+      expect(board.jkbRowCount).toBe(expectedCounts[position]);
+      expect(visibleJkbRows).toHaveLength(expectedCounts[position]);
+      expect(new Set(visibleJkbRows.map((row) => row.overallRank)).size).toBe(expectedCounts[position]);
+      expect(board.outsideDraftPool.every((row) => row.tier == null && row.par == null)).toBe(true);
+    }
+  });
+
+  it("retains the historical QB baseline when all eligible QBs have positive PAR", () => {
+    expect(FANTASY_PAR_RANKINGS.QB.every((row) => row.parPerGame > 0)).toBe(true);
+    expect(new Set(FANTASY_PAR_RANKINGS.QB.map((row) => row.replacementPpg))).toEqual(
+      new Set([17.566666666666666]),
+    );
   });
 });
