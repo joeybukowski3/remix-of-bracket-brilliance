@@ -1,10 +1,10 @@
 {
   "date": "2026-08-13",
-  "generatedAt": "2026-08-13T13:55:13.970Z",
+  "generatedAt": "2026-08-13T15:27:55.284Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rogers Centre and Yankee Stadium lead the slate with park factors of 1.08 and 1.18, while Scherzer and Gilbert face lineups that post elevated barrel and exit-velo marks. The Dodgers-Milwaukee matchup at UNIQLO Field (1.10) adds another hitter-friendly venue, and lefty-lefty exposure for Murakami against Abbott stands out as the clearest platoon edge.",
-    "modelNote": "The model is weighting barrel rate, hard-hit rate, and park factor most heavily today, elevating Abreu and Contreras at the top because their contact quality aligns with the highest-scoring park on the slate."
+    "slateOverview": "Rogers Centre and Yankee Stadium lead the slate with 1.08-1.18 park factors, while Nationals Park and loanDepot park suppress power. Scherzer vs Abreu/Contreras and Gausman vs Ortiz/Pinckney create the clearest HR edges, with lefty Abbott and righty Martin offering secondary value in CWS/CIN.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over recent form, elevating Abreu and Contreras despite modest last-30 HR totals."
   },
   "bestBets": [
     {
@@ -46,77 +46,18 @@
       "hrValueEdge": null
     },
     {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "CIN",
-      "opposingPitcher": "Andrew Abbott",
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "CHC",
+      "opposingPitcher": "Kevin Gausman",
       "hrScoreRank": 3,
-      "topStats": [
-        "barrel=20.4%",
-        "HH=59.7%"
-      ],
-      "bullets": [
-        "park=1.07",
-        "hrScore=65.7"
-      ],
-      "hrOddsYes": "+374",
-      "marketImpliedProbability": 0.2109704641350211,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "CHC",
-      "opposingPitcher": "Kevin Gausman",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Hard Hit%=47.6",
-        "Pitcher HR VS=45.9"
-      ],
-      "bullets": [
-        "HR score 65.5 (#4)",
-        "Pitcher HR VS 45.9 at park 0.98"
-      ],
-      "hrOddsYes": "+510",
-      "marketImpliedProbability": 0.16393442622950818,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andrew Pinckney",
-      "team": "WSH",
-      "opponent": "CHC",
-      "opposingPitcher": "Kevin Gausman",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Hard Hit%=60.0",
-        "Pitcher HR VS=45.9"
-      ],
-      "bullets": [
-        "HR score 63.9 (#5)",
-        "Pitcher HR VS 45.9 at park 0.98"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "CHC",
-      "opposingPitcher": "Kevin Gausman",
-      "hrScoreRank": 4,
       "topStats": [
         "barrel=19%",
         "HH=47.6%"
       ],
       "bullets": [
         "park=0.98",
-        "hrScore=65.5"
+        "hrScore=65.6"
       ],
       "hrOddsYes": "+510",
       "marketImpliedProbability": 0.16393442622950818,
@@ -128,18 +69,77 @@
       "team": "WSH",
       "opponent": "CHC",
       "opposingPitcher": "Kevin Gausman",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Hard Hit%=60.0",
+        "Pitcher HR VS=45.9"
+      ],
+      "bullets": [
+        "HR score 64.0 (#4)",
+        "Pitcher HR VS 45.9 at park 0.98"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "CIN",
+      "opposingPitcher": "Andrew Abbott",
       "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=54.4",
+        "Hard Hit%=46.0"
+      ],
+      "bullets": [
+        "HR score 63.1 (#5)",
+        "Pitcher HR VS 54.4 at park 1.07"
+      ],
+      "hrOddsYes": "+362",
+      "marketImpliedProbability": 0.21645021645021645,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Andrew Pinckney",
+      "team": "WSH",
+      "opponent": "CHC",
+      "opposingPitcher": "Kevin Gausman",
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=20%",
         "HH=60%"
       ],
       "bullets": [
         "park=0.98",
-        "hrScore=63.9"
+        "hrScore=64"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
       "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "CIN",
+      "opposingPitcher": "Andrew Abbott",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=14.2%",
+        "HH=46%"
+      ],
+      "bullets": [
+        "park=1.07",
+        "hrScore=63.1"
+      ],
+      "hrOddsYes": "+362",
+      "marketImpliedProbability": 0.21645021645021645,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -154,7 +154,7 @@
       ],
       "bullets": [
         "park=0.88",
-        "hrScore=62.7"
+        "hrScore=62.6"
       ],
       "hrOddsYes": "+465",
       "marketImpliedProbability": 0.17699115044247787,
@@ -191,7 +191,7 @@
         "Pitcher HR VS=44.4"
       ],
       "bullets": [
-        "HR score 62.3 (#8)",
+        "HR score 62.2 (#8)",
         "Pitcher HR VS 44.4 at park 1.10"
       ],
       "hrOddsYes": "+300",
@@ -232,29 +232,10 @@
       ],
       "bullets": [
         "park=1.1",
-        "hrScore=62.3"
+        "hrScore=62.2"
       ],
       "hrOddsYes": "+300",
       "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Angel Genao",
-      "team": "CLE",
-      "opponent": "DET",
-      "opposingPitcher": "Keider Montero",
-      "hrScoreRank": 23,
-      "topStats": [
-        "Hard Hit%=59.1",
-        "Pitcher HR VS=45.8"
-      ],
-      "bullets": [
-        "HR score 52.3 (#23)",
-        "Pitcher HR VS 45.8 at park 0.95"
-      ],
-      "hrOddsYes": "+755",
-      "marketImpliedProbability": 0.11695906432748537,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +244,36 @@
       "team": "CIN",
       "opponent": "CWS",
       "opposingPitcher": "Davis Martin",
-      "hrScoreRank": 18,
+      "hrScoreRank": 19,
       "topStats": [
         "Pitcher HR VS=54.4",
         "Hard Hit%=46.3"
       ],
       "bullets": [
-        "HR score 54.2 (#18)",
+        "HR score 54.2 (#19)",
         "Pitcher HR VS 54.4 at park 1.07"
       ],
       "hrOddsYes": "+575",
       "marketImpliedProbability": 0.14814814814814814,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Randal Grichuk",
+      "team": "CWS",
+      "opponent": "CIN",
+      "opposingPitcher": "Andrew Abbott",
+      "hrScoreRank": 24,
+      "topStats": [
+        "Pitcher HR VS=54.4",
+        "Hard Hit%=47.0"
+      ],
+      "bullets": [
+        "HR score 52.4 (#24)",
+        "Pitcher HR VS 54.4 at park 1.07"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
