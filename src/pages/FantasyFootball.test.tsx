@@ -24,6 +24,19 @@ function renderPage() {
 afterEach(() => window.history.pushState({}, "", "/"));
 
 describe("/fantasy-football research board", () => {
+  it("uses the approved historical replacement labels", () => {
+    renderPage();
+    for (const [button, label] of [
+      ["QB 31", "QB13"],
+      ["RB 85", "RB25"],
+      ["WR 100", "WR37"],
+      ["TE 34", "TE13"],
+    ] as const) {
+      fireEvent.click(screen.getByRole("button", { name: button }));
+      expect(screen.getByText(/PAR baseline:/i)).toHaveTextContent(label);
+    }
+  }, 30000);
+
   it("renders the full JKB board and PAR methodology", () => {
     renderPage();
     expect(screen.getByRole("heading", { level: 1, name: "2026 Fantasy PAR Rankings" })).toBeTruthy();

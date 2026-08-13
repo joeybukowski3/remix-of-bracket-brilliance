@@ -37,7 +37,7 @@ const POSITION_NAMES: Record<FantasyPosition, string> = {
   WR: "Wide receivers",
   TE: "Tight ends",
 };
-const BASELINE_LABELS: Record<FantasyPosition, string> = { QB: "QB13", RB: "RB25", WR: "WR31", TE: "TE13" };
+const BASELINE_LABELS: Record<FantasyPosition, string> = { QB: "QB13", RB: "RB25", WR: "WR37", TE: "TE13" };
 const METRIC_LABELS: Record<FantasyPosition, readonly [string, string, string]> = {
   QB: ["Passer Rating Rk", "Rush Yds/Game Rk", "Pass TD/Attempt Rk"],
   RB: ["Touches Rk", "Red Zone Touches Rk", "YPC Rk"],
