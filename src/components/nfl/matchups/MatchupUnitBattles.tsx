@@ -1,5 +1,6 @@
 import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
+import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
@@ -35,6 +36,49 @@ function pairingDirection(offenseKey: string, defenseKey: string) {
 }
 
 /**
+ * One side of a possession header: crest, unit name and the role it is playing.
+ *
+ * The role caption is a restatement of the unit, not a judgement — "Attacking"
+ * and "Defending" say who has the ball, and neither is presented as the better
+ * position to be in.
+ */
+function PossessionTeam({
+  team,
+  side,
+  unit,
+  align,
+}: {
+  team: NflMatchupTeam;
+  side: "away" | "home";
+  unit: "Offense" | "Defense";
+  /** Which edge of the header this side sits on. */
+  align: "start" | "end";
+}) {
+  const isEnd = align === "end";
+
+  return (
+    <div
+      className={`flex min-w-0 items-center gap-2 ${isEnd ? "flex-row-reverse text-right" : ""}`}
+    >
+      <NflTeamCrest team={team} side={side} size={22} />
+      <div className="min-w-0">
+        <div className="truncate text-[11px] font-bold leading-4 text-slate-900 sm:text-[12px]">
+          <span className="sm:hidden">
+            {team.abbr.toUpperCase()} {unit === "Offense" ? "Off" : "Def"}
+          </span>
+          <span className="hidden sm:inline">
+            {team.teamName} {unit}
+          </span>
+        </div>
+        <div className="text-[9px] font-bold uppercase leading-3 tracking-[0.08em] text-slate-600">
+          {unit === "Offense" ? "Attacking" : "Defending"}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * One possession view: the team with the ball on the left, the opposing defense
  * on the right, grouped Overall / Passing / Rushing.
  *
@@ -44,32 +88,29 @@ function pairingDirection(offenseKey: string, defenseKey: string) {
 function PossessionPanel({
   offenseTeam,
   defenseTeam,
+  offenseSide,
+  defenseSide,
   resolver,
   successRate,
   trench,
 }: {
   offenseTeam: NflMatchupTeam;
   defenseTeam: NflMatchupTeam;
+  /** Which side of the matchup each unit belongs to, for crest tone. */
+  offenseSide: "away" | "home";
+  defenseSide: "away" | "home";
   resolver: NflMatchupMetricResolver;
   successRate?: MatchupSuccessRateConfig;
   trench?: MatchupTrenchConfig;
 }) {
   return (
     <div className="rounded-lg border border-slate-200">
-      <div className="border-b border-slate-200 bg-slate-50 px-2 py-1.5">
-        <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
-          <div className="truncate text-right text-[10px] font-bold uppercase tracking-wide text-slate-600">
-            <span className="sm:hidden">{offenseTeam.abbr.toUpperCase()} Off</span>
-            <span className="hidden sm:inline">{offenseTeam.teamName} Offense</span>
-          </div>
-          <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
-            vs
-          </div>
-          <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
-            <span className="sm:hidden">{defenseTeam.abbr.toUpperCase()} Def</span>
-            <span className="hidden sm:inline">{defenseTeam.teamName} Defense</span>
-          </div>
-        </div>
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-2.5 py-2">
+        <PossessionTeam team={offenseTeam} side={offenseSide} unit="Offense" align="start" />
+        <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+          vs
+        </span>
+        <PossessionTeam team={defenseTeam} side={defenseSide} unit="Defense" align="end" />
       </div>
 
       <div className="px-2 pb-2">
@@ -168,10 +209,26 @@ export default function MatchupUnitBattles({
     >
       <div className="grid gap-3 xl:grid-cols-2">
         <div className={side === "away-ball" ? "" : "hidden lg:block"}>
-          <PossessionPanel offenseTeam={away} defenseTeam={home} resolver={resolver} successRate={successRate} trench={trench} />
+          <PossessionPanel
+            offenseTeam={away}
+            defenseTeam={home}
+            offenseSide="away"
+            defenseSide="home"
+            resolver={resolver}
+            successRate={successRate}
+            trench={trench}
+          />
         </div>
         <div className={side === "home-ball" ? "" : "hidden lg:block"}>
-          <PossessionPanel offenseTeam={home} defenseTeam={away} resolver={resolver} successRate={successRate} trench={trench} />
+          <PossessionPanel
+            offenseTeam={home}
+            defenseTeam={away}
+            offenseSide="home"
+            defenseSide="away"
+            resolver={resolver}
+            successRate={successRate}
+            trench={trench}
+          />
         </div>
       </div>
       <MatchupPendingNote>{CONVENTIONAL_STATS_SOURCES}</MatchupPendingNote>

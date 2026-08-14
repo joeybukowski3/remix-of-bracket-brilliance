@@ -1,5 +1,4 @@
-import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import { rankCellClass } from "@/lib/nfl/rankTier";
+import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
 import {
   SUCCESS_PERIOD_LABELS,
   formatSuccessRate,
@@ -30,27 +29,14 @@ function PeriodSide({
   metricLabel: string;
   periodLabel: string;
 }) {
-  const isAway = side === "away";
-  const unavailable = !value;
-
   return (
-    <div
-      className={`flex flex-col gap-0.5 rounded px-1 py-0.5 ${rankCellClass(
-        value?.rank ?? null
-      )} ${isAway ? "items-end text-right" : "items-start text-left"}`}
-    >
-      <span className="sr-only">
-        {teamName} {metricLabel} {periodLabel}:{" "}
-      </span>
-      <span
-        className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
-          unavailable ? "text-slate-600" : "text-slate-900"
-        }`}
-      >
-        {formatSuccessRate(value)}
-      </span>
-      <MatchupRankBadge rank={value?.rank ?? null} />
-    </div>
+    <MatchupValuePills
+      side={side}
+      formatted={formatSuccessRate(value)}
+      rank={value?.rank ?? null}
+      unavailable={!value}
+      srText={`${teamName} ${metricLabel} ${periodLabel}: `}
+    />
   );
 }
 

@@ -1,5 +1,4 @@
-import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import { rankCellClass } from "@/lib/nfl/rankTier";
+import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
 import {
   METRIC_NA,
   type ComparisonSideValue,
@@ -19,27 +18,15 @@ function ComparisonSide({
   metricLabel: string;
   neutral: boolean;
 }) {
-  const isAway = side === "away";
-  const unavailable = value.formattedValue === METRIC_NA;
-
   return (
-    <div
-      className={`flex flex-col gap-0.5 rounded px-1 py-0.5 ${neutral ? "" : rankCellClass(value.rank)} ${
-        isAway ? "items-end text-right" : "items-start text-left"
-      }`}
-    >
-      <span className="sr-only">
-        {teamName} {metricLabel}:{" "}
-      </span>
-      <span
-        className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
-          unavailable ? "text-slate-600" : "text-slate-900"
-        }`}
-      >
-        {value.formattedValue}
-      </span>
-      <MatchupRankBadge rank={value.rank} neutral={neutral} />
-    </div>
+    <MatchupValuePills
+      side={side}
+      formatted={value.formattedValue}
+      rank={value.rank}
+      unavailable={value.formattedValue === METRIC_NA}
+      neutral={neutral}
+      srText={`${teamName} ${metricLabel}: `}
+    />
   );
 }
 

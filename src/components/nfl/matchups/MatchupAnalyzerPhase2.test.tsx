@@ -162,8 +162,9 @@ describe("volume metrics are never scored as quality", () => {
 
   it("does not tint the value cell for context-only metrics", () => {
     renderOffense();
-    const passMix = within(rowFor("Pass Play %")).getByText("52.7%").parentElement!;
-    const quality = within(rowFor("Yards / Play")).getByText("6.81").parentElement!;
+    // The tier wash sits on the value pill itself, not on a wrapper around it.
+    const passMix = within(rowFor("Pass Play %")).getByText("52.7%");
+    const quality = within(rowFor("Yards / Play")).getByText("6.81");
     expect(passMix.className).not.toMatch(/bg-(emerald|red|orange|amber|teal)/);
     expect(quality.className).toMatch(/bg-emerald/);
   });
