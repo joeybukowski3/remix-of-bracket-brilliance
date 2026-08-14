@@ -1,5 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { chromium, firefox, webkit } from "@playwright/test";
+import { createAnalyticsBlockingContext } from "../lib/playwright-analytics-blocking.mjs";
 
 const baseUrl = process.env.SIXTEEN_ZERO_BASE_URL || "http://127.0.0.1:4173";
 const outputDirectory = "docs/pr-screenshots";
@@ -19,7 +20,7 @@ async function pageMetrics(page, phase) {
 }
 
 async function completeRun(browser, config) {
-  const context = await browser.newContext({
+  const context = await createAnalyticsBlockingContext(browser, {
     viewport: config.viewport,
     reducedMotion: config.reducedMotion,
   });
@@ -231,7 +232,7 @@ async function smokeBrowser(browserType, name) {
   try {
     browser = await browserType.launch();
     smoke.launched = true;
-    const context = await browser.newContext({
+    const context = await createAnalyticsBlockingContext(browser, {
       viewport: { width: 1280, height: 800 },
       reducedMotion: "reduce",
     });

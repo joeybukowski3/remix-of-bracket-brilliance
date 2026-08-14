@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
+import { createAnalyticsBlockingPage } from "./lib/playwright-analytics-blocking.mjs";
 import { assertLivePostConfirmed, buildCaption, validatePreviewReady } from "./lib/mlb-numerology-x-post-core.mjs";
 import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { assertScheduledLiveGateEnabled } from "./lib/mlb-numerology-scheduled-gate.mjs";
@@ -94,7 +95,7 @@ async function screenshotNumerologyExport(outputPath = SCREENSHOT_PATH) {
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1200, height: 1600 }, deviceScaleFactor: 1 });
+    const page = await createAnalyticsBlockingPage(browser, { viewport: { width: 1200, height: 1600 }, deviceScaleFactor: 1 });
     page.setDefaultTimeout(60000);
     await page.goto(SCREENSHOT_URL, { waitUntil: "networkidle", timeout: 60000 });
 

@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { createAnalyticsBlockingPage } from "../lib/playwright-analytics-blocking.mjs";
 
 const BASE_URL = process.env.JKB_PREVIEW_URL || "http://127.0.0.1:4173";
 const viewports = [
@@ -42,21 +43,21 @@ const browser = await chromium.launch();
 try {
   const results = [];
   for (const viewport of viewports) {
-    const page = await browser.newPage({ viewport });
+    const page = await createAnalyticsBlockingPage(browser, { viewport });
     results.push({ path: "/mlb/strikeout-props", width: viewport.width, result: await measure(page, "/mlb/strikeout-props") });
     await page.close();
   }
   for (const viewport of viewports) {
-    const page = await browser.newPage({ viewport });
+    const page = await createAnalyticsBlockingPage(browser, { viewport });
     results.push({ path: "/mlb/strikeout-props?debug=k-v2", width: viewport.width, result: await measure(page, "/mlb/strikeout-props?debug=k-v2") });
     await page.close();
   }
-  const missingPage = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  const missingPage = await createAnalyticsBlockingPage(browser, { viewport: { width: 390, height: 900 } });
   await missingPage.route("**/data/mlb/k-props-v2-shadow.json", (route) => route.fulfill({ status: 404, body: "missing" }));
   results.push({ path: "/mlb/strikeout-props?debug=k-v2#missing-shadow", width: 390, result: await measure(missingPage, "/mlb/strikeout-props?debug=k-v2") });
   await missingPage.close();
 
-  const stalePage = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  const stalePage = await createAnalyticsBlockingPage(browser, { viewport: { width: 390, height: 900 } });
   await stalePage.route("**/data/mlb/k-props-v2-shadow.json", async (route) => {
     const response = await route.fetch();
     const payload = await response.json();
