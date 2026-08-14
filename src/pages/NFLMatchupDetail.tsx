@@ -358,6 +358,7 @@ export default function NFLMatchupDetail() {
           matchup={matchup}
           categoryMetrics={categoryMetrics}
           categoryResults={categoryResults}
+          onOpenCategory={navigation.openCategory}
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
           scheduleContext={

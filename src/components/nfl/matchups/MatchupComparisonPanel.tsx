@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import MatchupCategoryAdvantageChip, {
+  categoryAdvantageLeadText,
+} from "@/components/nfl/matchups/MatchupCategoryAdvantageChip";
+import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupMetricRow from "@/components/nfl/matchups/MatchupMetricRow";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
@@ -44,11 +48,11 @@ function ComparisonColumnHeader({ matchup }: { matchup: NflMatchup }) {
 /**
  * Category advantage on the accordion trigger.
  *
- * The same count Overview's Category Advantage table shows, from the same
- * `CategoryAdvantageResult`, so a category cannot report one leader collapsed
- * and another expanded. Nothing is recomputed here and no tally spans
- * categories — this is one category's own unweighted count of the rows directly
- * beneath it.
+ * The same count the snapshot strip and Overview's Category Advantage table
+ * show, from the same `CategoryAdvantageResult` and through the same shared
+ * chip, so a category cannot report one leader in one place and another
+ * elsewhere. Nothing is recomputed here and no tally spans categories — this is
+ * one category's own unweighted count of the rows directly beneath it.
  *
  * The visual parts are hidden from assistive technology and the whole result is
  * restated once in `describeCategoryAdvantage()`'s sentence, which is the same
@@ -65,35 +69,13 @@ function CategoryAdvantageMeta({
   away: NflMatchupTeam;
   home: NflMatchupTeam;
 }) {
-  const team = result.result === "away" ? away : result.result === "home" ? home : null;
-  const side = result.result === "away" ? "away" : "home";
-  const leads = result.result === "away" ? result.awayLeads : result.homeLeads;
-
   return (
     <>
       <span aria-hidden className="flex min-w-0 items-center gap-1.5">
-        {team ? (
-          <>
-            <NflTeamCrest team={team} side={side} size={16} />
-            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
-              {team.abbr.toUpperCase()}
-            </span>
-            <span className="truncate text-[11px] font-medium text-slate-600">
-              Leads {leads} of {result.eligible}
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-slate-600">
-              {result.result === "even" ? "Even" : "N/A"}
-            </span>
-            <span className="truncate text-[11px] font-medium text-slate-600">
-              {result.result === "even"
-                ? `${result.awayLeads} each of ${result.eligible}`
-                : "No comparable metrics"}
-            </span>
-          </>
-        )}
+        <MatchupCategoryAdvantageChip result={result} away={away} home={home} />
+        <span className="truncate text-[11px] font-medium text-slate-600">
+          {categoryAdvantageLeadText(result)}
+        </span>
       </span>
       <span className="sr-only">
         {describeCategoryAdvantage(result, categoryLabel, away.teamName, home.teamName)}
@@ -120,6 +102,7 @@ export default function MatchupComparisonPanel({
   matchup,
   categoryMetrics,
   categoryResults,
+  onOpenCategory,
   pendingCategory,
   navigationToken,
   scheduleContext,
@@ -135,6 +118,13 @@ export default function MatchupComparisonPanel({
    * which team leads a category.
    */
   categoryResults: Record<MatchupCategoryId, CategoryAdvantageResult>;
+  /**
+   * The page's existing category navigation, reused verbatim by the snapshot
+   * strip so a tile runs the same expand/scroll/focus sequence as an Overview
+   * row. Omit it and the strip is not rendered at all, rather than rendering
+   * tiles that lead nowhere.
+   */
+  onOpenCategory?: (category: MatchupCategoryId) => void;
   /** Category addressed by the current fragment, if any. */
   pendingCategory: MatchupCategoryId | null;
   /** Changes on every navigation so a repeat jump re-runs the sequence. */
@@ -194,6 +184,14 @@ export default function MatchupComparisonPanel({
   return (
     <div className="@container space-y-3">
       {scheduleContext}
+
+      {onOpenCategory && (
+        <MatchupCategorySnapshot
+          matchup={matchup}
+          results={categoryResults}
+          onOpenCategory={onOpenCategory}
+        />
+      )}
 
       {unitBattles}
 
