@@ -183,8 +183,6 @@ export default function MatchupComparisonPanel({
 
   return (
     <div className="@container space-y-3">
-      {scheduleContext}
-
       {onOpenCategory && (
         <MatchupCategorySnapshot
           matchup={matchup}
@@ -192,6 +190,8 @@ export default function MatchupComparisonPanel({
           onOpenCategory={onOpenCategory}
         />
       )}
+
+      {scheduleContext}
 
       {unitBattles}
 
