@@ -1,10 +1,10 @@
 {
   "date": "2026-08-14",
-  "generatedAt": "2026-08-14T08:41:27.885Z",
+  "generatedAt": "2026-08-14T13:50:59.496Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Citi Field and Rogers Centre both play up today with 1.06-1.08 park factors, while Angel Stadium sits at a neutral 1.02. Robert Stock and Shane Bieber are the most exploitable arms on the slate, each allowing 65-78 HR/PA to right-handed power bats, and the model is zeroing in on the top three names in the top park spots.",
-    "modelNote": "The model is overweighting barrel rate, exit velo, and recent HR/FB spikes while discounting K-rate when the opposing pitcher has a high HR/PA mark, which is why Ortiz and Caglianone sit 1-2 despite elevated whiff numbers."
+    "slateOverview": "Citi Field and Rogers Centre both play up today with park factors of 1.06-1.08, while Angel Stadium sits at a neutral 1.02. The slate features several favorable right-handed pitcher matchups, including Robert Stock and Shane Bieber, who have allowed elevated HR/FB rates to opposing lineups.",
+    "modelNote": "The model is prioritizing barrel rate, recent HR volume, and opposing pitcher HR vulnerability, with Ortiz and Caglianone rising to the top due to their elevated barrel rates and strong park factors."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "opposingPitcher": "Robert Stock",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=19%",
-        "HH=47.6%"
+        "barrel=20.8%",
+        "HH=54.2%"
       ],
       "bullets": [
-        "barrel=19%",
+        "barrel=20.8%",
         "park=1.06"
       ],
       "hrOddsYes": "+500",
@@ -40,28 +40,9 @@
         "HH=55.1%",
         "park=1.02"
       ],
-      "hrOddsYes": "+262",
-      "marketImpliedProbability": 0.27624309392265195,
+      "hrOddsYes": "+282",
+      "marketImpliedProbability": 0.2617801047120419,
       "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andrew Pinckney",
-      "team": "WSH",
-      "opponent": "NYM",
-      "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=20%",
-        "HH=60%"
-      ],
-      "bullets": [
-        "barrel=20%",
-        "HH=60%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -69,17 +50,17 @@
       "team": "NYY",
       "opponent": "TOR",
       "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
-        "barrel=15.4%",
+        "barrel=15.3%",
         "HH=48.5%"
       ],
       "bullets": [
-        "barrel=15.4%",
+        "barrel=15.3%",
         "park=1.08"
       ],
-      "hrOddsYes": "+330",
-      "marketImpliedProbability": 0.23255813953488372,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -88,57 +69,17 @@
       "team": "NYY",
       "opponent": "TOR",
       "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=10.2%",
-        "HH=45.6%"
+        "Pitcher HR VS=77.6",
+        "Hard Hit%=45.8"
       ],
       "bullets": [
-        "barrel=10.2%",
-        "park=1.08"
+        "HR score 71.4 (#4)",
+        "Pitcher HR VS 77.6 at park 1.08"
       ],
       "hrOddsYes": "+420",
       "marketImpliedProbability": 0.19230769230769232,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "NYM",
-      "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=19%",
-        "HH=47.6%"
-      ],
-      "bullets": [
-        "barrel=19%",
-        "park=1.06"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=14.4%",
-        "HH=55.1%"
-      ],
-      "bullets": [
-        "HH=55.1%",
-        "park=1.02"
-      ],
-      "hrOddsYes": "+262",
-      "marketImpliedProbability": 0.27624309392265195,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,14 +88,54 @@
       "team": "WSH",
       "opponent": "NYM",
       "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 3,
+      "hrScoreRank": 5,
       "topStats": [
-        "barrel=20%",
-        "HH=60%"
+        "Pitcher HR VS=65.2",
+        "Hard Hit%=57.1"
       ],
       "bullets": [
-        "barrel=20%",
-        "HH=60%"
+        "HR score 71.2 (#5)",
+        "Pitcher HR VS 65.2 at park 1.06"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Trent Grisham",
+      "team": "NYY",
+      "opponent": "TOR",
+      "opposingPitcher": "Shane Bieber",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=10.1%",
+        "HH=45.8%"
+      ],
+      "bullets": [
+        "barrel=10.1%",
+        "park=1.08"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Andrew Pinckney",
+      "team": "WSH",
+      "opponent": "NYM",
+      "opposingPitcher": "Robert Stock",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=14.3%",
+        "HH=57.1%"
+      ],
+      "bullets": [
+        "HH=57.1%",
+        "park=1.06"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -162,17 +143,36 @@
       "hrValueEdge": null
     },
     {
+      "player": "CJ Abrams",
+      "team": "WSH",
+      "opponent": "NYM",
+      "opposingPitcher": "Robert Stock",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=10.4%",
+        "HH=42%"
+      ],
+      "bullets": [
+        "barrel=10.4%",
+        "park=1.06"
+      ],
+      "hrOddsYes": "+365",
+      "marketImpliedProbability": 0.21505376344086022,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Luis García Jr.",
       "team": "NYY",
       "opponent": "TOR",
       "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
         "Pitcher HR VS=77.6",
-        "Hard Hit%=46.0"
+        "Hard Hit%=45.8"
       ],
       "bullets": [
-        "HR score 68.9 (#6)",
+        "HR score 68.2 (#7)",
         "Pitcher HR VS 77.6 at park 1.08"
       ],
       "hrOddsYes": "+440",
@@ -181,118 +181,99 @@
       "hrValueEdge": null
     },
     {
-      "player": "CJ Abrams",
-      "team": "WSH",
-      "opponent": "NYM",
-      "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=65.2",
-        "Hard Hit%=42.4"
-      ],
-      "bullets": [
-        "HR score 67.0 (#7)",
-        "Pitcher HR VS 65.2 at park 1.06"
-      ],
-      "hrOddsYes": "+365",
-      "marketImpliedProbability": 0.21505376344086022,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "KC",
-      "opposingPitcher": "Seth Lugo",
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "SEA",
+      "opposingPitcher": "George Kirby",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=66.0",
-        "Hard Hit%=47.6"
+        "Hard Hit%=53.4",
+        "Pitcher HR VS=49.3"
       ],
       "bullets": [
-        "HR score 66.6 (#8)",
-        "Pitcher HR VS 66.0 at park 1.02"
+        "HR score 66.7 (#8)",
+        "Pitcher HR VS 49.3 at park 1.04"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
+      "hrOddsYes": "+260",
+      "marketImpliedProbability": 0.2777777777777778,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "NYM",
-      "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=19%",
-        "HH=47.6%"
-      ],
-      "bullets": [
-        "barrel=19%",
-        "park=1.06"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=14.4%",
-        "HH=55.1%"
-      ],
-      "bullets": [
-        "HH=55.1%",
-        "park=1.02"
-      ],
-      "hrOddsYes": "+262",
-      "marketImpliedProbability": 0.27624309392265195,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Bryce Eldridge",
-      "team": "SF",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 20,
-      "topStats": [
-        "Pitcher HR VS=69.4",
-        "Hard Hit%=51.3"
-      ],
-      "bullets": [
-        "HR score 59.1 (#20)",
-        "Pitcher HR VS 69.4 at park 0.85"
-      ],
-      "hrOddsYes": "+560",
-      "marketImpliedProbability": 0.15151515151515152,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "George Lombard Jr.",
+      "player": "Luis García Jr.",
       "team": "NYY",
       "opponent": "TOR",
       "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 14,
+      "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=77.6",
-        "Hard Hit%=38.9"
+        "barrel=12.4%",
+        "HH=45.8%"
       ],
       "bullets": [
-        "HR score 63.1 (#14)",
-        "Pitcher HR VS 77.6 at park 1.08"
+        "barrel=12.4%",
+        "park=1.08"
       ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
+      "hrOddsYes": "+440",
+      "marketImpliedProbability": 0.18518518518518517,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "SEA",
+      "opposingPitcher": "George Kirby",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=18.2%",
+        "HH=53.4%"
+      ],
+      "bullets": [
+        "barrel=18.2%",
+        "park=1.04"
+      ],
+      "hrOddsYes": "+260",
+      "marketImpliedProbability": 0.2777777777777778,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Brady House",
+      "team": "WSH",
+      "opponent": "NYM",
+      "opposingPitcher": "Robert Stock",
+      "hrScoreRank": 24,
+      "topStats": [
+        "Pitcher HR VS=65.2",
+        "Hard Hit%=46.7"
+      ],
+      "bullets": [
+        "HR score 56.6 (#24)",
+        "Pitcher HR VS 65.2 at park 1.06"
+      ],
+      "hrOddsYes": "+800",
+      "marketImpliedProbability": 0.1111111111111111,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Angel Genao",
+      "team": "CLE",
+      "opponent": "SD",
+      "opposingPitcher": "Michael King",
+      "hrScoreRank": 21,
+      "topStats": [
+        "Hard Hit%=56.0",
+        "Pitcher HR VS=46.4"
+      ],
+      "bullets": [
+        "HR score 58.6 (#21)",
+        "Pitcher HR VS 46.4 at park 0.91"
+      ],
+      "hrOddsYes": "+733",
+      "marketImpliedProbability": 0.12004801920768307,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
