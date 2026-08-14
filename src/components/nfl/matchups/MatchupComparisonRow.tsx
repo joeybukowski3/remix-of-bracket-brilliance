@@ -1,4 +1,6 @@
-import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
+import MatchupValuePills, {
+  MATCHUP_METRIC_LABEL,
+} from "@/components/nfl/matchups/MatchupValuePills";
 import {
   METRIC_NA,
   type ComparisonSideValue,
@@ -70,15 +72,15 @@ export default function MatchupComparisonRow({
       <div className="min-w-0 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (
           <>
-            <span className="block text-[15px] font-bold leading-5 text-slate-800 sm:hidden">
+            <span className={`block sm:hidden ${MATCHUP_METRIC_LABEL}`}>
               {shortLabel}
             </span>
-            <span className="hidden text-[15px] font-bold leading-5 text-slate-800 sm:block">
+            <span className={`hidden sm:block ${MATCHUP_METRIC_LABEL}`}>
               {metricLabel}
             </span>
           </>
         ) : (
-          <span className="block text-[15px] font-bold leading-5 text-slate-800">
+          <span className={`block ${MATCHUP_METRIC_LABEL}`}>
             {metricLabel}
           </span>
         )}

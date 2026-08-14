@@ -1,4 +1,6 @@
-import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
+import MatchupValuePills, {
+  MATCHUP_METRIC_LABEL,
+} from "@/components/nfl/matchups/MatchupValuePills";
 import type { TrenchResolver } from "@/lib/nfl/trenchMetricsData";
 import {
   formatTrenchValue,
@@ -91,15 +93,15 @@ export default function MatchupTrenchRow({
       <div className="mb-0.5 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (
           <>
-            <span className="block text-[10px] font-bold leading-3 text-slate-600 sm:hidden">
+            <span className={`block sm:hidden ${MATCHUP_METRIC_LABEL}`}>
               {shortLabel}
             </span>
-            <span className="hidden text-[11px] font-bold leading-4 text-slate-600 sm:block">
+            <span className={`hidden sm:block ${MATCHUP_METRIC_LABEL}`}>
               {metricLabel}
             </span>
           </>
         ) : (
-          <span className="block text-[10px] font-bold leading-3 text-slate-600 sm:text-[11px] sm:leading-4">
+          <span className={`block ${MATCHUP_METRIC_LABEL}`}>
             {metricLabel}
           </span>
         )}

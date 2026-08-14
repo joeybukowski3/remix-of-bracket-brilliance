@@ -1,4 +1,29 @@
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
+import { cn } from "@/lib/utils";
+
+/**
+ * The analyzer's primary type size, defined once.
+ *
+ * Two things carry it: the rank number inside `MatchupRankBadge`, and the
+ * metric name centred between a pair of these cells. They are the row's two
+ * headline elements and must match, so both read the size from here rather than
+ * repeating a literal — which is exactly how the four row types drifted to
+ * three different label sizes before.
+ */
+export const MATCHUP_PRIMARY_TEXT = "text-[22px]";
+
+/**
+ * The centred metric name — "EPA / Play", "Pass Block vs Pass Rush".
+ *
+ * Shared by every row that sits a label between two value cells:
+ * MatchupComparisonRow, MatchupMetricRow, MatchupSuccessRateRow and
+ * MatchupTrenchRow. The smaller period caption beneath it ("2025 Last 8",
+ * "2025 Season") is a different thing and keeps its own smaller size.
+ */
+export const MATCHUP_METRIC_LABEL = cn(
+  MATCHUP_PRIMARY_TEXT,
+  "font-bold leading-6 text-slate-800"
+);
 
 /**
  * One team's league rank and the raw value behind it, side by side.
@@ -59,7 +84,7 @@ export default function MatchupValuePills({
       <MatchupRankBadge
         rank={rank}
         neutral={neutral}
-        className="min-w-[2.75rem] px-2 py-1 text-[22px] leading-none"
+        className={cn("min-w-[2.75rem] px-2 py-1 leading-none", MATCHUP_PRIMARY_TEXT)}
       />
     );
 

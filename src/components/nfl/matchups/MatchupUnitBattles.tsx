@@ -60,9 +60,9 @@ function PossessionTeam({
     <div
       className={`flex min-w-0 items-center gap-2 ${isEnd ? "flex-row-reverse text-right" : ""}`}
     >
-      <NflTeamCrest team={team} side={side} size={22} />
+      <NflTeamCrest team={team} side={side} size={30} />
       <div className="min-w-0">
-        <div className="truncate text-[11px] font-bold leading-4 text-slate-900 sm:text-[12px]">
+        <div className="truncate text-[15px] font-extrabold leading-5 text-slate-900 sm:text-[17px] sm:leading-6">
           <span className="sm:hidden">
             {team.abbr.toUpperCase()} {unit === "Offense" ? "Off" : "Def"}
           </span>
@@ -70,7 +70,7 @@ function PossessionTeam({
             {team.teamName} {unit}
           </span>
         </div>
-        <div className="text-[9px] font-bold uppercase leading-3 tracking-[0.08em] text-slate-600">
+        <div className="text-[10px] font-bold uppercase leading-4 tracking-[0.08em] text-slate-600 sm:text-[11px]">
           {unit === "Offense" ? "Attacking" : "Defending"}
         </div>
       </div>
@@ -105,9 +105,9 @@ function PossessionPanel({
 }) {
   return (
     <div className="rounded-lg border border-slate-200">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-2 py-1.5">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-2 py-2">
         <PossessionTeam team={offenseTeam} side={offenseSide} unit="Offense" align="start" />
-        <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
           vs
         </span>
         <PossessionTeam team={defenseTeam} side={defenseSide} unit="Defense" align="end" />

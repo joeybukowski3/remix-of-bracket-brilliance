@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
+import { MATCHUP_METRIC_LABEL } from "@/components/nfl/matchups/MatchupValuePills";
 import {
   describeMetricAdvantage,
   type MatchupDisplayMetric,
@@ -136,7 +137,7 @@ export default function MatchupMetricRow({
         <div className="flex items-center gap-1.5 sm:justify-center">
           {/* Matches the Unit Matchups row label, so the two tables read at the
               same scale rather than one looking like a footnote of the other. */}
-          <span className="text-[15px] font-bold leading-5 text-slate-800">
+          <span className={MATCHUP_METRIC_LABEL}>
             <span className="sm:hidden">{metric.shortLabel ?? metric.label}</span>
             <span className="hidden sm:inline">{metric.label}</span>
           </span>
