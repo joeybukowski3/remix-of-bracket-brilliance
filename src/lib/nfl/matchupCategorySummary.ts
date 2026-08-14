@@ -38,6 +38,16 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 
+/**
+ * Verb for a team-name subject.
+ *
+ * Plural, because every one of the 32 NFL team names is grammatically plural —
+ * Patriots, Seahawks, 49ers — so "the Patriots lead Offense" is correct and
+ * "leads" is not. The category clauses below keep singular agreement ("Rushing
+ * is even"), because their subject is a category label, not a team.
+ */
+const TEAM_VERB = "lead";
+
 /** Results keyed by category. Entries may be absent while data is resolving. */
 export type CategorySummaryResults = Partial<
   Record<MatchupCategoryId, CategoryAdvantageResult>
@@ -85,8 +95,8 @@ export function summariseCategoryAdvantages(
   }
 
   const clauses: string[] = [];
-  if (awayLed.length > 0) clauses.push(`${awayTeamName} leads ${joinLabels(awayLed)}.`);
-  if (homeLed.length > 0) clauses.push(`${homeTeamName} leads ${joinLabels(homeLed)}.`);
+  if (awayLed.length > 0) clauses.push(`${awayTeamName} ${TEAM_VERB} ${joinLabels(awayLed)}.`);
+  if (homeLed.length > 0) clauses.push(`${homeTeamName} ${TEAM_VERB} ${joinLabels(homeLed)}.`);
   if (even.length > 0) {
     clauses.push(`${joinLabels(even)} ${even.length === 1 ? "is" : "are"} even.`);
   }

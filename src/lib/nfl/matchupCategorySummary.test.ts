@@ -9,8 +9,21 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 
-const AWAY = "Away Club";
-const HOME = "Home Club";
+/**
+ * Real team names, deliberately.
+ *
+ * These fixtures were "Away Club" / "Home Club" — singular-sounding, which is
+ * exactly why the suite passed while production rendered "New England Patriots
+ * leads Offense". Every real NFL team name is grammatically plural, so the
+ * fixtures have to be too or the agreement bug hides again.
+ *
+ * PLACEHOLDER_* keeps the team-neutrality check covered as well: the function
+ * must still use whatever names it is handed.
+ */
+const AWAY = "New England Patriots";
+const HOME = "Seattle Seahawks";
+const PLACEHOLDER_AWAY = "Away Club";
+const PLACEHOLDER_HOME = "Home Club";
 
 /** A result carrying the given verdict; counts are consistent with it. */
 function result(
@@ -56,8 +69,8 @@ describe("category summary", () => {
     );
 
     expect(summary).toBe(
-      "Away Club leads Overall Quality and Defense. " +
-        "Home Club leads Offense and Passing. " +
+      "New England Patriots lead Overall Quality and Defense. " +
+        "Seattle Seahawks lead Offense and Passing. " +
         "Rushing and Trenches are even."
     );
   });
@@ -65,12 +78,14 @@ describe("category summary", () => {
   it("uses the team names it is given, never a baked-in franchise", () => {
     const summary = summariseCategoryAdvantages(
       resultsFor({ offense: "away", defense: "home" }),
-      "Visiting Side",
-      "Hosting Side"
+      PLACEHOLDER_AWAY,
+      PLACEHOLDER_HOME
     );
 
-    expect(summary).toContain("Visiting Side leads Offense.");
-    expect(summary).toContain("Hosting Side leads Defense.");
+    expect(summary).toContain(`${PLACEHOLDER_AWAY} lead Offense.`);
+    expect(summary).toContain(`${PLACEHOLDER_HOME} lead Defense.`);
+    expect(summary).not.toContain(AWAY);
+    expect(summary).not.toContain(HOME);
   });
 
   it("names categories in registry order, not in the order they were supplied", () => {
@@ -80,7 +95,7 @@ describe("category summary", () => {
       HOME
     );
 
-    expect(summary).toBe("Away Club leads Overall Quality, Offense and Trenches.");
+    expect(summary).toBe("New England Patriots lead Overall Quality, Offense and Trenches.");
   });
 
   it("is deterministic for identical input", () => {
@@ -97,14 +112,14 @@ describe("category summary", () => {
 describe("list wording", () => {
   it("states a single category without a conjunction", () => {
     expect(summariseCategoryAdvantages(resultsFor({ offense: "away" }), AWAY, HOME)).toBe(
-      "Away Club leads Offense."
+      "New England Patriots lead Offense."
     );
   });
 
   it("joins exactly two categories with 'and' and no comma", () => {
     expect(
       summariseCategoryAdvantages(resultsFor({ offense: "away", defense: "away" }), AWAY, HOME)
-    ).toBe("Away Club leads Offense and Defense.");
+    ).toBe("New England Patriots lead Offense and Defense.");
   });
 
   it("agrees the verb with a single even category", () => {
@@ -130,7 +145,9 @@ describe("unavailable categories", () => {
       HOME
     );
 
-    expect(summary).toBe("Away Club leads Offense. Trenches has no comparable metrics yet.");
+    expect(summary).toBe(
+      "New England Patriots lead Offense. Trenches has no comparable metrics yet."
+    );
   });
 
   it("agrees the verb across several unavailable categories", () => {
@@ -147,13 +164,13 @@ describe("unavailable categories", () => {
     const summary = summariseCategoryAdvantages(allNa, AWAY, HOME);
 
     expect(summary).toContain("have no comparable metrics yet.");
-    expect(summary).not.toContain("leads");
+    expect(summary).not.toContain("lead");
     expect(summary).not.toContain("even");
   });
 
   it("skips categories with no result yet rather than guessing one", () => {
     expect(summariseCategoryAdvantages(resultsFor({ offense: "away" }), AWAY, HOME)).toBe(
-      "Away Club leads Offense."
+      "New England Patriots lead Offense."
     );
   });
 
@@ -211,5 +228,76 @@ describe("no fabricated or aggregate language", () => {
 
     expect(awayOnly).toContain(AWAY);
     expect(awayOnly).not.toContain(HOME);
+  });
+});
+
+// ── Verb agreement for team-name subjects ─────────────────────────────────────
+
+/**
+ * Every NFL team name is grammatically plural, so the team clause always takes
+ * "lead". These spot-checks span several franchises — including "49ers", whose
+ * name starts with a digit — so the fix cannot be specific to one matchup.
+ */
+describe("plural verb agreement", () => {
+  const TEAMS = [
+    "Kansas City Chiefs",
+    "San Francisco 49ers",
+    "Dallas Cowboys",
+    "Miami Dolphins",
+    "Las Vegas Raiders",
+    "Green Bay Packers",
+  ];
+
+  it.each(TEAMS)("uses the plural verb for %s as the away side", (teamName) => {
+    const summary = summariseCategoryAdvantages(
+      resultsFor({ offense: "away" }),
+      teamName,
+      HOME
+    );
+
+    expect(summary).toBe(`${teamName} lead Offense.`);
+    expect(summary).not.toContain(`${teamName} leads`);
+  });
+
+  it.each(TEAMS)("uses the plural verb for %s as the home side", (teamName) => {
+    const summary = summariseCategoryAdvantages(
+      resultsFor({ defense: "home" }),
+      AWAY,
+      teamName
+    );
+
+    expect(summary).toBe(`${teamName} lead Defense.`);
+    expect(summary).not.toContain(`${teamName} leads`);
+  });
+
+  it("never emits the singular team verb anywhere in a full sentence", () => {
+    const summary = summariseCategoryAdvantages(
+      resultsFor({
+        overall: "away",
+        offense: "home",
+        defense: "away",
+        passing: "home",
+        rushing: "even",
+        trenches: "na",
+      }),
+      AWAY,
+      HOME
+    );
+
+    expect(summary).not.toMatch(/leads/);
+    expect(summary).toContain(`${AWAY} lead `);
+    expect(summary).toContain(`${HOME} lead `);
+  });
+
+  it("keeps singular agreement for category subjects, which are not teams", () => {
+    // "Rushing is even" and "Trenches has no comparable metrics yet" stay
+    // singular — the subject there is a category label, not a team name.
+    const summary = summariseCategoryAdvantages(
+      resultsFor({ rushing: "even", trenches: "na" }),
+      AWAY,
+      HOME
+    );
+
+    expect(summary).toBe("Rushing is even. Trenches has no comparable metrics yet.");
   });
 });
