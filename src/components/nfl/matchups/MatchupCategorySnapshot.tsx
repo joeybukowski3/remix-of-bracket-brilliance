@@ -51,7 +51,7 @@ export default function MatchupCategorySnapshot({
       title="Category Snapshot"
       titleId="category-snapshot-heading"
     >
-      <ul className="grid grid-cols-2 gap-2 @[600px]:grid-cols-3 @[960px]:grid-cols-6">
+      <ul className="grid grid-cols-2 gap-1.5 @[600px]:grid-cols-3 @[960px]:grid-cols-6">
         {MATCHUP_CATEGORIES.map((category) => {
           const result = results?.[category.id];
           if (!result) return null;
@@ -101,7 +101,7 @@ export default function MatchupCategorySnapshot({
         })}
       </ul>
 
-      <p className="mt-2.5 text-[11px] leading-4 text-slate-600">{CATEGORY_ADVANTAGE_NOTE}</p>
+      <p className="mt-1.5 text-[11px] leading-4 text-slate-600">{CATEGORY_ADVANTAGE_NOTE}</p>
     </MatchupSectionCard>
   );
 }

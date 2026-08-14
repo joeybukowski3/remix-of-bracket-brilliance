@@ -331,7 +331,7 @@ export default function NFLMatchupDetail() {
      * content column so cards keep the width they had before, and stays well
      * inside the layout's column gap at every breakpoint.
      */
-    <div className="-mx-2 space-y-3 rounded-2xl bg-[#eef1f5] px-2 py-3">
+    <div className="-mx-2 space-y-2 rounded-2xl bg-[#eef1f5] px-2 py-2">
       <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
       <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
@@ -357,7 +357,7 @@ export default function NFLMatchupDetail() {
         />
       </div>
 
-      <div {...panelProps("comparison")} className="space-y-3">
+      <div {...panelProps("comparison")} className="space-y-2">
         <MatchupDataControls
           settings={sampleSettings}
           onChange={setSampleSettings}
@@ -398,7 +398,7 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         >
-          <div className="grid grid-cols-1 items-start gap-3 @[1080px]:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-2 @[1080px]:grid-cols-2">
             <MatchupTrenches
               matchup={matchup}
               trench={trench}

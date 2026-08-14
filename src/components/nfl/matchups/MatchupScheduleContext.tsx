@@ -78,13 +78,13 @@ function TeamScheduleCard({
   const noSample = summary.ratedGames === 0;
 
   return (
-    <div className="rounded border border-slate-200 p-2.5">
+    <div className="rounded border border-slate-200 p-2">
       <div className="flex items-center gap-2">
         <NflTeamCrest team={team} side={side} size={20} />
         <span className="truncate text-[12px] font-semibold text-slate-900">{team.teamName}</span>
       </div>
 
-      <dl className="mt-2 grid grid-cols-3 gap-2">
+      <dl className="mt-1.5 grid grid-cols-3 gap-2">
         <AverageFigure label="Opp power" value={summary.avgOpponentPowerRank} />
         <AverageFigure label="Opp offense" value={summary.avgOpponentOffenseRank} />
         <AverageFigure label="Opp defense" value={summary.avgOpponentDefenseRank} />
@@ -172,12 +172,12 @@ export default function MatchupScheduleContext({
       }
     >
       <div id="schedule-context-body">
-        <div className="grid gap-2 @[560px]:grid-cols-2">
+        <div className="grid gap-1.5 @[560px]:grid-cols-2">
           <TeamScheduleCard team={matchup.away} side="away" summary={awaySummary} />
           <TeamScheduleCard team={matchup.home} side="home" summary={homeSummary} />
         </div>
 
-        <p className="mt-2.5 text-[11px] leading-4 text-slate-600">
+        <p className="mt-1.5 text-[11px] leading-4 text-slate-600">
           Regular-season games played so far only; unplayed opponents are not included.{" "}
           {SCHEDULE_CONTEXT_DISCLAIMER}
         </p>

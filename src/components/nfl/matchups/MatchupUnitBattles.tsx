@@ -105,7 +105,7 @@ function PossessionPanel({
 }) {
   return (
     <div className="rounded-lg border border-slate-200">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-2.5 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-2 py-1.5">
         <PossessionTeam team={offenseTeam} side={offenseSide} unit="Offense" align="start" />
         <span className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
           vs
@@ -113,10 +113,14 @@ function PossessionPanel({
         <PossessionTeam team={defenseTeam} side={defenseSide} unit="Defense" align="end" />
       </div>
 
-      <div className="px-2 pb-2">
+      <div className="px-1.5 pb-1.5">
         {UNIT_BATTLE_GROUPS.map((group) => (
-          <div key={group.id} className="pt-2">
-            <h4 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+          <div key={group.id} className="pt-1.5">
+            {/* Solid dark band: the ink-to-white transition against the rows is
+                its own contrast, so it needs no border. Deliberately slate, not
+                green/amber/orange/red — those are the rank-tier colours — and
+                not blue, which reads as a link elsewhere on this page. */}
+            <h4 className="mb-1 rounded bg-slate-800 px-2 py-1 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-white">
               {group.label}
             </h4>
             {group.pairings.map((pairing) => {

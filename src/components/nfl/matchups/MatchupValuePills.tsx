@@ -1,24 +1,26 @@
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import { rankCellClass } from "@/lib/nfl/rankTier";
 
 /**
- * One team's value and its league rank, drawn as two pills.
+ * One team's league rank and the raw value behind it, side by side.
  *
- * The same treatment `MatchupMetricRow` uses in Statistical Comparison, shared
- * so every row inside Unit Matchups reads identically whatever supplies it —
- * the conventional/EPA resolver, the RBSDM success-rate periods or the ESPN
- * trench periods. Before this, the three row types each rendered their own
- * washed cell, so a success-rate line read as a different kind of table from
- * the EPA line directly above it.
+ * Rank leads. It is the figure a reader compares across a row — the only one
+ * that means the same thing for a rushing offense and the rushing defense it
+ * faces — so it is set large and keeps the saturated `rankTier` badge, while
+ * the raw value sits beside it as small muted text. The tier bands themselves
+ * are untouched.
  *
- * Both pills take their tint from the same `rankTier` bands used everywhere
- * else: the value pill wears the faint `cell` wash, the rank pill the saturated
- * `badge`. The band definitions are untouched.
+ * The pair is laid out space-between rather than clustered: the rank pins to
+ * the edge nearest the centre metric column and the value to the outer edge, so
+ * the reading order stays unambiguous whatever width either element takes.
+ *
+ * Shared by every row inside Unit Matchups and by Statistical Comparison, so a
+ * success-rate line, a trench line and an EPA line all read as one table
+ * whichever resolver supplied them.
  *
  * This renders presentation only. It performs no comparison and takes no view
  * on which side is better — in Unit Matchups the two sides are different
  * metrics (a rushing offense against a rushing defense), so a leader here would
- * be a claim the data does not support.
+ * be a claim the data does not support. There is deliberately no leader prop.
  */
 export default function MatchupValuePills({
   side,
@@ -40,21 +42,58 @@ export default function MatchupValuePills({
   srText: string;
 }) {
   const isAway = side === "away";
-  const tinted = !neutral && !unavailable;
 
-  return (
-    <div
-      className={`flex flex-col gap-1 ${isAway ? "items-end text-right" : "items-start text-left"}`}
-    >
-      <span className="sr-only">{srText}</span>
+  /**
+   * The rank, promoted to the primary element.
+   *
+   * When there is no rank the formatted value takes its place at the same
+   * position, so the inner edge always carries the cell's headline rather than
+   * leaving a gap where a rank would have been.
+   */
+  const primary =
+    rank == null || !Number.isFinite(rank) ? (
+      <span className="text-[15px] font-bold leading-none tabular-nums text-slate-500">
+        {formatted}
+      </span>
+    ) : (
+      <MatchupRankBadge
+        rank={rank}
+        neutral={neutral}
+        className="min-w-[2.75rem] px-2 py-1 text-[22px] leading-none"
+      />
+    );
+
+  /** The raw value, demoted to a quiet companion. Omitted when it is the primary. */
+  const secondary =
+    rank == null || !Number.isFinite(rank) ? null : (
       <span
-        className={`inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 text-[13px] font-semibold leading-4 tabular-nums sm:text-sm ${
-          tinted ? `${rankCellClass(rank)} border-slate-200/80` : "border-transparent"
-        } ${unavailable ? "text-slate-600" : "text-slate-900"}`}
+        className={`text-[11px] font-semibold leading-none tabular-nums ${
+          unavailable ? "text-slate-500" : "text-slate-600"
+        }`}
       >
         {formatted}
       </span>
-      <MatchupRankBadge rank={rank} neutral={neutral} />
+    );
+
+  /**
+   * Space-between, not a cluster: the rank is pinned to the edge nearest the
+   * centre metric column and the value to the outer edge, so which side a rank
+   * belongs to stays unambiguous however wide either element renders.
+   */
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <span className="sr-only">{srText}</span>
+      {isAway ? (
+        <>
+          {secondary}
+          {primary}
+        </>
+      ) : (
+        <>
+          {primary}
+          {secondary}
+        </>
+      )}
     </div>
   );
 }

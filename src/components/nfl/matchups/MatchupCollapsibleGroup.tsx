@@ -89,7 +89,7 @@ export default function MatchupCollapsibleGroup({
         </button>
       </h3>
 
-      <div id={panelId} hidden={!open} className="px-3 pb-3 sm:px-4">
+      <div id={panelId} hidden={!open} className="px-2.5 pb-2 sm:px-3">
         {children}
       </div>
     </div>

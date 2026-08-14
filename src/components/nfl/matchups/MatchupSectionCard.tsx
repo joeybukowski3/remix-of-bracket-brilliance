@@ -54,22 +54,22 @@ export default function MatchupSectionCard({
 }) {
   return (
     <section id={id} aria-labelledby={titleId} className={cn(MATCHUP_CARD_SURFACE, className)}>
-      <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
+      <div className="border-b border-slate-100 px-2.5 py-1.5 sm:px-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className={MATCHUP_CARD_EYEBROW}>{eyebrow}</div>
-            <h2 id={titleId} className={cn("mt-0.5", MATCHUP_CARD_TITLE)}>
+            <h2 id={titleId} className={MATCHUP_CARD_TITLE}>
               {title}
             </h2>
             {subtitle && (
-              <p className="mt-1 text-[11px] leading-4 text-slate-600">{subtitle}</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{subtitle}</p>
             )}
           </div>
           {headerAside && <div className="flex shrink-0 items-center gap-2">{headerAside}</div>}
         </div>
       </div>
 
-      <div className={cn("px-3 py-3 sm:px-4", bodyClassName)}>{children}</div>
+      <div className={cn("px-2.5 py-2 sm:px-3", bodyClassName)}>{children}</div>
     </section>
   );
 }

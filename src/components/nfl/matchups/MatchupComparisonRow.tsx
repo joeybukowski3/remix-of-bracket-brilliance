@@ -62,21 +62,23 @@ export default function MatchupComparisonRow({
 }) {
   const neutral = direction === "context-only";
   return (
-    <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 border-b border-slate-100 py-1.5 last:border-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
+    <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 border-b border-slate-100 py-1 last:border-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
       <ComparisonSide side="away" value={away} teamName={awayTeamName} metricLabel={metricLabel} neutral={neutral} />
 
+      {/* The metric name is the row's anchor between the two rank figures, so it
+          is set at the same 15px weight as Statistical Comparison's label. */}
       <div className="min-w-0 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (
           <>
-            <span className="block text-[10px] font-bold leading-3 text-slate-600 sm:hidden">
+            <span className="block text-[15px] font-bold leading-5 text-slate-800 sm:hidden">
               {shortLabel}
             </span>
-            <span className="hidden text-[11px] font-bold leading-4 text-slate-600 sm:block">
+            <span className="hidden text-[15px] font-bold leading-5 text-slate-800 sm:block">
               {metricLabel}
             </span>
           </>
         ) : (
-          <span className="block text-[10px] font-bold leading-3 text-slate-600 sm:text-[11px] sm:leading-4">
+          <span className="block text-[15px] font-bold leading-5 text-slate-800">
             {metricLabel}
           </span>
         )}

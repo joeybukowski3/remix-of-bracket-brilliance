@@ -195,9 +195,9 @@ export default function MatchupComparisonPanel({
   );
 
   return (
-    <div className="@container space-y-3">
+    <div className="@container space-y-2">
       {categorySummary && (
-        <p className="text-[12px] leading-5 text-slate-700">{categorySummary}</p>
+        <p className="px-0.5 text-[12px] leading-5 text-slate-700">{categorySummary}</p>
       )}
 
       {onOpenCategory && (
@@ -212,7 +212,7 @@ export default function MatchupComparisonPanel({
 
       {unitBattles}
 
-      <div className="grid grid-cols-1 items-start gap-3 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
+      <div className="grid grid-cols-1 items-start gap-2 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
         <MatchupSectionCard
           eyebrow="Metric by metric"
           title="Statistical Comparison"

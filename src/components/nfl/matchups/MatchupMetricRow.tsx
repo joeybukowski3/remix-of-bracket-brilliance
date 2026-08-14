@@ -131,10 +131,12 @@ export default function MatchupMetricRow({
       : "text-slate-600";
 
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-b border-slate-100 py-2 last:border-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:items-center sm:gap-2">
+    <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-slate-100 py-1 last:border-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:items-center sm:gap-2">
       <div className="order-first col-span-2 min-w-0 sm:order-none sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:text-center">
         <div className="flex items-center gap-1.5 sm:justify-center">
-          <span className="text-[11px] font-bold leading-4 text-slate-700">
+          {/* Matches the Unit Matchups row label, so the two tables read at the
+              same scale rather than one looking like a footnote of the other. */}
+          <span className="text-[15px] font-bold leading-5 text-slate-800">
             <span className="sm:hidden">{metric.shortLabel ?? metric.label}</span>
             <span className="hidden sm:inline">{metric.label}</span>
           </span>
