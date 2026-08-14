@@ -357,6 +357,7 @@ export default function NFLMatchupDetail() {
         <MatchupComparisonPanel
           matchup={matchup}
           categoryMetrics={categoryMetrics}
+          categoryResults={categoryResults}
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
           scheduleContext={
@@ -368,6 +369,14 @@ export default function NFLMatchupDetail() {
               />
             ) : undefined
           }
+          unitBattles={
+            <MatchupUnitBattles
+              matchup={matchup}
+              resolver={metricResolver}
+              successRate={successRate}
+              trench={trench}
+            />
+          }
           periodComparison={
             successArtifact && successRate ? (
               <MatchupPeriodComparison
@@ -378,13 +387,6 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         >
-          <MatchupUnitBattles
-            matchup={matchup}
-            resolver={metricResolver}
-            successRate={successRate}
-            trench={trench}
-          />
-
           <div className="grid grid-cols-1 items-start gap-3 @[1080px]:grid-cols-2">
             <MatchupTrenches
               matchup={matchup}

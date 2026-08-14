@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupMetricRow from "@/components/nfl/matchups/MatchupMetricRow";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
+import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import {
   MATCHUP_CATEGORIES,
+  describeCategoryAdvantage,
   getMatchupCategory,
   matchupCategoryTriggerId,
+  type CategoryAdvantageResult,
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
-import type { NflMatchup } from "@/lib/nfl/matchups";
+import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /** How long the arrival highlight stays on the destination group. */
 const JUMP_HIGHLIGHT_MS = 1100;
@@ -19,16 +22,83 @@ const JUMP_HIGHLIGHT_MS = 1100;
 function ComparisonColumnHeader({ matchup }: { matchup: NflMatchup }) {
   return (
     <div className="hidden grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] items-center gap-2 border-b border-slate-200 pb-1.5 sm:grid">
-      <span className="text-right text-[10px] font-bold uppercase tracking-wide text-slate-600">
-        {matchup.away.abbr.toUpperCase()}
+      <span className="flex items-center justify-end gap-1.5">
+        <NflTeamCrest team={matchup.away} side="away" size={18} />
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          {matchup.away.abbr.toUpperCase()}
+        </span>
       </span>
       <span className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-600">
         Metric · Advantage
       </span>
-      <span className="text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
-        {matchup.home.abbr.toUpperCase()}
+      <span className="flex items-center justify-start gap-1.5">
+        <NflTeamCrest team={matchup.home} side="home" size={18} />
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          {matchup.home.abbr.toUpperCase()}
+        </span>
       </span>
     </div>
+  );
+}
+
+/**
+ * Category advantage on the accordion trigger.
+ *
+ * The same count Overview's Category Advantage table shows, from the same
+ * `CategoryAdvantageResult`, so a category cannot report one leader collapsed
+ * and another expanded. Nothing is recomputed here and no tally spans
+ * categories — this is one category's own unweighted count of the rows directly
+ * beneath it.
+ *
+ * The visual parts are hidden from assistive technology and the whole result is
+ * restated once in `describeCategoryAdvantage()`'s sentence, which is the same
+ * helper the Overview rows use for their accessible name.
+ */
+function CategoryAdvantageMeta({
+  result,
+  categoryLabel,
+  away,
+  home,
+}: {
+  result: CategoryAdvantageResult;
+  categoryLabel: string;
+  away: NflMatchupTeam;
+  home: NflMatchupTeam;
+}) {
+  const team = result.result === "away" ? away : result.result === "home" ? home : null;
+  const side = result.result === "away" ? "away" : "home";
+  const leads = result.result === "away" ? result.awayLeads : result.homeLeads;
+
+  return (
+    <>
+      <span aria-hidden className="flex min-w-0 items-center gap-1.5">
+        {team ? (
+          <>
+            <NflTeamCrest team={team} side={side} size={16} />
+            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
+              {team.abbr.toUpperCase()}
+            </span>
+            <span className="truncate text-[11px] font-medium text-slate-600">
+              Leads {leads} of {result.eligible}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-slate-600">
+              {result.result === "even" ? "Even" : "N/A"}
+            </span>
+            <span className="truncate text-[11px] font-medium text-slate-600">
+              {result.result === "even"
+                ? `${result.awayLeads} each of ${result.eligible}`
+                : "No comparable metrics"}
+            </span>
+          </>
+        )}
+      </span>
+      <span className="sr-only">
+        {describeCategoryAdvantage(result, categoryLabel, away.teamName, home.teamName)}
+      </span>
+    </>
   );
 }
 
@@ -49,14 +119,22 @@ function ComparisonColumnHeader({ matchup }: { matchup: NflMatchup }) {
 export default function MatchupComparisonPanel({
   matchup,
   categoryMetrics,
+  categoryResults,
   pendingCategory,
   navigationToken,
   scheduleContext,
+  unitBattles,
   periodComparison,
   children,
 }: {
   matchup: NflMatchup;
   categoryMetrics: Record<MatchupCategoryId, MatchupDisplayMetric[]>;
+  /**
+   * The same per-category counts Overview renders, resolved once by the page.
+   * Shared rather than recomputed so the two surfaces cannot disagree about
+   * which team leads a category.
+   */
+  categoryResults: Record<MatchupCategoryId, CategoryAdvantageResult>;
   /** Category addressed by the current fragment, if any. */
   pendingCategory: MatchupCategoryId | null;
   /** Changes on every navigation so a repeat jump re-runs the sequence. */
@@ -68,6 +146,12 @@ export default function MatchupComparisonPanel({
    * value, colour or ordering below it depends on its presence or its state.
    */
   scheduleContext?: React.ReactNode;
+  /**
+   * Unit Matchups, rendered above the comparison grid so each offense is read
+   * against the defense it actually faces before the same-side, vs-league-average
+   * table below it. Its own data sources stay with the page.
+   */
+  unitBattles?: React.ReactNode;
   /**
    * Success Rate by Period, paired beside Statistical Comparison once the
    * surrounding container is wide enough for both to stay readable. Kept as
@@ -111,6 +195,8 @@ export default function MatchupComparisonPanel({
     <div className="@container space-y-3">
       {scheduleContext}
 
+      {unitBattles}
+
       <div className="grid grid-cols-1 items-start gap-3 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
         <section
           aria-labelledby="statistical-comparison-heading"
@@ -130,13 +216,26 @@ export default function MatchupComparisonPanel({
 
           {MATCHUP_CATEGORIES.map((category) => {
             const rows = categoryMetrics[category.id] ?? [];
+            // Optional-chained for the same reason `categoryMetrics` is: a
+            // category with no resolved result renders without a meta chip
+            // rather than taking the whole panel down.
+            const result = categoryResults?.[category.id];
             return (
               <MatchupCollapsibleGroup
                 key={category.id}
                 id={category.hash}
                 triggerId={matchupCategoryTriggerId(category.id)}
                 title={category.label}
-                meta={`${rows.length} metric${rows.length === 1 ? "" : "s"}`}
+                meta={
+                  result ? (
+                    <CategoryAdvantageMeta
+                      result={result}
+                      categoryLabel={category.label}
+                      away={matchup.away}
+                      home={matchup.home}
+                    />
+                  ) : undefined
+                }
                 open={open[category.id] === true}
                 highlighted={highlighted === category.id}
                 triggerRef={(node) => {

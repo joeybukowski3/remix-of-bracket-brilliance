@@ -1,3 +1,4 @@
+import { formatRankOrdinal } from "@/components/nfl/matchups/rankOrdinal";
 import { getRankTierLabel, rankBadgeClass } from "@/lib/nfl/rankTier";
 
 /** Neutral chip used for descriptive metrics that have no better/worse direction. */
@@ -37,12 +38,12 @@ export default function MatchupRankBadge({
 
   return (
     <span
-      className={`inline-flex min-w-[2.25rem] items-center justify-center rounded border px-1 py-0.5 text-[10px] font-bold leading-none tabular-nums ${
+      className={`inline-flex min-w-[2.25rem] items-center justify-center rounded-full border px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums ${
         neutral ? NEUTRAL_BADGE : rankBadgeClass(rank)
       } ${className}`}
       title={description}
     >
-      <span aria-hidden>{`#${rank}`}</span>
+      <span aria-hidden>{formatRankOrdinal(rank)}</span>
       <span className="sr-only">{description}</span>
     </span>
   );

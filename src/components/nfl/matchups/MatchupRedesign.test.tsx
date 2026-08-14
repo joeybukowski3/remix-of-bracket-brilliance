@@ -214,6 +214,7 @@ function Harness({
             <MatchupComparisonPanel
               matchup={MATCHUP}
               categoryMetrics={metrics}
+              categoryResults={results}
               pendingCategory={navigation.category}
               navigationToken={navigation.token}
             />

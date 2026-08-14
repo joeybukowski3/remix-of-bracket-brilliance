@@ -118,7 +118,7 @@ describe("preseason — 2025 only", () => {
     renderTrenches(resolveTrenchPeriods(0, 0));
     // NE PBWR 64 (#13) vs SEA PRWR 41 (#25)
     expect(screen.getAllByText("64%").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("#13").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
     expect(screen.getAllByText("41%").length).toBeGreaterThan(0);
   });
 
@@ -227,7 +227,7 @@ describe("offense and defense sections", () => {
     );
     const pbwr = screen.getAllByText("Pass Block Win Rate")[0].closest("div.border-b") as HTMLElement;
     expect(within(pbwr).getByText("64%")).toBeInTheDocument();
-    expect(within(pbwr).getByText("#13")).toBeInTheDocument();
+    expect(within(pbwr).getByText("13th")).toBeInTheDocument();
     const rbwr = screen.getAllByText("Run Block Win Rate")[0].closest("div.border-b") as HTMLElement;
     expect(within(rbwr).getByText("72%")).toBeInTheDocument();
   });

@@ -11,13 +11,22 @@ import { rankCellClass } from "@/lib/nfl/rankTier";
 /**
  * One team's value for one metric.
  *
- * The saturated rank chip carries the tier signal and the cell takes only a
- * faint wash behind it, exactly as `rankTier.ts` intends. The numeric rank is
- * always printed, so tier is never communicated by colour alone.
+ * Drawn as two distinct pills — the value and its league rank — rather than a
+ * washed cell containing loose text. Both take their tint from the same
+ * `rankTier` bands the rest of the analyzer uses: the value pill wears the faint
+ * `cell` wash and the rank pill the saturated `badge`, so the pair reads as one
+ * object without the value competing with the rank for attention. The band
+ * definitions themselves are untouched.
+ *
+ * Weight, not colour, marks the head-to-head leader: the side `metric.comparison`
+ * already names is set heavier than the side that is not. That is a redundant
+ * cue only — the row states its advantage in words beneath the label, and the
+ * numeric rank is always printed, so neither the leader nor the tier is ever
+ * carried by appearance alone.
  *
  * A context-only metric is drawn neutral: leading the league in pass attempts
  * is a play-style fact, not an "Elite" performance, and must not be coloured as
- * one. An unavailable value takes no wash either, so a missing number cannot
+ * one. An unavailable value takes no tint either, so a missing number cannot
  * borrow a tier it does not have.
  */
 function MetricSide({
@@ -27,6 +36,7 @@ function MetricSide({
   teamName,
   metricLabel,
   neutral,
+  isLeader,
 }: {
   side: "away" | "home";
   value: MatchupDisplaySide;
@@ -34,14 +44,16 @@ function MetricSide({
   teamName: string;
   metricLabel: string;
   neutral: boolean;
+  /** True when `metric.comparison` already names this side as the leader. */
+  isLeader: boolean;
 }) {
   const isAway = side === "away";
   const unavailable = value.formatted === METRIC_NA;
-  const wash = neutral || unavailable ? "" : rankCellClass(value.rank);
+  const tinted = !neutral && !unavailable;
 
   return (
     <div
-      className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 sm:flex-col sm:items-stretch sm:justify-start sm:gap-0.5 ${wash} ${
+      className={`flex items-center justify-between gap-2 sm:flex-col sm:items-stretch sm:justify-start sm:gap-1 ${
         isAway ? "sm:text-right" : "sm:text-left"
       } ${isAway ? "" : "flex-row-reverse sm:flex-col"}`}
     >
@@ -56,15 +68,23 @@ function MetricSide({
       <span className="sr-only">
         {teamName} {metricLabel}:{" "}
       </span>
-      <span
-        className={`text-[13px] font-bold leading-4 tabular-nums sm:text-sm ${
-          unavailable ? "text-slate-600" : "text-slate-900"
-        }`}
-      >
-        {value.formatted}
-      </span>
       <div className={isAway ? "sm:flex sm:justify-end" : "sm:flex sm:justify-start"}>
-        <MatchupRankBadge rank={value.rank} neutral={neutral} />
+        <span
+          className={`inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 text-[13px] leading-4 tabular-nums sm:text-sm ${
+            isLeader ? "font-extrabold" : "font-semibold"
+          } ${
+            tinted ? `${rankCellClass(value.rank)} border-slate-200/80` : "border-transparent"
+          } ${unavailable ? "text-slate-600" : "text-slate-900"}`}
+        >
+          {value.formatted}
+        </span>
+      </div>
+      <div className={isAway ? "sm:flex sm:justify-end" : "sm:flex sm:justify-start"}>
+        <MatchupRankBadge
+          rank={value.rank}
+          neutral={neutral}
+          className={isLeader ? "font-extrabold" : ""}
+        />
       </div>
     </div>
   );
@@ -134,7 +154,13 @@ export default function MatchupMetricRow({
             </button>
           )}
         </div>
-        <div className={`mt-0.5 text-[10px] font-bold leading-3 ${advantageTone}`}>{advantage}</div>
+        {/* Compressed to a caption, never removed: the advantage must stay
+            legible in words, not only as the heavier pill weight beside it. */}
+        <div
+          className={`mt-0.5 text-[9px] font-bold uppercase leading-3 tracking-[0.06em] ${advantageTone}`}
+        >
+          {advantage}
+        </div>
       </div>
 
       <div className="sm:col-start-1 sm:row-start-1">
@@ -145,6 +171,7 @@ export default function MatchupMetricRow({
           teamName={awayTeamName}
           metricLabel={metric.label}
           neutral={neutral}
+          isLeader={metric.comparison === "away"}
         />
       </div>
 
@@ -156,6 +183,7 @@ export default function MatchupMetricRow({
           teamName={homeTeamName}
           metricLabel={metric.label}
           neutral={neutral}
+          isLeader={metric.comparison === "home"}
         />
       </div>
 

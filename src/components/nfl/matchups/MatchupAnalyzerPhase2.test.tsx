@@ -132,8 +132,8 @@ describe("populated conventional stats", () => {
   it("renders league ranks alongside the values", () => {
     renderOffense();
     const row = rowFor("Yards / Play");
-    expect(within(row).getByText("#1")).toBeInTheDocument();
-    expect(within(row).getByText("#14")).toBeInTheDocument();
+    expect(within(row).getByText("1st")).toBeInTheDocument();
+    expect(within(row).getByText("14th")).toBeInTheDocument();
   });
 
   it("applies the quality rank tier to performance metrics", () => {

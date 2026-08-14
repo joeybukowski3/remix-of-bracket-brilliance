@@ -152,7 +152,7 @@ describe("ranks", () => {
   it("attaches rank chips to EPA rows", () => {
     const { container } = renderOffense();
     // NE is #1 in EPA/play over the rolling eight-game sample.
-    expect(container.textContent).toContain("#1");
+    expect(container.textContent).toContain("1st");
   });
 });
 
