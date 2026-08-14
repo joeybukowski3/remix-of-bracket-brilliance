@@ -195,6 +195,7 @@ export default function MatchupUnitBattles({
   return (
     <MatchupSection
       id="matchups"
+      eyebrow="Unit by unit"
       subtitle="Direct unit comparison. No matchup score or projected advantage is derived."
       headerAside={
         <MatchupSegmentedControl

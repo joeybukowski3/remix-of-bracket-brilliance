@@ -1,3 +1,4 @@
+import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategoryAdvantageChip, {
   categoryAdvantageLeadText,
 } from "@/components/nfl/matchups/MatchupCategoryAdvantageChip";
@@ -9,6 +10,7 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 import type { NflMatchup } from "@/lib/nfl/matchups";
+import { cn } from "@/lib/utils";
 
 /**
  * Category snapshot.
@@ -44,21 +46,23 @@ export default function MatchupCategorySnapshot({
   const { away, home } = matchup;
 
   return (
-    <section
-      aria-labelledby="category-snapshot-heading"
-      className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4"
+    <MatchupSectionCard
+      eyebrow="At a glance"
+      title="Category Snapshot"
+      titleId="category-snapshot-heading"
     >
-      <h2
-        id="category-snapshot-heading"
-        className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
-      >
-        Category Snapshot
-      </h2>
-
-      <ul className="mt-2 grid grid-cols-2 gap-2 @[600px]:grid-cols-3 @[960px]:grid-cols-6">
+      <ul className="grid grid-cols-2 gap-2 @[600px]:grid-cols-3 @[960px]:grid-cols-6">
         {MATCHUP_CATEGORIES.map((category) => {
           const result = results?.[category.id];
           if (!result) return null;
+
+          // Semantic stripe, not a team colour: accent when the category has a
+          // leader, neutral when it does not. Which team leads is already
+          // unambiguous from the crest and abbreviation inside the tile, and
+          // team colour would not carry it reliably anyway — guide data holds a
+          // single colour per team, so a navy-vs-navy matchup gives both sides
+          // near-identical stripes.
+          const decided = result.result === "away" || result.result === "home";
 
           return (
             <li key={category.id}>
@@ -71,7 +75,10 @@ export default function MatchupCategorySnapshot({
                   home.teamName
                 )}
                 onClick={() => onOpenCategory(category.id)}
-                className="flex min-h-[44px] w-full flex-col items-start gap-1 rounded-md border border-slate-200 px-2 py-2 text-left transition-colors hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                className={cn(
+                  "flex min-h-[44px] w-full flex-col items-start gap-1 rounded-lg border border-t-[3px] border-slate-200 bg-slate-50 px-2 py-2 text-left transition-colors hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                  decided ? "border-t-emerald-600" : "border-t-slate-300"
+                )}
               >
                 <span
                   aria-hidden
@@ -95,6 +102,6 @@ export default function MatchupCategorySnapshot({
       </ul>
 
       <p className="mt-2.5 text-[11px] leading-4 text-slate-600">{CATEGORY_ADVANTAGE_NOTE}</p>
-    </section>
+    </MatchupSectionCard>
   );
 }

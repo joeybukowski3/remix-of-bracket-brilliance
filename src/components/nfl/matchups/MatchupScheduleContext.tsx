@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import type { OpponentRankSummary } from "@/lib/nfl/opponentRankSummary";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
@@ -142,24 +143,19 @@ export default function MatchupScheduleContext({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <section
-      aria-labelledby="schedule-context-heading"
-      className="rounded-lg border border-slate-200 bg-white"
-    >
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 sm:px-4">
-        <div className="min-w-0">
-          <h2
-            id="schedule-context-heading"
-            className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600"
-          >
-            Strength of Schedule
-          </h2>
-          <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-            Average league rank of the opponents each team has already played.{" "}
-            <span className="font-semibold text-slate-900">Lower means a tougher schedule.</span>{" "}
-            Context only — it does not adjust any figure on this page.
-          </p>
-        </div>
+    <MatchupSectionCard
+      eyebrow="Who they have faced"
+      title="Strength of Schedule"
+      titleId="schedule-context-heading"
+      subtitle={
+        <>
+          Average league rank of the opponents each team has already played.{" "}
+          <span className="font-semibold text-slate-900">Lower means a tougher schedule.</span>{" "}
+          Context only — it does not adjust any figure on this page.
+        </>
+      }
+      bodyClassName={open ? undefined : "hidden"}
+      headerAside={
         <button
           type="button"
           aria-expanded={open}
@@ -173,9 +169,9 @@ export default function MatchupScheduleContext({
             className={cn("h-3 w-3 transition-transform", open && "rotate-180")}
           />
         </button>
-      </div>
-
-      <div id="schedule-context-body" hidden={!open} className="px-3 py-3 sm:px-4">
+      }
+    >
+      <div id="schedule-context-body">
         <div className="grid gap-2 @[560px]:grid-cols-2">
           <TeamScheduleCard team={matchup.away} side="away" summary={awaySummary} />
           <TeamScheduleCard team={matchup.home} side="home" summary={homeSummary} />
@@ -186,6 +182,6 @@ export default function MatchupScheduleContext({
           {SCHEDULE_CONTEXT_DISCLAIMER}
         </p>
       </div>
-    </section>
+    </MatchupSectionCard>
   );
 }

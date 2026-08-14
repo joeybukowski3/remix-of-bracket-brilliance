@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import MatchupCategoryAdvantageChip, {
   categoryAdvantageLeadText,
 } from "@/components/nfl/matchups/MatchupCategoryAdvantageChip";
+import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupMetricRow from "@/components/nfl/matchups/MatchupMetricRow";
@@ -212,22 +213,13 @@ export default function MatchupComparisonPanel({
       {unitBattles}
 
       <div className="grid grid-cols-1 items-start gap-3 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
-        <section
-          aria-labelledby="statistical-comparison-heading"
-          className="rounded-lg border border-slate-200 bg-white"
+        <MatchupSectionCard
+          eyebrow="Metric by metric"
+          title="Statistical Comparison"
+          titleId="statistical-comparison-heading"
+          subtitle="League rank out of 32 — 1 is best. Every row states its advantage in words."
+          bodyClassName="px-0 py-0 sm:px-0"
         >
-          <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-            <h2
-              id="statistical-comparison-heading"
-              className="text-sm font-semibold text-slate-900"
-            >
-              Statistical Comparison
-            </h2>
-            <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-              League rank out of 32 — 1 is best. Every row states its advantage in words.
-            </p>
-          </div>
-
           {MATCHUP_CATEGORIES.map((category) => {
             const rows = categoryMetrics[category.id] ?? [];
             // Optional-chained for the same reason `categoryMetrics` is: a
@@ -283,7 +275,7 @@ export default function MatchupComparisonPanel({
               advantage in words.
             </p>
           </div>
-        </section>
+        </MatchupSectionCard>
 
         {periodComparison}
       </div>

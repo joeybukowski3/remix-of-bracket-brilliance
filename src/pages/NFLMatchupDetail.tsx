@@ -321,7 +321,17 @@ export default function NFLMatchupDetail() {
   });
 
   return (
-    <div className="space-y-3">
+    /**
+     * Route-scoped surface: a step darker than the white section cards, so they
+     * lift off the ground beneath them. Deliberately applied here rather than on
+     * NflPlatformLayout, which wraps every NFL page — the other NFL surfaces keep
+     * their existing background and flat cards untouched.
+     *
+     * The small negative inline margin lets the surface bleed just past the
+     * content column so cards keep the width they had before, and stays well
+     * inside the layout's column gap at every breakpoint.
+     */
+    <div className="-mx-2 space-y-3 rounded-2xl bg-[#eef1f5] px-2 py-3">
       <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
       <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
