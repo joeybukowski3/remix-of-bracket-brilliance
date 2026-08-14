@@ -51,6 +51,7 @@ export default function MatchupComparisonPanel({
   categoryMetrics,
   pendingCategory,
   navigationToken,
+  scheduleContext,
   periodComparison,
   children,
 }: {
@@ -60,6 +61,13 @@ export default function MatchupComparisonPanel({
   pendingCategory: MatchupCategoryId | null;
   /** Changes on every navigation so a repeat jump re-runs the sequence. */
   navigationToken: number;
+  /**
+   * Strength-of-schedule context, rendered above the comparison grid.
+   *
+   * Purely informational and structurally inert: it sits in its own row and no
+   * value, colour or ordering below it depends on its presence or its state.
+   */
+  scheduleContext?: React.ReactNode;
   /**
    * Success Rate by Period, paired beside Statistical Comparison once the
    * surrounding container is wide enough for both to stay readable. Kept as
@@ -101,6 +109,8 @@ export default function MatchupComparisonPanel({
 
   return (
     <div className="@container space-y-3">
+      {scheduleContext}
+
       <div className="grid grid-cols-1 items-start gap-3 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
         <section
           aria-labelledby="statistical-comparison-heading"
