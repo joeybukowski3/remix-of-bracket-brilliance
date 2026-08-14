@@ -5,6 +5,7 @@ import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 import { isMlPostingEnabled } from "./lib/mlb-ml-posting-gate.mjs";
+import { createAnalyticsBlockingPage } from "./lib/playwright-analytics-blocking.mjs";
 
 const ROOT = process.cwd();
 const ML_EDGES_URL = "https://www.joeknowsball.com/mlb";
@@ -519,7 +520,7 @@ async function main() {
   let pageData;
   let screenshotPath = "";
   try {
-    const page = await browser.newPage({
+    const page = await createAnalyticsBlockingPage(browser, {
       viewport: { width: 1080, height: 1400 },
       deviceScaleFactor: 1,
     });

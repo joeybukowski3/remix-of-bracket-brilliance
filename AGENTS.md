@@ -80,6 +80,9 @@ Inspect surrounding usage before editing any of these.
 - `trash` > `rm` — recoverable beats gone forever.
 - When in doubt, ask.
 
+## Automated Browser Analytics
+All automated browser testing, screenshots, debugging, and visual verification must use the repository's Playwright analytics-blocking setup. Automated browser sessions must not send Google Analytics or Google Tag Manager traffic. Do not bypass or remove this protection.
+
 ## External vs Internal
 **Do freely:** read files, explore, organize, run dev server, run scripts locally.
 **Ask first:** deploying to Vercel, pushing to main, sending anything externally, touching Supabase migrations.

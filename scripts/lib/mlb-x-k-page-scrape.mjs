@@ -20,6 +20,7 @@
  * import a CLI entry point (which would execute its own main()) to get it.
  */
 import { dedupeScrapedKRows, filterEligibleKRows } from "./mlb-k-social-eligibility.mjs";
+import { createAnalyticsBlockingPage } from "./playwright-analytics-blocking.mjs";
 
 export const STRIKEOUT_PROPS_URL = "https://www.joeknowsball.com/mlb";
 const PAGE_EXPORT_SELECTOR = '[data-x-export="mlb-k-social"]';
@@ -52,7 +53,7 @@ export async function acquireKPageData({
   let browser = null;
   try {
     browser = await launchBrowser();
-    const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
+    const page = await createAnalyticsBlockingPage(browser, { viewport, deviceScaleFactor: 1 });
     page.setDefaultTimeout(60000);
     const pageData = await scrape(page);
     return { available: true, pageData, error: null };

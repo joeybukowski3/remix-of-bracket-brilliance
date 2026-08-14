@@ -3,6 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
+import { createAnalyticsBlockingPage } from "./lib/playwright-analytics-blocking.mjs";
 import { dedupeScrapedKRows, filterEligibleKRows } from "./lib/mlb-k-social-eligibility.mjs";
 import { checkDailyPostingLock, getDuplicateStatePath, getForceRepostOverride, readPostReceipt, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { buildConfirmationSnapshot, resolveKRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
@@ -359,7 +360,7 @@ async function main() {
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1080, height: 1400 }, deviceScaleFactor: 1 });
+    const page = await createAnalyticsBlockingPage(browser, { viewport: { width: 1080, height: 1400 }, deviceScaleFactor: 1 });
     page.setDefaultTimeout(60000);
     const pageData = await scrapeKPageRows(page);
     await page.close();

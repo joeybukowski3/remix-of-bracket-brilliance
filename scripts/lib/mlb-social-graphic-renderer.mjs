@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "@playwright/test";
 import { getEmailTeamLogoUrl } from "./mlb-team-email-assets.mjs";
+import { createAnalyticsBlockingPage } from "./playwright-analytics-blocking.mjs";
 
 export const SOCIAL_GRAPHIC_GEOMETRY = Object.freeze({
   width: 1600,
@@ -581,7 +582,7 @@ export async function rasterizeSvgToPng(svg, outputPath, { browser: existingBrow
   mkdirSync(path.dirname(outputPath), { recursive: true });
   const browser = existingBrowser ?? (await chromium.launch({ headless: true }));
   try {
-    const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 });
+    const page = await createAnalyticsBlockingPage(browser, { viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 });
     await page.setContent(`<style>html,body{margin:0;width:1600px;height:900px;overflow:hidden;background:#fff}svg{display:block}</style>${svg}`, { waitUntil: "load" });
     await page.locator("svg").screenshot({ path: outputPath, animations: "disabled" });
     await page.close();
