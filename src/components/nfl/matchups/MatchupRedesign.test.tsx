@@ -34,6 +34,7 @@ import { formatSpread, formatTotal, type MarketCurrentGame } from "@/lib/nfl/mar
 import type { NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import type { NflInjuryEntry, NflInjuryResolver } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { summariseCategoryAdvantages } from "@/lib/nfl/matchupCategorySummary";
 import { DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS } from "@/lib/nfl/matchupSampleWindow";
 import type { GameProjection } from "@/lib/nfl/projectionData";
 
@@ -786,6 +787,61 @@ describe("category snapshot", () => {
       const trigger = document.getElementById(matchupCategoryTriggerId(id));
       expect(trigger).toHaveAttribute("aria-expanded", "true");
       await waitFor(() => expect(trigger).toHaveFocus());
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+});
+
+/**
+ * Comparison summary line.
+ *
+ * The sentence itself is unit-tested against matchupCategorySummary.ts; these
+ * cover only the wiring — that it renders, where it sits, and that a null
+ * result leaves no element behind.
+ */
+describe("comparison summary", () => {
+  it(
+    "renders the summary sentence above the snapshot strip",
+    async () => {
+      const { results } = buildCategoryData({ resolver: leadingResolver });
+      const expected = summariseCategoryAdvantages(results, AWAY.teamName, HOME.teamName);
+      expect(expected).not.toBeNull();
+
+      render(<Harness />, { wrapper: MemoryRouter });
+      fireEvent.click(screen.getByRole("tab", { name: "Team Comparison" }));
+
+      const summary = screen.getByText(expected!);
+      const strip = screen.getByRole("region", { name: /category snapshot/i });
+
+      // DOCUMENT_POSITION_FOLLOWING: the strip comes after the summary.
+      expect(summary.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).
+        toBeTruthy();
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+
+  it(
+    "renders no element at all when there is nothing to summarise",
+    async () => {
+      const empty = {} as Record<MatchupCategoryId, CategoryAdvantageResult>;
+      expect(summariseCategoryAdvantages(empty, AWAY.teamName, HOME.teamName)).toBeNull();
+
+      const { container } = render(
+        <MatchupComparisonPanel
+          matchup={MATCHUP}
+          categoryMetrics={{} as Record<MatchupCategoryId, MatchupDisplayMetric[]>}
+          categoryResults={empty}
+          pendingCategory={null}
+          navigationToken={0}
+        />,
+        { wrapper: MemoryRouter }
+      );
+
+      // No empty paragraph left holding the stack's spacing.
+      const root = container.firstElementChild!;
+      const directParagraphs = Array.from(root.children).filter((el) => el.tagName === "P");
+      expect(directParagraphs).toHaveLength(0);
+      expect(screen.queryByText(new RegExp(`${AWAY.teamName} leads`))).toBeNull();
     },
     HEAVY_RENDER_TIMEOUT_MS
   );

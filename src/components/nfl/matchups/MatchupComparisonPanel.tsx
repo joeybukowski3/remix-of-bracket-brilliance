@@ -17,6 +17,7 @@ import {
   type CategoryAdvantageResult,
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
+import { summariseCategoryAdvantages } from "@/lib/nfl/matchupCategorySummary";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /** How long the arrival highlight stays on the destination group. */
@@ -181,8 +182,23 @@ export default function MatchupComparisonPanel({
     };
   }, [pendingCategory, navigationToken]);
 
+  /**
+   * One sentence restating the category results below. Null when there is
+   * nothing to state, in which case no element is rendered at all — an empty
+   * paragraph would still take the stack's spacing and read as a gap.
+   */
+  const categorySummary = summariseCategoryAdvantages(
+    categoryResults,
+    matchup.away.teamName,
+    matchup.home.teamName
+  );
+
   return (
     <div className="@container space-y-3">
+      {categorySummary && (
+        <p className="text-[12px] leading-5 text-slate-700">{categorySummary}</p>
+      )}
+
       {onOpenCategory && (
         <MatchupCategorySnapshot
           matchup={matchup}
