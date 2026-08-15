@@ -132,8 +132,8 @@ describe("populated conventional stats", () => {
   it("renders league ranks alongside the values", () => {
     renderOffense();
     const row = rowFor("Yards / Play");
-    expect(within(row).getByText("#1")).toBeInTheDocument();
-    expect(within(row).getByText("#14")).toBeInTheDocument();
+    expect(within(row).getByText("1st")).toBeInTheDocument();
+    expect(within(row).getByText("14th")).toBeInTheDocument();
   });
 
   it("applies the quality rank tier to performance metrics", () => {
@@ -160,12 +160,25 @@ describe("volume metrics are never scored as quality", () => {
     expect(within(row).queryByTitle(/Weak/)).toBeNull();
   });
 
-  it("does not tint the value cell for context-only metrics", () => {
+  it("gives a context-only metric no quality-tier colour", () => {
     renderOffense();
-    const passMix = within(rowFor("Pass Play %")).getByText("52.7%").parentElement!;
-    const quality = within(rowFor("Yards / Play")).getByText("6.81").parentElement!;
+    // Tier colour is carried by the rank chip, which is now the row's primary
+    // figure; the raw value beside it is plain muted text and never tinted.
+    const passMix = within(rowFor("Pass Play %")).getByTitle(
+      /League rank 22 of 32, descriptive only/
+    );
+    const quality = within(rowFor("Yards / Play")).getByTitle(/League rank 1 of 32, Elite/);
+
     expect(passMix.className).not.toMatch(/bg-(emerald|red|orange|amber|teal)/);
     expect(quality.className).toMatch(/bg-emerald/);
+
+    // The value text carries no tier colour on either kind of metric.
+    expect(within(rowFor("Pass Play %")).getByText("52.7%").className).not.toMatch(
+      /bg-(emerald|red|orange|amber|teal)/
+    );
+    expect(within(rowFor("Yards / Play")).getByText("6.81").className).not.toMatch(
+      /bg-(emerald|red|orange|amber|teal)/
+    );
   });
 
   it("marks the pass-attempt volume rank as descriptive too", () => {

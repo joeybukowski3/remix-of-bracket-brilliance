@@ -38,8 +38,13 @@ export default function MatchupCollapsibleGroup({
   /** Stable id for the trigger, so a jump can move focus to it. */
   triggerId: string;
   title: string;
-  /** Short secondary label, e.g. a metric count. */
-  meta?: string;
+  /**
+   * Short secondary content beside the title, e.g. a metric count or a category
+   * advantage chip. Accepts a node so a caller can supply a crest without this
+   * component learning what a matchup is; anything interactive belongs
+   * elsewhere, since this sits inside the trigger button.
+   */
+  meta?: ReactNode;
   open: boolean;
   onToggle: () => void;
   /** Brief arrival highlight. Respects reduced motion via the transition only. */
@@ -69,7 +74,11 @@ export default function MatchupCollapsibleGroup({
           className="flex min-h-[46px] w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 sm:px-4"
         >
           <span className="text-[13px] font-semibold text-slate-900">{title}</span>
-          {meta && <span className="text-[11px] font-medium text-slate-600">{meta}</span>}
+          {meta && (
+            <span className="flex min-w-0 items-center text-[11px] font-medium text-slate-600">
+              {meta}
+            </span>
+          )}
           <ChevronDown
             aria-hidden
             className={cn(
@@ -80,7 +89,7 @@ export default function MatchupCollapsibleGroup({
         </button>
       </h3>
 
-      <div id={panelId} hidden={!open} className="px-3 pb-3 sm:px-4">
+      <div id={panelId} hidden={!open} className="px-2.5 pb-2 sm:px-3">
         {children}
       </div>
     </div>

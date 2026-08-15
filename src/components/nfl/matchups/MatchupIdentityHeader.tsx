@@ -35,9 +35,9 @@ function TeamIdentity({
     <div
       className={`flex min-w-0 items-center gap-3 ${isEnd ? "lg:flex-row-reverse lg:text-right" : ""}`}
     >
-      <NflTeamCrest team={team} side={side} size={44} />
+      <NflTeamCrest team={team} side={side} size={56} />
       <div className="min-w-0">
-        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+        <div className="text-[11px] font-extrabold uppercase tracking-[0.09em] text-slate-400">
           {side === "away" ? "Away" : "Home"}
         </div>
         {/* Wraps rather than truncates: at 390px each block is ~250px wide and
@@ -46,11 +46,11 @@ function TeamIdentity({
             is the analyzer's only route out to a single team. */}
         <Link
           to={`/nfl/guide/team/${team.slug}`}
-          className="block text-base font-bold leading-5 tracking-tight text-slate-900 hover:text-emerald-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:text-lg"
+          className="block text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 hover:text-emerald-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:text-[26px]"
         >
           {team.teamName}
         </Link>
-        <div className="mt-0.5 text-[11px] font-semibold text-slate-600">
+        <div className="mt-1 text-[13px] font-medium text-slate-500">
           <span className="tabular-nums">{team.record2025 || NA}</span> in 2025 · {team.division}
         </div>
       </div>
@@ -63,24 +63,40 @@ function MarketCell({
   label,
   value,
   detail,
+  crest,
+  accentClass = "border-l-slate-400",
 }: {
   label: string;
   value: string;
   detail?: string;
+  /** Optional inline crest. Presentation only — names no new figure. */
+  crest?: React.ReactNode;
+  accentClass?: string;
 }) {
   const unavailable = value === NA;
   return (
-    <div className="min-w-0 bg-white px-3 py-2">
-      <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-600">{label}</div>
-      <div
-        className={`mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-[15px] font-bold leading-5 tabular-nums ${
-          unavailable ? "text-slate-600" : "text-slate-900"
-        }`}
-      >
-        {value}
-        {detail && !unavailable && (
-          <span className="text-[11px] font-semibold text-slate-600">{detail}</span>
-        )}
+    <div
+      className={`min-w-0 rounded-[10px] border border-slate-300 border-l-[5px] bg-slate-50 px-4 py-3 ${
+        unavailable ? "border-l-slate-300" : accentClass
+      }`}
+    >
+      <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </div>
+      <div className="mt-1.5 flex items-center gap-2.5">
+        {crest}
+        <div className="min-w-0">
+          <div
+            className={`text-[24px] font-black leading-none tracking-[-0.02em] tabular-nums ${
+              unavailable ? "text-slate-400" : "text-slate-900"
+            }`}
+          >
+            {value}
+          </div>
+          {detail && !unavailable && (
+            <div className="mt-1 text-[12px] font-medium text-slate-500">{detail}</div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -109,6 +125,8 @@ export default function MatchupIdentityHeader({
   // The favourite carries the negative number; showing that side keeps the
   // strip to one line without implying the other side is unpriced.
   const favouredIsHome = (market?.spread.home ?? 0) < 0;
+  const favoured = favouredIsHome ? home : away;
+  const favouredSide = favouredIsHome ? "home" : "away";
   const spreadValue = !priced
     ? NA
     : favouredIsHome
@@ -133,7 +151,7 @@ export default function MatchupIdentityHeader({
       id="matchup-header"
       tabIndex={-1}
       aria-labelledby="matchup-heading"
-      className={`${MATCHUP_SECTION_SCROLL_MT} rounded-lg border border-slate-200 bg-white p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:p-4`}
+      className={`${MATCHUP_SECTION_SCROLL_MT} rounded-[14px] border border-slate-300 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.04)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:p-6`}
     >
       <h1 id="matchup-heading" className="sr-only">
         {away.teamName} at {home.teamName} — Week {matchup.week} matchup
@@ -143,14 +161,14 @@ export default function MatchupIdentityHeader({
         <TeamIdentity team={away} side="away" align="start" />
         <span
           aria-hidden
-          className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300 lg:block"
+          className="hidden text-[15px] font-extrabold uppercase tracking-[0.14em] text-slate-300 lg:block"
         >
           At
         </span>
         <TeamIdentity team={home} side="home" align="end" />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-slate-600">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium text-slate-500">
         <span>{kickoffLabel(matchup.kickoffUtc)}</span>
         <span>{matchup.stadium ?? "Venue TBD"}</span>
         <span>
@@ -159,18 +177,31 @@ export default function MatchupIdentityHeader({
       </div>
 
       {priced ? (
-        <div className="mt-3 grid gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
-          <MarketCell label="Spread" value={spreadValue} />
-          <MarketCell label="Moneyline" value={moneylineValue} detail={moneylineDetail} />
-          <MarketCell label="Total" value={formatTotal(market?.total)} />
-          <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600">
-            <span className="flex items-center gap-1.5">
-              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-              Market line · nflverse
-            </span>
-            <span className="text-slate-600">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* The favoured side's crest and accent, per the reference. Both are
+              read from the spread already computed above — no new figure. */}
+          <MarketCell
+            label="Spread"
+            value={spreadValue}
+            crest={<NflTeamCrest team={favoured} side={favouredSide} size={30} />}
+            accentClass="border-l-emerald-700"
+          />
+          <MarketCell
+            label="Moneyline"
+            value={moneylineValue}
+            detail={moneylineDetail}
+            crest={<NflTeamCrest team={favoured} side={favouredSide} size={30} />}
+            accentClass="border-l-emerald-700"
+          />
+          <MarketCell label="Total" value={formatTotal(market?.total)} detail="Over / Under" />
+          <div className="rounded-[10px] border border-emerald-200 border-l-[5px] border-l-emerald-700 bg-emerald-50 px-4 py-3">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-emerald-700">
+              Market Line
+            </div>
+            <div className="mt-1.5 text-[16px] font-extrabold text-emerald-900">nflverse</div>
+            <p className="mt-1 text-[12px] leading-4 text-emerald-800">
               A single source-published line; book composition is not disclosed.
-            </span>
+            </p>
           </div>
         </div>
       ) : (

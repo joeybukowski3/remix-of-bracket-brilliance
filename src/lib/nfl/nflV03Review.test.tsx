@@ -13,6 +13,19 @@ import {
   type NflV03ReviewSeason,
 } from "@/lib/nfl/v03Review";
 
+/**
+ * Headroom for the whole-tree scans below.
+ *
+ * Both cases walk every file under src/ and read each one in full, so their
+ * runtime tracks repository size and machine load rather than the behaviour they
+ * assert. The guard logic is unchanged; only the budget is.
+ *
+ * Matches the budget given to the equivalent scan in nflV03Artifacts.test.ts.
+ * These already carried an explicit 20s and were still timing out at 24-36s
+ * under parallel load, so a smaller number would make them fail more, not less.
+ */
+const GUARD_SCAN_TIMEOUT_MS = 60_000;
+
 const ROOT = resolve(__dirname, "../../..");
 const NFL_DATA = join(ROOT, "public", "data", "nfl");
 const HIDDEN_ROUTE = "/internal/jkb-nfl-v03-review-7f3c9a";
@@ -167,7 +180,7 @@ describe("NFL v0.3 hidden route and public isolation", () => {
       .filter((path) => reviewOnly.some((filename) => readFileSync(path, "utf8").includes(filename)))
       .map((path) => basename(path));
     expect(references).toEqual(["useNflV03Artifacts.ts"]);
-  }, 20000);
+  }, GUARD_SCAN_TIMEOUT_MS);
 
   it("allows public preseason/full-season filenames only in internal review and the public power board", () => {
     const publicFiles = ["preseason-power-ratings.json", "full-season-team-metrics.json"];
@@ -177,7 +190,7 @@ describe("NFL v0.3 hidden route and public isolation", () => {
       .filter((path) => publicFiles.some((filename) => readFileSync(path, "utf8").includes(filename)))
       .map((path) => basename(path));
     expect(new Set(references)).toEqual(allowed);
-  }, 20000);
+  }, GUARD_SCAN_TIMEOUT_MS);
 
   it("keeps the hidden review page isolated from the public NFL layout and legacy preseason board", () => {
     const page = readFileSync(join(ROOT, "src", "pages", "NflV03Review.tsx"), "utf8");

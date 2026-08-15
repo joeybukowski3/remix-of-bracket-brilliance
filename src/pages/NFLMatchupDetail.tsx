@@ -15,6 +15,7 @@ import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
+import { opponentRankSummary } from "@/lib/nfl/opponentRankSummary";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import {
   MATCHUP_CATEGORIES,
@@ -58,6 +59,7 @@ import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile
 import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
 import MatchupOverviewPanel from "@/components/nfl/matchups/MatchupOverviewPanel";
 import MatchupPeriodComparison from "@/components/nfl/matchups/MatchupPeriodComparison";
+import MatchupScheduleContext from "@/components/nfl/matchups/MatchupScheduleContext";
 import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupTabRow from "@/components/nfl/matchups/MatchupTabRow";
 import MatchupTrenches from "@/components/nfl/matchups/MatchupTrenches";
@@ -247,6 +249,22 @@ export default function NFLMatchupDetail() {
     [powerBoard]
   );
 
+  /**
+   * Running strength-of-schedule context for the two teams.
+   *
+   * Reads completed results only, so it grows week by week. Deliberately kept
+   * out of `categoryMetrics` and out of every resolver: this is descriptive
+   * context rendered in its own block, and it adjusts no metric, rank or colour
+   * anywhere on the page.
+   */
+  const scheduleContext = useMemo(() => {
+    if (!matchup) return null;
+    return {
+      away: opponentRankSummary(data?.results, CURRENT_SEASON, matchup.away.abbr, modelRatings),
+      home: opponentRankSummary(data?.results, CURRENT_SEASON, matchup.home.abbr, modelRatings),
+    };
+  }, [matchup, data, modelRatings]);
+
   const { categoryMetrics, categoryResults } = useMemo(() => {
     const metrics = {} as Record<MatchupCategoryId, MatchupDisplayMetric[]>;
     const results = {} as Record<MatchupCategoryId, CategoryAdvantageResult>;
@@ -303,7 +321,17 @@ export default function NFLMatchupDetail() {
   });
 
   return (
-    <div className="space-y-3">
+    /**
+     * Route-scoped surface: a step darker than the white section cards, so they
+     * lift off the ground beneath them. Deliberately applied here rather than on
+     * NflPlatformLayout, which wraps every NFL page — the other NFL surfaces keep
+     * their existing background and flat cards untouched.
+     *
+     * The small negative inline margin lets the surface bleed just past the
+     * content column so cards keep the width they had before, and stays well
+     * inside the layout's column gap at every breakpoint.
+     */
+    <div className="-mx-2 space-y-2 rounded-2xl bg-[#eef1f5] px-2 py-2">
       <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
 
       <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
@@ -329,7 +357,7 @@ export default function NFLMatchupDetail() {
         />
       </div>
 
-      <div {...panelProps("comparison")} className="space-y-3">
+      <div {...panelProps("comparison")} className="space-y-2">
         <MatchupDataControls
           settings={sampleSettings}
           onChange={setSampleSettings}
@@ -339,8 +367,27 @@ export default function NFLMatchupDetail() {
         <MatchupComparisonPanel
           matchup={matchup}
           categoryMetrics={categoryMetrics}
+          categoryResults={categoryResults}
+          onOpenCategory={navigation.openCategory}
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
+          scheduleContext={
+            scheduleContext ? (
+              <MatchupScheduleContext
+                matchup={matchup}
+                awaySummary={scheduleContext.away}
+                homeSummary={scheduleContext.home}
+              />
+            ) : undefined
+          }
+          unitBattles={
+            <MatchupUnitBattles
+              matchup={matchup}
+              resolver={metricResolver}
+              successRate={successRate}
+              trench={trench}
+            />
+          }
           periodComparison={
             successArtifact && successRate ? (
               <MatchupPeriodComparison
@@ -351,14 +398,7 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         >
-          <MatchupUnitBattles
-            matchup={matchup}
-            resolver={metricResolver}
-            successRate={successRate}
-            trench={trench}
-          />
-
-          <div className="grid grid-cols-1 items-start gap-3 @[1080px]:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-2 @[1080px]:grid-cols-2">
             <MatchupTrenches
               matchup={matchup}
               trench={trench}

@@ -23,6 +23,22 @@ import {
   writeNflV03Artifacts,
 } from "../../../scripts/generate-nfl-v03-artifacts.mjs";
 
+/**
+ * Headroom for the whole-tree scan below.
+ *
+ * The case walks every file under src/ and reads each one in full, so its
+ * runtime tracks repository size and machine load, not the behaviour it
+ * asserts. The guard logic is unchanged; only the budget is.
+ *
+ * Substantially larger than the sibling budget in publicPowerRatings.test.ts,
+ * and deliberately so: that file makes a single pass over the tree, whereas
+ * this case re-reads every source file once per guarded filename — three
+ * review-only names plus two public-board names, so five full passes. It
+ * carried an explicit 20s budget already and was still timing out at 26-42s
+ * under parallel load, so a smaller number would make it fail more, not less.
+ */
+const GUARD_SCAN_TIMEOUT_MS = 60_000;
+
 const ROOT = resolve(__dirname, "../../..");
 const INPUT_DIR = join(ROOT, "public", "data", "nfl");
 const FIXED_AT = "2026-07-14T12:00:00.000Z";
@@ -351,7 +367,7 @@ describe("NFL v0.3 determinism, dry-run, and isolation", () => {
       expect(references).toContain("useNflV03Artifacts.ts");
       expect(references).toContain("publicPowerRatings.ts");
     }
-  }, 20000);
+  }, GUARD_SCAN_TIMEOUT_MS);
 
   it("hard-fails unknown abbreviations, malformed schemas, NaN, and Infinity", () => {
     const unknown = structuredClone(first);

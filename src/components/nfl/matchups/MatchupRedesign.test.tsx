@@ -34,6 +34,7 @@ import { formatSpread, formatTotal, type MarketCurrentGame } from "@/lib/nfl/mar
 import type { NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import type { NflInjuryEntry, NflInjuryResolver } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { summariseCategoryAdvantages } from "@/lib/nfl/matchupCategorySummary";
 import { DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS } from "@/lib/nfl/matchupSampleWindow";
 import type { GameProjection } from "@/lib/nfl/projectionData";
 
@@ -214,6 +215,8 @@ function Harness({
             <MatchupComparisonPanel
               matchup={MATCHUP}
               categoryMetrics={metrics}
+              categoryResults={results}
+              onOpenCategory={navigation.openCategory}
               pendingCategory={navigation.category}
               navigationToken={navigation.token}
             />
@@ -703,4 +706,143 @@ describe("overview projection card", () => {
     // The removed page-level tally must not come back.
     expect(screen.queryByText(/of 6 categories/i)).toBeNull();
   });
+});
+
+/**
+ * Category snapshot strip.
+ *
+ * Registry-driven, counting only comparable metrics, and carrying no aggregate
+ * figure — the three properties that distinguish it from the page-level tally
+ * this surface deliberately removed.
+ */
+describe("category snapshot", () => {
+  const openComparison = () => {
+    render(<Harness />, { wrapper: MemoryRouter });
+    fireEvent.click(screen.getByRole("tab", { name: "Team Comparison" }));
+    return screen.getByRole("region", { name: /category snapshot/i });
+  };
+
+  it(
+    "renders one tile per registry category, in registry order",
+    async () => {
+      const strip = openComparison();
+      const tiles = within(strip).getAllByRole("button");
+
+      expect(tiles).toHaveLength(MATCHUP_CATEGORIES.length);
+      MATCHUP_CATEGORIES.forEach((category, index) => {
+        expect(within(tiles[index]).getByText(category.label)).toBeInTheDocument();
+      });
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+
+  it(
+    "counts only comparable metrics in the denominator, not N/A rows",
+    async () => {
+      const { results } = buildCategoryData({ resolver: leadingResolver });
+      const overall = results.overall;
+      const totalRows = getMatchupCategory("overall").metrics.length;
+
+      // Overall Quality carries a context-only row and an unresolved power
+      // rating, so eligible must be smaller than the row count — otherwise this
+      // test could pass without the denominator ever being the eligible count.
+      expect(overall.eligible).toBeLessThan(totalRows);
+
+      const strip = openComparison();
+      const tile = within(strip).getByRole("button", { name: /Overall Quality/ });
+
+      // The denominator is the eligible count, never the raw row count.
+      expect(tile.textContent).toContain(`of ${overall.eligible}`);
+      expect(tile.textContent).not.toContain(`of ${totalRows}`);
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+
+  it(
+    "carries no percentage or average-rank figure",
+    async () => {
+      const strip = openComparison();
+
+      expect(within(strip).queryByText(/%/)).toBeNull();
+      expect(within(strip).queryByText(/avg rank/i)).toBeNull();
+      expect(within(strip).queryByText(/of 6 categories/i)).toBeNull();
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+
+  it.each(MATCHUP_CATEGORIES.map((category) => category.id))(
+    "routes %s through the existing category navigation",
+    async (id) => {
+      const strip = openComparison();
+      const category = getMatchupCategory(id);
+      const tile = within(strip).getByRole("button", { name: new RegExp(category.label) });
+
+      fireEvent.click(tile);
+
+      // Same fragment, same expanded group and same focus target an Overview
+      // row produces — no separate jump path exists for the strip.
+      await waitFor(() => {
+        expect(window.location.hash).toBe(`#${category.hash}`);
+      });
+      const trigger = document.getElementById(matchupCategoryTriggerId(id));
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+      await waitFor(() => expect(trigger).toHaveFocus());
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+});
+
+/**
+ * Comparison summary line.
+ *
+ * The sentence itself is unit-tested against matchupCategorySummary.ts; these
+ * cover only the wiring — that it renders, where it sits, and that a null
+ * result leaves no element behind.
+ */
+describe("comparison summary", () => {
+  it(
+    "renders the summary sentence above the snapshot strip",
+    async () => {
+      const { results } = buildCategoryData({ resolver: leadingResolver });
+      const expected = summariseCategoryAdvantages(results, AWAY.teamName, HOME.teamName);
+      expect(expected).not.toBeNull();
+
+      render(<Harness />, { wrapper: MemoryRouter });
+      fireEvent.click(screen.getByRole("tab", { name: "Team Comparison" }));
+
+      const summary = screen.getByText(expected!);
+      const strip = screen.getByRole("region", { name: /category snapshot/i });
+
+      // DOCUMENT_POSITION_FOLLOWING: the strip comes after the summary.
+      expect(summary.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).
+        toBeTruthy();
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
+
+  it(
+    "renders no element at all when there is nothing to summarise",
+    async () => {
+      const empty = {} as Record<MatchupCategoryId, CategoryAdvantageResult>;
+      expect(summariseCategoryAdvantages(empty, AWAY.teamName, HOME.teamName)).toBeNull();
+
+      const { container } = render(
+        <MatchupComparisonPanel
+          matchup={MATCHUP}
+          categoryMetrics={{} as Record<MatchupCategoryId, MatchupDisplayMetric[]>}
+          categoryResults={empty}
+          pendingCategory={null}
+          navigationToken={0}
+        />,
+        { wrapper: MemoryRouter }
+      );
+
+      // No empty paragraph left holding the stack's spacing.
+      const root = container.firstElementChild!;
+      const directParagraphs = Array.from(root.children).filter((el) => el.tagName === "P");
+      expect(directParagraphs).toHaveLength(0);
+      expect(screen.queryByText(new RegExp(`${AWAY.teamName} leads`))).toBeNull();
+    },
+    HEAVY_RENDER_TIMEOUT_MS
+  );
 });

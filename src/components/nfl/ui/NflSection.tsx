@@ -35,6 +35,8 @@ export default function NflSection({
   focusable = false,
   className = "",
   bodyClassName = "",
+  eyebrowClassName = "text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400",
+  titleClassName = "text-sm font-semibold tracking-tight text-slate-900",
   children,
 }: {
   id?: string;
@@ -57,6 +59,14 @@ export default function NflSection({
   focusable?: boolean;
   className?: string;
   bodyClassName?: string;
+  /**
+   * Header typography overrides. Both default to the platform's existing
+   * treatment, so every current caller renders exactly as before; the matchup
+   * analyzer passes its own so its sections can carry a heavier title without
+   * restyling the rest of the NFL platform.
+   */
+  eyebrowClassName?: string;
+  titleClassName?: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -89,15 +99,8 @@ export default function NflSection({
       <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            {eyebrow && (
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                {eyebrow}
-              </div>
-            )}
-            <Heading
-              id={headingId}
-              className="text-sm font-semibold tracking-tight text-slate-900"
-            >
+            {eyebrow && <div className={eyebrowClassName}>{eyebrow}</div>}
+            <Heading id={headingId} className={titleClassName}>
               {title}
             </Heading>
             {subtitle && (

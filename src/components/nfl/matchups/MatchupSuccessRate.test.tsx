@@ -109,8 +109,8 @@ describe("preseason — 2025 Last 8 only", () => {
     const block = srBlock("Success Rate");
     expect(within(block).getByText("50.5%")).toBeInTheDocument();
     expect(within(block).getByText("45.8%")).toBeInTheDocument();
-    expect(within(block).getByText("#2")).toBeInTheDocument();
-    expect(within(block).getByText("#9")).toBeInTheDocument();
+    expect(within(block).getByText("2nd")).toBeInTheDocument();
+    expect(within(block).getByText("9th")).toBeInTheDocument();
   });
 
   it("populates all three offensive success metrics", () => {

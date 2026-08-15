@@ -1,4 +1,5 @@
 import { useState } from "react";
+import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
 import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
@@ -65,16 +66,13 @@ export default function MatchupPeriodComparison({
   }));
 
   return (
-    <section
-      aria-labelledby="success-periods-heading"
-      className="rounded-lg border border-slate-200 bg-white"
+    <MatchupSectionCard
+      eyebrow="Over time"
+      title="Success Rate by Period"
+      titleId="success-periods-heading"
+      subtitle={note}
+      bodyClassName="px-0 py-0 sm:px-0"
     >
-      <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-        <h2 id="success-periods-heading" className="text-sm font-semibold text-slate-900">
-          Success Rate by Period
-        </h2>
-        <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{note}</p>
-      </div>
 
       {/* Table where the width exists. */}
       <div className="hidden px-3 py-3 sm:block sm:px-4">
@@ -166,6 +164,6 @@ export default function MatchupPeriodComparison({
         Periods switch together for both teams once each has six completed current-season games, so
         the two sides are always drawn from comparable windows.
       </p>
-    </section>
+    </MatchupSectionCard>
   );
 }

@@ -15,6 +15,16 @@ import {
 } from "@/lib/nfl/publicPowerRatings";
 import { validateNflV03ReviewArtifact } from "@/lib/nfl/v03Review";
 
+/**
+ * Headroom for the whole-tree scans below.
+ *
+ * These cases walk every file under src/ and read each one in full, so their
+ * runtime tracks repository size and machine load, not the behaviour they
+ * assert. At the 5s default they were failing intermittently on timeout alone
+ * while passing in isolation. The guard logic is unchanged; only the budget is.
+ */
+const GUARD_SCAN_TIMEOUT_MS = 15_000;
+
 const ROOT = resolve(__dirname, "../../..");
 const NFL_DATA = join(ROOT, "public", "data", "nfl");
 const REVIEW_ONLY_FILES = [
@@ -179,7 +189,7 @@ describe("public power integration isolation", () => {
       .map((path) => basename(path))
       .sort();
     expect(references).toEqual([...allowedBasenames].sort());
-  });
+  }, GUARD_SCAN_TIMEOUT_MS);
 
   it("never references review-only Stage-1 files from the public loader path", () => {
     const publicSources = [
@@ -218,5 +228,5 @@ describe("public power integration isolation", () => {
     expect(references).toEqual(
       ["publicPowerRatings.ts", "useNflV03Artifacts.ts"].sort()
     );
-  });
+  }, GUARD_SCAN_TIMEOUT_MS);
 });

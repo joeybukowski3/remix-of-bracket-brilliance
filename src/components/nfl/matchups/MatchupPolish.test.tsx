@@ -165,7 +165,7 @@ describe("rank chips", () => {
 
   it("renders the rank and its tier when one exists", () => {
     render(<MatchupRankBadge rank={3} />);
-    expect(screen.getByText("#3")).toBeInTheDocument();
+    expect(screen.getByText("3rd")).toBeInTheDocument();
     // Tier is announced, never carried by colour alone.
     expect(screen.getByText(/League rank 3 of 32/)).toBeInTheDocument();
   });

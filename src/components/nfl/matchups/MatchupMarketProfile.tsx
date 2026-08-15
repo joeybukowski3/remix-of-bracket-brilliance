@@ -100,7 +100,11 @@ export default function MatchupMarketProfile({
   };
 
   return (
-    <MatchupSection id="market" subtitle="Descriptive only — no projected line and no pick.">
+    <MatchupSection
+      id="market"
+      eyebrow="What the book says"
+      subtitle="Descriptive only — no projected line and no pick."
+    >
       <MatchupCurrentMarket matchup={matchup} market={market?.current ?? null} />
 
       <div className="pt-3">

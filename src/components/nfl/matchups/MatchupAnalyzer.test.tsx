@@ -243,8 +243,8 @@ describe("Offense and Defense comparisons", () => {
     expect(screen.getByText("+5.1%")).toBeInTheDocument();
     expect(screen.getByText("-6.7%")).toBeInTheDocument();
     // Offense ranks 9 and 24 come straight from the guide model.
-    expect(screen.getByText("#9")).toBeInTheDocument();
-    expect(screen.getByText("#24")).toBeInTheDocument();
+    expect(screen.getByText("9th")).toBeInTheDocument();
+    expect(screen.getByText("24th")).toBeInTheDocument();
   });
 
   it("renders every catalogued offense metric as N/A rather than inventing a value", () => {
@@ -430,8 +430,8 @@ describe("Matchup hero", () => {
     expect(screen.getByText("65.7")).toBeInTheDocument();
     expect(screen.getByText("74.4")).toBeInTheDocument();
     expect(screen.getByText("85.2")).toBeInTheDocument();
-    expect(screen.getByText("#2")).toBeInTheDocument();
-    expect(screen.getByText("#1")).toBeInTheDocument();
+    expect(screen.getByText("2nd")).toBeInTheDocument();
+    expect(screen.getByText("1st")).toBeInTheDocument();
     // The hand-curated static ratings were signed percentages; none may remain.
     const heroText = screen.getByRole("region", { hidden: true }).textContent ?? document.body.textContent ?? "";
     expect(heroText).not.toMatch(/[+-]\d+\.\d+%/);
