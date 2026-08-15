@@ -1,4 +1,9 @@
 import type { ReactNode } from "react";
+import {
+  MATCHUP_EYEBROW,
+  MATCHUP_SECTION_SUB,
+  MATCHUP_SECTION_TITLE,
+} from "@/components/nfl/matchups/matchupTypography";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,15 +23,13 @@ import { cn } from "@/lib/utils";
  * off the darker page ground rather than sitting flush against it.
  */
 export const MATCHUP_CARD_SURFACE =
-  "rounded-xl border border-slate-300 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.07),0_1px_2px_rgba(15,23,42,0.04)]";
+  "rounded-[14px] border border-slate-300 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.04)]";
 
 /** Small coloured label above the title. Names the section's role, not its data. */
-export const MATCHUP_CARD_EYEBROW =
-  "text-[10px] font-extrabold uppercase tracking-[0.08em] text-emerald-700";
+export { MATCHUP_EYEBROW as MATCHUP_CARD_EYEBROW } from "@/components/nfl/matchups/matchupTypography";
 
 /** Section title: larger and heavier than the body it heads. */
-export const MATCHUP_CARD_TITLE =
-  "text-[17px] font-extrabold leading-6 tracking-tight text-slate-900";
+export { MATCHUP_SECTION_TITLE as MATCHUP_CARD_TITLE } from "@/components/nfl/matchups/matchupTypography";
 
 export default function MatchupSectionCard({
   id,
@@ -54,22 +57,22 @@ export default function MatchupSectionCard({
 }) {
   return (
     <section id={id} aria-labelledby={titleId} className={cn(MATCHUP_CARD_SURFACE, className)}>
-      <div className="border-b border-slate-100 px-2.5 py-1.5 sm:px-3">
+      <div className="px-4 pb-3 pt-4 sm:px-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className={MATCHUP_CARD_EYEBROW}>{eyebrow}</div>
-            <h2 id={titleId} className={MATCHUP_CARD_TITLE}>
+            <div className={MATCHUP_EYEBROW}>{eyebrow}</div>
+            <h2 id={titleId} className={`mt-1 ${MATCHUP_SECTION_TITLE}`}>
               {title}
             </h2>
             {subtitle && (
-              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{subtitle}</p>
+              <p className={`mt-1 ${MATCHUP_SECTION_SUB}`}>{subtitle}</p>
             )}
           </div>
           {headerAside && <div className="flex shrink-0 items-center gap-2">{headerAside}</div>}
         </div>
       </div>
 
-      <div className={cn("px-2.5 py-2 sm:px-3", bodyClassName)}>{children}</div>
+      <div className={cn("px-4 pb-5 sm:px-5", bodyClassName)}>{children}</div>
     </section>
   );
 }

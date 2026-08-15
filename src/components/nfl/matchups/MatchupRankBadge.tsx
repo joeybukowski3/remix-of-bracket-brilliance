@@ -1,4 +1,8 @@
 import { formatRankOrdinal } from "@/components/nfl/matchups/rankOrdinal";
+import {
+  MATCHUP_PRIMARY_BADGE,
+  MATCHUP_PRIMARY_TEXT,
+} from "@/components/nfl/matchups/matchupTypography";
 import { getRankTierLabel, rankBadgeClass } from "@/lib/nfl/rankTier";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +27,17 @@ const NEUTRAL_BADGE = "border-slate-300 bg-slate-100 text-slate-700";
 export default function MatchupRankBadge({
   rank,
   neutral = false,
+  emphasis = "default",
   className = "",
 }: {
   rank: number | null | undefined;
   neutral?: boolean;
+  /**
+   * "primary" renders the rank at the shared headline size, with the chip sized
+   * to fit the number. Chosen with a prop rather than a className override so
+   * the size is decided here instead of depending on class-merge order.
+   */
+  emphasis?: "default" | "primary";
   className?: string;
 }) {
   const hasRank = rank != null && Number.isFinite(rank);
@@ -39,11 +50,14 @@ export default function MatchupRankBadge({
 
   return (
     <span
-      // Merged rather than concatenated so a caller can genuinely override the
-      // size: MatchupValuePills promotes the rank to the primary element and
-      // needs its own type scale to win over the default.
+      // Size comes from `emphasis`, not from a className override, so the chip
+      // geometry and the type scale are chosen together and never depend on
+      // class-merge order.
       className={cn(
-        "inline-flex min-w-[2.25rem] items-center justify-center rounded-full border px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums",
+        "inline-flex items-center justify-center border text-center tabular-nums",
+        emphasis === "primary"
+          ? `${MATCHUP_PRIMARY_BADGE} ${MATCHUP_PRIMARY_TEXT} font-extrabold leading-tight`
+          : "min-w-[2.25rem] rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
         neutral ? NEUTRAL_BADGE : rankBadgeClass(rank),
         className
       )}

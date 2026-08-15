@@ -51,7 +51,7 @@ export default function MatchupCategorySnapshot({
       title="Category Snapshot"
       titleId="category-snapshot-heading"
     >
-      <ul className="grid grid-cols-2 gap-1.5 @[600px]:grid-cols-3 @[960px]:grid-cols-6">
+      <ul className="grid grid-cols-1 gap-3 @[560px]:grid-cols-2 @[900px]:grid-cols-3">
         {MATCHUP_CATEGORIES.map((category) => {
           const result = results?.[category.id];
           if (!result) return null;
@@ -76,24 +76,25 @@ export default function MatchupCategorySnapshot({
                 )}
                 onClick={() => onOpenCategory(category.id)}
                 className={cn(
-                  "flex min-h-[44px] w-full flex-col items-start gap-1 rounded-lg border border-t-[3px] border-slate-200 bg-slate-50 px-2 py-2 text-left transition-colors hover:border-slate-300 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
-                  decided ? "border-t-emerald-600" : "border-t-slate-300"
+                  "flex min-h-[44px] w-full items-center gap-3.5 rounded-[10px] border border-t-4 border-slate-300 bg-slate-50 px-4 py-3 text-left transition-colors hover:border-slate-400 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                  decided ? "border-t-emerald-700" : "border-t-slate-300"
                 )}
               >
-                <span
-                  aria-hidden
-                  className="w-full truncate text-[11px] font-semibold leading-4 text-slate-900"
-                >
-                  {category.label}
+                <span aria-hidden className="shrink-0">
+                  <MatchupCategoryAdvantageChip
+                    result={result}
+                    away={away}
+                    home={home}
+                    crestSize={46}
+                  />
                 </span>
-                <span aria-hidden className="flex min-w-0 items-center">
-                  <MatchupCategoryAdvantageChip result={result} away={away} home={home} />
-                </span>
-                <span
-                  aria-hidden
-                  className="w-full truncate text-[10px] font-medium leading-4 text-slate-600"
-                >
-                  {categoryAdvantageLeadText(result)}
+                <span aria-hidden className="min-w-0">
+                  <span className="block truncate text-[16px] font-extrabold leading-tight text-slate-900">
+                    {category.label}
+                  </span>
+                  <span className="mt-1 block truncate text-[13px] leading-4 text-slate-500">
+                    {categoryAdvantageLeadText(result)}
+                  </span>
                 </span>
               </button>
             </li>

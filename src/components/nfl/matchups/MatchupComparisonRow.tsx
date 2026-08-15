@@ -1,6 +1,11 @@
-import MatchupValuePills, {
+import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
+import {
   MATCHUP_METRIC_LABEL,
-} from "@/components/nfl/matchups/MatchupValuePills";
+  MATCHUP_UNIT_ROW_GRID,
+  MATCHUP_ROW_AWAY_CELL,
+  MATCHUP_ROW_HOME_CELL,
+  MATCHUP_ROW_LABEL_CELL,
+} from "@/components/nfl/matchups/matchupTypography";
 import {
   METRIC_NA,
   type ComparisonSideValue,
@@ -64,29 +69,31 @@ export default function MatchupComparisonRow({
 }) {
   const neutral = direction === "context-only";
   return (
-    <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 border-b border-slate-100 py-1 last:border-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
-      <ComparisonSide side="away" value={away} teamName={awayTeamName} metricLabel={metricLabel} neutral={neutral} />
+    <div className="border-b border-slate-100 last:border-0">
+      {/* Capped and centred so the rank pill stays beside the metric label
+          however wide the viewport is, rather than drifting to the page edge. */}
+      <div className={MATCHUP_UNIT_ROW_GRID}>
+        <div className={`px-2 py-2.5 sm:px-4 ${MATCHUP_ROW_AWAY_CELL}`}>
+          <ComparisonSide side="away" value={away} teamName={awayTeamName} metricLabel={metricLabel} neutral={neutral} />
+        </div>
 
-      {/* The metric name is the row's anchor between the two rank figures, so it
-          is set at the same 15px weight as Statistical Comparison's label. */}
-      <div className="min-w-0 text-center" title={help}>
-        {shortLabel && shortLabel !== metricLabel ? (
-          <>
-            <span className={`block sm:hidden ${MATCHUP_METRIC_LABEL}`}>
-              {shortLabel}
-            </span>
-            <span className={`hidden sm:block ${MATCHUP_METRIC_LABEL}`}>
-              {metricLabel}
-            </span>
-          </>
-        ) : (
-          <span className={`block ${MATCHUP_METRIC_LABEL}`}>
-            {metricLabel}
-          </span>
-        )}
+        {/* The metric name is the row's anchor between the two rank figures and
+            carries the same size as them. */}
+        <div className={`min-w-0 px-2 py-2.5 text-center sm:px-5 ${MATCHUP_ROW_LABEL_CELL}`} title={help}>
+          {shortLabel && shortLabel !== metricLabel ? (
+            <>
+              <span className={`block sm:hidden ${MATCHUP_METRIC_LABEL}`}>{shortLabel}</span>
+              <span className={`hidden sm:block ${MATCHUP_METRIC_LABEL}`}>{metricLabel}</span>
+            </>
+          ) : (
+            <span className={`block ${MATCHUP_METRIC_LABEL}`}>{metricLabel}</span>
+          )}
+        </div>
+
+        <div className={`px-2 py-2.5 sm:px-4 ${MATCHUP_ROW_HOME_CELL}`}>
+          <ComparisonSide side="home" value={home} teamName={homeTeamName} metricLabel={metricLabel} neutral={neutral} />
+        </div>
       </div>
-
-      <ComparisonSide side="home" value={home} teamName={homeTeamName} metricLabel={metricLabel} neutral={neutral} />
     </div>
   );
 }

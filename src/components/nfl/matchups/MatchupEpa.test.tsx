@@ -182,6 +182,28 @@ describe("offense vs defense battles", () => {
     expect(text).not.toMatch(/winner|epa edge|advantage to|projected spread|favou?rite|win prob/i);
     expect(text).toMatch(/no matchup score or projected advantage is derived/i);
   });
+
+  it("keeps the away team in the left column of both panels", () => {
+    render(
+      <MemoryRouter>
+        <MatchupUnitBattles matchup={MATCHUP} resolver={epaResolver(settings("season", true))} />
+      </MemoryRouter>
+    );
+
+    // Both panels are rendered; the toggle only hides one below lg.
+    const headings = screen
+      .getAllByText(/New England Patriots (Offense|Defense)|Seattle Seahawks (Offense|Defense)/)
+      .map((node) => node.textContent ?? "");
+
+    // Panels are keyed by side, so the order is away, home, away, home — never
+    // offense-first, which would put the home team on the left in panel two.
+    expect(headings).toEqual([
+      "New England Patriots Offense",
+      "Seattle Seahawks Defense",
+      "New England Patriots Defense",
+      "Seattle Seahawks Offense",
+    ]);
+  });
 });
 
 describe("scope guarantees", () => {

@@ -1,6 +1,12 @@
-import MatchupValuePills, {
+import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
+import {
   MATCHUP_METRIC_LABEL,
-} from "@/components/nfl/matchups/MatchupValuePills";
+  MATCHUP_PERIOD_CAPTION,
+  MATCHUP_UNIT_ROW_GRID,
+  MATCHUP_ROW_AWAY_CELL,
+  MATCHUP_ROW_HOME_CELL,
+  MATCHUP_ROW_LABEL_CELL,
+} from "@/components/nfl/matchups/matchupTypography";
 import type { TrenchResolver } from "@/lib/nfl/trenchMetricsData";
 import {
   formatTrenchValue,
@@ -111,28 +117,29 @@ export default function MatchupTrenchRow({
       {periods.map((period) => {
         const labels = trenchPeriodLabel(artifact, period);
         return (
-          <div
-            key={period}
-            className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2"
-          >
-            <TrenchPeriodSide
-              side="away"
-              value={awayValues[period] ?? null}
-              teamName={awayTeamName}
-              metricLabel={metricLabel}
-              periodLabel={labels.label}
-            />
-            <span className="text-center text-[9px] font-bold uppercase tracking-wide text-slate-600">
+          <div key={period} className={MATCHUP_UNIT_ROW_GRID}>
+            <div className={`px-2 py-2 sm:px-4 ${MATCHUP_ROW_AWAY_CELL}`}>
+              <TrenchPeriodSide
+                side="away"
+                value={awayValues[period] ?? null}
+                teamName={awayTeamName}
+                metricLabel={metricLabel}
+                periodLabel={labels.label}
+              />
+            </div>
+            <span className={`px-2 py-1 text-center sm:px-4 ${MATCHUP_PERIOD_CAPTION} ${MATCHUP_ROW_LABEL_CELL}`}>
               <span className="sm:hidden">{labels.short}</span>
               <span className="hidden sm:inline">{labels.label}</span>
             </span>
-            <TrenchPeriodSide
-              side="home"
-              value={homeValues[period] ?? null}
-              teamName={homeTeamName}
-              metricLabel={metricLabel}
-              periodLabel={labels.label}
-            />
+            <div className={`px-2 py-2 sm:px-4 ${MATCHUP_ROW_HOME_CELL}`}>
+              <TrenchPeriodSide
+                side="home"
+                value={homeValues[period] ?? null}
+                teamName={homeTeamName}
+                metricLabel={metricLabel}
+                periodLabel={labels.label}
+              />
+            </div>
           </div>
         );
       })}

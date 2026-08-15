@@ -32,7 +32,7 @@ export default function MatchupCategoryAdvantageChip({
 
   if (!team) {
     return (
-      <span className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-slate-600">
+      <span className="rounded-md border border-slate-300 bg-slate-100 px-2 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-slate-600">
         {result.result === "even" ? "Even" : "N/A"}
       </span>
     );
@@ -41,7 +41,7 @@ export default function MatchupCategoryAdvantageChip({
   return (
     <span className="flex min-w-0 items-center gap-1.5">
       <NflTeamCrest team={team} side={side} size={crestSize} />
-      <span className="text-[11px] font-bold uppercase tracking-wide text-slate-800">
+      <span className="text-[14px] font-extrabold uppercase tracking-wide text-emerald-700">
         {team.abbr.toUpperCase()}
       </span>
     </span>

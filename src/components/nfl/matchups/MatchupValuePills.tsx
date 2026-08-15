@@ -1,29 +1,14 @@
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import { cn } from "@/lib/utils";
-
-/**
- * The analyzer's primary type size, defined once.
- *
- * Two things carry it: the rank number inside `MatchupRankBadge`, and the
- * metric name centred between a pair of these cells. They are the row's two
- * headline elements and must match, so both read the size from here rather than
- * repeating a literal — which is exactly how the four row types drifted to
- * three different label sizes before.
- */
-export const MATCHUP_PRIMARY_TEXT = "text-[22px]";
-
-/**
- * The centred metric name — "EPA / Play", "Pass Block vs Pass Rush".
- *
- * Shared by every row that sits a label between two value cells:
- * MatchupComparisonRow, MatchupMetricRow, MatchupSuccessRateRow and
- * MatchupTrenchRow. The smaller period caption beneath it ("2025 Last 8",
- * "2025 Season") is a different thing and keeps its own smaller size.
- */
-export const MATCHUP_METRIC_LABEL = cn(
+import {
   MATCHUP_PRIMARY_TEXT,
-  "font-bold leading-6 text-slate-800"
-);
+  MATCHUP_VALUE_TEXT,
+} from "@/components/nfl/matchups/matchupTypography";
+
+export {
+  MATCHUP_METRIC_LABEL,
+  MATCHUP_PRIMARY_TEXT,
+} from "@/components/nfl/matchups/matchupTypography";
+
 
 /**
  * One team's league rank and the raw value behind it, side by side.
@@ -67,46 +52,40 @@ export default function MatchupValuePills({
   srText: string;
 }) {
   const isAway = side === "away";
+  const hasRank = rank != null && Number.isFinite(rank);
 
   /**
    * The rank, promoted to the primary element.
    *
-   * When there is no rank the formatted value takes its place at the same
-   * position, so the inner edge always carries the cell's headline rather than
-   * leaving a gap where a rank would have been.
+   * With no rank the formatted value takes its place at the same size and the
+   * same position, so the inner edge always carries the cell's headline.
    */
-  const primary =
-    rank == null || !Number.isFinite(rank) ? (
-      <span className="text-[15px] font-bold leading-none tabular-nums text-slate-500">
-        {formatted}
-      </span>
-    ) : (
-      <MatchupRankBadge
-        rank={rank}
-        neutral={neutral}
-        className={cn("min-w-[2.75rem] px-2 py-1 leading-none", MATCHUP_PRIMARY_TEXT)}
-      />
-    );
+  const primary = hasRank ? (
+    <MatchupRankBadge rank={rank} neutral={neutral} emphasis="primary" />
+  ) : (
+    <span className={`${MATCHUP_PRIMARY_TEXT} font-extrabold leading-tight text-slate-400`}>
+      {formatted}
+    </span>
+  );
 
   /** The raw value, demoted to a quiet companion. Omitted when it is the primary. */
-  const secondary =
-    rank == null || !Number.isFinite(rank) ? null : (
-      <span
-        className={`text-[11px] font-semibold leading-none tabular-nums ${
-          unavailable ? "text-slate-500" : "text-slate-600"
-        }`}
-      >
-        {formatted}
-      </span>
-    );
+  const secondary = hasRank ? (
+    <span className={`${MATCHUP_VALUE_TEXT} ${unavailable ? "text-slate-400" : ""}`}>
+      {formatted}
+    </span>
+  ) : null;
 
   /**
-   * Space-between, not a cluster: the rank is pinned to the edge nearest the
-   * centre metric column and the value to the outer edge, so which side a rank
-   * belongs to stays unambiguous however wide either element renders.
+   * Both elements sit together against the inner edge — the side nearest the
+   * centre metric column — rather than being pushed apart to the cell's outer
+   * limits. The fixed side columns keep that edge in the same place down the
+   * whole table, and a rank-less row keeps its headline in the same position
+   * instead of drifting outward for want of a companion to push against.
    */
   return (
-    <div className="flex w-full items-center justify-between gap-2">
+    <div
+      className={`flex w-full items-center gap-3 ${isAway ? "justify-end" : "justify-start"}`}
+    >
       <span className="sr-only">{srText}</span>
       {isAway ? (
         <>

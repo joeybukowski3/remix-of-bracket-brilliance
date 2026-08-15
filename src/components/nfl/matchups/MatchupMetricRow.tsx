@@ -1,39 +1,41 @@
 import { useId, useState } from "react";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import { MATCHUP_METRIC_LABEL } from "@/components/nfl/matchups/MatchupValuePills";
+import {
+  MATCHUP_METRIC_LABEL,
+  MATCHUP_PRIMARY_TEXT,
+  MATCHUP_ROW_AWAY_CELL,
+  MATCHUP_ROW_HOME_CELL,
+  MATCHUP_ROW_LABEL_CELL,
+  MATCHUP_STAT_ROW_GRID,
+  MATCHUP_VALUE_TEXT,
+} from "@/components/nfl/matchups/matchupTypography";
 import {
   describeMetricAdvantage,
   type MatchupDisplayMetric,
   type MatchupDisplaySide,
 } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { METRIC_NA } from "@/lib/nfl/matchupMetrics";
-import { rankCellClass } from "@/lib/nfl/rankTier";
 
 /**
- * One team's value for one metric.
+ * One team's rank and value for one metric.
  *
- * Drawn as two distinct pills — the value and its league rank — rather than a
- * washed cell containing loose text. Both take their tint from the same
- * `rankTier` bands the rest of the analyzer uses: the value pill wears the faint
- * `cell` wash and the rank pill the saturated `badge`, so the pair reads as one
- * object without the value competing with the rank for attention. The band
- * definitions themselves are untouched.
+ * Rank leads at the shared headline size, with the raw value beside it as small
+ * muted text — the same treatment Unit Matchups uses, so the two tables read as
+ * one system rather than two scales. Tier colour is carried by the rank chip
+ * alone; `rankTier.ts` is untouched.
  *
- * Weight, not colour, marks the head-to-head leader: the side `metric.comparison`
- * already names is set heavier than the side that is not. That is a redundant
- * cue only — the row states its advantage in words beneath the label, and the
- * numeric rank is always printed, so neither the leader nor the tier is ever
- * carried by appearance alone.
+ * The head-to-head leader takes a soft ring rather than a heavier weight, since
+ * both figures already sit at the headline weight. That is a redundant cue only
+ * — the row states its advantage in words beneath the label and always prints
+ * the numeric rank, so neither leader nor tier depends on appearance.
  *
  * A context-only metric is drawn neutral: leading the league in pass attempts
- * is a play-style fact, not an "Elite" performance, and must not be coloured as
- * one. An unavailable value takes no tint either, so a missing number cannot
- * borrow a tier it does not have.
+ * is a play-style fact, not an "Elite" performance. An unavailable value takes
+ * no tier either, so a missing number cannot borrow one it does not have.
  */
 function MetricSide({
   side,
   value,
-  teamAbbr,
   teamName,
   metricLabel,
   neutral,
@@ -41,7 +43,6 @@ function MetricSide({
 }: {
   side: "away" | "home";
   value: MatchupDisplaySide;
-  teamAbbr: string;
   teamName: string;
   metricLabel: string;
   neutral: boolean;
@@ -50,43 +51,42 @@ function MetricSide({
 }) {
   const isAway = side === "away";
   const unavailable = value.formatted === METRIC_NA;
-  const tinted = !neutral && !unavailable;
+  const hasRank = value.rank != null && Number.isFinite(value.rank);
 
+  /**
+   * Same rank-primary treatment as Unit Matchups, at the same shared size, so
+   * the two tables read as one system. The leader keeps a soft ring rather than
+   * a heavier weight, since both figures are already at the headline weight.
+   */
   return (
     <div
-      className={`flex items-center justify-between gap-2 sm:flex-col sm:items-stretch sm:justify-start sm:gap-1 ${
-        isAway ? "sm:text-right" : "sm:text-left"
-      } ${isAway ? "" : "flex-row-reverse sm:flex-col"}`}
+      className={`flex w-full items-center gap-2.5 ${isAway ? "justify-end" : "justify-start"}`}
     >
-      {/* The abbreviation is the mobile row's only team label, so the stacked
-          pair never leaves a reader guessing which number is whose. */}
-      <span
-        aria-hidden
-        className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-600 sm:hidden"
-      >
-        {teamAbbr.toUpperCase()}
-      </span>
       <span className="sr-only">
         {teamName} {metricLabel}:{" "}
       </span>
-      <div className={isAway ? "sm:flex sm:justify-end" : "sm:flex sm:justify-start"}>
-        <span
-          className={`inline-flex items-center justify-center rounded-md border px-1.5 py-0.5 text-[13px] leading-4 tabular-nums sm:text-sm ${
-            isLeader ? "font-extrabold" : "font-semibold"
-          } ${
-            tinted ? `${rankCellClass(value.rank)} border-slate-200/80` : "border-transparent"
-          } ${unavailable ? "text-slate-600" : "text-slate-900"}`}
-        >
-          {value.formatted}
-        </span>
-      </div>
-      <div className={isAway ? "sm:flex sm:justify-end" : "sm:flex sm:justify-start"}>
+      {isAway && hasRank && (
+        <span className={MATCHUP_VALUE_TEXT}>{value.formatted}</span>
+      )}
+      {hasRank ? (
         <MatchupRankBadge
           rank={value.rank}
           neutral={neutral}
-          className={isLeader ? "font-extrabold" : ""}
+          emphasis="primary"
+          className={isLeader ? "ring-2 ring-slate-900/15" : ""}
         />
-      </div>
+      ) : (
+        <span
+          className={`${MATCHUP_PRIMARY_TEXT} font-extrabold leading-tight ${
+            unavailable ? "text-slate-400" : "text-slate-500"
+          }`}
+        >
+          {value.formatted}
+        </span>
+      )}
+      {!isAway && hasRank && (
+        <span className={MATCHUP_VALUE_TEXT}>{value.formatted}</span>
+      )}
     </div>
   );
 }
@@ -132,9 +132,9 @@ export default function MatchupMetricRow({
       : "text-slate-600";
 
   return (
-    <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-slate-100 py-1 last:border-0 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:items-center sm:gap-2">
-      <div className="order-first col-span-2 min-w-0 sm:order-none sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:text-center">
-        <div className="flex items-center gap-1.5 sm:justify-center">
+    <div className={`border-b border-slate-100 py-1.5 last:border-0 ${MATCHUP_STAT_ROW_GRID}`}>
+      <div className={`min-w-0 px-1 text-center sm:px-4 ${MATCHUP_ROW_LABEL_CELL}`}>
+        <div className="flex items-center justify-center gap-1.5">
           {/* Matches the Unit Matchups row label, so the two tables read at the
               same scale rather than one looking like a footnote of the other. */}
           <span className={MATCHUP_METRIC_LABEL}>
@@ -160,17 +160,16 @@ export default function MatchupMetricRow({
         {/* Compressed to a caption, never removed: the advantage must stay
             legible in words, not only as the heavier pill weight beside it. */}
         <div
-          className={`mt-0.5 text-[9px] font-bold uppercase leading-3 tracking-[0.06em] ${advantageTone}`}
+          className={`mt-1 text-[13px] font-bold leading-4 ${advantageTone}`}
         >
           {advantage}
         </div>
       </div>
 
-      <div className="sm:col-start-1 sm:row-start-1">
+      <div className={`px-1 sm:px-3 ${MATCHUP_ROW_AWAY_CELL}`}>
         <MetricSide
           side="away"
           value={metric.away}
-          teamAbbr={awayAbbr}
           teamName={awayTeamName}
           metricLabel={metric.label}
           neutral={neutral}
@@ -178,11 +177,10 @@ export default function MatchupMetricRow({
         />
       </div>
 
-      <div className="sm:col-start-3 sm:row-start-1">
+      <div className={`px-1 sm:px-3 ${MATCHUP_ROW_HOME_CELL}`}>
         <MetricSide
           side="home"
           value={metric.home}
-          teamAbbr={homeAbbr}
           teamName={homeTeamName}
           metricLabel={metric.label}
           neutral={neutral}
@@ -194,7 +192,7 @@ export default function MatchupMetricRow({
         <div
           id={helpId}
           hidden={!helpOpen}
-          className="col-span-2 rounded border-l-2 border-slate-300 bg-slate-50 px-2.5 py-1.5 text-[11px] leading-4 text-slate-600 sm:col-span-3 sm:row-start-2"
+          className="col-span-2 row-start-3 rounded border-l-2 sm:col-span-3 sm:row-start-2 border-slate-300 bg-slate-50 px-2.5 py-1.5 text-[12px] leading-4 text-slate-600"
         >
           {metric.help}
         </div>

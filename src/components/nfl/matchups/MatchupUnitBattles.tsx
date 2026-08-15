@@ -1,5 +1,10 @@
 import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
+import {
+  MATCHUP_GROUP_BAND,
+  MATCHUP_PANEL_CAPTION,
+  MATCHUP_PANEL_TITLE,
+} from "@/components/nfl/matchups/matchupTypography";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
@@ -60,9 +65,9 @@ function PossessionTeam({
     <div
       className={`flex min-w-0 items-center gap-2 ${isEnd ? "flex-row-reverse text-right" : ""}`}
     >
-      <NflTeamCrest team={team} side={side} size={30} />
+      <NflTeamCrest team={team} side={side} size={44} />
       <div className="min-w-0">
-        <div className="truncate text-[15px] font-extrabold leading-5 text-slate-900 sm:text-[17px] sm:leading-6">
+        <div className={`truncate ${MATCHUP_PANEL_TITLE}`}>
           <span className="sm:hidden">
             {team.abbr.toUpperCase()} {unit === "Offense" ? "Off" : "Def"}
           </span>
@@ -70,7 +75,7 @@ function PossessionTeam({
             {team.teamName} {unit}
           </span>
         </div>
-        <div className="text-[10px] font-bold uppercase leading-4 tracking-[0.08em] text-slate-600 sm:text-[11px]">
+        <div className={`mt-0.5 ${MATCHUP_PANEL_CAPTION}`}>
           {unit === "Offense" ? "Attacking" : "Defending"}
         </div>
       </div>
@@ -79,48 +84,68 @@ function PossessionTeam({
 }
 
 /**
- * One possession view: the team with the ball on the left, the opposing defense
- * on the right, grouped Overall / Passing / Rushing.
+ * One possession view: away team left, home team right, grouped Overall /
+ * Passing / Rushing. Which side has the ball decides the roles the two columns
+ * play, never which column they occupy.
  *
  * Straight comparison only — no aggregate matchup score, projected advantage or
  * weighted grade is derived from these pairings.
  */
 function PossessionPanel({
-  offenseTeam,
-  defenseTeam,
-  offenseSide,
-  defenseSide,
+  awayTeam,
+  homeTeam,
+  ballSide,
   resolver,
   successRate,
   trench,
 }: {
-  offenseTeam: NflMatchupTeam;
-  defenseTeam: NflMatchupTeam;
-  /** Which side of the matchup each unit belongs to, for crest tone. */
-  offenseSide: "away" | "home";
-  defenseSide: "away" | "home";
+  awayTeam: NflMatchupTeam;
+  homeTeam: NflMatchupTeam;
+  /** Which side has the ball in this panel. Decides roles, never columns. */
+  ballSide: "away" | "home";
   resolver: NflMatchupMetricResolver;
   successRate?: MatchupSuccessRateConfig;
   trench?: MatchupTrenchConfig;
 }) {
+  /**
+   * Columns are keyed by SIDE, not by role: the away team is always the left
+   * column and the home team always the right, in both panels, matching every
+   * other table on this page. Only the roles flip between panels — panel one
+   * reads away Offense vs home Defense, panel two away Defense vs home Offense.
+   *
+   * Orienting by role instead put the home team on the left in the second
+   * panel, so a reader scanning down the page found the sides swapped halfway.
+   */
+  const awayHasBall = ballSide === "away";
+  const awayUnit = awayHasBall ? "Offense" : "Defense";
+  const homeUnit = awayHasBall ? "Defense" : "Offense";
+  const awayRole = awayHasBall ? "offense" : "defense";
+  const homeRole = awayHasBall ? "defense" : "offense";
+
+  /** The metric key each column reads, which is what the role actually selects. */
+  const awayKey = (pairing: { offenseKey: string; defenseKey: string }) =>
+    awayHasBall ? pairing.offenseKey : pairing.defenseKey;
+  const homeKey = (pairing: { offenseKey: string; defenseKey: string }) =>
+    awayHasBall ? pairing.defenseKey : pairing.offenseKey;
+
   return (
-    <div className="rounded-lg border border-slate-200">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-2 py-2">
-        <PossessionTeam team={offenseTeam} side={offenseSide} unit="Offense" align="start" />
-        <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+    <div className="overflow-hidden rounded-xl border border-slate-300">
+      <div className="flex items-center justify-between gap-3 border-b-2 border-slate-300 bg-slate-100 px-3 py-3 sm:px-5 sm:py-4">
+        <PossessionTeam team={awayTeam} side="away" unit={awayUnit} align="start" />
+        <span className="shrink-0 text-[14px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
           vs
         </span>
-        <PossessionTeam team={defenseTeam} side={defenseSide} unit="Defense" align="end" />
+        <PossessionTeam team={homeTeam} side="home" unit={homeUnit} align="end" />
       </div>
 
-      <div className="px-1.5 pb-1.5">
+      <div>
         {UNIT_BATTLE_GROUPS.map((group) => (
-          <div key={group.id} className="pt-1.5">
+          <div key={group.id}>
             {/* Solid dark band: the ink-to-white transition against the rows is
                 its own contrast, so it needs no border. Deliberately slate, not
                 green/amber/orange/red — those are the rank-tier colours — and
                 not blue, which reads as a link elsewhere on this page. */}
-            <h4 className="mb-1 rounded bg-slate-800 px-2 py-1 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-white">
+            <h4 className={MATCHUP_GROUP_BAND}>
               {group.label}
             </h4>
             {group.pairings.map((pairing) => {
@@ -134,10 +159,10 @@ function PossessionPanel({
                     help={pairing.help}
                     artifact={trench.artifact}
                     periods={trench.periods}
-                    awayValues={collectTrenchPeriodValues(trench.resolve, offenseTeam.abbr, pairing.offenseKey, trench.periods)}
-                    homeValues={collectTrenchPeriodValues(trench.resolve, defenseTeam.abbr, pairing.defenseKey, trench.periods)}
-                    awayTeamName={`${offenseTeam.teamName} offense`}
-                    homeTeamName={`${defenseTeam.teamName} defense`}
+                    awayValues={collectTrenchPeriodValues(trench.resolve, awayTeam.abbr, awayKey(pairing), trench.periods)}
+                    homeValues={collectTrenchPeriodValues(trench.resolve, homeTeam.abbr, homeKey(pairing), trench.periods)}
+                    awayTeamName={`${awayTeam.teamName} ${awayRole}`}
+                    homeTeamName={`${homeTeam.teamName} ${homeRole}`}
                   />
                 );
               }
@@ -150,10 +175,10 @@ function PossessionPanel({
                     metricLabel={pairing.label}
                     help={pairing.help}
                     periods={successRate.periods}
-                    awayValues={collectPeriodValues(successRate.resolve, offenseTeam.abbr, pairing.offenseKey, successRate.periods)}
-                    homeValues={collectPeriodValues(successRate.resolve, defenseTeam.abbr, pairing.defenseKey, successRate.periods)}
-                    awayTeamName={`${offenseTeam.teamName} offense`}
-                    homeTeamName={`${defenseTeam.teamName} defense`}
+                    awayValues={collectPeriodValues(successRate.resolve, awayTeam.abbr, awayKey(pairing), successRate.periods)}
+                    homeValues={collectPeriodValues(successRate.resolve, homeTeam.abbr, homeKey(pairing), successRate.periods)}
+                    awayTeamName={`${awayTeam.teamName} ${awayRole}`}
+                    homeTeamName={`${homeTeam.teamName} ${homeRole}`}
                   />
                 );
               }
@@ -163,10 +188,10 @@ function PossessionPanel({
                   metricLabel={pairing.label}
                   help={pairing.help}
                   direction={pairingDirection(pairing.offenseKey, pairing.defenseKey)}
-                  away={toSideValue(resolver(offenseTeam.slug, pairing.offenseKey))}
-                  home={toSideValue(resolver(defenseTeam.slug, pairing.defenseKey))}
-                  awayTeamName={`${offenseTeam.teamName} offense`}
-                  homeTeamName={`${defenseTeam.teamName} defense`}
+                  away={toSideValue(resolver(awayTeam.slug, awayKey(pairing)))}
+                  home={toSideValue(resolver(homeTeam.slug, homeKey(pairing)))}
+                  awayTeamName={`${awayTeam.teamName} ${awayRole}`}
+                  homeTeamName={`${homeTeam.teamName} ${homeRole}`}
                 />
               );
             })}
@@ -212,13 +237,14 @@ export default function MatchupUnitBattles({
         />
       }
     >
-      <div className="grid gap-3 xl:grid-cols-2">
+      {/* Full-width stacked panels rather than two-up: the centre metric column
+          then has room for "Passing Yards / Attempt" without wrapping. */}
+      <div className="space-y-2">
         <div className={side === "away-ball" ? "" : "hidden lg:block"}>
           <PossessionPanel
-            offenseTeam={away}
-            defenseTeam={home}
-            offenseSide="away"
-            defenseSide="home"
+            awayTeam={away}
+            homeTeam={home}
+            ballSide="away"
             resolver={resolver}
             successRate={successRate}
             trench={trench}
@@ -226,10 +252,9 @@ export default function MatchupUnitBattles({
         </div>
         <div className={side === "home-ball" ? "" : "hidden lg:block"}>
           <PossessionPanel
-            offenseTeam={home}
-            defenseTeam={away}
-            offenseSide="home"
-            defenseSide="away"
+            awayTeam={away}
+            homeTeam={home}
+            ballSide="home"
             resolver={resolver}
             successRate={successRate}
             trench={trench}
