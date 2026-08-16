@@ -12,6 +12,7 @@ export type SeoPage =
   | "pga-model"
   | "nfl"
   | "fantasy-football"
+  | "fantasy-points-allowed"
   | "nba"
   | "ncaa"
   | "college-football"
@@ -103,6 +104,12 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "Customized Joe Knows Ball fantasy football rankings, position filters and draft research, built on the same NFL model that powers our power ratings and team guide.",
     path: "/fantasy-football",
+  },
+  "fantasy-points-allowed": {
+    title: "2025 Fantasy Points Allowed by Position | Joe Knows Ball",
+    description:
+      "Fantasy points allowed per game by every NFL defense in the 2025 season, split by QB, RB, WR, TE, K and DST, with the matchup ranks behind our playoff-week shading.",
+    path: "/fantasy-football/points-allowed",
   },
   nba: {
     title: "NBA Analytics & Betting Models | Joe Knows Ball",

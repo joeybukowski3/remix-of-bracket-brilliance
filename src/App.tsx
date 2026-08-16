@@ -50,6 +50,7 @@ import NFLRegression2026 from "./pages/NFLRegression2026";
 import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import FantasyFootball from "./pages/FantasyFootball";
+import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
 import WorldCupAnalyzer from "./pages/WorldCupAnalyzer";
@@ -161,6 +162,7 @@ const App = () => (
             <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           </Route>
           <Route path="/fantasy-football" element={<FantasyFootball />} />
+          <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
           <Route
             path="/internal/jkb-nfl-v03-review-7f3c9a"
             element={

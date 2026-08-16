@@ -148,6 +148,7 @@ const JKB_PLAYER_ALIASES: Readonly<Record<string, string>> = {
   "WR:chrisgodwinjr": "Chris Godwin",
   "WR:kcconcepcion": "Kevin Concepcion",
   "WR:deebosamuelsr": "Deebo Samuel",
+  "TE:kylepittssr": "Kyle Pitts",
 };
 
 function jkbLookupKey(position: FantasyPosition, sourcePlayer: string): string {
