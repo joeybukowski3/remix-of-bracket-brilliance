@@ -1,0 +1,351 @@
+import { ChevronDown } from "lucide-react";
+import TeamLogo from "@/components/TeamLogo";
+import type { SeasonRank2025 } from "@/lib/fantasy/seasonRanks2025";
+import { nflLogoUrl } from "@/data/nflPreseason2026";
+import { cn } from "@/lib/utils";
+import type { FantasyResearchBoardRow } from "@/lib/fantasy/parRankings";
+import type { FantasyPosition } from "@/lib/fantasy/rankings";
+import { getPositionTone } from "@/lib/fantasy/positionTone";
+import { formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
+import {
+  POINTS_ALLOWED_TEAM_COUNT,
+  getOpponentPointsAllowed,
+  type PointsAllowedPosition,
+} from "@/lib/fantasy/pointsAllowed2025";
+import {
+  getParPerGameTone,
+  getRankGradientColor,
+  type ParPerGameThresholds,
+  type ParPerGameTone,
+} from "@/lib/fantasy/parPresentation";
+
+/**
+ * Light separator on every body cell. Deliberately thinner and paler than the
+ * tier break (`border-t-2 border-t-slate-300`), which must stay readable as a
+ * structural divider rather than blending into these.
+ */
+export const BODY_CELL_BORDER = "border-b border-r border-slate-100";
+
+const PAR_TONE_CLASS: Record<ParPerGameTone, string> = {
+  elite: "bg-emerald-100 text-emerald-800 font-bold text-[13px]",
+  positive: "bg-emerald-50 text-emerald-700 font-semibold text-[12px]",
+  near: "bg-slate-50 text-slate-600 font-semibold text-[12px]",
+  below: "bg-rose-50 text-rose-700 font-semibold text-[12px]",
+  missing: "bg-white text-slate-400 font-semibold text-[12px]",
+};
+
+/**
+ * Merged position + position-rank badge, e.g. "WR3". Coloured by the fixed
+ * per-position palette so a mixed table reads by position at a glance.
+ */
+export function PositionRankBadge({
+  position,
+  positionRank,
+}: {
+  position: FantasyPosition;
+  positionRank: number | undefined;
+}) {
+  const tone = getPositionTone(position);
+  return (
+    <span
+      className={cn(
+        "inline-flex min-w-10 justify-center rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
+        tone.badge,
+      )}
+    >
+      {position}
+      {Number.isFinite(positionRank) ? positionRank : ""}
+    </span>
+  );
+}
+
+/** Inline tier chip. Rendered on every row at every breakpoint. */
+export function TierBadge({ tier }: { tier?: number }) {
+  if (!tier) return <span className="text-[10px] font-semibold text-slate-400">—</span>;
+  return (
+    <span className="inline-flex rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-700">
+      T{tier}
+    </span>
+  );
+}
+
+/** The headline PAR/G value, bucketed against the position's own distribution. */
+export function ParPerGameValue({
+  value,
+  thresholds,
+  size = "table",
+}: {
+  value: number | undefined;
+  thresholds: ParPerGameThresholds | null;
+  size?: "table" | "mobile";
+}) {
+  const tone = getParPerGameTone(value, thresholds);
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded px-1.5 py-0.5 tabular-nums",
+        PAR_TONE_CLASS[tone],
+        size === "mobile" && "px-2 py-1 text-[15px]",
+      )}
+    >
+      {formatSigned(value, 2)}
+    </span>
+  );
+}
+
+/**
+ * Season PAR, both years stacked. The 2026 projection keeps its existing
+ * weight; the joined 2025 actual sits under it, smaller and muted. Players with
+ * no 2025 data render the 2026 line alone — no placeholder second line.
+ */
+export function SeasonParStack({
+  projectedSeasonPar,
+  actualSeasonPar,
+  className,
+}: {
+  projectedSeasonPar: number | undefined;
+  actualSeasonPar: number | undefined;
+  className?: string;
+}) {
+  // Untiered rows have neither year; keep their existing bare placeholder
+  // rather than labelling an empty value.
+  if (!Number.isFinite(projectedSeasonPar) && !Number.isFinite(actualSeasonPar)) {
+    return <div className={cn("text-center text-[10px] text-slate-400", className)}>—</div>;
+  }
+
+  return (
+    <div className={cn("flex flex-col items-end gap-0.5", className)}>
+      <span className="flex w-full items-baseline justify-between gap-1.5 whitespace-nowrap">
+        <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">'26 proj</span>
+        <span className="text-[10px] tabular-nums text-slate-500">
+          {formatSigned(projectedSeasonPar, 1)}
+        </span>
+      </span>
+      {Number.isFinite(actualSeasonPar) && (
+        <span className="flex w-full items-baseline justify-between gap-1.5 whitespace-nowrap">
+          <span className="text-[9px] font-medium uppercase tracking-wide text-slate-400">'25 actual</span>
+          <span className="text-[9px] tabular-nums text-slate-400">
+            {formatSigned(actualSeasonPar, 1)}
+          </span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Rank cell with a continuous emerald → slate → rose heat-map background. */
+export function GradientRankCell({
+  value,
+  maxRank,
+  className,
+}: {
+  value: number | undefined;
+  maxRank: number | null;
+  className?: string;
+}) {
+  const background = getRankGradientColor(value, maxRank);
+  return (
+    <td
+      style={background ? { backgroundColor: background } : undefined}
+      className={cn(
+        // 11px/bold: at the previous 10px/semibold these read as regular weight
+        // against the gradient. PAR/G stays dominant at 13px plus its pill.
+        BODY_CELL_BORDER,
+        "px-2 py-1.5 text-center text-[11px] font-bold tabular-nums text-slate-800",
+        !background && "font-semibold text-slate-400",
+        className,
+      )}
+    >
+      {formatRank(value)}
+    </td>
+  );
+}
+
+/**
+ * Playoff-week opponent, shaded by that defense's 2025 fantasy points allowed
+ * to the row's own position. Rank 1 allowed the most points, so it anchors to
+ * emerald — the same gradient the evidence-rank columns use.
+ *
+ * Deliberately separate from the Strength of Schedule column: that is JKB's
+ * composite metric, this is a direct 2025 matchup read.
+ */
+export function MatchupOpponentCell({
+  opponent,
+  position,
+  className,
+  tintClass,
+}: {
+  opponent: string | undefined;
+  position: PointsAllowedPosition;
+  className?: string;
+  /**
+   * Overall-board opt-in: renders a flat categorical tint instead of the rank
+   * gradient. Position boards omit this and keep the gradient unchanged.
+   */
+  tintClass?: string;
+}) {
+  const allowed = getOpponentPointsAllowed(opponent, position);
+  const gradient = getRankGradientColor(allowed?.rank, POINTS_ALLOWED_TEAM_COUNT);
+  const background = tintClass ? undefined : gradient;
+  return (
+    <td
+      style={background ? { backgroundColor: background } : undefined}
+      title={
+        allowed
+          ? `${allowed.team.name} allowed ${allowed.pointsAllowed.toFixed(1)} ${position} pts/gm in 2025 (${allowed.rank} of ${POINTS_ALLOWED_TEAM_COUNT})`
+          : undefined
+      }
+      className={cn(
+        BODY_CELL_BORDER,
+        "px-2 py-1.5 text-center text-[11px] font-bold",
+        tintClass ?? (background ? "text-slate-800" : "font-semibold text-slate-500"),
+        tintClass && (opponent ? "text-slate-800" : "font-semibold text-slate-500"),
+        className,
+      )}
+    >
+      {opponent || "—"}
+    </td>
+  );
+}
+
+/** Inline (non-cell) variant of the same shading, for the mobile detail list. */
+export function MatchupOpponentChip({
+  opponent,
+  position,
+}: {
+  opponent: string | undefined;
+  position: PointsAllowedPosition;
+}) {
+  const allowed = getOpponentPointsAllowed(opponent, position);
+  const background = getRankGradientColor(allowed?.rank, POINTS_ALLOWED_TEAM_COUNT);
+  return (
+    <span
+      style={background ? { backgroundColor: background } : undefined}
+      title={
+        allowed
+          ? `${allowed.team.name} allowed ${allowed.pointsAllowed.toFixed(1)} ${position} pts/gm in 2025 (${allowed.rank} of ${POINTS_ALLOWED_TEAM_COUNT})`
+          : undefined
+      }
+      className={cn(
+        "inline-flex rounded px-1.5 py-0.5 font-semibold tabular-nums",
+        background ? "text-slate-800" : "text-slate-500",
+      )}
+    >
+      {opponent || "—"}
+    </span>
+  );
+}
+
+export function PlayerIdentity({ player, team }: { player: string; team?: string }) {
+  const normalizedTeam = team?.toUpperCase();
+  const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <TeamLogo
+        name={normalizedTeam ?? "FA"}
+        logo={hasTeam ? nflLogoUrl(normalizedTeam!) : undefined}
+        className="h-5 w-5"
+      />
+      <span className="truncate text-[12px] font-bold text-slate-950">{player}</span>
+      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+        {normalizedTeam ?? "FA"}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Expand affordance and the row's real keyboard-operable control.
+ *
+ * Clicks are stopped from bubbling: an enclosing row may also toggle on click,
+ * and letting the event through would fire both handlers and cancel out.
+ */
+export function ExpandControl({
+  label,
+  expanded,
+  onClick,
+  className,
+}: {
+  label: string;
+  expanded: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-expanded={expanded}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      className={cn(
+        "inline-flex min-h-8 min-w-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 group-hover:text-slate-700",
+        className,
+      )}
+    >
+      <ChevronDown aria-hidden className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} />
+    </button>
+  );
+}
+
+/**
+ * 2025 positional finish on both bases. Total points and PPG diverge whenever a
+ * player missed games, so both are shown. Omitted entirely with no 2025 data.
+ */
+export function SeasonFinish2025({ rank }: { rank: SeasonRank2025 | undefined }) {
+  if (!rank) return null;
+  return (
+    <div className="mb-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-slate-200 pb-1">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        2025 finish
+      </span>
+      <span>
+        <strong className="text-slate-900">
+          {rank.position}
+          {rank.byPoints}
+        </strong>{" "}
+        by total points
+      </span>
+      <span>
+        <strong className="text-slate-900">
+          {rank.position}
+          {rank.byPpg}
+        </strong>{" "}
+        by PPG
+      </span>
+      <span className="text-slate-400">of {rank.poolSize} ranked {rank.position}s</span>
+    </div>
+  );
+}
+
+/** PAR provenance shown when a row is expanded on either breakpoint. */
+export function ParDetail({ row }: { row: FantasyResearchBoardRow }) {
+  if (!row.par) {
+    return (
+      <span>
+        {row.position} remains in JKB position-rank order and is outside the approved PAR tier
+        universe.
+      </span>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-x-5 gap-y-1">
+      <span>
+        PAR rank <strong className="text-slate-900">#{row.par.parRank}</strong>
+      </span>
+      <span>
+        Historical replacement{" "}
+        <strong className="text-slate-900">{row.par.replacementPpg.toFixed(2)}</strong>
+      </span>
+      <span>
+        Projected points{" "}
+        <strong className="text-slate-900">{row.par.projectedFantasyPoints.toFixed(1)}</strong>
+      </span>
+      <span>
+        Projected games <strong className="text-slate-900">{row.par.projectedGames}</strong>
+      </span>
+    </div>
+  );
+}

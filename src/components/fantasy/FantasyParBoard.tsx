@@ -1,53 +1,42 @@
 import { useDeferredValue, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { ChevronDown, Search } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
+import PositionParBoard from "@/components/fantasy/PositionParBoard";
+import LegacyPositionBoard, { type MobileGroup } from "@/components/fantasy/LegacyPositionBoard";
+import { MatchupOpponentCell, PositionRankBadge } from "@/components/fantasy/ParBoardCells";
+import { getPositionTone, POSITION_TONES, POSITION_TONE_NAMES, type PositionTone } from "@/lib/fantasy/positionTone";
+import { getOverallRowContext } from "@/lib/fantasy/overallRowContext";
+import { formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { NflTableScroller } from "@/components/nfl/ui/NflTable";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { cn } from "@/lib/utils";
 import {
   FANTASY_POSITION_RESEARCH_BOARDS,
-  PAR_POSITION_LIMITS,
   PAR_POSITIONS,
-  type FantasyResearchBoardRow,
 } from "@/lib/fantasy/parRankings";
 import {
   FANTASY_RANKINGS,
-  getFantasyMetricValues,
   type FantasyPosition,
   type FantasyRankingRow,
 } from "@/lib/fantasy/rankings";
-import {
-  getQuantileRankTone,
-  getRankQuantileThresholds,
-  getSosRankTone,
-  type RankQuantileThresholds,
-  type RankTone,
-} from "@/lib/fantasy/rankingPresentation";
 
 type PositionFilter = "ALL" | FantasyPosition;
-type MobileGroup = "Metrics" | "Model" | "Context" | "Playoffs";
-type RankColumnKey = "metric0" | "metric1" | "metric2" | "late" | "projection" | "vegas" | "average" | "sos" | "oline";
+/** Temporary review switch between the PAR-first board and the pre-redesign one. */
+type BoardVariant = "par" | "legacy";
 
 const POSITION_FILTERS: readonly PositionFilter[] = ["ALL", ...PAR_POSITIONS];
 const MOBILE_GROUPS: readonly MobileGroup[] = ["Metrics", "Model", "Context", "Playoffs"];
-const POSITION_NAMES: Record<FantasyPosition, string> = {
-  QB: "Quarterbacks",
-  RB: "Running backs",
-  WR: "Wide receivers",
-  TE: "Tight ends",
-};
-const BASELINE_LABELS: Record<FantasyPosition, string> = { QB: "QB13", RB: "RB25", WR: "WR37", TE: "TE13" };
-const METRIC_LABELS: Record<FantasyPosition, readonly [string, string, string]> = {
-  QB: ["Passer Rating Rk", "Rush Yds/Game Rk", "Pass TD/Attempt Rk"],
-  RB: ["Touches Rk", "Red Zone Touches Rk", "YPC Rk"],
-  WR: ["Target % Rk", "Air Yds/Game Rk", "Targets/Game Rk"],
-  TE: ["Target Share Rk", "Targets/Route Run Rk", "YPRR Rk"],
-};
+const BOARD_VARIANTS: ReadonlyArray<{ value: BoardVariant; label: string }> = [
+  { value: "par", label: "PAR board" },
+  { value: "legacy", label: "Legacy board" },
+];
 
 export default function FantasyParBoard() {
   const [position, setPosition] = useState<PositionFilter>("ALL");
   const [query, setQuery] = useState("");
+  const [variant, setVariant] = useState<BoardVariant>("par");
   const [mobileGroup, setMobileGroup] = useState<MobileGroup>("Metrics");
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
 
@@ -66,7 +55,15 @@ export default function FantasyParBoard() {
               JKB rankings and position evidence, with draft-pool tiers derived from approved projected PAR/G.
             </p>
           </div>
-          <span className="text-xs font-semibold tabular-nums text-slate-200">{FANTASY_RANKINGS.rows.length} JKB-ranked players</span>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-xs font-semibold tabular-nums text-slate-200">{FANTASY_RANKINGS.rows.length} JKB-ranked players</span>
+            <Link
+              to="/fantasy-football/points-allowed"
+              className="text-xs font-semibold text-sky-300 underline hover:text-sky-200"
+            >
+              2025 Points Allowed by Position →
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -92,7 +89,11 @@ export default function FantasyParBoard() {
             />
           </div>
         </div>
+        {position === "ALL" && <PositionLegend />}
         {position !== "ALL" && (
+          <BoardVariantToggle variant={variant} onChange={setVariant} />
+        )}
+        {position !== "ALL" && variant === "legacy" && (
           <div className="mt-3 grid grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1 md:hidden" aria-label="Mobile table columns">
             {MOBILE_GROUPS.map((group) => (
               <button
@@ -109,12 +110,94 @@ export default function FantasyParBoard() {
         )}
       </div>
 
-      {position === "ALL" ? (
-        <OverallBoard query={deferredQuery} />
-      ) : (
-        <PositionBoard position={position} query={deferredQuery} mobileGroup={mobileGroup} />
+      {position === "ALL" && <OverallBoard query={deferredQuery} />}
+      {position !== "ALL" && variant === "par" && (
+        <PositionParBoard position={position} query={deferredQuery} />
+      )}
+      {position !== "ALL" && variant === "legacy" && (
+        <LegacyPositionBoard position={position} query={deferredQuery} mobileGroup={mobileGroup} />
       )}
     </section>
+  );
+}
+
+/**
+ * Side-by-side review switch. Temporary: remove this along with
+ * `LegacyPositionBoard` once one board is chosen.
+ */
+function BoardVariantToggle({
+  variant,
+  onChange,
+}: {
+  variant: BoardVariant;
+  onChange: (value: BoardVariant) => void;
+}) {
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Review</span>
+      <div className="inline-flex gap-1 rounded-lg bg-slate-200 p-1" role="group" aria-label="Board layout">
+        {BOARD_VARIANTS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={variant === option.value}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "min-h-8 rounded-md px-2.5 text-[11px] font-semibold",
+              variant === option.value ? "bg-white text-slate-950 shadow-sm" : "text-slate-600",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Overall stat cell: flat categorical tint by the row's position, never a
+ * value-based gradient. Cross-position comparability is the reason — see
+ * `positionTone`. Bold slate text keeps contrast against the light tint.
+ */
+function OverallStatCell({ tone, value }: { tone: PositionTone; value: string }) {
+  return (
+    <td
+      className={cn(
+        "px-3 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800",
+        tone.cell,
+        value === "—" && "font-semibold text-slate-400",
+      )}
+    >
+      {value}
+    </td>
+  );
+}
+
+/** One-time key for the Overall board's position tints. */
+function PositionLegend() {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5" aria-label="Position colour key">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        Position colours
+      </span>
+      {PAR_POSITIONS.map((position) => (
+        <span key={position} className="inline-flex items-center gap-1.5">
+          {/* Split swatch: the saturated badge tone over the lighter cell wash,
+              since both appear on a row. A plain border rather than the badge's
+              ring, whose two `ring-1` declarations merge away to nothing. */}
+          <span
+            aria-hidden
+            className="inline-flex h-3.5 w-6 overflow-hidden rounded-sm border border-slate-300"
+          >
+            <span className={cn("h-full w-1/2", POSITION_TONES[position].badge)} />
+            <span className={cn("h-full w-1/2", POSITION_TONES[position].cell)} />
+          </span>
+          <span className="text-[11px] font-semibold text-slate-700">{position}</span>
+          <span className="text-[10px] text-slate-400">{POSITION_TONE_NAMES[position]}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -124,15 +207,41 @@ function OverallBoard({ query }: { query: string }) {
 
   return (
     <NflTableScroller label="Overall fantasy rankings" className="max-h-[72vh]">
-      <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+      <table className="w-full min-w-[1240px] border-collapse text-left text-xs">
         <thead className="sticky top-0 z-20 bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
           <tr>
             <th className="sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center">Rank</th>
             <th className="sticky left-14 z-30 min-w-64 bg-slate-100 px-3 py-2">Player</th>
-            <th className="px-3 py-2 text-center">Pos</th>
             <th className="px-3 py-2 text-center">Pos Rk</th>
             <th className="px-3 py-2 text-center">Rd / Pick</th>
+            <th title="Approved projected PAR per game" className="px-3 py-2 text-center">PAR/G</th>
+            <th title="FantasyPros projection rank within position" className="px-3 py-2 text-center">Projection Rk</th>
             <th className="px-3 py-2 text-center">AVG Rk</th>
+            <th title="Positional strength of schedule; 1 is the easiest slate" className="px-3 py-2 text-center">SOS</th>
+            {["Pts", "PPG"].map((basis) => (
+              <th
+                key={basis}
+                title={`2025 positional finish by ${basis === "Pts" ? "total fantasy points" : "points per game"}`}
+                className="px-3 py-2 text-center leading-tight"
+              >
+                2025 Rk
+                <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
+                  {basis}
+                </span>
+              </th>
+            ))}
+            {["W15", "W16", "W17"].map((week) => (
+              <th
+                key={week}
+                title={`${week} opponent. Hover a cell for that defense's 2025 fantasy points allowed to the player's position.`}
+                className="px-3 py-2 text-center leading-tight"
+              >
+                {week}
+                <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
+                  2025 PA
+                </span>
+              </th>
+            ))}
             <th className="w-12 px-3 py-2"><span className="sr-only">Details</span></th>
           </tr>
         </thead>
@@ -146,185 +255,36 @@ function OverallBoard({ query }: { query: string }) {
 
 function OverallRow({ row }: { row: FantasyRankingRow }) {
   const [expanded, setExpanded] = useState(false);
+  // Overall mixes positions, so cells are tinted by *which* position the row is
+  // rather than by rank quality — see `positionTone`.
+  const tone = getPositionTone(row.position);
+  // PAR/G and the 2025 finish come from the approved PAR rows; players outside
+  // that universe resolve to undefined and render a dash.
+  const context = getOverallRowContext(row.overallRank);
   return (
     <>
       <tr className="border-t border-slate-100 hover:bg-slate-50">
         <td className="sticky left-0 z-10 bg-white px-3 py-2 text-center font-bold tabular-nums text-slate-800">{row.overallRank}</td>
         <td className="sticky left-14 z-10 bg-white px-3 py-2"><PlayerIdentity player={row.player} team={row.team} /></td>
-        <td className="px-3 py-2 text-center font-semibold text-slate-700">{row.position}</td>
-        <td className="px-3 py-2 text-center tabular-nums">{formatRank(row.positionRank)}</td>
+        <td className="px-3 py-2 text-center">
+          <PositionRankBadge position={row.position} positionRank={row.positionRank} />
+        </td>
         <td className="px-3 py-2 text-center tabular-nums">{row.draftRound && row.roundPick ? `${row.draftRound}.${row.roundPick}` : "—"}</td>
-        <td className="px-3 py-2 text-center font-bold tabular-nums">{formatRank(row.averageRank)}</td>
+        <OverallStatCell tone={tone} value={formatSigned(context.parPerGame, 2)} />
+        <OverallStatCell tone={tone} value={formatRank(row.projectionRank)} />
+        <OverallStatCell tone={tone} value={formatRank(row.averageRank)} />
+        <OverallStatCell tone={tone} value={formatRank(row.strengthOfSchedule)} />
+        <OverallStatCell tone={tone} value={formatRank(context.seasonRank2025?.byPoints)} />
+        <OverallStatCell tone={tone} value={formatRank(context.seasonRank2025?.byPpg)} />
+        <MatchupOpponentCell opponent={row.playoffWeek15Opponent} position={row.position} tintClass={tone.cell} />
+        <MatchupOpponentCell opponent={row.playoffWeek16Opponent} position={row.position} tintClass={tone.cell} />
+        <MatchupOpponentCell opponent={row.playoffWeek17Opponent} position={row.position} tintClass={tone.cell} />
         <td className="px-3 py-2 text-center"><ExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.player}`} expanded={expanded} onClick={() => setExpanded((value) => !value)} /></td>
       </tr>
       {expanded && (
         <tr className="bg-slate-50">
-          <td colSpan={7} className="px-4 py-3 text-xs text-slate-600">
+          <td colSpan={15} className="px-4 py-3 text-xs text-slate-600">
             Late / Last 8: <strong>{formatRank(row.lateSeasonRank)}</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-function PositionBoard({ position, query, mobileGroup }: { position: FantasyPosition; query: string; mobileGroup: MobileGroup }) {
-  const board = FANTASY_POSITION_RESEARCH_BOARDS[position];
-  const allJkbRows = useMemo(
-    () => FANTASY_RANKINGS.rows.filter((row) => row.position === position),
-    [position],
-  );
-  const thresholds = useMemo(() => buildThresholds(allJkbRows), [allJkbRows]);
-  const tierGroups = board.tierGroups
-    .map((group) => ({ ...group, rows: group.rows.filter((row) => matchesQuery(row.player, row.team, query)) }))
-    .filter((group) => group.rows.length > 0);
-  const outsideRows = board.outsideDraftPool.filter((row) => matchesQuery(row.player, row.team, query));
-  const visibleCount = tierGroups.reduce((total, group) => total + group.rows.length, 0) + outsideRows.length;
-  const baseline = board.tierGroups[0]?.rows[0]?.par?.replacementPpg;
-  const hasVegas = position === "QB" || position === "RB";
-  const columnCount = 2 + 3 + 3 + Number(hasVegas) + 3 + 3;
-
-  if (visibleCount === 0) return <EmptyState query={query} />;
-
-  return (
-    <section aria-labelledby={`${position.toLowerCase()}-board-heading`}>
-      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-slate-200 px-4 py-3 sm:px-5">
-        <div>
-          <h3 id={`${position.toLowerCase()}-board-heading`} className="text-sm font-bold text-slate-950 sm:text-base">{POSITION_NAMES[position]}</h3>
-          <p className="mt-1 text-[11px] leading-4 text-slate-600">
-            PAR baseline: {BASELINE_LABELS[position]} = {baseline?.toFixed(2)} PPG · Draft tiers derived from projected PAR/G
-          </p>
-        </div>
-        <span className="text-xs tabular-nums text-slate-500">{visibleCount} visible · {PAR_POSITION_LIMITS[position]} tier eligible</span>
-      </div>
-
-      <NflTableScroller label={`${POSITION_NAMES[position]} research board`} className="max-h-[72vh]">
-        <table className="w-full min-w-[620px] border-separate border-spacing-0 text-left text-xs md:min-w-[1320px]">
-          <PositionTableHeader position={position} mobileGroup={mobileGroup} hasVegas={hasVegas} />
-          <tbody>
-            {tierGroups.map((group) => (
-              <TierSection
-                key={group.tier}
-                tier={group.tier}
-                rows={group.rows}
-                columnCount={columnCount}
-                position={position}
-                mobileGroup={mobileGroup}
-                thresholds={thresholds}
-                hasVegas={hasVegas}
-              />
-            ))}
-            {outsideRows.length > 0 && (
-              <>
-                <tr className="bg-slate-200/80">
-                  <th colSpan={columnCount} className="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">Outside Draft Pool</th>
-                </tr>
-                {outsideRows.map((row) => (
-                  <ResearchRow key={row.key} row={row} position={position} mobileGroup={mobileGroup} thresholds={thresholds} hasVegas={hasVegas} />
-                ))}
-              </>
-            )}
-          </tbody>
-        </table>
-      </NflTableScroller>
-    </section>
-  );
-}
-
-function PositionTableHeader({ position, mobileGroup, hasVegas }: { position: FantasyPosition; mobileGroup: MobileGroup; hasVegas: boolean }) {
-  const metricLabels = METRIC_LABELS[position];
-  return (
-    <thead className="sticky top-0 z-30 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-      <tr className="bg-slate-200">
-        <th rowSpan={2} className="sticky left-0 z-40 w-14 border-b border-r border-slate-300 bg-slate-200 px-2 py-2 text-center">JKB Rk</th>
-        <th rowSpan={2} className="sticky left-14 z-40 min-w-64 border-b border-r border-slate-300 bg-slate-200 px-3 py-2">Player</th>
-        <GroupHeader label="Position Evidence" span={3} active={mobileGroup === "Metrics"} />
-        <GroupHeader label="Model" span={hasVegas ? 4 : 3} active={mobileGroup === "Model"} />
-        <GroupHeader label="Team Context" span={2} active={mobileGroup === "Context"} />
-        <GroupHeader label="Fantasy Playoffs" span={3} active={mobileGroup === "Playoffs"} />
-      </tr>
-      <tr className="bg-slate-100">
-        {metricLabels.map((label) => <ColumnHeader key={label} label={label} group="Metrics" active={mobileGroup} />)}
-        <ColumnHeader label="Late / Last 8 Rk" group="Model" active={mobileGroup} />
-        <ColumnHeader label="Projection Rk" group="Model" active={mobileGroup} />
-        {hasVegas && <ColumnHeader label="Vegas Rk" group="Model" active={mobileGroup} />}
-        <ColumnHeader label="AVG Rk" group="always" active={mobileGroup} emphasis />
-        <ColumnHeader label="Strength of Schedule" group="Context" active={mobileGroup} />
-        <ColumnHeader label="O-Line Rk" group="Context" active={mobileGroup} />
-        <ColumnHeader label="W15" group="Playoffs" active={mobileGroup} />
-        <ColumnHeader label="W16" group="Playoffs" active={mobileGroup} />
-        <ColumnHeader label="W17" group="Playoffs" active={mobileGroup} />
-      </tr>
-    </thead>
-  );
-}
-
-function GroupHeader({ label, span, active }: { label: string; span: number; active: boolean }) {
-  return <th colSpan={span} className={cn("border-b border-r border-slate-300 px-3 py-1.5 text-center", !active && "max-md:hidden")}>{label}</th>;
-}
-
-function ColumnHeader({ label, group, active, emphasis = false }: { label: string; group: MobileGroup | "always"; active: MobileGroup; emphasis?: boolean }) {
-  return <th className={cn("min-w-20 border-b border-r border-slate-200 px-2 py-2 text-center leading-4", group !== "always" && group !== active && "max-md:hidden", emphasis && "bg-slate-200 text-slate-800")}>{label}</th>;
-}
-
-function TierSection({ tier, rows, columnCount, position, mobileGroup, thresholds, hasVegas }: { tier: number; rows: readonly FantasyResearchBoardRow[]; columnCount: number; position: FantasyPosition; mobileGroup: MobileGroup; thresholds: Record<RankColumnKey, RankQuantileThresholds | null>; hasVegas: boolean }) {
-  const parValues = rows.flatMap((row) => row.par ? [row.par.parPerGame] : []);
-  const high = Math.max(...parValues);
-  const low = Math.min(...parValues);
-  return (
-    <>
-      <tr className="bg-slate-100">
-        <th colSpan={columnCount} className="border-b border-slate-200 px-4 py-2 text-left">
-          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-800">Tier {tier}</span>
-          <span className="ml-3 text-[10px] font-medium normal-case tracking-normal text-slate-500">PAR/G {formatSigned(high, 2)} to {formatSigned(low, 2)}</span>
-        </th>
-      </tr>
-      {rows.map((row) => <ResearchRow key={row.key} row={row} position={position} mobileGroup={mobileGroup} thresholds={thresholds} hasVegas={hasVegas} />)}
-    </>
-  );
-}
-
-function ResearchRow({ row, position, mobileGroup, thresholds, hasVegas }: { row: FantasyResearchBoardRow; position: FantasyPosition; mobileGroup: MobileGroup; thresholds: Record<RankColumnKey, RankQuantileThresholds | null>; hasVegas: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-  const jkb = row.jkb;
-  const metrics = jkb ? getFantasyMetricValues(jkb) : [undefined, undefined, undefined];
-  return (
-    <>
-      <tr className="group border-b border-slate-100 hover:bg-slate-50">
-        <td className="sticky left-0 z-10 w-14 border-b border-r border-slate-100 bg-white px-2 py-2 text-center font-bold tabular-nums text-slate-700 group-hover:bg-slate-50">{formatRank(jkb?.positionRank)}</td>
-        <td className="sticky left-14 z-10 min-w-64 border-b border-r border-slate-100 bg-white px-3 py-2 group-hover:bg-slate-50">
-          <div className="flex items-center gap-2">
-            <PlayerIdentity player={row.player} team={row.team} />
-            {row.tier && <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-700 md:hidden">T{row.tier}</span>}
-            <ExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.player}`} expanded={expanded} onClick={() => setExpanded((value) => !value)} />
-          </div>
-        </td>
-        {metrics.map((value, index) => <RankCell key={index} value={value} tone={getQuantileRankTone(value, thresholds[`metric${index}` as RankColumnKey])} group="Metrics" active={mobileGroup} />)}
-        <RankCell value={jkb?.lateSeasonRank} tone={getQuantileRankTone(jkb?.lateSeasonRank, thresholds.late)} group="Model" active={mobileGroup} />
-        <RankCell value={jkb?.projectionRank} tone={getQuantileRankTone(jkb?.projectionRank, thresholds.projection)} group="Model" active={mobileGroup} />
-        {hasVegas && <RankCell value={jkb?.vegasRank} tone={getQuantileRankTone(jkb?.vegasRank, thresholds.vegas)} group="Model" active={mobileGroup} />}
-        <RankCell value={jkb?.averageRank} tone={getQuantileRankTone(jkb?.averageRank, thresholds.average)} group="always" active={mobileGroup} emphasis />
-        <RankCell value={jkb?.strengthOfSchedule} tone={getSosRankTone(jkb?.strengthOfSchedule)} group="Context" active={mobileGroup} />
-        <RankCell value={jkb?.offensiveLineRank} tone={getQuantileRankTone(jkb?.offensiveLineRank, thresholds.oline)} group="Context" active={mobileGroup} />
-        <TextCell value={jkb?.playoffWeek15Opponent} group="Playoffs" active={mobileGroup} />
-        <TextCell value={jkb?.playoffWeek16Opponent} group="Playoffs" active={mobileGroup} />
-        <TextCell value={jkb?.playoffWeek17Opponent} group="Playoffs" active={mobileGroup} />
-      </tr>
-      {expanded && (
-        <tr className="bg-slate-50">
-          <td colSpan={20} className="px-4 py-3 text-[11px] leading-5 text-slate-600">
-            {row.par ? (
-              <div className="flex flex-wrap gap-x-5 gap-y-1">
-                <span>PAR rank <strong className="text-slate-900">#{row.par.parRank}</strong></span>
-                <span>PAR/G <strong className="text-slate-900">{formatSigned(row.par.parPerGame, 2)}</strong></span>
-                <span>Projected PPG <strong className="text-slate-900">{row.par.projectedPpg.toFixed(2)}</strong></span>
-                <span>Historical replacement <strong className="text-slate-900">{row.par.replacementPpg.toFixed(2)}</strong></span>
-                <span>Season PAR <strong className="text-slate-900">{formatSigned(row.par.projectedSeasonPar, 1)}</strong></span>
-                <span>Projected points <strong className="text-slate-900">{row.par.projectedFantasyPoints.toFixed(1)}</strong></span>
-              </div>
-            ) : (
-              <span>{position} player remains in JKB position-rank order and is outside the approved PAR tier universe.</span>
-            )}
           </td>
         </tr>
       )}
@@ -354,52 +314,12 @@ function ExpandControl({ label, expanded, onClick }: { label: string; expanded: 
   );
 }
 
-function RankCell({ value, tone, group, active, emphasis = false }: { value?: number; tone: RankTone; group: MobileGroup | "always"; active: MobileGroup; emphasis?: boolean }) {
-  return (
-    <td className={cn("border-b border-r border-slate-100 px-2 py-2 text-center font-semibold tabular-nums", toneClass(tone), group !== "always" && group !== active && "max-md:hidden", emphasis && "font-bold ring-1 ring-inset ring-slate-200/70")}>
-      {formatRank(value)}
-    </td>
-  );
-}
-
-function TextCell({ value, group, active }: { value?: string; group: MobileGroup; active: MobileGroup }) {
-  return <td className={cn("border-b border-r border-slate-100 bg-white px-2 py-2 text-center font-semibold text-slate-700", group !== active && "max-md:hidden")}>{value || "—"}</td>;
-}
-
 function EmptyState({ query }: { query: string }) {
   return <div className="px-4 py-12 text-center text-sm font-semibold text-slate-700">No players match “{query}”</div>;
-}
-
-function buildThresholds(rows: readonly FantasyRankingRow[]): Record<RankColumnKey, RankQuantileThresholds | null> {
-  const metrics = rows.map(getFantasyMetricValues);
-  return {
-    metric0: getRankQuantileThresholds(metrics.map((values) => values[0])),
-    metric1: getRankQuantileThresholds(metrics.map((values) => values[1])),
-    metric2: getRankQuantileThresholds(metrics.map((values) => values[2])),
-    late: getRankQuantileThresholds(rows.map((row) => row.lateSeasonRank)),
-    projection: getRankQuantileThresholds(rows.map((row) => row.projectionRank)),
-    vegas: getRankQuantileThresholds(rows.map((row) => row.vegasRank)),
-    average: getRankQuantileThresholds(rows.map((row) => row.averageRank)),
-    sos: null,
-    oline: getRankQuantileThresholds(rows.map((row) => row.offensiveLineRank)),
-  };
 }
 
 function matchesQuery(player: string, team: string | undefined, query: string): boolean {
   return !query || player.toLowerCase().includes(query) || team?.toLowerCase().includes(query) === true;
 }
 
-function toneClass(tone: RankTone): string {
-  if (tone === "favorable") return "bg-emerald-50 text-emerald-900";
-  if (tone === "unfavorable") return "bg-rose-50 text-rose-900";
-  if (tone === "neutral") return "bg-slate-50/70 text-slate-700";
-  return "bg-white text-slate-400";
-}
 
-function formatRank(value: number | undefined): string {
-  return Number.isFinite(value) ? String(value) : "—";
-}
-
-function formatSigned(value: number, digits: number): string {
-  return `${value > 0 ? "+" : ""}${value.toFixed(digits)}`;
-}
