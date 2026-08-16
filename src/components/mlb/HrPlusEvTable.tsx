@@ -9,9 +9,16 @@ import {
   formatHrPaRate,
   formatMultiplier,
   formatProbabilityPercent,
+  type HrPlusEvSampleLabel,
   type HrPlusEvValuation,
   type MatchupFactorKey,
 } from "@/lib/mlb/hrPlusEvModel";
+import {
+  filterPlusEvRows,
+  sampleDisplayLabel,
+  type PlusEvSampleFilter,
+  type PlusEvValueFilter,
+} from "@/components/mlb/hrPlusEvTableFilters";
 
 export type PlusEvSortKey =
   | "player"
@@ -97,6 +104,27 @@ function ValueBadge({ label }: { label: HrPlusEvValuation["label"] }) {
   );
 }
 
+function sampleTone(sample: HrPlusEvSampleLabel): string {
+  if (sample === "VERY LIMITED") return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
+  if (sample === "LIMITED") return "bg-amber-50 text-amber-700 ring-1 ring-amber-100";
+  if (sample === "MODERATE") return "bg-slate-100 text-slate-600";
+  return "bg-slate-50 text-slate-500";
+}
+
+function SampleChip({ row, className }: { row: HrPlusEvValuation; className?: string }) {
+  const display = sampleDisplayLabel(row.sampleLabel);
+  if (!display || row.sampleLabel == null) return null;
+  const pa = row.seasonPlateAppearances != null ? `${Math.round(row.seasonPlateAppearances)} PA` : null;
+  return (
+    <span
+      data-plus-ev-sample={row.sampleLabel}
+      className={cn("inline-flex whitespace-nowrap rounded-full px-1.5 py-0.5 text-[9px] font-bold", sampleTone(row.sampleLabel), className)}
+    >
+      {display}{pa ? ` · ${pa}` : ""}
+    </span>
+  );
+}
+
 function DetailItem({ label, value, note }: { label: string; value: string; note?: string | null }) {
   return (
     <div className="rounded-md bg-white px-2 py-1.5">
@@ -111,13 +139,15 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
   return (
     <div data-plus-ev-details={row.player} className="space-y-3">
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+        <DetailItem label="Season HR" value={row.seasonHomeRuns == null ? "—" : String(row.seasonHomeRuns)} />
+        <DetailItem label="Season PA" value={row.seasonPlateAppearances == null ? "—" : String(row.seasonPlateAppearances)} />
         <DetailItem
           label="Season HR/PA"
           value={row.seasonHrPa == null ? "—" : `${row.seasonHomeRuns}/${row.seasonPlateAppearances} (${formatHrPaRate(row.seasonHrPa)})`}
         />
         <DetailItem
           label="Sample"
-          value={row.sampleLabel ?? "—"}
+          value={sampleDisplayLabel(row.sampleLabel) ?? "—"}
           note={row.sampleLabel == null ? "No authoritative season PA." : "Informational only. Does not change HR% or EV."}
         />
         <DetailItem
@@ -190,6 +220,57 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
   );
 }
 
+const VALUE_FILTERS: Array<{ key: PlusEvValueFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "STRONG +EV", label: "Strong +EV" },
+  { key: "MODERATE +EV", label: "Moderate +EV" },
+  { key: "FAIR", label: "Fair" },
+  { key: "OVERPRICED", label: "Overpriced" },
+];
+
+const SAMPLE_FILTERS: Array<{ key: PlusEvSampleFilter; label: string }> = [
+  { key: "all", label: "All Samples" },
+  { key: "established", label: "Established" },
+  { key: "pa125", label: "125+ PA" },
+  { key: "limited", label: "Limited" },
+];
+
+function FilterPills<T extends string>({
+  legend,
+  value,
+  options,
+  onChange,
+}: {
+  legend: string;
+  value: T;
+  options: Array<{ key: T; label: string }>;
+  onChange: (key: T) => void;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 text-[9px] font-black uppercase tracking-wide text-slate-400">{legend}</div>
+      <div className="flex gap-1 overflow-x-auto pb-0.5" role="group" aria-label={legend}>
+        {options.map((option) => (
+          <button
+            key={option.key}
+            type="button"
+            aria-pressed={value === option.key}
+            onClick={() => onChange(option.key)}
+            className={cn(
+              "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition",
+              value === option.key
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function HrPlusEvTable({
   rows,
   compact,
@@ -202,13 +283,22 @@ export default function HrPlusEvTable({
   const [sortKey, setSortKey] = useState<PlusEvSortKey>("ev");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [valueFilter, setValueFilter] = useState<PlusEvValueFilter>("all");
+  const [sampleFilter, setSampleFilter] = useState<PlusEvSampleFilter>("all");
+  const [positiveOnly, setPositiveOnly] = useState(false);
 
+  const pricedTotal = useMemo(() => rows.filter((row) => row.available).length, [rows]);
+  const filtered = useMemo(
+    () => filterPlusEvRows(rows, { value: valueFilter, sample: sampleFilter, positiveOnly }),
+    [positiveOnly, rows, sampleFilter, valueFilter],
+  );
   const sorted = useMemo(() => {
     if (sortKey === "ev" && sortDirection === "desc") {
-      return [...rows].sort(comparePlusEvRows);
+      return [...filtered].sort(comparePlusEvRows);
     }
-    return sortRows(rows, sortKey, sortDirection);
-  }, [rows, sortDirection, sortKey]);
+    return sortRows(filtered, sortKey, sortDirection);
+  }, [filtered, sortDirection, sortKey]);
+  const pricedVisible = sorted.filter((row) => row.available).length;
 
   const handleSort = (key: PlusEvSortKey) => {
     if (sortKey === key) {
@@ -226,67 +316,98 @@ export default function HrPlusEvTable({
 
   const sortMark = (key: PlusEvSortKey) => (sortKey === key ? (sortDirection === "desc" ? " ↓" : " ↑") : "");
 
-  if (!sorted.length) {
-    return (
-      <div data-plus-ev-table="empty" className="px-3 py-6 text-center text-sm text-slate-500">
-        No batters match the current search or game filter.
+  const toolbar = (
+    <div data-plus-ev-filters="true" className="space-y-2 border-b border-slate-200 px-3 py-2.5">
+      <FilterPills legend="Value" value={valueFilter} options={VALUE_FILTERS} onChange={setValueFilter} />
+      <FilterPills legend="Sample" value={sampleFilter} options={SAMPLE_FILTERS} onChange={setSampleFilter} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+          <input
+            type="checkbox"
+            checked={positiveOnly}
+            onChange={(event) => setPositiveOnly(event.target.checked)}
+            className="h-3.5 w-3.5 rounded border-slate-300"
+          />
+          Positive EV only
+        </label>
+        <div data-plus-ev-count="true" className="text-[11px] text-slate-500">
+          {pricedVisible} of {pricedTotal} priced hitters
+          {valueFilter === "all" && !positiveOnly && rows.length > pricedTotal
+            ? ` · ${rows.length - pricedTotal} unavailable`
+            : ""}
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+
+  const emptyMessage = rows.length
+    ? "No +EV rows match the current filters."
+    : "No batters match the current search or game filter.";
 
   if (isCompact) {
     return (
-      <div data-plus-ev-table="mobile" className="divide-y divide-slate-100">
-        {sorted.map((row, index) => {
-          const key = `${row.player}|${row.team}|${row.opponent}`;
-          const expanded = expandedKey === key;
-          const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              toggleRow(row);
-            }
-          };
-          return (
-            <div key={key} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-              <div
-                role="button"
-                tabIndex={0}
-                aria-expanded={expanded}
-                aria-label={`${expanded ? "Hide" : "Show"} +EV details for ${row.player}`}
-                onClick={() => toggleRow(row)}
-                onKeyDown={onKeyDown}
-                className="flex cursor-pointer items-center gap-2 px-3 py-2.5"
-              >
-                <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
-                <MlbTeamLogo team={row.team} size={22} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
-                  <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <div className="flex items-center gap-1 text-[10px] font-bold tabular-nums text-slate-600">
-                    <span>{row.bookOddsRaw ?? "—"}</span>
-                    <span className="text-slate-300">/</span>
-                    <span>{formatAmericanOdds(row.fairOddsAmerican)}</span>
+      <div data-plus-ev-table="mobile">
+        {toolbar}
+        {sorted.length ? (
+          <div className="divide-y divide-slate-100">
+            {sorted.map((row, index) => {
+              const key = `${row.player}|${row.team}|${row.opponent}`;
+              const expanded = expandedKey === key;
+              const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleRow(row);
+                }
+              };
+              return (
+                <div key={key} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={expanded}
+                    aria-label={`${expanded ? "Hide" : "Show"} +EV details for ${row.player}`}
+                    onClick={() => toggleRow(row)}
+                    onKeyDown={onKeyDown}
+                    className="flex cursor-pointer items-center gap-2 px-3 py-2.5"
+                  >
+                    <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
+                    <MlbTeamLogo team={row.team} size={22} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
+                      <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
+                      <div className="mt-0.5"><SampleChip row={row} /></div>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <div className="flex items-center gap-1 text-[10px] font-bold tabular-nums text-slate-600">
+                        <span>{row.bookOddsRaw ?? "—"}</span>
+                        <span className="text-slate-300">/</span>
+                        <span>{formatAmericanOdds(row.fairOddsAmerican)}</span>
+                      </div>
+                      <span className={cn("text-[12px] font-black tabular-nums", evTone(row.ev))}>{formatEvPercent(row.ev)}</span>
+                      <ValueBadge label={row.label} />
+                    </div>
                   </div>
-                  <span className={cn("text-[12px] font-black tabular-nums", evTone(row.ev))}>{formatEvPercent(row.ev)}</span>
-                  <ValueBadge label={row.label} />
+                  {expanded ? (
+                    <div className="bg-slate-50 px-3 pb-3 pt-1">
+                      <PlusEvDetails row={row} />
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-              {expanded ? (
-                <div className="bg-slate-50 px-3 pb-3 pt-1">
-                  <PlusEvDetails row={row} />
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ) : (
+          <div data-plus-ev-empty="true" className="px-3 py-6 text-center text-sm text-slate-500">{emptyMessage}</div>
+        )}
       </div>
     );
   }
 
   return (
-    <div data-plus-ev-table="desktop" className="overflow-x-auto">
+    <div data-plus-ev-table="desktop">
+      {toolbar}
+      {sorted.length ? (
+      <div className="overflow-x-auto">
       <table className="w-full table-fixed border-separate border-spacing-0 text-xs">
         <thead className="sticky top-0 z-20">
           <tr className="text-[10px] uppercase tracking-[0.08em] text-slate-500">
@@ -345,7 +466,8 @@ export default function HrPlusEvTable({
                     {row.bookOddsRaw ?? "—"}
                   </td>
                   <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
-                    {formatHrPaRate(row.seasonHrPa)}
+                    <div>{formatHrPaRate(row.seasonHrPa)}</div>
+                    <div className="mt-0.5"><SampleChip row={row} /></div>
                   </td>
                   <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
                     {trendDisplay(row)}
@@ -378,6 +500,10 @@ export default function HrPlusEvTable({
           })}
         </tbody>
       </table>
+      </div>
+      ) : (
+        <div data-plus-ev-empty="true" className="px-3 py-6 text-center text-sm text-slate-500">{emptyMessage}</div>
+      )}
     </div>
   );
 }

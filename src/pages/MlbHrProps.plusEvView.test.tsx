@@ -130,6 +130,7 @@ describe("MlbHrProps +EV view toggle", () => {
     expect(plusEvTab).toHaveAttribute("aria-selected", "false");
     expect(container.querySelector('[data-x-export="mlb-hr-props"]')).not.toBeNull();
     expect(container.querySelector("[data-plus-ev-table]")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Strong +EV" })).not.toBeInTheDocument();
     expect(screen.getByText("Adley Rutschman")).toBeInTheDocument();
     expect(screen.getByText("70.0")).toBeInTheDocument();
   }, TIMEOUT);
@@ -147,6 +148,9 @@ describe("MlbHrProps +EV view toggle", () => {
     expect(screen.getByText("JKB HR%")).toBeInTheDocument();
     expect(screen.getByText("Fair Odds")).toBeInTheDocument();
     expect(screen.getByText("+425")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Strong +EV" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All Samples" })).toHaveAttribute("aria-pressed", "true");
   }, TIMEOUT);
 
   it("returns to Analytic View and restores the existing HR table", async () => {
