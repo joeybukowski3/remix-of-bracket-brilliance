@@ -142,6 +142,43 @@ describe("MLB HR props dashboard guards", () => {
     expect(payload?.games[0].windDirection).toBe("SW");
   });
 
+  it("passes through optional +EV season and rolling-PA counts without inventing them", () => {
+    const payload = normalizeHrDashboardPayload({
+      date: "2026-08-16",
+      generatedAt: "2026-08-16T12:00:00Z",
+      games: [],
+      pitchers: [],
+      batters: [{
+        player: "Yordan Alvarez",
+        team: "HOU",
+        opponent: "CIN",
+        opposingPitcher: "Hunter Greene",
+        hrScore: 71.4,
+        hrScoreRank: 1,
+        seasonHomeRuns: 25,
+        seasonPlateAppearances: 480,
+        last50PaHomeRuns: 3,
+        last50PaPlateAppearances: 52,
+        last100PaHomeRuns: 6,
+        last100PaPlateAppearances: 107,
+      }],
+    });
+
+    expect(payload?.batters[0].seasonHomeRuns).toBe(25);
+    expect(payload?.batters[0].seasonPlateAppearances).toBe(480);
+    expect(payload?.batters[0].last50PaHomeRuns).toBe(3);
+    expect(payload?.batters[0].last50PaPlateAppearances).toBe(52);
+    expect(payload?.batters[0].last100PaHomeRuns).toBe(6);
+    expect(payload?.batters[0].last100PaPlateAppearances).toBe(107);
+    expect(normalizeHrDashboardPayload({
+      date: "2026-08-16",
+      generatedAt: "2026-08-16T12:00:00Z",
+      games: [],
+      pitchers: [],
+      batters: [{ player: "Yordan Alvarez", team: "HOU", opponent: "CIN", hrScore: 71.4, hrScoreRank: 1 }],
+    })?.batters[0].seasonHomeRuns).toBeNull();
+  });
+
   it.each([null, undefined, ""])("preserves a missing K line (%p) as null during normalization", (kLine) => {
     const payload = normalizeHrDashboardPayload({
       date: "2026-08-10",

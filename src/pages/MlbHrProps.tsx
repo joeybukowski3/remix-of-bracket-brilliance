@@ -30,6 +30,8 @@ import {
   buildPitcherStrikeoutRows as sharedBuildPitcherStrikeoutRows,
   buildTbdGameKeySet as sharedBuildTbdGameKeySet,
 } from "@/lib/mlb/mlbSocialSelection";
+import { evaluateHrPlusEv } from "@/lib/mlb/hrPlusEvModel";
+import HrPlusEvTable from "@/components/mlb/HrPlusEvTable";
 
 /**
  * Re-exported for backward compatibility -- the real implementations live
@@ -190,6 +192,13 @@ export type HrDashboardBatter = {
   /** Dual-side current-season splits for expanded batter UI comparison (not used in scoring). */
   handednessSplits?: HandednessSplits | null;
   bats?: "L" | "R" | "S" | null;
+  /** Optional first-class season counts for the standalone +EV model. When absent, +EV derives HR/PA from complete vsL+vsR splits. */
+  seasonHomeRuns?: number | null;
+  seasonPlateAppearances?: number | null;
+  last50PaHomeRuns?: number | null;
+  last50PaPlateAppearances?: number | null;
+  last100PaHomeRuns?: number | null;
+  last100PaPlateAppearances?: number | null;
   /** Scheduled first-pitch time (ISO 8601, UTC), from the same authoritative schedule source as the rest of the slate. Null when the generator didn't receive one. */
   gameStartTime?: string | null;
   hrLine?: number | null;
@@ -467,6 +476,8 @@ export type PitcherStrikeoutTeamRow = {
 };
 
 export const DEFAULT_TAB: TabKey = "batters";
+export type BatterTableView = "analytic" | "plusEv";
+export const DEFAULT_BATTER_TABLE_VIEW: BatterTableView = "analytic";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
@@ -719,6 +730,12 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     splitHrFrequencyScore: normalizeNumber(entry.splitHrFrequencyScore),
     handednessSplits: normalizeHandednessSplits(entry.handednessSplits),
     bats: (["L","R","S"].includes(String(entry.bats ?? "")) ? String(entry.bats) as "L"|"R"|"S" : null),
+    seasonHomeRuns: normalizeNumber(entry.seasonHomeRuns),
+    seasonPlateAppearances: normalizeNumber(entry.seasonPlateAppearances),
+    last50PaHomeRuns: normalizeNumber(entry.last50PaHomeRuns),
+    last50PaPlateAppearances: normalizeNumber(entry.last50PaPlateAppearances),
+    last100PaHomeRuns: normalizeNumber(entry.last100PaHomeRuns),
+    last100PaPlateAppearances: normalizeNumber(entry.last100PaPlateAppearances),
     gameStartTime: normalizeText(entry.gameStartTime) || null,
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
@@ -1925,6 +1942,7 @@ export default function MlbHrProps() {
   /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. */
   const isCompactLayout = useIsCompactLayout();
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
+  const [batterTableView, setBatterTableView] = useState<BatterTableView>(DEFAULT_BATTER_TABLE_VIEW);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
   const [pitcherSortDirection, setPitcherSortDirection] = useState<SortDirection>(DEFAULT_PITCHER_SORT.direction);
@@ -2150,6 +2168,10 @@ export default function MlbHrProps() {
   const visibleBatters = useMemo(
     () => filteredBatters.slice(0, visibleBatterCount),
     [filteredBatters, visibleBatterCount],
+  );
+  const plusEvRows = useMemo(
+    () => filteredBatters.map((batter) => evaluateHrPlusEv(batter)),
+    [filteredBatters],
   );
 
   const filteredMatchups = useMemo(() => {
@@ -2660,7 +2682,11 @@ export default function MlbHrProps() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
-                            <p className="mt-1 text-sm text-slate-500">HR Quality Score drives the primary ranking. Supporting power and recent-HR stats provide context, not a separate probability.</p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {batterTableView === "plusEv"
+                                ? "Standalone +EV model using season HR/PA, matchup multipliers, and sportsbook YES prices. It does not change the HR Quality Score."
+                                : "HR Quality Score drives the primary ranking. Supporting power and recent-HR stats provide context, not a separate probability."}
+                            </p>
                           </div>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <input
@@ -2686,6 +2712,42 @@ export default function MlbHrProps() {
                             </button>
                           </div>
                         </div>
+                        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Batter table view">
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={batterTableView === "analytic"}
+                            onClick={() => setBatterTableView("analytic")}
+                            className={cn(
+                              "rounded-full px-3 py-1.5 text-sm font-semibold transition",
+                              batterTableView === "analytic"
+                                ? "bg-slate-900 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                            )}
+                          >
+                            Analytic View
+                          </button>
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={batterTableView === "plusEv"}
+                            onClick={() => setBatterTableView("plusEv")}
+                            className={cn(
+                              "rounded-full px-3 py-1.5 text-sm font-semibold transition",
+                              batterTableView === "plusEv"
+                                ? "bg-slate-900 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                            )}
+                          >
+                            +EV Table
+                          </button>
+                        </div>
+                        {batterTableView === "plusEv" ? (
+                        <div data-plus-ev-table-root="true" className="rounded-xl border border-slate-200">
+                          <HrPlusEvTable rows={plusEvRows} compact={isCompactLayout} />
+                        </div>
+                        ) : (
+                        <>
                         <DataLegend />
                         <div data-x-export="mlb-hr-props" className="rounded-xl border border-slate-200">
                           {isCompactLayout ? (
@@ -3075,6 +3137,8 @@ export default function MlbHrProps() {
                               </button>
                             )}
                           </div>
+                        )}
+                        </>
                         )}
 
                         {/* Top HR Environments -- game-level, informational only, never affects player ranking */}
