@@ -192,7 +192,7 @@ export type HrDashboardBatter = {
   /** Dual-side current-season splits for expanded batter UI comparison (not used in scoring). */
   handednessSplits?: HandednessSplits | null;
   bats?: "L" | "R" | "S" | null;
-  /** Optional first-class season counts for the standalone +EV model. When absent, +EV derives HR/PA from complete vsL+vsR splits. */
+  /** Authoritative StatsAPI season hitting totals for the standalone +EV model (joined by playerId). When absent, +EV is unavailable -- there is no handedness split-sum fallback. */
   seasonHomeRuns?: number | null;
   seasonPlateAppearances?: number | null;
   last50PaHomeRuns?: number | null;
