@@ -5,7 +5,6 @@ import {
   EXPECTED_PA_FALLBACK,
   MATCHUP_WEIGHTS,
   PITCHING_EXPOSURE_WEIGHTS,
-  RECENT_TREND_CAP,
   TOTAL_MATCHUP_CAP,
   americanOddsToImpliedProbability,
   capTotalMatchupMultiplier,
@@ -14,7 +13,6 @@ import {
   computeExpectedValue,
   computeHrPa,
   computeHrProbability,
-  computeRollingPaHrRate,
   evaluateHrPlusEv,
   expectedPaForBattingOrder,
   handednessSplitKey,
@@ -24,7 +22,6 @@ import {
   pitchingExposureMultiplier,
   probabilityToAmericanOdds,
   starterSusceptibilityMultiplier,
-  weatherMultiplier,
   type HrPlusEvBatterSource,
 } from "./hrPlusEvModel";
 
@@ -260,6 +257,7 @@ describe("missing data", () => {
     expect(valuation.missingComponents).toEqual(expect.arrayContaining([
       "Pitcher HR/PA vs hitter hand",
       "Opponent bullpen HR/PA",
+      "Weather",
       "Recent HR/PA trend",
     ]));
   });
@@ -280,59 +278,18 @@ describe("missing data", () => {
 });
 
 describe("rolling 50/100 PA", () => {
-  const games = [
-    { date: "2026-08-16", plateAppearances: 4, homeRuns: 1 },
-    { date: "2026-08-15", plateAppearances: 5, homeRuns: 0 },
-    { date: "2026-08-14", plateAppearances: 4, homeRuns: 0 },
-    { date: "2026-08-01", plateAppearances: 40, homeRuns: 2 },
-    { date: "2026-07-20", plateAppearances: 50, homeRuns: 1 },
-    { date: "2026-06-01", plateAppearances: 20, homeRuns: 3 },
-  ];
-
-  it("fills an actual completed-PA window from newest games", () => {
-    const last50 = computeRollingPaHrRate(games, 50);
-    expect(last50).not.toBeNull();
-    expect(last50?.plateAppearances).toBe(53);
-    expect(last50?.homeRuns).toBe(3);
-    expect(last50?.hrPa).toBeCloseTo(3 / 53, 12);
-  });
-
-  it("returns null instead of substituting last-X-games when PA is short", () => {
-    expect(computeRollingPaHrRate(games.slice(0, 3), 50)).toBeNull();
-    expect(computeRollingPaHrRate(games.slice(0, 4), 100)).toBeNull();
-  });
-
-  it("skips games that have no completed PA", () => {
-    const withMissing = [
-      { date: "2026-08-16", plateAppearances: null, homeRuns: 2 },
-      { date: "2026-08-15", plateAppearances: 50, homeRuns: 1 },
-    ];
-    const result = computeRollingPaHrRate(withMissing, 50);
-    expect(result?.homeRuns).toBe(1);
-    expect(result?.plateAppearances).toBe(50);
-  });
-
-  it("uses persisted last-50/100 counts when they meet the PA window", () => {
+  it("does not treat whole-game or persisted counts as exact last-50/100 PA", () => {
     const valuation = evaluateHrPlusEv(baseSource({
       last50PaHomeRuns: 4,
       last50PaPlateAppearances: 52,
       last100PaHomeRuns: 7,
       last100PaPlateAppearances: 104,
     }));
-    expect(valuation.last50HrPa).toBeCloseTo(4 / 52, 12);
-    expect(valuation.last100HrPa).toBeCloseTo(7 / 104, 12);
-    expect(valuation.factors.recentTrend.status).toBe("ok");
-    expect(valuation.factors.recentTrend.multiplier).toBeGreaterThanOrEqual(RECENT_TREND_CAP.min);
-    expect(valuation.factors.recentTrend.multiplier).toBeLessThanOrEqual(RECENT_TREND_CAP.max);
-  });
-
-  it("does not treat a short persisted window as last-50/100 PA", () => {
-    const valuation = evaluateHrPlusEv(baseSource({
-      last50PaHomeRuns: 2,
-      last50PaPlateAppearances: 30,
-    }));
     expect(valuation.last50HrPa).toBeNull();
+    expect(valuation.last100HrPa).toBeNull();
+    expect(valuation.factors.recentTrend.multiplier).toBe(1);
     expect(valuation.factors.recentTrend.status).toBe("neutral-missing");
+    expect(valuation.factors.recentTrend.reason).toMatch(/exact last 50\/100 PA/i);
   });
 });
 
@@ -357,11 +314,14 @@ describe("evaluateHrPlusEv integration", () => {
     expect(valuation.seasonHrPa).toBeCloseTo(0.05, 12);
   });
 
-  it("keeps weather at 1.00x when the boost is a real zero, not missing", () => {
-    const valuation = evaluateHrPlusEv(baseSource({ weatherBoost: 0 }));
-    expect(valuation.factors.weather.status).toBe("ok");
-    expect(valuation.factors.weather.multiplier).toBe(1);
-    expect(weatherMultiplier(0)).toBe(1);
+  it("does not convert weatherBoost into an HR-rate multiplier", () => {
+    const withBoost = evaluateHrPlusEv(baseSource({ weatherBoost: 7.5 }));
+    const withZero = evaluateHrPlusEv(baseSource({ weatherBoost: 0 }));
+    expect(withBoost.factors.weather.multiplier).toBe(1);
+    expect(withBoost.factors.weather.status).toBe("neutral-missing");
+    expect(withBoost.factors.weather.reason).toMatch(/not a calibrated HR-rate multiplier/i);
+    expect(withZero.factors.weather.multiplier).toBe(1);
+    expect(withZero.factors.weather.status).toBe("neutral-missing");
   });
 
   it("restrains a huge hand-split ratio before it enters the mix", () => {

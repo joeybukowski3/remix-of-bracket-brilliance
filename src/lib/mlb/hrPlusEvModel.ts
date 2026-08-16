@@ -42,14 +42,10 @@ export const COMPONENT_RATIO_CAP = { min: 0.7, max: 1.3 } as const;
 
 export const STARTER_SCORE_NEUTRAL = 50;
 export const STARTER_SCORE_MAX_SWING = 0.2;
-export const WEATHER_BOOST_PER_POINT = 0.007;
 
 export const VALUE_EV_STRONG = 0.15;
 export const VALUE_EV_MODERATE = 0.05;
 export const VALUE_EV_FAIR_LOW = -0.05;
-
-export const LAST50_TREND_BLEND = 0.6;
-export const LAST100_TREND_BLEND = 0.4;
 
 export type HrPlusEvValueLabel =
   | "STRONG +EV"
@@ -74,12 +70,6 @@ export type MatchupFactor = {
   multiplier: number;
   status: "ok" | "neutral-missing";
   reason: string | null;
-};
-
-export type RollingPaGame = {
-  plateAppearances: number | null;
-  homeRuns: number | null;
-  date?: string | null;
 };
 
 export type HandednessSplitCounts = {
@@ -273,15 +263,17 @@ function ratioAroundNeutral(
   return clampNumber(numerator / denominator, cap.min, cap.max);
 }
 
+/**
+ * Map the generator's pitcher-only HR VS score (0–100, 50 = range/slate
+ * midpoint) onto a restrained rate multiplier. The score is built from
+ * pitcher xERA, hard-hit %, fly-ball %, and barrel % only — not hitter,
+ * park, weather, or trend — so it can be used as starter susceptibility
+ * without double-counting those other +EV components.
+ */
 export function starterSusceptibilityMultiplier(hrVsScore: number | null | undefined): number | null {
   if (!isFiniteNumber(hrVsScore)) return null;
   const unit = clampNumber((hrVsScore - STARTER_SCORE_NEUTRAL) / STARTER_SCORE_NEUTRAL, -1, 1);
   return 1 + unit * STARTER_SCORE_MAX_SWING;
-}
-
-export function weatherMultiplier(weatherBoost: number | null | undefined): number | null {
-  if (!isFiniteNumber(weatherBoost)) return null;
-  return 1 + weatherBoost * WEATHER_BOOST_PER_POINT;
 }
 
 export function combineWeightedMultipliers(
@@ -302,44 +294,6 @@ export function pitchingExposureMultiplier(starter: number, bullpen: number): nu
     { multiplier: starter, weight: PITCHING_EXPOSURE_WEIGHTS.starter },
     { multiplier: bullpen, weight: PITCHING_EXPOSURE_WEIGHTS.bullpen },
   ]);
-}
-
-/**
- * Walk completed plate appearances from newest to oldest until the target
- * PA window is filled. Returns null when fewer than `targetPa` completed
- * PAs exist. Never substitutes last-X-games.
- */
-export function computeRollingPaHrRate(
-  games: readonly RollingPaGame[],
-  targetPa: number,
-): { homeRuns: number; plateAppearances: number; hrPa: number } | null {
-  if (!Number.isFinite(targetPa) || targetPa <= 0 || !Array.isArray(games) || games.length === 0) {
-    return null;
-  }
-
-  const chronologicalNewestFirst = [...games].sort((left, right) => {
-    const leftTime = Date.parse(String(left.date ?? ""));
-    const rightTime = Date.parse(String(right.date ?? ""));
-    const leftOk = Number.isFinite(leftTime);
-    const rightOk = Number.isFinite(rightTime);
-    if (leftOk && rightOk) return rightTime - leftTime;
-    if (leftOk) return -1;
-    if (rightOk) return 1;
-    return 0;
-  });
-
-  let homeRuns = 0;
-  let plateAppearances = 0;
-  for (const game of chronologicalNewestFirst) {
-    if (!isFiniteNumber(game.plateAppearances) || game.plateAppearances <= 0) continue;
-    if (!isFiniteNumber(game.homeRuns) || game.homeRuns < 0) continue;
-    homeRuns += game.homeRuns;
-    plateAppearances += game.plateAppearances;
-    if (plateAppearances >= targetPa) {
-      return { homeRuns, plateAppearances, hrPa: homeRuns / plateAppearances };
-    }
-  }
-  return null;
 }
 
 function seasonFromExplicit(source: HrPlusEvBatterSource): { homeRuns: number; plateAppearances: number } | null {
@@ -384,17 +338,6 @@ function resolveHitterHandSplit(
   return { homeRuns: side.homeRuns, plateAppearances: side.plateAppearances, hrPa };
 }
 
-function resolvePersistedRolling(
-  homeRuns: number | null | undefined,
-  plateAppearances: number | null | undefined,
-  targetPa: number,
-): { homeRuns: number; plateAppearances: number; hrPa: number } | null {
-  const hrPa = computeHrPa(homeRuns ?? null, plateAppearances ?? null);
-  if (hrPa == null || homeRuns == null || plateAppearances == null) return null;
-  if (plateAppearances < targetPa) return null;
-  return { homeRuns, plateAppearances, hrPa };
-}
-
 function makeFactor(
   key: MatchupFactorKey,
   label: string,
@@ -428,8 +371,6 @@ export function evaluateHrPlusEv(source: HrPlusEvBatterSource): HrPlusEvValuatio
   const bookImpliedProbability = americanOddsToImpliedProbability(bookOddsAmerican);
   const order = expectedPaForBattingOrder(source.battingOrder ?? null);
   const hitterHand = resolveHitterHandSplit(source, pitcherHand);
-  const last100 = resolvePersistedRolling(source.last100PaHomeRuns, source.last100PaPlateAppearances, 100);
-  const last50 = resolvePersistedRolling(source.last50PaHomeRuns, source.last50PaPlateAppearances, 50);
 
   const starterResolved = starterSusceptibilityMultiplier(source.opposingPitcherHrVs ?? null);
   const hitterHandResolved = season && hitterHand ? ratioAroundNeutral(hitterHand.hrPa, season.hrPa) : null;
@@ -442,24 +383,8 @@ export function evaluateHrPlusEv(source: HrPlusEvBatterSource): HrPlusEvValuatio
     source.leagueBullpenHrPa ?? null,
   );
   const parkResolved = isFiniteNumber(source.parkFactor) ? source.parkFactor : null;
-  const weatherResolved = weatherMultiplier(source.weatherBoost ?? null);
-
-  let trendResolved: number | null = null;
-  if (season) {
-    const last50Ratio = last50 ? last50.hrPa / season.hrPa : null;
-    const last100Ratio = last100 ? last100.hrPa / season.hrPa : null;
-    if (last50Ratio != null && last100Ratio != null) {
-      trendResolved = clampNumber(
-        LAST50_TREND_BLEND * last50Ratio + LAST100_TREND_BLEND * last100Ratio,
-        RECENT_TREND_CAP.min,
-        RECENT_TREND_CAP.max,
-      );
-    } else if (last50Ratio != null) {
-      trendResolved = clampNumber(last50Ratio, RECENT_TREND_CAP.min, RECENT_TREND_CAP.max);
-    } else if (last100Ratio != null) {
-      trendResolved = clampNumber(last100Ratio, RECENT_TREND_CAP.min, RECENT_TREND_CAP.max);
-    }
-  }
+  const weatherResolved = null;
+  const trendResolved = null;
 
   const factors: Record<MatchupFactorKey, MatchupFactor> = {
     starter: makeFactor(
@@ -498,13 +423,13 @@ export function evaluateHrPlusEv(source: HrPlusEvBatterSource): HrPlusEvValuatio
       "weather",
       "Weather",
       weatherResolved,
-      "Weather boost is missing on this batter row.",
+      "weatherBoost is a PropFinder temp/precip scoring composite on a -10 to +10 point scale, not a calibrated HR-rate multiplier. No defensible conversion exists, so weather is neutral for V1 probability modeling.",
     ),
     recentTrend: makeFactor(
       "recentTrend",
       "Recent HR/PA trend",
       trendResolved,
-      "Last 50/100 PA HR/PA is unavailable. Existing last-7/30-day HR counts are not a PA window and were not substituted.",
+      "Exact last 50/100 PA is unavailable. Whole-game PA totals cannot produce an exact PA window, and last-7/30-day HR counts were not substituted.",
     ),
   };
 
@@ -549,12 +474,12 @@ export function evaluateHrPlusEv(source: HrPlusEvBatterSource): HrPlusEvValuatio
     seasonHomeRuns: season?.homeRuns ?? null,
     seasonPlateAppearances: season?.plateAppearances ?? null,
     seasonHrPa: season?.hrPa ?? null,
-    last100HomeRuns: last100?.homeRuns ?? null,
-    last100PlateAppearances: last100?.plateAppearances ?? null,
-    last100HrPa: last100?.hrPa ?? null,
-    last50HomeRuns: last50?.homeRuns ?? null,
-    last50PlateAppearances: last50?.plateAppearances ?? null,
-    last50HrPa: last50?.hrPa ?? null,
+    last100HomeRuns: null,
+    last100PlateAppearances: null,
+    last100HrPa: null,
+    last50HomeRuns: null,
+    last50PlateAppearances: null,
+    last50HrPa: null,
     hitterHandSplitHomeRuns: hitterHand?.homeRuns ?? null,
     hitterHandSplitPlateAppearances: hitterHand?.plateAppearances ?? null,
     hitterHandHrPa: hitterHand?.hrPa ?? null,
