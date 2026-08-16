@@ -517,6 +517,15 @@ async function fetchPitcherSeasonStats(id) {
   return stats;
 }
 
+export function extractAuthoritativeSeasonTotals(seasonStat) {
+  const homeRuns = toFiniteNumber(seasonStat?.homeRuns);
+  const plateAppearances = toFiniteNumber(seasonStat?.plateAppearances);
+  return {
+    seasonHomeRuns: homeRuns == null || homeRuns < 0 ? null : homeRuns,
+    seasonPlateAppearances: plateAppearances == null || plateAppearances < 0 ? null : plateAppearances,
+  };
+}
+
 const batterSeasonCache = new Map();
 async function fetchBatterSeasonStats(id) {
   if (!id) return null;
@@ -959,6 +968,9 @@ function validateBatterRows(rows) {
       parkFactor: toFiniteNumber(row.parkFactor),
       // Display-only season sample context for the expanded profile.
       atBats: row.atBats == null ? null : toFiniteNumber(row.atBats),
+      // Additive +EV baseline. Null when StatsAPI season hitting totals were missing.
+      seasonHomeRuns: row.seasonHomeRuns == null ? null : toFiniteNumber(row.seasonHomeRuns),
+      seasonPlateAppearances: row.seasonPlateAppearances == null ? null : toFiniteNumber(row.seasonPlateAppearances),
       barrelRate: toFiniteNumber(row.barrelRate),
       hardHitRate: toFiniteNumber(row.hardHitRate),
       exitVelo: toFiniteNumber(row.exitVelo),
@@ -1693,6 +1705,9 @@ async function main() {
           ballpark: game.venue,
           parkFactor,
           atBats: safeNumber(season?.atBats, null),
+          // Additive +EV baseline only. Authoritative StatsAPI season hitting
+          // totals (same fetch as atBats). Not used by HR Score.
+          ...extractAuthoritativeSeasonTotals(season),
           barrelRate,
           hardHitRate,
           exitVelo,
@@ -1886,6 +1901,8 @@ async function main() {
       ballpark: player.ballpark,
       parkFactor: roundNumber(player.parkFactor, 2),
       atBats: roundNumber(player.atBats, 0),
+      seasonHomeRuns: player.seasonHomeRuns == null ? null : roundNumber(player.seasonHomeRuns, 0),
+      seasonPlateAppearances: player.seasonPlateAppearances == null ? null : roundNumber(player.seasonPlateAppearances, 0),
       barrelRate: roundNumber(player.barrelRate, 1),
       hardHitRate: roundNumber(player.hardHitRate, 1),
       exitVelo: roundNumber(player.exitVelo, 1),

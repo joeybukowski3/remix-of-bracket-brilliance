@@ -11,6 +11,7 @@ import {
   combineWeightedMultipliers,
   comparePlusEvRows,
   computeExpectedValue,
+  classifySeasonSample,
   computeHrPa,
   computeHrProbability,
   evaluateHrPlusEv,
@@ -198,6 +199,20 @@ describe("missing data", () => {
     expect(valuation.unavailableReasons.join(" ")).toMatch(/Season HR\/PA/i);
   });
 
+  it("does not fall back to vsL+vsR split sums when authoritative season totals are missing", () => {
+    const valuation = evaluateHrPlusEv(baseSource({
+      seasonHomeRuns: null,
+      seasonPlateAppearances: null,
+    }));
+    expect(valuation.available).toBe(false);
+    expect(valuation.seasonHrPa).toBeNull();
+    expect(valuation.sampleLabel).toBeNull();
+    expect(valuation.label).toBe("UNAVAILABLE");
+    expect(valuation.unavailableReasons.join(" ")).toMatch(/Authoritative season/i);
+    expect(valuation.unavailableReasons.join(" ")).toMatch(/Handedness-split sums/i);
+    expect(valuation.hitterHandHrPa).toBeCloseTo(8 / 160, 12);
+  });
+
   it("does not substitute HR/AB when only at-bats exist", () => {
     const valuation = evaluateHrPlusEv({
       player: "AB Only",
@@ -293,8 +308,20 @@ describe("rolling 50/100 PA", () => {
   });
 });
 
+describe("season sample classification", () => {
+  it("uses the published PA boundaries", () => {
+    expect(classifySeasonSample(74)).toBe("VERY LIMITED");
+    expect(classifySeasonSample(75)).toBe("LIMITED");
+    expect(classifySeasonSample(124)).toBe("LIMITED");
+    expect(classifySeasonSample(125)).toBe("MODERATE");
+    expect(classifySeasonSample(199)).toBe("MODERATE");
+    expect(classifySeasonSample(200)).toBe("ESTABLISHED");
+    expect(classifySeasonSample(null)).toBeNull();
+  });
+});
+
 describe("evaluateHrPlusEv integration", () => {
-  it("prefers explicit season HR/PA over split sums", () => {
+  it("uses only authoritative seasonHomeRuns / seasonPlateAppearances for the baseline", () => {
     const valuation = evaluateHrPlusEv(baseSource({
       seasonHomeRuns: 25,
       seasonPlateAppearances: 500,
@@ -302,16 +329,8 @@ describe("evaluateHrPlusEv integration", () => {
     expect(valuation.seasonHomeRuns).toBe(25);
     expect(valuation.seasonPlateAppearances).toBe(500);
     expect(valuation.seasonHrPa).toBeCloseTo(0.05, 12);
-  });
-
-  it("derives season HR/PA from complete vsL+vsR splits when explicit season counts are absent", () => {
-    const valuation = evaluateHrPlusEv(baseSource({
-      seasonHomeRuns: null,
-      seasonPlateAppearances: null,
-    }));
-    expect(valuation.seasonHomeRuns).toBe(20);
-    expect(valuation.seasonPlateAppearances).toBe(400);
-    expect(valuation.seasonHrPa).toBeCloseTo(0.05, 12);
+    expect(valuation.sampleLabel).toBe("ESTABLISHED");
+    expect(valuation.hitterHandHrPa).toBeCloseTo(8 / 160, 12);
   });
 
   it("does not convert weatherBoost into an HR-rate multiplier", () => {

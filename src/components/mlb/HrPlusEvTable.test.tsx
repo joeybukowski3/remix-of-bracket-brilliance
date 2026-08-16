@@ -53,6 +53,8 @@ describe("HrPlusEvTable", () => {
       : null;
     expect(details).not.toBeNull();
     expect(within(details as HTMLElement).getByText("Season HR/PA")).toBeInTheDocument();
+    expect(within(details as HTMLElement).getByText("Sample")).toBeInTheDocument();
+    expect(within(details as HTMLElement).getByText("ESTABLISHED")).toBeInTheDocument();
     expect(within(details as HTMLElement).getByText("Last 100 PA HR/PA")).toBeInTheDocument();
     expect(within(details as HTMLElement).getByText("Last 50 PA HR/PA")).toBeInTheDocument();
     expect(within(details as HTMLElement).getByText("Batting order / expected PA")).toBeInTheDocument();

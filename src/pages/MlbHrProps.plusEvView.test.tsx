@@ -70,6 +70,8 @@ function makeBatter(overrides: Partial<HrDashboardBatter> = {}): HrDashboardBatt
     weatherBoost: 2, hrScore: 70, hrScoreRank: 1, angleTags: [],
     hrOddsYes: "+425",
     bats: "S",
+    seasonHomeRuns: 20,
+    seasonPlateAppearances: 400,
     handednessSplits: {
       vsLeft: {
         plateAppearances: 180, atBats: 160, hits: 40, homeRuns: 10, walks: 15, strikeouts: 30,
@@ -163,13 +165,20 @@ describe("MlbHrProps +EV view toggle", () => {
   it("renders an unavailable +EV state when odds are missing", async () => {
     stubMatchMedia(false);
     vi.resetModules();
-    mockPropsData([makeBatter({ player: "No Odds", hrOddsYes: null, handednessSplits: null })]);
+    mockPropsData([makeBatter({
+      player: "No Odds",
+      hrOddsYes: null,
+      handednessSplits: null,
+      seasonHomeRuns: null,
+      seasonPlateAppearances: null,
+    })]);
     await renderPage();
 
     fireEvent.click(screen.getByRole("tab", { name: "+EV Table" }));
     expect(screen.getByText("UNAVAILABLE")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for No Odds/i }));
     expect(screen.getByText(/Season HR\/PA is unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(/Handedness-split sums/i)).toBeInTheDocument();
   }, TIMEOUT);
 
   it("expands +EV details from the page view", async () => {

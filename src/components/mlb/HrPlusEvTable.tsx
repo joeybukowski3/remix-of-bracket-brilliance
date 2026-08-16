@@ -116,6 +116,11 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
           value={row.seasonHrPa == null ? "—" : `${row.seasonHomeRuns}/${row.seasonPlateAppearances} (${formatHrPaRate(row.seasonHrPa)})`}
         />
         <DetailItem
+          label="Sample"
+          value={row.sampleLabel ?? "—"}
+          note={row.sampleLabel == null ? "No authoritative season PA." : "Informational only. Does not change HR% or EV."}
+        />
+        <DetailItem
           label="Last 100 PA HR/PA"
           value={row.last100HrPa == null ? "—" : `${row.last100HomeRuns}/${row.last100PlateAppearances} (${formatHrPaRate(row.last100HrPa)})`}
           note={row.last100HrPa == null ? "Unavailable — no completed last-100-PA window." : null}

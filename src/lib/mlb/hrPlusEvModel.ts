@@ -54,6 +54,8 @@ export type HrPlusEvValueLabel =
   | "OVERPRICED"
   | "UNAVAILABLE";
 
+export type HrPlusEvSampleLabel = "VERY LIMITED" | "LIMITED" | "MODERATE" | "ESTABLISHED";
+
 export type MatchupFactorKey =
   | "starter"
   | "hitterHandedness"
@@ -119,6 +121,7 @@ export type HrPlusEvValuation = {
   seasonHomeRuns: number | null;
   seasonPlateAppearances: number | null;
   seasonHrPa: number | null;
+  sampleLabel: HrPlusEvSampleLabel | null;
   last100HomeRuns: number | null;
   last100PlateAppearances: number | null;
   last100HrPa: number | null;
@@ -157,6 +160,14 @@ export function computeHrPa(homeRuns: number | null | undefined, plateAppearance
   if (!isFiniteNumber(homeRuns) || !isFiniteNumber(plateAppearances)) return null;
   if (homeRuns < 0 || plateAppearances <= 0) return null;
   return homeRuns / plateAppearances;
+}
+
+export function classifySeasonSample(plateAppearances: number | null | undefined): HrPlusEvSampleLabel | null {
+  if (!isFiniteNumber(plateAppearances) || plateAppearances < 0) return null;
+  if (plateAppearances < 75) return "VERY LIMITED";
+  if (plateAppearances < 125) return "LIMITED";
+  if (plateAppearances < 200) return "MODERATE";
+  return "ESTABLISHED";
 }
 
 export function expectedPaForBattingOrder(battingOrder: number | null | undefined): {
@@ -296,34 +307,10 @@ export function pitchingExposureMultiplier(starter: number, bullpen: number): nu
   ]);
 }
 
-function seasonFromExplicit(source: HrPlusEvBatterSource): { homeRuns: number; plateAppearances: number } | null {
+function resolveSeasonHrPa(source: HrPlusEvBatterSource): { homeRuns: number; plateAppearances: number; hrPa: number } | null {
   const hrPa = computeHrPa(source.seasonHomeRuns ?? null, source.seasonPlateAppearances ?? null);
   if (hrPa == null || source.seasonHomeRuns == null || source.seasonPlateAppearances == null) return null;
-  return { homeRuns: source.seasonHomeRuns, plateAppearances: source.seasonPlateAppearances };
-}
-
-function seasonFromHandSplits(source: HrPlusEvBatterSource): { homeRuns: number; plateAppearances: number } | null {
-  const vsLeft = source.handednessSplits?.vsLeft;
-  const vsRight = source.handednessSplits?.vsRight;
-  if (!vsLeft || !vsRight) return null;
-  if (!isFiniteNumber(vsLeft.homeRuns) || !isFiniteNumber(vsLeft.plateAppearances)) return null;
-  if (!isFiniteNumber(vsRight.homeRuns) || !isFiniteNumber(vsRight.plateAppearances)) return null;
-  if (vsLeft.plateAppearances <= 0 || vsRight.plateAppearances <= 0) return null;
-  if (vsLeft.homeRuns < 0 || vsRight.homeRuns < 0) return null;
-  return {
-    homeRuns: vsLeft.homeRuns + vsRight.homeRuns,
-    plateAppearances: vsLeft.plateAppearances + vsRight.plateAppearances,
-  };
-}
-
-function resolveSeasonHrPa(source: HrPlusEvBatterSource): { homeRuns: number; plateAppearances: number; hrPa: number } | null {
-  const explicit = seasonFromExplicit(source);
-  const fromSplits = seasonFromHandSplits(source);
-  const chosen = explicit ?? fromSplits;
-  if (!chosen) return null;
-  const hrPa = computeHrPa(chosen.homeRuns, chosen.plateAppearances);
-  if (hrPa == null) return null;
-  return { ...chosen, hrPa };
+  return { homeRuns: source.seasonHomeRuns, plateAppearances: source.seasonPlateAppearances, hrPa };
 }
 
 function resolveHitterHandSplit(
@@ -444,7 +431,7 @@ export function evaluateHrPlusEv(source: HrPlusEvBatterSource): HrPlusEvValuatio
 
   const unavailableReasons: string[] = [];
   if (!season) {
-    unavailableReasons.push("Season HR/PA is unavailable. Need season HR and PA, or complete vsL+vsR PA/HR splits. HR/AB was not substituted.");
+    unavailableReasons.push("Season HR/PA is unavailable. Authoritative season home runs and plate appearances are required. Handedness-split sums and HR/AB were not substituted.");
   }
   if (bookOddsAmerican == null || bookImpliedProbability == null) {
     unavailableReasons.push("Sportsbook HR YES odds are missing or unparseable.");
@@ -474,6 +461,7 @@ export function evaluateHrPlusEv(source: HrPlusEvBatterSource): HrPlusEvValuatio
     seasonHomeRuns: season?.homeRuns ?? null,
     seasonPlateAppearances: season?.plateAppearances ?? null,
     seasonHrPa: season?.hrPa ?? null,
+    sampleLabel: classifySeasonSample(season?.plateAppearances ?? null),
     last100HomeRuns: null,
     last100PlateAppearances: null,
     last100HrPa: null,
