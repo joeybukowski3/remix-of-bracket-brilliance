@@ -1,28 +1,47 @@
 {
   "date": "2026-08-17",
-  "generatedAt": "2026-08-17T13:13:44.145Z",
+  "generatedAt": "2026-08-17T14:51:22.211Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field dominates the slate with a 1.4 park factor and Sugano on the mound, creating a massive boost for Ohtani, Muncy, Betts, and Pages. PNC Park and Target Field offer neutral-to-slightly-suppressed environments, while Tropicana and Wrigley sit close to league average. The model is heavily weighting Coors leverage plus Sugano's 89.8 HR/600 mark, pushing four Dodgers into the top nine despite varying barrel and hard-hit profiles.",
-    "modelNote": "The model is prioritizing park-adjusted opposing pitcher HR rates and recent power spikes, elevating Ohtani to the top spot on the strength of his 52.8 hard-hit rate and 6.1 HR/FB ratio in the most favorable venue."
+    "slateOverview": "Coors Field and Great American Ball Park headline today’s slate with 1.4 and 1.25 park factors, respectively, while Sugano and Lowder each carry HR-allowed rates above 63 percent. Warm, dry conditions and thin air at altitude should amplify fly-ball carry, and the model is zeroing in on the top three names who combine elite barrel and hard-hit rates with the best opposing-pitcher vulnerabilities.",
+    "modelNote": "The model is overweighting raw exit velocity and barrel rate in today’s environment, pushing Báez (97.4 EV, 50 percent barrel) to the top despite limited sample, while still giving Coors hitters a sizable park boost."
   },
   "bestBets": [
+    {
+      "player": "Joshua Báez",
+      "team": "STL",
+      "opponent": "CIN",
+      "opposingPitcher": "Kent Emanuel",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=50%",
+        "HH=83.3%"
+      ],
+      "bullets": [
+        "barrel=50%",
+        "park=1.25"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Shohei Ohtani",
       "team": "LAD",
       "opponent": "COL",
       "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 1,
+      "hrScoreRank": 2,
       "topStats": [
         "barrel=16.4%",
         "HH=52.8%"
       ],
       "bullets": [
         "park=1.4",
-        "hrScore=79.6"
+        "HH=52.8%"
       ],
-      "hrOddsYes": "+180",
-      "marketImpliedProbability": 0.35714285714285715,
+      "hrOddsYes": "+185",
+      "marketImpliedProbability": 0.3508771929824561,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -31,14 +50,14 @@
       "team": "DET",
       "opponent": "PIT",
       "opposingPitcher": "Carmen Mlodzinski",
-      "hrScoreRank": 2,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=25.6%",
         "HH=56.4%"
       ],
       "bullets": [
-        "park=0.9",
-        "hrScore=75.8"
+        "barrel=25.6%",
+        "HH=56.4%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -46,18 +65,77 @@
       "hrValueEdge": null
     },
     {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=63.4",
+        "Hard Hit%=49.7"
+      ],
+      "bullets": [
+        "HR score 74.5 (#4)",
+        "Pitcher HR VS 63.4 at park 1.25"
+      ],
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Matt Olson",
       "team": "ATL",
       "opponent": "MIN",
       "opposingPitcher": "Bailey Ober",
-      "hrScoreRank": 3,
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=61.6",
+        "Hard Hit%=50.0"
+      ],
+      "bullets": [
+        "HR score 73.1 (#5)",
+        "Pitcher HR VS 61.6 at park 0.97"
+      ],
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "CIN",
+      "opposingPitcher": "Kent Emanuel",
+      "hrScoreRank": 28,
+      "topStats": [
+        "barrel=11.7%",
+        "HH=49.7%"
+      ],
+      "bullets": [
+        "park=1.25",
+        "HH=49.7%"
+      ],
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "MIN",
+      "opposingPitcher": "Bailey Ober",
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=15.9%",
         "HH=50%"
       ],
       "bullets": [
-        "park=0.97",
-        "hrScore=72.9"
+        "barrel=15.9%",
+        "park=0.97"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
@@ -69,57 +147,17 @@
       "team": "LAD",
       "opponent": "COL",
       "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=89.8",
-        "Hard Hit%=45.9"
-      ],
-      "bullets": [
-        "HR score 72.6 (#4)",
-        "Pitcher HR VS 89.8 at park 1.40"
-      ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "ATH",
-      "opposingPitcher": "Mason Barnett",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=64.0",
-        "Hard Hit%=55.3"
-      ],
-      "bullets": [
-        "HR score 70.1 (#5)",
-        "Pitcher HR VS 64.0 at park 0.96"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 4,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=13.9%",
         "HH=45.9%"
       ],
       "bullets": [
         "park=1.4",
-        "hrScore=72.6"
+        "barrel=13.9%"
       ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,17 +166,17 @@
       "team": "KC",
       "opponent": "ATH",
       "opposingPitcher": "Mason Barnett",
-      "hrScoreRank": 5,
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=14.7%",
-        "HH=55.3%"
+        "Pitcher HR VS=64.7",
+        "Hard Hit%=55.3"
       ],
       "bullets": [
-        "park=0.96",
-        "hrScore=70.1"
+        "HR score 70.2 (#7)",
+        "Pitcher HR VS 64.7 at park 0.96"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+385",
+      "marketImpliedProbability": 0.20618556701030927,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,52 +185,14 @@
       "team": "CWS",
       "opponent": "CHC",
       "opposingPitcher": "Shota Imanaga",
-      "hrScoreRank": 6,
+      "hrScoreRank": 9,
       "topStats": [
-        "barrel=14.7%",
-        "HH=46.3%"
+        "Pitcher HR VS=52.3",
+        "Hard Hit%=46.3"
       ],
       "bullets": [
-        "park=1",
-        "hrScore=67.7"
-      ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mookie Betts",
-      "team": "LAD",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=89.8",
-        "Hard Hit%=38.9"
-      ],
-      "bullets": [
-        "HR score 66.6 (#7)",
-        "Pitcher HR VS 89.8 at park 1.40"
-      ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "CWS",
-      "opposingPitcher": "Luis Castillo",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=64.4",
-        "Hard Hit%=48.5"
-      ],
-      "bullets": [
-        "HR score 64.7 (#8)",
-        "Pitcher HR VS 64.4 at park 1.00"
+        "HR score 67.9 (#9)",
+        "Pitcher HR VS 52.3 at park 1.00"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
@@ -202,37 +202,37 @@
   ],
   "longshots": [
     {
-      "player": "Mookie Betts",
-      "team": "LAD",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "ATH",
+      "opposingPitcher": "Mason Barnett",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=7.8%",
-        "HH=38.9%"
+        "barrel=14.7%",
+        "HH=55.3%"
       ],
       "bullets": [
-        "park=1.4",
-        "hrScore=66.6"
+        "HH=55.3%",
+        "park=0.96"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+385",
+      "marketImpliedProbability": 0.20618556701030927,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "CWS",
-      "opposingPitcher": "Luis Castillo",
-      "hrScoreRank": 8,
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "CHC",
+      "opposingPitcher": "Shota Imanaga",
+      "hrScoreRank": 9,
       "topStats": [
-        "barrel=12.2%",
-        "HH=48.5%"
+        "barrel=14.7%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "park=1",
-        "hrScore=64.7"
+        "barrel=14.7%",
+        "park=1"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
@@ -244,17 +244,17 @@
       "team": "PIT",
       "opponent": "DET",
       "opposingPitcher": "Framber Valdez",
-      "hrScoreRank": 20,
+      "hrScoreRank": 24,
       "topStats": [
         "Hard Hit%=46.4",
-        "Pitcher HR VS=43.4"
+        "Pitcher HR VS=45.7"
       ],
       "bullets": [
-        "HR score 57.8 (#20)",
-        "Pitcher HR VS 43.4 at park 0.90"
+        "HR score 57.9 (#24)",
+        "Pitcher HR VS 45.7 at park 0.90"
       ],
-      "hrOddsYes": "+1000",
-      "marketImpliedProbability": 0.09090909090909091,
+      "hrOddsYes": "+950",
+      "marketImpliedProbability": 0.09523809523809523,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,14 +263,14 @@
       "team": "DET",
       "opponent": "PIT",
       "opposingPitcher": "Carmen Mlodzinski",
-      "hrScoreRank": 14,
+      "hrScoreRank": 19,
       "topStats": [
-        "Pitcher HR VS=67.2",
+        "Pitcher HR VS=68.0",
         "Hard Hit%=43.2"
       ],
       "bullets": [
-        "HR score 61.5 (#14)",
-        "Pitcher HR VS 67.2 at park 0.90"
+        "HR score 61.3 (#19)",
+        "Pitcher HR VS 68.0 at park 0.90"
       ],
       "hrOddsYes": "+550",
       "marketImpliedProbability": 0.15384615384615385,
