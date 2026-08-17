@@ -6,28 +6,27 @@ import {
   comparePlusEvRows,
   formatAmericanOdds,
   formatEvPercent,
-  formatHrPaRate,
   formatMultiplier,
   formatProbabilityPercent,
-  type HrPlusEvSampleLabel,
+  formatSeasonPaHr,
+  PLUS_EV_MIN_SEASON_PA,
   type HrPlusEvValuation,
   type MatchupFactorKey,
 } from "@/lib/mlb/hrPlusEvModel";
 import {
   filterPlusEvRows,
-  sampleDisplayLabel,
-  type PlusEvSampleFilter,
   type PlusEvValueFilter,
 } from "@/components/mlb/hrPlusEvTableFilters";
 
 export type PlusEvSortKey =
   | "player"
   | "bookOdds"
-  | "seasonHrPa"
+  | "seasonPaHr"
+  | "currentRateFair"
   | "trend"
   | "matchup"
   | "jkbHrProbability"
-  | "fairOdds"
+  | "jkbFair"
   | "ev"
   | "label";
 
@@ -57,10 +56,24 @@ function evTone(ev: number | null): string {
   return "text-rose-700";
 }
 
-function trendDisplay(row: HrPlusEvValuation): string {
-  if (row.last50HrPa != null) return formatHrPaRate(row.last50HrPa);
-  if (row.last100HrPa != null) return formatHrPaRate(row.last100HrPa);
-  return "—";
+/** HR Trend cell: shows the TrendFactor multiplier, or a deliberate
+ * unavailable state when both L14 and L30 windows are genuinely missing --
+ * never a bare dash that could be mistaken for a computed neutral value. */
+function trendCellDisplay(row: HrPlusEvValuation): string {
+  return row.trendAvailable ? formatMultiplier(row.trendFactor) : "Unavailable";
+}
+
+/** A per-window PA/HR rate. Undefined (not Infinity) when the window's HR
+ * count is a real, populated zero -- the HR/PA count fields carry that
+ * signal instead. */
+function formatWindowRate(homeRuns: number | null, hrPa: number | null): string {
+  if (hrPa == null) return "unavailable";
+  if (homeRuns === 0) return "—";
+  return `${(1 / hrPa).toFixed(1)} PA/HR`;
+}
+
+function formatCount(value: number | null): string {
+  return value == null ? "—" : String(value);
 }
 
 function sortRows(rows: HrPlusEvValuation[], key: PlusEvSortKey, direction: "asc" | "desc"): HrPlusEvValuation[] {
@@ -70,11 +83,12 @@ function sortRows(rows: HrPlusEvValuation[], key: PlusEvSortKey, direction: "asc
     const pick = (row: HrPlusEvValuation): number | string | null => {
       if (key === "player") return row.player;
       if (key === "bookOdds") return row.bookOddsAmerican;
-      if (key === "seasonHrPa") return row.seasonHrPa;
-      if (key === "trend") return row.last50HrPa ?? row.last100HrPa;
+      if (key === "seasonPaHr") return row.seasonHrPa;
+      if (key === "currentRateFair") return row.currentRateFairOddsAmerican;
+      if (key === "trend") return row.trendAvailable ? row.trendFactor : null;
       if (key === "matchup") return row.totalMatchupMultiplier;
       if (key === "jkbHrProbability") return row.jkbHrProbability;
-      if (key === "fairOdds") return row.fairOddsAmerican;
+      if (key === "jkbFair") return row.fairOddsAmerican;
       if (key === "label") return row.label;
       return row.ev;
     };
@@ -104,27 +118,6 @@ function ValueBadge({ label }: { label: HrPlusEvValuation["label"] }) {
   );
 }
 
-function sampleTone(sample: HrPlusEvSampleLabel): string {
-  if (sample === "VERY LIMITED") return "bg-amber-50 text-amber-800 ring-1 ring-amber-200";
-  if (sample === "LIMITED") return "bg-amber-50 text-amber-700 ring-1 ring-amber-100";
-  if (sample === "MODERATE") return "bg-slate-100 text-slate-600";
-  return "bg-slate-50 text-slate-500";
-}
-
-function SampleChip({ row, className }: { row: HrPlusEvValuation; className?: string }) {
-  const display = sampleDisplayLabel(row.sampleLabel);
-  if (!display || row.sampleLabel == null) return null;
-  const pa = row.seasonPlateAppearances != null ? `${Math.round(row.seasonPlateAppearances)} PA` : null;
-  return (
-    <span
-      data-plus-ev-sample={row.sampleLabel}
-      className={cn("inline-flex whitespace-nowrap rounded-full px-1.5 py-0.5 text-[9px] font-bold", sampleTone(row.sampleLabel), className)}
-    >
-      {display}{pa ? ` · ${pa}` : ""}
-    </span>
-  );
-}
-
 function DetailItem({ label, value, note }: { label: string; value: string; note?: string | null }) {
   return (
     <div className="rounded-md bg-white px-2 py-1.5">
@@ -139,52 +132,55 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
   return (
     <div data-plus-ev-details={row.player} className="space-y-3">
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-        <DetailItem label="Season HR" value={row.seasonHomeRuns == null ? "—" : String(row.seasonHomeRuns)} />
-        <DetailItem label="Season PA" value={row.seasonPlateAppearances == null ? "—" : String(row.seasonPlateAppearances)} />
-        <DetailItem
-          label="Season HR/PA"
-          value={row.seasonHrPa == null ? "—" : `${row.seasonHomeRuns}/${row.seasonPlateAppearances} (${formatHrPaRate(row.seasonHrPa)})`}
-        />
-        <DetailItem
-          label="Sample"
-          value={sampleDisplayLabel(row.sampleLabel) ?? "—"}
-          note={row.sampleLabel == null ? "No authoritative season PA." : "Informational only. Does not change HR% or EV."}
-        />
-        <DetailItem
-          label="Last 100 PA HR/PA"
-          value={row.last100HrPa == null ? "—" : `${row.last100HomeRuns}/${row.last100PlateAppearances} (${formatHrPaRate(row.last100HrPa)})`}
-          note={row.last100HrPa == null ? "Unavailable — no completed last-100-PA window." : null}
-        />
-        <DetailItem
-          label="Last 50 PA HR/PA"
-          value={row.last50HrPa == null ? "—" : `${row.last50HomeRuns}/${row.last50PlateAppearances} (${formatHrPaRate(row.last50HrPa)})`}
-          note={row.last50HrPa == null ? "Unavailable — no completed last-50-PA window." : null}
-        />
+        <DetailItem label="Season HR" value={formatCount(row.seasonHomeRuns)} />
+        <DetailItem label="Season PA" value={formatCount(row.seasonPlateAppearances)} />
+        <DetailItem label="Season PA/HR" value={formatSeasonPaHr(row.seasonHomeRuns, row.seasonPlateAppearances)} />
         <DetailItem
           label="Batting order / expected PA"
           value={`${row.battingOrder ?? "—"} / ${row.expectedPa.toFixed(1)}`}
           note={row.expectedPaSource === "fallback" ? "Order unavailable; fallback 4.2 PA used." : null}
         />
+        <DetailItem label="Current Rate HR%" value={formatProbabilityPercent(row.currentRateHrProbability)} />
         <DetailItem
-          label="Hitter handedness"
-          value={`${row.bats ?? "—"} vs ${row.pitcherHand ?? "—"}HP`}
-          note={row.hitterHandHrPa == null ? "Matching split unavailable." : `${row.hitterHandSplitHomeRuns}/${row.hitterHandSplitPlateAppearances} (${formatHrPaRate(row.hitterHandHrPa)})`}
+          label="Current Rate Fair"
+          value={formatAmericanOdds(row.currentRateFairOddsAmerican)}
+          note="Raw season HR/PA + expected PA only. No trend or matchup."
         />
-        <DetailItem label="Total multiplier" value={formatMultiplier(row.totalMatchupMultiplier)} />
+        <DetailItem label="L30 HR" value={formatCount(row.last30HomeRuns)} />
+        <DetailItem label="L30 PA" value={formatCount(row.last30PlateAppearances)} />
+        <DetailItem
+          label="L30 PA/HR"
+          value={formatWindowRate(row.last30HomeRuns, row.last30HrPa)}
+          note={row.last30HrPa == null ? "Window unavailable; treated as neutral, not cold." : null}
+        />
+        <DetailItem label="L14 HR" value={formatCount(row.last14HomeRuns)} />
+        <DetailItem label="L14 PA" value={formatCount(row.last14PlateAppearances)} />
+        <DetailItem
+          label="L14 PA/HR"
+          value={formatWindowRate(row.last14HomeRuns, row.last14HrPa)}
+          note={row.last14HrPa == null ? "Window unavailable; treated as neutral, not cold." : null}
+        />
+        <DetailItem
+          label="Trend Factor"
+          value={row.trendAvailable ? formatMultiplier(row.trendFactor) : "1.00x (unavailable)"}
+          note={row.trendAvailable ? null : "Both L14 and L30 windows are unavailable for this batter."}
+        />
+        <DetailItem label="Matchup Multiplier" value={formatMultiplier(row.totalMatchupMultiplier)} />
         <DetailItem
           label="Pitching exposure"
           value={formatMultiplier(row.pitchingExposure)}
           note="65% starter / 35% bullpen"
         />
-        <DetailItem label="Adjusted HR/PA" value={formatHrPaRate(row.adjustedHrPa)} />
+        <DetailItem label="Trend-adjusted HR/PA" value={formatProbabilityPercent(row.trendAdjustedHrPa)} />
+        <DetailItem label="Final JKB HR/PA" value={formatProbabilityPercent(row.jkbHrPa)} />
         <DetailItem label="JKB HR%" value={formatProbabilityPercent(row.jkbHrProbability)} />
+        <DetailItem label="JKB Fair" value={formatAmericanOdds(row.fairOddsAmerican)} />
+        <DetailItem label="Book odds" value={row.bookOddsRaw ?? formatAmericanOdds(row.bookOddsAmerican)} />
         <DetailItem label="Book implied %" value={formatProbabilityPercent(row.bookImpliedProbability)} />
         <DetailItem
           label="Probability edge"
           value={row.probabilityEdge == null ? "—" : `${row.probabilityEdge >= 0 ? "+" : ""}${(row.probabilityEdge * 100).toFixed(1)} pp`}
         />
-        <DetailItem label="Fair odds" value={formatAmericanOdds(row.fairOddsAmerican)} />
-        <DetailItem label="Book odds" value={row.bookOddsRaw ?? formatAmericanOdds(row.bookOddsAmerican)} />
         <DetailItem label="+EV" value={formatEvPercent(row.ev)} />
         <DetailItem label="Value" value={row.label} />
       </div>
@@ -226,13 +222,6 @@ const VALUE_FILTERS: Array<{ key: PlusEvValueFilter; label: string }> = [
   { key: "MODERATE +EV", label: "Moderate +EV" },
   { key: "FAIR", label: "Fair" },
   { key: "OVERPRICED", label: "Overpriced" },
-];
-
-const SAMPLE_FILTERS: Array<{ key: PlusEvSampleFilter; label: string }> = [
-  { key: "all", label: "All Samples" },
-  { key: "established", label: "Established" },
-  { key: "pa125", label: "125+ PA" },
-  { key: "limited", label: "Limited" },
 ];
 
 function FilterPills<T extends string>({
@@ -284,13 +273,12 @@ export default function HrPlusEvTable({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [valueFilter, setValueFilter] = useState<PlusEvValueFilter>("all");
-  const [sampleFilter, setSampleFilter] = useState<PlusEvSampleFilter>("all");
   const [positiveOnly, setPositiveOnly] = useState(false);
 
   const pricedTotal = useMemo(() => rows.filter((row) => row.available).length, [rows]);
   const filtered = useMemo(
-    () => filterPlusEvRows(rows, { value: valueFilter, sample: sampleFilter, positiveOnly }),
-    [positiveOnly, rows, sampleFilter, valueFilter],
+    () => filterPlusEvRows(rows, { value: valueFilter, positiveOnly }),
+    [positiveOnly, rows, valueFilter],
   );
   const sorted = useMemo(() => {
     if (sortKey === "ev" && sortDirection === "desc") {
@@ -318,8 +306,10 @@ export default function HrPlusEvTable({
 
   const toolbar = (
     <div data-plus-ev-filters="true" className="space-y-2 border-b border-slate-200 px-3 py-2.5">
+      <p data-plus-ev-eligibility-note="true" className="text-[11px] font-semibold text-slate-500">
+        +EV model currently includes hitters with more than {PLUS_EV_MIN_SEASON_PA} season PA.
+      </p>
       <FilterPills legend="Value" value={valueFilter} options={VALUE_FILTERS} onChange={setValueFilter} />
-      <FilterPills legend="Sample" value={sampleFilter} options={SAMPLE_FILTERS} onChange={setSampleFilter} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
           <input
@@ -342,7 +332,7 @@ export default function HrPlusEvTable({
 
   const emptyMessage = rows.length
     ? "No +EV rows match the current filters."
-    : "No batters match the current search or game filter.";
+    : `No hitters currently qualify for the +EV Table (more than ${PLUS_EV_MIN_SEASON_PA} season PA required).`;
 
   if (isCompact) {
     return (
@@ -375,7 +365,9 @@ export default function HrPlusEvTable({
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
                       <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
-                      <div className="mt-0.5"><SampleChip row={row} /></div>
+                      <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold tabular-nums text-slate-500">
+                        <span>Current: {formatAmericanOdds(row.currentRateFairOddsAmerican)}</span>
+                      </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <div className="flex items-center gap-1 text-[10px] font-bold tabular-nums text-slate-600">
@@ -414,11 +406,12 @@ export default function HrPlusEvTable({
             {([
               ["player", "Batter"],
               ["bookOdds", "Book Odds"],
-              ["seasonHrPa", "HR/PA"],
+              ["seasonPaHr", "Season PA/HR"],
+              ["currentRateFair", "Current Rate Fair"],
               ["trend", "HR Trend"],
               ["matchup", "Matchup"],
               ["jkbHrProbability", "JKB HR%"],
-              ["fairOdds", "Fair Odds"],
+              ["jkbFair", "JKB Fair"],
               ["ev", "+EV"],
               ["label", "Value"],
             ] as Array<[PlusEvSortKey, string]>).map(([key, label]) => (
@@ -466,11 +459,13 @@ export default function HrPlusEvTable({
                     {row.bookOddsRaw ?? "—"}
                   </td>
                   <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
-                    <div>{formatHrPaRate(row.seasonHrPa)}</div>
-                    <div className="mt-0.5"><SampleChip row={row} /></div>
+                    {formatSeasonPaHr(row.seasonHomeRuns, row.seasonPlateAppearances)}
                   </td>
                   <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
-                    {trendDisplay(row)}
+                    {formatAmericanOdds(row.currentRateFairOddsAmerican)}
+                  </td>
+                  <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
+                    {trendCellDisplay(row)}
                   </td>
                   <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800">
                     {formatMultiplier(row.totalMatchupMultiplier)}
@@ -490,7 +485,7 @@ export default function HrPlusEvTable({
                 </tr>
                 {expanded ? (
                   <tr className="bg-slate-50">
-                    <td colSpan={9} className="border-b border-slate-100 px-3 py-3">
+                    <td colSpan={10} className="border-b border-slate-100 px-3 py-3">
                       <PlusEvDetails row={row} />
                     </td>
                   </tr>

@@ -72,6 +72,10 @@ function makeBatter(overrides: Partial<HrDashboardBatter> = {}): HrDashboardBatt
     bats: "S",
     seasonHomeRuns: 20,
     seasonPlateAppearances: 400,
+    last30HomeRuns: 4,
+    last30PlateAppearances: 80,
+    last14HomeRuns: 2,
+    last14PlateAppearances: 40,
     handednessSplits: {
       vsLeft: {
         plateAppearances: 180, atBats: 160, hits: 40, homeRuns: 10, walks: 15, strikeouts: 30,
@@ -145,12 +149,14 @@ describe("MlbHrProps +EV view toggle", () => {
     expect(screen.getByRole("tab", { name: "+EV Table" })).toHaveAttribute("aria-selected", "true");
     expect(container.querySelector("[data-plus-ev-table]")).not.toBeNull();
     expect(container.querySelector('[data-x-export="mlb-hr-props"]')).toBeNull();
+    expect(screen.getByText(/more than 300 season PA/i)).toBeInTheDocument();
     expect(screen.getByText("JKB HR%")).toBeInTheDocument();
-    expect(screen.getByText("Fair Odds")).toBeInTheDocument();
+    expect(screen.getByText("JKB Fair")).toBeInTheDocument();
+    expect(screen.getByText("Current Rate Fair")).toBeInTheDocument();
     expect(screen.getByText("+425")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Strong +EV" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "All Samples" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: "All Samples" })).not.toBeInTheDocument();
   }, TIMEOUT);
 
   it("returns to Analytic View and restores the existing HR table", async () => {
@@ -166,23 +172,47 @@ describe("MlbHrProps +EV view toggle", () => {
     expect(container.querySelector("[data-plus-ev-table]")).toBeNull();
   }, TIMEOUT);
 
-  it("renders an unavailable +EV state when odds are missing", async () => {
+  it("renders an unavailable +EV state when odds are missing but the batter is still eligible", async () => {
     stubMatchMedia(false);
     vi.resetModules();
     mockPropsData([makeBatter({
       player: "No Odds",
       hrOddsYes: null,
-      handednessSplits: null,
-      seasonHomeRuns: null,
-      seasonPlateAppearances: null,
     })]);
     await renderPage();
 
     fireEvent.click(screen.getByRole("tab", { name: "+EV Table" }));
+    expect(screen.getByText("No Odds")).toBeInTheDocument();
     expect(screen.getByText("UNAVAILABLE")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for No Odds/i }));
-    expect(screen.getByText(/Season HR\/PA is unavailable/i)).toBeInTheDocument();
-    expect(screen.getByText(/Handedness-split sums/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sportsbook HR YES odds/i)).toBeInTheDocument();
+  }, TIMEOUT);
+
+  it("excludes a sub-300 season PA hitter from the +EV Table entirely", async () => {
+    stubMatchMedia(false);
+    vi.resetModules();
+    mockPropsData([
+      makeBatter({ player: "Eligible Hitter", seasonPlateAppearances: 400 }),
+      makeBatter({ player: "Below Threshold", seasonPlateAppearances: 300, playerId: 2 }),
+    ]);
+    await renderPage();
+
+    fireEvent.click(screen.getByRole("tab", { name: "+EV Table" }));
+    expect(screen.getByText("Eligible Hitter")).toBeInTheDocument();
+    expect(screen.queryByText("Below Threshold")).not.toBeInTheDocument();
+  }, TIMEOUT);
+
+  it("still shows the broader hitter universe (including sub-300 PA) in Analytic View", async () => {
+    stubMatchMedia(false);
+    vi.resetModules();
+    mockPropsData([
+      makeBatter({ player: "Eligible Hitter", seasonPlateAppearances: 400 }),
+      makeBatter({ player: "Below Threshold", seasonPlateAppearances: 300, playerId: 2 }),
+    ]);
+    await renderPage();
+
+    expect(screen.getByText("Eligible Hitter")).toBeInTheDocument();
+    expect(screen.getByText("Below Threshold")).toBeInTheDocument();
   }, TIMEOUT);
 
   it("expands +EV details from the page view", async () => {
@@ -195,7 +225,7 @@ describe("MlbHrProps +EV view toggle", () => {
     fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for Adley Rutschman/i }));
     const details = document.querySelector('[data-plus-ev-details="Adley Rutschman"]') as HTMLElement;
     expect(details).not.toBeNull();
-    expect(within(details).getByText("Adjusted HR/PA")).toBeInTheDocument();
+    expect(within(details).getByText("Final JKB HR/PA")).toBeInTheDocument();
     expect(within(details).getByText(/65% starter \/ 35% bullpen/i)).toBeInTheDocument();
   }, TIMEOUT);
 });

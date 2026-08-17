@@ -161,6 +161,10 @@ describe("MLB HR props dashboard guards", () => {
         last50PaPlateAppearances: 52,
         last100PaHomeRuns: 6,
         last100PaPlateAppearances: 107,
+        last14HomeRuns: 2,
+        last14PlateAppearances: 41,
+        last30HomeRuns: 4,
+        last30PlateAppearances: 88,
       }],
     });
 
@@ -170,6 +174,10 @@ describe("MLB HR props dashboard guards", () => {
     expect(payload?.batters[0].last50PaPlateAppearances).toBe(52);
     expect(payload?.batters[0].last100PaHomeRuns).toBe(6);
     expect(payload?.batters[0].last100PaPlateAppearances).toBe(107);
+    expect(payload?.batters[0].last14HomeRuns).toBe(2);
+    expect(payload?.batters[0].last14PlateAppearances).toBe(41);
+    expect(payload?.batters[0].last30HomeRuns).toBe(4);
+    expect(payload?.batters[0].last30PlateAppearances).toBe(88);
     expect(normalizeHrDashboardPayload({
       date: "2026-08-16",
       generatedAt: "2026-08-16T12:00:00Z",

@@ -30,7 +30,7 @@ import {
   buildPitcherStrikeoutRows as sharedBuildPitcherStrikeoutRows,
   buildTbdGameKeySet as sharedBuildTbdGameKeySet,
 } from "@/lib/mlb/mlbSocialSelection";
-import { evaluateHrPlusEv } from "@/lib/mlb/hrPlusEvModel";
+import { evaluateHrPlusEv, isPlusEvEligible } from "@/lib/mlb/hrPlusEvModel";
 import HrPlusEvTable from "@/components/mlb/HrPlusEvTable";
 
 /**
@@ -199,6 +199,11 @@ export type HrDashboardBatter = {
   last50PaPlateAppearances?: number | null;
   last100PaHomeRuns?: number | null;
   last100PaPlateAppearances?: number | null;
+  /** Real calendar-window HR + PA from MLB StatsAPI game logs, for the +EV Trend factor (V2). */
+  last14HomeRuns?: number | null;
+  last14PlateAppearances?: number | null;
+  last30HomeRuns?: number | null;
+  last30PlateAppearances?: number | null;
   /** Scheduled first-pitch time (ISO 8601, UTC), from the same authoritative schedule source as the rest of the slate. Null when the generator didn't receive one. */
   gameStartTime?: string | null;
   hrLine?: number | null;
@@ -736,6 +741,10 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     last50PaPlateAppearances: normalizeNumber(entry.last50PaPlateAppearances),
     last100PaHomeRuns: normalizeNumber(entry.last100PaHomeRuns),
     last100PaPlateAppearances: normalizeNumber(entry.last100PaPlateAppearances),
+    last14HomeRuns: normalizeNumber(entry.last14HomeRuns),
+    last14PlateAppearances: normalizeNumber(entry.last14PlateAppearances),
+    last30HomeRuns: normalizeNumber(entry.last30HomeRuns),
+    last30PlateAppearances: normalizeNumber(entry.last30PlateAppearances),
     gameStartTime: normalizeText(entry.gameStartTime) || null,
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
@@ -2169,9 +2178,13 @@ export default function MlbHrProps() {
     () => filteredBatters.slice(0, visibleBatterCount),
     [filteredBatters, visibleBatterCount],
   );
-  const plusEvRows = useMemo(
-    () => filteredBatters.map((batter) => evaluateHrPlusEv(batter)),
+  const plusEvEligibleBatters = useMemo(
+    () => filteredBatters.filter((batter) => isPlusEvEligible(batter.seasonPlateAppearances)),
     [filteredBatters],
+  );
+  const plusEvRows = useMemo(
+    () => plusEvEligibleBatters.map((batter) => evaluateHrPlusEv(batter)),
+    [plusEvEligibleBatters],
   );
 
   const filteredMatchups = useMemo(() => {

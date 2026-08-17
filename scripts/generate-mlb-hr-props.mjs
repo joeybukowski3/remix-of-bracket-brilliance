@@ -545,6 +545,7 @@ async function fetchBatterHrGameLog(id) {
   const rows = splits.map((split) => ({
     date: split.date,
     homeRuns: safeNumber(split.stat?.homeRuns, 0),
+    plateAppearances: safeNumber(split.stat?.plateAppearances, 0),
   }));
   gameLogCache.set(id, rows);
   return rows;
@@ -558,6 +559,29 @@ function sumRecentHomeRuns(gameLogs, days) {
     if (Number.isNaN(date.getTime()) || date < cutoff) return sum;
     return sum + safeNumber(row.homeRuns, 0);
   }, 0);
+}
+
+/**
+ * Real calendar-window HR + PA from MLB StatsAPI per-game hitting splits
+ * (same gameLog fetch used for last7HR/last30HR). Returns nulls -- not
+ * zeros -- when the player has no games inside the window, so a genuinely
+ * missing window is never mistaken for a populated 0-HR cold window.
+ */
+export function sumRecentHrPa(gameLogs, days) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  let homeRuns = 0;
+  let plateAppearances = 0;
+  let matched = false;
+  for (const row of gameLogs) {
+    const date = new Date(row.date);
+    if (Number.isNaN(date.getTime()) || date < cutoff) continue;
+    matched = true;
+    homeRuns += safeNumber(row.homeRuns, 0);
+    plateAppearances += safeNumber(row.plateAppearances, 0);
+  }
+  if (!matched) return { homeRuns: null, plateAppearances: null };
+  return { homeRuns, plateAppearances };
 }
 
 export function parseCsv(text) {
@@ -983,6 +1007,11 @@ function validateBatterRows(rows) {
       whiffRate: toFiniteNumber(row.whiffRate),
       last7HR: toFiniteNumber(row.last7HR),
       last30HR: toFiniteNumber(row.last30HR),
+      // Real calendar-window HR + PA for the +EV Trend factor (V2).
+      last14HomeRuns: row.last14HomeRuns == null ? null : toFiniteNumber(row.last14HomeRuns),
+      last14PlateAppearances: row.last14PlateAppearances == null ? null : toFiniteNumber(row.last14PlateAppearances),
+      last30HomeRuns: row.last30HomeRuns == null ? null : toFiniteNumber(row.last30HomeRuns),
+      last30PlateAppearances: row.last30PlateAppearances == null ? null : toFiniteNumber(row.last30PlateAppearances),
       opposingPitcherHrVs: toFiniteNumber(row.opposingPitcherHrVs),
       opposingPitcherHitsVs: toFiniteNumber(row.opposingPitcherHitsVs),
       opposingPitcherKVs: toFiniteNumber(row.opposingPitcherKVs),
@@ -1720,6 +1749,18 @@ async function main() {
           whiffRate,
           last7HR: sumRecentHomeRuns(gameLogs, 7),
           last30HR: sumRecentHomeRuns(gameLogs, 30),
+          // Real calendar-window HR + PA for the +EV Trend factor (V2). Nulls
+          // mean the window is genuinely unavailable, not a 0-HR cold streak.
+          ...(() => {
+            const last14Window = sumRecentHrPa(gameLogs, 14);
+            const last30Window = sumRecentHrPa(gameLogs, 30);
+            return {
+              last14HomeRuns: last14Window.homeRuns,
+              last14PlateAppearances: last14Window.plateAppearances,
+              last30HomeRuns: last30Window.homeRuns,
+              last30PlateAppearances: last30Window.plateAppearances,
+            };
+          })(),
           opposingPitcherHr9: safeNumber(context.pitcherHr9, 1.1),
           weatherBoost: computeWeatherBoost(context.gameContext),
           batterHand: person?.batSide?.code ?? "R",
@@ -1915,6 +1956,10 @@ async function main() {
       whiffRate: roundNumber(player.whiffRate, 1),
       last7HR: player.last7HR,
       last30HR: player.last30HR,
+      last14HomeRuns: player.last14HomeRuns == null ? null : roundNumber(player.last14HomeRuns, 0),
+      last14PlateAppearances: player.last14PlateAppearances == null ? null : roundNumber(player.last14PlateAppearances, 0),
+      last30HomeRuns: player.last30HomeRuns == null ? null : roundNumber(player.last30HomeRuns, 0),
+      last30PlateAppearances: player.last30PlateAppearances == null ? null : roundNumber(player.last30PlateAppearances, 0),
       opposingPitcherHrVs: Number(safeNumber(player.opposingPitcherHrVs, 50).toFixed(1)),
       opposingPitcherHitsVs: Number(safeNumber(player.opposingPitcherHitsVs, 50).toFixed(1)),
       opposingPitcherKVs: Number(safeNumber(player.opposingPitcherKVs, 50).toFixed(1)),
