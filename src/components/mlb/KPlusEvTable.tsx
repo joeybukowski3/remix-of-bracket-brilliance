@@ -14,6 +14,66 @@ export type KPlusEvSortKey = "pitcher" | "kLine" | "seasonKPerIP" | "trend" | "m
 
 export type KPlusEvValueFilter = "all" | KPlusEvValueLabel;
 
+type ColumnGroup = "identity" | "pricing" | "performance" | "projection" | "outcome";
+/** Union of every column key used in the desktop table -- KPlusEvSortKey covers sortable columns, but a few display-only columns (Book Odds, Current Rate Fair, JKB Fair, Proj IP) are cast to KPlusEvSortKey in the header array without being real sort keys, so grouping needs the wider set. */
+type KPlusEvColumnKey = KPlusEvSortKey | "bookOdds" | "currentFair" | "jkbFair" | "projIP";
+
+/** Restrained semantic column color-coding -- keeps the approved desktop column order intact and only tints per-cell backgrounds (plus a thin left border at each group transition) so the table reads as organized without becoming a rainbow grid. */
+const COLUMN_GROUPS: Record<KPlusEvColumnKey, ColumnGroup> = {
+  pitcher: "identity",
+  kLine: "identity",
+  bookOdds: "pricing",
+  currentFair: "pricing",
+  jkbFair: "pricing",
+  seasonKPerIP: "performance",
+  trend: "performance",
+  projIP: "projection",
+  matchup: "projection",
+  jkbProjectedK: "projection",
+  jkbOverProbability: "projection",
+  ev: "outcome",
+  label: "outcome",
+};
+
+const GROUP_HEADER_CLASS: Record<ColumnGroup, string> = {
+  identity: "bg-slate-50",
+  pricing: "bg-amber-50",
+  performance: "bg-sky-50",
+  projection: "bg-emerald-50",
+  outcome: "bg-slate-50",
+};
+
+const GROUP_CELL_CLASS: Record<ColumnGroup, string> = {
+  identity: "",
+  pricing: "bg-amber-50/30",
+  performance: "bg-sky-50/25",
+  projection: "bg-emerald-50/25",
+  outcome: "",
+};
+
+function groupTdClass(key: KPlusEvColumnKey, previousKey: KPlusEvColumnKey | null): string {
+  const group = COLUMN_GROUPS[key];
+  const isGroupStart = previousKey != null && COLUMN_GROUPS[previousKey] !== group;
+  return cn(GROUP_CELL_CLASS[group], isGroupStart && "border-l border-slate-200");
+}
+
+/** Desktop column order -- approved in the K +EV V1 spec; do not reorder. Color grouping (COLUMN_GROUPS) is layered on top of this fixed order rather than by reordering columns into contiguous zones. */
+const DESKTOP_COLUMNS: Array<[KPlusEvColumnKey, string]> = [
+  ["pitcher", "Pitcher"],
+  ["kLine", "K Line"],
+  ["bookOdds", "Book Odds"],
+  ["seasonKPerIP", "Season K/IP"],
+  ["currentFair", "Current Rate Fair"],
+  ["jkbFair", "JKB Fair"],
+  ["trend", "K Trend"],
+  ["projIP", "Proj IP"],
+  ["matchup", "Matchup"],
+  ["jkbProjectedK", "JKB Proj K"],
+  ["jkbOverProbability", "JKB Over %"],
+  ["ev", "+EV"],
+  ["label", "Value"],
+];
+
 function labelTone(label: KPlusEvValueLabel): string {
   if (label === "STRONG +EV") return "bg-emerald-100 text-emerald-800";
   if (label === "MODERATE +EV") return "bg-sky-100 text-sky-800";
@@ -301,12 +361,27 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <div className="flex items-center gap-1 text-[10px] font-bold tabular-nums text-slate-600">
+                      <div
+                        data-k-plus-ev-mobile-pricing="true"
+                        className="flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-amber-900"
+                        title="Book / Current Rate Fair / JKB Fair"
+                      >
                         <span>{formatAmericanOdds(row.market.bookOverOdds)}</span>
-                        <span className="text-slate-300">/</span>
+                        <span className="text-amber-400">/</span>
+                        <span>{formatAmericanOdds(row.market.currentRateFairOdds)}</span>
+                        <span className="text-amber-400">/</span>
                         <span>{formatAmericanOdds(row.market.jkbFairOdds)}</span>
                       </div>
-                      <span className={cn("text-[12px] font-black tabular-nums", evTone(row.market.ev))}>{formatEvPercent(row.market.ev)}</span>
+                      <div className="flex items-center gap-1">
+                        <span
+                          data-k-plus-ev-mobile-projk="true"
+                          className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800"
+                          title="JKB Projected K"
+                        >
+                          {fmtNum(row.projection?.jkbProjectedK ?? null, 1)}K
+                        </span>
+                        <span className={cn("text-[12px] font-black tabular-nums", evTone(row.market.ev))}>{formatEvPercent(row.market.ev)}</span>
+                      </div>
                       <ValueBadge label={row.label} />
                     </div>
                   </div>
@@ -334,33 +409,27 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
           <table className="w-full table-fixed border-separate border-spacing-0 text-xs">
             <thead className="sticky top-0 z-20">
               <tr className="text-[10px] uppercase tracking-[0.08em] text-slate-500">
-                {([
-                  ["pitcher", "Pitcher"],
-                  ["kLine", "K Line"],
-                  ["bookOdds" as KPlusEvSortKey, "Book Odds"],
-                  ["seasonKPerIP", "Season K/IP"],
-                  ["currentFair" as KPlusEvSortKey, "Current Rate Fair"],
-                  ["jkbFair" as KPlusEvSortKey, "JKB Fair"],
-                  ["trend", "K Trend"],
-                  ["projIP" as KPlusEvSortKey, "Proj IP"],
-                  ["matchup", "Matchup"],
-                  ["jkbProjectedK", "JKB Proj K"],
-                  ["jkbOverProbability", "JKB Over %"],
-                  ["ev", "+EV"],
-                  ["label", "Value"],
-                ] as Array<[KPlusEvSortKey, string]>).map(([key, label]) => (
-                  <th
-                    key={key}
-                    className={cn(
-                      "border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-left font-bold",
-                      key === "pitcher" && "w-44",
-                    )}
-                  >
-                    <button type="button" onClick={() => handleSort(key)} className="hover:text-slate-900">
-                      {label}{sortMark(key)}
-                    </button>
-                  </th>
-                ))}
+                {(DESKTOP_COLUMNS.map(([key, label], index) => {
+                  const group = COLUMN_GROUPS[key];
+                  const previousKey = index > 0 ? DESKTOP_COLUMNS[index - 1][0] : null;
+                  const isGroupStart = previousKey != null && COLUMN_GROUPS[previousKey] !== group;
+                  const sortableKey = key as KPlusEvSortKey;
+                  return (
+                    <th
+                      key={key}
+                      className={cn(
+                        "border-b border-slate-200 px-2 py-1.5 text-left font-bold",
+                        GROUP_HEADER_CLASS[group],
+                        key === "pitcher" && "w-44",
+                        isGroupStart && "border-l border-slate-300",
+                      )}
+                    >
+                      <button type="button" onClick={() => handleSort(sortableKey)} className="hover:text-slate-900">
+                        {label}{sortMark(sortableKey)}
+                      </button>
+                    </th>
+                  );
+                }))}
               </tr>
             </thead>
             <tbody>
@@ -386,7 +455,7 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
                       onKeyDown={onKeyDown}
                       className={cn("cursor-pointer", rowBg)}
                     >
-                      <td className="border-b border-slate-100 px-2 py-2">
+                      <td className={cn("border-b border-slate-100 px-2 py-2", groupTdClass("pitcher", null))}>
                         <div className="flex min-w-0 items-center gap-2">
                           <span aria-hidden="true" className={cn("text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
                           <MlbTeamLogo team={row.team} size={18} />
@@ -396,18 +465,18 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
                           </div>
                         </div>
                       </td>
-                      <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-700">{line ?? "—"}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800">{formatAmericanOdds(row.market.bookOverOdds)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">{fmtNum(row.seasonBaseline.seasonKPerIP)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800">{formatAmericanOdds(row.market.currentRateFairOdds)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800">{formatAmericanOdds(row.market.jkbFairOdds)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">{fmtNum(row.trend.trendFactor, 3)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">{fmtNum(row.workload.expectedIP)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">{fmtMultiplier(row.matchup.matchupMultiplier)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800">{fmtNum(row.projection?.jkbProjectedK ?? null)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">{fmtPct(row.market.jkbOverProbability)}</td>
-                      <td className={cn("border-b border-slate-100 px-2 py-2 font-black tabular-nums", evTone(row.market.ev))}>{formatEvPercent(row.market.ev)}</td>
-                      <td className="border-b border-slate-100 px-2 py-2">
+                      <td className={cn("border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-700", groupTdClass("kLine", "pitcher"))}>{line ?? "—"}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800", groupTdClass("bookOdds", "kLine"))}>{formatAmericanOdds(row.market.bookOverOdds)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700", groupTdClass("seasonKPerIP", "bookOdds"))}>{fmtNum(row.seasonBaseline.seasonKPerIP)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800", groupTdClass("currentFair", "seasonKPerIP"))}>{formatAmericanOdds(row.market.currentRateFairOdds)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800", groupTdClass("jkbFair", "currentFair"))}>{formatAmericanOdds(row.market.jkbFairOdds)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700", groupTdClass("trend", "jkbFair"))}>{fmtNum(row.trend.trendFactor, 3)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700", groupTdClass("projIP", "trend"))}>{fmtNum(row.workload.expectedIP)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700", groupTdClass("matchup", "projIP"))}>{fmtMultiplier(row.matchup.matchupMultiplier)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800", groupTdClass("jkbProjectedK", "matchup"))}>{fmtNum(row.projection?.jkbProjectedK ?? null)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700", groupTdClass("jkbOverProbability", "jkbProjectedK"))}>{fmtPct(row.market.jkbOverProbability)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2 font-black tabular-nums", groupTdClass("ev", "jkbOverProbability"), evTone(row.market.ev))}>{formatEvPercent(row.market.ev)}</td>
+                      <td className={cn("border-b border-slate-100 px-2 py-2", groupTdClass("label", "ev"))}>
                         <ValueBadge label={row.label} />
                       </td>
                     </tr>

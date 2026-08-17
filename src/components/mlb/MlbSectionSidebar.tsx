@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Menu } from "lucide-react";
+import { ChevronDown, Gem, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -45,7 +45,7 @@ const HR_TABLE_GLOSSARY: [string, string][] = [
   ["AVG vs P", "Batter's career batting average against this specific opposing starter. Historical context only — not used in HR Score or any ranking."],
 ];
 
-function NavLink({ item, active, onNavigate }: { item: MlbNavItem; active: boolean; onNavigate?: () => void }) {
+function NavLink({ item, active, onNavigate, accent = false }: { item: MlbNavItem; active: boolean; onNavigate?: () => void; accent?: boolean }) {
   const Icon = item.icon;
   return (
     <Link
@@ -53,13 +53,25 @@ function NavLink({ item, active, onNavigate }: { item: MlbNavItem; active: boole
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]",
-        active ? "bg-[#dce9ff] text-[#031635]" : "text-slate-600",
+        "mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold transition hover:translate-x-1",
+        accent
+          ? cn("hover:bg-amber-50 hover:text-amber-950", active ? "bg-amber-50 text-amber-950" : "text-slate-700")
+          : cn("hover:bg-[#dce9ff] hover:text-[#031635]", active ? "bg-[#dce9ff] text-[#031635]" : "text-slate-600"),
       )}
     >
       <Icon className={cn("h-4 w-4", getMlbNavIconColorClass(item.icon))} />
       {item.label}
     </Link>
+  );
+}
+
+/** PLUS EV section header -- restrained premium/analytics accent (amber Gem icon, thin gold rule) distinguishing it from the plain uppercase section labels used elsewhere in the sidebar, without introducing a heavy or gaudy treatment. */
+function PlusEvSectionLabel({ label }: { label: string }) {
+  return (
+    <div className="mx-3 mb-1 flex items-center gap-1.5 rounded-md bg-gradient-to-r from-amber-50 to-transparent px-2 py-1">
+      <Gem className="h-3 w-3 text-amber-500" aria-hidden="true" />
+      <span className="text-[9px] font-bold uppercase tracking-widest text-amber-700">{label}</span>
+    </div>
   );
 }
 
@@ -87,17 +99,24 @@ export default function MlbSectionSidebar({ mobile = false, onNavigate }: MlbSec
       </div>
 
       <nav className="flex flex-col gap-1" aria-label="MLB sitemap">
-        {MLB_NAV_SECTIONS.map((section, index) => (
-          <Fragment key={section.id}>
-            {index > 0 && <div className="mx-4 my-2 border-t border-slate-200" />}
-            <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
-              {section.label}
-            </div>
-            {section.items.map((item) => (
-              <NavLink key={item.id} item={item} active={isActive(item)} onNavigate={onNavigate} />
-            ))}
-          </Fragment>
-        ))}
+        {MLB_NAV_SECTIONS.map((section, index) => {
+          const isPlusEv = section.id === "plus-ev";
+          return (
+            <Fragment key={section.id}>
+              {index > 0 && <div className="mx-4 my-2 border-t border-slate-200" />}
+              {isPlusEv ? (
+                <PlusEvSectionLabel label={section.label ?? ""} />
+              ) : (
+                <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
+                  {section.label}
+                </div>
+              )}
+              {section.items.map((item) => (
+                <NavLink key={item.id} item={item} active={isActive(item)} onNavigate={onNavigate} accent={isPlusEv} />
+              ))}
+            </Fragment>
+          );
+        })}
       </nav>
 
       {/* Vertical "Bet with our partners" section card (stacked, no horizontal scroll) */}

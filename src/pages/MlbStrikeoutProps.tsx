@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
@@ -373,9 +373,16 @@ function KBestBetsSection({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
   );
 }
 
+/** Strikeout Props main table region has exactly one primary view at a time -- "score" (default) is the existing K Score board, "ev" is the standalone K +EV V1 table. Backed by the ?view= query param (see VIEW_QUERY_PARAM) so the MLB sidebar's PLUS EV section and the MLB Hub's +EV Props block can deep-link directly into the +EV view without duplicating this page. */
+export type KPropsTableView = "score" | "ev";
+export const DEFAULT_K_PROPS_TABLE_VIEW: KPropsTableView = "score";
+export const K_PROPS_VIEW_QUERY_PARAM = "view";
+export const K_PROPS_EV_VIEW_QUERY_VALUE = "ev";
+
 export default function MlbStrikeoutProps() {
   usePageSeo(getSeoMeta("mlb-strikeout-props"));
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { dashboard, games, status, strikeoutDetailRows } = useMlbPropsData();
   const { loading: detailsLoading, fileUnavailable: detailsUnavailable, detailsByKey, detailsDate } = useMlbStrikeoutPropDetails();
   const [search, setSearch] = useState("");
@@ -394,10 +401,27 @@ export default function MlbStrikeoutProps() {
   const slateDate = dashboard?.date ?? null;
   const showKProjectionV2Debug = new URLSearchParams(location.search).get("debug") === "k-v2";
   const kV2Shadow = useMlbKPropsV2Shadow(showKProjectionV2Debug, slateDate);
-  /** K Props +EV V1 -- a standalone model, opt-in via the "+EV Table" tab below. Hidden by default so the existing K Score view remains the default page experience. */
-  const [showKPlusEvTable, setShowKPlusEvTable] = useState(false);
+  /**
+   * K Props +EV V1 -- a standalone model, selectable via the K Score / +EV
+   * tabs below. Defaults to "score" so the existing K Score view remains the
+   * default page experience; seeded from ?view=ev so direct links (MLB
+   * sidebar, MLB Hub) can open straight into the +EV view. Tab clicks use
+   * `replace` so toggling views doesn't spam browser history -- only actual
+   * navigations (including a deep link's initial load) create a history
+   * entry, so back/forward behavior for real navigation is unaffected.
+   */
+  const tableView: KPropsTableView = searchParams.get(K_PROPS_VIEW_QUERY_PARAM) === K_PROPS_EV_VIEW_QUERY_VALUE ? "ev" : DEFAULT_K_PROPS_TABLE_VIEW;
+  const setTableView = (next: KPropsTableView) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (next === "ev") nextParams.set(K_PROPS_VIEW_QUERY_PARAM, K_PROPS_EV_VIEW_QUERY_VALUE);
+    else nextParams.delete(K_PROPS_VIEW_QUERY_PARAM);
+    setSearchParams(nextParams, { replace: true });
+  };
   const kPlusEv = useMlbKPlusEv(true);
   const kPlusEvRows = useMemo(() => evaluateKPlusEvArtifact(kPlusEv.artifact), [kPlusEv.artifact]);
+  /** +EV mode's primary table only shows pitchers with a complete valuation (row.available) -- eligibility/model math is untouched, this is a display filter so partial/incomplete rows never render fabricated prices. Excluded pitchers remain fully visible in K Score mode. */
+  const kPlusEvAvailableRows = useMemo(() => kPlusEvRows.filter((row) => row.available), [kPlusEvRows]);
+  const kPlusEvExcludedCount = kPlusEvRows.length - kPlusEvAvailableRows.length;
   // A details file loaded successfully but generated for a different slate
   // than the page is currently showing (e.g. yesterday's committed data
   // still deployed on today's slate). Every row key will fail to match in
@@ -615,41 +639,57 @@ export default function MlbStrikeoutProps() {
           )}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
-          <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-3">
+          <section id="k-props-table-view" className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-3">
               <div>
-                <h2 className="text-lg font-black text-slate-900">K +EV Table</h2>
-                <p className="text-xs text-slate-500">Standalone K Props +EV V1 model (season K/IP, recent trend, workload, home/away, and lineup-vs-hand matchup). Independent of the K Score model above.</p>
+                <h2 className="text-lg font-black text-slate-900">{tableView === "ev" ? "K +EV Table" : "K Score Board"}</h2>
+                <p className="text-xs text-slate-500">
+                  {tableView === "ev"
+                    ? "Standalone K Props +EV V1 model (season K/IP, recent trend, workload, home/away, and lineup-vs-hand matchup). Independent of the K Score model."
+                    : "Ranks today's probable starters by K Score, a matchup-strength rating."}
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2" role="tablist" aria-label="K +EV table visibility">
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="Strikeout Props table view">
                 <button
                   type="button"
                   role="tab"
-                  aria-selected={!showKPlusEvTable}
-                  onClick={() => setShowKPlusEvTable(false)}
-                  className={cn("rounded-full px-3 py-1.5 text-sm font-semibold transition", !showKPlusEvTable ? "bg-slate-900 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900")}
+                  aria-selected={tableView === "score"}
+                  onClick={() => setTableView("score")}
+                  className={cn("rounded-full px-3 py-1.5 text-sm font-semibold transition", tableView === "score" ? "bg-slate-900 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900")}
                 >
-                  Hide
+                  K Score
                 </button>
                 <button
                   type="button"
                   role="tab"
-                  aria-selected={showKPlusEvTable}
-                  onClick={() => setShowKPlusEvTable(true)}
-                  className={cn("rounded-full px-3 py-1.5 text-sm font-semibold transition", showKPlusEvTable ? "bg-slate-900 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900")}
+                  aria-selected={tableView === "ev"}
+                  onClick={() => setTableView("ev")}
+                  className={cn("rounded-full px-3 py-1.5 text-sm font-semibold transition", tableView === "ev" ? "bg-slate-900 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900")}
                 >
-                  +EV Table
+                  +EV
                 </button>
               </div>
             </div>
-            {showKPlusEvTable ? (
-              kPlusEv.status === "valid" ? (
-                <KPlusEvTable rows={kPlusEvRows} compact={isCompactLayout} />
-              ) : (
-                <div className="px-3 py-6 text-center text-sm text-slate-500">
-                  {kPlusEv.loading ? "Loading K +EV data…" : "K +EV data is unavailable for today's slate."}
+            {tableView === "ev" ? (
+              <div>
+                <div className="border-b border-slate-100 bg-slate-50/60 px-3 py-2.5 text-xs text-slate-600">
+                  {kPlusEvRows.length > 0 ? (
+                    <>
+                      <span className="font-bold text-slate-800">{kPlusEvAvailableRows.length} of {kPlusEvRows.length} starters eligible for +EV modeling</span>
+                      {kPlusEvExcludedCount > 0 && <span className="ml-1.5 text-slate-500">· {kPlusEvExcludedCount} excluded due to insufficient season or split data</span>}
+                    </>
+                  ) : (
+                    <span>+EV eligibility summary is unavailable until today's slate loads.</span>
+                  )}
                 </div>
-              )
+                {kPlusEv.status === "valid" ? (
+                  <KPlusEvTable rows={kPlusEvAvailableRows} compact={isCompactLayout} />
+                ) : (
+                  <div className="px-3 py-6 text-center text-sm text-slate-500">
+                    {kPlusEv.loading ? "Loading K +EV data…" : "K +EV data is unavailable for today's slate."}
+                  </div>
+                )}
+              </div>
             ) : null}
           </section>
 
@@ -666,6 +706,8 @@ export default function MlbStrikeoutProps() {
           />
 
           <div className="space-y-4">
+              {tableView === "score" ? (
+              <div data-k-props-score-view="true" className="space-y-4">
               <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="grid gap-2 sm:grid-cols-4">
                   <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search pitcher, team, park" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-300 focus:bg-white" />
@@ -1116,6 +1158,8 @@ export default function MlbStrikeoutProps() {
                   )}
                 </details>
               )}
+              </div>
+              ) : null}
 
               <section aria-labelledby="strikeout-page-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
                 <div className="flex items-start justify-between gap-2">

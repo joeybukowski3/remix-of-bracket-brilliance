@@ -76,4 +76,35 @@ describe("KPlusEvTable", () => {
     fireEvent.click(screen.getByRole("button", { name: "Strong +EV" }));
     expect(document.querySelector('[data-k-plus-ev-empty="true"]')).not.toBeNull();
   });
+
+  it("preserves the widened Pitcher column and applies restrained semantic column tints on desktop", () => {
+    const row = evaluateKPlusEv(source({ pitcher: "Framber Valdez" }));
+    render(<KPlusEvTable rows={[row]} compact={false} />);
+
+    const pitcherHeader = screen.getByRole("button", { name: /^Pitcher/ }).closest("th");
+    expect(pitcherHeader?.className).toContain("w-44");
+
+    // Pricing group (Book Odds / Current Rate Fair / JKB Fair) gets an amber tint.
+    const bookOddsHeader = screen.getByRole("button", { name: /^Book Odds/ }).closest("th");
+    expect(bookOddsHeader?.className).toContain("bg-amber-50");
+    // Performance group (Season K/IP / K Trend) gets a sky tint.
+    const seasonHeader = screen.getByRole("button", { name: /^Season K\/IP/ }).closest("th");
+    expect(seasonHeader?.className).toContain("bg-sky-50");
+    // Projection group (Proj IP / Matchup / JKB Proj K / JKB Over %) gets an emerald tint.
+    const projIpHeader = screen.getByRole("button", { name: /^Proj IP/ }).closest("th");
+    expect(projIpHeader?.className).toContain("bg-emerald-50");
+  });
+
+  it("mobile card surfaces Book/Current Fair/JKB Fair and JKB Proj K with the pricing/projection accent colors", () => {
+    const row = evaluateKPlusEv(source({ pitcher: "Framber Valdez" }));
+    render(<KPlusEvTable rows={[row]} compact />);
+
+    const pricing = document.querySelector('[data-k-plus-ev-mobile-pricing="true"]');
+    expect(pricing).not.toBeNull();
+    expect(pricing?.className).toContain("bg-amber-50");
+
+    const projK = document.querySelector('[data-k-plus-ev-mobile-projk="true"]');
+    expect(projK).not.toBeNull();
+    expect(projK?.className).toContain("bg-emerald-50");
+  });
 });

@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Dice5,
   Flame,
+  Gem,
   Radar,
   Share2,
   Sparkles,
@@ -51,6 +52,7 @@ const ICON_COLOR_BY_COMPONENT = new Map<ComponentType<LucideProps>, string>([
   [Dice5, "text-rose-600"],
   [Sparkles, "text-fuchsia-600"],
   [Share2, "text-cyan-600"],
+  [Gem, "text-amber-500"],
 ]);
 
 /**
@@ -97,6 +99,14 @@ export const MLB_NAV_SECTIONS: MlbNavSection[] = [
     ],
   },
   {
+    id: "plus-ev",
+    label: "Plus EV",
+    items: [
+      { id: "hr-plus-ev", label: "HR +EV", href: "/mlb/hr-props?view=ev", icon: Gem },
+      { id: "k-plus-ev", label: "Pitcher K +EV", href: "/mlb/strikeout-props?view=ev", icon: Gem },
+    ],
+  },
+  {
     id: "models-specials",
     label: "Models & Specials",
     items: [
@@ -126,7 +136,12 @@ export const MLB_NAV_ITEMS: MlbNavItem[] = MLB_NAV_SECTIONS.flatMap((section) =>
  * given prefixes (used for Game Matchups' game-detail sub-state).
  */
 export function isMlbNavItemActive(pathname: string, hash: string, item: MlbNavItem): boolean {
-  const [base, anchor] = item.href.split("#");
+  const [hrefWithoutHash, anchor] = item.href.split("#");
+  // Strip a query string (e.g. the Plus EV items' `?view=ev`) before
+  // comparing to `pathname`, which never includes one -- active matching is
+  // by route only, so the "+EV" deep-link items still highlight normally
+  // while on /mlb/hr-props or /mlb/strikeout-props regardless of ?view=ev.
+  const base = hrefWithoutHash.split("?")[0];
   if (pathname !== base) return false;
   if (item.activeHashPrefixes?.some((prefix) => hash.startsWith(prefix))) return true;
   if (!anchor) return true;

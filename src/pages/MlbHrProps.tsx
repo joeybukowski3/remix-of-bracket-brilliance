@@ -1,4 +1,5 @@
 ﻿import { Fragment, useCallback, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
@@ -1941,8 +1942,20 @@ export default function MlbHrProps() {
   const [isMobile, setIsMobile] = useState(false);
   /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. */
   const isCompactLayout = useIsCompactLayout();
-  const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
-  const [batterTableView, setBatterTableView] = useState<BatterTableView>(DEFAULT_BATTER_TABLE_VIEW);
+  /**
+   * `?view=ev` deep-links straight into the Batters tab's +EV table -- read
+   * once to seed initial state (mirrors the equivalent K +EV deep link on
+   * MlbStrikeoutProps.tsx). Pure display routing: no HR +EV model behavior
+   * changes. Subsequent in-page tab clicks intentionally do not keep
+   * rewriting the URL here (unlike the Strikeout Props page) since this
+   * toggle sits one level beneath the pitchers/batters/matchups tab and
+   * round-tripping both through the URL on every click isn't worth the
+   * added complexity for this page.
+   */
+  const [searchParams] = useSearchParams();
+  const hrPlusEvDeepLink = searchParams.get("view") === "ev";
+  const [activeTab, setActiveTab] = useState<TabKey>(hrPlusEvDeepLink ? "batters" : DEFAULT_TAB);
+  const [batterTableView, setBatterTableView] = useState<BatterTableView>(hrPlusEvDeepLink ? "plusEv" : DEFAULT_BATTER_TABLE_VIEW);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
   const [pitcherSortDirection, setPitcherSortDirection] = useState<SortDirection>(DEFAULT_PITCHER_SORT.direction);
