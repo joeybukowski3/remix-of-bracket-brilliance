@@ -19,8 +19,10 @@ import {
   classifySeasonSample,
   computeHrPa,
   computeHrProbability,
+  computeJkbProjectedPaPerHr,
   evaluateHrPlusEv,
   expectedPaForBattingOrder,
+  formatJkbProjectedPaPerHr,
   formatSeasonPaHr,
   formatTrendWindow,
   handednessSplitKey,
@@ -31,6 +33,7 @@ import {
   pitchingExposureMultiplier,
   probabilityToAmericanOdds,
   starterSusceptibilityMultiplier,
+  trendWindowDirection,
   trendWindowRatio,
   type HrPlusEvBatterSource,
 } from "./hrPlusEvModel";
@@ -96,6 +99,58 @@ describe("season PA/HR display", () => {
 
   it("formats missing season data as a dash", () => {
     expect(formatSeasonPaHr(null, null)).toBe("—");
+  });
+});
+
+describe("JKB projected PA/HR (display only)", () => {
+  it("computes 1 / jkbHrPa", () => {
+    expect(computeJkbProjectedPaPerHr(0.056)).toBeCloseTo(1 / 0.056, 12);
+  });
+
+  it("formats it as PA/HR", () => {
+    expect(formatJkbProjectedPaPerHr(0.056)).toBe(`${(1 / 0.056).toFixed(1)} PA/HR`);
+  });
+
+  it("never displays Infinity for a zero rate", () => {
+    expect(computeJkbProjectedPaPerHr(0)).toBeNull();
+    expect(formatJkbProjectedPaPerHr(0)).toBe("—");
+    expect(formatJkbProjectedPaPerHr(0)).not.toMatch(/infinity/i);
+  });
+
+  it("returns a dash for a negative or missing rate", () => {
+    expect(formatJkbProjectedPaPerHr(-0.01)).toBe("—");
+    expect(formatJkbProjectedPaPerHr(null)).toBe("—");
+    expect(formatJkbProjectedPaPerHr(undefined)).toBe("—");
+  });
+});
+
+describe("recent trend direction (display only)", () => {
+  it("is up when recent HR/PA is higher than season HR/PA (lower PA/HR = hotter)", () => {
+    // Season 20.0 PA/HR (0.05 HR/PA), L30 15.0 PA/HR (0.0667 HR/PA) -> up.
+    expect(trendWindowDirection(1 / 15, 1 / 20)).toBe("up");
+  });
+
+  it("is down when recent HR/PA is lower than season HR/PA (higher PA/HR = colder)", () => {
+    // Season 20.0 PA/HR (0.05 HR/PA), L14 28.0 PA/HR (0.0357 HR/PA) -> down.
+    expect(trendWindowDirection(1 / 28, 1 / 20)).toBe("down");
+  });
+
+  it("is down for a real populated 0-HR window", () => {
+    expect(trendWindowDirection(0, 1 / 20)).toBe("down");
+  });
+
+  it("is neutral, never down, when the window is genuinely unavailable", () => {
+    expect(trendWindowDirection(null, 1 / 20)).toBe("neutral");
+    expect(trendWindowDirection(undefined, 1 / 20)).toBe("neutral");
+  });
+
+  it("is neutral when the season baseline itself is unavailable", () => {
+    expect(trendWindowDirection(1 / 15, null)).toBe("neutral");
+    expect(trendWindowDirection(1 / 15, 0)).toBe("neutral");
+  });
+
+  it("is neutral when the recent rate equals the season rate", () => {
+    expect(trendWindowDirection(1 / 20, 1 / 20)).toBe("neutral");
   });
 });
 

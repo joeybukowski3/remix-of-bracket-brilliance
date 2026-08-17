@@ -335,6 +335,43 @@ export function formatTrendWindow(
   return `${paPerHr.toFixed(1)} PA/HR (${plateAppearances} PA)`;
 }
 
+export type TrendDirection = "up" | "down" | "neutral";
+
+/**
+ * Display-only JKB projected PA/HR: 1 / jkbHrPa. Never Infinity -- returns
+ * null (rendered as "—") when the final JKB HR/PA rate is zero, negative,
+ * or unavailable. Purely derived for presentation; does not feed back into
+ * JKB HR%, JKB Fair, or any other model calculation.
+ */
+export function computeJkbProjectedPaPerHr(jkbHrPa: number | null | undefined): number | null {
+  if (!isFiniteNumber(jkbHrPa) || jkbHrPa <= 0) return null;
+  return 1 / jkbHrPa;
+}
+
+export function formatJkbProjectedPaPerHr(jkbHrPa: number | null | undefined): string {
+  const value = computeJkbProjectedPaPerHr(jkbHrPa);
+  return value == null ? "—" : `${value.toFixed(1)} PA/HR`;
+}
+
+/**
+ * Directional read on a recent trend window vs. the season baseline, for
+ * display only. PA/HR is inverse of HR/PA, so this compares HR/PA rates
+ * directly: a higher recent HR/PA than season HR/PA means the hitter is
+ * homering MORE often (up), a lower recent HR/PA means LESS often (down).
+ * A real populated 0-HR window yields a genuine "down" signal (windowHrPa
+ * is 0, a finite number). A genuinely missing window is always "neutral" --
+ * missing data is never classified as a cold/down signal.
+ */
+export function trendWindowDirection(
+  windowHrPa: number | null | undefined,
+  seasonHrPa: number | null | undefined,
+): TrendDirection {
+  if (!isFiniteNumber(windowHrPa) || !isFiniteNumber(seasonHrPa) || seasonHrPa <= 0) return "neutral";
+  if (windowHrPa > seasonHrPa) return "up";
+  if (windowHrPa < seasonHrPa) return "down";
+  return "neutral";
+}
+
 function ratioAroundNeutral(
   numerator: number | null,
   denominator: number | null,

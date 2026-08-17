@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
+import { Fragment, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { cn } from "@/lib/utils";
@@ -6,12 +6,15 @@ import {
   comparePlusEvRows,
   formatAmericanOdds,
   formatEvPercent,
+  formatJkbProjectedPaPerHr,
   formatMultiplier,
   formatProbabilityPercent,
   formatSeasonPaHr,
   PLUS_EV_MIN_SEASON_PA,
+  trendWindowDirection,
   type HrPlusEvValuation,
   type MatchupFactorKey,
+  type TrendDirection,
 } from "@/lib/mlb/hrPlusEvModel";
 import {
   filterPlusEvRows,
@@ -103,6 +106,55 @@ function trendCellDisplay(row: HrPlusEvValuation): string {
   return row.trendAvailable ? formatMultiplier(row.trendFactor) : "Unavailable";
 }
 
+const TREND_ARROW_STYLE: Record<TrendDirection, { icon: string; tone: string }> = {
+  up: { icon: "↑", tone: "text-emerald-600" },
+  down: { icon: "↓", tone: "text-rose-600" },
+  neutral: { icon: "–", tone: "text-slate-400" },
+};
+
+/** Restrained up/down indicator for the main-table HR Trend cell, driven by
+ * the same weighted TrendFactor already shown in the cell -- never rendered
+ * when the trend is genuinely unavailable for this batter. */
+function MainTrendArrow({ row }: { row: HrPlusEvValuation }) {
+  if (!row.trendAvailable) return null;
+  const direction: TrendDirection = row.trendFactor > 1 ? "up" : row.trendFactor < 1 ? "down" : "neutral";
+  const style = TREND_ARROW_STYLE[direction];
+  return (
+    <span aria-hidden="true" className={cn("ml-1 text-[10px] font-black", style.tone)}>
+      {style.icon}
+    </span>
+  );
+}
+
+/** Directional read on a recent trend window (L14/L30) vs. season baseline,
+ * for the expanded detail panel. PA/HR is inverse of HR/PA: a real
+ * populated 0-HR window ("0 HR / 51 PA") always reads as a down trend, and
+ * a genuinely missing window always reads as neutral/unavailable -- never
+ * down. */
+function TrendWindowIndicator({
+  windowHrPa,
+  seasonHrPa,
+}: {
+  windowHrPa: number | null;
+  seasonHrPa: number | null;
+}) {
+  if (windowHrPa == null) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400">
+        {TREND_ARROW_STYLE.neutral.icon} Unavailable
+      </span>
+    );
+  }
+  const direction = trendWindowDirection(windowHrPa, seasonHrPa);
+  const style = TREND_ARROW_STYLE[direction];
+  const text = direction === "up" ? "Better than season" : direction === "down" ? "Worse than season" : "Matches season";
+  return (
+    <span className={cn("inline-flex items-center gap-1 text-[10px] font-bold", direction === "neutral" ? "text-slate-400" : style.tone)}>
+      {style.icon} {text}
+    </span>
+  );
+}
+
 /** A per-window PA/HR rate. Undefined (not Infinity) when the window's HR
  * count is a real, populated zero -- the HR/PA count fields carry that
  * signal instead. */
@@ -158,20 +210,70 @@ function ValueBadge({ label }: { label: HrPlusEvValuation["label"] }) {
   );
 }
 
-function DetailItem({ label, value, note }: { label: string; value: string; note?: string | null }) {
+function DetailItem({
+  label,
+  value,
+  note,
+  extra,
+}: {
+  label: string;
+  value: string;
+  note?: string | null;
+  extra?: ReactNode;
+}) {
   return (
-    <div className="rounded-md bg-white px-2 py-1.5">
+    <div className="rounded-md bg-white/90 px-2 py-1.5">
       <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">{label}</div>
       <div className="mt-0.5 text-[12px] font-semibold tabular-nums text-slate-800">{value}</div>
+      {extra ? <div className="mt-0.5">{extra}</div> : null}
       {note ? <div className="mt-0.5 text-[10px] leading-4 text-slate-500">{note}</div> : null}
     </div>
   );
 }
 
+type DetailSectionTone = "season" | "trend" | "jkb" | "market" | "matchup";
+
+/** Restrained per-group border/gradient treatment for the expanded detail
+ * panel. JKB Projection ("jkb") gets a slightly stronger ring so it reads
+ * as the most prominent analytical group without turning the panel into a
+ * rainbow dashboard. */
+const SECTION_TONE: Record<DetailSectionTone, { container: string; heading: string }> = {
+  season: {
+    container: "border-l-4 border-slate-300 bg-gradient-to-br from-slate-100/80 to-white",
+    heading: "text-slate-500",
+  },
+  trend: {
+    container: "border-l-4 border-sky-300 bg-gradient-to-br from-sky-50 to-white",
+    heading: "text-sky-700",
+  },
+  jkb: {
+    container: "border-l-4 border-emerald-400 bg-gradient-to-br from-emerald-50 to-white ring-1 ring-inset ring-emerald-100",
+    heading: "text-emerald-700",
+  },
+  market: {
+    container: "border-l-4 border-amber-300 bg-gradient-to-br from-amber-50 to-white",
+    heading: "text-amber-700",
+  },
+  matchup: {
+    container: "border-l-4 border-violet-300 bg-gradient-to-br from-violet-50 to-white",
+    heading: "text-violet-700",
+  },
+};
+
+function DetailSection({ title, tone, children }: { title: string; tone: DetailSectionTone; children: ReactNode }) {
+  const style = SECTION_TONE[tone];
+  return (
+    <section className={cn("rounded-lg p-2.5", style.container)}>
+      <div className={cn("mb-1.5 text-[10px] font-black uppercase tracking-wide", style.heading)}>{title}</div>
+      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">{children}</div>
+    </section>
+  );
+}
+
 function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
   return (
-    <div data-plus-ev-details={row.player} className="space-y-3">
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+    <div data-plus-ev-details={row.player} className="space-y-2.5">
+      <DetailSection title="Season baseline" tone="season">
         <DetailItem label="Season HR" value={formatCount(row.seasonHomeRuns)} />
         <DetailItem label="Season PA" value={formatCount(row.seasonPlateAppearances)} />
         <DetailItem label="Season PA/HR" value={formatSeasonPaHr(row.seasonHomeRuns, row.seasonPlateAppearances)} />
@@ -186,11 +288,15 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
           value={formatAmericanOdds(row.currentRateFairOddsAmerican)}
           note="Raw season HR/PA + expected PA only. No trend or matchup."
         />
+      </DetailSection>
+
+      <DetailSection title="Recent HR trend" tone="trend">
         <DetailItem label="L30 HR" value={formatCount(row.last30HomeRuns)} />
         <DetailItem label="L30 PA" value={formatCount(row.last30PlateAppearances)} />
         <DetailItem
           label="L30 PA/HR"
           value={formatWindowRate(row.last30HomeRuns, row.last30HrPa)}
+          extra={<TrendWindowIndicator windowHrPa={row.last30HrPa} seasonHrPa={row.seasonHrPa} />}
           note={row.last30HrPa == null ? "Window unavailable; treated as neutral, not cold." : null}
         />
         <DetailItem label="L14 HR" value={formatCount(row.last14HomeRuns)} />
@@ -198,6 +304,7 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
         <DetailItem
           label="L14 PA/HR"
           value={formatWindowRate(row.last14HomeRuns, row.last14HrPa)}
+          extra={<TrendWindowIndicator windowHrPa={row.last14HrPa} seasonHrPa={row.seasonHrPa} />}
           note={row.last14HrPa == null ? "Window unavailable; treated as neutral, not cold." : null}
         />
         <DetailItem
@@ -205,16 +312,22 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
           value={row.trendAvailable ? formatMultiplier(row.trendFactor) : "1.00x (unavailable)"}
           note={row.trendAvailable ? null : "Both L14 and L30 windows are unavailable for this batter."}
         />
+      </DetailSection>
+
+      <DetailSection title="JKB projection" tone="jkb">
         <DetailItem label="Matchup Multiplier" value={formatMultiplier(row.totalMatchupMultiplier)} />
-        <DetailItem
-          label="Pitching exposure"
-          value={formatMultiplier(row.pitchingExposure)}
-          note="65% starter / 35% bullpen"
-        />
         <DetailItem label="Trend-adjusted HR/PA" value={formatProbabilityPercent(row.trendAdjustedHrPa)} />
         <DetailItem label="Final JKB HR/PA" value={formatProbabilityPercent(row.jkbHrPa)} />
-        <DetailItem label="JKB HR%" value={formatProbabilityPercent(row.jkbHrProbability)} />
+        <DetailItem
+          label="JKB HR%"
+          value={formatProbabilityPercent(row.jkbHrProbability)}
+          note={`Projected: ${formatJkbProjectedPaPerHr(row.jkbHrPa)}`}
+        />
+        <DetailItem label="JKB Projected PA/HR" value={formatJkbProjectedPaPerHr(row.jkbHrPa)} />
         <DetailItem label="JKB Fair" value={formatAmericanOdds(row.fairOddsAmerican)} />
+      </DetailSection>
+
+      <DetailSection title="Market / value" tone="market">
         <DetailItem label="Book odds" value={row.bookOddsRaw ?? formatAmericanOdds(row.bookOddsAmerican)} />
         <DetailItem label="Book implied %" value={formatProbabilityPercent(row.bookImpliedProbability)} />
         <DetailItem
@@ -223,15 +336,22 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
         />
         <DetailItem label="+EV" value={formatEvPercent(row.ev)} />
         <DetailItem label="Value" value={row.label} />
-      </div>
+      </DetailSection>
 
-      <div>
-        <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Matchup factors</div>
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+      <section className={cn("rounded-lg p-2.5", SECTION_TONE.matchup.container)}>
+        <div className={cn("mb-1.5 text-[10px] font-black uppercase tracking-wide", SECTION_TONE.matchup.heading)}>
+          Matchup factors
+        </div>
+        <DetailItem
+          label="Pitching exposure"
+          value={formatMultiplier(row.pitchingExposure)}
+          note="65% starter / 35% bullpen"
+        />
+        <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {FACTOR_ORDER.map((key) => {
             const factor = row.factors[key];
             return (
-              <div key={key} className="rounded-md bg-white px-2 py-1.5">
+              <div key={key} className="rounded-md bg-white/90 px-2 py-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] font-semibold text-slate-700">{factor.label}</span>
                   <span className="text-[11px] font-bold tabular-nums text-slate-800">
@@ -247,7 +367,7 @@ function PlusEvDetails({ row }: { row: HrPlusEvValuation }) {
             );
           })}
         </div>
-      </div>
+      </section>
 
       {row.unavailableReasons.length ? (
         <p className="text-[11px] leading-5 text-slate-500">{row.unavailableReasons.join(" ")}</p>
@@ -346,6 +466,11 @@ export default function HrPlusEvTable({
 
   const toolbar = (
     <div data-plus-ev-filters="true" className="space-y-2 border-b border-slate-200 px-3 py-2.5">
+      <p data-plus-ev-description="true" className="text-[11px] font-normal leading-5 text-slate-500">
+        Compare the sportsbook HR price with each hitter&rsquo;s current-season home run rate and JoeKnowsBall&rsquo;s
+        matchup-adjusted projection. Current Rate Fair reflects season HR frequency and expected plate appearances;
+        JKB Fair adds recent HR trend and today&rsquo;s matchup.
+      </p>
       <p data-plus-ev-eligibility-note="true" className="text-[11px] font-semibold text-slate-500">
         +EV model currently includes hitters with more than {PLUS_EV_MIN_SEASON_PA} season PA.
       </p>
@@ -511,6 +636,7 @@ export default function HrPlusEvTable({
                   </td>
                   <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("context"))}>
                     {trendCellDisplay(row)}
+                    <MainTrendArrow row={row} />
                   </td>
                   <td className={cn("border-b border-slate-200 px-2 py-2.5 font-semibold tabular-nums text-slate-800")}>
                     {formatMultiplier(row.totalMatchupMultiplier)}

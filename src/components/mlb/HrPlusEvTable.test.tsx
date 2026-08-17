@@ -59,6 +59,15 @@ describe("HrPlusEvTable", () => {
     expect(screen.getByText(/more than 300 season PA/i)).toBeInTheDocument();
   });
 
+  it("shows a compact explanatory description above the eligibility banner", () => {
+    const row = evaluateHrPlusEv(source());
+    const { container } = render(<HrPlusEvTable rows={[row]} compact={false} />);
+    const description = container.querySelector('[data-plus-ev-description="true"]');
+    expect(description).not.toBeNull();
+    expect(description?.textContent).toMatch(/current-season home run rate/i);
+    expect(description?.textContent).toMatch(/matchup-adjusted projection/i);
+  });
+
   it("expands a row to show V2 model details", () => {
     const row = evaluateHrPlusEv(source());
     render(<HrPlusEvTable rows={[row]} compact={false} />);
@@ -84,6 +93,7 @@ describe("HrPlusEvTable", () => {
     expect(scope.getByText("Trend-adjusted HR/PA")).toBeInTheDocument();
     expect(scope.getByText("Final JKB HR/PA")).toBeInTheDocument();
     expect(scope.getByText("JKB HR%")).toBeInTheDocument();
+    expect(scope.getByText("JKB Projected PA/HR")).toBeInTheDocument();
     expect(scope.getByText("JKB Fair")).toBeInTheDocument();
     expect(scope.getByText("Book odds")).toBeInTheDocument();
     expect(scope.getByText("Book implied %")).toBeInTheDocument();
@@ -110,6 +120,79 @@ describe("HrPlusEvTable", () => {
     expect(within(details).getByText("51")).toBeInTheDocument();
     expect(details.textContent).not.toMatch(/infinity/i);
     expect(within(details).getByText("unavailable")).toBeInTheDocument();
+  });
+
+  it("shows JKB Projected PA/HR beside JKB HR% and never renders Infinity", () => {
+    const row = evaluateHrPlusEv(source());
+    render(<HrPlusEvTable rows={[row]} compact={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for Adley Rutschman/i }));
+    const details = document.querySelector('[data-plus-ev-details="Adley Rutschman"]') as HTMLElement;
+    expect(within(details).getByText("JKB Projected PA/HR")).toBeInTheDocument();
+    expect(within(details).getAllByText(/Projected:/).length).toBeGreaterThan(0);
+    expect(details.textContent).not.toMatch(/infinity/i);
+  });
+
+  it("marks a lower recent PA/HR (hotter) as a positive/up trend and a higher one as negative/down", () => {
+    const row = evaluateHrPlusEv(source({
+      seasonHomeRuns: 20,
+      seasonPlateAppearances: 400, // Season PA/HR = 20.0
+      last30HomeRuns: 8,
+      last30PlateAppearances: 120, // L30 PA/HR = 15.0 -> hotter -> up
+      last14HomeRuns: 2,
+      last14PlateAppearances: 56, // L14 PA/HR = 28.0 -> colder -> down
+    }));
+    render(<HrPlusEvTable rows={[row]} compact={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for Adley Rutschman/i }));
+    const details = document.querySelector('[data-plus-ev-details="Adley Rutschman"]') as HTMLElement;
+    expect(within(details).getByText(/Better than season/)).toBeInTheDocument();
+    expect(within(details).getByText(/Worse than season/)).toBeInTheDocument();
+  });
+
+  it("marks a real populated 0-HR recent window as a negative/down trend", () => {
+    const row = evaluateHrPlusEv(source({
+      seasonHomeRuns: 20,
+      seasonPlateAppearances: 400,
+      last30HomeRuns: 0,
+      last30PlateAppearances: 51,
+      last14HomeRuns: null,
+      last14PlateAppearances: null,
+    }));
+    render(<HrPlusEvTable rows={[row]} compact={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for Adley Rutschman/i }));
+    const details = document.querySelector('[data-plus-ev-details="Adley Rutschman"]') as HTMLElement;
+    expect(within(details).getByText(/Worse than season/)).toBeInTheDocument();
+  });
+
+  it("marks a genuinely unavailable trend window as neutral/unavailable, never down", () => {
+    const row = evaluateHrPlusEv(source({
+      last30HomeRuns: null,
+      last30PlateAppearances: null,
+      last14HomeRuns: null,
+      last14PlateAppearances: null,
+    }));
+    render(<HrPlusEvTable rows={[row]} compact={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /Show \+EV details for Adley Rutschman/i }));
+    const details = document.querySelector('[data-plus-ev-details="Adley Rutschman"]') as HTMLElement;
+    expect(within(details).getAllByText(/Unavailable/i).length).toBeGreaterThan(0);
+    expect(details.textContent).not.toMatch(/Worse than season/);
+  });
+
+  it("keeps the main-table column order unchanged", () => {
+    const row = evaluateHrPlusEv(source());
+    render(<HrPlusEvTable rows={[row]} compact={false} />);
+    const headers = screen.getAllByRole("columnheader").map((node) => node.textContent?.replace(/[↑↓]/g, "").trim());
+    expect(headers).toEqual([
+      "Batter",
+      "Book Odds",
+      "Season PA/HR",
+      "Current Rate Fair",
+      "JKB Fair",
+      "HR Trend",
+      "Matchup",
+      "JKB HR%",
+      "+EV",
+      "Value",
+    ]);
   });
 
   it("renders UNAVAILABLE when valuation cannot be calculated", () => {
