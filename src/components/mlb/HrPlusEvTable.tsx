@@ -41,11 +41,51 @@ const FACTOR_ORDER: MatchupFactorKey[] = [
 ];
 
 function labelTone(label: HrPlusEvValuation["label"]): string {
-  if (label === "STRONG +EV") return "bg-emerald-100 text-emerald-800";
-  if (label === "MODERATE +EV") return "bg-sky-100 text-sky-800";
-  if (label === "FAIR") return "bg-slate-100 text-slate-700";
-  if (label === "OVERPRICED") return "bg-rose-100 text-rose-800";
-  return "bg-slate-200 text-slate-500";
+  if (label === "STRONG +EV") return "border border-emerald-300 bg-emerald-100 text-emerald-900";
+  if (label === "MODERATE +EV") return "border border-sky-300 bg-sky-100 text-sky-900";
+  if (label === "FAIR") return "border border-slate-300 bg-slate-100 text-slate-700";
+  if (label === "OVERPRICED") return "border border-rose-300 bg-rose-100 text-rose-900";
+  return "border border-slate-200 bg-slate-100 text-slate-400";
+}
+
+type PlusEvColumnGroup = "identity" | "pricing" | "context" | "outcome";
+
+const PLUS_EV_COLUMNS: Array<{
+  key: PlusEvSortKey;
+  label: string;
+  group: PlusEvColumnGroup;
+  width: string;
+}> = [
+  { key: "player", label: "Batter", group: "identity", width: "21%" },
+  { key: "bookOdds", label: "Book Odds", group: "pricing", width: "9%" },
+  { key: "seasonPaHr", label: "Season PA/HR", group: "context", width: "10%" },
+  { key: "currentRateFair", label: "Current Rate Fair", group: "pricing", width: "11%" },
+  { key: "jkbFair", label: "JKB Fair", group: "pricing", width: "10%" },
+  { key: "trend", label: "HR Trend", group: "context", width: "8%" },
+  { key: "matchup", label: "Matchup", group: "context", width: "8%" },
+  { key: "jkbHrProbability", label: "JKB HR%", group: "context", width: "8%" },
+  { key: "ev", label: "+EV", group: "outcome", width: "8%" },
+  { key: "label", label: "Value", group: "outcome", width: "7%" },
+];
+
+/** Pricing columns (Book Odds, Current Rate Fair, JKB Fair) get a restrained
+ * tint/border/weight treatment so the three comparable prices stand out from
+ * the surrounding context columns, per the V2 presentation pass. */
+function pricingCellClass(group: PlusEvColumnGroup): string {
+  return group === "pricing" ? "bg-amber-50/70 font-bold text-slate-900" : "text-slate-700";
+}
+
+function pricingHeaderClass(group: PlusEvColumnGroup): string {
+  return group === "pricing" ? "bg-amber-100/80 text-amber-900" : "bg-slate-50 text-slate-500";
+}
+
+/** Subtle right-hand divider whenever the next column belongs to a different
+ * visual group (Identity / Pricing / Context / Outcome), so the grouping
+ * reads even though Pricing columns are not all contiguous. */
+function groupBoundaryClass(index: number): string {
+  const current = PLUS_EV_COLUMNS[index];
+  const next = PLUS_EV_COLUMNS[index + 1];
+  return next && next.group !== current.group ? "border-r-2 border-slate-200" : "";
 }
 
 function evTone(ev: number | null): string {
@@ -111,7 +151,7 @@ function ValueBadge({ label }: { label: HrPlusEvValuation["label"] }) {
   return (
     <span
       data-plus-ev-label={label}
-      className={cn("inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold", labelTone(label))}
+      className={cn("inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide", labelTone(label))}
     >
       {label}
     </span>
@@ -358,24 +398,21 @@ export default function HrPlusEvTable({
                     aria-label={`${expanded ? "Hide" : "Show"} +EV details for ${row.player}`}
                     onClick={() => toggleRow(row)}
                     onKeyDown={onKeyDown}
-                    className="flex cursor-pointer items-center gap-2 px-3 py-2.5"
+                    className="flex cursor-pointer items-start gap-2 px-3 py-2.5"
                   >
-                    <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
+                    <span aria-hidden="true" className={cn("mt-1 shrink-0 text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
                     <MlbTeamLogo team={row.team} size={22} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
-                      <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
-                      <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold tabular-nums text-slate-500">
-                        <span>Current: {formatAmericanOdds(row.currentRateFairOddsAmerican)}</span>
+                      <div className="truncate text-[15px] font-black leading-tight text-slate-900">{row.player}</div>
+                      <div className="truncate text-[11px] text-slate-400">{row.team} vs {row.opponent} · {row.opposingPitcher}</div>
+                      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 rounded-md bg-amber-50/70 px-1.5 py-1 text-[10px] font-bold tabular-nums text-slate-700">
+                        <span>Book <span className="text-slate-900">{row.bookOddsRaw ?? "—"}</span></span>
+                        <span>Current: <span className="text-slate-900">{formatAmericanOdds(row.currentRateFairOddsAmerican)}</span></span>
+                        <span>JKB Fair <span className="text-slate-900">{formatAmericanOdds(row.fairOddsAmerican)}</span></span>
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <div className="flex items-center gap-1 text-[10px] font-bold tabular-nums text-slate-600">
-                        <span>{row.bookOddsRaw ?? "—"}</span>
-                        <span className="text-slate-300">/</span>
-                        <span>{formatAmericanOdds(row.fairOddsAmerican)}</span>
-                      </div>
-                      <span className={cn("text-[12px] font-black tabular-nums", evTone(row.ev))}>{formatEvPercent(row.ev)}</span>
+                      <span className={cn("text-[13px] font-black tabular-nums", evTone(row.ev))}>{formatEvPercent(row.ev)}</span>
                       <ValueBadge label={row.label} />
                     </div>
                   </div>
@@ -401,23 +438,28 @@ export default function HrPlusEvTable({
       {sorted.length ? (
       <div className="overflow-x-auto">
       <table className="w-full table-fixed border-separate border-spacing-0 text-xs">
+        <colgroup>
+          {PLUS_EV_COLUMNS.map((column) => (
+            <col key={column.key} style={{ width: column.width }} />
+          ))}
+        </colgroup>
         <thead className="sticky top-0 z-20">
-          <tr className="text-[10px] uppercase tracking-[0.08em] text-slate-500">
-            {([
-              ["player", "Batter"],
-              ["bookOdds", "Book Odds"],
-              ["seasonPaHr", "Season PA/HR"],
-              ["currentRateFair", "Current Rate Fair"],
-              ["trend", "HR Trend"],
-              ["matchup", "Matchup"],
-              ["jkbHrProbability", "JKB HR%"],
-              ["jkbFair", "JKB Fair"],
-              ["ev", "+EV"],
-              ["label", "Value"],
-            ] as Array<[PlusEvSortKey, string]>).map(([key, label]) => (
-              <th key={key} className="border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-left font-bold">
-                <button type="button" onClick={() => handleSort(key)} className="hover:text-slate-900">
-                  {label}{sortMark(key)}
+          <tr className="text-[10px] uppercase tracking-[0.08em]">
+            {PLUS_EV_COLUMNS.map((column, index) => (
+              <th
+                key={column.key}
+                className={cn(
+                  "border-b-2 border-slate-300 px-2 py-2 text-left font-bold",
+                  pricingHeaderClass(column.group),
+                  groupBoundaryClass(index),
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort(column.key)}
+                  className={cn("hover:text-slate-900", column.group === "pricing" && "font-black")}
+                >
+                  {column.label}{sortMark(column.key)}
                 </button>
               </th>
             ))}
@@ -445,41 +487,41 @@ export default function HrPlusEvTable({
                   onKeyDown={onKeyDown}
                   className={cn("cursor-pointer", rowBg)}
                 >
-                  <td className="border-b border-slate-100 px-2 py-2">
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5", groupBoundaryClass(0))}>
                     <div className="flex min-w-0 items-center gap-2">
-                      <span aria-hidden="true" className={cn("text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
+                      <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", expanded && "rotate-90")}>▶</span>
                       <MlbTeamLogo team={row.team} size={18} />
                       <div className="min-w-0">
-                        <div className="truncate font-semibold text-slate-900">{row.player}</div>
-                        <div className="truncate text-[10px] text-slate-400">vs {row.opposingPitcher}</div>
+                        <div className="truncate text-[13px] font-black leading-tight text-slate-900">{row.player}</div>
+                        <div className="truncate text-[10px] text-slate-400">{row.team} vs {row.opponent}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-700">
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("pricing"), groupBoundaryClass(1))}>
                     {row.bookOddsRaw ?? "—"}
                   </td>
-                  <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("context"), groupBoundaryClass(2))}>
                     {formatSeasonPaHr(row.seasonHomeRuns, row.seasonPlateAppearances)}
                   </td>
-                  <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("pricing"))}>
                     {formatAmericanOdds(row.currentRateFairOddsAmerican)}
                   </td>
-                  <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
-                    {trendCellDisplay(row)}
-                  </td>
-                  <td className="border-b border-slate-100 px-2 py-2 font-semibold tabular-nums text-slate-800">
-                    {formatMultiplier(row.totalMatchupMultiplier)}
-                  </td>
-                  <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
-                    {formatProbabilityPercent(row.jkbHrProbability)}
-                  </td>
-                  <td className="border-b border-slate-100 px-2 py-2 tabular-nums text-slate-700">
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("pricing"), groupBoundaryClass(4))}>
                     {formatAmericanOdds(row.fairOddsAmerican)}
                   </td>
-                  <td className={cn("border-b border-slate-100 px-2 py-2 font-black tabular-nums", evTone(row.ev))}>
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("context"))}>
+                    {trendCellDisplay(row)}
+                  </td>
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 font-semibold tabular-nums text-slate-800")}>
+                    {formatMultiplier(row.totalMatchupMultiplier)}
+                  </td>
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 tabular-nums", pricingCellClass("context"), groupBoundaryClass(7))}>
+                    {formatProbabilityPercent(row.jkbHrProbability)}
+                  </td>
+                  <td className={cn("border-b border-slate-200 px-2 py-2.5 font-black tabular-nums", evTone(row.ev))}>
                     {formatEvPercent(row.ev)}
                   </td>
-                  <td className="border-b border-slate-100 px-2 py-2">
+                  <td className="border-b border-slate-200 px-2 py-2.5">
                     <ValueBadge label={row.label} />
                   </td>
                 </tr>

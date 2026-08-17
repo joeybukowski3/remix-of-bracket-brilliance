@@ -2756,7 +2756,7 @@ export default function MlbHrProps() {
                           </button>
                         </div>
                         {batterTableView === "plusEv" ? (
-                        <div data-plus-ev-table-root="true" className="rounded-xl border border-slate-200">
+                        <div data-plus-ev-table-root="true" className="overflow-hidden rounded-xl border border-slate-300 shadow-sm">
                           <HrPlusEvTable rows={plusEvRows} compact={isCompactLayout} />
                         </div>
                         ) : (
