@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, Dice5, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
+import MlbPlusEvHubBlock from "@/components/mlb/MlbPlusEvHubBlock";
 import MlbModelEdgeHero from "@/components/mlb/MlbModelEdgeHero";
 import MlbGameTopProps from "@/components/mlb/MlbGameTopProps";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
@@ -3607,6 +3608,8 @@ export function HomeSchedule({
           />
 
           <MlbNavHero />
+
+          <MlbPlusEvHubBlock />
 
           <section id="props" className="space-y-3">
             <div>

@@ -226,30 +226,35 @@ describe("Mobile compact rows -- collapsed header and K Model Metrics expand gri
     expect(within(collapsedRow).queryByText(/K\/Inning SZN/)).not.toBeInTheDocument();
 
     fireEvent.click(collapsedRow);
+    // Scope to the row's <article> (not `screen`): the page now also has a
+    // "K Score" tab label (K Score / +EV view toggle) elsewhere on the page,
+    // so an unscoped getByText("K Score") is ambiguous.
+    const rowArticle = collapsedRow.closest("article") as HTMLElement;
+    expect(rowArticle).toBeTruthy();
     for (const label of ["K Line", "Proj K", "Edge", "K Score"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(within(rowArticle).getByText(label)).toBeInTheDocument();
     }
-    const pitcherStats = screen.getByRole("button", { name: "Pitcher Stats" });
-    const opposingStats = screen.getByRole("button", { name: "Opposing Team Stats" });
+    const pitcherStats = within(rowArticle).getByRole("button", { name: "Pitcher Stats" });
+    const opposingStats = within(rowArticle).getByRole("button", { name: "Opposing Team Stats" });
     expect(pitcherStats.className).toContain("border-emerald-200");
     expect(opposingStats.className).toContain("border-indigo-200");
     expect(pitcherStats).toHaveAttribute("aria-expanded", "false");
     expect(opposingStats).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("K/Inning SZN")).not.toBeInTheDocument();
-    expect(screen.queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+    expect(within(rowArticle).queryByText("K/Inning SZN")).not.toBeInTheDocument();
+    expect(within(rowArticle).queryByText("Opp K/Game L10")).not.toBeInTheDocument();
 
     fireEvent.click(pitcherStats);
     expect(pitcherStats).toHaveAttribute("aria-expanded", "true");
     for (const label of ["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(within(rowArticle).getByText(label)).toBeInTheDocument();
     }
     expect(opposingStats).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+    expect(within(rowArticle).queryByText("Opp K/Game L10")).not.toBeInTheDocument();
 
     fireEvent.click(opposingStats);
     expect(opposingStats).toHaveAttribute("aria-expanded", "true");
     for (const label of ["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(within(rowArticle).getByText(label)).toBeInTheDocument();
     }
   }, SLOW_RENDER_TIMEOUT_MS);
 

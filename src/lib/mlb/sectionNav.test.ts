@@ -85,7 +85,7 @@ describe("MLB_NAV_SECTIONS", () => {
   });
 
   it("uses the approved sidebar groups and item order", () => {
-    expect(MLB_NAV_SECTIONS.map((section) => section.label)).toEqual(["Main", "Models & Specials"]);
+    expect(MLB_NAV_SECTIONS.map((section) => section.label)).toEqual(["Main", "Plus EV", "Models & Specials"]);
     expect(MLB_NAV_SECTIONS[0].items.map(({ label, href }) => [label, href])).toEqual([
       ["Game Matchups", "/mlb#schedule"],
       ["HR Props", "/mlb/hr-props"],
@@ -95,6 +95,10 @@ describe("MLB_NAV_SECTIONS", () => {
       ["Power Rankings", "/mlb/power-rankings"],
     ]);
     expect(MLB_NAV_SECTIONS[1].items.map(({ label, href }) => [label, href])).toEqual([
+      ["HR +EV", "/mlb/hr-props?view=ev"],
+      ["Pitcher K +EV", "/mlb/strikeout-props?view=ev"],
+    ]);
+    expect(MLB_NAV_SECTIONS[2].items.map(({ label, href }) => [label, href])).toEqual([
       ["Moneyline Edges", "/mlb#ml-edges-social"],
       ["Social Media Tables", "/mlb#social-tables"],
       ["Vulnerable Pitchers", "/mlb/vulnerable-pitchers"],
@@ -103,6 +107,23 @@ describe("MLB_NAV_SECTIONS", () => {
       ["Sin City", "/mlb/sin-city"],
       ["Numerology", "/mlb/numerology"],
     ]);
+  });
+});
+
+describe("Plus EV nav items", () => {
+  it("HR +EV and Pitcher K +EV deep-link into their page's +EV view via ?view=ev", () => {
+    const hrPlusEv = itemById("hr-plus-ev");
+    const kPlusEv = itemById("k-plus-ev");
+    expect(hrPlusEv.href).toBe("/mlb/hr-props?view=ev");
+    expect(kPlusEv.href).toBe("/mlb/strikeout-props?view=ev");
+  });
+
+  it("stay active on their page regardless of the ?view=ev query string", () => {
+    const hrPlusEv = itemById("hr-plus-ev");
+    const kPlusEv = itemById("k-plus-ev");
+    expect(isMlbNavItemActive("/mlb/hr-props", "", hrPlusEv)).toBe(true);
+    expect(isMlbNavItemActive("/mlb/strikeout-props", "", kPlusEv)).toBe(true);
+    expect(isMlbNavItemActive("/mlb", "", hrPlusEv)).toBe(false);
   });
 });
 

@@ -5,6 +5,11 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import MlbLayout from "@/components/mlb/MlbLayout";
 import { getMlbNavIconColorClass, MLB_NAV_ITEMS } from "@/lib/mlb/sectionNav";
 
+/** Some nav labels (e.g. "HR +EV") contain regex-special characters -- escape before building a match RegExp so `+` etc. are treated literally instead of as quantifiers. */
+function labelPattern(label: string): RegExp {
+  return new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+}
+
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div data-testid="site-shell">{children}</div>,
 }));
@@ -44,6 +49,16 @@ describe("MlbLayout", () => {
     expect(screen.getByRole("heading", { name: heading })).toBeTruthy();
     expect(screen.getByRole("navigation", { name: "MLB sitemap" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /MLB Menu/i })).toBeTruthy();
+  });
+
+  it("renders a PLUS EV sidebar section with HR +EV and Pitcher K +EV links", () => {
+    renderMlbRoute("/mlb");
+    const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
+    expect(within(nav).getByText("Plus EV")).toBeInTheDocument();
+    const hrPlusEv = within(nav).getByRole("link", { name: labelPattern("HR +EV") });
+    expect(hrPlusEv).toHaveAttribute("href", "/mlb/hr-props?view=ev");
+    const kPlusEv = within(nav).getByRole("link", { name: labelPattern("Pitcher K +EV") });
+    expect(kPlusEv).toHaveAttribute("href", "/mlb/strikeout-props?view=ev");
   });
 
   it("renders exactly one nav sidebar instance per route (no duplication)", () => {
@@ -86,7 +101,7 @@ describe("MlbLayout", () => {
     renderMlbRoute("/mlb");
     const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
     for (const item of MLB_NAV_ITEMS) {
-      expect(within(nav).queryByRole("link", { name: new RegExp(item.label, "i") })?.getAttribute("aria-current")).toBeFalsy();
+      expect(within(nav).queryByRole("link", { name: labelPattern(item.label) })?.getAttribute("aria-current")).toBeFalsy();
     }
   });
 
@@ -102,17 +117,20 @@ describe("MlbLayout", () => {
     expect(within(nav).getByRole("link", { name: /Game Matchups/i }).getAttribute("aria-current")).toBe("page");
   });
 
-  it("desktop sidebar and mobile drawer render the identical destination set", () => {
+  // Explicit timeout: this test now walks MLB_NAV_ITEMS twice (desktop +
+  // mobile drawer) across 15 items including the new Plus EV section, which
+  // pushed it close to/over the 5000ms default on slower machines.
+  it("desktop sidebar and mobile drawer render the identical destination set", { timeout: 15000 }, () => {
     renderMlbRoute("/mlb");
     // Only the desktop instance is mounted before the Sheet opens.
     for (const item of MLB_NAV_ITEMS) {
-      expect(screen.getByRole("link", { name: new RegExp(item.label, "i") })).toBeTruthy();
+      expect(screen.getByRole("link", { name: labelPattern(item.label) })).toBeTruthy();
     }
 
     fireEvent.click(screen.getByRole("button", { name: /MLB Menu/i }));
     const dialog = screen.getByRole("dialog");
     for (const item of MLB_NAV_ITEMS) {
-      expect(within(dialog).getByRole("link", { name: new RegExp(item.label, "i") })).toBeTruthy();
+      expect(within(dialog).getByRole("link", { name: labelPattern(item.label) })).toBeTruthy();
     }
   });
 
@@ -174,7 +192,7 @@ describe("MlbLayout", () => {
     renderMlbRoute("/mlb");
     const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
     for (const item of MLB_NAV_ITEMS) {
-      const link = within(nav).getByRole("link", { name: new RegExp(item.label, "i") });
+      const link = within(nav).getByRole("link", { name: labelPattern(item.label) });
       const icon = link.querySelector("svg");
       expect(icon).toBeTruthy();
       expect(icon?.getAttribute("class")).toContain(getMlbNavIconColorClass(item.icon));
