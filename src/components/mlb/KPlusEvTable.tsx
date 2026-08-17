@@ -349,7 +349,13 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
                   ["ev", "+EV"],
                   ["label", "Value"],
                 ] as Array<[KPlusEvSortKey, string]>).map(([key, label]) => (
-                  <th key={key} className="border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-left font-bold">
+                  <th
+                    key={key}
+                    className={cn(
+                      "border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-left font-bold",
+                      key === "pitcher" && "w-44",
+                    )}
+                  >
                     <button type="button" onClick={() => handleSort(key)} className="hover:text-slate-900">
                       {label}{sortMark(key)}
                     </button>
