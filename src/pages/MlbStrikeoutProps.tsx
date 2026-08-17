@@ -27,6 +27,9 @@ import { describeKPropStatusReasons, resolveKPropStatus } from "@/lib/mlb/kPropS
 import { cn } from "@/lib/utils";
 import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
 import { useMlbKPropsV2Shadow, type KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
+import { useMlbKPlusEv } from "@/hooks/useMlbKPlusEv";
+import { evaluateKPlusEvArtifact } from "@/lib/mlb/kPlusEvSourceAdapter";
+import KPlusEvTable from "@/components/mlb/KPlusEvTable";
 import MlbStrikeoutPropRowDetail, {
   MlbStrikeoutCompactAccordion,
   MlbStrikeoutPropDetailsStaleBanner,
@@ -391,6 +394,10 @@ export default function MlbStrikeoutProps() {
   const slateDate = dashboard?.date ?? null;
   const showKProjectionV2Debug = new URLSearchParams(location.search).get("debug") === "k-v2";
   const kV2Shadow = useMlbKPropsV2Shadow(showKProjectionV2Debug, slateDate);
+  /** K Props +EV V1 -- a standalone model, opt-in via the "+EV Table" tab below. Hidden by default so the existing K Score view remains the default page experience. */
+  const [showKPlusEvTable, setShowKPlusEvTable] = useState(false);
+  const kPlusEv = useMlbKPlusEv(true);
+  const kPlusEvRows = useMemo(() => evaluateKPlusEvArtifact(kPlusEv.artifact), [kPlusEv.artifact]);
   // A details file loaded successfully but generated for a different slate
   // than the page is currently showing (e.g. yesterday's committed data
   // still deployed on today's slate). Every row key will fail to match in
@@ -607,6 +614,44 @@ export default function MlbStrikeoutProps() {
             </div>
           )}
           <KBestBetsSection rows={strikeoutDetailRows} />
+
+          <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-3">
+              <div>
+                <h2 className="text-lg font-black text-slate-900">K +EV Table</h2>
+                <p className="text-xs text-slate-500">Standalone K Props +EV V1 model (season K/IP, recent trend, workload, home/away, and lineup-vs-hand matchup). Independent of the K Score model above.</p>
+              </div>
+              <div className="flex flex-wrap gap-2" role="tablist" aria-label="K +EV table visibility">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={!showKPlusEvTable}
+                  onClick={() => setShowKPlusEvTable(false)}
+                  className={cn("rounded-full px-3 py-1.5 text-sm font-semibold transition", !showKPlusEvTable ? "bg-slate-900 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900")}
+                >
+                  Hide
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={showKPlusEvTable}
+                  onClick={() => setShowKPlusEvTable(true)}
+                  className={cn("rounded-full px-3 py-1.5 text-sm font-semibold transition", showKPlusEvTable ? "bg-slate-900 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900")}
+                >
+                  +EV Table
+                </button>
+              </div>
+            </div>
+            {showKPlusEvTable ? (
+              kPlusEv.status === "valid" ? (
+                <KPlusEvTable rows={kPlusEvRows} compact={isCompactLayout} />
+              ) : (
+                <div className="px-3 py-6 text-center text-sm text-slate-500">
+                  {kPlusEv.loading ? "Loading K +EV data…" : "K +EV data is unavailable for today's slate."}
+                </div>
+              )
+            ) : null}
+          </section>
 
           <MlbParkFactorsStrip
             parks={parkRows}
