@@ -1,8 +1,81 @@
 import METHODOLOGY from "../../../config/mlb-numerology-methodology.json";
 import type { DailyProfile, NumerologyScoreBreakdown, NumerologySignal } from "@/types/mlbNumerology";
+import {
+  DEFAULT_SIN_CITY_FIELDS,
+  evaluateSinCityMasonic,
+  type SinCityFieldInclusion,
+} from "./sinCityMasonic";
 
 export type PlayerIdentity = { birthDate?: string | null; jerseyNumber?: number | null };
 export type AuditablePlayer = { playerName: string; jerseyNumber?: number | null; battingOrder?: number | null; numerologyScore: number };
+
+export const NUMEROLOGY_SCORING_FIELDS = [
+  "personalDay",
+  "jersey",
+  "battingOrder",
+  "lifePath",
+  "birthDay",
+  "expression",
+  "repeatedDigit",
+] as const;
+
+export type NumerologyScoringField = (typeof NUMEROLOGY_SCORING_FIELDS)[number];
+export type FieldInclusion = Record<NumerologyScoringField, boolean>;
+
+export const NUMEROLOGY_SIGNAL_TYPE_KEYS = [
+  "exact",
+  "root",
+  "family",
+  "context",
+  "countercurrent",
+] as const;
+
+export type NumerologySignalTypeKey = (typeof NUMEROLOGY_SIGNAL_TYPE_KEYS)[number];
+export type SignalTypeInclusion = Record<NumerologySignalTypeKey, boolean>;
+
+export const DEFAULT_INCLUDED_FIELDS: FieldInclusion = {
+  personalDay: true,
+  jersey: true,
+  battingOrder: true,
+  lifePath: true,
+  birthDay: true,
+  expression: true,
+  repeatedDigit: true,
+};
+
+export const DEFAULT_INCLUDED_SIGNAL_TYPES: SignalTypeInclusion = {
+  exact: true,
+  root: true,
+  family: true,
+  context: true,
+  countercurrent: true,
+};
+
+export interface NumerologyScoringOptions {
+  includedFields?: Partial<FieldInclusion>;
+  includedSignalTypes?: Partial<SignalTypeInclusion>;
+  sinCity?: {
+    included: boolean;
+    fields?: Partial<SinCityFieldInclusion>;
+    currentHrCount?: number | null;
+  };
+}
+
+export function defaultFieldInclusion(overrides?: Partial<FieldInclusion>): FieldInclusion {
+  return { ...DEFAULT_INCLUDED_FIELDS, ...overrides };
+}
+
+export function defaultSignalTypeInclusion(overrides?: Partial<SignalTypeInclusion>): SignalTypeInclusion {
+  return { ...DEFAULT_INCLUDED_SIGNAL_TYPES, ...overrides };
+}
+
+export function signalTypeKey(type: string): NumerologySignalTypeKey {
+  if (type === "countercurrent") return "countercurrent";
+  if (type === "family_support") return "family";
+  if (type === "contextual_echo") return "context";
+  if (type.includes("exact")) return "exact";
+  return "root";
+}
 
 type Reduced = { original: number; compound: number; master: number | null; root: number };
 
@@ -71,8 +144,11 @@ export function calculateNumerologyScoreBreakdown(
   daily: DailyProfile,
   slateDate: string,
   configured?: Record<string, number>,
+  options?: NumerologyScoringOptions,
 ): NumerologyScoreBreakdown {
   const W = { ...DEFAULT_WEIGHTS, ...(configured ?? {}) };
+  const includedFields = defaultFieldInclusion(options?.includedFields);
+  const includedTypes = defaultSignalTypeInclusion(options?.includedSignalTypes);
   const [, monthStr, dayStr] = slateDate.split("-");
   const month = Number(monthStr);
   const day = Number(dayStr);
@@ -106,6 +182,12 @@ export function calculateNumerologyScoreBreakdown(
     rawPoints: number, description: string, key: string, isDirect: boolean,
   ) {
     if (used.has(key)) return;
+    if (field === "age") return;
+    if (field !== "sinCity" && field !== "multiCountercurrent") {
+      const scoringField = field as NumerologyScoringField;
+      if (scoringField in includedFields && includedFields[scoringField] === false) return;
+    }
+    if (includedTypes[signalTypeKey(type)] === false) return;
     used.add(key);
     rawSignals.push({ field, label, type, rawPoints, description, isDirect, tier: getFieldTier(field) });
   }
@@ -183,16 +265,7 @@ export function calculateNumerologyScoreBreakdown(
     }
   }
 
-  // ── Age (Tier2) ───────────────────────────────────────────────────────────
-  if (ageR) {
-    if (udMaster != null && (ageR.original === udMaster || ageR.compound === udMaster)) {
-      awardRaw("age", `Age ${age} — Master Match`, "primary_exact_master", W.ageExactMaster ?? 24, "Age matches Universal Day master.", "age:master", true);
-    } else if (ageR.original === target || ageR.compound === target) {
-      awardRaw("age", `Age ${age} — Exact Target`, "primary_exact_root", W.ageExact, `Age ${age} matches Universal Day ${target}.`, "age:exact", true);
-    } else if (ageR.root === udRoot) {
-      awardRaw("age", `Age ${age} root ${ageR.root} — Reduces to Target`, "primary_root", W.ageRoot, `Age ${age} reduces to root ${ageR.root}.`, "age:root", false);
-    }
-  }
+  // Age is informational profile data only — it never awards points.
 
   // ── Batting order (Tier3) ─────────────────────────────────────────────────
   if (batting != null) {
@@ -207,7 +280,9 @@ export function calculateNumerologyScoreBreakdown(
 
   // ── Repeated digits (Tier3) ───────────────────────────────────────────────
   for (const repeated of daily.repeatedDigits ?? []) {
-    if (repeated.reinforces === "primary" && ((jersey?.root === repeated.digit) || (jersey?.original === repeated.digit) || batting === repeated.digit)) {
+    const jerseyHit = includedFields.jersey && ((jersey?.root === repeated.digit) || (jersey?.original === repeated.digit));
+    const battingHit = includedFields.battingOrder && batting === repeated.digit;
+    if (repeated.reinforces === "primary" && (jerseyHit || battingHit)) {
       awardRaw("repeatedDigit", `Date digit ${repeated.digit} (×${repeated.count}) — Contextual Echo`, "contextual_echo", W.repeatedDateDigit, "Repeated date digit reinforces an existing field.", `repeat:${repeated.digit}`, false);
     }
   }
@@ -244,10 +319,6 @@ export function calculateNumerologyScoreBreakdown(
     finalSignals.push({ field: "multiCountercurrent", label: `${negativeRaw.length} independent countercurrents`, type: "countercurrent", points: penalty, description: "Multiple countercurrents compound." });
   }
 
-  // ── Compute totals ─────────────────────────────────────────────────────────
-  const positiveTotal = finalSignals.filter(s => s.points > 0).reduce((a, s) => a + s.points, 0);
-  const countercurrentTotal = Math.abs(finalSignals.filter(s => s.points < 0).reduce((a, s) => a + s.points, 0));
-
   // ── Synergy bonus ──────────────────────────────────────────────────────────
   const tier1ExactFields = new Set(directPositive.filter(s => s.tier === 1).map(s => s.field));
   // Only primary_root / personal_cycle / name_resonance qualify as root matches for synergy
@@ -259,6 +330,26 @@ export function calculateNumerologyScoreBreakdown(
   } else if (tier1ExactFields.size === 1 && tier1RootFields.size >= 1) {
     synergyBonus = W.synergyExactPlusRootTier1 ?? 4;
   }
+
+  const sinCity = evaluateSinCityMasonic({
+    included: options?.sinCity?.included === true,
+    fields: options?.sinCity?.fields ?? DEFAULT_SIN_CITY_FIELDS,
+    includedSignalTypes: {
+      exact: includedTypes.exact,
+      root: includedTypes.root,
+      family: includedTypes.family,
+    },
+    jerseyNumber: jerseyNo,
+    battingOrder: batting,
+    birthDay,
+    lifePath: life,
+    currentHrCount: options?.sinCity?.currentHrCount ?? null,
+    daily,
+    weights: (METHODOLOGY as { sinCity?: Partial<import("./sinCityMasonic").SinCityWeights> }).sinCity,
+  });
+
+  const positiveTotal = finalSignals.filter(s => s.points > 0).reduce((a, s) => a + s.points, 0);
+  const countercurrentTotal = Math.abs(finalSignals.filter(s => s.points < 0).reduce((a, s) => a + s.points, 0));
 
   const normCeiling = W.normCeiling ?? 76;
   const convergenceBonus = 0;
@@ -300,6 +391,7 @@ export function calculateNumerologyScoreBreakdown(
       age: ageR ? `${age} (${fmt(ageR)})` : null,
       expression: fmt(expr),
     },
+    sinCity,
     missingData,
   };
 }

@@ -436,18 +436,7 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
     }
   }
 
-  // ── Age (Tier2) ───────────────────────────────────────────────────────────
-  const age = playerProfile.age;
-  if (age != null) {
-    const ageR = reduce(age);
-    if (ud.master != null && (ageR.original === ud.master || ageR.compound === ud.master)) {
-      awardRaw("age", `Age ${age} — Master Match`, "primary_exact_master", W.ageExactMaster ?? 24, `Age ${age} matches Universal Day master.`, "age:master", true);
-    } else if (ageR.original === ud.rawSum || ageR.compound === ud.rawSum) {
-      awardRaw("age", `Age ${age} — Exact Target`, "primary_exact_root", W.ageExact, `Age ${age} matches Universal Day ${ud.rawSum}.`, "age:exact", true);
-    } else if (ageR.root === ud.root) {
-      awardRaw("age", `Age ${age} root ${ageR.root} — Reduces to Target`, "primary_root", W.ageRoot, `Age ${age} reduces to root ${ageR.root}.`, "age:root", false);
-    }
-  }
+  // Age is informational profile data only and never awards points.
 
   // ── Batting order (Tier3) ─────────────────────────────────────────────────
   const bo = playerProfile.battingOrder;
@@ -853,14 +842,12 @@ async function main() {
     };
 
     addExact("jersey", profile.jerseyNumber, `Jersey #${profile.jerseyNumber}`);
-    addExact("age", profile.age, `Age ${profile.age}`);
     addExact("birthDay", profile.birthDayNum?.original, `Born on day ${profile.birthDayNum?.original}`);
     addExact("personalDay", profile.personalDay?.original, `Personal Day ${profile.personalDay?.original}`);
     addExact("lifePath", profile.lifePath?.original, `Life Path ${profile.lifePath?.original}`);
     addExact("expression", profile.expressionNum?.original, `Expression ${profile.expressionNum?.original}`);
 
     addRoot("jersey", profile.jerseyReduced, `Jersey #${profile.jerseyNumber} → ${targetRoot}`);
-    addRoot("age", profile.ageReduced, `Age ${profile.age} → ${targetRoot}`);
     addRoot("birthDay", profile.birthDayNum, `Birth day ${profile.birthDayNum?.original} → ${targetRoot}`);
     addRoot("personalDay", profile.personalDay, `Personal Day ${profile.personalDay?.original} → ${targetRoot}`);
     addRoot("lifePath", profile.lifePath, `Life Path ${profile.lifePath?.original} → ${targetRoot}`);
@@ -977,7 +964,7 @@ async function main() {
     : [];
   const watchlist = candidates.filter(c => c.numerologyScore < 60 && c.numerologyScore >= 45).slice(0, 6);
   const countercurrents = candidates.filter(c => c.countercurrentTotal > 0 && c.numerologyScore < 40).slice(0, 3);
-  const exactFieldPriority = { jersey: 0, personalDay: 1, lifePath: 2, birthDay: 3, age: 4, expression: 5 };
+  const exactFieldPriority = { jersey: 0, personalDay: 1, lifePath: 2, birthDay: 3, expression: 4 };
   const exactNumberMatches = candidates
     .filter(c => c.exactNumberMatches.length > 0)
     .sort((a, b) => {

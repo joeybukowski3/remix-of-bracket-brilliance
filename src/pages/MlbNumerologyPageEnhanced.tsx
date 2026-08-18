@@ -103,7 +103,7 @@ export default function MlbNumerologyPageEnhanced() {
           </aside>
 
           {/* ── Main content ─────────────────────────────────────────────────── */}
-          <main className="min-w-0 flex-1 px-4 py-3 sm:px-6 lg:px-8">
+          <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-3 sm:px-6 lg:px-8">
 
             {/* ── Page header — compact ──────────────────────────────────────── */}
             <header className="mb-2 border-b border-[#494454] pb-2">
@@ -208,7 +208,15 @@ export default function MlbNumerologyPageEnhanced() {
               </section>
 
               {/* ── Player Explorer ──────────────────────────────────────────── */}
-              <NumerologyExplorer exact={exact} root={root} hrBatters={hrBatters} />
+              <NumerologyExplorer
+                exact={exact}
+                root={root}
+                hrBatters={hrBatters}
+                identities={identities}
+                dailyProfile={profile}
+                slateDate={data.date}
+                weights={isCandidateMode ? undefined : data.scoringConfiguration?.weights}
+              />
 
               {/* ── Exact & Root match sections ──────────────────────────────── */}
               <section id="exact-matches" className="mb-4 scroll-mt-20">

@@ -31,7 +31,7 @@ function normName(s: string): string {
     .trim();
 }
 
-function matchHrBatter(player: ExplorerRow, batters: HrDashboardBatter[]): HrDashboardBatter | null {
+export function matchHrBatter(player: ExplorerRow, batters: HrDashboardBatter[]): HrDashboardBatter | null {
   const pn = normName(player.playerName);
   const pt = player.team?.toUpperCase();
   // Try exact name + team match first
@@ -77,9 +77,9 @@ function Tile({
   wide?: boolean;
 }) {
   return (
-    <div className={`rounded border px-2 py-2 text-center ${TONE_CLASSES[tone]}`}>
-      <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-[11px]">{label}</p>
-      <p className="mt-0.5 font-mono text-[13px] font-bold tabular-nums sm:text-[14px]">{value ?? em}</p>
+    <div className={`min-w-0 rounded border px-2 py-2 text-center ${TONE_CLASSES[tone]}`}>
+      <p className="break-words text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-[11px]">{label}</p>
+      <p className="mt-0.5 break-words font-mono text-[13px] font-bold tabular-nums sm:text-[14px]">{value ?? em}</p>
     </div>
   );
 }
@@ -87,7 +87,7 @@ function Tile({
 // ── Signal chips in collapsed row ─────────────────────────────────────────────
 
 function SignalChips({ player, limit }: { player: ExplorerRow; limit?: number }) {
-  const signals = player.scoreBreakdown?.signals ?? [];
+  const signals = (player.scoreBreakdown?.signals ?? []).filter(s => s.field !== "age");
   const visible = limit ? signals.slice(0, limit) : signals;
   return (
     <div className="flex flex-wrap gap-1">
@@ -106,7 +106,7 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
   const breakdown = player.scoreBreakdown;
   const id = Number(player.playerId ?? player.personId);
   const hasHeadshot = Number.isFinite(id) && id > 0;
-  const signals = breakdown?.signals ?? [];
+  const signals = (breakdown?.signals ?? []).filter(s => s.field !== "age");
   const posSignals = signals.filter(s => s.points > 0);
   const negSignals = signals.filter(s => s.points < 0);
   const profile = breakdown?.profile;
@@ -118,20 +118,21 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
   const sectionHead = "text-[10px] font-bold uppercase tracking-wide sm:text-xs";
 
   return (
-    <div className="border-t border-[#2a304d] bg-[#0c0e16] p-3">
+    <div className="overflow-x-hidden border-t border-[#2a304d] bg-[#0c0e16] p-3">
       {/* ── Top zone ── */}
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
 
         {/* LEFT — headshot + score tiles */}
-        <div className="flex w-[130px] shrink-0 flex-col gap-2">
+        <div className="flex w-full shrink-0 flex-row items-start gap-2 sm:w-[130px] sm:flex-col">
           {/* Circular headshot */}
-          <div className="relative h-[76px] w-[76px] self-center overflow-hidden rounded-full border border-[#494454] bg-[#1d1f28]">
+          <div className="relative h-[64px] w-[64px] shrink-0 overflow-hidden rounded-full border border-[#494454] bg-[#1d1f28] sm:h-[76px] sm:w-[76px] sm:self-center">
             {hasHeadshot
               ? <MlbPlayerHeadshot playerId={id} playerName={player.playerName} className="absolute inset-0 h-full w-full object-cover" />
               : <div className="grid h-full place-items-center font-bold text-xl text-[#d0bcff]">{player.team?.slice(0, 2)}</div>
             }
           </div>
 
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:flex sm:flex-col">
           {/* Numerology tile */}
           <div className={`rounded border px-2.5 py-2 text-center ${TONE_CLASSES.purple}`}>
             <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Numerology</p>
@@ -157,16 +158,24 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
             <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Model Rating</p>
             <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(player.baseballScore)}</p>
           </div>
+          {breakdown?.sinCity?.included && (
+            <div className={`col-span-2 rounded border px-2.5 py-2 text-center sm:col-span-1 ${TONE_CLASSES.gold}`}>
+              <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Sin City Score</p>
+              <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(breakdown.sinCity.score)}</p>
+              <p className="mt-0.5 text-[10px] text-[#958ea0]">{breakdown.sinCity.matchCount}/5 symbols</p>
+            </div>
+          )}
+          </div>
         </div>
 
         {/* RIGHT — profile + stats + signals + summary */}
-        <div className="min-w-0 flex-1 space-y-3">
+        <div className="min-w-0 flex-1 space-y-3 overflow-x-hidden">
 
           {/* Player profile tiles */}
           {profile && (
             <div>
               <p className={`mb-2 ${sectionHead} text-[#e9c349]`}>Profile</p>
-              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+              <div className="grid grid-cols-2 gap-1.5 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-6">
                 {[
                   ["Personal Day", profile.personalDay],
                   ["Jersey", profile.jersey],
@@ -184,7 +193,7 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
           {/* HR Model stats */}
           <div>
             <p className={`mb-2 ${sectionHead} text-[#89ceff]`}>HR Model Stats</p>
-            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-6">
               <Tile label="HR Odds" value={hrBatter?.hrOddsYes ?? em} tone="gold" />
               <Tile label="HR Score" value={hrBatter ? num(hrBatter.hrScore, 1) : em} tone="blue" />
               <Tile label="Barrel%" value={hrBatter ? pct(hrBatter.barrelRate) : em} tone="green" />
@@ -192,7 +201,7 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
               <Tile label="L7 HR" value={hrBatter?.last7HR != null ? String(hrBatter.last7HR) : em} tone="green" />
               <Tile label="L30 HR" value={hrBatter?.last30HR != null ? String(hrBatter.last30HR) : em} tone="green" />
             </div>
-            <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-6">
               <Tile label="Ptch HR VS" value={hrBatter ? num(hrBatter.opposingPitcherHrVs, 1) : em} tone="red" />
               <Tile label="xERA" value={hrBatter ? num(hrBatter.pitcherXera, 2) : em} tone="red" />
               <Tile label="FB%" value={hrBatter ? pct(hrBatter.pitcherFlyBallRate) : em} tone="red" />
@@ -208,8 +217,8 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
               <p className={`mb-2 ${sectionHead} text-[#d0bcff]`}>Signals</p>
               <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {posSignals.map((s, i) => (
-                  <div key={`${s.field}-${i}`} className={`flex items-center justify-between rounded border px-2 py-1 text-[11px] ${signalTone(s)}`}>
-                    <span className="truncate pr-2">{s.label}</span>
+                  <div key={`${s.field}-${i}`} className={`flex items-start justify-between gap-2 rounded border px-2 py-1 text-[11px] ${signalTone(s)}`}>
+                    <span className="min-w-0 break-words pr-2">{s.label}</span>
                     <span className="font-mono font-bold shrink-0">+{s.points}</span>
                   </div>
                 ))}
@@ -223,8 +232,8 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
               <p className={`mb-2 ${sectionHead} text-[#ffb4ab]`}>Penalties</p>
               <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {negSignals.map((s, i) => (
-                  <div key={`${s.field}-${i}`} className={`flex items-center justify-between rounded border px-2 py-1 text-[11px] ${signalTone(s)}`}>
-                    <span className="truncate pr-2">{s.label}</span>
+                  <div key={`${s.field}-${i}`} className={`flex items-start justify-between gap-2 rounded border px-2 py-1 text-[11px] ${signalTone(s)}`}>
+                    <span className="min-w-0 break-words pr-2">{s.label}</span>
                     <span className="font-mono font-bold shrink-0">{s.points}</span>
                   </div>
                 ))}
@@ -232,10 +241,35 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
             </div>
           )}
 
+          {breakdown?.sinCity && (
+            <div>
+              <p className={`mb-2 ${sectionHead} text-[#e9c349]`}>Sin City Masonic Symbols</p>
+              {breakdown.sinCity.included ? (
+                <>
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-5">
+                    {(breakdown.sinCity.matches.length > 0 ? breakdown.sinCity.matches : []).map((match) => (
+                      <Tile
+                        key={match.field}
+                        label={match.field === "currentHrCount" ? "Current HR Count" : match.field === "battingOrder" ? "Lineup Spot" : match.field === "birthDay" ? "Birthday" : match.field === "lifePath" ? "Life Path" : "Jersey #"}
+                        value={match.value ?? (match.matchKind === "missing" ? "—" : match.matchKind)}
+                        tone={match.points > 0 ? "gold" : "default"}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-[#958ea0]">
+                    Sin City Score {breakdown.sinCity.score}/100 · {breakdown.sinCity.matchCount} of {breakdown.sinCity.matches.length || 5} symbols · raw {breakdown.sinCity.bonus}/{breakdown.sinCity.rawCeiling ?? 21}. Standalone grade — not added to the Base Numerology Score.
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-[#958ea0]">Sin City excluded from this score.</p>
+              )}
+            </div>
+          )}
+
           {/* Score summary */}
           {breakdown && (
             <div className="border-t border-[#494454]/40 pt-2 space-y-1.5">
-              <div className="grid grid-cols-6 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-6">
                 {[
                   { label: "Positive", val: `+${breakdown.positiveTotal}`, cls: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" },
                   { label: "Penalty", val: `-${breakdown.countercurrentTotal}`, cls: "border-red-400/20 bg-red-400/10 text-red-300" },
@@ -280,8 +314,18 @@ export function nextSortState(current: SortState, field: SortField): SortState {
  * the secondary/tertiary tie-breakers always favor higher score / earlier
  * alphabetically, matching the brief's example exactly.
  */
+export function compareRowsByNumerologyScore(a: ExplorerRow, b: ExplorerRow): number {
+  const aScore = a.numerologyScore ?? 0;
+  const bScore = b.numerologyScore ?? 0;
+  if (bScore !== aScore) return bScore - aScore;
+  const aModel = a.baseballScore ?? 0;
+  const bModel = b.baseballScore ?? 0;
+  if (bModel !== aModel) return bModel - aModel;
+  return a.playerName.localeCompare(b.playerName);
+}
+
 export function compareRowsBySort(a: ExplorerRow, b: ExplorerRow, sort: SortState): number {
-  if (!sort) return 0;
+  if (!sort) return compareRowsByNumerologyScore(a, b);
   const { field, direction } = sort;
   const otherField: SortField = field === "numerologyScore" ? "baseballScore" : "numerologyScore";
 
@@ -298,104 +342,17 @@ export function compareRowsBySort(a: ExplorerRow, b: ExplorerRow, sort: SortStat
   return a.playerName.localeCompare(b.playerName);
 }
 
-function ariaSortFor(sort: SortState, field: SortField): "descending" | "ascending" | "none" {
-  if (!sort || sort.field !== field) return "none";
-  return sort.direction === "desc" ? "descending" : "ascending";
-}
-
-function SortIcon({ direction }: { direction: SortDirection | null }) {
-  if (direction === "desc") {
-    return (
-      <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" fill="none" aria-hidden="true">
-        <path d="M8 3v9M4.5 9 8 12.5 11.5 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (direction === "asc") {
-    return (
-      <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" fill="none" aria-hidden="true">
-        <path d="M8 13V4M4.5 7 8 3.5 11.5 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0 opacity-50" fill="none" aria-hidden="true">
-      <path d="M5 6.5 8 3.5 11 6.5M5 9.5 8 12.5 11 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function SortableHeader({
-  field,
-  label,
-  sort,
-  onSort,
-  className = "",
-}: {
-  field: SortField;
-  label: string;
-  sort: SortState;
-  onSort: (field: SortField) => void;
-  className?: string;
-}) {
-  const active = sort?.field === field;
-  const direction = active ? sort!.direction : null;
-  return (
-    <th
-      scope="col"
-      aria-sort={ariaSortFor(sort, field)}
-      className={`px-3 py-2 font-medium tabular-nums ${className}`}
-    >
-      <button
-        type="button"
-        onClick={() => onSort(field)}
-        aria-label={`Sort by ${label}`}
-        className={`flex min-h-[28px] items-center gap-1 rounded px-1 -mx-1 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a078ff] ${active ? "text-[#d0bcff]" : "text-[#958ea0] hover:text-[#e2e1ee]"}`}
-      >
-        {label}
-        <SortIcon direction={direction} />
-      </button>
-    </th>
-  );
-}
-
 // ── ExplorerTable ─────────────────────────────────────────────────────────────
 
-export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { rows: ExplorerRow[]; hrBatters?: HrDashboardBatter[]; sort?: SortState; onSort?: (field: SortField) => void }) {
+export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: ExplorerRow[]; hrBatters?: HrDashboardBatter[]; sort?: SortState; onSort?: (field: SortField) => void }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const toggle = (key: string) => setOpenKey(prev => prev === key ? null : key);
-  const sortedRows = sort ? [...rows].sort((a, b) => compareRowsBySort(a, b, sort)) : rows;
-  const handleSort = (field: SortField) => onSort?.(field);
+  const sortedRows = [...rows].sort((a, b) => sort ? compareRowsBySort(a, b, sort) : compareRowsByNumerologyScore(a, b));
 
   return (
     <>
-      {/* Mobile sort controls */}
-      <div className="flex items-center gap-1.5 border-b border-[#494454]/40 px-3 py-2 md:hidden">
-        <span className="text-[10px] font-bold uppercase tracking-wide text-[#958ea0]">Sort</span>
-        <button
-          type="button"
-          onClick={() => handleSort("numerologyScore")}
-          aria-label="Sort by Numerology Score"
-          aria-pressed={sort?.field === "numerologyScore"}
-          className={`flex min-h-[32px] items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a078ff] ${sort?.field === "numerologyScore" ? "border-[#d0bcff] bg-[#d0bcff]/15 text-[#d0bcff]" : "border-[#494454] text-[#cbc3d7]"}`}
-        >
-          Numerology
-          <SortIcon direction={sort?.field === "numerologyScore" ? sort.direction : null} />
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSort("baseballScore")}
-          aria-label="Sort by Model Rating"
-          aria-pressed={sort?.field === "baseballScore"}
-          className={`flex min-h-[32px] items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a078ff] ${sort?.field === "baseballScore" ? "border-[#89ceff] bg-[#89ceff]/15 text-[#89ceff]" : "border-[#494454] text-[#cbc3d7]"}`}
-        >
-          Model
-          <SortIcon direction={sort?.field === "baseballScore" ? sort.direction : null} />
-        </button>
-      </div>
-
       {/* Mobile cards */}
-      <div className="space-y-1.5 px-3 pb-3 md:hidden">
+      <div className="space-y-1.5 overflow-x-hidden px-3 pb-3 md:hidden">
         {sortedRows.map((player) => {
           const key = `${player.playerName}-${player.team}`;
           const open = openKey === key;
@@ -409,27 +366,35 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { r
                 className="w-full p-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#a078ff]"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
                     <MlbTeamLogo team={player.team} size={38} />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#e2e1ee]">{player.playerName}</p>
-                      <p className="truncate text-xs text-[#958ea0]">{player.team} vs {player.opponent}</p>
+                      <p className="break-words text-sm font-semibold leading-tight text-[#e2e1ee]">{player.playerName}</p>
+                      <p className="break-words text-xs text-[#958ea0]">{player.team} vs {player.opponent}</p>
                       <p className="text-[10px] text-[#958ea0]">AB: {player.recentActivity?.atBatsPrevious2 ?? 0}/2g · {player.recentActivity?.atBatsPrevious5 ?? 0}/5g</p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2 text-right">
-                    <div>
-                      <p className="font-mono text-base font-bold text-[#d0bcff]">{safe(player.numerologyScore)}</p>
+                  <div className="flex shrink-0 items-start gap-2 text-right">
+                    <div className="min-w-[52px]">
+                      <p className="font-mono text-base font-bold tabular-nums text-[#d0bcff]">{safe(player.numerologyScore)}</p>
                       <p className="text-[10px] uppercase tracking-wide text-[#958ea0]">Num.</p>
                     </div>
-                    <ChevronDown className={`h-4 w-4 text-[#958ea0] transition-transform ${open ? "rotate-180" : ""}`} />
+                    <div className="min-w-[52px]">
+                      <p className="font-mono text-base font-bold tabular-nums text-[#89ceff]">{safe(player.baseballScore)}</p>
+                      <p className="text-[10px] uppercase tracking-wide text-[#958ea0]">Model</p>
+                    </div>
+                    <ChevronDown className={`mt-1 h-4 w-4 text-[#958ea0] transition-transform ${open ? "rotate-180" : ""}`} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-full border border-[#494454] px-2 py-0.5 text-[10px] text-[#cbc3d7]">{player.matchType}</span>
-                  <span className="text-[11px] text-[#89ceff]">Model {safe(player.baseballScore)}</span>
+                  {player.scoreBreakdown?.sinCity?.included && (
+                    <span className="rounded-full border border-[#e9c349]/30 px-2 py-0.5 text-[10px] text-[#f6dc71]">
+                      Sin City {safe(player.scoreBreakdown.sinCity.score)}
+                    </span>
+                  )}
                 </div>
-                <div className="mt-2"><SignalChips player={player} limit={3} /></div>
+                <div className="mt-2"><SignalChips player={player} /></div>
               </button>
               {open && <ExpandedDetail player={player} hrBatter={hrBatter} />}
             </article>
@@ -446,8 +411,19 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { r
               <th className="w-[260px] px-3 py-2 font-medium">Player</th>
               <th className="w-[110px] px-3 py-2 font-medium">Match Type</th>
               <th className="px-3 py-2 font-medium">Signals</th>
-              <SortableHeader field="numerologyScore" label="Numerology Score" sort={sort} onSort={handleSort} className="w-[110px]" />
-              <SortableHeader field="baseballScore" label="Model Rating" sort={sort} onSort={handleSort} className="w-[110px]" />
+              <th
+                scope="col"
+                aria-sort="descending"
+                className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#d0bcff]"
+              >
+                Numerology Score
+              </th>
+              <th scope="col" aria-sort="none" className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#958ea0]">
+                Model Rating
+              </th>
+              <th scope="col" className="w-[90px] px-3 py-2 font-medium tabular-nums text-[#f6dc71]">
+                Sin City Score
+              </th>
               <th className="w-[40px] px-3 py-2"></th>
             </tr>
           </thead>
@@ -476,13 +452,16 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { r
                     <td className="border-b border-[#494454]/30 px-3 py-2"><SignalChips player={player} limit={4} /></td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{player.numerologyScore}</td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{safe(player.baseballScore)}</td>
+                    <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums text-[#f6dc71]">
+                      {player.scoreBreakdown?.sinCity?.included ? safe(player.scoreBreakdown.sinCity.score) : em}
+                    </td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 text-right">
                       <ChevronDown className={`h-4 w-4 text-[#958ea0] transition-transform ${open ? "rotate-180" : ""}`} />
                     </td>
                   </tr>
                   {open && (
                     <tr>
-                      <td colSpan={6} className="border-b border-[#494454]/30 p-0">
+                      <td colSpan={7} className="border-b border-[#494454]/30 p-0">
                         <ExpandedDetail player={player} hrBatter={hrBatter} />
                       </td>
                     </tr>
@@ -490,7 +469,7 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { r
                 </Fragment>
               );
             })}
-            {sortedRows.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#958ea0]">No players match the selected filters.</td></tr>}
+            {sortedRows.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-[#958ea0]">No players match the selected filters.</td></tr>}
           </tbody>
         </table>
       </div>
