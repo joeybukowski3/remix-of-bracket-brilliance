@@ -2148,6 +2148,7 @@ export function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-pitcher={r.pitcher}
               data-k-team={r.team}
               data-k-opponent={r.opponent}
+              data-k-game-id={r.gameId ?? ""}
               data-k-score={safeScore}
               data-k-rate={r.pitcherKRate ?? ""}
               data-k-whiff-rate={r.pitcherWhiffRate ?? ""}
@@ -2242,6 +2243,7 @@ export function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-pitcher={r.pitcher}
               data-k-team={r.team}
               data-k-opponent={r.opponent}
+              data-k-game-id={r.gameId ?? ""}
               data-k-score={safeScore}
               data-k-rate={r.pitcherKRate ?? ""}
               data-k-whiff-rate={r.pitcherWhiffRate ?? ""}

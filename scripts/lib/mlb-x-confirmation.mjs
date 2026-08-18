@@ -172,9 +172,26 @@ async function fetchJson(url, fetchImpl) {
 }
 
 /**
+ * Is this schedule game part of a doubleheader? StatsAPI's `doubleHeader`
+ * field is a code, not a boolean -- "Y" (traditional doubleheader) and "S"
+ * (split-admission doubleheader) both mean two games; "N" means a normal
+ * single game. A normal game still carries a numeric `gameNumber` (usually
+ * 1), so `gameNumber` alone is NEVER used to infer doubleheader status --
+ * only the authoritative `doubleHeader` code is. See mlb-bullpen-workload.mjs
+ * and mlb-hr-grading.mjs for the same convention elsewhere in this repo.
+ */
+export function isDoubleheaderCode(doubleHeader) {
+  return doubleHeader === "Y" || doubleHeader === "S";
+}
+
+/**
  * Live schedule with current listed starters. Returns a normalized array of
- * `{ gamePk, gameDate, status, away, home }` where away/home carry the
- * current probablePitcher `{ id, name }` and team abbreviation.
+ * `{ gamePk, gameDate, gameNumber, doubleHeader, status, away, home }` where
+ * away/home carry the current probablePitcher `{ id, name }` and team
+ * abbreviation. `gameNumber` is an integer when StatsAPI provides one,
+ * otherwise `null`; `doubleHeader` preserves the raw "N"/"Y"/"S" schedule
+ * code (see isDoubleheaderCode for how to interpret it) rather than being
+ * collapsed to a boolean here, so callers keep the authoritative value.
  */
 export async function fetchScheduleWithStarters({ date, fetchImpl = fetch } = {}) {
   const url = `${STATS_API}/schedule?sportId=1&date=${date}&hydrate=team,linescore,probablePitcher`;
@@ -183,6 +200,8 @@ export async function fetchScheduleWithStarters({ date, fetchImpl = fetch } = {}
   return games.map((game) => ({
     gamePk: game.gamePk ?? null,
     gameDate: game.gameDate ?? null,
+    gameNumber: Number.isInteger(game.gameNumber) ? game.gameNumber : toFiniteNumber(game.gameNumber),
+    doubleHeader: typeof game.doubleHeader === "string" ? game.doubleHeader : null,
     status: game.status ?? null,
     away: {
       abbreviation: game?.teams?.away?.team?.abbreviation ?? null,

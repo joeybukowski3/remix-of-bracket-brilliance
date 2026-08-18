@@ -336,6 +336,72 @@ describe("doubleheader", () => {
       [111, 222],
     );
   });
+
+  it("labels a normal (non-doubleheader) game with no G1/G2 suffix", () => {
+    const pool = [hrRow({ team: "NYY", opponent: "BOS", gameNumber: 1, isDoubleheader: false }), hrRow({ playerId: 2, player: "Other" })];
+    const plan = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: pool, ...BASE_PLAN_ARGS });
+    assert.equal(plan.rows[0].gameLabel, "NYY vs BOS");
+  });
+
+  it("labels doubleheader game 1 with a G1 suffix", () => {
+    const pool = [hrRow({ team: "NYY", opponent: "BOS", gameNumber: 1, isDoubleheader: true }), hrRow({ playerId: 2, player: "Other" })];
+    const plan = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: pool, ...BASE_PLAN_ARGS });
+    assert.equal(plan.rows[0].gameLabel, "NYY vs BOS — G1");
+    assert.equal(plan.rows[0].isDoubleheader, true);
+  });
+
+  it("labels doubleheader game 2 with a G2 suffix", () => {
+    const pool = [hrRow({ team: "NYY", opponent: "BOS", gameNumber: 2, isDoubleheader: true }), hrRow({ playerId: 2, player: "Other" })];
+    const plan = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: pool, ...BASE_PLAN_ARGS });
+    assert.equal(plan.rows[0].gameLabel, "NYY vs BOS — G2");
+  });
+
+  it("does not fabricate a leg suffix when isDoubleheader is true but gameNumber is unknown", () => {
+    const pool = [hrRow({ team: "NYY", opponent: "BOS", gameNumber: null, isDoubleheader: true }), hrRow({ playerId: 2, player: "Other" })];
+    const plan = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: pool, ...BASE_PLAN_ARGS });
+    assert.equal(plan.rows[0].gameLabel, "NYY vs BOS");
+    assert.equal(plan.rows[0].isDoubleheader, true);
+  });
+
+  it("does not append a suffix merely because a numeric gameNumber exists on a non-doubleheader game", () => {
+    const pool = [hrRow({ team: "NYY", opponent: "BOS", gameNumber: 1, isDoubleheader: false }), hrRow({ playerId: 2, player: "Other" })];
+    const plan = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: pool, ...BASE_PLAN_ARGS });
+    assert.equal(plan.rows[0].gameLabel, "NYY vs BOS");
+  });
+
+  it("keeps the same player's two doubleheader legs independently eligible with distinct G1/G2 labels", () => {
+    const pool = [
+      hrRow({ playerId: 1, gameId: 111, player: "Same Player", hrScore: 90, team: "NYY", opponent: "BOS", gameNumber: 1, isDoubleheader: true }),
+      hrRow({ playerId: 1, gameId: 222, player: "Same Player", hrScore: 70, team: "NYY", opponent: "BOS", gameNumber: 2, isDoubleheader: true }),
+    ];
+    const plan = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: pool, ...BASE_PLAN_ARGS });
+    assert.equal(plan.rows.length, 2);
+    assert.deepEqual(
+      plan.rows.map((r) => r.gameId),
+      [111, 222],
+    );
+    assert.deepEqual(
+      plan.rows.map((r) => r.gameLabel),
+      ["NYY vs BOS — G1", "NYY vs BOS — G2"],
+    );
+  });
+
+  it("fingerprint differs between G1 and G2 for the same player/team/opponent", () => {
+    const g1Row = hrRow({ team: "NYY", opponent: "BOS", gameId: 201, gameNumber: 1, isDoubleheader: true });
+    const g2Row = hrRow({ team: "NYY", opponent: "BOS", gameId: 202, gameNumber: 2, isDoubleheader: true });
+    const planG1 = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: [g1Row, hrRow({ playerId: 2, player: "Other" })], ...BASE_PLAN_ARGS });
+    const planG2 = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: [g2Row, hrRow({ playerId: 2, player: "Other" })], ...BASE_PLAN_ARGS });
+    assert.notEqual(planG1.rowFingerprint, planG2.rowFingerprint);
+  });
+
+  it("fingerprint is unchanged when only non-visible metadata (gameStartTime) changes", () => {
+    const base = hrRow({ team: "NYY", opponent: "BOS", gameId: 201, gameNumber: 1, isDoubleheader: true, gameStartTime: "2026-08-18T17:05:00Z" });
+    const later = hrRow({ team: "NYY", opponent: "BOS", gameId: 201, gameNumber: 1, isDoubleheader: true, gameStartTime: "2026-08-18T19:05:00Z" });
+    const other = hrRow({ playerId: 2, player: "Other" });
+    const planBase = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: [base, other], ...BASE_PLAN_ARGS });
+    const planLater = composeSocialPostPlan({ product: SOCIAL_PRODUCT.HR, candidatePool: [later, other], ...BASE_PLAN_ARGS });
+    assert.equal(planBase.rowFingerprint, planLater.rowFingerprint);
+  });
 });
 
 describe("fingerprint", () => {

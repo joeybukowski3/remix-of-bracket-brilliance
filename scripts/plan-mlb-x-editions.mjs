@@ -148,7 +148,17 @@ async function main() {
       const dataFresh = pageData.date === slateDate;
       const enriched = (dataFresh ? pageData.rows : []).map((row) => {
         const facts = resolveKRowFacts(snapshot, row);
-        return { ...row, isCurrentStarter: facts.isCurrentStarter, gameStarted: facts.gameStarted, opposingLineupConfirmed: facts.opposingLineupConfirmed, gameId: facts.gamePk, pitcherId: facts.starterId };
+        return {
+          ...row,
+          isCurrentStarter: facts.isCurrentStarter,
+          gameStarted: facts.gameStarted,
+          opposingLineupConfirmed: facts.opposingLineupConfirmed,
+          gameId: facts.gamePk,
+          pitcherId: facts.starterId,
+          gameNumber: facts.gameNumber,
+          gameStartTime: facts.gameDate,
+          isDoubleheader: facts.isDoubleheader,
+        };
       });
       kMorningSelection = buildKMorningSelection({ rows: enriched });
       kConfirmedSelection = buildKConfirmedSelection({ rows: enriched });
@@ -171,10 +181,14 @@ async function main() {
     const dateMismatch = Boolean(hrArtifactSlateDate && hrArtifactSlateDate !== slateDate);
     const batters = Array.isArray(raw?.batters) ? raw.batters.map(normalizeHrBatter).filter(Boolean) : [];
     const currentBatters = dateMismatch ? [] : batters;
+    const enrichedBatters = currentBatters.map((row) => {
+      const facts = resolveHrRowFacts(snapshot, row);
+      return { ...row, gameNumber: facts.gameNumber, gameStartTime: facts.gameDate, isDoubleheader: facts.isDoubleheader };
+    });
     const isGameStarted = (row) => resolveHrRowFacts(snapshot, row).gameStarted;
     const liveConfirm = (row) => resolveHrRowFacts(snapshot, row).liveConfirmed;
-    hrMorningSelection = buildHrMorningSelection({ batters: currentBatters, isGameStarted });
-    hrConfirmedSelection = buildHrConfirmedSelection({ batters: currentBatters, isGameStarted, liveConfirm });
+    hrMorningSelection = buildHrMorningSelection({ batters: enrichedBatters, isGameStarted });
+    hrConfirmedSelection = buildHrConfirmedSelection({ batters: enrichedBatters, isGameStarted, liveConfirm });
     hrAvailable = true;
     console.log(`[plan-mlb-x-editions] HR: rawDate=${hrArtifactSlateDate || "missing"} dateMismatch=${dateMismatch} morning=${hrMorningSelection.selectedRows.length} confirmedValue=${hrConfirmedSelection.selectedRows.length} promoted=${hrConfirmedSelection.selectedLineupStatus.promotedFromLiveCount}`);
   } catch (error) {

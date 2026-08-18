@@ -35,8 +35,10 @@
  * @property {string|null} team
  * @property {string|null} opponent
  * @property {number|string|null} gameId
- * @property {number|null} gameNumber    null until acquisition reliably populates it (Phase 2)
- * @property {string|null} gameLabel     non-doubleheader label derived from team/opponent only
+ * @property {number|null} gameNumber    leg number (1/2) when isDoubleheader is true, else null
+ * @property {string|null} gameStartTime scheduled start timestamp (StatsAPI gameDate), metadata only -- not part of the fingerprint
+ * @property {boolean} isDoubleheader    true only when the authoritative schedule marks this game a doubleheader (StatsAPI doubleHeader "Y"/"S")
+ * @property {string|null} gameLabel     "TEAM vs OPP", with " — G1"/" — G2" appended only when isDoubleheader is true and gameNumber is known
  * @property {KPostRowContent|HrPostRowContent} content
  *
  * @typedef {object} SocialPostPlanReadiness
