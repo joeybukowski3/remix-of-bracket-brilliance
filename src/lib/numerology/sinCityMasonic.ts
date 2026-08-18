@@ -53,7 +53,21 @@ export interface SinCityEvaluation {
   fieldPoints: number;
   comboBonus: number;
   bonus: number;
+  /** Standalone 0–100 grade against SIN_CITY_RAW_CEILING. Never folded into the /76 base ledger. */
+  score: number;
+  rawCeiling: number;
 }
+
+export const SIN_CITY_RAW_CEILING = 21;
+
+export type SinCitySignalTypeKey = "exact" | "root" | "family";
+export type SinCitySignalTypeInclusion = Record<SinCitySignalTypeKey, boolean>;
+
+export const DEFAULT_SIN_CITY_SIGNAL_TYPES: SinCitySignalTypeInclusion = {
+  exact: true,
+  root: true,
+  family: true,
+};
 
 export const DEFAULT_SIN_CITY_FIELDS: SinCityFieldInclusion = {
   jersey: true,
@@ -146,6 +160,7 @@ const FIELD_LABELS: Record<SinCityFieldKey, string> = {
 export interface SinCityInput {
   included: boolean;
   fields?: Partial<SinCityFieldInclusion>;
+  includedSignalTypes?: Partial<SinCitySignalTypeInclusion>;
   jerseyNumber?: number | null;
   battingOrder?: number | null;
   birthDay?: Reduced | null;
@@ -164,7 +179,13 @@ function emptyEvaluation(included: boolean): SinCityEvaluation {
     fieldPoints: 0,
     comboBonus: 0,
     bonus: 0,
+    score: 0,
+    rawCeiling: SIN_CITY_RAW_CEILING,
   };
+}
+
+function standaloneScore(bonus: number): number {
+  return Math.min(100, Math.round((bonus / SIN_CITY_RAW_CEILING) * 100));
 }
 
 export function evaluateSinCityMasonic(input: SinCityInput): SinCityEvaluation {
@@ -172,6 +193,10 @@ export function evaluateSinCityMasonic(input: SinCityInput): SinCityEvaluation {
 
   const fields = defaultSinCityFields(input.fields);
   const weights = { ...DEFAULT_SIN_CITY_WEIGHTS, ...input.weights };
+  const types: SinCitySignalTypeInclusion = {
+    ...DEFAULT_SIN_CITY_SIGNAL_TYPES,
+    ...input.includedSignalTypes,
+  };
   const matches: SinCityMatch[] = [];
 
   const candidates: Array<{ key: SinCityFieldKey; raw: number | null | undefined; reduced?: Reduced | null }> = [
@@ -199,22 +224,29 @@ export function evaluateSinCityMasonic(input: SinCityInput): SinCityEvaluation {
 
     const reduced = candidate.reduced ?? reduceSinCityNumber(Number(raw));
     const matchKind = classifyMatch(reduced, input.daily);
+    const typeExcluded =
+      (matchKind === "exact" && types.exact === false) ||
+      (matchKind === "root" && types.root === false) ||
+      (matchKind === "family" && types.family === false);
+    const points = typeExcluded ? 0 : pointsFor(matchKind, weights);
+    const kindLabel = matchKind === "none" ? "No match" : typeExcluded ? `${matchKind} excluded` : matchKind;
     matches.push({
       field: candidate.key,
-      label: `${FIELD_LABELS[candidate.key]} ${fmt(reduced)} — ${matchKind === "none" ? "No match" : matchKind}`,
+      label: `${FIELD_LABELS[candidate.key]} ${fmt(reduced)} — ${kindLabel}`,
       value: candidate.key === "jersey"
         ? `#${raw} (${fmt(reduced)})`
         : candidate.key === "currentHrCount"
           ? `${raw} (${fmt(reduced)})`
           : fmt(reduced),
       matchKind,
-      points: pointsFor(matchKind, weights),
+      points,
     });
   }
 
-  const hits = matches.filter((m) => m.matchKind === "exact" || m.matchKind === "root" || m.matchKind === "family");
+  const hits = matches.filter((m) => m.points > 0 && (m.matchKind === "exact" || m.matchKind === "root" || m.matchKind === "family"));
   const fieldPoints = matches.reduce((sum, m) => sum + m.points, 0);
   const comboBonus = comboBonusFor(hits.length, weights);
+  const bonus = fieldPoints + comboBonus;
 
   return {
     included: true,
@@ -223,6 +255,8 @@ export function evaluateSinCityMasonic(input: SinCityInput): SinCityEvaluation {
     evaluatedCount: matches.filter((m) => m.matchKind !== "missing").length,
     fieldPoints,
     comboBonus,
-    bonus: fieldPoints + comboBonus,
+    bonus,
+    score: standaloneScore(bonus),
+    rawCeiling: SIN_CITY_RAW_CEILING,
   };
 }

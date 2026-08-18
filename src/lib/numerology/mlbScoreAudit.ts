@@ -334,6 +334,11 @@ export function calculateNumerologyScoreBreakdown(
   const sinCity = evaluateSinCityMasonic({
     included: options?.sinCity?.included === true,
     fields: options?.sinCity?.fields ?? DEFAULT_SIN_CITY_FIELDS,
+    includedSignalTypes: {
+      exact: includedTypes.exact,
+      root: includedTypes.root,
+      family: includedTypes.family,
+    },
     jerseyNumber: jerseyNo,
     battingOrder: batting,
     birthDay,
@@ -342,28 +347,6 @@ export function calculateNumerologyScoreBreakdown(
     daily,
     weights: (METHODOLOGY as { sinCity?: Partial<import("./sinCityMasonic").SinCityWeights> }).sinCity,
   });
-
-  if (sinCity.included && sinCity.bonus > 0) {
-    for (const match of sinCity.matches) {
-      if (match.points <= 0) continue;
-      finalSignals.push({
-        field: "sinCity",
-        label: `Sin City · ${match.label}`,
-        type: match.matchKind === "exact" ? "secondary_exact" : match.matchKind === "root" ? "secondary_root" : "family_support",
-        points: match.points,
-        description: "Separate Sin City Masonic symbol alignment. Not a copy of regular field points.",
-      });
-    }
-    if (sinCity.comboBonus > 0) {
-      finalSignals.push({
-        field: "sinCity",
-        label: `Sin City · ${sinCity.matchCount}/5 symbol alignment`,
-        type: "contextual_echo",
-        points: sinCity.comboBonus,
-        description: "Combo bonus for independent Sin City symbol matches.",
-      });
-    }
-  }
 
   const positiveTotal = finalSignals.filter(s => s.points > 0).reduce((a, s) => a + s.points, 0);
   const countercurrentTotal = Math.abs(finalSignals.filter(s => s.points < 0).reduce((a, s) => a + s.points, 0));

@@ -58,6 +58,7 @@ describe("Sin City defaults", () => {
     });
     expect(result.included).toBe(false);
     expect(result.bonus).toBe(0);
+    expect(result.score).toBe(0);
     expect(result.matchCount).toBe(0);
     expect(result.matches).toHaveLength(0);
   });
@@ -124,6 +125,69 @@ describe("missing Sin City data", () => {
     const hr = result.matches.find((m) => m.field === "currentHrCount");
     expect(hr?.matchKind).toBe("none");
     expect(hr?.points).toBe(0);
+  });
+});
+
+describe("standalone Sin City Score", () => {
+  it("normalizes raw bonus against the Sin City ceiling, not 76", () => {
+    const result = evaluateSinCityMasonic({
+      included: true,
+      jerseyNumber: 19,
+      battingOrder: 1,
+      birthDay: reduceSinCityNumber(19),
+      lifePath: reduceSinCityNumber(19),
+      currentHrCount: 19,
+      daily: DAILY,
+    });
+    expect(result.bonus).toBe(20);
+    expect(result.rawCeiling).toBe(21);
+    expect(result.score).toBe(95);
+  });
+});
+
+describe("Signal Type exclusions", () => {
+  it("excluding Exact zeros Exact awards and drops them from combo hits", () => {
+    const included = evaluateSinCityMasonic({
+      included: true,
+      jerseyNumber: 19,
+      battingOrder: 1,
+      birthDay: reduceSinCityNumber(19),
+      lifePath: reduceSinCityNumber(19),
+      currentHrCount: 19,
+      daily: DAILY,
+    });
+    const excluded = evaluateSinCityMasonic({
+      included: true,
+      includedSignalTypes: { exact: false },
+      jerseyNumber: 19,
+      battingOrder: 1,
+      birthDay: reduceSinCityNumber(19),
+      lifePath: reduceSinCityNumber(19),
+      currentHrCount: 19,
+      daily: DAILY,
+    });
+    expect(included.matches.filter((m) => m.matchKind === "exact").every((m) => m.points > 0)).toBe(true);
+    expect(excluded.matches.filter((m) => m.matchKind === "exact").every((m) => m.points === 0)).toBe(true);
+    expect(excluded.matches.find((m) => m.field === "battingOrder")?.points).toBe(2);
+    expect(excluded.bonus).toBeLessThan(included.bonus);
+    expect(excluded.score).toBeLessThan(included.score);
+  });
+
+  it("excluding Root and Family zeros those Sin City awards only", () => {
+    const result = evaluateSinCityMasonic({
+      included: true,
+      includedSignalTypes: { root: false, family: false },
+      jerseyNumber: 19,
+      battingOrder: 1,
+      birthDay: reduceSinCityNumber(4),
+      lifePath: reduceSinCityNumber(19),
+      currentHrCount: 7,
+      daily: DAILY,
+    });
+    expect(result.matches.find((m) => m.field === "jersey")?.points).toBe(3);
+    expect(result.matches.find((m) => m.field === "battingOrder")?.points).toBe(0);
+    expect(result.matches.find((m) => m.field === "birthDay")?.points).toBe(0);
+    expect(result.matches.find((m) => m.field === "currentHrCount")?.points).toBe(0);
   });
 });
 

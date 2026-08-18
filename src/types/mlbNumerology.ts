@@ -65,6 +65,9 @@ export interface NumerologyScoreBreakdown {
     fieldPoints: number;
     comboBonus: number;
     bonus: number;
+    /** Standalone 0–100 Sin City Score. Not added into calculatedScore. */
+    score: number;
+    rawCeiling: number;
     matches: Array<{
       field: string;
       label: string;

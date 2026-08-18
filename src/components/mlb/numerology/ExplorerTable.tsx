@@ -158,6 +158,13 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
             <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Model Rating</p>
             <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(player.baseballScore)}</p>
           </div>
+          {breakdown?.sinCity?.included && (
+            <div className={`col-span-2 rounded border px-2.5 py-2 text-center sm:col-span-1 ${TONE_CLASSES.gold}`}>
+              <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Sin City Score</p>
+              <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(breakdown.sinCity.score)}</p>
+              <p className="mt-0.5 text-[10px] text-[#958ea0]">{breakdown.sinCity.matchCount}/5 symbols</p>
+            </div>
+          )}
           </div>
         </div>
 
@@ -250,7 +257,7 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
                     ))}
                   </div>
                   <p className="mt-1.5 text-[11px] text-[#958ea0]">
-                    {breakdown.sinCity.matchCount} of {breakdown.sinCity.matches.length || 5} symbols aligned · contribution +{breakdown.sinCity.bonus}
+                    Sin City Score {breakdown.sinCity.score}/100 · {breakdown.sinCity.matchCount} of {breakdown.sinCity.matches.length || 5} symbols · raw {breakdown.sinCity.bonus}/{breakdown.sinCity.rawCeiling ?? 21}. Standalone grade — not added to the Base Numerology Score.
                   </p>
                 </>
               ) : (
@@ -381,6 +388,11 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-full border border-[#494454] px-2 py-0.5 text-[10px] text-[#cbc3d7]">{player.matchType}</span>
+                  {player.scoreBreakdown?.sinCity?.included && (
+                    <span className="rounded-full border border-[#e9c349]/30 px-2 py-0.5 text-[10px] text-[#f6dc71]">
+                      Sin City {safe(player.scoreBreakdown.sinCity.score)}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2"><SignalChips player={player} /></div>
               </button>
@@ -408,6 +420,9 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
               </th>
               <th scope="col" aria-sort="none" className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#958ea0]">
                 Model Rating
+              </th>
+              <th scope="col" className="w-[90px] px-3 py-2 font-medium tabular-nums text-[#f6dc71]">
+                Sin City Score
               </th>
               <th className="w-[40px] px-3 py-2"></th>
             </tr>
@@ -437,13 +452,16 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
                     <td className="border-b border-[#494454]/30 px-3 py-2"><SignalChips player={player} limit={4} /></td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{player.numerologyScore}</td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{safe(player.baseballScore)}</td>
+                    <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums text-[#f6dc71]">
+                      {player.scoreBreakdown?.sinCity?.included ? safe(player.scoreBreakdown.sinCity.score) : em}
+                    </td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 text-right">
                       <ChevronDown className={`h-4 w-4 text-[#958ea0] transition-transform ${open ? "rotate-180" : ""}`} />
                     </td>
                   </tr>
                   {open && (
                     <tr>
-                      <td colSpan={6} className="border-b border-[#494454]/30 p-0">
+                      <td colSpan={7} className="border-b border-[#494454]/30 p-0">
                         <ExpandedDetail player={player} hrBatter={hrBatter} />
                       </td>
                     </tr>
@@ -451,7 +469,7 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
                 </Fragment>
               );
             })}
-            {sortedRows.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#958ea0]">No players match the selected filters.</td></tr>}
+            {sortedRows.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-[#958ea0]">No players match the selected filters.</td></tr>}
           </tbody>
         </table>
       </div>

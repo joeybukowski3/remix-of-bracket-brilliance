@@ -136,19 +136,22 @@ describe("Sin City master and field states in scoring", () => {
     });
     expect(off.sinCity?.included).toBe(false);
     expect(off.sinCity?.bonus ?? 0).toBe(0);
+    expect(off.sinCity?.score ?? 0).toBe(0);
     expect(off.signals.some((s) => s.field === "sinCity")).toBe(false);
   });
 
-  it("Sin City Include adds a separate contribution without replacing regular field points", () => {
+  it("Sin City Include is a standalone score and does not change Base Numerology", () => {
     const off = score("2003-04-19", { jerseyNumber: 19, currentHrCount: 19, sinCityIncluded: false });
     const on = score("2003-04-19", { jerseyNumber: 19, currentHrCount: 19, sinCityIncluded: true });
 
     expect(on.sinCity?.included).toBe(true);
     expect(on.sinCity?.bonus ?? 0).toBeGreaterThan(0);
+    expect(on.sinCity?.score ?? 0).toBeGreaterThan(0);
     expect(on.signals.some((s) => s.field === "jersey")).toBe(true);
-    expect(on.signals.some((s) => s.field === "sinCity")).toBe(true);
-    expect(on.sinCity?.bonus ?? 0).toBeGreaterThan(0);
-    expect(on.rawNumerology).toBeGreaterThan(off.rawNumerology);
+    expect(on.signals.some((s) => s.field === "sinCity")).toBe(false);
+    expect(on.rawNumerology).toBe(off.rawNumerology);
+    expect(on.calculatedScore).toBe(off.calculatedScore);
+    expect(on.positiveTotal).toBe(off.positiveTotal);
   });
 
   it("excluding a Sin City field does not remove the regular numerology field", () => {
@@ -160,5 +163,20 @@ describe("Sin City master and field states in scoring", () => {
     });
     expect(result.signals.some((s) => s.field === "jersey")).toBe(true);
     expect(result.sinCity?.matches.some((m) => m.field === "jersey")).toBe(false);
+  });
+
+  it("excluding Exact/Root/Family signal types zeros matching Sin City awards only", () => {
+    const allTypes = score("2003-04-19", { jerseyNumber: 19, battingOrder: 1, currentHrCount: 19, sinCityIncluded: true });
+    const noExact = score("2003-04-19", {
+      jerseyNumber: 19,
+      battingOrder: 1,
+      currentHrCount: 19,
+      sinCityIncluded: true,
+      includedSignalTypes: { exact: false },
+    });
+    expect(allTypes.sinCity?.matches.some((m) => m.matchKind === "exact" && m.points > 0)).toBe(true);
+    expect(noExact.sinCity?.matches.filter((m) => m.matchKind === "exact").every((m) => m.points === 0)).toBe(true);
+    expect(noExact.sinCity?.score ?? 0).toBeLessThan(allTypes.sinCity?.score ?? 0);
+    expect(noExact.signals.some((s) => s.type.includes("exact"))).toBe(false);
   });
 });
