@@ -96,6 +96,7 @@ export async function scrapeKPageRows(page, { url = STRIKEOUT_PROPS_URL } = {}) 
       pitcher: el.getAttribute("data-k-pitcher") || "",
       team: el.getAttribute("data-k-team") || "",
       opponent: el.getAttribute("data-k-opponent") || "",
+      gameId: el.getAttribute("data-k-game-id") || "",
       line: el.getAttribute("data-k-line") || "",
       oddsOver: el.getAttribute("data-k-odds-over") || "",
       oddsUnder: el.getAttribute("data-k-odds-under") || "",
@@ -116,6 +117,11 @@ export async function scrapeKPageRows(page, { url = STRIKEOUT_PROPS_URL } = {}) 
       pitcher: normalizeText(data.pitcher),
       team: normalizeTeam(data.team),
       opponent: normalizeTeam(data.opponent),
+      // Canonical numeric MLB gamePk, passed through from PitcherStrikeoutTeamRow.gameId
+      // via the [data-k-game-id] DOM attribute -- doubleheader-safe. Null when the page
+      // could not resolve one (never fabricated); resolveKRowFacts falls back to the
+      // unique team+opponent lookup in that case.
+      gameId: toFiniteNumber(data.gameId),
       kLine: toFiniteNumber(data.line),
       oddsOver: normalizeText(data.oddsOver) || null,
       oddsUnder: normalizeText(data.oddsUnder) || null,

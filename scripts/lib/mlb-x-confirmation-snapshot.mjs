@@ -26,9 +26,16 @@ import {
   fetchBoxscore,
   fetchScheduleWithStarters,
   findConfirmedBatter,
+  isDoubleheaderCode,
   matchesCurrentStarter,
   normalizeBoxscoreLineup,
 } from "./mlb-x-confirmation.mjs";
+
+function toFiniteNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 // StatsAPI abbreviation quirks vs. what generated data / the site may use.
 const TEAM_ALIASES = new Map([
@@ -50,17 +57,71 @@ function abbrEq(a, b) {
   return normAbbr(a) === normAbbr(b);
 }
 
-/** Find the snapshot game (and which side the team is on) for a team abbreviation. */
-export function findGameForTeam(snapshot, teamAbbr) {
+/**
+ * Find the snapshot game (and which side the team is on) for a team
+ * abbreviation, optionally narrowed by opponent abbreviation.
+ *
+ * On a doubleheader the same team appears in TWO snapshot games (same two
+ * abbreviations, different gamePk), so a team-only lookup is ambiguous.
+ * Passing `opponentAbbr` narrows to games where the other side also matches,
+ * which resolves the normal case (one game) and the doubleheader case down
+ * to its two legs -- but a team+opponent pair still can't tell leg 1 from
+ * leg 2 (both share team/opponent), so if more than one game still matches
+ * after narrowing, this returns `null` (fail closed) rather than guessing
+ * via first-match. Callers that also have a reliable `gamePk` should use
+ * `findGameById` first and only fall back to this for legs it can't tell
+ * apart, which is a defer to "no live signal" the same way an unknown team
+ * already does.
+ */
+export function findGameForTeam(snapshot, teamAbbr, { opponentAbbr = null } = {}) {
+  const matches = [];
   for (const game of snapshot?.games ?? []) {
+    if (abbrEq(game.awayAbbr, teamAbbr)) {
+      if (opponentAbbr == null || abbrEq(game.homeAbbr, opponentAbbr)) matches.push({ game, side: "away" });
+      continue;
+    }
+    if (abbrEq(game.homeAbbr, teamAbbr)) {
+      if (opponentAbbr == null || abbrEq(game.awayAbbr, opponentAbbr)) matches.push({ game, side: "home" });
+    }
+  }
+  return matches.length === 1 ? matches[0] : null;
+}
+
+/** Find the snapshot game (and which side `teamAbbr` is on) by exact gamePk -- the preferred, unambiguous lookup when a row already carries one. */
+export function findGameById(snapshot, gamePk, teamAbbr) {
+  const pk = toFiniteNumber(gamePk);
+  if (pk == null) return null;
+  for (const game of snapshot?.games ?? []) {
+    if (toFiniteNumber(game.gamePk) !== pk) continue;
     if (abbrEq(game.awayAbbr, teamAbbr)) return { game, side: "away" };
     if (abbrEq(game.homeAbbr, teamAbbr)) return { game, side: "home" };
+    return null;
   }
   return null;
 }
 
+/** Resolve a row's snapshot game: prefer an exact `gameId`/gamePk match, else fall back to team(+opponent) lookup. Fails closed (null) on ambiguity. */
+function locateRowGame(snapshot, { team, opponent, gameId } = {}) {
+  const byId = findGameById(snapshot, gameId, team);
+  if (byId) return byId;
+  return findGameForTeam(snapshot, team, { opponentAbbr: opponent });
+}
+
 function otherSide(side) {
   return side === "away" ? "home" : "away";
+}
+
+function emptyGameContext() {
+  return { gamePk: null, gameNumber: null, gameDate: null, isDoubleheader: false };
+}
+
+function gameContext(game) {
+  return {
+    gamePk: game.gamePk ?? null,
+    gameNumber: game.gameNumber ?? null,
+    gameDate: game.gameDate ?? null,
+    isDoubleheader: Boolean(game.isDoubleheader),
+  };
 }
 
 /**
@@ -70,13 +131,13 @@ function otherSide(side) {
  * fail-closed veto); `null` means "no live signal -- defer to generated data".
  */
 export function resolveHrRowFacts(snapshot, row) {
-  const located = findGameForTeam(snapshot, row?.team);
-  if (!located) return { gameStarted: false, liveConfirmed: null };
+  const located = locateRowGame(snapshot, { team: row?.team, opponent: row?.opponent, gameId: row?.gameId });
+  if (!located) return { gameStarted: false, liveConfirmed: null, ...emptyGameContext() };
   const { game, side } = located;
   const lineup = game[`${side}Lineup`];
-  if (!lineup?.confirmed) return { gameStarted: game.started, liveConfirmed: null };
+  if (!lineup?.confirmed) return { gameStarted: game.started, liveConfirmed: null, ...gameContext(game) };
   const match = findConfirmedBatter(lineup, { playerId: row?.playerId, playerName: row?.player });
-  return { gameStarted: game.started, liveConfirmed: Boolean(match) };
+  return { gameStarted: game.started, liveConfirmed: Boolean(match), ...gameContext(game) };
 }
 
 /**
@@ -84,9 +145,15 @@ export function resolveHrRowFacts(snapshot, row) {
  * the game started, and is the OPPOSING batting order confirmed?
  */
 export function resolveKRowFacts(snapshot, row) {
-  const located = findGameForTeam(snapshot, row?.team);
+  const located = locateRowGame(snapshot, { team: row?.team, opponent: row?.opponent, gameId: row?.gameId });
   if (!located) {
-    return { isCurrentStarter: false, gameStarted: false, opposingLineupConfirmed: false, gamePk: null, starterId: null };
+    return {
+      isCurrentStarter: false,
+      gameStarted: false,
+      opposingLineupConfirmed: false,
+      starterId: null,
+      ...emptyGameContext(),
+    };
   }
   const { game, side } = located;
   const starter = game[`${side}Starter`];
@@ -101,8 +168,8 @@ export function resolveKRowFacts(snapshot, row) {
     isCurrentStarter,
     gameStarted: game.started,
     opposingLineupConfirmed: Boolean(opposingLineup?.confirmed),
-    gamePk: game.gamePk ?? null,
     starterId: starter?.id ?? null,
+    ...gameContext(game),
   };
 }
 
@@ -164,6 +231,9 @@ export async function buildConfirmationSnapshot({ date, now = new Date(), fetchI
       games.push({
         gamePk: g.gamePk,
         gameDate: g.gameDate,
+        gameNumber: g.gameNumber ?? null,
+        doubleHeader: g.doubleHeader ?? null,
+        isDoubleheader: isDoubleheaderCode(g.doubleHeader),
         started,
         excluded,
         awayAbbr: g.away.abbreviation,

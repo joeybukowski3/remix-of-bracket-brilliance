@@ -25,6 +25,7 @@ function detailRow(overrides: Partial<PitcherStrikeoutTeamRow> = {}): PitcherStr
   return {
     rank: 1,
     gameKey: "PIT@CLE",
+    gameId: 201,
     pitcher: "Gavin Williams",
     team: "CLE",
     opponent: "PIT",
@@ -144,6 +145,24 @@ describe("SocialTableK export contract", () => {
     expect(exportRoot).not.toBeNull();
     expect(exportRoot).toHaveAttribute("data-k-row-count", "0");
     expect(screen.getByText("Data Not Available")).toBeInTheDocument();
+  });
+
+  it("stamps the row's canonical gamePk onto data-k-game-id, doubleheader-safe identity for the scraper to read", () => {
+    const { container } = render(<SocialTableK rows={[detailRow({ gameId: 201 })]} />);
+    const rows = container.querySelectorAll("[data-k-row]");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row).toHaveAttribute("data-k-game-id", "201");
+    }
+  });
+
+  it("renders an empty (not fabricated) data-k-game-id when the row has no resolved gamePk", () => {
+    const { container } = render(<SocialTableK rows={[detailRow({ gameId: null })]} />);
+    const rows = container.querySelectorAll("[data-k-row]");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row).toHaveAttribute("data-k-game-id", "");
+    }
   });
 });
 

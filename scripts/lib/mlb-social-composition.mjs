@@ -210,10 +210,19 @@ function resolveKSide(row) {
   return null;
 }
 
-/** Non-doubleheader label built ONLY from team/opponent -- never a fabricated Game 1/Game 2 guess. */
-function resolveGameLabel(team, opponent) {
-  if (team && opponent) return `${team} vs ${opponent}`;
-  return team || opponent || null;
+/**
+ * Canonical game label. Base `TEAM vs OPP` always; a ` — G1`/` — G2` suffix
+ * is appended ONLY when the row is positively known to be a doubleheader leg
+ * (`isDoubleheader === true`) AND carries a trustworthy `gameNumber`. A
+ * doubleheader row with an unknown gameNumber falls back to the plain label
+ * rather than inventing a leg number -- `isDoubleheader`/`gameId` stay on the
+ * row for any future handling, but the label itself never guesses.
+ */
+function resolveGameLabel(team, opponent, { isDoubleheader = false, gameNumber = null } = {}) {
+  const base = team && opponent ? `${team} vs ${opponent}` : team || opponent || null;
+  if (!base) return base;
+  if (isDoubleheader && Number.isInteger(gameNumber)) return `${base} — G${gameNumber}`;
+  return base;
 }
 
 function toPostRow(row, product) {
@@ -221,7 +230,9 @@ function toPostRow(row, product) {
   const opponent = normalizeText(row?.opponent) || null;
   const gameId = row?.gameId ?? null;
   const gameNumber = Number.isInteger(row?.gameNumber) ? row.gameNumber : null;
-  const gameLabel = resolveGameLabel(team, opponent);
+  const gameStartTime = row?.gameStartTime ?? row?.gameDate ?? null;
+  const isDoubleheader = row?.isDoubleheader === true;
+  const gameLabel = resolveGameLabel(team, opponent, { isDoubleheader, gameNumber });
 
   if (product === SOCIAL_PRODUCT.K) {
     const side = resolveKSide(row);
@@ -236,6 +247,8 @@ function toPostRow(row, product) {
       opponent,
       gameId,
       gameNumber,
+      gameStartTime,
+      isDoubleheader,
       gameLabel,
       content: { kind: "k", side, kLine, projectedKs, edge, odds },
     };
@@ -248,6 +261,8 @@ function toPostRow(row, product) {
     opponent,
     gameId,
     gameNumber,
+    gameStartTime,
+    isDoubleheader,
     gameLabel,
     content: {
       kind: "hr",
