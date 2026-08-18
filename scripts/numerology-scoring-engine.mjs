@@ -142,18 +142,7 @@ export function scorePlayerProfile(playerProfile, dailyProfile, config) {
     }
   }
 
-  // ── Age (Tier2) ───────────────────────────────────────────────────────────
-  const age = playerProfile.age;
-  const ageR = playerProfile.ageReduced;
-  if (ageR != null) {
-    if (udMaster != null && (ageR.original === udMaster || ageR.compound === udMaster)) {
-      awardRaw("age", `Age ${age} — Master Match`, "primary_exact_master", W.ageExactMaster ?? 24, `Age ${age} matches Universal Day master.`, "age:master", true);
-    } else if (ageR.original === target || ageR.compound === target) {
-      awardRaw("age", `Age ${age} — Exact Target`, "primary_exact_root", W.ageExact, `Age ${age} matches Universal Day ${target}.`, "age:exact", true);
-    } else if (ageR.root === udRoot) {
-      awardRaw("age", `Age ${age} root ${ageR.root} — Reduces to Target`, "primary_root", W.ageRoot, `Age ${age} reduces to root ${ageR.root}.`, "age:root", false);
-    }
-  }
+  // Age is informational profile data only and never awards points.
 
   // ── Batting order (Tier3) ─────────────────────────────────────────────────
   const bo = playerProfile.battingOrder;

@@ -6,7 +6,7 @@
  * Grok cannot change any calculated value.
  */
 
-import { MASTER_NUMBERS, type ReducedNumber } from "./reduce";
+import { type ReducedNumber } from "./reduce";
 import type { DailyProfile } from "./dateProfile";
 import type { PlayerNumerologyProfile } from "./playerProfile";
 
@@ -113,7 +113,7 @@ export function scorePlayer(
   dailyProfile: DailyProfile,
   baseballOpportunityScore: number,
   weights: ScoringWeights,
-  ageOnDate?: number | null
+  _ageOnDate?: number | null
 ): ScoringTrace {
   const signals: ScoredSignal[] = [];
   const awardedSources = new Set<string>(); // guard double-counting
@@ -306,16 +306,7 @@ export function scorePlayer(
     }
   }
 
-  // ── Age ───────────────────────────────────────────────────────────────────
-  if (ageOnDate != null) {
-    const ageR = reduce(ageOnDate);
-    const udMaster = dailyProfile.universalDay.master;
-    if (udMaster != null && ageR.compound === udMaster) {
-      award("age", `Age ${ageOnDate} — Master Match`, "primary_exact_master", weights.ageExactCompound, `Age ${ageOnDate} matches Universal Day master.`, "age:master");
-    } else if (matchesPrimaryRoot(ageR, dailyProfile)) {
-      award("age", `Age ${ageOnDate} root ${ageR.root} — Root Match`, "primary_root", weights.ageRoot, `Age ${ageOnDate} reduces to ${ageR.root}.`, "age:root");
-    }
-  }
+  // Age is informational only and never awards points.
 
   // ── Expression Number ─────────────────────────────────────────────────────
   const expr = playerProfile.expressionNumber;

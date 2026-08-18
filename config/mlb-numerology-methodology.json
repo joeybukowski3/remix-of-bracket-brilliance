@@ -36,7 +36,7 @@
   "baseballContextOnly": true,
   "fieldTiers": {
     "tier1": ["personalDay", "lifePath", "birthDay", "expression"],
-    "tier2": ["age", "jersey"],
+    "tier2": ["jersey"],
     "tier3": ["battingOrder", "calendarDay", "repeatedDigit"]
   },
   "matchStrengthHierarchy": "exactCompound > exactRoot > familySupport > contextualEcho",
@@ -86,13 +86,21 @@
     "numerologyWeight": 1,
     "baseballWeight": 0
   },
+  "sinCity": {
+    "exact": 3,
+    "root": 2,
+    "family": 1,
+    "combo3": 2,
+    "combo4": 4,
+    "combo5": 6
+  },
   "signalCapabilities": {
     "personalDay": "implemented",
     "jersey": "implemented",
     "battingOrder": "implemented",
     "lifePath": "implemented",
     "birthDay": "implemented",
-    "age": "implemented",
+    "age": "display-only — informational profile data, never scored",
     "expressionNumber": "implemented",
     "repeatedDateDigits": "implemented",
     "multipleCountercurrentPenalty": "implemented",

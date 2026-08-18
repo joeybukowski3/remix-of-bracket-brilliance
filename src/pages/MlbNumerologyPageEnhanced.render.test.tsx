@@ -307,8 +307,8 @@ describe("Sorting: v3 numerology score is used", () => {
     expect(compareRowsBySort(rowA, rowB, { field: "numerologyScore", direction: "asc" })).toBeGreaterThan(0);
   });
 
-  it("compareRowsBySort uses baseballScore for Model Rating column — unaffected by v3", async () => {
-    const { compareRowsBySort } = await import("@/components/mlb/numerology/ExplorerTable");
+  it("compareRowsByNumerologyScore keeps Numerology Score as the primary ranking", async () => {
+    const { compareRowsByNumerologyScore } = await import("@/components/mlb/numerology/ExplorerTable");
     const rowA = {
       playerName: "Player A", team: "NYY", opponent: "BOS", numerologyScore: 79, baseballScore: 30,
       matchType: "Exact Match" as const,
@@ -317,12 +317,10 @@ describe("Sorting: v3 numerology score is used", () => {
       playerName: "Player B", team: "LAD", opponent: "SF", numerologyScore: 55, baseballScore: 90,
       matchType: "Root Match" as const,
     };
-    // Sorting by baseballScore desc: B (90) before A (30)
-    expect(compareRowsBySort(rowA, rowB, { field: "baseballScore", direction: "desc" })).toBeGreaterThan(0);
-    expect(compareRowsBySort(rowA, rowB, { field: "baseballScore", direction: "asc" })).toBeLessThan(0);
+    expect(compareRowsByNumerologyScore(rowA, rowB)).toBeLessThan(0);
   });
 
-  it("nextSortState cycles unsorted → desc → asc → unsorted", async () => {
+  it("nextSortState remains available for compatibility", async () => {
     const { nextSortState } = await import("@/components/mlb/numerology/ExplorerTable");
     expect(nextSortState(null, "numerologyScore")).toEqual({ field: "numerologyScore", direction: "desc" });
     expect(nextSortState({ field: "numerologyScore", direction: "desc" }, "numerologyScore")).toEqual({ field: "numerologyScore", direction: "asc" });

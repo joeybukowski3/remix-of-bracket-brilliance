@@ -1,31 +1,127 @@
 import { useMemo, useState } from "react";
 import type { HrDashboardBatter } from "@/pages/MlbHrProps";
-import { panel, signalCategory, type NumerologyCardPlayer } from "./NumerologyAuditCard";
+import type { DailyProfile } from "@/types/mlbNumerology";
+import { panel, type NumerologyCardPlayer } from "./NumerologyAuditCard";
 import { ExplorerFilters } from "./ExplorerFilters";
-import { ExplorerTable, compareRowsBySort, nextSortState, type ExplorerRow, type SortField, type SortState } from "./ExplorerTable";
-export function NumerologyExplorer({exact,root,hrBatters}:{exact:NumerologyCardPlayer[];root:NumerologyCardPlayer[];hrBatters?:HrDashboardBatter[]}){const[query,setQuery]=useState(""),[team,setTeam]=useState("all"),[matchType,setMatchType]=useState("all"),[fields,setFields]=useState<string[]>([]),[types,setTypes]=useState<string[]>([]),[sort,setSort]=useState<SortState>(null);const handleSort=(field:SortField)=>setSort(prev=>nextSortState(prev,field));const rows=useMemo<ExplorerRow[]>(()=>[...exact.map(p=>({...p,matchType:"Exact Match" as const})),...root.map(p=>({...p,matchType:"Root Match" as const}))],[exact,root]),teams=[...new Set(rows.map(p=>p.team))].sort(),filtered=rows.filter(p=>{if(team!=="all"&&p.team!==team)return false;if(matchType!=="all"&&p.matchType!==matchType)return false;if(query&&!`${p.playerName} ${p.team} ${p.opponent}`.toLowerCase().includes(query.toLowerCase()))return false;const signals=p.scoreBreakdown?.signals??[];if(fields.length&&!fields.some(f=>signals.some(s=>s.field===f)||p.matches?.some(m=>m.field===f)))return false;if(types.length&&!types.some(t=>signals.some(s=>signalCategory(s)===t)))return false;return true}).sort((a,b)=>{
-  if(sort)return compareRowsBySort(a,b,sort);
-  // Default ranking when no column sort is active (unchanged from prior behavior):
-  // 1. Exact primary count descending
-  const aExact=a.scoreBreakdown?.exactPrimaryCount??0;
-  const bExact=b.scoreBreakdown?.exactPrimaryCount??0;
-  if(bExact!==aExact)return bExact-aExact;
-  // 2. Birthday exact target match
-  const aBdExact=a.scoreBreakdown?.hasBirthdayExact?1:0;
-  const bBdExact=b.scoreBreakdown?.hasBirthdayExact?1:0;
-  if(bBdExact!==aBdExact)return bBdExact-aBdExact;
-  // 3. Combo bonus (birthday+jersey, multiple strong fields)
-  const aCombo=a.scoreBreakdown?.exactComboBonus??0;
-  const bCombo=b.scoreBreakdown?.exactComboBonus??0;
-  if(bCombo!==aCombo)return bCombo-aCombo;
-  // 4. Birthday strong match (reduces to target)
-  const aBdStrong=a.scoreBreakdown?.hasBirthdayStrong?1:0;
-  const bBdStrong=b.scoreBreakdown?.hasBirthdayStrong?1:0;
-  if(bBdStrong!==aBdStrong)return bBdStrong-aBdStrong;
-  // 5. Calculated score desc
-  const aCalc=a.scoreBreakdown?.calculatedScore??a.numerologyScore;
-  const bCalc=b.scoreBreakdown?.calculatedScore??b.numerologyScore;
-  if(bCalc!==aCalc)return bCalc-aCalc;
-  // 6. Model rating as final tiebreaker only
-  return (b.baseballScore??0)-(a.baseballScore??0);
-});return <section id="explorer" className="mb-4 scroll-mt-20"><div className="mb-1.5 flex items-center gap-2"><span className="text-[10px] font-bold uppercase tracking-wide text-[#e9c349]">Player Explorer</span><span className="text-xs text-[#958ea0]">Ranked results. Expand any row for the full scoring audit.</span></div><div className={`${panel} overflow-hidden`}><ExplorerFilters query={query} setQuery={setQuery} team={team} setTeam={setTeam} teams={teams} matchType={matchType} setMatchType={setMatchType} fields={fields} setFields={setFields} types={types} setTypes={setTypes}/><p className="px-4 py-2 text-xs text-[#958ea0]">Showing {filtered.length} players</p><ExplorerTable rows={filtered} hrBatters={hrBatters??[]} sort={sort} onSort={handleSort}/></div></section>}
+import { ExplorerTable, compareRowsByNumerologyScore, matchHrBatter, type ExplorerRow } from "./ExplorerTable";
+import {
+  calculateNumerologyScoreBreakdown,
+  defaultFieldInclusion,
+  defaultSignalTypeInclusion,
+  type FieldInclusion,
+  type PlayerIdentity,
+  type SignalTypeInclusion,
+} from "@/lib/numerology/mlbScoreAudit";
+import { defaultSinCityFields, type SinCityFieldInclusion } from "@/lib/numerology/sinCityMasonic";
+
+export function NumerologyExplorer({
+  exact,
+  root,
+  hrBatters,
+  identities = {},
+  dailyProfile,
+  slateDate,
+  weights,
+}: {
+  exact: NumerologyCardPlayer[];
+  root: NumerologyCardPlayer[];
+  hrBatters?: HrDashboardBatter[];
+  identities?: Record<string, PlayerIdentity>;
+  dailyProfile?: DailyProfile | null;
+  slateDate?: string | null;
+  weights?: Record<string, number>;
+}) {
+  const [query, setQuery] = useState("");
+  const [team, setTeam] = useState("all");
+  const [matchType, setMatchType] = useState("all");
+  const [includedFields, setIncludedFields] = useState<FieldInclusion>(defaultFieldInclusion);
+  const [includedTypes, setIncludedTypes] = useState<SignalTypeInclusion>(defaultSignalTypeInclusion);
+  const [sinCityIncluded, setSinCityIncluded] = useState(true);
+  const [sinCityFields, setSinCityFields] = useState<SinCityFieldInclusion>(defaultSinCityFields);
+
+  const rows = useMemo<ExplorerRow[]>(
+    () => [
+      ...exact.map((p) => ({ ...p, matchType: "Exact Match" as const })),
+      ...root.map((p) => ({ ...p, matchType: "Root Match" as const })),
+    ],
+    [exact, root],
+  );
+
+  const teams = [...new Set(rows.map((p) => p.team))].sort();
+  const batters = useMemo(() => hrBatters ?? [], [hrBatters]);
+
+  const scored = useMemo(() => {
+    return rows.map((player) => {
+      if (!dailyProfile || !slateDate) return player;
+      const identity = identities[`${player.playerName}|${player.team}`] ?? {
+        jerseyNumber: player.jerseyNumber ?? null,
+      };
+      const hrBatter = matchHrBatter(player, batters);
+      try {
+        const scoreBreakdown = calculateNumerologyScoreBreakdown(
+          player,
+          identity,
+          dailyProfile,
+          slateDate,
+          weights,
+          {
+            includedFields,
+            includedSignalTypes: includedTypes,
+            sinCity: {
+              included: sinCityIncluded,
+              fields: sinCityFields,
+              currentHrCount: hrBatter?.seasonHomeRuns ?? null,
+            },
+          },
+        );
+        return {
+          ...player,
+          numerologyScore: scoreBreakdown.calculatedScore,
+          scoreBreakdown,
+        };
+      } catch (reason) {
+        console.error("[mlb-numerology] explorer rescore failed", player.playerName, reason);
+        return player;
+      }
+    });
+  }, [rows, dailyProfile, slateDate, identities, batters, weights, includedFields, includedTypes, sinCityIncluded, sinCityFields]);
+
+  const filtered = scored
+    .filter((p) => {
+      if (team !== "all" && p.team !== team) return false;
+      if (matchType !== "all" && p.matchType !== matchType) return false;
+      if (query && !`${p.playerName} ${p.team} ${p.opponent}`.toLowerCase().includes(query.toLowerCase())) return false;
+      return true;
+    })
+    .sort(compareRowsByNumerologyScore);
+
+  return (
+    <section id="explorer" className="mb-4 scroll-mt-20 overflow-x-hidden">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-[#e9c349]">Player Explorer</span>
+        <span className="text-xs text-[#958ea0]">Always ranked by Numerology Score. Expand any row for the full scoring audit.</span>
+      </div>
+      <div className={`${panel} overflow-hidden`}>
+        <ExplorerFilters
+          query={query}
+          setQuery={setQuery}
+          team={team}
+          setTeam={setTeam}
+          teams={teams}
+          matchType={matchType}
+          setMatchType={setMatchType}
+          includedFields={includedFields}
+          setIncludedFields={setIncludedFields}
+          includedTypes={includedTypes}
+          setIncludedTypes={setIncludedTypes}
+          sinCityIncluded={sinCityIncluded}
+          setSinCityIncluded={setSinCityIncluded}
+          sinCityFields={sinCityFields}
+          setSinCityFields={setSinCityFields}
+        />
+        <p className="px-4 py-2 text-xs text-[#958ea0]">Showing {filtered.length} players</p>
+        <ExplorerTable rows={filtered} hrBatters={batters} />
+      </div>
+    </section>
+  );
+}

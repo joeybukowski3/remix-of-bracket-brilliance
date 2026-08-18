@@ -58,6 +58,21 @@ export interface NumerologyScoreBreakdown {
     age: string | null;
     expression: string | null;
   };
+  sinCity?: {
+    included: boolean;
+    matchCount: number;
+    evaluatedCount: number;
+    fieldPoints: number;
+    comboBonus: number;
+    bonus: number;
+    matches: Array<{
+      field: string;
+      label: string;
+      value: string | null;
+      matchKind: string;
+      points: number;
+    }>;
+  };
   missingData: string[];
 }
 

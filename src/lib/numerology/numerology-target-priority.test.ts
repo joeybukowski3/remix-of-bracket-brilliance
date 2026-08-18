@@ -271,16 +271,14 @@ describe("Data integrity", () => {
     expect(bdSignal?.label).toContain("27");
   });
 
-  it("19. age is calculated correctly from DOB and slate date", () => {
-    // Born 1998-06-28 → age on 2026-06-29 = 28 (birthday was yesterday)
+  it("19. age remains visible in the profile and never appears as a scoring signal", () => {
     const player = calculateNumerologyScoreBreakdown(
       makePlayer(),
       makeIdentity({ birthDate: "1998-06-28" }),
       DAILY, SLATE
     );
-    const ageSignal = player.signals.find(s => s.field === "age");
-    // Should show age 28 (28 → 2+8 = 10 → 1, root=1, no signal for root=9)
-    // Not finding a signal is OK if 28 doesn't match
+    expect(player.profile.age).toMatch(/^28/);
+    expect(player.signals.some((s) => s.field === "age")).toBe(false);
     expect(player.missingData).not.toContain("age");
   });
 
