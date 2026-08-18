@@ -1,10 +1,10 @@
 {
   "date": "2026-08-18",
-  "generatedAt": "2026-08-18T07:58:50.605Z",
+  "generatedAt": "2026-08-18T13:15:48.558Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field and Great American Ball Park lead the slate with 1.4 and 1.25 park factors, while Ryan Feltner and Andrew Abbott are the most vulnerable starters. Barrel rates spike for Báez (50%) and Alvarez (17.7%) against right-handers in hitter-friendly venues.",
-    "modelNote": "The model prioritizes barrel rate, park factor, and opposing pitcher HR vulnerability, elevating Alvarez and Ohtani to the top ranks despite moderate recent HR volume."
+    "slateOverview": "Coors Field and Great American Ball Park are the primary HR drivers today, with park factors of 1.4 and 1.25 respectively. Ryan Feltner and Andrew Abbott are both right-handers allowing elevated HR rates, creating favorable conditions for left-handed power bats like Ohtani, Muncy, and Báez. Weather is neutral across the slate, so park and matchup edges dominate.",
+    "modelNote": "The model is heavily weighting barrel rate and hard-hit metrics in Coors and GABP, while also elevating players with recent HR volume against right-handed pitching in hitter-friendly venues."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
         "HH=53.4%"
       ],
       "bullets": [
-        "hrScore=87.6",
+        "barrel=17.7%",
         "park=1.04"
       ],
       "hrOddsYes": "+230",
@@ -33,15 +33,15 @@
       "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=16.4%",
-        "HH=52.8%"
+        "barrel=16.7%",
+        "HH=52.6%"
       ],
       "bullets": [
-        "hrScore=83.8",
-        "park=1.4"
+        "park=1.4",
+        "barrel=16.7%"
       ],
-      "hrOddsYes": "+200",
-      "marketImpliedProbability": 0.3333333333333333,
+      "hrOddsYes": "+203",
+      "marketImpliedProbability": 0.33003300330033003,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,12 +52,12 @@
       "opposingPitcher": "Andrew Abbott",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=50%",
-        "HH=83.3%"
+        "barrel=33.3%",
+        "HH=75%"
       ],
       "bullets": [
-        "hrScore=80.7",
-        "park=1.25"
+        "barrel=33.3%",
+        "HH=75%"
       ],
       "hrOddsYes": "+370",
       "marketImpliedProbability": 0.2127659574468085,
@@ -65,80 +65,80 @@
       "hrValueEdge": null
     },
     {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=69.1",
+        "Hard Hit%=45.9"
+      ],
+      "bullets": [
+        "HR score 73.8 (#4)",
+        "Pitcher HR VS 69.1 at park 1.40"
+      ],
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Abimelec Ortiz",
       "team": "WSH",
       "opponent": "TEX",
       "opposingPitcher": "Cal Quantrill",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "Hard Hit%=50.0",
         "Pitcher HR VS=47.7"
       ],
       "bullets": [
-        "HR score 74.2 (#4)",
+        "HR score 73.4 (#5)",
         "Pitcher HR VS 47.7 at park 0.99"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=69.0",
-        "Hard Hit%=45.9"
-      ],
-      "bullets": [
-        "HR score 73.4 (#5)",
-        "Pitcher HR VS 69.0 at park 1.40"
-      ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+440",
+      "marketImpliedProbability": 0.18518518518518517,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=14.1%",
+        "HH=45.9%"
+      ],
+      "bullets": [
+        "park=1.4",
+        "barrel=14.1%"
+      ],
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Abimelec Ortiz",
       "team": "WSH",
       "opponent": "TEX",
       "opposingPitcher": "Cal Quantrill",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=20%",
         "HH=50%"
       ],
       "bullets": [
-        "hrScore=74.2",
+        "barrel=20%",
         "park=0.99"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=13.9%",
-        "HH=45.9%"
-      ],
-      "bullets": [
-        "hrScore=73.4",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+440",
+      "marketImpliedProbability": 0.18518518518518517,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,11 +149,11 @@
       "opposingPitcher": "Zebby Matthews",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=15.9%",
+        "barrel=15.8%",
         "HH=50%"
       ],
       "bullets": [
-        "hrScore=72.2",
+        "barrel=15.8%",
         "park=0.97"
       ],
       "hrOddsYes": "+285",
@@ -169,14 +169,14 @@
       "hrScoreRank": 7,
       "topStats": [
         "Pitcher HR VS=87.5",
-        "Hard Hit%=44.2"
+        "Hard Hit%=44.3"
       ],
       "bullets": [
-        "HR score 71.9 (#7)",
+        "HR score 70.9 (#7)",
         "Pitcher HR VS 87.5 at park 0.95"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -188,14 +188,14 @@
       "hrScoreRank": 8,
       "topStats": [
         "Pitcher HR VS=87.5",
-        "Hard Hit%=44.9"
+        "Hard Hit%=45.0"
       ],
       "bullets": [
-        "HR score 70.3 (#8)",
+        "HR score 69.1 (#8)",
         "Pitcher HR VS 87.5 at park 0.95"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -208,15 +208,15 @@
       "opposingPitcher": "Merrill Kelly",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=13.3%",
-        "HH=44.2%"
+        "barrel=13.2%",
+        "HH=44.3%"
       ],
       "bullets": [
-        "hrScore=71.9",
+        "barrel=13.2%",
         "park=0.95"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -227,34 +227,34 @@
       "opposingPitcher": "Merrill Kelly",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=14.3%",
-        "HH=44.9%"
+        "barrel=14.1%",
+        "HH=45%"
       ],
       "bullets": [
-        "hrScore=70.3",
+        "barrel=14.1%",
         "park=0.95"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Adael Amador",
-      "team": "COL",
-      "opponent": "LAD",
-      "opposingPitcher": "Eric Lauer",
-      "hrScoreRank": 11,
+      "player": "Nathaniel Lowe",
+      "team": "CLE",
+      "opponent": "SF",
+      "opposingPitcher": "Carson Whisenhunt",
+      "hrScoreRank": 24,
       "topStats": [
-        "Barrel%=100.0",
-        "Hard Hit%=100.0"
+        "Pitcher HR VS=72.9",
+        "Hard Hit%=42.5"
       ],
       "bullets": [
-        "HR score 65.0 (#11)",
-        "Pitcher HR VS 59.9 at park 1.40"
+        "HR score 60.0 (#24)",
+        "Pitcher HR VS 72.9 at park 0.91"
       ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
+      "hrOddsYes": "+540",
+      "marketImpliedProbability": 0.15625,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +263,17 @@
       "team": "BAL",
       "opponent": "NYY",
       "opposingPitcher": "Carlos Rodón",
-      "hrScoreRank": 17,
+      "hrScoreRank": 25,
       "topStats": [
-        "Hard Hit%=43.1",
+        "Hard Hit%=41.9",
         "Pitcher HR VS=35.4"
       ],
       "bullets": [
-        "HR score 62.4 (#17)",
+        "HR score 59.9 (#25)",
         "Pitcher HR VS 35.4 at park 1.10"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
