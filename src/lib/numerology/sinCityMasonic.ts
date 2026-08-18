@@ -113,6 +113,10 @@ export function defaultSinCityFields(overrides?: Partial<SinCityFieldInclusion>)
   return { ...DEFAULT_SIN_CITY_FIELDS, ...overrides };
 }
 
+export function defaultSinCitySignalTypes(overrides?: Partial<SinCitySignalTypeInclusion>): SinCitySignalTypeInclusion {
+  return { ...DEFAULT_SIN_CITY_SIGNAL_TYPES, ...overrides };
+}
+
 type Reduced = ReturnType<typeof reduceSinCityNumber>;
 
 function classifyMatch(

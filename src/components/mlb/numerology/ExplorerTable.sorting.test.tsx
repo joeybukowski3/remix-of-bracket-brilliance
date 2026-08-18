@@ -7,6 +7,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import {
   ExplorerTable,
   compareRowsByNumerologyScore,
+  compareRowsBySinCityScore,
   compareRowsBySort,
   type ExplorerRow,
 } from "./ExplorerTable";
@@ -148,6 +149,38 @@ describe("Header labels", () => {
     const rows = [makeRow()];
     render(<ExplorerTable rows={rows} />);
     expect(screen.getByRole("columnheader", { name: /Model Rating/i })).toHaveAttribute("aria-sort", "none");
+  });
+
+  it("Sin City mode ranks by Sin City Score and marks that column descending", () => {
+    const rows = [
+      makeRow({
+        playerName: "Low Sin",
+        numerologyScore: 90,
+        baseballScore: 90,
+        scoreBreakdown: { sinCity: { included: true, score: 10, matchCount: 1, evaluatedCount: 1, fieldPoints: 1, comboBonus: 0, bonus: 1, rawCeiling: 21, matches: [] } },
+      }),
+      makeRow({
+        playerName: "High Sin",
+        numerologyScore: 20,
+        baseballScore: 10,
+        scoreBreakdown: { sinCity: { included: true, score: 80, matchCount: 2, evaluatedCount: 2, fieldPoints: 6, comboBonus: 0, bonus: 6, rawCeiling: 21, matches: [] } },
+      }),
+    ];
+    render(<ExplorerTable rows={rows} rankingMode="sinCity" />);
+    expect(screen.getByRole("columnheader", { name: /Sin City Score/i })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("columnheader", { name: /Numerology Score/i })).toHaveAttribute("aria-sort", "none");
+    const names = screen.getAllByText(/Low Sin|High Sin/).map((el) => el.textContent);
+    expect(names[0]).toContain("High Sin");
+  });
+});
+
+describe("Sin City ranking comparator", () => {
+  it("sorts Sin City Score descending before Base Numerology or Model Rating", () => {
+    const rows = [
+      makeRow({ playerName: "HighNum", numerologyScore: 90, baseballScore: 99, scoreBreakdown: { sinCity: { included: true, score: 5 } } as ExplorerRow["scoreBreakdown"] }),
+      makeRow({ playerName: "HighSin", numerologyScore: 10, baseballScore: 10, scoreBreakdown: { sinCity: { included: true, score: 70 } } as ExplorerRow["scoreBreakdown"] }),
+    ];
+    expect([...rows].sort(compareRowsBySinCityScore)[0].playerName).toBe("HighSin");
   });
 });
 

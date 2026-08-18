@@ -3,7 +3,13 @@ import type { HrDashboardBatter } from "@/pages/MlbHrProps";
 import type { DailyProfile } from "@/types/mlbNumerology";
 import { panel, type NumerologyCardPlayer } from "./NumerologyAuditCard";
 import { ExplorerFilters } from "./ExplorerFilters";
-import { ExplorerTable, compareRowsByNumerologyScore, matchHrBatter, type ExplorerRow } from "./ExplorerTable";
+import {
+  ExplorerTable,
+  compareRowsByRankingMode,
+  matchHrBatter,
+  type ExplorerRankingMode,
+  type ExplorerRow,
+} from "./ExplorerTable";
 import {
   calculateNumerologyScoreBreakdown,
   defaultFieldInclusion,
@@ -12,9 +18,14 @@ import {
   type PlayerIdentity,
   type SignalTypeInclusion,
 } from "@/lib/numerology/mlbScoreAudit";
-import { defaultSinCityFields, type SinCityFieldInclusion } from "@/lib/numerology/sinCityMasonic";
+import {
+  defaultSinCityFields,
+  defaultSinCitySignalTypes,
+  type SinCityFieldInclusion,
+  type SinCitySignalTypeInclusion,
+} from "@/lib/numerology/sinCityMasonic";
 
-export type SinCityListScope = "all" | "hasMatch";
+export type { ExplorerRankingMode };
 
 export function filterExplorerRows(
   rows: ExplorerRow[],
@@ -22,23 +33,16 @@ export function filterExplorerRows(
     query?: string;
     team?: string;
     matchType?: string;
-    sinCityIncluded?: boolean;
-    sinCityListScope?: SinCityListScope;
   },
 ): ExplorerRow[] {
   const query = options.query ?? "";
   const team = options.team ?? "all";
   const matchType = options.matchType ?? "all";
-  const sinCityIncluded = options.sinCityIncluded !== false;
-  const sinCityListScope = options.sinCityListScope ?? "all";
 
   return rows.filter((p) => {
     if (team !== "all" && p.team !== team) return false;
     if (matchType !== "all" && p.matchType !== matchType) return false;
     if (query && !`${p.playerName} ${p.team} ${p.opponent}`.toLowerCase().includes(query.toLowerCase())) return false;
-    if (sinCityIncluded && sinCityListScope === "hasMatch") {
-      return (p.scoreBreakdown?.sinCity?.matchCount ?? 0) >= 1;
-    }
     return true;
   });
 }
@@ -60,19 +64,14 @@ export function NumerologyExplorer({
   slateDate?: string | null;
   weights?: Record<string, number>;
 }) {
+  const [rankingMode, setRankingMode] = useState<ExplorerRankingMode>("sinCity");
   const [query, setQuery] = useState("");
   const [team, setTeam] = useState("all");
   const [matchType, setMatchType] = useState("all");
   const [includedFields, setIncludedFields] = useState<FieldInclusion>(defaultFieldInclusion);
   const [includedTypes, setIncludedTypes] = useState<SignalTypeInclusion>(defaultSignalTypeInclusion);
-  const [sinCityIncluded, setSinCityIncluded] = useState(true);
   const [sinCityFields, setSinCityFields] = useState<SinCityFieldInclusion>(defaultSinCityFields);
-  const [sinCityListScope, setSinCityListScope] = useState<SinCityListScope>("all");
-
-  const handleSinCityIncluded = (next: boolean) => {
-    setSinCityIncluded(next);
-    if (!next) setSinCityListScope("all");
-  };
+  const [sinCityTypes, setSinCityTypes] = useState<SinCitySignalTypeInclusion>(defaultSinCitySignalTypes);
 
   const rows = useMemo<ExplorerRow[]>(
     () => [
@@ -103,8 +102,9 @@ export function NumerologyExplorer({
             includedFields,
             includedSignalTypes: includedTypes,
             sinCity: {
-              included: sinCityIncluded,
+              included: true,
               fields: sinCityFields,
+              includedSignalTypes: sinCityTypes,
               currentHrCount: hrBatter?.seasonHomeRuns ?? null,
             },
           },
@@ -119,23 +119,58 @@ export function NumerologyExplorer({
         return player;
       }
     });
-  }, [rows, dailyProfile, slateDate, identities, batters, weights, includedFields, includedTypes, sinCityIncluded, sinCityFields]);
+  }, [rows, dailyProfile, slateDate, identities, batters, weights, includedFields, includedTypes, sinCityFields, sinCityTypes]);
 
   const filtered = filterExplorerRows(scored, {
     query,
     team,
     matchType,
-    sinCityIncluded,
-    sinCityListScope,
-  }).sort(compareRowsByNumerologyScore);
+  }).sort((a, b) => compareRowsByRankingMode(a, b, rankingMode));
 
   return (
     <section id="explorer" className="mb-4 scroll-mt-20 overflow-x-hidden">
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-bold uppercase tracking-wide text-[#e9c349]">Player Explorer</span>
-        <span className="text-xs text-[#958ea0]">Always ranked by Numerology Score. Expand any row for the full scoring audit.</span>
+        <span className="text-xs text-[#958ea0]">
+          {rankingMode === "sinCity"
+            ? "Sin City Score ranks this view. Base Numerology stays independent."
+            : "Numerology Score ranks this view. Sin City stays independent."}
+        </span>
       </div>
       <div className={`${panel} overflow-hidden`}>
+        <div className="border-b border-[#494454] bg-[#14161f] px-3 pt-3 sm:px-4">
+          <div role="tablist" aria-label="Ranking view" className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={rankingMode === "sinCity"}
+              onClick={() => setRankingMode("sinCity")}
+              className={`min-h-11 rounded-lg px-3 py-2 text-sm font-bold transition ${
+                rankingMode === "sinCity"
+                  ? "bg-[#e9c349] text-[#342800] shadow-sm"
+                  : "border border-[#494454] bg-[#1d1f28] text-[#cbc3d7]"
+              }`}
+            >
+              Sin City
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={rankingMode === "numerology"}
+              onClick={() => setRankingMode("numerology")}
+              className={`min-h-11 rounded-lg px-3 py-2 text-sm font-bold transition ${
+                rankingMode === "numerology"
+                  ? "bg-[#a078ff] text-[#26005d] shadow-sm"
+                  : "border border-[#494454] bg-[#1d1f28] text-[#cbc3d7]"
+              }`}
+            >
+              Numerology
+            </button>
+          </div>
+          <p className="py-2 text-[11px] text-[#958ea0]">
+            {rankingMode === "sinCity" ? "Sin City Score ↓" : "Numerology Score ↓"}
+          </p>
+        </div>
         <ExplorerFilters
           query={query}
           setQuery={setQuery}
@@ -144,19 +179,18 @@ export function NumerologyExplorer({
           teams={teams}
           matchType={matchType}
           setMatchType={setMatchType}
+          rankingMode={rankingMode}
           includedFields={includedFields}
           setIncludedFields={setIncludedFields}
           includedTypes={includedTypes}
           setIncludedTypes={setIncludedTypes}
-          sinCityIncluded={sinCityIncluded}
-          setSinCityIncluded={handleSinCityIncluded}
           sinCityFields={sinCityFields}
           setSinCityFields={setSinCityFields}
-          sinCityListScope={sinCityListScope}
-          setSinCityListScope={setSinCityListScope}
+          sinCityTypes={sinCityTypes}
+          setSinCityTypes={setSinCityTypes}
         />
         <p className="px-4 py-2 text-xs text-[#958ea0]">Showing {filtered.length} players</p>
-        <ExplorerTable rows={filtered} hrBatters={batters} />
+        <ExplorerTable rows={filtered} hrBatters={batters} rankingMode={rankingMode} />
       </div>
     </section>
   );

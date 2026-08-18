@@ -4,6 +4,7 @@ import {
   DEFAULT_SIN_CITY_FIELDS,
   evaluateSinCityMasonic,
   type SinCityFieldInclusion,
+  type SinCitySignalTypeInclusion,
 } from "./sinCityMasonic";
 
 export type PlayerIdentity = { birthDate?: string | null; jerseyNumber?: number | null };
@@ -57,6 +58,7 @@ export interface NumerologyScoringOptions {
   sinCity?: {
     included: boolean;
     fields?: Partial<SinCityFieldInclusion>;
+    includedSignalTypes?: Partial<SinCitySignalTypeInclusion>;
     currentHrCount?: number | null;
   };
 }
@@ -334,7 +336,7 @@ export function calculateNumerologyScoreBreakdown(
   const sinCity = evaluateSinCityMasonic({
     included: options?.sinCity?.included === true,
     fields: options?.sinCity?.fields ?? DEFAULT_SIN_CITY_FIELDS,
-    includedSignalTypes: {
+    includedSignalTypes: options?.sinCity?.includedSignalTypes ?? {
       exact: includedTypes.exact,
       root: includedTypes.root,
       family: includedTypes.family,
