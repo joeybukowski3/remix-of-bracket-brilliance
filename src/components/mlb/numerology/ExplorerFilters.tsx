@@ -100,6 +100,8 @@ export function ExplorerFilters({
   setSinCityIncluded,
   sinCityFields = DEFAULT_SIN_CITY_FIELDS,
   setSinCityFields,
+  sinCityListScope = "all",
+  setSinCityListScope,
 }: {
   query: string;
   setQuery: (v: string) => void;
@@ -116,6 +118,8 @@ export function ExplorerFilters({
   setSinCityIncluded: (next: boolean) => void;
   sinCityFields: SinCityFieldInclusion;
   setSinCityFields: (next: SinCityFieldInclusion | ((prev: SinCityFieldInclusion) => SinCityFieldInclusion)) => void;
+  sinCityListScope?: "all" | "hasMatch";
+  setSinCityListScope?: (next: "all" | "hasMatch") => void;
 }) {
   return (
     <div className="space-y-3 overflow-x-hidden border-b border-[#494454] bg-[#191b24] px-3 py-3 sm:px-4">
@@ -178,6 +182,35 @@ export function ExplorerFilters({
             included={sinCityIncluded}
             onChange={setSinCityIncluded}
           />
+          <div
+            role="group"
+            aria-label="Sin City list filter"
+            className="flex min-w-0 max-w-full flex-wrap items-center gap-1 rounded-lg border border-[#2a304d] bg-[#10131f] px-2 py-1.5"
+          >
+            <span className="min-w-0 break-words text-[11px] font-semibold text-[#e2e1ee]">List</span>
+            <span className="ml-auto flex min-w-0 flex-wrap justify-end gap-1">
+              <button
+                type="button"
+                disabled={!sinCityIncluded}
+                aria-pressed={sinCityListScope === "all"}
+                aria-label="All Players"
+                onClick={() => setSinCityListScope?.("all")}
+                className={includeChip(sinCityListScope === "all")}
+              >
+                All Players
+              </button>
+              <button
+                type="button"
+                disabled={!sinCityIncluded}
+                aria-pressed={sinCityListScope === "hasMatch"}
+                aria-label="Has Sin City Match"
+                onClick={() => setSinCityListScope?.("hasMatch")}
+                className={includeChip(sinCityListScope === "hasMatch")}
+              >
+                Has Sin City Match
+              </button>
+            </span>
+          </div>
           {SIN_CITY_FIELDS.map(([key, label]) => (
             <IncludeExclude
               key={key}

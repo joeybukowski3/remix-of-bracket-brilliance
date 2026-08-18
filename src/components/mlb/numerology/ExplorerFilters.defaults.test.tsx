@@ -67,4 +67,18 @@ describe("Explorer filter defaults", () => {
     fireEvent.click(screen.getByRole("button", { name: "Jersey Exclude" }));
     expect(setIncludedFields).toHaveBeenCalled();
   });
+
+  it("defaults the Sin City list filter to All Players", () => {
+    renderFilters();
+    expect(screen.getByRole("button", { name: "All Players" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Has Sin City Match" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "All Players" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Has Sin City Match" })).not.toBeDisabled();
+  });
+
+  it("disables the Sin City list filter when the master is Exclude", () => {
+    renderFilters({ sinCityIncluded: false, sinCityListScope: "all" });
+    expect(screen.getByRole("button", { name: "All Players" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Has Sin City Match" })).toBeDisabled();
+  });
 });
