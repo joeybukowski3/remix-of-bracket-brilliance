@@ -1,10 +1,10 @@
 {
   "date": "2026-08-19",
-  "generatedAt": "2026-08-19T15:00:17.132Z",
+  "generatedAt": "2026-08-19T16:01:54.279Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field and Camden Yards headline today's slate with 1.4 and 1.1 park factors, respectively, while Freeland's left-handed delivery against Ohtani and Muncy creates favorable platoon angles. Freeland's 70 HRs allowed to opposing hitters and Warren's 56 HRs surrendered set up elevated fly-ball environments in Denver and Baltimore.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over recent form, elevating Ohtani to the top spot despite modest last-30 HR totals."
+    "slateOverview": "Coors Field and Camden Yards headline today's slate with park factors of 1.4 and 1.1, respectively, while Freeland's left-handed delivery to Ohtani and Muncy creates favorable platoon angles. Warren's debut against Alonso at Camden and Nola's matchup with Conine at Citizens Bank Park round out the top park-plus-pitcher combinations.",
+    "modelNote": "The model is prioritizing barrel rate and recent HR/FB ratios over raw exit velocity, elevating Ortiz and Conine despite modest xBA marks due to their elevated pull rates and favorable park factors."
   },
   "bestBets": [
     {
@@ -18,30 +18,11 @@
         "HH=52.5%"
       ],
       "bullets": [
-        "barrel=16.8%",
-        "park=1.4"
+        "park=1.4",
+        "hrScore=85.1"
       ],
       "hrOddsYes": "+210",
       "marketImpliedProbability": 0.3225806451612903,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "NYM",
-      "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=12.1%",
-        "HH=52.6%"
-      ],
-      "bullets": [
-        "HH=52.6%",
-        "park=1.06"
-      ],
-      "hrOddsYes": "+406",
-      "marketImpliedProbability": 0.1976284584980237,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,17 +31,36 @@
       "team": "BAL",
       "opponent": "NYY",
       "opposingPitcher": "Will Warren",
-      "hrScoreRank": 3,
+      "hrScoreRank": 2,
       "topStats": [
-        "Hard Hit%=56.2",
-        "Pitcher HR VS=56.1"
+        "barrel=13.9%",
+        "HH=56.2%"
       ],
       "bullets": [
-        "HR score 72.2 (#3)",
-        "Pitcher HR VS 56.1 at park 1.10"
+        "park=1.1",
+        "hrScore=72.3"
       ],
       "hrOddsYes": "+333",
       "marketImpliedProbability": 0.23094688221709006,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "NYM",
+      "opposingPitcher": "Robert Stock",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=12.1%",
+        "HH=52.6%"
+      ],
+      "bullets": [
+        "park=1.06",
+        "hrScore=72.2"
+      ],
+      "hrOddsYes": "+406",
+      "marketImpliedProbability": 0.1976284584980237,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -115,8 +115,8 @@
         "HH=48.5%"
       ],
       "bullets": [
-        "barrel=18.2%",
-        "park=0.99"
+        "park=0.99",
+        "hrScore=71.5"
       ],
       "hrOddsYes": "+515",
       "marketImpliedProbability": 0.16260162601626016,
@@ -134,8 +134,8 @@
         "HH=45.3%"
       ],
       "bullets": [
-        "barrel=13.9%",
-        "park=1.4"
+        "park=1.4",
+        "hrScore=71.1"
       ],
       "hrOddsYes": "+312",
       "marketImpliedProbability": 0.24271844660194175,
@@ -153,8 +153,8 @@
         "HH=59.5%"
       ],
       "bullets": [
-        "HH=59.5%",
-        "park=0.9"
+        "park=0.9",
+        "hrScore=70.4"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -212,8 +212,8 @@
         "HH=50.1%"
       ],
       "bullets": [
-        "barrel=15.9%",
-        "park=0.97"
+        "park=0.97",
+        "hrScore=68.2"
       ],
       "hrOddsYes": "+300",
       "marketImpliedProbability": 0.25,
@@ -231,8 +231,8 @@
         "HH=54.5%"
       ],
       "bullets": [
-        "barrel=17%",
-        "park=1.17"
+        "park=1.17",
+        "hrScore=68.1"
       ],
       "hrOddsYes": "+346",
       "marketImpliedProbability": 0.2242152466367713,
@@ -253,27 +253,27 @@
         "HR score 63.2 (#16)",
         "Pitcher HR VS 38.1 at park 1.00"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Ryan Jeffers",
-      "team": "MIN",
-      "opponent": "ATL",
-      "opposingPitcher": "AJ Smith-Shawver",
-      "hrScoreRank": 17,
+      "player": "Esmerlyn Valdez",
+      "team": "PIT",
+      "opponent": "DET",
+      "opposingPitcher": "Jackson Jobe",
+      "hrScoreRank": 23,
       "topStats": [
-        "Pitcher HR VS=99.3",
-        "Hard Hit%=41.0"
+        "Pitcher HR VS=88.2",
+        "Hard Hit%=48.2"
       ],
       "bullets": [
-        "HR score 63.0 (#17)",
-        "Pitcher HR VS 99.3 at park 0.97"
+        "HR score 60.0 (#23)",
+        "Pitcher HR VS 88.2 at park 0.90"
       ],
-      "hrOddsYes": "+554",
-      "marketImpliedProbability": 0.1529051987767584,
+      "hrOddsYes": "+480",
+      "marketImpliedProbability": 0.1724137931034483,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
