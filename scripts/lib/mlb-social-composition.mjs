@@ -26,6 +26,18 @@ export const SOCIAL_PRODUCT = Object.freeze({
 });
 
 /**
+ * Canonical `SocialPostPlan.product` -> the "k"/"hr" market vocabulary used by
+ * the image-bundle and renderer layers (mlb-x-image-bundle.mjs's
+ * imageKindForMarket, the legacy edition renderer). One mapping, reused by
+ * every canonical-publisher collaborator so no caller re-derives it.
+ */
+export function marketForProduct(product) {
+  if (product === SOCIAL_PRODUCT.K) return "k";
+  if (product === SOCIAL_PRODUCT.HR) return "hr";
+  throw new Error(`Unknown canonical social product "${product}" (expected "${SOCIAL_PRODUCT.K}" or "${SOCIAL_PRODUCT.HR}").`);
+}
+
+/**
  * Candidate-pool size requested from the existing analytic selection
  * functions before composition runs. The live display limit is 5
  * (K_TARGET_TABLE_SIZE / HR_TARGET_TABLE_SIZE in the posting scripts); this

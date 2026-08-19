@@ -88,6 +88,33 @@ export function dailyCardReceiptCommitMessage({ slateDate, target, postId }) {
   return `chore(mlb-x): record ${target} receipt for ${slateDate} [skip ci]\n\npostId=${postId}`;
 }
 
+/**
+ * Canonical publication targets (Phase 5+). Distinct from the market/edition
+ * receipt namespace above -- the canonical publisher has no morning/confirmed
+ * axis at all, so its identity is `{product}:{slateDate}` alone (see
+ * SocialPostPlan.receiptKey in mlb-social-post-plan.mjs). One receipt per
+ * product per slate date is the entire one-post guarantee: a later
+ * canonical-publisher run for the same product/date is ALREADY_POSTED no
+ * matter how its rowFingerprint, selected rows, or readiness differ.
+ */
+export const CANONICAL_PRODUCTS = Object.freeze(["mlb-k-props", "mlb-hr-props"]);
+
+/** `mlb-x/YYYY-MM-DD/canonical/{product}.json` -- e.g. mlb-x/2026-08-19/canonical/mlb-hr-props.json */
+export function canonicalReceiptPathFor({ slateDate, product }) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(slateDate ?? ""))) {
+    throw new Error(`Malformed slate date "${slateDate}" (expected YYYY-MM-DD).`);
+  }
+  if (!CANONICAL_PRODUCTS.includes(product)) {
+    throw new Error(`Unknown canonical product "${product}" (expected one of: ${CANONICAL_PRODUCTS.join(", ")}).`);
+  }
+  return `${STATE_ROOT}/${slateDate}/canonical/${product}.json`;
+}
+
+/** Same [skip ci] convention as receiptCommitMessage. */
+export function canonicalReceiptCommitMessage({ slateDate, product, postId }) {
+  return `chore(mlb-x): record canonical ${product} receipt for ${slateDate} [skip ci]\n\npostId=${postId}`;
+}
+
 /** `mlb-x/YYYY-MM-DD/diagnostics/{market}-{edition}.json` -- structurally distinct from receiptPathFor. */
 export function diagnosticPathFor({ slateDate, market, edition }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(slateDate ?? ""))) {
@@ -281,6 +308,32 @@ export function createGitStateStore({
     });
   }
 
+  /** Reads the canonical receipt for one product/slate (Phase 5+). */
+  function readCanonicalReceipt({ slateDate, product }) {
+    return readJsonFile(canonicalReceiptPathFor({ slateDate, product }));
+  }
+
+  /**
+   * Writes one canonical receipt and pushes it. Same conflict semantics as
+   * writeReceipt/writeDailyCardReceipt: a competing runner's confirmed
+   * publication for THIS product/date is never silently overwritten.
+   */
+  function writeCanonicalReceipt({ slateDate, product, receipt }) {
+    const ourId = receipt?.primaryPostId ?? receipt?.postId ?? null;
+    return writeJsonWithRetry({
+      relative: canonicalReceiptPathFor({ slateDate, product }),
+      value: receipt,
+      commitMessage: canonicalReceiptCommitMessage({ slateDate, product, postId: ourId ?? "unknown" }),
+      onConflict: (theirs) => {
+        const theirId = theirs?.primaryPostId ?? theirs?.postId ?? null;
+        if (theirs && theirId && ourId && theirId !== ourId) {
+          return { pushed: false, conflicted: true, existingReceipt: theirs };
+        }
+        return null;
+      },
+    });
+  }
+
   function readDiagnostic({ slateDate, market, edition }) {
     return readJsonFile(diagnosticPathFor({ slateDate, market, edition }));
   }
@@ -313,6 +366,7 @@ export function createGitStateStore({
   return {
     sync, readReceipt, writeReceipt, readDiagnostic, writeDiagnostic,
     readDailyCardReceipt, writeDailyCardReceipt,
-    branch, workDir, receiptPathFor, diagnosticPathFor, dailyCardReceiptPathFor,
+    readCanonicalReceipt, writeCanonicalReceipt,
+    branch, workDir, receiptPathFor, diagnosticPathFor, dailyCardReceiptPathFor, canonicalReceiptPathFor,
   };
 }
