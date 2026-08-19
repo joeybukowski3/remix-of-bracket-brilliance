@@ -16,6 +16,7 @@ import {
   PublicationStep,
   ReplyStatus,
 } from "./mlb-x-edition-publication.mjs";
+import { computeEditionRowFingerprint } from "./mlb-x-edition-image.mjs";
 import { resolveEditionReadiness } from "./mlb-x-edition-readiness.mjs";
 import { toReadinessImageInput } from "./mlb-x-image-bundle.mjs";
 
@@ -108,7 +109,16 @@ export async function runEditionPost({
     }
 
     // ── 6. Image bundle: reuse or render synchronously from frozen rows. ──
-    const bundle = await ensureImage({ market, slateDate, rows: plan.selectedRows });
+    // rowFingerprint is derived purely from the already-frozen selectedRows
+    // (no reselection) and is what lets ensureImage refuse to reuse a
+    // same-day bundle whose content has since changed -- see
+    // mlb-x-image-bundle.mjs / mlb-x-edition-image.mjs. computeEditionRowFingerprint
+    // is transitional: this plan shape predates the canonical SocialPostPlan,
+    // so it is not that plan's rowFingerprint. Once this poster consumes a
+    // SocialPostPlan directly (Phase 5+), pass SocialPostPlan.rowFingerprint
+    // here instead and delete computeEditionRowFingerprint.
+    const rowFingerprint = computeEditionRowFingerprint(plan.selectedRows);
+    const bundle = await ensureImage({ market, slateDate, rows: plan.selectedRows, rowFingerprint });
     if (!bundle?.valid) {
       return result(PostOutcome.IMAGE_FAILED, { receiptKey, status: bundle?.reason ?? "IMAGE_UNAVAILABLE" });
     }
@@ -119,11 +129,17 @@ export async function runEditionPost({
     const { caption, captionRows, omittedRows = [] } = await buildCaption({ rows: plan.selectedRows, languageMode: plan.readiness.languageMode, plan });
 
     // ── 8. Plan / caption / graphic must describe the same players. ───────
+    // A reused bundle (source === "reused") has no captured renderedRows --
+    // its content safety was already proven by the rowFingerprint match in
+    // step 6, not by anything checkable here. Passing plan.selectedRows in
+    // its place (the pre-Phase-4 bug) would only ever compare the plan to
+    // itself and could never catch a stale image. Only a freshly rendered
+    // bundle's ACTUAL renderedRows are checked.
     const consistency = assertRowConsistency({
       planRows: plan.selectedRows,
       captionRows,
       omittedRows,
-      renderedRows: bundle.renderedRows ?? plan.selectedRows,
+      renderedRows: bundle.source === "rendered" ? bundle.renderedRows : null,
     });
     if (!consistency.consistent) {
       return result(PostOutcome.ROW_MISMATCH, { receiptKey, status: "ROW_MISMATCH", detail: consistency.mismatches });

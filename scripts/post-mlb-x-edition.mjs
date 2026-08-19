@@ -362,9 +362,9 @@ async function main() {
       planDirectory: args.planDirectory,
       stateStore,
       acquireLease,
-      ensureImage: ({ rows }) =>
+      ensureImage: ({ rows, rowFingerprint }) =>
         ensureEditionImage({
-          market, slateDate, rows, directory: args.imageDirectory,
+          market, slateDate, rows, rowFingerprint, directory: args.imageDirectory,
           renderGraphic: (params) => renderGraphic({ ...params, browser }),
         }),
       buildCaption: buildCaptionForMarket(market),
