@@ -1,65 +1,58 @@
 /**
- * JKB projected spread consumption (nfl-spread-v0.1.0).
+ * JKB projected spread consumption (jkb-power-number-v1.0.0).
  *
  * Reads the generated public/data/nfl/matchup-projections.json artifact. No
  * modelling happens in the browser and nflverse is never called from it.
  *
- * The model itself is market-independent: no spread, moneyline, total or ATS
- * value takes part in its features, its opponent adjustment or its single
- * fitted parameter. The market appears only here, in the consumer layer, and
- * only as a side-by-side comparison after the projection already exists.
+ * The model itself is market-independent: the ONLY team-strength input is
+ * the canonical universal Current OVR board (the same rating shown
+ * everywhere else on the site) reduced to a Power Number relative to the
+ * current league-average team, then combined with a fixed home-field
+ * adjustment. No spread, moneyline, total or ATS value takes part in the
+ * projection. The market appears only here, in the consumer layer, and only
+ * as a side-by-side comparison after the projection already exists.
  *
  * That comparison is descriptive. Backtesting did not show the model beating
  * the market, so nothing in this module produces a pick, a best bet, a value
  * bet, a confidence level, an expected value or a stake size, and the
  * difference is labelled "Model vs Market" rather than an edge.
+ *
+ * REPLACES the nfl-spread-v0.1.0 composite as the authoritative public JKB
+ * spread source (2026-08-19). That model's code remains available under
+ * scripts/analysis/nfl-spread-v0.1.0-legacy/ for historical/model comparison
+ * only — it no longer feeds this artifact or this module.
  */
 
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 
 export const PROJECTIONS_ARTIFACT_PATH = "/data/nfl/matchup-projections.json";
-export const NFL_SPREAD_MODEL_VERSION = "nfl-spread-v0.1.0";
+export const JKB_POWER_NUMBER_MODEL_VERSION = "jkb-power-number-v1.0.0";
 
 const NA = "N/A";
 
-export type ProjectionTeamSide = {
-  offAdj: number;
-  defAdj: number;
-  pdgAdj: number;
-  compositeZ: number;
-  sampleGames: number;
-  lastSampleGameId: string | null;
-  priorSeason: number | null;
-  priorWeight: number;
-  currentSeasonGames: number;
-  priorSeasonGames: number;
-};
-
-export type ProjectedSpreadNotation = {
-  favoriteTeam: string | null;
-  line: number;
-  display: string;
-};
-
 export type GameProjection = {
   gameId: string;
-  season: number;
   week: number;
   kickoff: string | null;
-  awayTeam: string;
   homeTeam: string;
+  awayTeam: string;
+  /** The exact canonical universal Current OVR (1-99 scale) for each side. */
+  homeCurrentOVR: number;
+  awayCurrentOVR: number;
+  /** The 32-team mean Current OVR both Power Numbers were centered against. */
+  leagueAverageOVR: number;
+  /** Points better/worse than the average NFL team on a neutral field. */
+  homePowerNumber: number;
+  awayPowerNumber: number;
   neutralSite: boolean;
-  beta: number;
-  away: ProjectionTeamSide;
-  home: ProjectionTeamSide;
-  /** Composite z difference, home minus away. */
-  strengthDiff: number;
-  /** beta x strengthDiff, before home field. */
-  neutralMargin: number;
+  /** 2.0 at a normal site, 0.0 at a neutral site. Never fitted. */
   homeFieldAdvantage: number;
+  /** homePowerNumber - awayPowerNumber, before home-field advantage. */
+  neutralProjectedMargin: number;
   /** Positive means the home team is projected to win by this many points. */
   projectedHomeMargin: number;
-  projectedSpread: ProjectedSpreadNotation;
+  /** Pre-formatted sportsbook-style notation, e.g. "SEA −3.5" / "PK". */
+  formattedJkbSpread: string;
 };
 
 export type ProjectionsArtifact = {
@@ -68,27 +61,19 @@ export type ProjectionsArtifact = {
   modelVersion: string;
   currentSeason: number;
   model: {
-    weights: { off: number; def: number; pdg: number };
-    priorK: number;
+    ovrToPointsCoefficient: number;
     homeFieldAdvantage: number;
     neutralSiteHomeFieldAdvantage: number;
-    recency: string;
-    opponentAdjustment: string;
-    epaSource: string;
-    epaDefinition: string;
-    beta: number;
-    betaFitSeasons: number[];
-    betaFitObservations: number;
-    betaFitThrough: number;
+    leagueAverageOVR: number;
+    strengthInput: string;
     fittedParameters: string[];
     marketInputUsed: boolean;
   };
   projections: Record<string, GameProjection>;
   provenance: {
     generatedAt: string;
-    dataCutoff: string;
-    historySeasons: number[];
     gamesProjected: number;
+    inputs: Record<string, string>;
   };
 };
 
@@ -101,19 +86,14 @@ export function projectionFor(
 }
 
 /**
- * Conventional spread notation for a projected home margin, e.g. "SEA −3.4".
- * A home margin of +3.4 means the home team is a 3.4-point favourite, so the
- * printed line is negative for the favourite.
- *
- * Rebuilt from the artifact's parts rather than echoing its `display` string so
- * the typographic minus matches the market line rendered beside it; the two
- * sitting side by side with different characters reads as a data mismatch.
+ * Conventional spread notation for this projection, e.g. "SEA −3.4" / "PK".
+ * Generated once at build time (scripts/generate-nfl-matchup-projections.mts)
+ * using the same typographic minus (U+2212) the market line uses, so the two
+ * sitting side by side never read as a data mismatch.
  */
 export function formatProjectedSpread(projection: GameProjection | null): string {
   if (!projection) return NA;
-  const { favoriteTeam, line } = projection.projectedSpread;
-  if (favoriteTeam == null) return "PK";
-  return `${favoriteTeam.toUpperCase()} −${Math.abs(line).toFixed(1)}`;
+  return projection.formattedJkbSpread;
 }
 
 /** Signed points, e.g. "+3.4" / "−1.5" / "0.0". */
@@ -176,6 +156,20 @@ export function compareToMarket(
   };
 }
 
+/**
+ * Team-oriented rendering of the model-vs-market gap, e.g. "BUF +2.5" — never
+ * a bare signed number, since a signed difference alone doesn't say which
+ * team it favors. "Even" when the two agree exactly, "N/A" when there's no
+ * market line to compare against. This is a description of the gap, not an
+ * edge, a pick or a betting recommendation.
+ */
+export function formatModelVsMarketDifference(comparison: ModelVsMarket | null): string {
+  if (!comparison || comparison.difference == null) return NA;
+  const rounded = Number(comparison.difference.toFixed(1));
+  if (rounded === 0 || !comparison.leansToward) return "Even";
+  return `${comparison.leansToward.toUpperCase()} +${Math.abs(rounded).toFixed(1)}`;
+}
+
 /** The team the model projects to win, or null for an exact pick'em. */
 export function projectedWinner(projection: GameProjection | null): string | null {
   if (!projection) return null;
@@ -191,22 +185,46 @@ export type ProjectionBreakdownRow = {
 };
 
 /**
- * The three terms that make up the projection, in the order they are applied.
+ * The five terms that make up the projection, in the order they are applied.
  * Deliberately limited to what the model actually computes — there is no
  * confidence, no probability and no bet sizing behind it.
  */
 export function projectionBreakdown(projection: GameProjection | null): ProjectionBreakdownRow[] {
   if (!projection) return [];
-  const { homeTeam, awayTeam, strengthDiff, neutralMargin, homeFieldAdvantage, neutralSite } = projection;
-  const stronger = strengthDiff >= 0 ? homeTeam : awayTeam;
+  const {
+    homeTeam,
+    awayTeam,
+    homeCurrentOVR,
+    awayCurrentOVR,
+    leagueAverageOVR,
+    homePowerNumber,
+    awayPowerNumber,
+    neutralProjectedMargin,
+    homeFieldAdvantage,
+    neutralSite,
+    projectedHomeMargin,
+  } = projection;
+
   return [
     {
-      label: "Team Strength Difference",
-      value: formatPoints(neutralMargin),
+      label: `${homeTeam.toUpperCase()} Power Number`,
+      value: formatPoints(homePowerNumber),
       detail:
-        `${stronger.toUpperCase()} rates higher on opponent-adjusted EPA and point differential ` +
-        `(${strengthDiff >= 0 ? "+" : "−"}${Math.abs(strengthDiff).toFixed(2)} composite), ` +
-        `worth ${Math.abs(neutralMargin).toFixed(1)} points on a neutral field.`,
+        `Current OVR ${homeCurrentOVR.toFixed(1)} vs a league-average Current OVR of ` +
+        `${leagueAverageOVR.toFixed(1)} — how many points better or worse than an average NFL ` +
+        `team ${homeTeam.toUpperCase()} projects on a neutral field.`,
+    },
+    {
+      label: `${awayTeam.toUpperCase()} Power Number`,
+      value: formatPoints(awayPowerNumber),
+      detail:
+        `Current OVR ${awayCurrentOVR.toFixed(1)} vs the same league-average Current OVR of ` +
+        `${leagueAverageOVR.toFixed(1)}.`,
+    },
+    {
+      label: "Neutral Margin",
+      value: formatPoints(neutralProjectedMargin),
+      detail: `${homeTeam.toUpperCase()} Power Number minus ${awayTeam.toUpperCase()} Power Number — the expected margin on a neutral field.`,
     },
     {
       label: "Home Field",
@@ -217,7 +235,7 @@ export function projectionBreakdown(projection: GameProjection | null): Projecti
     },
     {
       label: "Projected Margin",
-      value: formatPoints(projection.projectedHomeMargin),
+      value: formatPoints(projectedHomeMargin),
       detail: `Projected final margin for ${homeTeam.toUpperCase()} against ${awayTeam.toUpperCase()}.`,
     },
   ];

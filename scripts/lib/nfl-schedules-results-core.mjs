@@ -191,6 +191,12 @@ export function transformSeasonRows(rows, season, teamMap) {
       status: isFinal ? "final" : "scheduled",
       stadium: row.stadium || null,
       isDome: toIsDome(row.roof),
+      // nflverse's own `location` column ("Home" | "Neutral") is the
+      // authoritative neutral-site designation — international games, the
+      // Super Bowl, and any other league-designated neutral site. Never
+      // inferred from stadium name; any other value (including missing,
+      // for older fixtures/sources that predate this column) is non-neutral.
+      neutralSite: row.location === "Neutral",
     });
 
     if (isFinal) {

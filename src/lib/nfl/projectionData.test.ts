@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   compareToMarket,
+  formatModelVsMarketDifference,
   formatPoints,
   formatProjectedSpread,
   marketHomeMargin,
@@ -12,37 +13,24 @@ import {
 } from "@/lib/nfl/projectionData";
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 
-const side = {
-  offAdj: 0.1,
-  defAdj: -0.05,
-  pdgAdj: 4,
-  compositeZ: 0,
-  sampleGames: 17,
-  lastSampleGameId: "2025_18_MIA_NE",
-  priorSeason: 2025,
-  priorWeight: 1,
-  currentSeasonGames: 0,
-  priorSeasonGames: 17,
-};
-
 function projection(overrides: Partial<GameProjection> = {}): GameProjection {
   const projectedHomeMargin = overrides.projectedHomeMargin ?? 3.36;
   return {
     gameId: "2026_01_NE_SEA",
-    season: 2026,
     week: 1,
     kickoff: "2026-09-10T00:20:00.000Z",
     awayTeam: "ne",
     homeTeam: "sea",
+    homeCurrentOVR: 55.65,
+    awayCurrentOVR: 44.35,
+    leagueAverageOVR: 50,
+    homePowerNumber: 1.356,
+    awayPowerNumber: -1.356,
     neutralSite: false,
-    beta: 4.63,
-    away: { ...side },
-    home: { ...side, compositeZ: 0.2934 },
-    strengthDiff: 0.2934,
-    neutralMargin: 1.36,
     homeFieldAdvantage: 2,
+    neutralProjectedMargin: 1.36,
     projectedHomeMargin,
-    projectedSpread: { favoriteTeam: "sea", line: -3.4, display: "SEA −3.4" },
+    formattedJkbSpread: "SEA −3.4",
     ...overrides,
   };
 }
@@ -81,7 +69,7 @@ describe("projectionFor", () => {
 });
 
 describe("formatProjectedSpread", () => {
-  it("prints the favourite with a negative line", () => {
+  it("returns the pre-formatted spread from the projection artifact", () => {
     expect(formatProjectedSpread(projection())).toBe("SEA −3.4");
   });
 
@@ -154,6 +142,28 @@ describe("compareToMarket", () => {
   });
 });
 
+describe("formatModelVsMarketDifference", () => {
+  it("is team-oriented, never a bare signed number", () => {
+    const c = compareToMarket(projection(), market(-2.5))!;
+    expect(formatModelVsMarketDifference(c)).toBe("SEA +0.9");
+  });
+
+  it("names the away team when the model leans away relative to the market", () => {
+    const c = compareToMarket(projection(), market(-6.5))!;
+    expect(formatModelVsMarketDifference(c)).toBe("NE +3.1");
+  });
+
+  it("reports Even, not a zero, when the two agree exactly", () => {
+    const c = compareToMarket(projection({ projectedHomeMargin: 3.5 }), market(-3.5))!;
+    expect(formatModelVsMarketDifference(c)).toBe("Even");
+  });
+
+  it("reports N/A when there is no market line or no comparison", () => {
+    expect(formatModelVsMarketDifference(null)).toBe("N/A");
+    expect(formatModelVsMarketDifference(compareToMarket(projection(), market(null)))).toBe("N/A");
+  });
+});
+
 describe("projectedWinner", () => {
   it("names the home team on a positive margin and the away team on a negative one", () => {
     expect(projectedWinner(projection({ projectedHomeMargin: 3.36 }))).toBe("sea");
@@ -166,9 +176,11 @@ describe("projectedWinner", () => {
 });
 
 describe("projectionBreakdown", () => {
-  it("shows exactly the three terms the model computes", () => {
+  it("shows exactly the five terms the model computes", () => {
     expect(projectionBreakdown(projection()).map((r) => r.label)).toEqual([
-      "Team Strength Difference",
+      "SEA Power Number",
+      "NE Power Number",
+      "Neutral Margin",
       "Home Field",
       "Projected Margin",
     ]);
@@ -176,12 +188,15 @@ describe("projectionBreakdown", () => {
 
   it("states that home field is neither applied nor fitted at a neutral site", () => {
     const rows = projectionBreakdown(projection({ neutralSite: true, homeFieldAdvantage: 0 }));
-    expect(rows[1].value).toBe("0.0");
-    expect(rows[1].detail).toMatch(/neutral site/i);
+    const homeFieldRow = rows.find((r) => r.label === "Home Field")!;
+    expect(homeFieldRow.value).toBe("0.0");
+    expect(homeFieldRow.detail).toMatch(/neutral site/i);
   });
 
   it("describes home field as fixed and never fitted", () => {
-    expect(projectionBreakdown(projection())[1].detail).toMatch(/never fitted/i);
+    const rows = projectionBreakdown(projection());
+    const homeFieldRow = rows.find((r) => r.label === "Home Field")!;
+    expect(homeFieldRow.detail).toMatch(/never fitted/i);
   });
 
   it("offers no confidence, probability, edge or bet sizing", () => {
@@ -197,7 +212,7 @@ describe("market independence of the consumer layer", () => {
     const p = projection();
     expect(formatProjectedSpread(p)).toBe("SEA −3.4");
     expect(projectedWinner(p)).toBe("sea");
-    expect(projectionBreakdown(p)).toHaveLength(3);
+    expect(projectionBreakdown(p)).toHaveLength(5);
   });
 
   it("does not let the market change the projection itself", () => {

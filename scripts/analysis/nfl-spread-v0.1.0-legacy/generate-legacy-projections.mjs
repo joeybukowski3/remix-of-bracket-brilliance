@@ -1,6 +1,20 @@
 /**
- * Generate public/data/nfl/matchup-projections.json — JKB projected spreads
- * (nfl-spread-v0.1.0).
+ * RETIRED FROM PRODUCTION (2026-08-19). This is the nfl-spread-v0.1.0
+ * composite (opponent-adjusted EPA + point differential, its own fitted
+ * beta) that used to generate the public matchup-projections.json artifact.
+ *
+ * It no longer generates the authoritative public JKB spread — that's now
+ * scripts/generate-nfl-matchup-projections.mts, driven by the canonical
+ * Current OVR board (src/lib/nfl/currentRating2026.ts) and Power Number
+ * (src/lib/nfl/jkbPowerNumber2026.ts), per the approved 2026-08-19
+ * methodology.
+ *
+ * Kept here, unmodified in logic, ONLY for historical/model comparison and
+ * backtesting (see scripts/analysis/nfl-current-ovr-spread-calibration/,
+ * which already reuses scripts/lib/nfl-spread-model.mjs and
+ * nfl-spread-dataset.mjs directly for exactly this purpose). Writes to an
+ * analysis-only output path — it can never again overwrite the production
+ * public/data/nfl/matchup-projections.json artifact.
  *
  * Reads only the committed Phase 6 EPA cache and the repository's own
  * schedule/results; the network is never touched.
@@ -10,19 +24,16 @@
  * beta fit or the prediction. Market comparison belongs to the consumer layer,
  * strictly after a projection exists.
  *
- * Independent of the Phase 2-6 display generators: a failure here leaves the
- * Model Analysis section unavailable and changes nothing else.
- *
  * Usage:
- *   node scripts/generate-nfl-matchup-projections.mjs
- *   node scripts/generate-nfl-matchup-projections.mjs --dry-run
- *   node scripts/generate-nfl-matchup-projections.mjs --backtest
+ *   node scripts/analysis/nfl-spread-v0.1.0-legacy/generate-legacy-projections.mjs
+ *   node scripts/analysis/nfl-spread-v0.1.0-legacy/generate-legacy-projections.mjs --dry-run
+ *   node scripts/analysis/nfl-spread-v0.1.0-legacy/generate-legacy-projections.mjs --backtest
  */
 
 import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
+import { buildNflMeta, toNflJsonFileString } from "../../lib/nfl-data-meta.mjs";
 import {
   BACKTEST_SEASONS,
   HISTORY_SEASONS,
@@ -30,7 +41,7 @@ import {
   loadSeason,
   loadSpreadDataset,
   runBacktest,
-} from "./lib/nfl-spread-dataset.mjs";
+} from "../../lib/nfl-spread-dataset.mjs";
 import {
   GAME_COMPLETION_MS,
   NFL_SPREAD_MODEL_VERSION,
@@ -41,10 +52,10 @@ import {
   SPREAD_WEIGHTS,
   projectGame,
   toConventionalSpread,
-} from "./lib/nfl-spread-model.mjs";
+} from "../../lib/nfl-spread-model.mjs";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT_FILE = join(ROOT, "public", "data", "nfl", "matchup-projections.json");
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const OUT_FILE = join(ROOT, "scripts", "analysis", "nfl-spread-v0.1.0-legacy", "out", "legacy-matchup-projections.json");
 
 export const PROJECTIONS_SCHEMA_VERSION = "nfl-matchup-projections-v1";
 
@@ -90,10 +101,6 @@ function main() {
   }
   const betaFitThrough = fitSeasons[fitSeasons.length - 1];
 
-  // sampleGameIds is deliberately not published: it is thousands of identifiers
-  // the browser never reads. The leakage guard runs on the full list here at
-  // generation time, and lastSampleGameId still lets a reader confirm the
-  // sample stops before kickoff.
   const side = (s) => ({
     offAdj: s.offAdj,
     defAdj: s.defAdj,
@@ -160,10 +167,11 @@ function main() {
       week: null,
       modelVersion: NFL_SPREAD_MODEL_VERSION,
       notes: [
+        "RETIRED FROM PRODUCTION 2026-08-19 — analysis/comparison artifact only, never consumed by the public site.",
         "Independent football-performance model. No sportsbook spread, moneyline, total, ATS or over/under value is used as a predictive input, in the sample, the opponent adjustment, the composite or the beta fit.",
         "Separate from nfl-power-v0.3.1: that model is a balanced descriptive team rating (40/40/20, 1-99 scale); this one is calibrated for future scoring margin (45/35/20, points) and found offence modestly more predictive.",
         "EPA is the Phase 6 nflfastR play-by-play definition (matchup-epa-v1); the legacy stats_team_week EPA is never used.",
-        "Sample is fixed: all completed regular-season games finished before kickoff. It does not respond to the matchup page's Season / Last 5 display control.",
+        "Sample is fixed: all completed regular-season games finished before kickoff.",
         "Prior season is the full previous regular season, weighted K/(K + completed current-season games).",
         "Home-field advantage is a fixed 2.0 points, 0.0 at neutral sites, and is never fitted. Beta is the model's only fitted parameter.",
         "Positive projectedHomeMargin means the home team is favoured by that many points.",
@@ -202,12 +210,12 @@ function main() {
   };
 
   console.log(
-    `[nfl:projections] ${NFL_SPREAD_MODEL_VERSION} beta=${beta.toFixed(4)} ` +
+    `[nfl:legacy-projections] ${NFL_SPREAD_MODEL_VERSION} beta=${beta.toFixed(4)} ` +
       `(fit on ${fitSeasons.join(",")}, ${fitObservations} games)  projected ${projected} ${CURRENT_SEASON} games`
   );
 
   if (args.dryRun) {
-    console.log("[nfl:projections] dry run; nothing written");
+    console.log("[nfl:legacy-projections] dry run; nothing written");
     return;
   }
 
@@ -226,7 +234,7 @@ function main() {
     }
     throw err;
   }
-  console.log(`[nfl:projections] wrote ${OUT_FILE}`);
+  console.log(`[nfl:legacy-projections] wrote ${OUT_FILE}`);
 }
 
 /** Developer-facing walk-forward report. Never part of artifact generation. */
@@ -255,7 +263,7 @@ function printBacktest(dataset) {
 try {
   main();
 } catch (err) {
-  console.error(`[nfl:projections] FAILED: ${err.message}`);
-  console.error("[nfl:projections] existing artifact left untouched");
+  console.error(`[nfl:legacy-projections] FAILED: ${err.message}`);
+  console.error("[nfl:legacy-projections] existing artifact left untouched");
   process.exit(1);
 }

@@ -29,6 +29,7 @@ type GameRecord = {
   status: string;
   stadium: string | null;
   isDome: boolean | null;
+  neutralSite: boolean;
 };
 
 type ResultRecord = GameRecord & {
@@ -172,6 +173,25 @@ describe("pipeline core (fixture input)", () => {
     const sb = games.find((g: GameRecord) => g.seasonType === "SB")!;
     expect(sb.status).toBe("final");
     expect(sb.isDome).toBeNull(); // quoted-empty roof in source
+    // FIXTURE_CSV has no `location` column at all — every game must default
+    // to non-neutral rather than crashing on a missing field.
+    expect(games.every((g: GameRecord) => g.neutralSite === false)).toBe(true);
+  });
+
+  it("flags neutralSite true only when nflverse's own location column says 'Neutral'", () => {
+    const header = `${FIXTURE_HEADER},location`;
+    const csv = [
+      header,
+      "2025_01_BUF_MIA,2025,REG,1,2025-09-07,13:00,BUF,31,MIA,20,outdoors,Hard Rock Stadium,Home",
+      "2025_02_KC_LAC,2025,REG,2,2025-11-02,13:00,KC,24,LAC,17,outdoors,Estadio Azteca,Neutral",
+    ].join("\n");
+    const rows = parseCsv(csv);
+    const teamMap = buildNflverseTeamMap(TEAMS_JSON);
+    const { games } = transformSeasonRows(rows, 2025, teamMap);
+    const home = games.find((g: GameRecord) => g.gameId === "2025_01_BUF_MIA")!;
+    const neutral = games.find((g: GameRecord) => g.gameId === "2025_02_KC_LAC")!;
+    expect(home.neutralSite).toBe(false);
+    expect(neutral.neutralSite).toBe(true);
   });
 
   it("converts US Eastern kickoff times to UTC across DST boundaries", () => {

@@ -3,15 +3,19 @@ import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupCard from "@/components/nfl/matchups/MatchupCard";
 import { formatMarketFavoriteSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
+import type { GameProjection } from "@/lib/nfl/projectionData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 
 /**
- * The matchup-list card's spread must come from the published Phase 5 market
- * artifact, not from the schedule's always-null `matchup.spread`.
+ * The matchup-list card shows the MARKET spread from the published market
+ * artifact and, deliberately since the 2026-08-19 Power Number integration,
+ * the JKB projected spread and the Model-vs-Market difference alongside it —
+ * never a value manufactured from the moneyline, total or power rating also
+ * on the card.
  *
- * It is the MARKET line. The JKB projected spread never appears here and never
- * substitutes for a missing line, and no other field — moneyline, total, power
- * rating — can manufacture one.
+ * The market line still names no sportsbook and still never claims to be a
+ * consensus or an independently verified closing line — that provenance
+ * constraint is unchanged by adding the JKB column beside it.
  */
 
 const team = (abbr: string, teamName: string, slug: string) => ({
@@ -53,10 +57,29 @@ const market = (overrides: Partial<MarketCurrentGame> = {}): MarketCurrentGame =
     ...overrides,
   }) as MarketCurrentGame;
 
-function renderCard(m: MarketCurrentGame | null) {
+const projection = (overrides: Partial<GameProjection> = {}): GameProjection => ({
+  gameId: "2026_01_NE_SEA",
+  week: 1,
+  kickoff: "2026-09-10T00:20:00.000Z",
+  awayTeam: "ne",
+  homeTeam: "sea",
+  homeCurrentOVR: 55.65,
+  awayCurrentOVR: 44.35,
+  leagueAverageOVR: 50,
+  homePowerNumber: 1.356,
+  awayPowerNumber: -1.356,
+  neutralSite: false,
+  homeFieldAdvantage: 2,
+  neutralProjectedMargin: 1.3586,
+  projectedHomeMargin: 3.3586,
+  formattedJkbSpread: "SEA −3.4",
+  ...overrides,
+});
+
+function renderCard(m: MarketCurrentGame | null, p: GameProjection | null = null) {
   render(
     <MemoryRouter>
-      <MatchupCard matchup={MATCHUP} market={m} />
+      <MatchupCard matchup={MATCHUP} market={m} projection={p} />
     </MemoryRouter>
   );
   return screen.getByRole("link", { name: /view matchup breakdown/i });
@@ -66,7 +89,6 @@ describe("MatchupCard market spread", () => {
   it("shows the published line for a priced game", () => {
     const card = renderCard(market());
     expect(within(card).getByText("SEA −3.5")).toBeInTheDocument();
-    expect(within(card).queryByText("N/A")).toBeNull();
   });
 
   it("names the home team when the home side is favoured", () => {
@@ -81,62 +103,88 @@ describe("MatchupCard market spread", () => {
 
   it("renders a genuine pick'em as PK", () => {
     const card = renderCard(market({ spread: { home: 0, away: 0 } }));
-    expect(within(card).getByText("PK")).toBeInTheDocument();
+    expect(within(card).getAllByText("PK").length).toBeGreaterThan(0);
   });
 
   it("shows N/A when the source has not priced the game", () => {
     const card = renderCard(market({ spread: { home: null, away: null } }));
-    expect(within(card).getByText("N/A")).toBeInTheDocument();
+    expect(within(card).getAllByText("N/A").length).toBeGreaterThan(0);
   });
 
   it("shows N/A when no market record exists at all, and still renders the card", () => {
     const card = renderCard(null);
-    expect(within(card).getByText("N/A")).toBeInTheDocument();
+    expect(within(card).getAllByText("N/A").length).toBeGreaterThan(0);
     // The card is never hidden just because the game is unpriced.
     expect(within(card).getByText("Seattle Seahawks")).toBeInTheDocument();
   });
 
-  it("keeps the Spread label so an unpriced game still reads as a spread slot", () => {
+  it("keeps the JKB / Market / Diff labels so an unpriced game still reads as a spread slot", () => {
     const card = renderCard(null);
-    expect(within(card).getByText("Spread")).toBeInTheDocument();
+    expect(within(card).getByText("JKB")).toBeInTheDocument();
+    expect(within(card).getByText("Market")).toBeInTheDocument();
+    expect(within(card).getByText("Diff")).toBeInTheDocument();
   });
 });
 
-describe("MatchupCard spread cannot be manufactured", () => {
-  it("does not derive a spread from the moneyline", () => {
+describe("MatchupCard market spread cannot be manufactured", () => {
+  it("does not derive the market spread from the moneyline", () => {
     const card = renderCard(
       market({ spread: { home: null, away: null }, moneyline: { home: -260, away: 210 } })
     );
-    expect(within(card).getByText("N/A")).toBeInTheDocument();
     expect(within(card).queryByText(/−2\.5|−3|SEA −/)).toBeNull();
   });
 
-  it("does not derive a spread from the total", () => {
+  it("does not derive the market spread from the total", () => {
     const card = renderCard(market({ spread: { home: null, away: null }, total: 51.5 }));
-    expect(within(card).getByText("N/A")).toBeInTheDocument();
     expect(within(card).queryByText("51.5")).toBeNull();
   });
 
   it("does not fall back to the power rating shown on the same card", () => {
     const card = renderCard(market({ spread: { home: null, away: null } }));
-    const spreadChip = within(card).getByText("N/A");
-    expect(spreadChip.textContent).toBe("N/A");
-  });
-
-  it("never labels the market line as the JKB projection", () => {
-    const card = renderCard(market());
-    const text = card.textContent ?? "";
-    for (const banned of [/JKB/i, /projected/i, /model/i, /consensus/i, /closing line/i]) {
-      expect(text).not.toMatch(banned);
-    }
+    expect(within(card).getAllByText("N/A").length).toBeGreaterThan(0);
   });
 
   it("names no sportsbook", () => {
-    const card = renderCard(market());
+    const card = renderCard(market(), projection());
     const text = card.textContent ?? "";
     for (const book of [/draftkings/i, /fanduel/i, /caesars/i, /bet365/i, /pinnacle/i]) {
       expect(text).not.toMatch(book);
     }
+  });
+
+  it("never claims the market line is a consensus or an independently verified closing line", () => {
+    const card = renderCard(market(), projection());
+    const text = card.textContent ?? "";
+    expect(text).not.toMatch(/consensus/i);
+    expect(text).not.toMatch(/closing line/i);
+  });
+});
+
+describe("MatchupCard JKB projected spread (deliberate, since 2026-08-19)", () => {
+  it("renders the JKB projected spread when a projection is supplied", () => {
+    const card = renderCard(market(), projection());
+    expect(within(card).getByText("SEA −3.4")).toBeInTheDocument();
+  });
+
+  it("shows N/A for JKB, never a fabricated projection, when none is supplied", () => {
+    const card = renderCard(market(), null);
+    const jkbLabel = within(card).getByText("JKB");
+    const jkbValue = jkbLabel.parentElement?.querySelector("div:nth-child(2)");
+    expect(jkbValue?.textContent).toBe("N/A");
+  });
+
+  it("shows a team-oriented Diff, never a bare signed number", () => {
+    // JKB SEA -3.4 (home margin +3.4) vs Market SEA -3.5 (home margin +3.5)
+    // -> model is 0.1 lower on home than market -> leans away (NE) by 0.1.
+    const card = renderCard(market(), projection());
+    expect(within(card).getByText("NE +0.1")).toBeInTheDocument();
+  });
+
+  it("shows Diff as N/A when there is no market line to compare against", () => {
+    const card = renderCard(market({ spread: { home: null, away: null } }), projection());
+    const diffLabel = within(card).getByText("Diff");
+    const diffValue = diffLabel.parentElement?.querySelector("div:nth-child(2)");
+    expect(diffValue?.textContent).toBe("N/A");
   });
 });
 
@@ -170,7 +218,7 @@ describe("MatchupCard universal OVR (never the legacy guide powerRank/overallPct
   });
 });
 
-describe("MatchupCard uses the shared formatter", () => {
+describe("MatchupCard uses the shared formatters", () => {
   it("renders exactly what formatMarketFavoriteSpread returns", () => {
     // The same helper the hero and Model Analysis use, so one line is never
     // stated two different ways across the site.
@@ -182,7 +230,9 @@ describe("MatchupCard uses the shared formatter", () => {
         </MemoryRouter>
       );
       const card = screen.getByRole("link", { name: /view matchup breakdown/i });
-      expect(within(card).getByText(formatMarketFavoriteSpread(m))).toBeInTheDocument();
+      const marketLabel = within(card).getByText("Market");
+      const marketValue = marketLabel.parentElement?.querySelector("div:nth-child(2)");
+      expect(marketValue?.textContent).toBe(formatMarketFavoriteSpread(m));
       unmount();
     }
   });

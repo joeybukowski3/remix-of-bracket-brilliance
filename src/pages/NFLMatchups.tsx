@@ -12,6 +12,8 @@ import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { currentMarketFor } from "@/lib/nfl/marketData";
+import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
+import { projectionFor } from "@/lib/nfl/projectionData";
 
 const CURRENT_SEASON = 2026;
 const DEFAULT_WEEK = 1;
@@ -57,6 +59,10 @@ export default function NFLMatchups() {
   // malformed market artifact leaves each card's spread at N/A and changes
   // nothing else on the page.
   const { artifact: marketArtifact } = useNflMatchupMarket();
+  // Optional enrichment, loaded independently of the schedule: a missing or
+  // malformed projections artifact leaves each card's JKB spread at N/A and
+  // changes nothing else on the page.
+  const { artifact: projectionsArtifact } = useNflMatchupProjections();
   // Universal current 2026 OVR/rank -- the only source for the "Power" line
   // on each card. Never the guide's frozen 2025-preseason powerRank/overallPct.
   const currentRating = useNflCurrentRating2026();
@@ -124,6 +130,7 @@ export default function NFLMatchups() {
                 key={matchup.gameId}
                 matchup={matchup}
                 market={currentMarketFor(marketArtifact, matchup.gameId)}
+                projection={projectionFor(projectionsArtifact, matchup.gameId)}
                 awayOvr={ovrByAbbr.get(matchup.away.abbr) ?? null}
                 homeOvr={ovrByAbbr.get(matchup.home.abbr) ?? null}
               />

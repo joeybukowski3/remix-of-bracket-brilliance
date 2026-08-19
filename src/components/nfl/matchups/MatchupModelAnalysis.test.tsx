@@ -4,36 +4,23 @@ import MatchupModelAnalysis from "@/components/nfl/matchups/MatchupModelAnalysis
 import type { GameProjection } from "@/lib/nfl/projectionData";
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 
-const side = {
-  offAdj: 0.1,
-  defAdj: -0.05,
-  pdgAdj: 4,
-  compositeZ: 0,
-  sampleGames: 17,
-  lastSampleGameId: "2025_18_MIA_NE",
-  priorSeason: 2025,
-  priorWeight: 1,
-  currentSeasonGames: 0,
-  priorSeasonGames: 17,
-};
-
 function projection(overrides: Partial<GameProjection> = {}): GameProjection {
   return {
     gameId: "2026_01_NE_SEA",
-    season: 2026,
     week: 1,
     kickoff: "2026-09-10T00:20:00.000Z",
     awayTeam: "ne",
     homeTeam: "sea",
+    homeCurrentOVR: 55.65,
+    awayCurrentOVR: 44.35,
+    leagueAverageOVR: 50,
+    homePowerNumber: 1.356,
+    awayPowerNumber: -1.356,
     neutralSite: false,
-    beta: 4.63,
-    away: { ...side },
-    home: { ...side, compositeZ: 0.2934 },
-    strengthDiff: 0.2934,
-    neutralMargin: 1.3586,
     homeFieldAdvantage: 2,
+    neutralProjectedMargin: 1.3586,
     projectedHomeMargin: 3.3586,
-    projectedSpread: { favoriteTeam: "sea", line: -3.4, display: "SEA −3.4" },
+    formattedJkbSpread: "SEA −3.4",
     ...overrides,
   };
 }
@@ -61,7 +48,7 @@ function renderSection(props: Partial<React.ComponentProps<typeof MatchupModelAn
       market={market(-2.5)}
       awayTeamName="New England Patriots"
       homeTeamName="Seattle Seahawks"
-      modelVersion="nfl-spread-v0.1.0"
+      modelVersion="jkb-power-number-v1.0.0"
       loading={false}
       error={null}
       {...props}
@@ -118,10 +105,12 @@ describe("MatchupModelAnalysis headline", () => {
 });
 
 describe("MatchupModelAnalysis explanation", () => {
-  it("shows exactly the three terms behind the projection", () => {
+  it("shows the Power Number breakdown terms", () => {
     renderSection();
     const body = within(section());
-    expect(body.getByText("Team Strength Difference")).toBeInTheDocument();
+    expect(body.getByText("SEA Power Number")).toBeInTheDocument();
+    expect(body.getByText("NE Power Number")).toBeInTheDocument();
+    expect(body.getByText("Neutral Margin")).toBeInTheDocument();
     expect(body.getByText("Home Field")).toBeInTheDocument();
     expect(body.getByText("Projected Margin")).toBeInTheDocument();
   });
@@ -137,7 +126,7 @@ describe("MatchupModelAnalysis explanation", () => {
         neutralSite: true,
         homeFieldAdvantage: 0,
         projectedHomeMargin: 1.3586,
-        projectedSpread: { favoriteTeam: "sea", line: -1.4, display: "SEA -1.4" },
+        formattedJkbSpread: "SEA −1.4",
       }),
     });
     // The phrase appears in the subtitle too; the breakdown row is what matters.

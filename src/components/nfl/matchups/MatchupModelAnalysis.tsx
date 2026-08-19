@@ -100,7 +100,7 @@ export default function MatchupModelAnalysis({
   return (
     <MatchupSection
       id="model-analysis"
-      subtitle={`${awayTeamName} at ${homeTeamName} — opponent-adjusted EPA and point differential${
+      subtitle={`${awayTeamName} at ${homeTeamName} — Power Number difference from the canonical Current OVR board${
         projection.neutralSite ? ", neutral site" : ""
       }.`}
     >
@@ -108,7 +108,7 @@ export default function MatchupModelAnalysis({
         <HeadlineStat
           label="JKB Projected Spread"
           value={formatProjectedSpread(projection)}
-          help="This model's own estimate of the final margin, from opponent-adjusted EPA and point differential. No market data is used to produce it."
+          help="This model's own estimate of the final margin, from the two teams' Power Numbers (derived from the canonical Current OVR board). No market data is used to produce it."
           emphasis
         />
         <HeadlineStat
@@ -159,11 +159,11 @@ export default function MatchupModelAnalysis({
       </div>
 
       <MatchupPendingNote>
-        {modelVersion ?? "nfl-spread-v0.1.0"} projects scoring margin from opponent-adjusted EPA and
-        point differential over completed regular-season games, with a full previous-season prior and a
-        fixed 2.0-point home-field adjustment. No sportsbook line, moneyline, total or ATS record is used
-        as an input. Backtesting has not shown this model beating the market, so no pick, confidence
-        level or bet sizing is offered.
+        {modelVersion ?? "jkb-power-number-v1.0.0"} projects scoring margin from each team's Power
+        Number — how many points better or worse than the current league-average NFL team it is,
+        derived from the canonical Current OVR board — plus a fixed 2.0-point home-field adjustment.
+        No sportsbook line, moneyline, total or ATS record is used as an input. Backtesting has not
+        shown this model beating the market, so no pick, confidence level or bet sizing is offered.
       </MatchupPendingNote>
     </MatchupSection>
   );
