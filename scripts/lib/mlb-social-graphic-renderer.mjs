@@ -16,7 +16,7 @@ export const SOCIAL_GRAPHIC_GEOMETRY = Object.freeze({
   rowCount: 5,
 });
 
-const COLORS = Object.freeze({
+export const COLORS = Object.freeze({
   navy: "#0F1B33",
   blue: "#1E5AA8",
   gray: "#5B6B7F",
@@ -32,8 +32,8 @@ const COLORS = Object.freeze({
   faint: "#C6D0DC",
 });
 
-const MEDAL_COLORS = ["#F2B134", "#B9C2CD", "#C98A4B"];
-const FONT_STACK = "Arial,'Helvetica Neue',Helvetica,sans-serif";
+export const MEDAL_COLORS = ["#F2B134", "#B9C2CD", "#C98A4B"];
+export const FONT_STACK = "Arial,'Helvetica Neue',Helvetica,sans-serif";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -45,7 +45,7 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function escapeXml(value) {
+export function escapeXml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -63,17 +63,17 @@ function decodeXml(value) {
     .replace(/&amp;/g, "&");
 }
 
-function truncateText(value, maxCharacters) {
+export function truncateText(value, maxCharacters) {
   const text = normalizeText(value);
   if (text.length <= maxCharacters) return text;
   return `${text.slice(0, Math.max(1, maxCharacters - 1)).trimEnd()}…`;
 }
 
-function text(x, y, value, { size = 26, weight = 700, fill = COLORS.navy, anchor = "middle", letterSpacing = 0, tabular = true } = {}) {
+export function text(x, y, value, { size = 26, weight = 700, fill = COLORS.navy, anchor = "middle", letterSpacing = 0, tabular = true } = {}) {
   return `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}"${letterSpacing ? ` letter-spacing="${letterSpacing}"` : ""}${tabular ? ' style="font-variant-numeric:tabular-nums"' : ""}>${escapeXml(value)}</text>`;
 }
 
-function scoreStyle(value, thresholds) {
+export function scoreStyle(value, thresholds) {
   if (value != null && value >= thresholds.green) return { fill: COLORS.green, text: "#fff" };
   if (value != null && value >= thresholds.gold) return { fill: COLORS.gold, text: COLORS.navy };
   if (value != null && value >= thresholds.navy) return { fill: COLORS.navy, text: "#fff" };
@@ -89,7 +89,7 @@ function scoreStyle(value, thresholds) {
  * visible tiers; only a genuinely missing (null) score stays muted, since
  * that's absent data, not a bad score.
  */
-function hrScoreStyle(value) {
+export function hrScoreStyle(value) {
   if (value == null) return { fill: "#8A97A8", text: "#fff" };
   if (value >= 70) return { fill: "#22c55e", text: "#fff" };
   if (value >= 65) return { fill: "#4ade80", text: "#000" };
@@ -103,7 +103,7 @@ function hrScoreStyle(value) {
  * otherwise a muted (not hidden) gray. Data-driven, unlike a fixed color
  * regardless of value.
  */
-function statColor(value, hi, mid) {
+export function statColor(value, hi, mid) {
   if (value == null) return "#94a3b8";
   return value >= hi ? "#22c55e" : value >= mid ? "#86efac" : "#94a3b8";
 }
@@ -112,12 +112,12 @@ function statColor(value, hi, mid) {
  * Count-stat text color (L7, L30 home runs) -- mirrors the website's inline
  * `v >= hi ? green : v >= mid ? gold : muted` bands exactly.
  */
-function countColor(value, hi, mid) {
+export function countColor(value, hi, mid) {
   if (value == null) return "#94a3b8";
   return value >= hi ? "#22c55e" : value >= mid ? "#facc15" : "#94a3b8";
 }
 
-function triangle(centerX, centerY, direction, size, color) {
+export function triangle(centerX, centerY, direction, size, color) {
   const points =
     direction === "up"
       ? `${centerX},${centerY - size} ${centerX + size},${centerY + size} ${centerX - size},${centerY + size}`
@@ -125,7 +125,7 @@ function triangle(centerX, centerY, direction, size, color) {
   return `<polygon points="${points}" fill="${color}"/>`;
 }
 
-function icon(kind, x, baselineY, size = 24) {
+export function icon(kind, x, baselineY, size = 24) {
   const scale = size / 24;
   const top = baselineY - size + 4;
   const transform = `translate(${x} ${top}) scale(${scale})`;
@@ -150,11 +150,11 @@ function icon(kind, x, baselineY, size = 24) {
   return "";
 }
 
-function formatMetric(value, decimals = 1, suffix = "") {
+export function formatMetric(value, decimals = 1, suffix = "") {
   return value == null ? "N/A" : `${value.toFixed(decimals)}${suffix}`;
 }
 
-function formatCount(value) {
+export function formatCount(value) {
   return value == null ? "N/A" : String(value);
 }
 
@@ -337,7 +337,7 @@ export async function createRemoteMlbLogoResolver({ teams = [], fetchImpl = fetc
   };
 }
 
-function renderTeamLogo(centerX, centerY, team, resolveLogo) {
+export function renderTeamLogo(centerX, centerY, team, resolveLogo) {
   const logoUri = typeof resolveLogo === "function" ? resolveLogo(team) : null;
   if (logoUri && logoUri.startsWith("data:image/")) {
     return `<image data-team-logo="${escapeXml(team)}" href="${escapeXml(logoUri)}" x="${centerX - 27}" y="${centerY - 27}" width="54" height="54" preserveAspectRatio="xMidYMid meet"/>`;
@@ -352,7 +352,7 @@ function rowMetadata(kind, row, index) {
   return `<g data-social-row="${index}" data-pitcher-id="${escapeXml(row.pitcherId ?? "")}" data-game-id="${escapeXml(row.gameId ?? "")}" data-pitcher="${escapeXml(row.pitcher)}" data-team="${escapeXml(row.team)}" data-side="${escapeXml(row.recommendedSide)}" data-odds="${escapeXml(row.recommendedOdds ?? "")}">`;
 }
 
-function formatSlateDate(slateDate) {
+export function formatSlateDate(slateDate) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalizeText(slateDate));
   if (!match) return normalizeText(slateDate);
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
