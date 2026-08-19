@@ -28,14 +28,13 @@
  *   pipeline sources from a live page scrape); --source=local for K is not
  *   supported here and falls back to fixture with a warning.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { getHrCandidatePool, SOCIAL_PRODUCT } from "./lib/mlb-social-composition.mjs";
-import { composeSocialPostPlan } from "./lib/mlb-social-composition.mjs";
 import { buildHrCanonicalCaption, buildKCanonicalCaption, buildCanonicalOmittedReply, weightedLength } from "./lib/mlb-social-canonical-caption.mjs";
-import { extractCanonicalRenderedRows, renderCanonicalSocialSvg, writeCanonicalSocialGraphic } from "./lib/mlb-social-canonical-renderer.mjs";
-import { assertGraphicCaptionConsistency, getPlanRowIdentities, planRowIdentity } from "./lib/mlb-social-plan-consistency.mjs";
+import { writeCanonicalSocialGraphic } from "./lib/mlb-social-canonical-renderer.mjs";
+import { assertGraphicCaptionConsistency, planRowIdentity } from "./lib/mlb-social-plan-consistency.mjs";
+import { buildPlanFromSource } from "./lib/mlb-social-plan-source.mjs";
 
 const ROOT = process.cwd();
 const args = new Map(
@@ -61,105 +60,8 @@ if (!["k", "hr", "all"].includes(product)) throw new Error(`Unknown --product="$
 if (!["fixture", "local"].includes(source)) throw new Error(`Unknown --source="${source}". Expected fixture or local.`);
 if (rowsArg != null && (!Number.isInteger(rowsArg) || rowsArg < 2 || rowsArg > 5)) throw new Error(`--rows must be an integer 2-5, got "${args.get("rows")}".`);
 
-// ---------------------------------------------------------------------------
-// Fixture candidate pools -- deterministic, network-free, includes one
-// doubleheader example (same pitcher/batter, two distinct gameIds) so the
-// preview always exercises G1/G2 rendering without depending on today's
-// real schedule containing one.
-// ---------------------------------------------------------------------------
-function kFixturePool() {
-  return [
-    { pitcher: "Zack Wheeler", pitcherId: 1001, team: "PHI", opponent: "ATL", gameId: 9001, kLine: 6.5, projectedKs: 7.4, direction: "OVER", projectionEdge: 0.9, oddsOver: "+105", oddsUnder: "-125", projectedIP: 6.1 },
-    { pitcher: "Tarik Skubal", pitcherId: 1002, team: "DET", opponent: "CLE", gameId: 9002, kLine: 7.5, projectedKs: 8.1, direction: "OVER", projectionEdge: 0.6, oddsOver: "-110", oddsUnder: "-115", projectedIP: 6.4 },
-    { pitcher: "Doubleheader Ace", pitcherId: 1003, team: "NYY", opponent: "BOS", gameId: 9003, gameNumber: 1, isDoubleheader: true, kLine: 5.5, projectedKs: 4.2, direction: "UNDER", projectionEdge: -1.3, oddsOver: "+120", oddsUnder: "-140", projectedIP: 5.2 },
-    { pitcher: "Doubleheader Ace", pitcherId: 1003, team: "NYY", opponent: "BOS", gameId: 9004, gameNumber: 2, isDoubleheader: true, kLine: 5.0, projectedKs: 6.1, direction: "OVER", projectionEdge: 1.1, oddsOver: "-105", oddsUnder: "-115", projectedIP: 5.8 },
-    { pitcher: "George Kirby", pitcherId: 1005, team: "SEA", opponent: "HOU", gameId: 9005, kLine: 5.5, projectedKs: 6.0, direction: "OVER", projectionEdge: 0.5, oddsOver: "-115", oddsUnder: "-105", projectedIP: 6.0 },
-  ];
-}
-
-function hrFixturePool() {
-  return [
-    { player: "Aaron Judge", playerId: 2001, team: "NYY", opponent: "BOS", gameId: 9003, gameNumber: 1, isDoubleheader: true, hrScore: 87.1, hrOddsYes: "+230", opposingPitcher: "Brayan Bello", barrelRate: 22.4, hardHitRate: 58.1, last7HR: 4, last30HR: 11 },
-    { player: "Shohei Ohtani", playerId: 2002, team: "LAD", opponent: "SF", gameId: 9006, hrScore: 84.3, hrOddsYes: "+202", opposingPitcher: "Logan Webb", barrelRate: 20.9, hardHitRate: 55.3, last7HR: 3, last30HR: 9 },
-    { player: "Aaron Judge", playerId: 2001, team: "NYY", opponent: "BOS", gameId: 9004, gameNumber: 2, isDoubleheader: true, hrScore: 79.8, hrOddsYes: "+260", opposingPitcher: "Kutter Crawford", barrelRate: 22.4, hardHitRate: 58.1, last7HR: 4, last30HR: 11 },
-    { player: "Kyle Schwarber", playerId: 2004, team: "PHI", opponent: "ATL", gameId: 9001, hrScore: 75.8, hrOddsYes: "+350", opposingPitcher: "Spencer Strider", barrelRate: 18.6, hardHitRate: 52.7, last7HR: 2, last30HR: 8 },
-    { player: "Marcell Ozuna", playerId: 2005, team: "ATL", opponent: "PHI", gameId: 9001, hrScore: 73.4, hrOddsYes: "+320", opposingPitcher: "Zack Wheeler", barrelRate: 17.1, hardHitRate: 50.2, last7HR: 1, last30HR: 6 },
-  ];
-}
-
-function slicePool(pool, count) {
-  if (!count) return pool;
-  return pool.slice(0, Math.min(count, pool.length));
-}
-
-// ---------------------------------------------------------------------------
-// Real-slate HR loading. Mirrors post-mlb-hr-props-to-x.mjs's own local
-// normalizer, but is a standalone read-only copy here -- it never imports
-// from or calls that posting script, so this tool can never accidentally
-// share state, receipts, or side effects with it.
-// ---------------------------------------------------------------------------
-function normalizeHrBatterForSelection(value) {
-  const player = String(value?.player ?? "").trim();
-  const team = String(value?.team ?? "").trim().toUpperCase();
-  if (!player || !team) return null;
-  const num = (v) => {
-    const n = Number(v);
-    return v === null || v === undefined || v === "" || !Number.isFinite(n) ? null : n;
-  };
-  return {
-    player,
-    playerId: value?.playerId ?? null,
-    gameId: value?.gameId ?? null,
-    team,
-    opponent: String(value?.opponent ?? "").trim().toUpperCase(),
-    opposingPitcher: String(value?.opposingPitcher ?? "").trim() || "TBD",
-    hrScore: num(value?.hrScore),
-    hrOddsYes: String(value?.hrOddsYes ?? "").trim() || null,
-    barrelRate: num(value?.barrelRate),
-    hardHitRate: num(value?.hardHitRate),
-    last7HR: num(value?.last7HR),
-    last30HR: num(value?.last30HR),
-    lineupStatus: value?.lineupStatus ?? "unknown",
-    battingOrder: value?.battingOrder ?? null,
-  };
-}
-
-function loadLocalHrCandidatePool() {
-  const rawPath = path.join(ROOT, "public", "data", "mlb", "hr-props-raw.json");
-  if (!existsSync(rawPath)) throw new Error(`--source=local requires ${rawPath}, which does not exist.`);
-  const raw = JSON.parse(readFileSync(rawPath, "utf8"));
-  const batters = (Array.isArray(raw?.batters) ? raw.batters : Array.isArray(raw) ? raw : [])
-    .map(normalizeHrBatterForSelection)
-    .filter(Boolean);
-  // Treat every lineup status as confirmed for preview purposes only -- this
-  // tool never posts, so it is not subject to the live confirmation gate.
-  // selectConfirmedHrProps only promotes a PROJECTED row on an explicit
-  // `=== true` from liveConfirm (see mlb-hr-x-selection-core.mjs), so this
-  // must return the literal boolean, not a truthy object.
-  return getHrCandidatePool({ batters, isGameStarted: () => false, liveConfirm: () => true });
-}
-
-function buildPlan(productKey, { source, slateDate, rows }) {
-  const isK = productKey === "k";
-  if (isK && source === "local") {
-    console.warn("[dry-run] --source=local is not supported for K in Phase 3 (no local raw K data source yet); falling back to fixture.");
-  }
-
-  const useLocal = !isK && source === "local";
-  const candidatePool = useLocal ? loadLocalHrCandidatePool() : slicePool(isK ? kFixturePool() : hrFixturePool(), rows);
-
-  return composeSocialPostPlan({
-    product: isK ? SOCIAL_PRODUCT.K : SOCIAL_PRODUCT.HR,
-    slateDate,
-    candidatePool,
-    title: isK ? "MLB STRIKEOUT PROPS" : "MLB HOME RUN TARGETS",
-    generatedAt: new Date().toISOString(),
-    sourceSummary: [useLocal ? "local hr-props-raw.json" : "fixture"],
-  });
-}
-
 async function renderOneProduct(productKey, outDir) {
-  const plan = buildPlan(productKey, { source, slateDate, rows: rowsArg });
+  const { plan } = buildPlanFromSource(productKey, { source, slateDate, rows: rowsArg, root: ROOT, warn: (m) => console.warn(`[dry-run] ${m}`) });
   if (!plan) {
     console.warn(`[dry-run] ${productKey}: no plan could be composed (fewer than 2 distinct qualified opportunities). Skipping.`);
     return null;

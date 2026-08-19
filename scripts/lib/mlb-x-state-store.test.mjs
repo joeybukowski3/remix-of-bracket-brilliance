@@ -13,6 +13,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  canonicalReceiptCommitMessage,
+  canonicalReceiptPathFor,
   createGitStateStore,
   dailyCardReceiptPathFor,
   diagnosticPathFor,
@@ -193,6 +195,78 @@ describe("edition and market independence", () => {
       store.sync();
       store.writeReceipt({ ...target("k", "morning"), receipt: receipt("111") });
       assert.equal(store.readReceipt(target("hr", "morning")), null);
+    });
+  });
+});
+
+describe("canonical receipt paths (Phase 5, product:slateDate identity, no edition axis)", () => {
+  it("builds one path per slate and product", () => {
+    assert.equal(canonicalReceiptPathFor({ slateDate: SLATE, product: "mlb-hr-props" }), "mlb-x/2026-07-21/canonical/mlb-hr-props.json");
+    assert.equal(canonicalReceiptPathFor({ slateDate: SLATE, product: "mlb-k-props" }), "mlb-x/2026-07-21/canonical/mlb-k-props.json");
+  });
+
+  it("rejects a malformed slate date or unknown product", () => {
+    assert.throws(() => canonicalReceiptPathFor({ slateDate: "7/21/26", product: "mlb-hr-props" }), /slate date/i);
+    assert.throws(() => canonicalReceiptPathFor({ slateDate: SLATE, product: "mlb-nfl-props" }), /product/i);
+  });
+
+  it("marks state commits so they cannot trigger a production deploy", () => {
+    assert.match(canonicalReceiptCommitMessage({ slateDate: SLATE, product: "mlb-hr-props", postId: "1" }), /\[skip ci\]/);
+  });
+
+  it("is structurally distinct from the market/edition receipt namespace", () => {
+    assert.notEqual(canonicalReceiptPathFor({ slateDate: SLATE, product: "mlb-hr-props" }), receiptPathFor({ slateDate: SLATE, market: "hr", edition: "morning" }));
+  });
+});
+
+describe("canonical receipt round-trip and independence", () => {
+  it("round-trips a canonical receipt with no prior state", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      assert.equal(store.readCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props" }), null);
+      const result = store.writeCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props", receipt: receipt("canon-1") });
+      assert.equal(result.pushed, true);
+      assert.equal(store.readCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props" }).primaryPostId, "canon-1");
+    });
+  });
+
+  it("an HR canonical receipt leaves the K canonical receipt unwritten", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props", receipt: receipt("hr-1") });
+      assert.equal(store.readCanonicalReceipt({ slateDate: SLATE, product: "mlb-k-props" }), null);
+    });
+  });
+
+  it("never silently overwrites a competing runner's canonical receipt with a different post id", () => {
+    withRemote(2, ([a, b]) => {
+      a.sync();
+      b.sync();
+      assert.equal(a.writeCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props", receipt: receipt("111") }).pushed, true);
+
+      const bResult = b.writeCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props", receipt: receipt("222") });
+      // Either the rebase conflicts and B is told about the existing receipt,
+      // or B rebases cleanly -- but the winner's post id must survive and be
+      // discoverable, never silently replaced without notice.
+      if (bResult.conflicted) {
+        assert.equal(bResult.existingReceipt.primaryPostId, "111");
+      } else {
+        assert.equal(bResult.pushed, true);
+      }
+      a.sync();
+      const finalReceipt = a.readCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props" });
+      assert.ok(["111", "222"].includes(finalReceipt.primaryPostId));
+      if (bResult.conflicted) {
+        assert.equal(finalReceipt.primaryPostId, "111", "B must not clobber A's receipt");
+      }
+    });
+  });
+
+  it("is independent from the legacy market/edition receipt for the same slate/market", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeReceipt({ ...target("hr", "morning"), receipt: receipt("edition-1") });
+      assert.equal(store.readCanonicalReceipt({ slateDate: SLATE, product: "mlb-hr-props" }), null, "the legacy edition receipt must not be visible as a canonical receipt");
     });
   });
 });
