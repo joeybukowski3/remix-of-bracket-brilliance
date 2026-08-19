@@ -61,6 +61,8 @@ export type NflGameRecord = {
   awayAbbr: string;
   status: "final" | "scheduled";
   stadium: string | null;
+  /** Authoritative from nflverse's own `location` column ("Home"/"Neutral") — never inferred from stadium name. */
+  neutralSite: boolean;
 };
 
 export type TeamStanding = {

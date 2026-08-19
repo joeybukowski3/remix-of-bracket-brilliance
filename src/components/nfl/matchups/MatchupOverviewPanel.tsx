@@ -11,7 +11,7 @@ import type { NflMatchup } from "@/lib/nfl/matchups";
 import { describeSampleRule, type NflMatchupSampleSettings } from "@/lib/nfl/matchupSampleWindow";
 import {
   compareToMarket,
-  formatPoints,
+  formatModelVsMarketDifference,
   formatProjectedSpread,
   type GameProjection,
 } from "@/lib/nfl/projectionData";
@@ -62,7 +62,7 @@ function ProjectionCard({
 }) {
   const comparison = compareToMarket(projection, market);
   const marketDisplay = formatMarketFavoriteSpread(market);
-  const difference = comparison?.difference == null ? NA : formatPoints(comparison.difference);
+  const difference = formatModelVsMarketDifference(comparison);
   const unavailable = !loading && !projection;
 
   return (

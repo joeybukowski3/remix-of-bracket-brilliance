@@ -8,7 +8,7 @@ type State = {
 };
 
 /**
- * Loads the generated JKB projected spread artifact (nfl-spread-v0.1.0).
+ * Loads the generated JKB projected spread artifact (jkb-power-number-v1.0.0).
  *
  * Optional enrichment loaded independently of every other NFL artifact: if this
  * file is missing or malformed, the Model Analysis section reports itself

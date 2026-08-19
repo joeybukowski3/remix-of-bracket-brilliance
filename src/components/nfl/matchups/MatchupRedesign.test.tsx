@@ -116,35 +116,22 @@ const MARKET: MarketCurrentGame = {
   rawSpreadLine: 3.5,
 };
 
-const PROJECTION_SIDE = {
-  offAdj: 0.1,
-  defAdj: -0.05,
-  pdgAdj: 4,
-  compositeZ: 0,
-  sampleGames: 17,
-  lastSampleGameId: "2025_18_AWY_HME",
-  priorSeason: 2025,
-  priorWeight: 1,
-  currentSeasonGames: 0,
-  priorSeasonGames: 17,
-};
-
 const PROJECTION: GameProjection = {
   gameId: MATCHUP.gameId,
-  season: 2026,
   week: 1,
   kickoff: "2026-09-13T20:05:00Z",
   awayTeam: "awy",
   homeTeam: "hme",
+  homeCurrentOVR: 55.65,
+  awayCurrentOVR: 44.35,
+  leagueAverageOVR: 50,
+  homePowerNumber: 1.356,
+  awayPowerNumber: -1.356,
   neutralSite: false,
-  beta: 4.63,
-  away: { ...PROJECTION_SIDE },
-  home: { ...PROJECTION_SIDE, compositeZ: 0.2934 },
-  strengthDiff: 0.2934,
-  neutralMargin: 1.3586,
   homeFieldAdvantage: 2,
+  neutralProjectedMargin: 1.3586,
   projectedHomeMargin: 3.3586,
-  projectedSpread: { favoriteTeam: "hme", line: -3.4, display: "HME −3.4" },
+  formattedJkbSpread: "HME −3.4",
 };
 
 /** Away leads every comparable conventional metric; ranks are plausible. */
@@ -603,18 +590,20 @@ describe("availability states", () => {
 });
 
 describe("model details", () => {
-  it("renders the three real breakdown terms", () => {
+  it("renders the real breakdown terms", () => {
     render(
       <MatchupModelDetails
         matchup={MATCHUP}
         projection={PROJECTION}
-        modelVersion="nfl-spread-v0.1.0"
+        modelVersion="jkb-power-number-v1.0.0"
         generatedAt="2026-08-04T12:17:35.907Z"
         loading={false}
         error={null}
       />
     );
-    expect(screen.getByText("Team Strength Difference")).toBeInTheDocument();
+    expect(screen.getByText("HME Power Number")).toBeInTheDocument();
+    expect(screen.getByText("AWY Power Number")).toBeInTheDocument();
+    expect(screen.getByText("Neutral Margin")).toBeInTheDocument();
     expect(screen.getByText("Home Field")).toBeInTheDocument();
     expect(screen.getByText("Projected Margin")).toBeInTheDocument();
 

@@ -1,31 +1,22 @@
 import { useState } from "react";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
-import { ROLLING_BLEND_GAME_COUNT } from "@/lib/nfl/matchupSampleWindow";
-import {
-  projectionBreakdown,
-  type GameProjection,
-  type ProjectionTeamSide,
-} from "@/lib/nfl/projectionData";
+import { formatPoints, projectionBreakdown, type GameProjection } from "@/lib/nfl/projectionData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 
 const NA = "N/A";
 
-/** Signed two-decimal figure for the model's unitless adjustments. */
-function signed2(value: number | null | undefined): string {
+function ovr(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return NA;
-  const rounded = Number(value.toFixed(2));
-  if (rounded === 0) return "0.00";
-  return `${rounded > 0 ? "+" : "−"}${Math.abs(rounded).toFixed(2)}`;
+  return value.toFixed(1);
 }
 
-function count(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return NA;
-  return String(Math.round(value));
-}
+/** One side's Current OVR + Power Number, read from the flat projection fields. */
+type ProjectionTeamSide = { currentOVR: number; powerNumber: number };
 
-function weight(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return NA;
-  return value.toFixed(2);
+function sideOf(projection: GameProjection, which: "home" | "away"): ProjectionTeamSide {
+  return which === "home"
+    ? { currentOVR: projection.homeCurrentOVR, powerNumber: projection.homePowerNumber }
+    : { currentOVR: projection.awayCurrentOVR, powerNumber: projection.awayPowerNumber };
 }
 
 /**
@@ -53,17 +44,8 @@ const TEAM_COMPONENT_ROWS: {
   label: string;
   format: (side: ProjectionTeamSide) => string;
 }[] = [
-  { key: "offAdj", label: "Offensive adjustment", format: (side) => signed2(side.offAdj) },
-  { key: "defAdj", label: "Defensive adjustment", format: (side) => signed2(side.defAdj) },
-  { key: "pdgAdj", label: "Point differential adjustment", format: (side) => signed2(side.pdgAdj) },
-  { key: "compositeZ", label: "Composite (z)", format: (side) => signed2(side.compositeZ) },
-  { key: "sampleGames", label: "Games in sample", format: (side) => count(side.sampleGames) },
-  {
-    key: "priorSeasonGames",
-    label: "Prior-season games contributing",
-    format: (side) => count(side.priorSeasonGames),
-  },
-  { key: "priorWeight", label: "Prior-season weight", format: (side) => weight(side.priorWeight) },
+  { key: "currentOVR", label: "Current OVR", format: (side) => ovr(side.currentOVR) },
+  { key: "powerNumber", label: "Power Number", format: (side) => formatPoints(side.powerNumber) },
 ];
 
 /** Verified sources only. TeamRankings appears nowhere — it is not a source. */
@@ -121,7 +103,7 @@ export default function MatchupModelDetails({
                 Projection Breakdown
               </h2>
               <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-                The three terms the model computes, in the order they are applied.
+                The terms the model computes, in the order they are applied.
               </p>
             </div>
 
@@ -169,7 +151,7 @@ export default function MatchupModelDetails({
                   Team Components
                 </h2>
                 <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-                  Opponent-adjusted inputs behind each side&apos;s composite.
+                  Current OVR and Power Number behind each side&apos;s projection.
                 </p>
               </div>
 
@@ -186,10 +168,10 @@ export default function MatchupModelDetails({
                   >
                     <span className="text-[11px] font-semibold text-slate-700">{row.label}</span>
                     <span className="text-right text-[12px] font-bold tabular-nums text-slate-900">
-                      {row.format(projection.away)}
+                      {row.format(sideOf(projection, "away"))}
                     </span>
                     <span className="text-right text-[12px] font-bold tabular-nums text-slate-900">
-                      {row.format(projection.home)}
+                      {row.format(sideOf(projection, "home"))}
                     </span>
                   </div>
                 ))}
@@ -247,27 +229,27 @@ export default function MatchupModelDetails({
         >
           <div className="space-y-2 text-[12px] leading-5 text-slate-600">
             <p>
-              Each team&apos;s composite is an opponent-adjusted blend of offensive efficiency,
-              defensive efficiency and point differential. The difference between the two composites
-              is multiplied by a fitted coefficient to produce a neutral-field margin, and a fixed
-              home-field adjustment is then applied. The home-field value is never fitted to
-              results.
+              Each team&apos;s Power Number is how many points better or worse it is than the current
+              league-average NFL team on a neutral field: (Current OVR − league-average Current OVR) ×
+              0.24. Current OVR is the exact same universal 1–99 rating shown everywhere else on the
+              site — no separate rating exists for this projection.
             </p>
             <p>
-              No sportsbook line, moneyline, total or ATS record takes part in the model&apos;s
-              features, its opponent adjustment or its single fitted parameter. The market appears
-              only in the consumer layer, beside the finished projection, as a comparison.
+              The projected margin is the two teams&apos; Power Numbers subtracted, plus a fixed
+              2.0-point home-field adjustment (0 at a neutral site). The home-field value and the 0.24
+              conversion are never fitted to this matchup&apos;s data — both come from a walk-forward
+              backtest run once, in advance.
             </p>
             <p>
-              Season with the historical blend on uses a rolling{" "}
-              {ROLLING_BLEND_GAME_COUNT}-game sample: each completed current-season game replaces
-              one late prior-season game, so the prior season contributes nothing from the{" "}
-              {ROLLING_BLEND_GAME_COUNT}th completed game onward.
+              No sportsbook line, moneyline, total or ATS record takes part in Current OVR, the Power
+              Number or the projected margin. The market appears only in the consumer layer, beside the
+              finished projection, as a comparison.
             </p>
             <p className="rounded border border-slate-200 bg-slate-50 px-2.5 py-2">
-              The Season / Last 5 and historical-blend controls govern the displayed comparison
-              metrics only. The projection fixes its own sample from kickoff and is unaffected by
-              them.
+              Current OVR — and therefore every Power Number and every projected spread — updates
+              automatically as each team&apos;s season progresses (100% preseason at 0 games played,
+              phasing to 100% current-season performance by game 6). Nothing here has a separate
+              preseason model.
             </p>
           </div>
         </MatchupCollapsibleGroup>

@@ -2,6 +2,12 @@ import { Link } from "react-router-dom";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import { formatMarketFavoriteSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
+import {
+  compareToMarket,
+  formatModelVsMarketDifference,
+  formatProjectedSpread,
+  type GameProjection,
+} from "@/lib/nfl/projectionData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /** Universal current 2026 OVR/rank for one team, from useNflCurrentRating2026(). */
@@ -36,27 +42,50 @@ function TeamLine({ team, prefix, ovr }: { team: NflMatchupTeam; prefix?: string
   );
 }
 
-/**
- * The card's market line.
- *
- * Formatting comes from the shared `formatMarketFavoriteSpread`, the same
- * helper the matchup hero and Model Analysis use, so one line is never stated
- * two ways across the site. This is the MARKET spread; the JKB projected spread
- * is not shown here and never stands in for a missing line.
- */
-function MarketSpread({ market }: { market: MarketCurrentGame | null }) {
-  const text = formatMarketFavoriteSpread(market);
-  const unavailable = text === "N/A";
+function SpreadStat({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
+  const unavailable = value === "N/A";
   return (
-    <div className="inline-flex items-center gap-1.5 text-xs font-semibold">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Spread</span>
-      <span
-        className={`rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-          unavailable ? "bg-slate-100 text-slate-500" : "bg-slate-900 text-white"
+    <div className="min-w-0 text-center">
+      <div className="text-[8px] font-bold uppercase tracking-wider text-slate-400">{label}</div>
+      <div
+        className={`mt-0.5 rounded px-1 py-0.5 text-[11px] font-bold tabular-nums ${
+          unavailable
+            ? "bg-slate-100 text-slate-500"
+            : emphasis
+              ? "bg-emerald-50 text-emerald-800"
+              : "bg-slate-900 text-white"
         }`}
       >
-        {text}
-      </span>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * JKB / Market / Diff, side by side, so the model and the market are easy to
+ * compare at a glance without opening the matchup breakdown.
+ *
+ * Formatting comes from the same shared helpers the matchup detail page
+ * uses (formatProjectedSpread, formatMarketFavoriteSpread,
+ * formatModelVsMarketDifference), so a card and its detail page never state
+ * the same game two different ways. Diff is always team-oriented (e.g.
+ * "BUF +2.5"), never a bare signed number — it describes the gap between the
+ * model and the market, not a pick, edge or betting recommendation.
+ */
+function ModelVsMarketStrip({
+  projection,
+  market,
+}: {
+  projection: GameProjection | null;
+  market: MarketCurrentGame | null;
+}) {
+  const comparison = compareToMarket(projection, market);
+  return (
+    <div className="grid grid-cols-3 gap-1.5">
+      <SpreadStat label="JKB" value={formatProjectedSpread(projection)} emphasis />
+      <SpreadStat label="Market" value={formatMarketFavoriteSpread(market)} />
+      <SpreadStat label="Diff" value={formatModelVsMarketDifference(comparison)} />
     </div>
   );
 }
@@ -74,12 +103,15 @@ function MarketSpread({ market }: { market: MarketCurrentGame | null }) {
 export default function MatchupCard({
   matchup,
   market = null,
+  projection = null,
   awayOvr = null,
   homeOvr = null,
 }: {
   matchup: NflMatchup;
   /** Current published line for this game; null renders N/A, never a derived value. */
   market?: MarketCurrentGame | null;
+  /** JKB projected spread for this game; null renders N/A, never a derived value. */
+  projection?: GameProjection | null;
   /** Universal current OVR/rank for the away/home team; null renders "NR", never a legacy fallback. */
   awayOvr?: MatchupCardOvr | null;
   homeOvr?: MatchupCardOvr | null;
@@ -106,9 +138,11 @@ export default function MatchupCard({
         <TeamLine team={home} prefix="Home" ovr={homeOvr} />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-        <span className="min-w-0 truncate text-[11px] text-slate-500">{matchup.stadium ?? "Venue TBD"}</span>
-        <MarketSpread market={market} />
+      <div className="mt-3 border-t border-slate-100 pt-3">
+        <span className="mb-1.5 block min-w-0 truncate text-[11px] text-slate-500">
+          {matchup.stadium ?? "Venue TBD"}
+        </span>
+        <ModelVsMarketStrip projection={projection} market={market} />
       </div>
 
       <div className="mt-2 text-[11px] font-bold text-emerald-700 group-hover:underline">
