@@ -47,6 +47,24 @@ vi.mock("@/components/layout/SiteShell", () => ({
 }));
 vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
 
+// The universal current-rating board -- deterministic and mocked so cards
+// render synchronously and the "Power" line can be asserted directly rather
+// than racing a real fetch.
+vi.mock("@/hooks/useNflCurrentRating2026", () => ({
+  useNflCurrentRating2026: () => ({
+    loading: false,
+    error: null,
+    data: {
+      season: 2026,
+      state: "preseason",
+      teams: [
+        { abbr: "ne", team: "New England Patriots", division: "AFC East", rating: 68.4, rank: 3, evidenceWeight: 0, performanceDelta: null, gamesPlayed: 0, preseasonV04Rating: 68.4, preseasonV03Rating: 68.4, currentV03Rating: null, state: "preseason" },
+        { abbr: "sea", team: "Seattle Seahawks", division: "NFC West", rating: 74.5, rank: 2, evidenceWeight: 0, performanceDelta: null, gamesPlayed: 0, preseasonV04Rating: 74.5, preseasonV03Rating: 74.5, currentV03Rating: null, state: "preseason" },
+      ],
+    },
+  }),
+}));
+
 // Imported after mocks so they pick up the mocked hook.
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import NFLMatchups from "@/pages/NFLMatchups";
@@ -92,6 +110,15 @@ describe("NFLMatchups landing", () => {
     renderRoute("/nfl/matchups");
     const link = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks/i });
     expect(link.getAttribute("href")).toBe(`/nfl/matchups/${OPENER}`);
+  });
+
+  it("shows the universal current OVR/rank on each card, not the legacy guide powerRank/overallPct", () => {
+    renderRoute("/nfl/matchups");
+    const link = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks/i });
+    // Mocked useNflCurrentRating2026 values above; the guide's own powerRank/
+    // overallPct for these teams differ from these figures.
+    expect(within(link).getByText("#3 · 68.4")).toBeTruthy();
+    expect(within(link).getByText("#2 · 74.5")).toBeTruthy();
   });
 
   it("highlights Weekly Matchups in the sidebar on the index route", () => {

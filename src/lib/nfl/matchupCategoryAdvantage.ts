@@ -55,12 +55,14 @@ export type MatchupCategoryId =
  * comparison — moved into the category they describe, so every row a category
  * displays is also a row it counts.
  *
- * They read the active generated power board, the same board the /nfl landing
- * page renders, rather than the guide's 2025 composite percentages. That choice
- * is deliberate and pre-existing: showing a second rating system beside the
- * model-driven metrics is exactly the contradiction `heroModelRatings.ts` was
- * introduced to remove. Because they come from that board rather than the
- * metric artifact, they are declared here instead of as catalogue keys.
+ * overallRating reads the universal current-rating board (the same source
+ * every current-OVR surface on the site reads); offenseRating/defenseRating
+ * read the existing objective v0.3.1 unit board. Both come through
+ * `heroModelRatings.ts`'s single resolver rather than the guide's 2025
+ * composite percentages -- showing a second rating system beside the
+ * model-driven metrics is exactly the contradiction that resolver exists to
+ * remove. Because they come from those boards rather than the metric
+ * artifact, they are declared here instead of as catalogue keys.
  *
  * They are neutral-field ratings on the model's 1-99 public scale, not a game
  * prediction: no spread, win probability or picked winner is derived from them.

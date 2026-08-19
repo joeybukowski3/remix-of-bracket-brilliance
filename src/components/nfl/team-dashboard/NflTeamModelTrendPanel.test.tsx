@@ -11,12 +11,12 @@ import {
 function trend(overrides: Partial<NflTeamModelTrendViewModel> = {}): NflTeamModelTrendViewModel {
   return {
     teamSlug: "buffalo-bills",
-    modelVersion: "nfl-power-v0.3.1",
-    currentPublicRating: 72.4,
-    currentPublicRank: 4,
+    currentUniversalRating: 72.4,
+    currentUniversalRank: 4,
     currentRatingSeason: 2026,
-    currentSourceSeason: 2025,
-    currentRatingStateLabel: "2026 preseason public board",
+    currentUniversalStateLabel: "2026 season-to-date",
+    preseasonV04Rating: 68.2,
+    sincePreseasonDelta: 4.2,
     comparisonSeason: 2025,
     fullSeasonRating: 70.1,
     finalEightRating: 73.45,
@@ -26,7 +26,7 @@ function trend(overrides: Partial<NflTeamModelTrendViewModel> = {}): NflTeamMode
     l8OpponentStrength: 0.42,
     provenance: {
       sourceKind: "model",
-      sourceLabel: "nfl-power-v0.3.1 · 2026 preseason public board · 2025 comparison windows",
+      sourceLabel: "nfl-power-v0.4-beta · 2026 season-to-date · 2025 comparison windows",
       generatedAt: "2026-08-03T21:19:45.299Z",
       season: 2026,
       validationStatus: "stage-1",
@@ -36,18 +36,30 @@ function trend(overrides: Partial<NflTeamModelTrendViewModel> = {}): NflTeamMode
 }
 
 describe("NFL team model trend presentation", () => {
-  it("renders current, full-season, final-eight, signed delta, and opponent context", () => {
+  it("renders current OVR, since-preseason movement, full-season, final-eight, signed delta, and opponent context", () => {
     const { rerender } = render(<NflTeamModelTrendView trend={trend()} />);
 
     expect(screen.getByText("72.4")).toBeTruthy();
+    expect(screen.getByText("+4.20")).toBeTruthy();
     expect(screen.getByText("70.1")).toBeTruthy();
     expect(screen.getByText("73.5")).toBeTruthy();
     expect(screen.getByText("+3.35")).toBeTruthy();
     expect(screen.getByText("+0.42")).toBeTruthy();
     expect(screen.getByText(/0 = league average · higher = tougher/i)).toBeTruthy();
+    expect(screen.getByText(/League rank #4/)).toBeTruthy();
+    expect(screen.getAllByText(/2026 season-to-date/).length).toBeGreaterThan(0);
 
-    rerender(<NflTeamModelTrendView trend={trend({ delta: -3.35 })} />);
+    rerender(<NflTeamModelTrendView trend={trend({ delta: -3.35, sincePreseasonDelta: -4.2 })} />);
     expect(screen.getByText("-3.35")).toBeTruthy();
+    expect(screen.getByText("-4.20")).toBeTruthy();
+  });
+
+  it("never renders a raw v0.3.1 overall value as the current power rating", () => {
+    // If current OVR were ever sourced from the old v0.3.1 board's own
+    // publicRating, it would differ from the universal rating supplied here.
+    render(<NflTeamModelTrendView trend={trend({ currentUniversalRating: 72.4 })} />);
+    expect(screen.getByText("72.4")).toBeTruthy();
+    expect(screen.queryByText("nfl-power-v0.3.1")).not.toBeInTheDocument();
   });
 
   it("renders every current trajectory label with text and a distinct inflated-surge state", () => {
@@ -84,17 +96,20 @@ describe("NFL team model trend presentation", () => {
           fullSeasonRating: 0,
           finalEightRating: 0,
           delta: 0,
+          sincePreseasonDelta: 0,
           l8OpponentStrength: 0,
         })}
       />,
     );
     expect(screen.getAllByText("0.0").length).toBe(2);
-    expect(screen.getAllByText("0.00").length).toBe(2);
+    expect(screen.getAllByText("0.00").length).toBe(3);
 
     rerender(
       <NflTeamModelTrendView
         trend={trend({
-          currentPublicRating: null,
+          currentUniversalRating: null,
+          currentUniversalRank: null,
+          sincePreseasonDelta: null,
           fullSeasonRating: null,
           finalEightRating: null,
           delta: null,
@@ -112,7 +127,7 @@ describe("NFL team model trend presentation", () => {
 
     const provenance = screen.getByLabelText("Data provenance");
     expect(provenance.textContent).toContain("Model");
-    expect(provenance.textContent).toContain("nfl-power-v0.3.1");
+    expect(provenance.textContent).toContain("nfl-power-v0.4-beta");
     expect(provenance.textContent).toContain("Season 2026");
     expect(provenance.textContent).toContain("Validation: stage-1");
     expect(provenance.textContent).toContain("Generated");

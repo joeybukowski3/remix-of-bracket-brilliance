@@ -8,16 +8,22 @@ type MatchupTone = "advantage" | "disadvantage" | "even" | "neutral";
 
 const GUIDE_TEAM_BY_ABBR = getNflSeasonGuide(2026)!.teamByAbbr;
 
+/** Universal current 2026 OVR/rank for the opponent, from useNflCurrentRating2026(). */
+export type ScheduleOpponentOvr = { rating: number; rank: number };
+
 export default function NflScheduleGameCard({
   team,
   game,
   fallbackWeek,
   restEdge,
+  opponentOvr = null,
 }: {
   team: NflGuideTeamNormalized;
   game: NflScheduleGame;
   fallbackWeek: number;
   restEdge: WarrenSharpWeeklyRestEdge | null;
+  /** Null renders "NR" -- never a fallback to the guide's frozen powerRank/overallPct. */
+  opponentOvr?: ScheduleOpponentOvr | null;
 }) {
   const opponent = GUIDE_TEAM_BY_ABBR.get(game.opponentAbbr);
   const opponentName = opponent?.teamName ?? game.opponentName;
@@ -78,8 +84,8 @@ export default function NflScheduleGameCard({
         <div className="mt-4 grid grid-cols-3 gap-2" aria-label={`Model matchup ratings against ${opponentName}`}>
           <MatchupMetric
             label="Opponent power"
-            value={`#${opponent.powerRank}`}
-            detail={`${formatModelRating(opponent.overallPct)} overall`}
+            value={opponentOvr ? `#${opponentOvr.rank}` : "NR"}
+            detail={opponentOvr ? `${opponentOvr.rating.toFixed(1)} overall` : "Unavailable"}
             tone="neutral"
           />
           <MatchupMetric

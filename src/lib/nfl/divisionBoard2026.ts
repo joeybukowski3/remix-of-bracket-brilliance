@@ -81,6 +81,11 @@ export type StandingsDisplayMode = "preseasonProjection" | "actualStandings";
  * the current season before any completed games; every other case — a
  * historical season, or the current season once results exist — renders the
  * actual-standings column set. Power Rating is never part of that decision.
+ *
+ * Kept as-is (unchanged signature/behavior) for the historical-season case
+ * and as the "auto" building block below — `resolveDivisionBoardMode` is the
+ * new entry point that also supports a manual Preseason/In Season override
+ * and the distinct in-season (current-season) column set.
  */
 export function standingsDisplayMode(
   isCurrentSeason: boolean,
@@ -89,6 +94,45 @@ export function standingsDisplayMode(
   return isPreseasonDivisionView(isCurrentSeason, hasCompletedGames)
     ? "preseasonProjection"
     : "actualStandings";
+}
+
+/** User-facing view control. "auto" is the permanent default. */
+export type DivisionViewMode = "auto" | "preseason" | "inSeason";
+
+/**
+ * Final board mode after applying the view-mode override.
+ *
+ * - "historicalStandings": any season other than the current one. The view
+ *   picker has no effect here — historical seasons always show plain actual
+ *   standings, with no Power Rating/SOS columns (the universal current-rating
+ *   board only ever covers the current season).
+ * - "preseasonProjection": the existing approved preseason board.
+ * - "inSeasonCurrent": the new Team/Record/OVR/SOS-to-date/Future-SOS board,
+ *   for the current season, either because games have started (auto) or the
+ *   user explicitly asked to preview it before Week 1.
+ */
+export type DivisionBoardMode = "preseasonProjection" | "inSeasonCurrent" | "historicalStandings";
+
+/**
+ * Resolve the final board mode from the user's view-mode selection.
+ *
+ * "preseason" and "inSeason" are hard overrides for the current season only
+ * — a manual "In Season" selection before any 2026 game has been played
+ * deliberately renders the in-season layout with honest N/A/0-0 values
+ * rather than being coerced back to the preseason board, so the design can
+ * be previewed early. Non-current seasons ignore the view mode entirely.
+ */
+export function resolveDivisionBoardMode(
+  viewMode: DivisionViewMode,
+  isCurrentSeason: boolean,
+  hasCompletedGames: boolean
+): DivisionBoardMode {
+  if (!isCurrentSeason) return "historicalStandings";
+  if (viewMode === "preseason") return "preseasonProjection";
+  if (viewMode === "inSeason") return "inSeasonCurrent";
+  return standingsDisplayMode(isCurrentSeason, hasCompletedGames) === "preseasonProjection"
+    ? "preseasonProjection"
+    : "inSeasonCurrent";
 }
 
 export type { TeamStanding };

@@ -3,7 +3,7 @@ import NflOptionalValue from "@/components/nfl/provenance/NflOptionalValue";
 import NflProvenanceDetails from "@/components/nfl/provenance/NflProvenanceDetails";
 import NflSourceTag from "@/components/nfl/provenance/NflSourceTag";
 import { useNflV03Artifacts } from "@/hooks/useNflV03Artifacts";
-import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings";
+import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import {
   buildNflTeamModelTrend,
   formatNflTrendDelta,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/nfl/teamModelTrend";
 import { cn } from "@/lib/utils";
 
-const CURRENT_RATING_SEASON = 2026;
 const COMPARISON_SEASON = 2025;
 
 const TRAJECTORY_CLASSES: Record<NflTrajectoryTone, string> = {
@@ -23,23 +22,31 @@ const TRAJECTORY_CLASSES: Record<NflTrajectoryTone, string> = {
   neutral: "border-slate-200 bg-slate-100 text-slate-700",
 };
 
-export default function NflTeamModelTrendPanel({ teamSlug }: { teamSlug: string }) {
-  const publicRatings = useNflV03PublicPowerRatings(CURRENT_RATING_SEASON);
+export default function NflTeamModelTrendPanel({
+  teamSlug,
+  teamAbbr,
+}: {
+  teamSlug: string;
+  /** Canonical abbreviation -- the join key into the universal current-rating board. */
+  teamAbbr: string;
+}) {
+  const currentRating = useNflCurrentRating2026();
   const comparisonArtifacts = useNflV03Artifacts(COMPARISON_SEASON);
   const trend = useMemo(
     () => buildNflTeamModelTrend({
       teamSlug,
-      publicBoard: publicRatings.data,
+      teamAbbr,
+      currentRating: currentRating.data,
       fullSeason: comparisonArtifacts.data?.artifacts.fullSeason,
       finalEight: comparisonArtifacts.data?.artifacts.finalEight,
     }),
-    [comparisonArtifacts.data, publicRatings.data, teamSlug],
+    [comparisonArtifacts.data, currentRating.data, teamSlug, teamAbbr],
   );
 
   return (
     <NflTeamModelTrendView
       trend={trend}
-      loading={publicRatings.loading || comparisonArtifacts.loading}
+      loading={currentRating.loading || comparisonArtifacts.loading}
     />
   );
 }
@@ -54,8 +61,8 @@ export function NflTeamModelTrendView({
   const trajectory = getNflTrajectoryPresentation(trend.trajectoryLabel);
   const missingLabel = loading ? "Loading…" : "Unavailable";
   const ratingStateDetail = [
-    trend.currentPublicRank != null ? `Public rank #${trend.currentPublicRank}` : null,
-    trend.currentRatingStateLabel,
+    trend.currentUniversalRank != null ? `League rank #${trend.currentUniversalRank}` : null,
+    trend.currentUniversalStateLabel,
   ].filter(Boolean).join(" · ") || undefined;
   const comparisonDetail = trend.comparisonSeason
     ? `${trend.comparisonSeason} public-scale equivalent`
@@ -63,6 +70,11 @@ export function NflTeamModelTrendView({
   const deltaTone = trend.delta == null || trend.delta === 0
     ? "text-slate-900"
     : trend.delta > 0
+      ? "text-emerald-700"
+      : "text-red-700";
+  const sincePreseasonTone = trend.sincePreseasonDelta == null || trend.sincePreseasonDelta === 0
+    ? "text-slate-900"
+    : trend.sincePreseasonDelta > 0
       ? "text-emerald-700"
       : "text-red-700";
 
@@ -80,17 +92,26 @@ export function NflTeamModelTrendView({
           Current model trend
         </h2>
         <p className="mt-0.5 max-w-4xl text-[11px] leading-4 text-slate-500">
-          The generated public rating is separate from the curated Guide outlook. Historical windows use the same frozen public scale for a like-for-like comparison.
+          Current power rating and rank are the universal 2026 Joe Knows Ball rating, updated as
+          2026 results are incorporated. The 2025 windows below are separate historical model
+          context and use the same frozen public scale for a like-for-like comparison.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 border-b border-slate-200 lg:grid-cols-5">
+      <div className="grid grid-cols-2 border-b border-slate-200 lg:grid-cols-6">
         <TrendMetric
-          label="Current public rating"
-          value={formatRating(trend.currentPublicRating)}
+          label="Current power rating"
+          value={formatRating(trend.currentUniversalRating)}
           unavailableLabel={missingLabel}
           detail={ratingStateDetail}
           className="bg-sky-50/60 text-sky-800"
+        />
+        <TrendMetric
+          label="Since preseason"
+          value={formatNflTrendDelta(trend.sincePreseasonDelta)}
+          unavailableLabel={missingLabel}
+          detail="Current power rating minus preseason projection"
+          valueClassName={sincePreseasonTone}
         />
         <TrendMetric
           label="Full season"

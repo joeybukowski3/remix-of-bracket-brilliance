@@ -76,6 +76,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         icon: "⚔️",
         match: "prefix",
       },
+      {
+        to: "/nfl/analytics",
+        label: "Team Performance Analytics",
+        shortLabel: "Analytics",
+        description: "Offense and defense efficiency metrics for all 32 teams across Last 4, Last 8 and Full Season windows.",
+        icon: "📊",
+        status: "new",
+      },
     ],
   },
   {

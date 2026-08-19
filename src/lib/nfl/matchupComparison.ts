@@ -10,6 +10,7 @@
 
 import { formatSigned } from "@/lib/nfl/guideData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import type { HeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 
 // ---------------------------------------------------------------------------
 // Comparison rows
@@ -232,8 +233,50 @@ const ADVANTAGE_PHRASE: Record<string, string> = {
   projectedWins: "the higher model win projection",
 };
 
-export function deriveAdvantages(matchup: NflMatchup, rows?: MatchupComparisonRow[]): MatchupAdvantageNote[] {
-  const comparisonRows = rows ?? buildComparisonRows(matchup);
+/**
+ * overallRank/offenseRank/defenseRank must reflect the live Current Power
+ * Board (the same source Team Comparison and Power Rankings already use),
+ * not the static NflMatchupTeam.powerRank/offenseRank/defenseRank fields
+ * that ROW_SPECS reads by default -- those are stale/legacy season-snapshot
+ * values. When a resolver is supplied, these three rows are overridden in
+ * place; every other comparison row (2025 record, projected wins, schedule
+ * rank, etc.) is untouched.
+ */
+function withLiveRatingRows(
+  matchup: NflMatchup,
+  comparisonRows: MatchupComparisonRow[],
+  modelRatings: HeroModelRatingResolver
+): MatchupComparisonRow[] {
+  const away = modelRatings(matchup.away.abbr);
+  const home = modelRatings(matchup.home.abbr);
+
+  const overrides: Record<string, { awayRaw: number | null; homeRaw: number | null }> = {
+    overallRank: { awayRaw: away?.rank ?? null, homeRaw: home?.rank ?? null },
+    offenseRank: { awayRaw: away?.offenseRank ?? null, homeRaw: home?.offenseRank ?? null },
+    defenseRank: { awayRaw: away?.defenseRank ?? null, homeRaw: home?.defenseRank ?? null },
+  };
+
+  return comparisonRows.map((row) => {
+    const override = overrides[row.key];
+    if (!override) return row;
+    return {
+      ...row,
+      awayRaw: override.awayRaw,
+      homeRaw: override.homeRaw,
+      awayValue: rank(override.awayRaw),
+      homeValue: rank(override.homeRaw),
+      advantage: computeAdvantage(override.awayRaw, override.homeRaw, row.direction),
+    };
+  });
+}
+
+export function deriveAdvantages(
+  matchup: NflMatchup,
+  modelRatings?: HeroModelRatingResolver,
+  rows?: MatchupComparisonRow[]
+): MatchupAdvantageNote[] {
+  const baseRows = rows ?? buildComparisonRows(matchup);
+  const comparisonRows = modelRatings ? withLiveRatingRows(matchup, baseRows, modelRatings) : baseRows;
   const byKey = new Map(comparisonRows.map((row) => [row.key, row]));
   const notes: MatchupAdvantageNote[] = [];
 

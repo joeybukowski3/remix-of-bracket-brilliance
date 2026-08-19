@@ -54,7 +54,7 @@ function TeamBlock({
   team: NflMatchupTeam;
   label: string;
   align: "start" | "end";
-  /** Generated v0.3 rating for this team; null renders N/A rather than a stale static value. */
+  /** Universal current-rating resolver output for this team; null renders N/A rather than a stale static value. */
   model: HeroModelRating | null;
 }) {
   const isEnd = align === "end";
@@ -165,11 +165,12 @@ function GameFact({ label, children }: { label: string; children: React.ReactNod
  * always-null `matchup.spread`, so the hero announced "N/A" for a game the
  * section below priced at SEA -3.5 — one page contradicting itself.
  *
- * The Joe Knows Ball block shows generated neutral-field team-strength ratings
- * from the active power model (nfl-power-v0.3.1), on the model's 1-99 public
- * scale centred on 50 — not a percentage, and not a game prediction. No
- * projected spread, win probability, model edge or picked winner appears here;
- * the projection lives in Model Analysis and is not duplicated up here.
+ * The Joe Knows Ball block shows the universal current 2026 overall rating
+ * (OVR) plus the existing objective offense/defense unit ratings, on the
+ * model's 1-99 public scale centred on 50 — not a percentage, and not a game
+ * prediction. No projected spread, win probability, model edge or picked
+ * winner appears here; the projection lives in Model Analysis and is not
+ * duplicated up here.
  */
 export default function MatchupHero({
   matchup,

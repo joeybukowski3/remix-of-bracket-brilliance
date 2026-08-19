@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   deltaTone,
   formatSignedDelta,
+  resolveDivisionBoardMode,
   sortTeamsByProjectedRating,
   sosTone,
   standingsDisplayMode,
@@ -87,5 +88,30 @@ describe("standingsDisplayMode", () => {
   it("shows actualStandings for a historical season regardless of completed-games count", () => {
     expect(standingsDisplayMode(false, false)).toBe("actualStandings");
     expect(standingsDisplayMode(false, true)).toBe("actualStandings");
+  });
+});
+
+describe("resolveDivisionBoardMode", () => {
+  it("auto defaults to preseasonProjection with 0 completed games", () => {
+    expect(resolveDivisionBoardMode("auto", true, false)).toBe("preseasonProjection");
+  });
+
+  it("auto switches to inSeasonCurrent once at least one game is completed", () => {
+    expect(resolveDivisionBoardMode("auto", true, true)).toBe("inSeasonCurrent");
+  });
+
+  it("manual preseason override always shows the preseason board, even mid-season", () => {
+    expect(resolveDivisionBoardMode("preseason", true, true)).toBe("preseasonProjection");
+    expect(resolveDivisionBoardMode("preseason", true, false)).toBe("preseasonProjection");
+  });
+
+  it("manual inSeason override shows the in-season board even before Week 1", () => {
+    expect(resolveDivisionBoardMode("inSeason", true, false)).toBe("inSeasonCurrent");
+  });
+
+  it("ignores the view mode entirely for a historical season", () => {
+    expect(resolveDivisionBoardMode("inSeason", false, false)).toBe("historicalStandings");
+    expect(resolveDivisionBoardMode("preseason", false, true)).toBe("historicalStandings");
+    expect(resolveDivisionBoardMode("auto", false, true)).toBe("historicalStandings");
   });
 });
