@@ -34,11 +34,8 @@ describe("post-mlb-social-canonical.mjs -- Phase 7 cutover short-circuit", () =>
     assert.match(stdout, /finalOutcome=NO_POST_FOR_SLATE/);
   });
 
-  it("2026-08-20 (still legacy-live-capable through the full ET slate day) is also blocked", () => {
-    assert.equal(CANONICAL_CUTOVER_FIRST_SLATE_DATE, "2026-08-21");
-    const stdout = run(["--product=hr", "--slate-date=2026-08-20", "--source=fixture", "--dry-run"]);
-    assert.match(stdout, /"readinessStatus":\s*"NO_POST_FOR_SLATE"/);
-    assert.match(stdout, /"reason":\s*"BEFORE_CANONICAL_CUTOVER"/);
+  it("2026-08-20 is the cutover constant's value -- the first eligible canonical live slate", () => {
+    assert.equal(CANONICAL_CUTOVER_FIRST_SLATE_DATE, "2026-08-20");
   });
 
   it("the cutover date itself is NOT blocked (first valid canonical live slate)", () => {

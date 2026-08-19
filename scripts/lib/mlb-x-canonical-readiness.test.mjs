@@ -382,40 +382,40 @@ describe("evaluateCanonicalPublication -- product/date independence and identity
 });
 
 describe("isBeforeCanonicalCutover -- Phase 7 same-day cutover guard (applied by the caller, not evaluateCanonicalPublication itself)", () => {
-  it("2026-08-19 (the day the cutover PR merges) is blocked", () => {
+  it("A. 2026-08-19 ET (the day the cutover PR merges) is blocked", () => {
     assert.equal(isBeforeCanonicalCutover("2026-08-19"), true);
   });
 
-  it("2026-08-20 (still legacy-live-capable through the full ET slate day) is blocked", () => {
-    assert.equal(isBeforeCanonicalCutover("2026-08-20"), true);
-  });
-
-  it("2026-08-21 is the first eligible canonical production slate -- NOT blocked", () => {
-    assert.equal(isBeforeCanonicalCutover("2026-08-21"), false);
-    assert.equal(CANONICAL_CUTOVER_FIRST_SLATE_DATE, "2026-08-21");
+  it("B. 2026-08-20 ET is the first eligible canonical production slate -- NOT blocked", () => {
+    // Every legacy scheduled/live-capable HR/K publisher is disabled in the
+    // SAME merge that enables mlb-x-canonical.yml, so there is no legacy
+    // system left that could still publish for the very next ET slate day --
+    // no same-day-duplicate risk to guard against beyond the merge date.
+    assert.equal(isBeforeCanonicalCutover("2026-08-20"), false);
+    assert.equal(CANONICAL_CUTOVER_FIRST_SLATE_DATE, "2026-08-20");
     assert.equal(isBeforeCanonicalCutover(CANONICAL_CUTOVER_FIRST_SLATE_DATE), false);
   });
 
-  it("is false for slate dates after the cutover date", () => {
-    assert.equal(isBeforeCanonicalCutover("2026-08-22"), false);
+  it("2026-08-21 is also eligible (after the cutover date)", () => {
+    assert.equal(isBeforeCanonicalCutover("2026-08-21"), false);
     assert.equal(isBeforeCanonicalCutover("2027-01-01"), false);
   });
 
-  it("UTC/ET boundary: a UTC timestamp already on 2026-08-21 but still 2026-08-20 in ET resolves to the BLOCKED slate date, never prematurely enabling publication", () => {
-    // 2026-08-21T02:00:00Z is 2:00 AM UTC on Aug 21 -- but ET is UTC-4 in
-    // August (EDT), so this is 10:00 PM ET on Aug 20. A naive UTC-date read
-    // would wrongly resolve "2026-08-21" (eligible); the ET-aware resolver
-    // must still resolve "2026-08-20" (blocked).
-    const etSlateDate = getEtSlateDate(new Date("2026-08-21T02:00:00.000Z"));
-    assert.equal(etSlateDate, "2026-08-20");
+  it("C. UTC/ET boundary: 2026-08-20T02:00:00Z is still 2026-08-19 in ET -> blocked", () => {
+    // 2026-08-20T02:00:00Z is 2:00 AM UTC on Aug 20 -- but ET is UTC-4 in
+    // August (EDT), so this is 10:00 PM ET on Aug 19. A naive UTC-date read
+    // would wrongly resolve "2026-08-20" (eligible); the ET-aware resolver
+    // must still resolve "2026-08-19" (blocked).
+    const etSlateDate = getEtSlateDate(new Date("2026-08-20T02:00:00.000Z"));
+    assert.equal(etSlateDate, "2026-08-19");
     assert.equal(isBeforeCanonicalCutover(etSlateDate), true);
   });
 
-  it("UTC/ET boundary: a UTC timestamp still on 2026-08-20 but already 2026-08-21 in ET resolves to the ELIGIBLE slate date", () => {
-    // 2026-08-21T05:00:00Z is 5:00 AM UTC on Aug 21 -- 1:00 AM ET on Aug 21
+  it("D. UTC/ET boundary: 2026-08-20T05:00:00Z is already 2026-08-20 in ET -> eligible", () => {
+    // 2026-08-20T05:00:00Z is 5:00 AM UTC on Aug 20 -- 1:00 AM ET on Aug 20
     // (past the midnight-ET rollover at 04:00 UTC during EDT).
-    const etSlateDate = getEtSlateDate(new Date("2026-08-21T05:00:00.000Z"));
-    assert.equal(etSlateDate, "2026-08-21");
+    const etSlateDate = getEtSlateDate(new Date("2026-08-20T05:00:00.000Z"));
+    assert.equal(etSlateDate, "2026-08-20");
     assert.equal(isBeforeCanonicalCutover(etSlateDate), false);
   });
 

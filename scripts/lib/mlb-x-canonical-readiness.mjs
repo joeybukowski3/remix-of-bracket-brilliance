@@ -170,11 +170,19 @@ export function isSlateTerminallyExpired(slateTiming) {
  * no way to know that. Rather than attempt a fragile cross-namespace read
  * of two differently-shaped, differently-durable legacy receipt stores,
  * canonical publication is simply never permitted for any slate date on or
- * before this one: the legacy systems were the only live public
- * publisher through that date, and canonical's first live slate begins the
- * very next ET slate date after cutover. This is a fixed historical fact
- * about the cutover, not a rolling window -- it never needs to advance
- * again after the PR that sets it merges.
+ * before this one.
+ *
+ * The Phase 7 PR disables every legacy scheduled/live-capable HR/K
+ * publishing path (mlb-x-editions.yml, poll-mlb-x-posts.yml, and the
+ * standalone rescue workflows) ATOMICALLY, in the same merge that enables
+ * mlb-x-canonical.yml -- so once that PR merges, no legacy system can ever
+ * publish for any slate date from that point forward, including the very
+ * next ET slate day. The last ET slate date the legacy systems could still
+ * have published for is therefore the one active when the merge lands, not
+ * some later "safety buffer" day -- there is no same-day-duplicate risk to
+ * guard against beyond that. This is a fixed historical fact about the
+ * cutover, not a rolling window -- it never needs to advance again after the
+ * PR that sets it merges.
  *
  * Deliberately NOT enforced inside evaluateCanonicalPublication itself: that
  * function is pure Phase 6 readiness policy, exercised against arbitrary
@@ -183,16 +191,17 @@ export function isSlateTerminallyExpired(slateTiming) {
  * applies this guard before evaluateCanonicalPublication (indeed before even
  * building a plan) is ever reached for a given run.
  */
-export const CANONICAL_CUTOVER_FIRST_SLATE_DATE = "2026-08-21";
+export const CANONICAL_CUTOVER_FIRST_SLATE_DATE = "2026-08-20";
 
 /**
  * True for any slateDate on or before the last date the legacy systems could
- * have published (2026-08-20 inclusive -- the Phase 7 cutover PR merges on
- * 2026-08-19 ET, but the legacy systems remained live-capable through the
- * full 2026-08-20 ET slate day too, so canonical's first eligible slate is
- * 2026-08-21). String comparison is safe and correct here ONLY because
- * slateDate is always an already-validated YYYY-MM-DD ET calendar date
- * (never a raw UTC timestamp) -- see the module doc above.
+ * have published (2026-08-19 inclusive -- the Phase 7 cutover PR merges on
+ * 2026-08-19 ET, atomically disabling every legacy system in the same merge
+ * that enables mlb-x-canonical.yml, so canonical's first eligible slate is
+ * the very next ET slate day, 2026-08-20). String comparison is safe and
+ * correct here ONLY because slateDate is always an already-validated
+ * YYYY-MM-DD ET calendar date (never a raw UTC timestamp) -- see the module
+ * doc above.
  */
 export function isBeforeCanonicalCutover(slateDate) {
   return String(slateDate ?? "") < CANONICAL_CUTOVER_FIRST_SLATE_DATE;
