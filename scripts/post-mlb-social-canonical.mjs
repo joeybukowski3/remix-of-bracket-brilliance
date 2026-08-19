@@ -41,9 +41,11 @@ import { TwitterApi } from "twitter-api-v2";
 import { buildHrCanonicalCaption, buildKCanonicalCaption, buildCanonicalOmittedReply } from "./lib/mlb-social-canonical-caption.mjs";
 import { ensureCanonicalImage } from "./lib/mlb-social-canonical-image.mjs";
 import { CanonicalPostOutcome, publishCanonicalSocialPost } from "./lib/mlb-social-canonical-publisher.mjs";
+import { CanonicalReceiptState, classifyCanonicalReceipt, evaluateCanonicalPublication } from "./lib/mlb-x-canonical-readiness.mjs";
 import { buildPlanFromSource } from "./lib/mlb-social-plan-source.mjs";
 import { createGitStateStore } from "./lib/mlb-x-state-store.mjs";
 import { acquirePublicationLease } from "./lib/mlb-x-publication-lease.mjs";
+import { fetchSlateTiming } from "./lib/mlb-x-slate-timing.mjs";
 import {
   assertLivePostAllowed,
   createXClientFromEnv,
@@ -69,6 +71,7 @@ function parseArgs(argv) {
     else if (raw.startsWith("--image-directory=")) args.imageDirectory = raw.slice("--image-directory=".length);
     else if (raw.startsWith("--lease-directory=")) args.leaseDirectory = raw.slice("--lease-directory=".length);
     else if (raw.startsWith("--state-work-dir=")) args.stateWorkDir = raw.slice("--state-work-dir=".length);
+    else if (raw === "--offline") args.offline = true;
   }
   if (!["k", "hr"].includes(args.product)) throw new Error(`--product must be "k" or "hr" (got "${args.product}").`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(args.slateDate ?? ""))) {
@@ -118,31 +121,36 @@ function buildCaptionForProduct(productKey) {
   return async (plan) => (productKey === "k" ? buildKCanonicalCaption(plan) : buildHrCanonicalCaption(plan));
 }
 
-function replyBuilderForProduct(productKey, client) {
-  return async ({ inReplyTo, plan }) => {
-    // Recomputed here (pure, cheap) rather than threaded through the
-    // publisher's interface, so this one closure serves both the normal
-    // post-then-reply path and reply-only recovery, where only `plan` exists.
+/**
+ * The reply DECISION and TEXT, derived from the frozen plan. Called by the
+ * publisher exactly once, at primary-post time, and persisted onto the
+ * receipt -- never called again for reply-only recovery (see
+ * mlb-social-canonical-publisher.mjs), so a later run's freshly-built `plan`
+ * (which may reflect different current data) can never change what an
+ * already-posted primary's reply says.
+ */
+function buildReplyForProduct(productKey) {
+  return async (plan) => {
     const captionResult = productKey === "k" ? buildKCanonicalCaption(plan) : buildHrCanonicalCaption(plan);
     const omitted = captionResult.skipped ? [] : captionResult.omittedRows ?? [];
-    const { shouldReply, caption } = buildCanonicalOmittedReply({ omittedRows: omitted, product: productKey });
-    if (!shouldReply) return null;
-    return postReplyTweet({ client, caption, inReplyTo });
+    return buildCanonicalOmittedReply({ omittedRows: omitted, product: productKey }); // {shouldReply, caption}
   };
+}
+
+/**
+ * Pure "send this exact text as a reply" side effect. Deliberately takes
+ * only `caption` (never `plan`) -- the reply CONTENT is entirely decided
+ * upstream by buildReplyForProduct/the publisher, so this closure can never
+ * recompute or diverge from the persisted reply text.
+ */
+function replySenderForProduct(client) {
+  return async ({ inReplyTo, caption }) => postReplyTweet({ client, caption, inReplyTo });
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const { product, slateDate } = args;
   console.log(`[post-mlb-social-canonical:${product}] slateDate=${slateDate} source=${args.source} dryRun=${args.dryRun}`);
-
-  const plan = buildPlanFromSource(product, { source: args.source, slateDate, rows: args.rows, root: ROOT, warn: (m) => console.warn(`[post-mlb-social-canonical:${product}] ${m}`) });
-  if (!plan) {
-    console.log(`[post-mlb-social-canonical:${product}] no canonical post: fewer than 2 distinct qualified opportunities.`);
-    console.log(`[post-mlb-social-canonical:${product}] finalOutcome=${CanonicalPostOutcome.NO_PLAN}`);
-    return;
-  }
-  log(product, `plan built: rows=${plan.rows.length} rowFingerprint=${plan.rowFingerprint} receiptKey=${plan.receiptKey}`);
 
   // ── Live-mode gating: same event/flag gate the legacy posters use, plus
   // this script's own --live requirement. Zero X calls before this passes. ──
@@ -166,6 +174,61 @@ async function main() {
   const rawStore = makeStateStore(args.stateWorkDir);
   const stateStore = toPublisherStateStore(rawStore);
   const acquireLease = (receiptKey) => acquirePublicationLease({ receiptKey, leaseDir: args.leaseDirectory });
+  const productKey = product === "k" ? "mlb-k-props" : "mlb-hr-props";
+
+  // ── Phase 6 receipt-first check. Sync + classify the canonical receipt
+  // BEFORE building a plan, fetching slate timing, or doing any acquisition
+  // work at all. A fully-published product/date returns immediately here and
+  // never pays for plan composition, timing fetch, rendering, or X calls. ──
+  rawStore.sync();
+  const existingReceipt = rawStore.readCanonicalReceipt({ slateDate, product: productKey });
+  const receiptState = classifyCanonicalReceipt(existingReceipt);
+
+  if (receiptState === CanonicalReceiptState.FULLY_PUBLISHED) {
+    console.log(JSON.stringify({
+      readinessStatus: "ALREADY_PUBLISHED", reason: "PRIMARY_AND_REPLY_COMPLETE", receiptState,
+      qualifiedRowCount: 0, pendingConfirmationCount: null, earliestIncludedGameStart: null, publicationCutoff: null,
+      planBuilt: false, wouldCallX: false,
+    }, null, 2));
+    console.log(`[post-mlb-social-canonical:${product}] finalOutcome=ALREADY_PUBLISHED`);
+    return;
+  }
+
+  // ── Plan build + slate timing are only needed once we know the receipt is
+  // NOT already fully published (fresh candidate, or reply-recovery-only,
+  // where `plan` is still required for publication identity, but the reply
+  // CONTENT itself comes from the persisted receipt -- see
+  // mlb-social-canonical-publisher.mjs -- never from this freshly-built
+  // plan). ───────────────────────────────────────────────────────────────
+  const { plan, pendingConfirmationCount } = buildPlanFromSource(product, { source: args.source, slateDate, rows: args.rows, root: ROOT, warn: (m) => console.warn(`[post-mlb-social-canonical:${product}] ${m}`) });
+  if (plan) log(product, `plan built: rows=${plan.rows.length} rowFingerprint=${plan.rowFingerprint} receiptKey=${plan.receiptKey} pendingConfirmationCount=${pendingConfirmationCount}`);
+
+  let slateTiming = null;
+  if (!args.offline) {
+    try {
+      slateTiming = await fetchSlateTiming({ date: slateDate });
+    } catch (error) {
+      log(product, `slate timing fetch failed, treating as unknown: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  const readiness = evaluateCanonicalPublication({ product: productKey, slateDate, existingReceipt, plan, pendingConfirmationCount, slateTiming });
+  console.log(JSON.stringify({
+    readinessStatus: readiness.status,
+    reason: readiness.reason,
+    receiptState: readiness.receiptState,
+    qualifiedRowCount: readiness.qualifiedRowCount,
+    pendingConfirmationCount,
+    earliestIncludedGameStart: readiness.earliestIncludedGameStart,
+    publicationCutoff: readiness.publicationCutoff,
+    planBuilt: Boolean(plan),
+    wouldCallX: readiness.shouldCallX && liveMode,
+  }, null, 2));
+
+  if (!readiness.shouldBuildPlan && !readiness.shouldCallX) {
+    console.log(`[post-mlb-social-canonical:${product}] finalOutcome=${readiness.status}`);
+    return;
+  }
 
   let client = null;
   let verifiedAccount = false;
@@ -189,11 +252,12 @@ async function main() {
       acquireLease,
       ensureImage: (thePlan) => ensureCanonicalImage({ plan: thePlan, directory: args.imageDirectory, browser }),
       buildCaption: buildCaptionForProduct(product),
+      buildReply: buildReplyForProduct(product),
       postPrimary: async ({ caption, imagePath }) => {
         if (!client) throw new Error("X client not configured (missing credentials).");
         return postPrimaryTweet({ client, caption, imagePath, fs: { existsSync, statSync } });
       },
-      postReply: replyBuilderForProduct(product, client),
+      postReply: replySenderForProduct(client),
       verifyAccount: async () => {
         if (!client) return false;
         if (verifiedAccount) return true;

@@ -61,7 +61,7 @@ if (!["fixture", "local"].includes(source)) throw new Error(`Unknown --source="$
 if (rowsArg != null && (!Number.isInteger(rowsArg) || rowsArg < 2 || rowsArg > 5)) throw new Error(`--rows must be an integer 2-5, got "${args.get("rows")}".`);
 
 async function renderOneProduct(productKey, outDir) {
-  const plan = buildPlanFromSource(productKey, { source, slateDate, rows: rowsArg, root: ROOT, warn: (m) => console.warn(`[dry-run] ${m}`) });
+  const { plan } = buildPlanFromSource(productKey, { source, slateDate, rows: rowsArg, root: ROOT, warn: (m) => console.warn(`[dry-run] ${m}`) });
   if (!plan) {
     console.warn(`[dry-run] ${productKey}: no plan could be composed (fewer than 2 distinct qualified opportunities). Skipping.`);
     return null;

@@ -19,7 +19,8 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { composeSocialPostPlan, getHrCandidatePool, SOCIAL_PRODUCT } from "./mlb-social-composition.mjs";
+import { composeSocialPostPlan, getHrCandidatePoolWithPendingConfirmation, SOCIAL_PRODUCT } from "./mlb-social-composition.mjs";
+import { isDoubleheaderCode } from "./mlb-x-confirmation.mjs";
 
 export function kFixturePool() {
   return [
@@ -64,6 +65,12 @@ function normalizeHrBatterForSelection(value) {
     player,
     playerId: value?.playerId ?? null,
     gameId: value?.gameId ?? null,
+    // Authoritative timing/doubleheader fields, propagated (never invented)
+    // from the raw row -- Phase 6's readiness evaluator fails closed on a
+    // missing gameStartTime, so this normalizer must not silently drop it.
+    gameStartTime: value?.gameStartTime ?? null,
+    gameNumber: Number.isInteger(value?.gameNumber) ? value.gameNumber : null,
+    isDoubleheader: isDoubleheaderCode(value?.doubleHeader),
     team,
     opponent: String(value?.opponent ?? "").trim().toUpperCase(),
     opposingPitcher: String(value?.opposingPitcher ?? "").trim() || "TBD",
@@ -78,6 +85,9 @@ function normalizeHrBatterForSelection(value) {
   };
 }
 
+/**
+ * @returns {{ candidatePool: Array<object>, pendingConfirmationCount: number }}
+ */
 export function loadLocalHrCandidatePool(root = process.cwd()) {
   const rawPath = path.join(root, "public", "data", "mlb", "hr-props-raw.json");
   if (!existsSync(rawPath)) throw new Error(`--source=local requires ${rawPath}, which does not exist.`);
@@ -89,12 +99,21 @@ export function loadLocalHrCandidatePool(root = process.cwd()) {
   // helper never posts, so it is not subject to the live confirmation gate.
   // selectConfirmedHrProps only promotes a PROJECTED row on an explicit
   // `=== true` from liveConfirm (see mlb-hr-x-selection-core.mjs), so this
-  // must return the literal boolean, not a truthy object.
-  return getHrCandidatePool({ batters, isGameStarted: () => false, liveConfirm: () => true });
+  // must return the literal boolean, not a truthy object. Because every row
+  // is force-confirmed here, pendingConfirmationCount is always 0 for this
+  // preview path -- an accurate reflection of "nothing withheld," not an
+  // invented value.
+  return getHrCandidatePoolWithPendingConfirmation({ batters, isGameStarted: () => false, liveConfirm: () => true });
 }
 
 /**
- * Builds a SocialPostPlan for one product from fixture or local data.
+ * Builds a SocialPostPlan for one product from fixture or local data,
+ * alongside the pendingConfirmationCount canonical readiness needs (see
+ * deriveConfirmationCompleteness in mlb-x-canonical-readiness.mjs). The
+ * fixture pools are hand-authored/deterministic with no real "still
+ * unconfirmed" candidates behind them, so pendingConfirmationCount is
+ * always 0 for --source=fixture -- an accurate statement about that source,
+ * not an invented value.
  * @param {"k"|"hr"} productKey
  * @param {object} params
  * @param {"fixture"|"local"} params.source
@@ -102,7 +121,7 @@ export function loadLocalHrCandidatePool(root = process.cwd()) {
  * @param {number|null} [params.rows]
  * @param {string} [params.root]
  * @param {(message: string) => void} [params.warn]
- * @returns {import("./mlb-social-post-plan.mjs").SocialPostPlan|null}
+ * @returns {{ plan: import("./mlb-social-post-plan.mjs").SocialPostPlan|null, pendingConfirmationCount: number }}
  */
 export function buildPlanFromSource(productKey, { source, slateDate, rows = null, root = process.cwd(), warn = console.warn }) {
   const isK = productKey === "k";
@@ -111,9 +130,11 @@ export function buildPlanFromSource(productKey, { source, slateDate, rows = null
   }
 
   const useLocal = !isK && source === "local";
-  const candidatePool = useLocal ? loadLocalHrCandidatePool(root) : slicePool(isK ? kFixturePool() : hrFixturePool(), rows);
+  const { candidatePool, pendingConfirmationCount } = useLocal
+    ? loadLocalHrCandidatePool(root)
+    : { candidatePool: slicePool(isK ? kFixturePool() : hrFixturePool(), rows), pendingConfirmationCount: 0 };
 
-  return composeSocialPostPlan({
+  const plan = composeSocialPostPlan({
     product: isK ? SOCIAL_PRODUCT.K : SOCIAL_PRODUCT.HR,
     slateDate,
     candidatePool,
@@ -121,4 +142,6 @@ export function buildPlanFromSource(productKey, { source, slateDate, rows = null
     generatedAt: new Date().toISOString(),
     sourceSummary: [useLocal ? "local hr-props-raw.json" : "fixture"],
   });
+
+  return { plan, pendingConfirmationCount };
 }

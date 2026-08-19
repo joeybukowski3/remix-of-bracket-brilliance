@@ -92,15 +92,18 @@ function decideStep(existing) {
  * @param {Function} deps.acquireLease   (receiptKey) -> lease
  * @param {Function} deps.ensureImage    (plan) -> validated image bundle (rowFingerprint is plan.rowFingerprint, passed by the caller's wiring -- see mlb-social-canonical-image.mjs)
  * @param {Function} deps.buildCaption   (plan) -> {skipped, reason, caption, captionRows, omittedRows}
+ * @param {Function} [deps.buildReply]   (plan) -> {shouldReply, caption} -- the reply DECISION and
+ *        exact TEXT, derived once from the frozen plan at primary-post time and persisted onto the
+ *        receipt (`replyCaption` below). Never called again for reply-only recovery: a later,
+ *        separate invocation may be handed a freshly-recomposed `plan` reflecting CURRENT data (a
+ *        rowFingerprint drift, a changed candidate pool), and that plan must never be allowed to
+ *        change what an already-posted primary's reply says. Defaults to "never reply" when omitted.
  * @param {Function} deps.postPrimary    ({caption, imagePath}) -> {postId}
- * @param {Function} [deps.postReply]    ({inReplyTo, plan}) -> {postId} | null
- *        Injected closure decides for itself (from `plan`) whether anything
- *        was omitted and needs a reply -- returns null when nothing was
- *        omitted, exactly like the edition poster's replyBuilderForMarket in
- *        post-mlb-x-edition.mjs. Recomputing from `plan` (pure, cheap) rather
- *        than threading omittedRows through this interface is what lets the
- *        same closure serve both the normal post-then-reply path and
- *        reply-only recovery, where only `plan` exists.
+ * @param {Function} [deps.postReply]    ({inReplyTo, caption}) -> {postId} | null
+ *        Pure "send this exact text as a reply" side effect -- deliberately does NOT receive `plan`
+ *        or recompute caption/omitted-rows itself, so it can never diverge from the persisted
+ *        `replyCaption` this module hands it, in either the normal post-then-reply path or
+ *        reply-only recovery.
  * @param {Function} [deps.verifyAccount]
  * @param {Function} [deps.now]
  * @param {boolean} [deps.dryRun]
@@ -115,6 +118,7 @@ export async function publishCanonicalSocialPost({
   acquireLease,
   ensureImage,
   buildCaption,
+  buildReply = async () => ({ shouldReply: false, caption: null }),
   postPrimary,
   postReply = null,
   verifyAccount = async () => true,
@@ -154,10 +158,28 @@ export async function publishCanonicalSocialPost({
 
     if (decided === PublicationStep.REPLY_RECOVERY_ONLY) {
       const primaryPostId = existing.primaryPostId ?? existing.postId;
+      // The reply text comes ONLY from what was persisted at primary-post
+      // time (see step 10 below) -- NEVER recomputed from `plan`. This
+      // invocation may have been handed a freshly-recomposed `plan`
+      // reflecting current data (a rowFingerprint drift, a changed
+      // candidate pool); that plan is used only for publication identity
+      // (validated above via receiptKey), never for reply content, so a
+      // data change after the primary posted can never alter what the
+      // pending reply says.
+      const replyCaption = typeof existing.replyCaption === "string" ? existing.replyCaption : null;
+      if (!replyCaption) {
+        // Reached REPLY_RECOVERY_ONLY (replyStatus PENDING/FAILED_RETRYABLE)
+        // but no reply text was ever persisted -- a receipt from before this
+        // guarantee existed. Fail safe: never fabricate reply content, mark
+        // the reply as not required rather than guessing.
+        const receipt = { ...existing, receiptKey, product, slateDate, primaryPostId, postId: primaryPostId, outcome: "POSTED", replyStatus: ReplyStatus.NOT_REQUESTED };
+        stateStore.writeCanonicalReceipt({ slateDate, product, receipt });
+        return result(CanonicalPostOutcome.REPLY_RECOVERED, { receiptKey, primaryPostId, replyPostId: null, replyStatus: ReplyStatus.NOT_REQUESTED });
+      }
       if (dryRun || !postReply) {
         return result(CanonicalPostOutcome.DRY_RUN, { receiptKey, primaryPostId, status: "REPLY_RECOVERY_ONLY" });
       }
-      const recovered = await attemptReply({ stateStore, product, slateDate, receiptKey, existing, primaryPostId, plan, postReply, now, log });
+      const recovered = await attemptReply({ stateStore, product, slateDate, receiptKey, existing, primaryPostId, replyCaption, postReply, now, log });
       return result(CanonicalPostOutcome.REPLY_RECOVERED, { receiptKey, calledX: true, ...recovered });
     }
 
@@ -180,6 +202,11 @@ export async function publishCanonicalSocialPost({
     }
 
     const imagePath = bundle.metadata?.imagePath ?? bundle.paths?.pngPath ?? null;
+
+    // ── 7b. Reply DECISION and TEXT, computed once from this SAME frozen
+    // plan and persisted alongside the primary (step 10) -- the sole source
+    // of truth for the reply, including on a later recovery-only run. ─────
+    const replyDecision = await buildReply(plan);
 
     if (dryRun) {
       return result(CanonicalPostOutcome.DRY_RUN, {
@@ -212,7 +239,12 @@ export async function publishCanonicalSocialPost({
       return result(CanonicalPostOutcome.X_API_FAILED, { receiptKey, calledX: true, status: "PRIMARY_NO_POST_ID" });
     }
 
-    // ── 10. Persist BEFORE the reply, so a crash cannot duplicate the primary. ──
+    // ── 10. Persist BEFORE the reply, so a crash cannot duplicate the
+    // primary -- and persist the reply DECISION/TEXT here too (replyRequired/
+    // replyCaption), computed once above from this exact frozen plan, so any
+    // later reply-only recovery reads this same text rather than recomputing
+    // it from whatever plan a subsequent run happens to build. ─────────────
+    const replyRequired = Boolean(replyDecision.shouldReply) && Boolean(postReply);
     const receipt = {
       receiptKey, product, slateDate,
       outcome: "POSTED",
@@ -220,7 +252,9 @@ export async function publishCanonicalSocialPost({
       primaryPostId,
       primaryPostedAt: now(),
       rowFingerprint: plan.rowFingerprint,
-      replyStatus: postReply ? ReplyStatus.PENDING : ReplyStatus.NOT_REQUESTED,
+      replyRequired,
+      replyCaption: replyRequired ? replyDecision.caption : null,
+      replyStatus: replyRequired ? ReplyStatus.PENDING : ReplyStatus.NOT_REQUESTED,
       replyPostId: null,
       replyAttemptedAt: null,
       replyFailureReason: null,
@@ -228,22 +262,25 @@ export async function publishCanonicalSocialPost({
     stateStore.writeCanonicalReceipt({ slateDate, product, receipt });
     log(`primary posted postId=${primaryPostId} receipt pushed`);
 
-    if (!postReply) return result(CanonicalPostOutcome.POSTED, { receiptKey, calledX: true, primaryPostId });
+    if (!replyRequired) return result(CanonicalPostOutcome.POSTED, { receiptKey, calledX: true, primaryPostId });
 
     // ── 11. Reply is a separate outcome; failure never undoes the primary. ──
-    const replyResult = await attemptReply({ stateStore, product, slateDate, receiptKey, existing: receipt, primaryPostId, plan, postReply, now, log });
+    const replyResult = await attemptReply({ stateStore, product, slateDate, receiptKey, existing: receipt, primaryPostId, replyCaption: replyDecision.caption, postReply, now, log });
     return result(CanonicalPostOutcome.POSTED, { receiptKey, calledX: true, primaryPostId, replyPostId: replyResult.replyPostId, replyStatus: replyResult.replyStatus });
   } finally {
     lease.release();
   }
 }
 
-async function attemptReply({ stateStore, product, slateDate, receiptKey, existing, primaryPostId, plan, postReply, now, log }) {
+async function attemptReply({ stateStore, product, slateDate, receiptKey, existing, primaryPostId, replyCaption, postReply, now, log }) {
   const base = { ...existing, receiptKey, product, slateDate, primaryPostId, postId: primaryPostId, outcome: "POSTED" };
   try {
-    const reply = await postReply({ inReplyTo: primaryPostId, plan });
+    const reply = await postReply({ inReplyTo: primaryPostId, caption: replyCaption });
     if (!reply) {
-      // Nothing was omitted -- no reply was ever wanted, not a failure.
+      // The reply decision (shouldReply) already happened before this call
+      // -- reaching here means postReply itself declined to send. Treated as
+      // "not required" rather than a failure, matching the injected
+      // closure's own judgment call.
       const receipt = { ...base, replyStatus: ReplyStatus.NOT_REQUESTED };
       stateStore.writeCanonicalReceipt({ slateDate, product, receipt });
       return { replyPostId: null, replyStatus: ReplyStatus.NOT_REQUESTED, primaryPostId };

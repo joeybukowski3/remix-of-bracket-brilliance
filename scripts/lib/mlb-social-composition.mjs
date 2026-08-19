@@ -132,7 +132,22 @@ function toFiniteNumber(value) {
  * @returns {Array<object>} ranked candidate rows, analytic order preserved
  */
 export function getKCandidatePool({ poolSize = SOCIAL_COMPOSITION_POOL_SIZE, ...rest } = {}) {
-  return selectConfirmedKRows({ ...rest, maxTableSize: poolSize }).selected;
+  return getKCandidatePoolWithPendingConfirmation({ poolSize, ...rest }).candidatePool;
+}
+
+/**
+ * Same candidate pool as getKCandidatePool, alongside the authoritative
+ * count of otherwise-eligible pitchers held back only because their
+ * opposing lineup has not confirmed yet (`heldForOpposingCount` from
+ * selectConfirmedKRows). This is the real "is there more confirmation data
+ * still to arrive" signal canonical readiness needs (see
+ * mlb-x-canonical-readiness.mjs's deriveConfirmationCompleteness) -- as
+ * opposed to a display-cap row count, which says nothing about whether the
+ * underlying data is actually done confirming.
+ */
+export function getKCandidatePoolWithPendingConfirmation({ poolSize = SOCIAL_COMPOSITION_POOL_SIZE, ...rest } = {}) {
+  const result = selectConfirmedKRows({ ...rest, maxTableSize: poolSize });
+  return { candidatePool: result.selected, pendingConfirmationCount: result.heldForOpposingCount };
 }
 
 /**
@@ -144,7 +159,19 @@ export function getKCandidatePool({ poolSize = SOCIAL_COMPOSITION_POOL_SIZE, ...
  * @returns {Array<object>} ranked candidate rows, analytic order preserved
  */
 export function getHrCandidatePool({ poolSize = SOCIAL_COMPOSITION_POOL_SIZE, ...rest } = {}) {
-  return selectConfirmedHrProps({ ...rest, maxTableSize: poolSize }).selected;
+  return getHrCandidatePoolWithPendingConfirmation({ poolSize, ...rest }).candidatePool;
+}
+
+/**
+ * Same candidate pool as getHrCandidatePool, alongside the authoritative
+ * count of otherwise-eligible hitters held back only because their lineup
+ * is still PROJECTED, not yet CONFIRMED_LINEUP (`projectedExcludedCount`
+ * from selectConfirmedHrProps). See getKCandidatePoolWithPendingConfirmation
+ * for why this -- not a row count -- is the real readiness signal.
+ */
+export function getHrCandidatePoolWithPendingConfirmation({ poolSize = SOCIAL_COMPOSITION_POOL_SIZE, ...rest } = {}) {
+  const result = selectConfirmedHrProps({ ...rest, maxTableSize: poolSize });
+  return { candidatePool: result.selected, pendingConfirmationCount: result.projectedExcludedCount };
 }
 
 function normalizeIdentityPart(value) {

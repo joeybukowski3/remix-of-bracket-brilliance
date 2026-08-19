@@ -79,6 +79,24 @@ function fakeBuildCaption({ omit = 0 } = {}) {
   return fn;
 }
 
+/**
+ * Mirrors post-mlb-social-canonical.mjs's buildReplyForProduct: derives the
+ * reply decision/text from the SAME `omit` count fakeBuildCaption uses, so
+ * tests can express "N rows omitted -> a reply is required" the same way
+ * the real caption builder does. Called by the publisher exactly once, at
+ * primary-post time -- never during reply-only recovery.
+ */
+function fakeBuildReply({ omit = 0 } = {}) {
+  const calls = [];
+  const fn = async (plan) => {
+    calls.push(plan);
+    if (omit <= 0) return { shouldReply: false, caption: null };
+    return { shouldReply: true, caption: `omitted ${omit} row(s)` };
+  };
+  fn.calls = calls;
+  return fn;
+}
+
 function baseDeps(plan, overrides = {}) {
   return {
     plan,
@@ -89,6 +107,7 @@ function baseDeps(plan, overrides = {}) {
     acquireLease: fakeLeaseFactory(),
     ensureImage: fakeEnsureImage(),
     buildCaption: fakeBuildCaption(),
+    buildReply: fakeBuildReply(),
     postPrimary: async () => ({ postId: "post-1" }),
     postReply: null,
     dryRun: false,
@@ -282,11 +301,14 @@ describe("lease collision", () => {
 });
 
 describe("primary/reply partial-failure and retry semantics", () => {
-  it("a primary already recorded (reply pending) never posts a second primary; only reply recovery runs", async () => {
+  it("a primary already recorded (reply pending, replyCaption persisted) never posts a second primary; only reply recovery runs", async () => {
     const stateStore = fakeStateStore();
     stateStore.writeCanonicalReceipt({
       product: SOCIAL_PRODUCT.HR, slateDate: SLATE,
-      receipt: { receiptKey: `${SOCIAL_PRODUCT.HR}:${SLATE}`, outcome: "POSTED", postId: "existing-1", primaryPostId: "existing-1", replyStatus: ReplyStatus.PENDING },
+      receipt: {
+        receiptKey: `${SOCIAL_PRODUCT.HR}:${SLATE}`, outcome: "POSTED", postId: "existing-1", primaryPostId: "existing-1",
+        replyRequired: true, replyCaption: "original omitted-row reply", replyStatus: ReplyStatus.PENDING,
+      },
     });
     let primaryCalled = false;
     let replyCalled = false;
@@ -294,7 +316,7 @@ describe("primary/reply partial-failure and retry semantics", () => {
     const result = await publishCanonicalSocialPost(baseDeps(plan, {
       stateStore,
       postPrimary: async () => { primaryCalled = true; return { postId: "should-never-happen" }; },
-      postReply: async () => { replyCalled = true; return { postId: "reply-1" }; },
+      postReply: async ({ caption }) => { replyCalled = true; assert.equal(caption, "original omitted-row reply"); return { postId: "reply-1" }; },
     }));
     assert.equal(primaryCalled, false, "a pending-reply receipt must never trigger a second primary post");
     assert.equal(replyCalled, true);
@@ -307,6 +329,7 @@ describe("primary/reply partial-failure and retry semantics", () => {
     const plan = hrPlan(2);
     const result = await publishCanonicalSocialPost(baseDeps(plan, {
       stateStore,
+      buildReply: fakeBuildReply({ omit: 2 }),
       postReply: async () => { throw new Error("network blip"); },
     }));
     assert.equal(result.outcome, CanonicalPostOutcome.POSTED);
@@ -320,23 +343,108 @@ describe("primary/reply partial-failure and retry semantics", () => {
     const stateStore = fakeStateStore();
     const plan = hrPlan(5);
     const buildCaption = fakeBuildCaption({ omit: 2 });
+    const buildReply = fakeBuildReply({ omit: 2 });
     const result = await publishCanonicalSocialPost(baseDeps(plan, {
-      stateStore, buildCaption,
-      postReply: async ({ inReplyTo }) => { assert.equal(inReplyTo, "post-1"); return { postId: "reply-1" }; },
+      stateStore, buildCaption, buildReply,
+      postReply: async ({ inReplyTo, caption }) => { assert.equal(inReplyTo, "post-1"); assert.equal(caption, "omitted 2 row(s)"); return { postId: "reply-1" }; },
     }));
     assert.equal(result.outcome, CanonicalPostOutcome.POSTED);
     assert.equal(result.replyPostId, "reply-1");
     const receipt = stateStore.readCanonicalReceipt({ product: SOCIAL_PRODUCT.HR, slateDate: SLATE });
     assert.equal(receipt.replyStatus, ReplyStatus.POSTED);
+    assert.equal(receipt.replyCaption, "omitted 2 row(s)", "the persisted reply text must match what was actually sent");
   });
 
-  it("postReply returning null (nothing omitted) records NOT_REQUESTED, not a failure", async () => {
+  it("nothing omitted (buildReply shouldReply:false) records NOT_REQUESTED without ever calling postReply", async () => {
     const stateStore = fakeStateStore();
     const plan = hrPlan(2);
-    const result = await publishCanonicalSocialPost(baseDeps(plan, { stateStore, postReply: async () => null }));
+    let replyCalled = false;
+    const result = await publishCanonicalSocialPost(baseDeps(plan, {
+      stateStore,
+      postReply: async () => { replyCalled = true; return { postId: "should-not-be-called" }; },
+    }));
     assert.equal(result.outcome, CanonicalPostOutcome.POSTED);
+    assert.equal(replyCalled, false, "no reply was ever required, so postReply must never be invoked");
     const receipt = stateStore.readCanonicalReceipt({ product: SOCIAL_PRODUCT.HR, slateDate: SLATE });
     assert.equal(receipt.replyStatus, ReplyStatus.NOT_REQUESTED);
+    assert.equal(receipt.replyCaption, null);
+  });
+});
+
+describe("reply-recovery content fidelity (a later run's plan must never alter a pending reply)", () => {
+  it("10. partial-primary retry cannot create a second primary", async () => {
+    const stateStore = fakeStateStore();
+    stateStore.writeCanonicalReceipt({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE,
+      receipt: {
+        receiptKey: `${SOCIAL_PRODUCT.HR}:${SLATE}`, outcome: "POSTED", postId: "existing-1", primaryPostId: "existing-1",
+        replyRequired: true, replyCaption: "original reply", replyStatus: ReplyStatus.PENDING,
+      },
+    });
+    let primaryCalled = false;
+    const plan = hrPlan(2);
+    const result = await publishCanonicalSocialPost(baseDeps(plan, {
+      stateStore,
+      postPrimary: async () => { primaryCalled = true; return { postId: "should-never-happen" }; },
+      postReply: async () => ({ postId: "reply-1" }),
+    }));
+    assert.equal(primaryCalled, false);
+    assert.equal(result.primaryPostId, "existing-1");
+    assert.notEqual(result.outcome, CanonicalPostOutcome.POSTED, "a recovery run must never report a fresh POSTED outcome for the primary");
+  });
+
+  it("11. partial-primary reply recovery uses the ORIGINAL persisted reply text, not a newly composed plan", async () => {
+    const stateStore = fakeStateStore();
+    stateStore.writeCanonicalReceipt({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE,
+      receipt: {
+        receiptKey: `${SOCIAL_PRODUCT.HR}:${SLATE}`, outcome: "POSTED", postId: "existing-1", primaryPostId: "existing-1",
+        replyRequired: true, replyCaption: "ORIGINAL reply text from the first attempt", replyStatus: ReplyStatus.PENDING,
+      },
+    });
+    // A DIFFERENT, freshly-recomposed plan is handed to this recovery run --
+    // e.g. current data now omits different rows than the original attempt
+    // did. buildReply/buildCaption would derive DIFFERENT reply text from
+    // this plan if they were ever consulted during recovery.
+    const freshPlan = hrPlan(5, { hrScore: 12.3 });
+    const buildReply = fakeBuildReply({ omit: 4 }); // would say "omitted 4 row(s)" if (wrongly) called
+    let sentCaption = null;
+    const result = await publishCanonicalSocialPost(baseDeps(freshPlan, {
+      stateStore, buildReply,
+      postReply: async ({ caption }) => { sentCaption = caption; return { postId: "reply-1" }; },
+    }));
+    assert.equal(result.outcome, CanonicalPostOutcome.REPLY_RECOVERED);
+    assert.equal(sentCaption, "ORIGINAL reply text from the first attempt");
+    assert.equal(buildReply.calls.length, 0, "buildReply must never be called again during reply-only recovery");
+  });
+
+  it("12. rowFingerprint/data changing after primary publication cannot alter the pending reply", async () => {
+    const stateStore = fakeStateStore();
+    const originalPlan = hrPlan(5, { hrScore: 50 });
+    const buildCaption = fakeBuildCaption({ omit: 3 });
+    const buildReply = fakeBuildReply({ omit: 3 });
+    let sentCaption = null;
+    const first = await publishCanonicalSocialPost(baseDeps(originalPlan, {
+      stateStore, buildCaption, buildReply,
+      postReply: async () => { throw new Error("simulated crash before reply lands"); },
+    }));
+    assert.equal(first.outcome, CanonicalPostOutcome.POSTED);
+    const afterPrimary = stateStore.readCanonicalReceipt({ product: SOCIAL_PRODUCT.HR, slateDate: SLATE });
+    assert.equal(afterPrimary.replyStatus, ReplyStatus.FAILED_RETRYABLE);
+    assert.equal(afterPrimary.replyCaption, "omitted 3 row(s)");
+
+    // Recovery run: DIFFERENT data (different rowFingerprint), and a
+    // buildReply that -- if wrongly invoked -- would derive different text.
+    const changedPlan = hrPlan(5, { hrScore: 999 });
+    assert.notEqual(originalPlan.rowFingerprint, changedPlan.rowFingerprint);
+    const wrongBuildReply = fakeBuildReply({ omit: 1 }); // would say "omitted 1 row(s)" if (wrongly) called
+    const recovered = await publishCanonicalSocialPost(baseDeps(changedPlan, {
+      stateStore, buildReply: wrongBuildReply,
+      postReply: async ({ caption }) => { sentCaption = caption; return { postId: "reply-1" }; },
+    }));
+    assert.equal(recovered.outcome, CanonicalPostOutcome.REPLY_RECOVERED);
+    assert.equal(sentCaption, "omitted 3 row(s)", "the reply must reflect the ORIGINAL plan's omission, not the changed plan's");
+    assert.equal(wrongBuildReply.calls.length, 0);
   });
 });
 
