@@ -86,7 +86,7 @@ describe("offseason provenance on the normalized type", () => {
 });
 
 describe("schedule game card on the normalized type", () => {
-  it("computes the same matchup edges the legacy shape produced", () => {
+  it("computes the same offense/defense matchup edges the legacy shape produced (OFF/DEF sourcing unchanged)", () => {
     const team = GUIDE.teamBySlug.get("buffalo-bills")!;
     const legacyTeam = NFL_GUIDE_TEAM_BY_SLUG.get("buffalo-bills")!;
     const legacyOpponent = NFL_GUIDE_TEAM_BY_SLUG.get("miami-dolphins")!;
@@ -106,10 +106,60 @@ describe("schedule game card on the normalized type", () => {
       </MemoryRouter>
     );
     expect(screen.getByText("Miami Dolphins")).toBeTruthy();
-    expect(screen.getByText(`#${legacyOpponent.powerRank}`)).toBeTruthy();
     const expectedOffenseEdge = legacyTeam.offPct - legacyOpponent.defPct;
     const rendered = `${expectedOffenseEdge > 0 ? "+" : ""}${expectedOffenseEdge.toFixed(1)}%`;
     expect(screen.getAllByText(rendered).length).toBeGreaterThan(0);
+  });
+
+  it("sources 'Opponent power' from the opponentOvr prop (universal current rating), never the legacy guide powerRank", () => {
+    const team = GUIDE.teamBySlug.get("buffalo-bills")!;
+    const legacyOpponent = NFL_GUIDE_TEAM_BY_SLUG.get("miami-dolphins")!;
+    const game: NflScheduleGame = {
+      week: 1,
+      opponentAbbr: "mia",
+      opponentName: "Miami Dolphins",
+      homeAway: "home",
+      date: "2026-09-13T17:00:00Z",
+      venue: "Highmark Stadium",
+      status: "Scheduled",
+      result: null,
+    } as NflScheduleGame;
+    render(
+      <MemoryRouter>
+        <NflScheduleGameCard
+          team={team}
+          game={game}
+          fallbackWeek={1}
+          restEdge={null}
+          opponentOvr={{ rating: 60.4, rank: 12 }}
+        />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("#12")).toBeTruthy();
+    expect(screen.getByText("60.4 overall")).toBeTruthy();
+    // The legacy guide powerRank for Miami must not appear anywhere.
+    expect(screen.queryByText(`#${legacyOpponent.powerRank}`)).toBeNull();
+  });
+
+  it("renders NR (not a fabricated rank) when opponentOvr is unavailable", () => {
+    const team = GUIDE.teamBySlug.get("buffalo-bills")!;
+    const game: NflScheduleGame = {
+      week: 1,
+      opponentAbbr: "mia",
+      opponentName: "Miami Dolphins",
+      homeAway: "home",
+      date: "2026-09-13T17:00:00Z",
+      venue: "Highmark Stadium",
+      status: "Scheduled",
+      result: null,
+    } as NflScheduleGame;
+    render(
+      <MemoryRouter>
+        <NflScheduleGameCard team={team} game={game} fallbackWeek={1} restEdge={null} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("NR")).toBeTruthy();
+    expect(screen.getByText("Unavailable")).toBeTruthy();
   });
 
   it("renders without matchup metrics for an unknown opponent (graceful)", () => {

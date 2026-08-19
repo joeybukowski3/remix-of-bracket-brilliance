@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import NflTeamDashboardExtras from "@/components/nfl/NflTeamDashboardExtras";
 import NflCoachOfYearCase from "@/components/nfl/NflCoachOfYearCase";
 import NflTeamModelTrendPanel from "@/components/nfl/team-dashboard/NflTeamModelTrendPanel";
+import type { ScheduleOpponentOvr } from "@/components/nfl/team-dashboard/NflScheduleGameCard";
 import {
   NflTeamHeaderOdds,
   NflTeamStatsSidebar,
@@ -10,6 +12,7 @@ import NflSection from "@/components/nfl/ui/NflSection";
 import NflMetricStrip from "@/components/nfl/ui/NflMetricStrip";
 import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   formatSigned,
@@ -23,6 +26,15 @@ const GUIDE = getNflSeasonGuide(2026)!;
 export default function NFLTeamGuide2026() {
   const { teamSlug = "" } = useParams();
   const team = GUIDE.teamBySlug.get(teamSlug);
+  // Universal current 2026 OVR/rank -- the only source for any opponent
+  // "power" figure shown on this page (schedule cards). Never the guide's
+  // frozen 2025-preseason powerRank/overallPct.
+  const currentRating = useNflCurrentRating2026();
+  const ovrByAbbr = useMemo(() => {
+    const map = new Map<string, ScheduleOpponentOvr>();
+    for (const row of currentRating.data?.teams ?? []) map.set(row.abbr, { rating: row.rating, rank: row.rank });
+    return map;
+  }, [currentRating.data]);
 
   usePageSeo({
     title: team ? `${team.teamName} 2026 Schedule, Stats, Odds & Roster Changes | Joe Knows Ball` : "2026 NFL Team Dashboard | Joe Knows Ball",
@@ -107,11 +119,11 @@ export default function NFLTeamGuide2026() {
         ]}
       />
 
-      <NflTeamModelTrendPanel teamSlug={team.slug} />
+      <NflTeamModelTrendPanel teamSlug={team.slug} teamAbbr={team.abbr} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
         <div className="min-w-0 space-y-5">
-          <NflTeamDashboardExtras team={team} />
+          <NflTeamDashboardExtras team={team} ovrByAbbr={ovrByAbbr} />
           <NflCoachOfYearCase team={team} />
 
           <NflSection

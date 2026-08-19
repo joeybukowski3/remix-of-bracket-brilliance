@@ -4,9 +4,10 @@ import { getSeoMeta } from "@/lib/seo";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
+import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildWeekMatchups, getAvailableWeeks, type NflMatchup } from "@/lib/nfl/matchups";
-import MatchupCard from "@/components/nfl/matchups/MatchupCard";
+import MatchupCard, { type MatchupCardOvr } from "@/components/nfl/matchups/MatchupCard";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
@@ -56,6 +57,9 @@ export default function NFLMatchups() {
   // malformed market artifact leaves each card's spread at N/A and changes
   // nothing else on the page.
   const { artifact: marketArtifact } = useNflMatchupMarket();
+  // Universal current 2026 OVR/rank -- the only source for the "Power" line
+  // on each card. Never the guide's frozen 2025-preseason powerRank/overallPct.
+  const currentRating = useNflCurrentRating2026();
   const [selectedWeek, setSelectedWeek] = useState(DEFAULT_WEEK);
 
   usePageSeo({
@@ -73,6 +77,12 @@ export default function NFLMatchups() {
   );
   const dayGroups = useMemo(() => groupByDay(matchups), [matchups]);
   const hasResults = (data?.results.length ?? 0) > 0;
+
+  const ovrByAbbr = useMemo(() => {
+    const map = new Map<string, MatchupCardOvr>();
+    for (const team of currentRating.data?.teams ?? []) map.set(team.abbr, { rating: team.rating, rank: team.rank });
+    return map;
+  }, [currentRating.data]);
 
   return (
     <>
@@ -114,6 +124,8 @@ export default function NFLMatchups() {
                 key={matchup.gameId}
                 matchup={matchup}
                 market={currentMarketFor(marketArtifact, matchup.gameId)}
+                awayOvr={ovrByAbbr.get(matchup.away.abbr) ?? null}
+                homeOvr={ovrByAbbr.get(matchup.home.abbr) ?? null}
               />
             ))}
           </div>

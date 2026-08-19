@@ -1,0 +1,136 @@
+name: NFL Team Performance Analytics
+
+run-name: NFL Team Performance Analytics • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # 7:55 AM ET Tuesdays during the NFL season window (Sep-Feb) — after the
+    # daily 6:10 AM schedules/results refresh and the 7:40 AM team-ratings
+    # refresh have both ingested the week's finals. The `timezone` field
+    # (not a raw UTC cron offset) is what keeps this anchored to 7:55 AM
+    # America/New_York across the DST transition each season — GitHub
+    # Actions resolves the wall-clock time itself, so this cron string is
+    # never hand-translated to UTC and never drifts by an hour in November.
+    - cron: "55 7 * 1,2,9,10,11,12 2"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-performance-analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Streams nflverse play-by-play and writes the compact per-team-game
+      # cache. When 2026 play-by-play isn't published yet (true before/very
+      # early in the season) or upstream is temporarily unavailable, this
+      # script itself reports "not yet published upstream" / "no completed
+      # REG-season games yet" and exits 0 without touching the committed
+      # cache -- a benign no-op, not a failure, per scripts/refresh-nfl-
+      # performance-source-cache.mjs's documented behavior.
+      - name: Refresh performance source cache
+        run: npm run nfl:performance-cache
+
+      # Reads whatever cache exists (possibly still the honest zero-game
+      # state) and (re)writes the public artifact. This never fails just
+      # because there's no play-by-play yet -- a zero-game artifact is a
+      # valid, correct output, not an error state.
+      - name: Generate team performance analytics artifact
+        run: npm run nfl:performance-analytics
+
+      - name: Detect meaningful data changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'public/data/nfl/2026/team-performance-analytics.json' 'data/nfl/nflverse/performance-team-game')" ]; then
+            echo "No NFL team performance analytics changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "NFL team performance analytics changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Safety guard: never let a generation glitch commit a corrupted or
+      # collapsed artifact over a known-good one. This does not duplicate the
+      # generator's own logic -- it only checks the two invariants the
+      # generator (and its own tests) already guarantee for a healthy run:
+      # the correct schema tag and exactly 32 teams. Anything else means the
+      # generator step itself must have already failed non-zero, which fails
+      # this job before this point is ever reached.
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          node -e "
+            const { readFileSync } = require('fs');
+            const file = 'public/data/nfl/2026/team-performance-analytics.json';
+            const parsed = JSON.parse(readFileSync(file, 'utf8'));
+            if (parsed.schemaVersion !== 'nfl-performance-v1') {
+              throw new Error(\`\${file} has unexpected schemaVersion \${parsed.schemaVersion}\`);
+            }
+            if (!Array.isArray(parsed.teams) || parsed.teams.length !== 32) {
+              throw new Error(\`\${file} does not contain exactly 32 teams (got \${parsed.teams?.length})\`);
+            }
+            console.log('Generated NFL team performance analytics artifact is valid.');
+          "
+
+      - name: Commit and push refreshed data
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nfl/2026/team-performance-analytics.json data/nfl/nflverse/performance-team-game
+
+          if git diff --cached --quiet; then
+            echo "No staged NFL team performance analytics changes."
+            exit 0
+          fi
+
+          git commit -m "data(nfl): refresh team performance analytics"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — NFL team performance analytics were not committed." >&2
+            exit 1
+          fi
+
+          echo "NFL team performance analytics pushed successfully."

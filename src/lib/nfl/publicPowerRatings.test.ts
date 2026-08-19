@@ -208,15 +208,24 @@ describe("public power integration isolation", () => {
     }
   });
 
-  it("wires the public NFL page to the v0.3 public loader instead of static preseason ratings", () => {
+  it("wires the public NFL page's OFF/DEF columns to the v0.3.1 public loader, never to raw static preseason ratings", () => {
     const page = readFileSync(join(ROOT, "src", "pages", "NFL.tsx"), "utf8");
     expect(page).toContain("useNflV03PublicPowerRatings");
-    expect(page).toContain("model v0.3");
-    expect(page).toContain("data?.title");
     expect(page).not.toContain("NFL_POWER_RATINGS");
     expect(page).not.toContain("context-flags");
     expect(page).not.toContain("manual-adjustments");
     expect(page).not.toContain("winTotal");
+  });
+
+  it("sources the public NFL page's headline OVR/rank from the universal current-rating hook, never from the v0.3.1 board's own publicRating/rank fields", () => {
+    const page = readFileSync(join(ROOT, "src", "pages", "NFL.tsx"), "utf8");
+    expect(page).toContain("useNflCurrentRating2026");
+    // The old "Public Rating / vs Scale Center" toggle and its relative-value
+    // math are retired; a v0.4-anchored current OVR/rank replaces them.
+    expect(page).not.toContain("model v0.3");
+    expect(page).not.toContain("vs Scale Center");
+    expect(page).not.toContain("overallVsCenter");
+    expect(page).not.toContain("team.publicRating");
   });
 
   it("keeps the full-season filename reference limited to public record enrichment and internal review", () => {

@@ -4,6 +4,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { NFL_POWER_RATINGS, nflLogoUrl, type NflPowerTeam } from "@/data/nflPreseason2026";
 import { slugifyNflTeam } from "@/lib/nfl/guide2026";
 import { calculateRankGap, getRankGapSignal, type SuperBowlMarketTeam } from "@/lib/nfl/superBowlMarkets";
+import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
 
@@ -18,7 +19,13 @@ type SuperBowlOddsResponse = {
 };
 
 type PageStatus = "loading" | "success" | "error";
-type OddsRow = NflPowerTeam & { probability: number | null; marketRank: number | null; gap: number | null };
+type OddsRow = NflPowerTeam & {
+  probability: number | null;
+  marketRank: number | null;
+  /** Universal current 2026 league rank; null when the team is unresolved in the current-rating board. */
+  universalRank: number | null;
+  gap: number | null;
+};
 
 function TeamLogo({ team }: { team: NflPowerTeam }) {
   const [failed, setFailed] = useState(false);
@@ -51,6 +58,11 @@ export default function NFLSuperBowlOdds() {
   const [status, setStatus] = useState<PageStatus>("loading");
   const [data, setData] = useState<SuperBowlOddsResponse | null>(null);
   const [error, setError] = useState("");
+  // Universal current 2026 rank -- the only source for "Power rank" and the
+  // rank-gap math below. Never the legacy nflPreseason2026 static rank
+  // (still used here only for team identity/matching, see NFL_POWER_RATINGS
+  // in the rows memo).
+  const currentRating = useNflCurrentRating2026();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,17 +84,27 @@ export default function NFLSuperBowlOdds() {
 
   const rows = useMemo<OddsRow[]>(() => {
     const markets = new Map(data?.teams.map((team) => [team.abbr.toLowerCase(), team]) ?? []);
+    const universalRankByAbbr = new Map(
+      (currentRating.data?.teams ?? []).map((team) => [team.abbr, team.rank])
+    );
     return NFL_POWER_RATINGS.map((team) => {
       const market = markets.get(team.abbr.toLowerCase());
       const marketRank = market?.marketRank ?? null;
-      return { ...team, probability: market?.probability ?? null, marketRank, gap: calculateRankGap(marketRank, team.rank) };
+      const universalRank = universalRankByAbbr.get(team.abbr) ?? null;
+      return {
+        ...team,
+        probability: market?.probability ?? null,
+        marketRank,
+        universalRank,
+        gap: universalRank == null ? null : calculateRankGap(marketRank, universalRank),
+      };
     }).sort((a, b) => {
       if (a.probability == null && b.probability == null) return a.team.localeCompare(b.team);
       if (a.probability == null) return 1;
       if (b.probability == null) return -1;
       return b.probability - a.probability || a.team.localeCompare(b.team);
     });
-  }, [data]);
+  }, [data, currentRating.data]);
 
   const favorite = rows.find((row) => row.marketRank === 1) ?? null;
   const bestValue = rows.filter((row) => row.gap != null && row.gap > 0).sort((a, b) => (b.gap ?? 0) - (a.gap ?? 0))[0] ?? null;
@@ -124,7 +146,7 @@ export default function NFLSuperBowlOdds() {
                       </Link>
                     </td>
                     <td className="text-center"><span className="font-semibold tabular-nums text-slate-900">{row.probability == null ? "—" : `${row.probability.toFixed(1)}%`}</span></td>
-                    <td className="text-center tabular-nums text-slate-700">{row.rank}</td>
+                    <td className="text-center tabular-nums text-slate-700">{row.universalRank ?? "—"}</td>
                     <td className={`text-center font-semibold tabular-nums ${gapTone(row.gap)}`}>{formatGap(row.gap)}</td>
                     <td className={`text-center text-xs font-semibold ${gapTone(row.gap)}`}>{getRankGapSignal(row.gap)}</td>
                   </tr>

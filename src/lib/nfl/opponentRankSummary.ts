@@ -130,7 +130,13 @@ export function opponentRankSummary(
 
   let ratedGames = 0;
   let powerTotal = 0;
+  // OFF/DEF can be unavailable for an opponent independently of its overall
+  // rank (the two source boards can fail independently -- see
+  // heroModelRatings.ts), so offense/defense keep their own divisors rather
+  // than sharing `ratedGames` with the always-present overall rank.
+  let offenseRatedGames = 0;
   let offenseTotal = 0;
+  let defenseRatedGames = 0;
   let defenseTotal = 0;
 
   // One iteration per GAME, so an opponent faced twice is added twice.
@@ -139,8 +145,14 @@ export function opponentRankSummary(
     if (!rating) continue;
     ratedGames += 1;
     powerTotal += rating.rank;
-    offenseTotal += rating.offenseRank;
-    defenseTotal += rating.defenseRank;
+    if (rating.offenseRank != null) {
+      offenseRatedGames += 1;
+      offenseTotal += rating.offenseRank;
+    }
+    if (rating.defenseRank != null) {
+      defenseRatedGames += 1;
+      defenseTotal += rating.defenseRank;
+    }
   }
 
   return {
@@ -148,8 +160,8 @@ export function opponentRankSummary(
     gamesPlayed: opponents.length,
     ratedGames,
     avgOpponentPowerRank: mean(powerTotal, ratedGames),
-    avgOpponentOffenseRank: mean(offenseTotal, ratedGames),
-    avgOpponentDefenseRank: mean(defenseTotal, ratedGames),
+    avgOpponentOffenseRank: mean(offenseTotal, offenseRatedGames),
+    avgOpponentDefenseRank: mean(defenseTotal, defenseRatedGames),
   };
 }
 

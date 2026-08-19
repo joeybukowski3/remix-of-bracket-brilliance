@@ -140,6 +140,36 @@ describe("MatchupCard spread cannot be manufactured", () => {
   });
 });
 
+describe("MatchupCard universal OVR (never the legacy guide powerRank/overallPct)", () => {
+  it("renders the awayOvr/homeOvr prop, not the guide team's powerRank/overallPct", () => {
+    render(
+      <MemoryRouter>
+        <MatchupCard
+          matchup={MATCHUP}
+          market={null}
+          awayOvr={{ rating: 68.4, rank: 3 }}
+          homeOvr={{ rating: 74.5, rank: 2 }}
+        />
+      </MemoryRouter>
+    );
+    // MATCHUP fixture teams have powerRank: 5, overallPct: 6.8 -- neither
+    // value (nor the old "+6.8%" formatting) should appear anywhere.
+    expect(screen.getByText("#3 · 68.4")).toBeInTheDocument();
+    expect(screen.getByText("#2 · 74.5")).toBeInTheDocument();
+    expect(screen.queryByText("#5")).not.toBeInTheDocument();
+    expect(screen.queryByText(/\+6\.8%/)).not.toBeInTheDocument();
+  });
+
+  it("renders NR (not a fabricated rank) when a team has no universal rating", () => {
+    render(
+      <MemoryRouter>
+        <MatchupCard matchup={MATCHUP} market={null} />
+      </MemoryRouter>
+    );
+    expect(screen.getAllByText("NR").length).toBe(2);
+  });
+});
+
 describe("MatchupCard uses the shared formatter", () => {
   it("renders exactly what formatMarketFavoriteSpread returns", () => {
     // The same helper the hero and Model Analysis use, so one line is never

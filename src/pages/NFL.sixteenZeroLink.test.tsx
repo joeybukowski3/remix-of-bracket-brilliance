@@ -7,6 +7,12 @@ vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
 vi.mock("@/hooks/useNflV03PublicPowerRatings", () => ({
   useNflV03PublicPowerRatings: () => ({ loading: false, error: null, data: null }),
 }));
+vi.mock("@/hooks/useNflCurrentRating2026", () => ({
+  useNflCurrentRating2026: () => ({ loading: false, error: null, data: null }),
+}));
+vi.mock("@/hooks/useNflSeasonData", () => ({
+  useNflSeasonData: () => ({ loading: false, error: null, data: null }),
+}));
 
 function renderNflLanding() {
   return render(

@@ -1,17 +1,24 @@
 import { Link } from "react-router-dom";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
-import { formatSigned } from "@/lib/nfl/guideData";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import { formatMarketFavoriteSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
-function ratingLine(team: NflMatchupTeam): string {
-  const rankPart = Number.isFinite(team.powerRank) ? `#${team.powerRank}` : "NR";
-  const pctPart = Number.isFinite(team.overallPct) ? ` · ${formatSigned(team.overallPct)}%` : "";
-  return `${rankPart}${pctPart}`;
+/** Universal current 2026 OVR/rank for one team, from useNflCurrentRating2026(). */
+export type MatchupCardOvr = { rating: number; rank: number };
+
+/**
+ * "#4 · 67.5" — universal rank primary, current rating secondary. Never the
+ * legacy guide-derived powerRank/overallPct that used to render here (that
+ * was a frozen 2025-preseason value competing with the live universal
+ * rating shown everywhere else on the site).
+ */
+function ratingLine(ovr: MatchupCardOvr | null): string {
+  if (!ovr) return "NR";
+  return `#${ovr.rank} · ${ovr.rating.toFixed(1)}`;
 }
 
-function TeamLine({ team, prefix }: { team: NflMatchupTeam; prefix?: string }) {
+function TeamLine({ team, prefix, ovr }: { team: NflMatchupTeam; prefix?: string; ovr: MatchupCardOvr | null }) {
   return (
     <div className="flex items-center gap-2.5">
       <img src={nflLogoUrl(team.abbr)} alt="" aria-hidden className="h-9 w-9 shrink-0 object-contain" loading="lazy" />
@@ -22,7 +29,7 @@ function TeamLine({ team, prefix }: { team: NflMatchupTeam; prefix?: string }) {
         </div>
         <div className="text-[11px] font-bold tabular-nums text-slate-500">
           <span className="text-[9px] uppercase tracking-wider text-slate-400">Power </span>
-          {ratingLine(team)}
+          {ratingLine(ovr)}
         </div>
       </div>
     </div>
@@ -67,10 +74,15 @@ function MarketSpread({ market }: { market: MarketCurrentGame | null }) {
 export default function MatchupCard({
   matchup,
   market = null,
+  awayOvr = null,
+  homeOvr = null,
 }: {
   matchup: NflMatchup;
   /** Current published line for this game; null renders N/A, never a derived value. */
   market?: MarketCurrentGame | null;
+  /** Universal current OVR/rank for the away/home team; null renders "NR", never a legacy fallback. */
+  awayOvr?: MatchupCardOvr | null;
+  homeOvr?: MatchupCardOvr | null;
 }) {
   const { away, home } = matchup;
   return (
@@ -85,13 +97,13 @@ export default function MatchupCard({
       </div>
 
       <div className="mt-3 space-y-2.5">
-        <TeamLine team={away} prefix="Away" />
+        <TeamLine team={away} prefix="Away" ovr={awayOvr} />
         <div className="flex items-center gap-2 pl-1 text-[10px] font-bold uppercase tracking-wider text-slate-300">
           <span className="h-px flex-1 bg-slate-100" />
           at
           <span className="h-px flex-1 bg-slate-100" />
         </div>
-        <TeamLine team={home} prefix="Home" />
+        <TeamLine team={home} prefix="Home" ovr={homeOvr} />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">

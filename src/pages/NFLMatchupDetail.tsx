@@ -11,7 +11,7 @@ import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
-import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings";
+import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
@@ -131,10 +131,10 @@ export default function NFLMatchupDetail() {
     loading: projectionLoading,
     error: projectionError,
   } = useNflMatchupProjections();
-  // The JKB team-strength rows come from the active generated model, the same
-  // board the /nfl landing page renders — never from the retired static
-  // preseason file, so the two surfaces cannot show contradictory ratings.
-  const { data: powerBoard } = useNflV03PublicPowerRatings(CURRENT_SEASON);
+  // OVR/OFF/DEF all come from the universal current-rating board -- the same
+  // canonical source every current-rating surface on the site reads, so this
+  // page can never show a different rating than /nfl or a team dashboard.
+  const { data: currentRating } = useNflCurrentRating2026();
 
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
@@ -245,8 +245,8 @@ export default function NFLMatchupDetail() {
    * never disagree about what a category contains or which team leads it.
    */
   const modelRatings = useMemo(
-    () => createHeroModelRatingResolver(powerBoard),
-    [powerBoard]
+    () => createHeroModelRatingResolver(currentRating),
+    [currentRating]
   );
 
   /**
@@ -295,7 +295,10 @@ export default function NFLMatchupDetail() {
     noindex: seo.noindex ?? !matchup,
   });
 
-  const advantages = useMemo(() => (matchup ? deriveAdvantages(matchup) : []), [matchup]);
+  const advantages = useMemo(
+    () => (matchup ? deriveAdvantages(matchup, modelRatings) : []),
+    [matchup, modelRatings]
+  );
   const angles = useMemo(() => (matchup ? deriveAngles(matchup) : []), [matchup]);
 
   if (loading) {

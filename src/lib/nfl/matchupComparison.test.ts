@@ -10,6 +10,8 @@ import {
 } from "@/lib/nfl/matchupComparison";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
+import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
+import type { CurrentRatingBoard, CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 
 // Minimal full guide team; override only the fields a test cares about.
 function makeTeam(overrides: Partial<NflGuideTeamNormalized>): NflMatchupTeam {
@@ -135,6 +137,83 @@ describe("deriveAdvantages", () => {
       { powerRank: 10, offenseRank: 10, defenseRank: 10, projectedWins: 8 }
     );
     expect(deriveAdvantages(m)).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regression coverage: the Overview tab's Advantages list must reflect the
+// live Current Power Board (the same source Team Comparison and Power
+// Rankings use) for overall/offense/defense, never the static
+// NflMatchupTeam.powerRank/offenseRank/defenseRank guide-snapshot fields.
+// ---------------------------------------------------------------------------
+describe("deriveAdvantages — live Current Power Board sourcing", () => {
+  function currentRow(overrides: Partial<CurrentRatingRow>): CurrentRatingRow {
+    return {
+      abbr: "awy", team: "Away", division: "AFC East",
+      rating: 50, rank: 16, offenseRating: 50, offenseRank: 16,
+      defenseRating: 50, defenseRank: 16, performanceRating: null, performanceRank: null,
+      gamesPlayed: 0, preseasonWeight: 1, performanceWeight: 0, state: "preseason",
+      preseasonV04Rating: 50, preseasonOffenseRating: 50, preseasonDefenseRating: 50,
+      ...overrides,
+    };
+  }
+  function board(teams: CurrentRatingRow[]): CurrentRatingBoard {
+    return { season: 2026, state: "preseason", teams };
+  }
+
+  it("uses the resolver's rank/offenseRank/defenseRank, not the stale guide-snapshot fields on NflMatchupTeam", () => {
+    // Guide-snapshot fields deliberately say the OPPOSITE of the live board,
+    // so leaking either one would flip the winning team in the sentence.
+    const m = makeMatchup(
+      { abbr: "awy", teamName: "Away", powerRank: 20, offenseRank: 20, defenseRank: 20 },
+      { abbr: "hom", teamName: "Home", powerRank: 1, offenseRank: 1, defenseRank: 1 }
+    );
+    const modelRatings = createHeroModelRatingResolver(
+      board([
+        currentRow({ abbr: "awy", rank: 2, offenseRank: 3, defenseRank: 13 }),
+        currentRow({ abbr: "hom", rank: 3, offenseRank: 13, defenseRank: 1 }),
+      ])
+    );
+
+    const notes = deriveAdvantages(m, modelRatings);
+    const byKey = new Map(notes.map((n) => [n.key, n]));
+
+    // Away is #2 (better) vs Home #3 on OVR -> Away wins overallRank.
+    expect(byKey.get("overallRank")?.teamSlug).toBe("away");
+    expect(byKey.get("overallRank")?.text).toContain("#2 versus #3");
+    // Away is #3 (better) vs Home #13 on OFF -> Away wins offenseRank.
+    expect(byKey.get("offenseRank")?.teamSlug).toBe("away");
+    expect(byKey.get("offenseRank")?.text).toContain("#3 versus #13");
+    // Home is #1 (better) vs Away #13 on DEF -> Home wins defenseRank.
+    expect(byKey.get("defenseRank")?.teamSlug).toBe("home");
+    expect(byKey.get("defenseRank")?.text).toContain("#1 versus #13");
+  });
+
+  it("falls back to the static guide fields only when no resolver is supplied (backward compatible)", () => {
+    const m = makeMatchup({ powerRank: 2, offenseRank: 1, defenseRank: 8 }, { powerRank: 18, offenseRank: 20, defenseRank: 12 });
+    const notes = deriveAdvantages(m);
+    expect(notes.find((n) => n.key === "overallRank")?.text).toContain("#2 versus #18");
+  });
+
+  it("cross-consumer consistency: Advantages ranks equal heroModelRatings output for the same two teams", () => {
+    const modelRatings = createHeroModelRatingResolver(
+      board([
+        currentRow({ abbr: "awy", rank: 5, offenseRank: 7, defenseRank: 9 }),
+        currentRow({ abbr: "hom", rank: 2, offenseRank: 4, defenseRank: 6 }),
+      ])
+    );
+    const m = makeMatchup({ abbr: "awy" }, { abbr: "hom" });
+    const notes = deriveAdvantages(m, modelRatings);
+    const away = modelRatings("awy")!;
+    const home = modelRatings("hom")!;
+
+    const overallRank = notes.find((n) => n.key === "overallRank")!;
+    expect(overallRank.text).toContain(`#${Math.min(away.rank, home.rank)}`);
+    expect(overallRank.text).toContain(`#${Math.max(away.rank, home.rank)}`);
+    const offenseRank = notes.find((n) => n.key === "offenseRank")!;
+    expect(offenseRank.text).toContain(`#${Math.min(away.offenseRank, home.offenseRank)}`);
+    const defenseRank = notes.find((n) => n.key === "defenseRank")!;
+    expect(defenseRank.text).toContain(`#${Math.min(away.defenseRank, home.defenseRank)}`);
   });
 });
 

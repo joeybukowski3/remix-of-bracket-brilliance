@@ -7,12 +7,19 @@ import {
   getWarrenSharpScheduleProfile,
 } from "@/lib/nfl/warrenSharpSchedule2026";
 import NflSection from "@/components/nfl/ui/NflSection";
-import NflScheduleGameCard from "./NflScheduleGameCard";
+import NflScheduleGameCard, { type ScheduleOpponentOvr } from "./NflScheduleGameCard";
 import NflWarrenSharpScheduleSummary from "./NflWarrenSharpScheduleSummary";
 
 type LoadStatus = "loading" | "success" | "error";
 
-export default function NflScheduleSection({ team }: { team: NflGuideTeamNormalized }) {
+export default function NflScheduleSection({
+  team,
+  ovrByAbbr,
+}: {
+  team: NflGuideTeamNormalized;
+  /** Universal current 2026 OVR/rank, keyed by abbr. Undefined while the board is still loading. */
+  ovrByAbbr?: ReadonlyMap<string, ScheduleOpponentOvr>;
+}) {
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [data, setData] = useState<NflTeamScheduleResponse | null>(null);
   const [error, setError] = useState("");
@@ -87,6 +94,7 @@ export default function NflScheduleSection({ team }: { team: NflGuideTeamNormali
                   game.week,
                   game.opponentAbbr,
                 )}
+                opponentOvr={ovrByAbbr?.get(game.opponentAbbr) ?? null}
               />
             ))}
           </div>

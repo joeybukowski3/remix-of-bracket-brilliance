@@ -212,44 +212,134 @@ describe("NFLStandings — 2026 preseason projection view", () => {
   });
 });
 
-describe("NFLStandings — 2026 once results exist", () => {
-  it("renders actual W-L/PF/PA/Diff standings and does not use Power Rating as a tiebreaker", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const path = String(input);
-        if (path === "/data/nfl/2026/results.json") {
-          // Cardinals (rating2026 34.6, last place in NFC West) blow out the
-          // Rams (rating2026 82.8, first place) — if the page used Power
-          // Rating as a tiebreaker the Rams would still show first.
-          return jsonResponse({
-            _meta: { schemaVersion: "nfl-v0.1", generatedAt: new Date().toISOString(), source: "test", season: 2026, week: 1, modelVersion: null, notes: [] },
-            results: [
-              { gameId: "g1", season: 2026, week: 1, seasonType: "REG", homeAbbr: "ari", awayAbbr: "lar", homeScore: 45, awayScore: 3, winner: "ari", final: true },
-            ],
-          });
-        }
-        return committedFetch(input);
-      })
-    );
+/** Cardinals (rating2026 34.6, last place in NFC West) blow out the Rams (rating2026 82.8, first place). */
+function oneResultFetch(input: RequestInfo | URL): Response | Promise<Response> {
+  const path = String(input);
+  if (path === "/data/nfl/2026/results.json") {
+    return jsonResponse({
+      _meta: { schemaVersion: "nfl-v0.1", generatedAt: new Date().toISOString(), source: "test", season: 2026, week: 1, modelVersion: null, notes: [] },
+      results: [
+        { gameId: "g1", season: 2026, week: 1, seasonType: "REG", homeAbbr: "ari", awayAbbr: "lar", homeScore: 45, awayScore: 3, winner: "ari", final: true },
+      ],
+    });
+  }
+  return committedFetch(input);
+}
+
+describe("NFLStandings — 2026 once results exist (auto mode)", () => {
+  it("auto switches to the in-season board (Team/Record/OVR/SOS To Date/Future SOS), not the plain W-L/PF/PA/Diff board", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
       </MemoryRouter>
     );
 
-    expect((await screen.findAllByText("W-L")).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("PF").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("PA").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Diff").length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Record")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OVR").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("SOS To Date").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Future SOS").length).toBeGreaterThan(0);
     expect(screen.queryByText("2026 PR")).not.toBeInTheDocument();
     expect(screen.queryByText("2025 Adj")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Auto" })).toHaveAttribute("aria-pressed", "true");
+  });
 
-    const heading = screen.getByRole("heading", { name: "NFC West" });
+  it("does not use Power Rating as a standings tiebreaker: the Cardinals sort first on record alone", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+
+    const heading = await screen.findByRole("heading", { name: "NFC West" });
     const card = heading.closest("article")!;
-    const rows = within(card).getAllByRole("row").slice(1); // drop header row
+    const table = within(card).getByRole("table", { hidden: true }) ?? card.querySelector("table")!;
+    const rows = within(table as HTMLElement).getAllByRole("row").slice(1); // drop header row
     // Cardinals won on the field and must sort first, despite the much lower Power Rating.
     expect(within(rows[0]).getByText(/Cardinals/)).toBeInTheDocument();
+  });
+
+  it("Rams' OVR cell shows the universal current rank/rating, not the preseason rank once it has changed", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+
+    const links = await screen.findAllByRole("link", { name: /Open LA Rams team dashboard/i });
+    for (const link of links) {
+      const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
+      expect(card.getAllByText("#1").length).toBeGreaterThan(0);
+      expect(card.getAllByText("82.8").length).toBeGreaterThan(0);
+    }
+  });
+
+  it("SOS To Date is N/A for a team with zero completed games, even in in-season mode", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+
+    // Seahawks have not played in this fixture (only ARI @ LAR is final).
+    const links = await screen.findAllByRole("link", { name: /Open Seattle Seahawks team dashboard/i });
+    for (const link of links) {
+      const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
+      expect(card.getAllByText("N/A").length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("NFLStandings — view mode control", () => {
+  it("defaults to Auto, which shows the preseason board with zero completed games", async () => {
+    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+
+    expect((await screen.findAllByText("2026 PR")).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Auto" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("manual Preseason override always shows the preseason board, even once results exist", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+    await screen.findAllByText("OVR"); // auto mode has already switched to in-season
+    fireEvent.click(screen.getByRole("button", { name: "Preseason" }));
+
+    expect((await screen.findAllByText("2026 PR")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("SOS To Date")).not.toBeInTheDocument();
+  });
+
+  it("manual In Season override shows the in-season board before any 2026 game is final, with honest N/A and 0-0", async () => {
+    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+    await screen.findAllByText("2026 PR"); // auto mode starts in preseason
+    fireEvent.click(screen.getByRole("button", { name: "In Season" }));
+
+    expect((await screen.findAllByText("SOS To Date")).length).toBeGreaterThan(0);
+    const links = await screen.findAllByRole("link", { name: /Open LA Rams team dashboard/i });
+    for (const link of links) {
+      const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
+      expect(card.getAllByText("0-0").length).toBeGreaterThan(0);
+      // SOS To Date is N/A this early; Future SOS is already live from the schedule.
+      expect(card.getAllByText("N/A").length).toBeGreaterThan(0);
+    }
+    // Future SOS renders real rank badges from the schedule immediately, before Week 1.
+    expect(document.querySelectorAll('[title*="remaining schedule"]').length).toBeGreaterThan(0);
   });
 });
 
