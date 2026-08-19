@@ -183,9 +183,21 @@ export function rowIdentities(rows) {
 /**
  * Blocks a post whose caption or graphic drifted from the frozen plan.
  *
- * The image must show every selected row: renderedRows is checked for an
- * exact multiset match against planRows, so a duplicated, dropped, or
- * substituted row in the graphic is always a mismatch.
+ * The image must show every selected row: when `renderedRows` is supplied,
+ * it is checked for an exact multiset match against planRows, so a
+ * duplicated, dropped, or substituted row in the graphic is always a
+ * mismatch.
+ *
+ * `renderedRows` is null/omitted exactly when the caller has NO actual
+ * captured rows to compare -- a reused image bundle, not a freshly rendered
+ * one -- and that case is intentionally NOT checked here. Substituting
+ * planRows for the unknown rendered content (the pre-Phase-4 bug) would only
+ * ever compare the plan to itself and could never detect a stale image; the
+ * image's content safety on reuse must instead already be proven by
+ * something with actual access to what was rendered (see
+ * mlb-x-image-bundle.mjs's rowFingerprint gate) before ensureImage ever
+ * reports a bundle as reused. This function only re-proves consistency for
+ * rows it was actually given.
  *
  * The caption is different on purpose. The caption-budget layer
  * (mlb-x-caption-budget.mjs) deliberately omits rows that do not fit in 280
@@ -196,12 +208,11 @@ export function rowIdentities(rows) {
  * caption must be accounted for in omittedRows (nothing vanishes silently).
  * A row appearing in both is also a mismatch -- that would double-count it.
  */
-export function assertRowConsistency({ planRows, captionRows, omittedRows = [], renderedRows }) {
+export function assertRowConsistency({ planRows, captionRows, omittedRows = [], renderedRows = null }) {
   const plan = rowIdentities(planRows).sort();
   const planSet = new Set(plan);
   const caption = rowIdentities(captionRows);
   const omitted = rowIdentities(omittedRows);
-  const rendered = rowIdentities(renderedRows).sort();
 
   const mismatches = [];
 
@@ -218,8 +229,11 @@ export function assertRowConsistency({ planRows, captionRows, omittedRows = [], 
     mismatches.push(`caption plus omittedRows (${accounted.length}) do not reconstruct the full plan (${plan.length})`);
   }
 
-  if (rendered.length !== plan.length || rendered.some((id, i) => id !== plan[i])) {
-    mismatches.push(`rendered rows differ from plan rows (plan=${plan.length}, rendered=${rendered.length})`);
+  if (renderedRows != null) {
+    const rendered = rowIdentities(renderedRows).sort();
+    if (rendered.length !== plan.length || rendered.some((id, i) => id !== plan[i])) {
+      mismatches.push(`rendered rows differ from plan rows (plan=${plan.length}, rendered=${rendered.length})`);
+    }
   }
   return { consistent: mismatches.length === 0, mismatches, planIdentities: plan };
 }

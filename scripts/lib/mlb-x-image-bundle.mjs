@@ -16,6 +16,16 @@
  * The per-market render lock prevents two same-market jobs corrupting the same
  * fixed output paths. It is NOT a publication barrier -- the durable edition
  * receipt remains the only thing preventing a duplicate post.
+ *
+ * Phase 4: kind + slateDate alone are not enough to prove a bundle's PIXELS
+ * still match the CURRENT selected rows -- an earlier same-day render is
+ * indistinguishable from a fresh one by that identity alone, which is how a
+ * later same-day run with different content could silently reuse a stale
+ * image. `rowFingerprint` (validateImageBundle / ensureImageBundle) is an
+ * opt-in third identity component: a caller that passes it only accepts a
+ * bundle whose sidecar fingerprint matches exactly, and a bundle with no
+ * fingerprint on record is never treated as reusable once anything checks.
+ * A caller that omits it entirely is unaffected (pre-Phase-4 behavior).
  */
 import { existsSync, mkdirSync, openSync, closeSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -41,6 +51,7 @@ export const BundleRejection = Object.freeze({
   UNSUPPORTED_VERSION: "UNSUPPORTED_VERSION",
   KIND_MISMATCH: "KIND_MISMATCH",
   SLATE_MISMATCH: "SLATE_MISMATCH",
+  FINGERPRINT_MISMATCH: "FINGERPRINT_MISMATCH",
   BAD_DIMENSIONS: "BAD_DIMENSIONS",
   BAD_ROW_COUNT: "BAD_ROW_COUNT",
   MISSING_PNG: "MISSING_PNG",
@@ -62,8 +73,20 @@ export function bundlePaths(kind, directory) {
  *
  * Deliberately ignores file mtimes: a graphic rendered yesterday and touched
  * today is still yesterday's graphic. Identity comes from the sidecar alone.
+ *
+ * `rowFingerprint` is the content-aware reuse gate (Phase 4): pass the
+ * caller's current row content fingerprint and a bundle is only valid when
+ * the sidecar's own `rowFingerprint` matches it exactly -- a same-day bundle
+ * rendered from different rows is rejected even though kind and slateDate
+ * still agree. The check is OPTED INTO by passing this argument at all: a
+ * caller that omits it (i.e. leaves it `undefined`) gets the pre-Phase-4
+ * kind+slateDate-only behavior unchanged, which is required for callers that
+ * have no fingerprint to offer (see mlb-x-image-bundle.mjs module doc /
+ * Phase 4 report for which callers those are). A caller that DOES pass a
+ * fingerprint always fails closed: a bundle with no fingerprint on record
+ * (old metadata, or a legacy render) is never treated as safely reusable.
  */
-export function validateImageBundle({ kind, slateDate, directory }) {
+export function validateImageBundle({ kind, slateDate, directory, rowFingerprint }) {
   const paths = bundlePaths(kind, directory);
   const reject = (reason) => ({ valid: false, reason, metadata: null, paths });
 
@@ -79,6 +102,9 @@ export function validateImageBundle({ kind, slateDate, directory }) {
   if (metadata.version !== IMAGE_METADATA_VERSION) return reject(BundleRejection.UNSUPPORTED_VERSION);
   if (metadata.kind !== kind) return reject(BundleRejection.KIND_MISMATCH);
   if (metadata.slateDate !== slateDate) return reject(BundleRejection.SLATE_MISMATCH);
+  if (rowFingerprint !== undefined && (!metadata.rowFingerprint || metadata.rowFingerprint !== rowFingerprint)) {
+    return reject(BundleRejection.FINGERPRINT_MISMATCH);
+  }
 
   const width = Number(metadata.width);
   const height = Number(metadata.height);
@@ -108,6 +134,7 @@ export function validateImageBundle({ kind, slateDate, directory }) {
 export function publishImageBundle({
   kind, slateDate, directory, pngSource, svgSource,
   width, height, rowCount, now = new Date().toISOString(),
+  rowFingerprint = null,
 }) {
   const paths = bundlePaths(kind, directory);
   mkdirSync(directory, { recursive: true });
@@ -129,6 +156,10 @@ export function publishImageBundle({
     rowCount,
     imagePath: paths.pngPath,
     svgPath: paths.svgPath,
+    // Content-aware reuse gate (Phase 4). null for a caller that has no
+    // fingerprint to offer -- see validateImageBundle's doc comment for why
+    // that reads as "never safely reusable" the moment ANY caller checks it.
+    rowFingerprint,
   };
   const tempMetadata = `${paths.metadataPath}.tmp`;
   writeFileSync(tempMetadata, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
@@ -174,13 +205,14 @@ const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function ensureImageBundle({
   kind, slateDate, directory,
   render = null,
+  rowFingerprint,
   expectExternalRender = false,
   pollTimeoutMs = POLL_TIMEOUT_MS,
   pollIntervalMs = POLL_INTERVAL_MS,
   sleep = defaultSleep,
   clock = () => Date.now(),
 }) {
-  const first = validateImageBundle({ kind, slateDate, directory });
+  const first = validateImageBundle({ kind, slateDate, directory, rowFingerprint });
   if (first.valid) return { ...first, source: "reused", rejectedReason: null };
 
   if (!expectExternalRender && typeof render === "function") {
@@ -189,15 +221,15 @@ export async function ensureImageBundle({
       // Another same-market job took the lock between our check and now; it is
       // rendering the identical bundle, so waiting is justified after all.
       if (!lock.acquired) {
-        return pollForBundle({ kind, slateDate, directory, pollTimeoutMs, pollIntervalMs, sleep, clock, rejectedReason: first.reason });
+        return pollForBundle({ kind, slateDate, directory, rowFingerprint, pollTimeoutMs, pollIntervalMs, sleep, clock, rejectedReason: first.reason });
       }
       // Re-check under the lock: a concurrent job may have finished while we
       // were acquiring, which would make re-rendering pure waste.
-      const underLock = validateImageBundle({ kind, slateDate, directory });
+      const underLock = validateImageBundle({ kind, slateDate, directory, rowFingerprint });
       if (underLock.valid) return { ...underLock, source: "reused", rejectedReason: first.reason };
 
       await render({ kind, slateDate, directory, paths: bundlePaths(kind, directory) });
-      const published = validateImageBundle({ kind, slateDate, directory });
+      const published = validateImageBundle({ kind, slateDate, directory, rowFingerprint });
       return published.valid
         ? { ...published, source: "rendered", rejectedReason: first.reason }
         : { ...published, source: "render-invalid", rejectedReason: published.reason };
@@ -207,16 +239,16 @@ export async function ensureImageBundle({
   }
 
   if (expectExternalRender) {
-    return pollForBundle({ kind, slateDate, directory, pollTimeoutMs, pollIntervalMs, sleep, clock, rejectedReason: first.reason });
+    return pollForBundle({ kind, slateDate, directory, rowFingerprint, pollTimeoutMs, pollIntervalMs, sleep, clock, rejectedReason: first.reason });
   }
 
   return { ...first, source: "unavailable", rejectedReason: first.reason };
 }
 
-async function pollForBundle({ kind, slateDate, directory, pollTimeoutMs, pollIntervalMs, sleep, clock, rejectedReason }) {
+async function pollForBundle({ kind, slateDate, directory, rowFingerprint, pollTimeoutMs, pollIntervalMs, sleep, clock, rejectedReason }) {
   const deadline = clock() + pollTimeoutMs;
   for (;;) {
-    const result = validateImageBundle({ kind, slateDate, directory });
+    const result = validateImageBundle({ kind, slateDate, directory, rowFingerprint });
     if (result.valid) return { ...result, source: "polled", rejectedReason };
     if (clock() >= deadline) {
       return { ...result, source: "timeout", rejectedReason: result.reason };

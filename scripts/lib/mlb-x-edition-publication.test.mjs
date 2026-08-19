@@ -321,6 +321,22 @@ describe("row consistency", () => {
     assert.equal(result.consistent, false);
   });
 
+  it("skips the rendered-rows check entirely when renderedRows is null (reused, content-safety proven elsewhere)", () => {
+    // Phase 4: a reused image bundle has no captured renderedRows. Passing
+    // null must SKIP the image check, not substitute the plan for it -- that
+    // substitution (the pre-Phase-4 bug) would always "pass" by construction,
+    // proving nothing about the actual pixels on disk.
+    const result = assertRowConsistency({ planRows: rows, captionRows: rows, renderedRows: null });
+    assert.equal(result.consistent, true);
+    assert.deepEqual(result.mismatches, []);
+  });
+
+  it("still blocks a caption-only defect when renderedRows is null", () => {
+    const result = assertRowConsistency({ planRows: rows, captionRows: rows.slice(0, 2), omittedRows: [], renderedRows: null });
+    assert.equal(result.consistent, false);
+    assert.match(result.mismatches[0], /do not reconstruct the full plan/);
+  });
+
   it("distinguishes the same player in different games", () => {
     assert.notEqual(rowIdentity(row("Alpha", 1)), rowIdentity(row("Alpha", 2)));
   });

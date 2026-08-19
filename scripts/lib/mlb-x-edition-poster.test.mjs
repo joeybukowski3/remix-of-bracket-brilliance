@@ -224,6 +224,58 @@ describe("image handling", () => {
       assert.deepEqual(seen.map((r) => r.player), ["Alpha", "Bravo"]);
     });
   });
+
+  it("passes a rowFingerprint derived from the frozen rows to ensureImage", async () => {
+    await withTempDir(async (dir) => {
+      writePlans(dir);
+      let seenFingerprint = null;
+      const h = harness(dir, { ensureImage: async ({ rows, rowFingerprint }) => { seenFingerprint = rowFingerprint; return bundle(rows); } });
+      await h.run();
+      assert.equal(typeof seenFingerprint, "string");
+      assert.ok(seenFingerprint.length > 0);
+    });
+  });
+
+  it("does not fabricate consistency for a REUSED bundle (no renderedRows captured)", async () => {
+    // Phase 4 regression test: a reused bundle reports renderedRows: null
+    // (nothing was captured this run). The poster must not substitute
+    // plan.selectedRows in its place -- that tautology is exactly the bug
+    // this phase removes. A reused bundle with a different market's rows
+    // than the plan must still be trusted (content safety was already
+    // proven by the fingerprint gate before ensureImage said "reused"), so
+    // posting proceeds.
+    await withTempDir(async (dir) => {
+      writePlans(dir);
+      const h = harness(dir, {
+        ensureImage: async () => ({
+          valid: true,
+          source: "reused",
+          renderedRows: null,
+          metadata: { slateDate: SLATE, generatedAt: MORNING, width: 1200, height: 675, imagePath: "/tmp/x.png" },
+        }),
+      });
+      const r = await h.run();
+      assert.equal(r.outcome, PostOutcome.POSTED, "a reused bundle is trusted without a plan-vs-plan tautology");
+      assert.equal(h.calls.primary, 1);
+    });
+  });
+
+  it("still blocks on a genuinely mismatched FRESH render", async () => {
+    await withTempDir(async (dir) => {
+      writePlans(dir);
+      const h = harness(dir, {
+        ensureImage: async () => ({
+          valid: true,
+          source: "rendered",
+          renderedRows: [{ player: "Zulu", gameId: 9 }, { player: "Bravo", gameId: 2 }],
+          metadata: { slateDate: SLATE, generatedAt: MORNING, width: 1200, height: 675, imagePath: "/tmp/x.png" },
+        }),
+      });
+      const r = await h.run();
+      assert.equal(r.outcome, PostOutcome.ROW_MISMATCH);
+      assert.equal(h.calls.primary, 0);
+    });
+  });
 });
 
 describe("volatile revalidation", () => {

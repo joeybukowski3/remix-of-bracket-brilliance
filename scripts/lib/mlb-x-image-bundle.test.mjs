@@ -19,6 +19,7 @@ import {
   toReadinessImageInput,
   validateImageBundle,
 } from "./mlb-x-image-bundle.mjs";
+import { buildSocialPostPlan } from "./mlb-social-post-plan.mjs";
 
 const SLATE = "2026-07-21";
 
@@ -48,12 +49,12 @@ function withTempDir(fn) {
 }
 
 /** Publishes a complete, valid bundle the way a real render would. */
-function publish(dir, { kind = ImageKind.STRIKEOUT, slateDate = SLATE, width = 1200, height = 675, rowCount = 8 } = {}) {
+function publish(dir, { kind = ImageKind.STRIKEOUT, slateDate = SLATE, width = 1200, height = 675, rowCount = 8, rowFingerprint = null } = {}) {
   const pngSource = path.join(dir, "render.png.tmp");
   const svgSource = path.join(dir, "render.svg.tmp");
   writeFileSync(pngSource, "PNGDATA");
   writeFileSync(svgSource, "<svg/>");
-  return publishImageBundle({ kind, slateDate, directory: dir, pngSource, svgSource, width, height, rowCount });
+  return publishImageBundle({ kind, slateDate, directory: dir, pngSource, svgSource, width, height, rowCount, rowFingerprint });
 }
 
 describe("bundle validation", () => {
@@ -183,6 +184,250 @@ describe("bundle validation", () => {
   });
 });
 
+describe("content-aware reuse (rowFingerprint)", () => {
+  const FP_A = "fp-aaaa";
+  const FP_B = "fp-bbbb";
+
+  it("a caller that never checks rowFingerprint keeps the pre-Phase-4 behavior", () => {
+    withTempDir((dir) => {
+      publish(dir); // no rowFingerprint passed to publish -> stored as null
+      const result = validateImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir });
+      assert.equal(result.valid, true);
+    });
+  });
+
+  it("reuses when product/date/fingerprint all match", () => {
+    withTempDir((dir) => {
+      publish(dir, { rowFingerprint: FP_A });
+      const result = validateImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: FP_A });
+      assert.equal(result.valid, true);
+    });
+  });
+
+  it("rejects reuse when the fingerprint differs, even with the same product/date", () => {
+    withTempDir((dir) => {
+      publish(dir, { rowFingerprint: FP_A });
+      const result = validateImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: FP_B });
+      assert.equal(result.valid, false);
+      assert.equal(result.reason, BundleRejection.FINGERPRINT_MISMATCH);
+    });
+  });
+
+  it("never cross-reuses across products even with a matching fingerprint", () => {
+    withTempDir((dir) => {
+      publish(dir, { kind: ImageKind.STRIKEOUT, rowFingerprint: FP_A });
+      const result = validateImageBundle({ kind: ImageKind.HOME_RUN, slateDate: SLATE, directory: dir, rowFingerprint: FP_A });
+      assert.equal(result.valid, false);
+      assert.equal(result.reason, BundleRejection.NO_METADATA);
+    });
+  });
+
+  it("never cross-reuses across slate dates even with a matching fingerprint", () => {
+    withTempDir((dir) => {
+      publish(dir, { slateDate: "2026-07-20", rowFingerprint: FP_A });
+      const result = validateImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: FP_A });
+      assert.equal(result.valid, false);
+      assert.equal(result.reason, BundleRejection.SLATE_MISMATCH);
+    });
+  });
+
+  it("fails closed on old metadata with no fingerprint on record, for a caller that checks", () => {
+    withTempDir((dir) => {
+      publish(dir); // legacy publish: rowFingerprint stored as null
+      const result = validateImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: FP_A });
+      assert.equal(result.valid, false);
+      assert.equal(result.reason, BundleRejection.FINGERPRINT_MISMATCH);
+    });
+  });
+});
+
+/**
+ * Bridges the CANONICAL `SocialPostPlan.rowFingerprint` (computed by
+ * buildSocialPostPlan, not reimplemented here) to actual bundle reuse
+ * decisions. These are the forward-looking equivalents of the fingerprint
+ * unit tests already covered against real composed plans in
+ * mlb-social-composition.test.mjs -- this describe block proves that once a
+ * canonical plan's fingerprint changes, ensureImageBundle actually refuses
+ * reuse and re-invokes the renderer (not just that the hash itself differs).
+ */
+describe("canonical SocialPostPlan fingerprint drives real reuse decisions", () => {
+  const PLAN_SLATE = "2026-08-18";
+
+  function kPlan({ gameLabel = "PHI vs ATL — G1", projectedKs = 6.1, generatedAt = "2026-08-18T09:00:00.000Z", sourceSummary = [] } = {}) {
+    return buildSocialPostPlan({
+      product: "mlb-k-props",
+      slateDate: PLAN_SLATE,
+      rows: [{
+        playerId: 1001, playerName: "Zack Wheeler", team: "PHI", opponent: "ATL",
+        gameId: 9001, gameNumber: null, gameStartTime: "2026-08-18T23:05:00Z", isDoubleheader: false,
+        gameLabel,
+        content: { kind: "k", side: "OVER", kLine: 6.5, projectedKs, edge: projectedKs - 6.5, odds: "-110" },
+      }],
+      title: "MLB STRIKEOUT PROPS",
+      generatedAt,
+      sourceSummary,
+    });
+  }
+
+  function hrPlan({ hrScore = 82.4, generatedAt = "2026-08-18T09:00:00.000Z", sourceSummary = [] } = {}) {
+    return buildSocialPostPlan({
+      product: "mlb-hr-props",
+      slateDate: PLAN_SLATE,
+      rows: [{
+        playerId: 2001, playerName: "Aaron Judge", team: "NYY", opponent: "BOS",
+        gameId: 9003, gameNumber: null, gameStartTime: "2026-08-18T23:05:00Z", isDoubleheader: false,
+        gameLabel: "NYY vs BOS",
+        content: { kind: "hr", hrScore, odds: "+230", opposingPitcher: "Brayan Bello", barrelRate: 22.4, hardHitRate: 58.1, last7HR: 4, last30HR: 11 },
+      }],
+      title: "MLB HOME RUN TARGETS",
+      generatedAt,
+      sourceSummary,
+    });
+  }
+
+  function publishFromPlan(dir, plan) {
+    const pngSource = path.join(dir, "canon-render.png.tmp");
+    const svgSource = path.join(dir, "canon-render.svg.tmp");
+    writeFileSync(pngSource, "PNGDATA");
+    writeFileSync(svgSource, "<svg/>");
+    return publishImageBundle({
+      kind: ImageKind.STRIKEOUT, slateDate: plan.slateDate, directory: dir,
+      pngSource, svgSource, width: 1200, height: 675, rowCount: plan.rows.length,
+      rowFingerprint: plan.rowFingerprint,
+    });
+  }
+
+  it("gameLabel G1 -> G2: fingerprint changes, and the existing bundle is rejected + rerendered", async () => {
+    await withTempDir(async (dir) => {
+      const planG1 = kPlan({ gameLabel: "PHI vs ATL — G1" });
+      const planG2 = kPlan({ gameLabel: "PHI vs ATL — G2" });
+      assert.notEqual(planG1.rowFingerprint, planG2.rowFingerprint, "canonical fingerprint must change on gameLabel");
+
+      publishFromPlan(dir, planG1);
+      // Same product/date, new (G2) fingerprint: must NOT reuse G1's bundle.
+      const stale = validateImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: planG2.slateDate, directory: dir, rowFingerprint: planG2.rowFingerprint });
+      assert.equal(stale.valid, false);
+      assert.equal(stale.reason, BundleRejection.FINGERPRINT_MISMATCH);
+
+      let renders = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: planG2.slateDate, directory: dir, rowFingerprint: planG2.rowFingerprint,
+        render: async () => { renders += 1; publishFromPlan(dir, planG2); },
+      });
+      assert.equal(renders, 1, "the renderer must be invoked for the changed content");
+      assert.equal(result.source, "rendered");
+      assert.equal(result.metadata.rowFingerprint, planG2.rowFingerprint);
+    });
+  });
+
+  it("projection change (6.1 -> 6.4): fingerprint changes, and the existing bundle is rejected + rerendered", async () => {
+    await withTempDir(async (dir) => {
+      const planBefore = kPlan({ projectedKs: 6.1 });
+      const planAfter = kPlan({ projectedKs: 6.4 });
+      assert.notEqual(planBefore.rowFingerprint, planAfter.rowFingerprint, "canonical fingerprint must change on projectedKs");
+
+      publishFromPlan(dir, planBefore);
+      let renders = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: planAfter.slateDate, directory: dir, rowFingerprint: planAfter.rowFingerprint,
+        render: async () => { renders += 1; publishFromPlan(dir, planAfter); },
+      });
+      assert.equal(renders, 1);
+      assert.equal(result.source, "rendered");
+    });
+  });
+
+  it("HR Score change (82.4 -> 84.1): fingerprint changes, and the existing bundle is rejected + rerendered", async () => {
+    await withTempDir(async (dir) => {
+      const planBefore = hrPlan({ hrScore: 82.4 });
+      const planAfter = hrPlan({ hrScore: 84.1 });
+      assert.notEqual(planBefore.rowFingerprint, planAfter.rowFingerprint, "canonical fingerprint must change on hrScore");
+
+      const pngSource = path.join(dir, "hr-render.png.tmp");
+      const svgSource = path.join(dir, "hr-render.svg.tmp");
+      writeFileSync(pngSource, "PNGDATA");
+      writeFileSync(svgSource, "<svg/>");
+      publishImageBundle({
+        kind: ImageKind.HOME_RUN, slateDate: planBefore.slateDate, directory: dir,
+        pngSource, svgSource, width: 1200, height: 675, rowCount: 1, rowFingerprint: planBefore.rowFingerprint,
+      });
+
+      let renders = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.HOME_RUN, slateDate: planAfter.slateDate, directory: dir, rowFingerprint: planAfter.rowFingerprint,
+        render: async () => {
+          renders += 1;
+          const p2 = path.join(dir, "hr-render2.png.tmp");
+          const s2 = path.join(dir, "hr-render2.svg.tmp");
+          writeFileSync(p2, "PNGDATA2");
+          writeFileSync(s2, "<svg/>2");
+          publishImageBundle({
+            kind: ImageKind.HOME_RUN, slateDate: planAfter.slateDate, directory: dir,
+            pngSource: p2, svgSource: s2, width: 1200, height: 675, rowCount: 1, rowFingerprint: planAfter.rowFingerprint,
+          });
+        },
+      });
+      assert.equal(renders, 1);
+      assert.equal(result.source, "rendered");
+    });
+  });
+
+  it("generatedAt-only change: fingerprint unchanged, bundle stays reusable, renderer NOT invoked", async () => {
+    await withTempDir(async (dir) => {
+      const planA = kPlan({ generatedAt: "2026-08-18T09:00:00.000Z" });
+      const planLater = kPlan({ generatedAt: "2026-08-18T15:30:00.000Z" });
+      assert.equal(planA.rowFingerprint, planLater.rowFingerprint, "generatedAt must not affect the canonical fingerprint");
+
+      publishFromPlan(dir, planA);
+      let renders = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: planLater.slateDate, directory: dir, rowFingerprint: planLater.rowFingerprint,
+        render: async () => { renders += 1; },
+      });
+      assert.equal(renders, 0, "a generatedAt-only change must not trigger a rerender");
+      assert.equal(result.source, "reused");
+    });
+  });
+
+  it("readiness/sourceSummary-only change: fingerprint unchanged, bundle stays reusable, renderer NOT invoked", async () => {
+    await withTempDir(async (dir) => {
+      const planA = kPlan({ sourceSummary: ["morning snapshot"] });
+      const planLater = kPlan({ sourceSummary: ["confirmed snapshot", "second source"] });
+      assert.equal(planA.rowFingerprint, planLater.rowFingerprint, "readiness/sourceSummary must not affect the canonical fingerprint");
+      assert.notDeepEqual(planA.readiness.sourceSummary, planLater.readiness.sourceSummary);
+
+      publishFromPlan(dir, planA);
+      let renders = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: planLater.slateDate, directory: dir, rowFingerprint: planLater.rowFingerprint,
+        render: async () => { renders += 1; },
+      });
+      assert.equal(renders, 0, "a readiness-only change must not trigger a rerender");
+      assert.equal(result.source, "reused");
+    });
+  });
+
+  it("identical product + slateDate + rowFingerprint: bundle remains reusable across two independently-built plan instances", async () => {
+    await withTempDir(async (dir) => {
+      const planA = kPlan();
+      const planB = kPlan(); // separately constructed, same visible content
+      assert.equal(planA.rowFingerprint, planB.rowFingerprint);
+      assert.equal(planA.product, planB.product);
+      assert.equal(planA.slateDate, planB.slateDate);
+
+      publishFromPlan(dir, planA);
+      let renders = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: planB.slateDate, directory: dir, rowFingerprint: planB.rowFingerprint,
+        render: async () => { renders += 1; },
+      });
+      assert.equal(renders, 0);
+      assert.equal(result.source, "reused");
+      assert.equal(result.metadata.rowFingerprint, planA.rowFingerprint);
+    });
+  });
+});
+
 describe("atomic publication", () => {
   it("leaves no partial bundle visible: the sidecar lands last", () => {
     withTempDir((dir) => {
@@ -298,6 +543,49 @@ describe("ensureImageBundle", () => {
       const result = await ensureImageBundle({ kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, render: null });
       assert.equal(result.valid, false);
       assert.equal(result.source, "unavailable");
+    });
+  });
+
+  it("reuses without rendering when the fingerprint matches", async () => {
+    await withTempDir(async (dir) => {
+      publish(dir, { rowFingerprint: "fp-1" });
+      let rendered = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: "fp-1",
+        render: async () => { rendered += 1; },
+      });
+      assert.equal(result.valid, true);
+      assert.equal(result.source, "reused");
+      assert.equal(rendered, 0);
+    });
+  });
+
+  it("re-renders and republishes when the fingerprint differs, even for the same product/date", async () => {
+    await withTempDir(async (dir) => {
+      publish(dir, { rowFingerprint: "fp-old", rowCount: 3 });
+      let rendered = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: "fp-new",
+        render: async () => { rendered += 1; publish(dir, { rowFingerprint: "fp-new", rowCount: 9 }); },
+      });
+      assert.equal(rendered, 1);
+      assert.equal(result.valid, true);
+      assert.equal(result.source, "rendered");
+      assert.equal(result.metadata.rowFingerprint, "fp-new");
+      assert.equal(result.metadata.rowCount, 9);
+    });
+  });
+
+  it("forces a fresh render when old metadata has no fingerprint on record", async () => {
+    await withTempDir(async (dir) => {
+      publish(dir); // legacy bundle, no fingerprint
+      let rendered = 0;
+      const result = await ensureImageBundle({
+        kind: ImageKind.STRIKEOUT, slateDate: SLATE, directory: dir, rowFingerprint: "fp-new",
+        render: async () => { rendered += 1; publish(dir, { rowFingerprint: "fp-new" }); },
+      });
+      assert.equal(rendered, 1, "old fingerprint-less metadata must never be grandfathered in as reusable");
+      assert.equal(result.source, "rendered");
     });
   });
 });
