@@ -17,6 +17,12 @@ export type ExplorerRow = NumerologyCardPlayer & {
   recentActivity?: ExplorerRecentActivity;
 };
 
+export type ExplorerRankingMode = "sinCity" | "numerology";
+
+export function sinCityScoreOf(player: ExplorerRow): number {
+  return player.scoreBreakdown?.sinCity?.score ?? 0;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Normalize player name for matching: remove punctuation, suffixes, lowercase */
@@ -90,7 +96,7 @@ function SignalChips({ player, limit }: { player: ExplorerRow; limit?: number })
   const signals = (player.scoreBreakdown?.signals ?? []).filter(s => s.field !== "age");
   const visible = limit ? signals.slice(0, limit) : signals;
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex min-w-0 flex-wrap gap-1">
       {visible.map((signal, index) => (
         <span key={`${signal.field}-${index}`} className={`rounded border px-1.5 py-0.5 text-[10px] ${signalTone(signal)}`}>
           {signal.label} {signal.points > 0 ? "+" : ""}{signal.points}
@@ -100,9 +106,34 @@ function SignalChips({ player, limit }: { player: ExplorerRow; limit?: number })
   );
 }
 
+const SIN_CITY_FIELD_LABEL: Record<string, string> = {
+  jersey: "Jersey #",
+  battingOrder: "Lineup Spot",
+  birthDay: "Birthday",
+  lifePath: "Life Path",
+  currentHrCount: "Current HR Count",
+};
+
+function SinCityChips({ player, limit }: { player: ExplorerRow; limit?: number }) {
+  const matches = (player.scoreBreakdown?.sinCity?.matches ?? []).filter((match) => match.points > 0);
+  const visible = limit ? matches.slice(0, limit) : matches;
+  if (visible.length === 0) {
+    return <span className="text-[10px] text-[#958ea0]">No Sin City symbols</span>;
+  }
+  return (
+    <div className="flex min-w-0 flex-wrap gap-1">
+      {visible.map((match) => (
+        <span key={match.field} className="rounded border border-[#e9c349]/30 bg-[#e9c349]/10 px-1.5 py-0.5 text-[10px] text-[#f6dc71]">
+          {SIN_CITY_FIELD_LABEL[match.field] ?? match.field} {match.points > 0 ? "+" : ""}{match.points}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Expanded detail panel ─────────────────────────────────────────────────────
 
-function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: HrDashboardBatter | null }) {
+function ExpandedDetail({ player, hrBatter, rankingMode }: { player: ExplorerRow; hrBatter: HrDashboardBatter | null; rankingMode: ExplorerRankingMode }) {
   const breakdown = player.scoreBreakdown;
   const id = Number(player.playerId ?? player.personId);
   const hasHeadshot = Number.isFinite(id) && id > 0;
@@ -133,10 +164,17 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
           </div>
 
           <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:flex sm:flex-col">
+          {rankingMode === "sinCity" && player.scoreBreakdown?.sinCity?.included && (
+            <div className={`col-span-2 rounded border px-2.5 py-2 text-center sm:col-span-1 ${TONE_CLASSES.gold}`}>
+              <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Sin City Score</p>
+              <p className="mt-1 font-mono text-2xl font-bold tabular-nums">{safe(player.scoreBreakdown.sinCity.score)}</p>
+              <p className="mt-0.5 text-[10px] text-[#958ea0]">{player.scoreBreakdown.sinCity.matchCount}/5 symbols</p>
+            </div>
+          )}
           {/* Numerology tile */}
-          <div className={`rounded border px-2.5 py-2 text-center ${TONE_CLASSES.purple}`}>
+          <div className={`rounded border px-2.5 py-2 text-center ${rankingMode === "numerology" ? TONE_CLASSES.purple : TONE_CLASSES.default}`}>
             <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Numerology</p>
-            <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(player.numerologyScore)}</p>
+            <p className={`mt-1 font-mono font-bold tabular-nums ${rankingMode === "numerology" ? "text-xl" : "text-lg"}`}>{safe(player.numerologyScore)}</p>
             {(breakdown?.exactPrimaryCount ?? 0) > 0 && (
               <p className="mt-0.5 text-[10px] text-[#e9c349]">{breakdown!.exactPrimaryCount} exact primary</p>
             )}
@@ -158,10 +196,10 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
             <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Model Rating</p>
             <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(player.baseballScore)}</p>
           </div>
-          {breakdown?.sinCity?.included && (
+          {rankingMode === "numerology" && breakdown?.sinCity?.included && (
             <div className={`col-span-2 rounded border px-2.5 py-2 text-center sm:col-span-1 ${TONE_CLASSES.gold}`}>
               <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Sin City Score</p>
-              <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(breakdown.sinCity.score)}</p>
+              <p className="mt-1 font-mono text-lg font-bold tabular-nums">{safe(breakdown.sinCity.score)}</p>
               <p className="mt-0.5 text-[10px] text-[#958ea0]">{breakdown.sinCity.matchCount}/5 symbols</p>
             </div>
           )}
@@ -324,6 +362,23 @@ export function compareRowsByNumerologyScore(a: ExplorerRow, b: ExplorerRow): nu
   return a.playerName.localeCompare(b.playerName);
 }
 
+export function compareRowsBySinCityScore(a: ExplorerRow, b: ExplorerRow): number {
+  const aSin = sinCityScoreOf(a);
+  const bSin = sinCityScoreOf(b);
+  if (bSin !== aSin) return bSin - aSin;
+  const aScore = a.numerologyScore ?? 0;
+  const bScore = b.numerologyScore ?? 0;
+  if (bScore !== aScore) return bScore - aScore;
+  const aModel = a.baseballScore ?? 0;
+  const bModel = b.baseballScore ?? 0;
+  if (bModel !== aModel) return bModel - aModel;
+  return a.playerName.localeCompare(b.playerName);
+}
+
+export function compareRowsByRankingMode(a: ExplorerRow, b: ExplorerRow, rankingMode: ExplorerRankingMode): number {
+  return rankingMode === "sinCity" ? compareRowsBySinCityScore(a, b) : compareRowsByNumerologyScore(a, b);
+}
+
 export function compareRowsBySort(a: ExplorerRow, b: ExplorerRow, sort: SortState): number {
   if (!sort) return compareRowsByNumerologyScore(a, b);
   const { field, direction } = sort;
@@ -344,10 +399,22 @@ export function compareRowsBySort(a: ExplorerRow, b: ExplorerRow, sort: SortStat
 
 // ── ExplorerTable ─────────────────────────────────────────────────────────────
 
-export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: ExplorerRow[]; hrBatters?: HrDashboardBatter[]; sort?: SortState; onSort?: (field: SortField) => void }) {
+export function ExplorerTable({
+  rows,
+  hrBatters = [],
+  sort = null,
+  rankingMode = "numerology",
+}: {
+  rows: ExplorerRow[];
+  hrBatters?: HrDashboardBatter[];
+  sort?: SortState;
+  onSort?: (field: SortField) => void;
+  rankingMode?: ExplorerRankingMode;
+}) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const toggle = (key: string) => setOpenKey(prev => prev === key ? null : key);
-  const sortedRows = [...rows].sort((a, b) => sort ? compareRowsBySort(a, b, sort) : compareRowsByNumerologyScore(a, b));
+  const sortedRows = [...rows].sort((a, b) => sort ? compareRowsBySort(a, b, sort) : compareRowsByRankingMode(a, b, rankingMode));
+  const sinCityActive = rankingMode === "sinCity";
 
   return (
     <>
@@ -357,6 +424,7 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
           const key = `${player.playerName}-${player.team}`;
           const open = openKey === key;
           const hrBatter = matchHrBatter(player, hrBatters);
+          const sinScore = player.scoreBreakdown?.sinCity?.included ? safe(player.scoreBreakdown.sinCity.score) : em;
           return (
             <article key={key} className="overflow-hidden rounded-xl border border-[#2a304d] bg-[#10131f]">
               <button
@@ -375,28 +443,49 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
                     </div>
                   </div>
                   <div className="flex shrink-0 items-start gap-2 text-right">
-                    <div className="min-w-[52px]">
-                      <p className="font-mono text-base font-bold tabular-nums text-[#d0bcff]">{safe(player.numerologyScore)}</p>
-                      <p className="text-[10px] uppercase tracking-wide text-[#958ea0]">Num.</p>
-                    </div>
-                    <div className="min-w-[52px]">
-                      <p className="font-mono text-base font-bold tabular-nums text-[#89ceff]">{safe(player.baseballScore)}</p>
-                      <p className="text-[10px] uppercase tracking-wide text-[#958ea0]">Model</p>
-                    </div>
+                    {sinCityActive ? (
+                      <>
+                        <div className="min-w-[56px]" data-prominent-score="sinCity">
+                          <p className="font-mono text-lg font-bold tabular-nums text-[#f6dc71]">{sinScore}</p>
+                          <p className="text-[10px] uppercase tracking-wide text-[#f6dc71]">Sin City</p>
+                        </div>
+                        <div className="min-w-[44px]">
+                          <p className="font-mono text-sm font-bold tabular-nums text-[#d0bcff]">{safe(player.numerologyScore)}</p>
+                          <p className="text-[10px] uppercase tracking-wide text-[#958ea0]">Num.</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="min-w-[52px]" data-prominent-score="numerology">
+                          <p className="font-mono text-lg font-bold tabular-nums text-[#d0bcff]">{safe(player.numerologyScore)}</p>
+                          <p className="text-[10px] uppercase tracking-wide text-[#d0bcff]">Num.</p>
+                        </div>
+                        <div className="min-w-[44px]">
+                          <p className="font-mono text-sm font-bold tabular-nums text-[#89ceff]">{safe(player.baseballScore)}</p>
+                          <p className="text-[10px] uppercase tracking-wide text-[#958ea0]">Model</p>
+                        </div>
+                      </>
+                    )}
                     <ChevronDown className={`mt-1 h-4 w-4 text-[#958ea0] transition-transform ${open ? "rotate-180" : ""}`} />
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-full border border-[#494454] px-2 py-0.5 text-[10px] text-[#cbc3d7]">{player.matchType}</span>
-                  {player.scoreBreakdown?.sinCity?.included && (
-                    <span className="rounded-full border border-[#e9c349]/30 px-2 py-0.5 text-[10px] text-[#f6dc71]">
-                      Sin City {safe(player.scoreBreakdown.sinCity.score)}
+                  {sinCityActive ? (
+                    <span className="rounded-full border border-[#89ceff]/30 px-2 py-0.5 text-[10px] text-[#89ceff]">
+                      Model {safe(player.baseballScore)}
                     </span>
+                  ) : (
+                    player.scoreBreakdown?.sinCity?.included && (
+                      <span className="rounded-full border border-[#e9c349]/30 px-2 py-0.5 text-[10px] text-[#f6dc71]">
+                        Sin City {safe(player.scoreBreakdown.sinCity.score)}
+                      </span>
+                    )
                   )}
                 </div>
-                <div className="mt-2"><SignalChips player={player} /></div>
+                <div className="mt-2">{sinCityActive ? <SinCityChips player={player} /> : <SignalChips player={player} />}</div>
               </button>
-              {open && <ExpandedDetail player={player} hrBatter={hrBatter} />}
+              {open && <ExpandedDetail player={player} hrBatter={hrBatter} rankingMode={rankingMode} />}
             </article>
           );
         })}
@@ -404,26 +493,46 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block">
+      <div className="hidden overflow-x-hidden md:block">
         <table className="w-full table-fixed text-left text-sm">
           <thead>
             <tr className="border-b border-[#494454] text-[11px] uppercase tracking-wide text-[#958ea0]">
-              <th className="w-[260px] px-3 py-2 font-medium">Player</th>
-              <th className="w-[110px] px-3 py-2 font-medium">Match Type</th>
-              <th className="px-3 py-2 font-medium">Signals</th>
-              <th
-                scope="col"
-                aria-sort="descending"
-                className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#d0bcff]"
-              >
-                Numerology Score
-              </th>
-              <th scope="col" aria-sort="none" className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#958ea0]">
-                Model Rating
-              </th>
-              <th scope="col" className="w-[90px] px-3 py-2 font-medium tabular-nums text-[#f6dc71]">
-                Sin City Score
-              </th>
+              <th className="w-[240px] px-3 py-2 font-medium">Player</th>
+              <th className="w-[100px] px-3 py-2 font-medium">{sinCityActive ? "Match" : "Match Type"}</th>
+              <th className="px-3 py-2 font-medium">{sinCityActive ? "Sin City Signals" : "Signals"}</th>
+              {sinCityActive ? (
+                <>
+                  <th
+                    scope="col"
+                    aria-sort="descending"
+                    className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#f6dc71]"
+                  >
+                    Sin City Score
+                  </th>
+                  <th scope="col" aria-sort="none" className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#958ea0]">
+                    Numerology Score
+                  </th>
+                  <th scope="col" aria-sort="none" className="w-[100px] px-3 py-2 font-medium tabular-nums text-[#958ea0]">
+                    Model Rating
+                  </th>
+                </>
+              ) : (
+                <>
+                  <th
+                    scope="col"
+                    aria-sort="descending"
+                    className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#d0bcff]"
+                  >
+                    Numerology Score
+                  </th>
+                  <th scope="col" aria-sort="none" className="w-[110px] px-3 py-2 font-medium tabular-nums text-[#958ea0]">
+                    Model Rating
+                  </th>
+                  <th scope="col" className="w-[90px] px-3 py-2 font-medium tabular-nums text-[#f6dc71]">
+                    Sin City Score
+                  </th>
+                </>
+              )}
               <th className="w-[40px] px-3 py-2"></th>
             </tr>
           </thead>
@@ -432,6 +541,7 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
               const key = `${player.playerName}-${player.team}`;
               const open = openKey === key;
               const hrBatter = matchHrBatter(player, hrBatters);
+              const sinScore = player.scoreBreakdown?.sinCity?.included ? safe(player.scoreBreakdown.sinCity.score) : em;
               return (
                 <Fragment key={key}>
                   <tr
@@ -449,12 +559,22 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
                       </div>
                     </td>
                     <td className="border-b border-[#494454]/30 px-3 py-2 text-xs">{player.matchType}</td>
-                    <td className="border-b border-[#494454]/30 px-3 py-2"><SignalChips player={player} limit={4} /></td>
-                    <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{player.numerologyScore}</td>
-                    <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{safe(player.baseballScore)}</td>
-                    <td className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums text-[#f6dc71]">
-                      {player.scoreBreakdown?.sinCity?.included ? safe(player.scoreBreakdown.sinCity.score) : em}
+                    <td className="border-b border-[#494454]/30 px-3 py-2">
+                      {sinCityActive ? <SinCityChips player={player} limit={4} /> : <SignalChips player={player} limit={4} />}
                     </td>
+                    {sinCityActive ? (
+                      <>
+                        <td data-score="sinCity" className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm font-bold tabular-nums text-[#f6dc71]">{sinScore}</td>
+                        <td data-score="numerology" className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums text-[#958ea0]">{player.numerologyScore}</td>
+                        <td data-score="model" className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{safe(player.baseballScore)}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td data-score="numerology" className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm font-bold tabular-nums text-[#d0bcff]">{player.numerologyScore}</td>
+                        <td data-score="model" className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums">{safe(player.baseballScore)}</td>
+                        <td data-score="sinCity" className="border-b border-[#494454]/30 px-3 py-2 font-mono text-sm tabular-nums text-[#f6dc71]">{sinScore}</td>
+                      </>
+                    )}
                     <td className="border-b border-[#494454]/30 px-3 py-2 text-right">
                       <ChevronDown className={`h-4 w-4 text-[#958ea0] transition-transform ${open ? "rotate-180" : ""}`} />
                     </td>
@@ -462,7 +582,7 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null }: { rows: Exp
                   {open && (
                     <tr>
                       <td colSpan={7} className="border-b border-[#494454]/30 p-0">
-                        <ExpandedDetail player={player} hrBatter={hrBatter} />
+                        <ExpandedDetail player={player} hrBatter={hrBatter} rankingMode={rankingMode} />
                       </td>
                     </tr>
                   )}
