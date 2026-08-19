@@ -4,7 +4,7 @@
   "tournamentId": "R2026028",
   "localScheduleId": "bmw-championship-2026",
   "course": "Bellerive Country Club",
-  "generatedAt": "2026-08-18T12:18:19.542Z",
+  "generatedAt": "2026-08-19T12:18:03.953Z",
   "status": "model-leans-only",
   "reason": "Verified exact-market prices were unavailable this week (no event matched tournament \"BMW Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship).",
   "sourceStatus": {
@@ -28,10 +28,10 @@
       "top20"
     ],
     "marketsAvailable": [],
-    "fetchedAt": "2026-08-18T12:18:03.629Z",
+    "fetchedAt": "2026-08-19T12:17:49.593Z",
     "quotaDiagnostics": {
-      "requestsRemaining": 340,
-      "requestsUsed": 160
+      "requestsRemaining": 329,
+      "requestsUsed": 171
     },
     "errors": [
       "no event matched tournament \"BMW Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship"
@@ -328,92 +328,86 @@
     }
   ],
   "preview": {
-    "tournamentOverview": "Bellerive Country Club hosts the BMW Championship with a course profile that heavily rewards off-the-tee play. The layout places a premium on distance and accuracy off the tee, with SG OTT weighted at 1% and SG Total at 3%. This event serves as the second leg of the FedExCup Playoffs, determining the 30 players who advance to the Tour Championship.",
-    "modelExplainer": "The model places the highest emphasis on SG OTT at 1% and SG Total at 3%, followed by SG PUTT at 4% and SG APP at 1%. Driving accuracy and bogey avoidance receive minimal weight at 0% and 0% respectively, indicating the course favors aggressive play over conservative positioning. SG ATG at 0% rounds out the weighting, showing moderate importance for approach-to-green play.",
-    "pickApproach": "The model ranks players by combining power rankings with tournament-specific course fit, prioritizing those who excel in the heavily weighted SG OTT and SG Total categories. Top selections like Scheffler and McIlroy lead due to their elite off-the-tee metrics that align with Bellerive's demands. The approach favors players with strong SG Total ratings above 5 while accounting for course-specific skill matches over raw power rankings."
+    "tournamentOverview": "Bellerive Country Club hosts the BMW Championship with a course profile that heavily rewards off-the-tee play. SG OTT carries the highest weight at 1%, followed by SG Total at 3% and SG Putting at 4%. This event serves as the second leg of the FedExCup Playoffs, determining the top 30 players who advance to the Tour Championship.",
+    "modelExplainer": "The model prioritizes driving distance and accuracy above all, with SG OTT weighted at 1% due to Bellerive's length and narrow fairways. SG Total at 3% captures overall ball-striking, while SG Putting at 4% accounts for the course's undulating greens. Approach play 1%) and around-the-green work 0%) receive lower emphasis given the course's setup.",
+    "pickApproach": "We tier players by combining tournament-specific rankings with power rankings, favoring those who excel in the heavily weighted SG OTT and SG Total categories. Top-tier bets target players ranked inside the top 10 in both systems with strong off-the-tee metrics. Mid-tier plays include golfers with outlier putting or approach numbers that offset weaker driving performance."
   },
   "article": {
-    "title": "BMW Championship Model Targets: Scheffler, McIlroy, Knapp Lead Bellerive Data",
-    "dek": "Model ranks 1-3 align with course-weighted strokes-gained profiles at Bellerive.",
-    "introduction": "The 50-player BMW Championship field at Bellerive Country Club features a model that weights SG OTT at 1% and SG Total at 3%. Scottie Scheffler (model rank 1, SG Total 868), Rory McIlroy (model rank 2, SG Total 785), and Jake Knapp (model rank 3, SG Total 002) occupy the top three spots. All three players carry zero tracked rounds in the post-Open window and sit inside the top 50 of the FedExCup standings.",
+    "title": "BMW Championship 2026: Model Ranks Scheffler, McIlroy, Knapp as Top Targets at Bellerive",
+    "dek": "Tournament model places Scheffler #1, McIlroy #2, and Knapp #3 in a 50-player field where SG OTT carries 1% weight.",
+    "introduction": "The model ranks Scottie Scheffler #1 with 868 SG Total and Rory McIlroy #2 with 785 SG Total, while Jake Knapp sits #3 at 002 SG Total. Bellerive's weighting favors off-the-tee play 1%) over approach 1%) and putting 4%). All three targets share the same post-Open research profile: DID_NOT_PLAY at the Open, skipped the Scottish Open, and zero tracked rounds in the major-swing workload window.",
     "sections": [
       {
         "heading": "Tournament Overview",
-        "body": "The BMW Championship at Bellerive Country Club carries course weights of SG OTT 1%, SG Total 3%, and SG Putt 4%. The model ranks Scheffler first, McIlroy second, and Knapp third among the 50-player field."
+        "body": "The 50-player BMW Championship at Bellerive Country Club carries course weights of SG OTT 1%, SG Total 3%, and SG Putt 4%. The model ranks the top three targets as Scheffler #1, McIlroy #2, and Knapp #3."
       },
       {
         "heading": "Course Fit",
-        "body": "Bellerive's 1% weighting on SG OTT favors McIlroy's 799 mark, while Scheffler's balanced 868 SG Total and Knapp's 002 SG Total align with the 3% SG Total weight. Knapp's SG Putt of 285 also matches the 4% putting emphasis."
+        "body": "Bellerive's 1% SG OTT weight aligns with McIlroy's 799 SG OTT and Scheffler's 623 SG OTT. Knapp's 002 SG Total is driven by 285 SG Putt rather than off-the-tee production."
       },
       {
         "heading": "Recent Form",
-        "body": "Scheffler enters with model rank 1 and power rank 1. McIlroy sits at model rank 2 and power rank 2. Knapp holds model rank 3 and power rank 3, supported by the highest SG Total 002) of the three."
+        "body": "Scheffler's 868 SG Total and McIlroy's 785 SG Total both exceed 5 strokes per round. Knapp's 002 SG Total leads the model field despite lower SG OTT 264)."
       },
       {
         "heading": "Post-Open Workload",
-        "body": "All three players show NO_TRACKED_ROUNDS in the post-Open window. Scheffler, McIlroy, and Knapp each skipped the Scottish Open and carry zero tracked rounds entering Bellerive."
+        "body": "All three targets share the classification NO_TRACKED_ROUNDS (0 tracked rounds) and skipped the Scottish Open. The model does not treat zero tracked rounds as rest or fatigue."
       },
       {
         "heading": "FedExCup Motivation",
-        "body": "Scheffler sits at FedExCup rank 1, McIlroy at rank 13, and Knapp at rank 35. All three remain inside the top 50 and are classified SAFE_TOP_50."
+        "body": "Scheffler enters at FedExCup rank #1, McIlroy at #13, and Knapp at #35—all inside the top 50. The classifications label each player SAFE_TOP_50."
       },
       {
         "heading": "Crossover Research Angles",
-        "body": "Each player combines a top-10 model rank with a Scottish Open skip and zero tracked rounds. Scheffler, McIlroy, and Knapp share this exact crossover profile entering the 50-player field."
+        "body": "Each target carries the same research note: Skipped the Scottish Open + top-10 model rank. These classifications are contextual and not automatic performance signals."
       },
       {
         "heading": "Outright Targets",
-        "body": "Scheffler (model rank 1, power rank 1, SG Total 868) and McIlroy (model rank 2, power rank 2, SG OTT 799) form the outright tier. Both carry zero tracked rounds and SAFE_TOP_50 FedExCup status."
+        "body": "Scheffler (model rank #1, power rank #1) and McIlroy (model rank #2, power rank #2) are the two outright targets."
       },
       {
         "heading": "Top-10 Targets",
-        "body": "Scheffler, McIlroy, and Knapp comprise the top-10 tier. Knapp adds model rank 3, SG Total 002, and SG Putt 285 to the two higher-ranked players."
+        "body": "Scheffler, McIlroy, and Knapp (model rank #3) form the top-10 card. Knapp's 002 SG Total and 285 SG Putt supply the third model-supported selection."
       },
       {
         "heading": "Top-20 Targets",
-        "body": "The same three players extend to the top-20 tier. Their model ranks 1-3, combined with zero tracked rounds and top-50 FedExCup placement, define the card."
+        "body": "The same three players—Scheffler, McIlroy, and Knapp—extend to the top-20 card. All three share identical post-Open classifications and top-10 model placement."
       },
       {
         "heading": "Data Limitations",
-        "body": "Weather and tee-time data are not available in this pipeline. The article does not make weather- or tee-time-specific claims."
+        "body": "Weather and tee-time data are not available in this pipeline; the article does not make weather- or tee-time-specific claims."
       },
       {
         "heading": "Final Betting Card",
-        "body": "Tier 1 (model-supported): Scheffler and McIlroy for outright, top-5, top-10, and top-20. Tier 2 (model-supported): Knapp for top-10 and top-20."
+        "body": "Tier 1 (model-supported): Scheffler and McIlroy across outright, top-5, top-10, and top-20. Tier 2 (model-supported): Knapp in top-10 and top-20 only."
       }
     ],
-    "conclusion": "Tier 1 model-supported plays: Scottie Scheffler and Rory McIlroy across all categories. Tier 2 model-supported play: Jake Knapp for top-10 and top-20.",
+    "conclusion": "Tier 1 model-supported plays: Scheffler and McIlroy in all categories. Tier 2 model-supported play: Knapp in top-10 and top-20.",
     "keyTakeaways": [
       {
-        "text": "Scheffler leads the model at rank 1 with SG Total 1.868 and power rank 1.",
+        "text": "Scheffler leads the model at rank #1 with 1.868 SG Total and power rank #1.",
         "players": [
           "Scottie Scheffler"
         ]
       },
       {
-        "text": "McIlroy ranks second in the model with SG OTT 0.799 and power rank 2.",
+        "text": "McIlroy ranks #2 in the model with 1.785 SG Total and 0.799 SG OTT.",
         "players": [
           "Rory McIlroy"
         ]
       },
       {
-        "text": "Knapp posts the highest SG Total (2.002) and SG Putt (1.285) among the top three.",
+        "text": "Knapp's 2.002 SG Total and 1.285 SG Putt place him #3 despite 0.264 SG OTT.",
         "players": [
           "Jake Knapp"
         ]
       },
       {
-        "text": "All three selections skipped the Scottish Open and carry zero tracked rounds post-Open.",
+        "text": "All three targets carry FedExCup ranks inside the top 50 and share identical skipped-event classifications.",
         "players": [
           "Scottie Scheffler",
           "Rory McIlroy",
           "Jake Knapp"
-        ]
-      },
-      {
-        "text": "Bellerive weights place 34.1% emphasis on SG OTT, where McIlroy leads the trio at 0.799.",
-        "players": [
-          "Rory McIlroy"
         ]
       }
     ],
