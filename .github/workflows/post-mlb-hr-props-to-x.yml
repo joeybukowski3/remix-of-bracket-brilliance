@@ -1,39 +1,37 @@
 name: Post MLB HR Props to X
 
-# Manual HR posting workflow. Automatic earliest-first-pitch polling is owned
-# exclusively by poll-mlb-x-posts.yml, which uses the same timing,
-# confirmation, poster, artifact, and daily-lock modules:
-#   1. It fetches the live MLB schedule (earliest first pitch, current
-#      starters, game status) + boxscores (official batting orders) and decides
-#      one of: post now, keep waiting, or skip cleanly -- printing finalStatus=.
-#   2. It only reports READY inside the posting window (~3h before first pitch,
-#      preferring 60-90 min out, hard cutoff ~40 min out) AND when enough
-#      hitters are confirmed in today's official batting order (projected-lineup
-#      hitters are never eligible for a live post; the website still shows them).
-#   3. Outside the window / on stale data / when confirmation can't be verified
-#      it fails closed (no post). The daily posting lock (one key per slate
-#      date) still guarantees at most one live post per day.
-# Manual dispatch intentionally keeps the complete guarded poster path.
+# DISABLED as a live-posting path (Phase 7 cutover,
+# .github/workflows/mlb-x-canonical.yml). The canonical publisher is now the
+# ONLY code path allowed to submit a real MLB HR public X post -- it alone
+# reads/writes the canonical git-backed receipt
+# (mlb-x/{date}/canonical/mlb-hr-props.json) and holds the canonical
+# publication lease. This workflow can no longer reach a live post through
+# ANY trigger: `mode` offers only dry-run/verify-account (neither ever calls
+# X to post), and X_ALLOW_LIVE_POST is never set in the environment at all --
+# there is no typed override, no flag, no input that re-enables posting. If
+# emergency posting is ever needed, it must be implemented through the
+# canonical publisher so it respects canonical receipt identity -- never
+# through this file.
+#
+# Retained for forensic/manual dry-run investigation of the legacy
+# selection/rendering pipeline only. Automatic earliest-first-pitch polling
+# used to be owned by poll-mlb-x-posts.yml, which is itself retired in the
+# same cutover (see that workflow's own header comment).
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Run mode"
+        description: "Run mode (live posting removed in Phase 7 -- dry-run/verify-account only)"
         required: true
-        default: "post"
+        default: "dry-run"
         type: choice
-        options: [dry-run, post, post-text-only, verify-account]
+        options: [dry-run, verify-account]
       data_source:
-        description: "Data source (only applies to workflow_dispatch; automated runs always use production)"
+        description: "Data source"
         required: true
         default: "production"
         type: choice
         options: [production, github, local]
-      force_repost:
-        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt. Only for an intentional, reviewed re-post -- never set true routinely."
-        required: true
-        default: false
-        type: boolean
 
 concurrency:
   group: post-mlb-hr-props-to-x
@@ -48,7 +46,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     env:
       X_EXPECTED_USERNAME: _joeknowsball_
-      X_DUPLICATE_STATE_DIR: .cache/mlb-hr-props-x-posted
       JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
       JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
       JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -57,74 +54,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
-
-      - name: Compute ET date for cache key
-        id: et_date
-        shell: bash
-        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-
-      # Restore the day-scoped duplicate-post receipt so a poll after a
-      # successful post short-circuits without doing any heavy work. Run-unique
-      # save keys + restore-keys let the cache accumulate across the day's many
-      # polls (a single fixed key can only be saved once per day).
-      - name: Restore duplicate-post state
-        id: restore_cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .cache/mlb-hr-props-x-posted
-          key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
-          restore-keys: |
-            mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-
-
-      - name: Already posted today?
-        id: already
-        shell: bash
-        run: |
-          KEY="mlb-hr-props:${{ steps.et_date.outputs.date }}"
-          SLUG="$(echo "$KEY" | sed 's/[^a-zA-Z0-9._-]\+/-/g')"
-          if [ -f ".cache/mlb-hr-props-x-posted/${SLUG}.json" ] && [ "${{ inputs.force_repost || 'false' }}" != "true" ]; then
-            echo "posted=true" >> "$GITHUB_OUTPUT"
-            echo "Today's slate already has a post receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
-          else
-            echo "posted=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Lightweight readiness gate: NO npm ci / Playwright. Manual
-      # workflow_dispatch bypasses it (the operator chose the mode explicitly);
-      # automated schedule/workflow_run firings must earn a READY here.
-      - name: Readiness gate
-        id: gate
-        if: steps.already.outputs.posted != 'true'
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate bypassed: manual workflow_dispatch (mode=${{ inputs.mode || 'post' }})."
-            exit 0
-          fi
-          set +e
-          node scripts/check-mlb-x-posting-readiness.mjs --content=hr --data-source=production
-          CODE=$?
-          set -e
-          if [ "$CODE" -eq 0 ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate: READY -- proceeding to post."
-          elif [ "$CODE" -eq 20 ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate: clean wait/skip -- no post this attempt."
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate: confirmation source failed -- failing closed." >&2
-            exit 1
-          fi
-
-      - name: Install dependencies
-        if: steps.gate.outputs.ready == 'true'
-        run: npm ci
-
-      - name: Install Playwright
-        if: steps.gate.outputs.ready == 'true'
-        run: npx playwright install --with-deps chromium
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
 
       # The confirmed-only screenshot is rendered from the immutable selection
       # artifact against the bare /mlb/hr-props/x-export route served LOCALLY
@@ -132,44 +63,25 @@ jobs:
       # production deploy and can never drift from the selected rows. That
       # needs the built SPA in dist/.
       - name: Build site for local export render
-        if: steps.gate.outputs.ready == 'true'
         run: npm run build
 
-      - name: Post HR Props
+      - name: Run HR props script (dry-run/verify-account only)
         id: post
-        if: steps.gate.outputs.ready == 'true'
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "schedule" ]; then
-            MODE="post"
-            DATA_SOURCE="production"
-          else
-            MODE="${{ inputs.mode || 'post' }}"
-            DATA_SOURCE="${{ inputs.data_source || 'production' }}"
-          fi
+          MODE="${{ inputs.mode || 'dry-run' }}"
           echo "Mode: $MODE"
-          echo "Data source: $DATA_SOURCE"
+          echo "Data source: ${{ inputs.data_source || 'production' }}"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
-          HR_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
-        env:
-          X_ALLOW_LIVE_POST: "true"
-          HR_X_FORCE_REPOST: ${{ inputs.force_repost || 'false' }}
-          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
-          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
-          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
-          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
-
-      # always() so a receipt written just before a later failure still
-      # persists; only when we actually reached the post path (gate READY).
-      - name: Save duplicate-post state
-        if: always() && steps.gate.outputs.ready == 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .cache/mlb-hr-props-x-posted
-          key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
+          HR_PROPS_DATA_SOURCE="${{ inputs.data_source || 'production' }}" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
+        # X_ALLOW_LIVE_POST is deliberately NOT set anywhere in this file.
+        # assertLivePostAllowed/normalizeAllowLivePostFlag treat an unset
+        # value as fail-closed -- there is no environment variable, input, or
+        # override anywhere here that can make this script call X to post.
+        # See the header banner above.
 
       - name: Upload dry-run selection + screenshot
-        if: steps.gate.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        if: inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-hr-props-x-dry-run
@@ -182,10 +94,6 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo "== Post MLB HR Props to X summary =="
-          echo "trigger event: ${{ github.event_name }}"
-          echo "already posted today: ${{ steps.already.outputs.posted || 'n/a' }}"
-          echo "readiness gate ready: ${{ steps.gate.outputs.ready || 'n/a (skipped: already posted)' }}"
-          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (gate not ready)' }}"
-          echo "force repost override: ${{ inputs.force_repost || 'false' }}"
-          echo "See the 'Readiness gate' step for the finalStatus= line (READY_CONFIRMED_SELECTIONS / WAITING_FOR_* / SKIPPED_* / FAILED_CONFIRMATION_SOURCE) and the 'Post HR Props' step for the script's own finalStatus= (POSTED / SKIPPED_ALREADY_POSTED_TODAY / SKIPPED_NO_ELIGIBLE_ROWS / FAILED)."
+          echo "== Post MLB HR Props to X summary (dry-run/verify-account only) =="
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a' }}"
+          echo "This workflow cannot submit a real X post -- see the header banner."

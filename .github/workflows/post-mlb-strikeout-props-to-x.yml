@@ -1,33 +1,38 @@
 name: Post MLB Strikeout Props to X
 
-# Manual K posting workflow. Automatic earliest-first-pitch polling is owned
-# by poll-mlb-x-posts.yml. A tightly marker-gated push recovery path exists so
-# an authorized repair commit can recover a missed daily post without making
-# normal code pushes post to X.
+# DISABLED as a live-posting path (Phase 7 cutover,
+# .github/workflows/mlb-x-canonical.yml). The canonical publisher is now the
+# ONLY code path allowed to submit a real MLB K public X post -- it alone
+# reads/writes the canonical git-backed receipt
+# (mlb-x/{date}/canonical/mlb-k-props.json) and holds the canonical
+# publication lease. This workflow can no longer reach a live post through
+# ANY trigger: the marker-gated `push` rescue trigger is removed entirely,
+# `mode` offers only dry-run/verify-account (neither ever calls X to post),
+# and X_ALLOW_LIVE_POST is never set in the environment at all -- there is
+# no typed override, no flag, no input that re-enables posting. If emergency
+# posting is ever needed, it must be implemented through the canonical
+# publisher so it respects canonical receipt identity -- never through this
+# file.
+#
+# Retained for forensic/manual dry-run investigation of the legacy
+# selection/rendering pipeline only. Automatic earliest-first-pitch polling
+# used to be owned by poll-mlb-x-posts.yml, which is itself retired in the
+# same cutover (see that workflow's own header comment).
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Run mode"
+        description: "Run mode (live posting removed in Phase 7 -- dry-run/verify-account only)"
         required: true
-        default: "post"
+        default: "dry-run"
         type: choice
-        options: [dry-run, post, post-text-only, verify-account]
+        options: [dry-run, verify-account]
       data_source:
         description: "Data source"
         required: true
         default: "production"
         type: choice
         options: [production, github, local]
-      force_repost:
-        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt."
-        required: true
-        default: false
-        type: boolean
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/post-mlb-strikeout-props-to-x.yml"
 
 concurrency:
   group: post-mlb-strikeout-props-to-x
@@ -39,12 +44,9 @@ permissions:
 jobs:
   post-strikeout-props-to-x:
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && contains(github.event.head_commit.message, '[rescue-k-x-post]'))
+    if: github.event_name == 'workflow_dispatch'
     env:
       X_EXPECTED_USERNAME: _joeknowsball_
-      X_DUPLICATE_STATE_DIR: .cache/mlb-strikeout-props-x-posted
       JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
       JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
       JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -53,107 +55,27 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
 
-      - name: Compute ET date for cache key
-        id: et_date
-        shell: bash
-        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore duplicate-post state
-        uses: actions/cache/restore@v4
-        with:
-          path: .cache/mlb-strikeout-props-x-posted
-          key: mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
-          restore-keys: |
-            mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-
-
-      - name: Already posted today?
-        id: already
-        shell: bash
-        run: |
-          KEY="mlb-k-props:${{ steps.et_date.outputs.date }}"
-          SLUG="$(echo "$KEY" | sed 's/[^a-zA-Z0-9._-]\+/-/g')"
-          FORCE="${{ github.event_name == 'workflow_dispatch' && inputs.force_repost || 'false' }}"
-          RECEIPT=".cache/mlb-strikeout-props-x-posted/${SLUG}.json"
-          if [ -f "$RECEIPT" ] && [ "$FORCE" != "true" ]; then
-            # Main post + self-reply are one posting unit -- a receipt with
-            # a main tweetId but no replyTweetId yet is NOT fully posted;
-            # let the job continue so post-mlb-strikeout-props-to-x.mjs's
-            # own reply-recovery path can finish the missing reply.
-            REPLY_STATE="$(node -e "try{const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(r&&r.tweetId&&r.replyTweetId?'complete':'pending')}catch{process.stdout.write('pending')}" "$RECEIPT")"
-            if [ "$REPLY_STATE" = "complete" ]; then
-              echo "posted=true" >> "$GITHUB_OUTPUT"
-              echo "Today's slate already has a post + reply receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
-            else
-              echo "posted=false" >> "$GITHUB_OUTPUT"
-              echo "Today's slate has a main-post receipt but no reply yet -- proceeding to recover the missing reply only."
-            fi
-          else
-            echo "posted=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Readiness gate
-        id: gate
-        if: steps.already.outputs.posted != 'true'
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Readiness timing gate bypassed for explicit guarded recovery/manual run; poster still performs live fail-closed validation."
-            exit 0
-          fi
-          set +e
-          node scripts/check-mlb-x-posting-readiness.mjs --content=k
-          CODE=$?
-          set -e
-          if [ "$CODE" -eq 0 ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          elif [ "$CODE" -eq 20 ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-
-      - name: Install dependencies
-        if: steps.gate.outputs.ready == 'true'
-        run: npm ci
-
-      - name: Install Playwright
-        if: steps.gate.outputs.ready == 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Build site for local export render
-        if: steps.gate.outputs.ready == 'true'
-        run: npm run build
-
-      - name: Post Strikeout Props
+      - name: Run Strikeout Props script (dry-run/verify-account only)
         id: post
-        if: steps.gate.outputs.ready == 'true'
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            MODE="post"
-            DATA_SOURCE="production"
-          else
-            MODE="${{ inputs.mode || 'post' }}"
-            DATA_SOURCE="${{ inputs.data_source || 'production' }}"
-          fi
+          MODE="${{ inputs.mode || 'dry-run' }}"
+          echo "Mode: $MODE"
+          echo "Data source: ${{ inputs.data_source || 'production' }}"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
-          K_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
-        env:
-          X_ALLOW_LIVE_POST: "true"
-          K_X_FORCE_REPOST: ${{ github.event_name == 'workflow_dispatch' && inputs.force_repost || 'false' }}
-
-      - name: Save duplicate-post state
-        if: always() && steps.gate.outputs.ready == 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .cache/mlb-strikeout-props-x-posted
-          key: mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
+          K_PROPS_DATA_SOURCE="${{ inputs.data_source || 'production' }}" node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
+        # X_ALLOW_LIVE_POST is deliberately NOT set anywhere in this file.
+        # assertLivePostAllowed/normalizeAllowLivePostFlag treat an unset
+        # value as fail-closed -- there is no environment variable, input, or
+        # override anywhere here that can make this script call X to post.
+        # See the header banner above.
 
       - name: Upload dry-run selection + screenshot
-        if: steps.gate.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        if: inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-strikeout-props-x-dry-run
@@ -166,9 +88,6 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo "== Post MLB Strikeout Props to X summary =="
-          echo "trigger event: ${{ github.event_name }}"
-          echo "already posted today: ${{ steps.already.outputs.posted || 'n/a' }}"
-          echo "readiness gate ready: ${{ steps.gate.outputs.ready || 'n/a' }}"
+          echo "== Post MLB Strikeout Props to X summary (dry-run/verify-account only) =="
           echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a' }}"
-          echo "See Post Strikeout Props for finalStatus=."
+          echo "This workflow cannot submit a real X post -- see the header banner."
