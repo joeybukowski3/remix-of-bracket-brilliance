@@ -69,6 +69,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         icon: "🗓️",
       },
       {
+        to: "/nfl/team-schedules",
+        label: "Team Schedules",
+        shortLabel: "Team Schedules",
+        description: "Any team's full season schedule with opponent power ratings and projections.",
+        icon: "📋",
+        match: "prefix",
+      },
+      {
         to: "/nfl/matchups",
         label: "Weekly Matchups",
         shortLabel: "Matchups",
