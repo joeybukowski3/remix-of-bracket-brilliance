@@ -42,6 +42,7 @@ import MlbVulnerablePitchers from "./pages/MlbVulnerablePitchers";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSchedule from "./pages/NFLSchedule";
+import NFLTeamSchedules from "./pages/NFLTeamSchedules";
 import NFLMatchups from "./pages/NFLMatchups";
 import NFLMatchupDetail from "./pages/NFLMatchupDetail";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
@@ -153,6 +154,8 @@ const App = () => (
             <Route index element={<NFL />} />
             <Route path="standings" element={<NFLStandings />} />
             <Route path="schedule" element={<NFLSchedule />} />
+            <Route path="team-schedules" element={<NFLTeamSchedules />} />
+            <Route path="team-schedules/:teamSlug" element={<NFLTeamSchedules />} />
             <Route path="matchups" element={<NFLMatchups />} />
             <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
             <Route path="analytics" element={<NFLAnalytics />} />
