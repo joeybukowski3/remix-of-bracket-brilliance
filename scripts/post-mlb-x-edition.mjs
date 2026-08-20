@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 /**
+ * DEPRECATED as a public live-posting path (Phase 7 cutover,
+ * .github/workflows/mlb-x-canonical.yml). mlb-x-editions.yml's
+ * schedule/workflow_run triggers and morning-live/confirmed-live dispatch
+ * modes are retired -- this script can no longer be reached by any
+ * automated or "live" GitHub Actions trigger. It is retained for
+ * dry-run/diagnostic-only manual testing of the still-useful
+ * acquisition/readiness code underneath the four editions.
+ *
  * Shared edition posting entry point, invoked as:
  *   node scripts/post-mlb-x-edition.mjs --market=k|hr --edition=morning|confirmed
  *     --slate-date=YYYY-MM-DD --plan-directory=<path> [--dry-run]

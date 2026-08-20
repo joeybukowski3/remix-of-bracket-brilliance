@@ -12,7 +12,13 @@
  *
  * Usage:
  *   node scripts/post-mlb-social-canonical.mjs --product=k|hr --slate-date=YYYY-MM-DD
- *     [--source=fixture|local] [--rows=2|3|4|5] [--dry-run] [--live]
+ *     [--source=fixture|local|production] [--candidates-file=path] [--rows=2|3|4|5] [--dry-run] [--live]
+ *
+ * --source=production is the only source a scheduled live workflow run may
+ * use (see .github/workflows/mlb-x-canonical.yml). For K it requires
+ * --candidates-file=<path to scripts/generate-mlb-k-production-candidates.ts's
+ * output> and throws rather than posting anything if that file is missing or
+ * malformed -- see scripts/lib/mlb-k-production-candidates.mjs.
  *
  * Live gating is intentionally strict for a manual/local run: --live alone is
  * NOT enough. Live posting also requires GITHUB_EVENT_NAME to be one of
@@ -41,7 +47,7 @@ import { TwitterApi } from "twitter-api-v2";
 import { buildHrCanonicalCaption, buildKCanonicalCaption, buildCanonicalOmittedReply } from "./lib/mlb-social-canonical-caption.mjs";
 import { ensureCanonicalImage } from "./lib/mlb-social-canonical-image.mjs";
 import { CanonicalPostOutcome, publishCanonicalSocialPost } from "./lib/mlb-social-canonical-publisher.mjs";
-import { CanonicalReceiptState, classifyCanonicalReceipt, evaluateCanonicalPublication } from "./lib/mlb-x-canonical-readiness.mjs";
+import { CanonicalReceiptState, classifyCanonicalReceipt, evaluateCanonicalPublication, isBeforeCanonicalCutover } from "./lib/mlb-x-canonical-readiness.mjs";
 import { buildPlanFromSource } from "./lib/mlb-social-plan-source.mjs";
 import { createGitStateStore } from "./lib/mlb-x-state-store.mjs";
 import { acquirePublicationLease } from "./lib/mlb-x-publication-lease.mjs";
@@ -67,6 +73,7 @@ function parseArgs(argv) {
     else if (raw.startsWith("--product=")) args.product = raw.slice("--product=".length);
     else if (raw.startsWith("--slate-date=")) args.slateDate = raw.slice("--slate-date=".length);
     else if (raw.startsWith("--source=")) args.source = raw.slice("--source=".length);
+    else if (raw.startsWith("--candidates-file=")) args.candidatesFile = raw.slice("--candidates-file=".length);
     else if (raw.startsWith("--rows=")) args.rows = Number(raw.slice("--rows=".length));
     else if (raw.startsWith("--image-directory=")) args.imageDirectory = raw.slice("--image-directory=".length);
     else if (raw.startsWith("--lease-directory=")) args.leaseDirectory = raw.slice("--lease-directory=".length);
@@ -152,6 +159,17 @@ async function main() {
   const { product, slateDate } = args;
   console.log(`[post-mlb-social-canonical:${product}] slateDate=${slateDate} source=${args.source} dryRun=${args.dryRun}`);
 
+  // ── Phase 7 cutover guard, checked before anything else -- plan build,
+  // state sync, live-mode gating. A slate date the legacy edition/poll
+  // systems could already have published under a different receipt
+  // namespace must never receive a canonical primary post; see
+  // isBeforeCanonicalCutover in mlb-x-canonical-readiness.mjs. ──────────────
+  if (isBeforeCanonicalCutover(slateDate)) {
+    console.log(JSON.stringify({ readinessStatus: "NO_POST_FOR_SLATE", reason: "BEFORE_CANONICAL_CUTOVER", planBuilt: false, wouldCallX: false }, null, 2));
+    console.log(`[post-mlb-social-canonical:${product}] finalOutcome=NO_POST_FOR_SLATE`);
+    return;
+  }
+
   // ── Live-mode gating: same event/flag gate the legacy posters use, plus
   // this script's own --live requirement. Zero X calls before this passes. ──
   let liveMode = false;
@@ -200,7 +218,11 @@ async function main() {
   // CONTENT itself comes from the persisted receipt -- see
   // mlb-social-canonical-publisher.mjs -- never from this freshly-built
   // plan). ───────────────────────────────────────────────────────────────
-  const { plan, pendingConfirmationCount } = buildPlanFromSource(product, { source: args.source, slateDate, rows: args.rows, root: ROOT, warn: (m) => console.warn(`[post-mlb-social-canonical:${product}] ${m}`) });
+  const { plan, pendingConfirmationCount } = buildPlanFromSource(product, {
+    source: args.source, slateDate, rows: args.rows, root: ROOT,
+    warn: (m) => console.warn(`[post-mlb-social-canonical:${product}] ${m}`),
+    productionKCandidatesPath: args.candidatesFile ?? null,
+  });
   if (plan) log(product, `plan built: rows=${plan.rows.length} rowFingerprint=${plan.rowFingerprint} receiptKey=${plan.receiptKey} pendingConfirmationCount=${pendingConfirmationCount}`);
 
   let slateTiming = null;

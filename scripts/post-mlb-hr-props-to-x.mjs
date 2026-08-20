@@ -1,3 +1,17 @@
+/**
+ * DEPRECATED as a public live-posting path (Phase 7 cutover,
+ * .github/workflows/mlb-x-canonical.yml). The canonical publisher
+ * (post-mlb-social-canonical.mjs) is now the only scheduled public MLB X
+ * publisher for HR. This script is retained for forensic/manual dry-run use
+ * only -- its scheduled invocation (poll-mlb-x-posts.yml's post-hr job) is
+ * retired, and any manual live run still requires GITHUB_EVENT_NAME to be
+ * workflow_dispatch/schedule/workflow_run (assertLivePostAllowed) plus
+ * X_ALLOW_LIVE_POST=true plus real credentials -- none of which a bare local
+ * shell sets. It writes to its own legacy receipt namespace
+ * (.cache/mlb-hr-props-x-posted), structurally invisible to the canonical
+ * git-backed receipt, so a deliberate live run here is NOT protected against
+ * duplicating a canonical post for the same slate date.
+ */
 import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";

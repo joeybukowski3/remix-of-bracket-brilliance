@@ -1,0 +1,128 @@
+name: MLB X Canonical Publisher
+
+# Phase 7 cutover: the ONE scheduled public MLB X publisher for HR and K.
+# Legacy scheduled publication is retired in this same PR -- see
+# mlb-x-editions.yml (schedule/workflow_run triggers removed, live dispatch
+# modes removed) and poll-mlb-x-posts.yml (schedule trigger removed, manual
+# rescue gated behind an explicit typed confirmation). No interval exists
+# where both an old and the new system can publish the same product/date.
+#
+# Cadence: reuses poll-mlb-x-posts.yml's exact pregame cron window (every 15
+# minutes, roughly 8am-10pm ET across both DST offsets) rather than inventing
+# a new one -- canonical readiness (mlb-x-canonical-readiness.mjs) decides
+# per firing whether there is anything to do; most firings outside an actual
+# ready window are a routine, cheap NO_POST_YET.
+#
+# HR and K are fully independent jobs with independent concurrency groups --
+# one product's failure (transient X API error, image render failure,
+# missing production data) can never block, delay, or duplicate the other's
+# publication. Each job's canonical receipt/lease (mlb-x-state-store.mjs,
+# mlb-x-publication-lease.mjs) remains the authoritative one-post guarantee;
+# the concurrency groups below only prevent two overlapping scheduled runs
+# for the SAME product from racing each other before that lease/receipt
+# becomes visible.
+on:
+  schedule:
+    - cron: "*/15 12-23 * * *"
+    - cron: "*/15 0-2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  X_EXPECTED_USERNAME: _joeknowsball_
+  MLB_X_STATE_BRANCH: automation/mlb-x-state
+
+jobs:
+  publish-hr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-canonical-hr
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # Same ET-slate-date derivation already used by poll-mlb-x-posts.yml's
+      # plan job and mlb-x-editions.yml's audit-eod job -- never the runner's
+      # raw UTC date, which would misidentify the slate around midnight ET.
+      - name: Compute ET slate date
+        id: et_date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate and publish canonical HR
+        run: |
+          node scripts/post-mlb-social-canonical.mjs \
+            --product=hr --slate-date="${{ steps.et_date.outputs.date }}" \
+            --source=production --live \
+            --image-directory=artifacts/mlb-x-canonical-images \
+            --lease-directory=artifacts/mlb-x-canonical-leases \
+            --state-work-dir=.mlb-x-canonical-state-work-hr
+        env:
+          # Separate clone from the checked-out repo, same rationale as every
+          # other MLB X poster's MLB_X_STATE_REMOTE_URL -- never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          # Operator-controlled kill switch, never a hardcoded literal. Unset
+          # (the default) fails closed -- assertLivePostAllowed requires
+          # exactly "true" even on this live-capable scheduled trigger.
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  publish-k:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-canonical-k
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Compute ET slate date
+        id: et_date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # Reuses the SAME source-of-truth selection the Strikeout Props page's
+      # Top Over Plays / Top Under Plays section renders
+      # (buildPitcherStrikeoutRows -> buildKPropBestBets, via
+      # buildCanonicalKCandidatePool) -- never a separate/independent K
+      # model. Writes candidatePool JSON only; no X call, no receipt, no
+      # state-branch write.
+      - name: Generate canonical K production candidates
+        run: |
+          npx tsx scripts/generate-mlb-k-production-candidates.ts \
+            --slate-date="${{ steps.et_date.outputs.date }}" \
+            --output=artifacts/mlb-x-canonical/k-production-candidates.json
+
+      - name: Evaluate and publish canonical K
+        run: |
+          node scripts/post-mlb-social-canonical.mjs \
+            --product=k --slate-date="${{ steps.et_date.outputs.date }}" \
+            --source=production --candidates-file=artifacts/mlb-x-canonical/k-production-candidates.json --live \
+            --image-directory=artifacts/mlb-x-canonical-images \
+            --lease-directory=artifacts/mlb-x-canonical-leases \
+            --state-work-dir=.mlb-x-canonical-state-work-k
+        env:
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}

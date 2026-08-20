@@ -11,14 +11,16 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { composeSocialPostPlan, SOCIAL_PRODUCT } from "./mlb-social-composition.mjs";
-import { computeSlateTiming } from "./mlb-x-slate-timing.mjs";
+import { computeSlateTiming, getEtSlateDate } from "./mlb-x-slate-timing.mjs";
 import {
+  CANONICAL_CUTOVER_FIRST_SLATE_DATE,
   CanonicalReadinessStatus,
   CanonicalReceiptState,
   classifyCanonicalReceipt,
   deriveConfirmationCompleteness,
   evaluateCanonicalPublication,
   evaluateRowTimingSafety,
+  isBeforeCanonicalCutover,
 } from "./mlb-x-canonical-readiness.mjs";
 
 const SLATE = "2026-08-19";
@@ -376,5 +378,55 @@ describe("evaluateCanonicalPublication -- product/date independence and identity
       assert.ok(!serialized.includes(forbidden), `result must not mention "${forbidden}"`);
     }
     assert.equal(plan.receiptKey, `${SOCIAL_PRODUCT.HR}:${SLATE}`);
+  });
+});
+
+describe("isBeforeCanonicalCutover -- Phase 7 same-day cutover guard (applied by the caller, not evaluateCanonicalPublication itself)", () => {
+  it("A. 2026-08-19 ET (the day the cutover PR merges) is blocked", () => {
+    assert.equal(isBeforeCanonicalCutover("2026-08-19"), true);
+  });
+
+  it("B. 2026-08-20 ET is the first eligible canonical production slate -- NOT blocked", () => {
+    // Every legacy scheduled/live-capable HR/K publisher is disabled in the
+    // SAME merge that enables mlb-x-canonical.yml, so there is no legacy
+    // system left that could still publish for the very next ET slate day --
+    // no same-day-duplicate risk to guard against beyond the merge date.
+    assert.equal(isBeforeCanonicalCutover("2026-08-20"), false);
+    assert.equal(CANONICAL_CUTOVER_FIRST_SLATE_DATE, "2026-08-20");
+    assert.equal(isBeforeCanonicalCutover(CANONICAL_CUTOVER_FIRST_SLATE_DATE), false);
+  });
+
+  it("2026-08-21 is also eligible (after the cutover date)", () => {
+    assert.equal(isBeforeCanonicalCutover("2026-08-21"), false);
+    assert.equal(isBeforeCanonicalCutover("2027-01-01"), false);
+  });
+
+  it("C. UTC/ET boundary: 2026-08-20T02:00:00Z is still 2026-08-19 in ET -> blocked", () => {
+    // 2026-08-20T02:00:00Z is 2:00 AM UTC on Aug 20 -- but ET is UTC-4 in
+    // August (EDT), so this is 10:00 PM ET on Aug 19. A naive UTC-date read
+    // would wrongly resolve "2026-08-20" (eligible); the ET-aware resolver
+    // must still resolve "2026-08-19" (blocked).
+    const etSlateDate = getEtSlateDate(new Date("2026-08-20T02:00:00.000Z"));
+    assert.equal(etSlateDate, "2026-08-19");
+    assert.equal(isBeforeCanonicalCutover(etSlateDate), true);
+  });
+
+  it("D. UTC/ET boundary: 2026-08-20T05:00:00Z is already 2026-08-20 in ET -> eligible", () => {
+    // 2026-08-20T05:00:00Z is 5:00 AM UTC on Aug 20 -- 1:00 AM ET on Aug 20
+    // (past the midnight-ET rollover at 04:00 UTC during EDT).
+    const etSlateDate = getEtSlateDate(new Date("2026-08-20T05:00:00.000Z"));
+    assert.equal(etSlateDate, "2026-08-20");
+    assert.equal(isBeforeCanonicalCutover(etSlateDate), false);
+  });
+
+  it("evaluateCanonicalPublication itself is agnostic of the cutover date -- a pre-cutover fixture slate can still resolve READY_TO_PUBLISH", () => {
+    // Proves the guard lives at the caller (post-mlb-social-canonical.mjs),
+    // never inside this pure readiness function -- otherwise every
+    // pre-existing test above using SLATE="2026-08-19" would break.
+    assert.equal(isBeforeCanonicalCutover(SLATE), true);
+    const result = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, existingReceipt: null, plan: hrPlan(5), pendingConfirmationCount: 0, slateTiming: safeTiming(), now: NOW,
+    });
+    assert.equal(result.status, CanonicalReadinessStatus.READY_TO_PUBLISH);
   });
 });

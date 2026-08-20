@@ -16,11 +16,24 @@
  *   local raw-data source in this phase (the live K pipeline sources from a
  *   live page scrape); --source=local for K falls back to fixture with a
  *   warning.
+ * --source=production (Phase 7, scheduled canonical publisher ONLY): HR
+ *   behaves identically to --source=local (the same committed, hourly-
+ *   refreshed hr-props-raw.json IS the production HR data -- there is no
+ *   separate "more production than local" source for HR). K reads the
+ *   canonical K candidate pool written by
+ *   scripts/generate-mlb-k-production-candidates.ts (the union of the
+ *   Strikeout Props page's Top Over Plays / Top Under Plays, via
+ *   buildCanonicalKCandidatePool -- see src/lib/mlb/kPropCanonicalCandidates.ts)
+ *   at `productionKCandidatesPath`. Unlike --source=local, K NEVER falls
+ *   back to fixture under --source=production: a missing/invalid candidates
+ *   file throws instead, so a scheduled live run can never silently post
+ *   fixture placeholder data as if it were real.
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { composeSocialPostPlan, getHrCandidatePoolWithPendingConfirmation, SOCIAL_PRODUCT } from "./mlb-social-composition.mjs";
 import { isDoubleheaderCode } from "./mlb-x-confirmation.mjs";
+import { loadProductionKCandidatePool } from "./mlb-k-production-candidates.mjs";
 
 export function kFixturePool() {
   return [
@@ -116,23 +129,38 @@ export function loadLocalHrCandidatePool(root = process.cwd()) {
  * not an invented value.
  * @param {"k"|"hr"} productKey
  * @param {object} params
- * @param {"fixture"|"local"} params.source
+ * @param {"fixture"|"local"|"production"} params.source
  * @param {string} params.slateDate
  * @param {number|null} [params.rows]
  * @param {string} [params.root]
  * @param {(message: string) => void} [params.warn]
+ * @param {string|null} [params.productionKCandidatesPath]  required when productKey==="k" and source==="production"
  * @returns {{ plan: import("./mlb-social-post-plan.mjs").SocialPostPlan|null, pendingConfirmationCount: number }}
  */
-export function buildPlanFromSource(productKey, { source, slateDate, rows = null, root = process.cwd(), warn = console.warn }) {
+export function buildPlanFromSource(productKey, { source, slateDate, rows = null, root = process.cwd(), warn = console.warn, productionKCandidatesPath = null }) {
   const isK = productKey === "k";
   if (isK && source === "local") {
     warn("[social-plan-source] --source=local is not supported for K in this phase (no local raw K data source yet); falling back to fixture.");
   }
 
-  const useLocal = !isK && source === "local";
-  const { candidatePool, pendingConfirmationCount } = useLocal
-    ? loadLocalHrCandidatePool(root)
-    : { candidatePool: slicePool(isK ? kFixturePool() : hrFixturePool(), rows), pendingConfirmationCount: 0 };
+  let candidatePool;
+  let pendingConfirmationCount;
+  let sourceLabel;
+
+  if (isK && source === "production") {
+    // Fails closed (throws) rather than falling back to fixture -- see the
+    // module doc above. A scheduled live run must never silently post
+    // placeholder data.
+    ({ candidatePool, pendingConfirmationCount } = loadProductionKCandidatePool({ path: productionKCandidatesPath }));
+    sourceLabel = "production (Top Over/Under Plays)";
+  } else if (!isK && (source === "local" || source === "production")) {
+    ({ candidatePool, pendingConfirmationCount } = loadLocalHrCandidatePool(root));
+    sourceLabel = source === "production" ? "production hr-props-raw.json" : "local hr-props-raw.json";
+  } else {
+    candidatePool = slicePool(isK ? kFixturePool() : hrFixturePool(), rows);
+    pendingConfirmationCount = 0;
+    sourceLabel = "fixture";
+  }
 
   const plan = composeSocialPostPlan({
     product: isK ? SOCIAL_PRODUCT.K : SOCIAL_PRODUCT.HR,
@@ -140,7 +168,7 @@ export function buildPlanFromSource(productKey, { source, slateDate, rows = null
     candidatePool,
     title: isK ? "MLB STRIKEOUT PROPS" : "MLB HOME RUN TARGETS",
     generatedAt: new Date().toISOString(),
-    sourceSummary: [useLocal ? "local hr-props-raw.json" : "fixture"],
+    sourceSummary: [sourceLabel],
   });
 
   return { plan, pendingConfirmationCount };

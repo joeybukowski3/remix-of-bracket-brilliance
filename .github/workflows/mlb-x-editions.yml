@@ -29,50 +29,31 @@ run-name: MLB X Editions • ${{ github.event_name }} • ${{ github.ref_name }}
 # routing decision independent of the flag's current value -- it is still a
 # genuine dry run with no X call and no successful receipt, exactly like
 # every other dry-run mode in this file.
+# Phase 7 cutover: this workflow's scheduled/workflow_run public-posting
+# capability is PERMANENTLY RETIRED. The canonical publisher
+# (.github/workflows/mlb-x-canonical.yml) is now the one and only scheduled
+# public MLB X publisher. Both `schedule` and `workflow_run` triggers are
+# removed below (they are what used to fire this workflow automatically --
+# see the retired cron/workflow_run comments preserved in git history), and
+# the workflow_dispatch `mode` choices no longer include morning-live/
+# confirmed-live, so post-k-morning/post-hr-morning/post-k-confirmed/
+# post-hr-confirmed/post-daily-card-morning can never go live again through
+# ANY trigger, scheduled or manual. Only the dry-run and diagnostic-only
+# modes remain, preserved for forensic/manual testing of the still-useful
+# acquisition/readiness code -- neither ever calls X or writes a successful
+# receipt. This invariant is enforced structurally (no trigger can select a
+# live mode), not by convention.
 on:
-  schedule:
-    # Morning edition: seven candidate firings (EDT+EST) meant to land inside
-    # 09:45-11:15 ET. The America/New_York-based readiness module is the sole
-    # authority on whether a given firing is actually inside the window, so
-    # an out-of-season candidate is a routine NOT_DUE/MISSED_WINDOW, not a
-    # bug. On 2026-07-27 GitHub delivered ZERO of these firings inside
-    # 09:45-11:15 ET at all -- the first one that day landed at 11:22 ET --
-    # so resolveEditionReadiness now also opens a catch-up stage through
-    # 13:00 ET (see MORNING_CATCH_UP_CLOSE_ET in mlb-x-edition-readiness.mjs)
-    # rather than treating a late GHA delivery as a full-day loss.
-    - cron: "45 13 * * *"  # 09:45 EDT
-    - cron: "45 14 * * *"  # 10:45 EDT / 09:45 EST
-    - cron: "15 14 * * *"  # 10:15 EDT
-    - cron: "15 15 * * *"  # 10:15 EST
-    - cron: "45 15 * * *"  # 10:45 EST
-    - cron: "10 15 * * *"  # 11:10 EDT
-    - cron: "10 16 * * *"  # 11:10 EST
-    # Confirmed/pregame edition: every 20 minutes across the likely MLB
-    # pregame period (roughly noon-1:30 AM ET across the season and both
-    # offsets). resolveEditionReadiness's minutes-before-first-pitch window
-    # (2h20m-1h15m) decides eligibility on every firing; most firings outside
-    # a slate's actual pregame window are a routine NOT_DUE.
-    - cron: "*/20 16-23,0-5 * * *"
-  workflow_run:
-    # Fires after the canonical data-generation workflow succeeds on main.
-    # Still obeys every edition window, receipt, image and live-post check --
-    # this is an additional opportunity to catch an eligible window promptly
-    # after fresh data lands, never a bypass of any of them.
-    workflows: ["Generate MLB Data"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       mode:
-        description: "Run mode"
+        description: "Run mode (live modes retired in Phase 7 -- dry-run/diagnostic only)"
         required: true
         default: "morning-dry-run"
         type: choice
         options:
           - morning-dry-run
           - confirmed-dry-run
-          - morning-live
-          - confirmed-live
           - diagnostic-only
       simulation_now:
         description: >-
@@ -80,9 +61,8 @@ on:
           accepted for morning-dry-run, confirmed-dry-run or diagnostic-only,
           and only when it names the same Eastern slate date the planner
           resolves for real -- resolveEventMode (mlb-x-event-mode.mjs)
-          rejects it as CONFIGURATION_ERROR otherwise, including for
-          morning-live/confirmed-live. Never used for a live post; leave
-          blank to use the real clock.
+          rejects it as CONFIGURATION_ERROR otherwise. Leave blank to use the
+          real clock.
         required: false
         type: string
 
