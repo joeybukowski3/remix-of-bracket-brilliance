@@ -13,6 +13,7 @@ export type SeoPage =
   | "nfl"
   | "fantasy-football"
   | "fantasy-points-allowed"
+  | "fantasy-weekly-rankings"
   | "nba"
   | "ncaa"
   | "college-football"
@@ -110,6 +111,12 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "Fantasy points allowed per game by every NFL defense in the 2025 season, split by QB, RB, WR, TE, K and DST, with the matchup ranks behind our playoff-week shading.",
     path: "/fantasy-football/points-allowed",
+  },
+  "fantasy-weekly-rankings": {
+    title: "Week 1 Fantasy Rankings | Joe Knows Ball",
+    description:
+      "Week 1 fantasy football rankings for QB, RB, WR and TE, ordered by projected points per game, with each player's Week 1 opponent and 2025 fantasy points allowed as matchup context.",
+    path: "/fantasy-football/weekly-rankings",
   },
   nba: {
     title: "NBA Analytics & Betting Models | Joe Knows Ball",

@@ -76,3 +76,21 @@ export function getRankGradientColor(
     ? mix(GRADIENT_BEST, GRADIENT_MID, position * 2)
     : mix(GRADIENT_MID, GRADIENT_WORST, (position - 0.5) * 2);
 }
+
+/**
+ * The same emerald → slate → rose ramp keyed on a 0-100 percentile instead of a
+ * rank, so a percentile column and a rank column read identically on one board.
+ * 100 anchors to emerald, 50 to slate and 0 to rose. Missing stays uncoloured
+ * rather than defaulting to the neutral midpoint, which would read as "average"
+ * for a value we do not have.
+ */
+export function getPercentileGradientColor(
+  percentile: number | null | undefined,
+): string | undefined {
+  if (percentile == null || !Number.isFinite(percentile)) return undefined;
+  const clamped = Math.min(100, Math.max(0, percentile));
+  const position = (100 - clamped) / 100;
+  return position <= 0.5
+    ? mix(GRADIENT_BEST, GRADIENT_MID, position * 2)
+    : mix(GRADIENT_MID, GRADIENT_WORST, (position - 0.5) * 2);
+}

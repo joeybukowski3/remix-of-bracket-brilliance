@@ -53,6 +53,7 @@ import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import NFLAnalytics from "./pages/NFLAnalytics";
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
+import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
 import WorldCupAnalyzer from "./pages/WorldCupAnalyzer";
@@ -168,6 +169,7 @@ const App = () => (
           </Route>
           <Route path="/fantasy-football" element={<FantasyFootball />} />
           <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
+          <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
           <Route
             path="/internal/jkb-nfl-v03-review-7f3c9a"
             element={
