@@ -6,32 +6,49 @@ import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
+import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { deriveStandings, formatStandingRecord, type CanonicalNflTeam } from "@/lib/nfl/standings";
 import type { CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 import { buildTeamSchedule, type TeamScheduleLocation, type TeamScheduleRow } from "@/lib/nfl/teamScheduleView";
 import { formatProjectedSpread, projectionFor } from "@/lib/nfl/projectionData";
+import {
+  currentMarketFor,
+  formatMarketFavoriteSpread,
+  formatTotal as formatMarketTotal,
+  type MarketCurrentGame,
+} from "@/lib/nfl/marketData";
+import { getNflRatingHeatClass } from "@/lib/nfl/ratingPresentation";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import NflMetricStrip, { type NflMetric } from "@/components/nfl/ui/NflMetricStrip";
-import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
+import { NFL_TABLE_HEAD_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
+import { cn } from "@/lib/utils";
 
 const CURRENT_SEASON = 2026;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
 const NA = "—";
 
-/**
- * No JKB win-probability model exists anywhere in the repository (checked
- * against every NFL lib/hook — only the spread and total models are
- * published artifacts). Rendered as "—" for every row rather than derived
- * from the spread, which would be an invented figure.
- */
-const WIN_PROBABILITY_UNAVAILABLE_REASON =
-  "No JKB win-probability model has been published yet — only the projected spread and projected total models exist.";
-
 function ratingLine(row: CurrentRatingRow | undefined | null): string {
   if (!row) return "NR";
   return `#${row.rank} · ${row.rating.toFixed(1)}`;
+}
+
+/**
+ * Real betting-market spread for this matchup, in favorite notation
+ * (e.g. "SEA −3.5" / "PK"). Sourced from the guide-derived market artifact
+ * (public/data/nfl/matchup-market.json) — never the JKB projection. Renders
+ * "—" when the guide has not priced this game yet.
+ */
+function formatMarketSpreadCell(market: MarketCurrentGame | null): string {
+  if (!market || market.spread.home == null) return NA;
+  return formatMarketFavoriteSpread(market);
+}
+
+/** Real betting-market total for this matchup. Renders "—" when unpriced. */
+function formatMarketTotalCell(market: MarketCurrentGame | null): string {
+  if (!market || market.total == null) return NA;
+  return formatMarketTotal(market.total);
 }
 
 function LocationBadge({ location }: { location: TeamScheduleLocation }) {
@@ -39,7 +56,7 @@ function LocationBadge({ location }: { location: TeamScheduleLocation }) {
     location === "HOME"
       ? "bg-emerald-50 text-emerald-800 border-emerald-200"
       : location === "AWAY"
-        ? "bg-slate-50 text-slate-700 border-slate-200"
+        ? "bg-sky-50 text-sky-800 border-sky-200"
         : "bg-amber-50 text-amber-800 border-amber-200";
   return (
     <span className={`inline-block rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${cls}`}>
@@ -48,12 +65,26 @@ function LocationBadge({ location }: { location: TeamScheduleLocation }) {
   );
 }
 
-/** Sparse conditional tint for opponent strength — restrained, never a full-card wash. */
-function opponentPowerTone(rank: number | undefined): string {
-  if (rank == null) return "text-slate-700";
-  if (rank <= 10) return "font-semibold text-red-700";
-  if (rank >= 23) return "font-semibold text-emerald-700";
-  return "text-slate-700";
+/**
+ * Full-row home/away tint so a user can scan the schedule and immediately
+ * distinguish home vs. away. Kept to unsaturated 50-shade washes — subtle
+ * enough that the Opp Power heat cell and hover state both stay legible.
+ */
+function rowLocationTone(location: TeamScheduleLocation): string {
+  if (location === "HOME") return "bg-emerald-50/70 hover:bg-emerald-100/70";
+  if (location === "AWAY") return "bg-sky-50/70 hover:bg-sky-100/70";
+  return "bg-slate-50/50 hover:bg-slate-100/60";
+}
+
+/**
+ * Opp Power cell color, using the NFL-calibrated score-based Power Rating
+ * scale (src/lib/nfl/ratingPresentation.ts — gold "Elite" tier down through
+ * a descending green/warm scale, thresholds fixed to the actual Current OVR
+ * distribution) rather than a rank-only red/green split. Colors by the
+ * actual rating value, not league rank.
+ */
+function opponentPowerCellClass(rating: number | undefined | null): string {
+  return getNflRatingHeatClass(rating);
 }
 
 function ScheduleRow({
@@ -61,21 +92,23 @@ function ScheduleRow({
   teamAbbr,
   opponentRecord,
   opponentRating,
-  spread,
-  total,
+  marketSpread,
+  marketTotal,
+  jkbSpread,
 }: {
   row: TeamScheduleRow;
   teamAbbr: string;
   opponentRecord: string | null;
   opponentRating: CurrentRatingRow | null;
-  spread: string;
-  total: string;
+  marketSpread: string;
+  marketTotal: string;
+  jkbSpread: string;
 }) {
   const detailHref = `/nfl/matchups/${row.matchupSlug}`;
   const label = `Week ${row.week}: ${teamAbbr.toUpperCase()} ${row.location === "AWAY" ? "at" : "vs"} ${row.opponent.teamName} — view matchup breakdown`;
 
   return (
-    <tr className={NFL_TABLE_ROW}>
+    <tr className={cn("border-t border-slate-100 transition-colors", rowLocationTone(row.location))}>
       <td className="whitespace-nowrap px-2 py-2 text-center font-semibold tabular-nums text-slate-700">
         {row.week}
       </td>
@@ -88,12 +121,12 @@ function ScheduleRow({
           <img src={nflLogoUrl(row.opponent.abbr)} alt="" className="h-6 w-6 shrink-0 object-contain" loading="lazy" />
           <span className="min-w-0">
             <span className="block truncate text-xs sm:text-sm">{row.opponent.teamName}</span>
-            {/* Secondary line: mobile-only compact context (date, location, opponent record, total). */}
+            {/* Secondary line: mobile-only compact context (date, site, opponent record, market total). */}
             <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] font-normal text-slate-500 sm:hidden">
               <LocationBadge location={row.location} />
               <span>{kickoffLabel(row.kickoffUtc)}</span>
               {opponentRecord && <span>{opponentRecord}</span>}
-              <span>O/U {total}</span>
+              <span>O/U {marketTotal}</span>
             </span>
           </span>
         </Link>
@@ -107,17 +140,24 @@ function ScheduleRow({
       <td className="hidden whitespace-nowrap px-2 py-2 text-center tabular-nums text-slate-700 sm:table-cell">
         {opponentRecord ?? NA}
       </td>
-      <td className={`whitespace-nowrap px-2 py-2 text-center tabular-nums ${opponentPowerTone(opponentRating?.rank)}`}>
-        {ratingLine(opponentRating)}
+      <td className="whitespace-nowrap px-2 py-2 text-center">
+        <span
+          className={cn(
+            "inline-flex min-w-[3.25rem] items-center justify-center rounded px-1.5 py-0.5 font-semibold tabular-nums",
+            opponentPowerCellClass(opponentRating?.rating),
+          )}
+        >
+          {ratingLine(opponentRating)}
+        </span>
       </td>
       <td className="whitespace-nowrap px-2 py-2 text-center font-semibold tabular-nums text-slate-900">
-        {spread}
+        {marketSpread}
       </td>
       <td className="hidden whitespace-nowrap px-2 py-2 text-center tabular-nums text-slate-700 sm:table-cell">
-        {total}
+        {marketTotal}
       </td>
-      <td className="whitespace-nowrap px-2 py-2 text-center tabular-nums text-slate-400" title={WIN_PROBABILITY_UNAVAILABLE_REASON}>
-        {NA}
+      <td className="whitespace-nowrap px-2 py-2 text-center tabular-nums text-slate-900">
+        {jkbSpread}
       </td>
     </tr>
   );
@@ -130,6 +170,7 @@ export default function NFLTeamSchedules() {
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
   const currentRating = useNflCurrentRating2026();
   const { artifact: projectionsArtifact } = useNflMatchupProjections();
+  const { artifact: marketArtifact } = useNflMatchupMarket();
 
   const teams: CanonicalNflTeam[] = useMemo(
     () => [...(data?.teams ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
@@ -266,17 +307,18 @@ export default function NFLTeamSchedules() {
                       <th scope="col" className="px-2 py-2 text-center">Wk</th>
                       <th scope="col" className="px-2 py-2 text-left">Opponent</th>
                       <th scope="col" className="hidden px-2 py-2 text-left sm:table-cell">Date</th>
-                      <th scope="col" className="hidden px-2 py-2 sm:table-cell">Loc</th>
+                      <th scope="col" className="hidden px-2 py-2 sm:table-cell">Site</th>
                       <th scope="col" className="hidden px-2 py-2 text-center sm:table-cell">Opp Record</th>
                       <th scope="col" className="px-2 py-2 text-center">Opp Power</th>
-                      <th scope="col" className="px-2 py-2 text-center">Spread</th>
-                      <th scope="col" className="hidden px-2 py-2 text-center sm:table-cell">Total</th>
-                      <th scope="col" className="px-2 py-2 text-center">Win %</th>
+                      <th scope="col" className="px-2 py-2 text-center">Market Spread</th>
+                      <th scope="col" className="hidden px-2 py-2 text-center sm:table-cell">Market Total</th>
+                      <th scope="col" className="px-2 py-2 text-center">JKB Spread</th>
                     </tr>
                   </thead>
                   <tbody>
                     {scheduleRows.map((row) => {
                       const projection = projectionFor(projectionsArtifact, row.gameId);
+                      const market = currentMarketFor(marketArtifact, row.gameId);
                       return (
                         <ScheduleRow
                           key={row.gameId}
@@ -288,8 +330,9 @@ export default function NFLTeamSchedules() {
                               : null
                           }
                           opponentRating={ratingByAbbr.get(row.opponent.abbr) ?? null}
-                          spread={formatProjectedSpread(projection)}
-                          total={NA}
+                          marketSpread={formatMarketSpreadCell(market)}
+                          marketTotal={formatMarketTotalCell(market)}
+                          jkbSpread={formatProjectedSpread(projection)}
                         />
                       );
                     })}
@@ -300,9 +343,6 @@ export default function NFLTeamSchedules() {
           </article>
 
           <p className="mt-2 text-[11px] leading-5 text-slate-400">
-            Win % is not shown: {WIN_PROBABILITY_UNAVAILABLE_REASON}
-          </p>
-          <p className="mt-1 text-[11px] leading-5 text-slate-400">
             <Link to="/nfl/matchups" className="font-semibold text-emerald-700 hover:underline">
               View weekly matchups →
             </Link>

@@ -41,6 +41,21 @@ vi.mock("@/hooks/useNflMatchupProjections", () => {
   return { useNflMatchupProjections: () => ({ loading: false, error: null, artifact }) };
 });
 
+// Real published market artifact (public/data/nfl/matchup-market.json), so the
+// Market Spread / Market Total columns are exercised against the actual
+// guide-derived data shape — never invented, never derived from the JKB
+// projection above.
+vi.mock("@/hooks/useNflMatchupMarket", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { readFileSync } = require("node:fs") as typeof import("node:fs");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { join } = require("node:path") as typeof import("node:path");
+  const artifact = JSON.parse(
+    readFileSync(join(process.cwd(), "public/data/nfl/matchup-market.json"), "utf-8")
+  );
+  return { useNflMatchupMarket: () => ({ loading: false, error: null, artifact }) };
+});
+
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div data-testid="site-shell">{children}</div>,
 }));
@@ -176,25 +191,109 @@ describe("NFLTeamSchedules schedule table", () => {
     expect(within(rows[1]).getAllByText("HOME").length).toBeGreaterThan(0);
   });
 
-  it("renders projected total and win probability safely as a placeholder, never invented", () => {
-    renderRoute("/nfl/team-schedules/buffalo-bills");
-    const rows = screen.getAllByRole("row").slice(1);
-    // No projected-total model is exposed by the committed projection API yet.
-    // No win-probability model exists anywhere in the repository either.
-    expect(within(rows[0]).getAllByText("—").length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("moves secondary info (date, location, opponent record, total) into a compact mobile-only line without dropping it", () => {
+  it("moves secondary info (date, site, opponent record, market total) into a compact mobile-only line without dropping it", () => {
     renderRoute("/nfl/team-schedules/buffalo-bills");
     const rows = screen.getAllByRole("row").slice(1);
     const mobileLine = rows[0].querySelector(".sm\\:hidden");
     expect(mobileLine).toBeTruthy();
     expect(mobileLine!.textContent).toContain("AWAY");
     expect(mobileLine!.textContent).toContain("O/U");
-    // Desktop-only cells (date, location, opponent record, total) are marked
-    // `hidden sm:table-cell` so the page never scrolls horizontally to reach
-    // them on mobile, but they stay in the DOM for larger breakpoints.
+    // Desktop-only cells (date, site, opponent record, market total) are
+    // marked `hidden sm:table-cell` so the page never scrolls horizontally to
+    // reach them on mobile, but they stay in the DOM for larger breakpoints.
     const desktopOnlyCells = rows[0].querySelectorAll("td.hidden.sm\\:table-cell");
     expect(desktopOnlyCells.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("NFLTeamSchedules market vs. JKB columns", () => {
+  it("renders Market Spread from the guide-derived market artifact, distinct from the JKB projection", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Week 1 BUF @ HOU: market artifact prices HOU +1.5 (favorite: BUF -1.5);
+    // the JKB projection artifact independently favors HOU -2.0. The two
+    // must never collapse into the same number by accident.
+    expect(within(rows[0]).getByText("BUF −1.5")).toBeTruthy();
+    expect(within(rows[0]).getByText("HOU −2.0")).toBeTruthy();
+  });
+
+  it("renders Market Total from the guide-derived market artifact", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Week 1 BUF @ HOU market total is 44.5 in the published artifact.
+    expect(within(rows[0]).getByText("44.5")).toBeTruthy();
+  });
+
+  it("renders JKB Spread from the existing JKB projection artifact", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(within(rows[1]).getByText("BUF −3.9")).toBeTruthy(); // week 2 DET @ BUF
+  });
+
+  it("renders — for a game the market artifact has not priced yet, rather than inventing a line", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Week 4 BUF vs NE has no entry in the market artifact's currentMarket.
+    const week4Row = rows.find((row) => within(row).queryByText("New England Patriots"));
+    expect(week4Row).toBeTruthy();
+    expect(within(week4Row!).getAllByText("—").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("no longer renders a Win % column", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    expect(screen.queryByText("Win %")).toBeNull();
+  });
+});
+
+describe("NFLTeamSchedules Site column", () => {
+  it("renames the Loc header to Site while preserving HOME/AWAY/NEUTRAL badges", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    expect(screen.getByText("Site")).toBeTruthy();
+    expect(screen.queryByText("Loc")).toBeNull();
+  });
+});
+
+describe("NFLTeamSchedules row tint", () => {
+  it("applies home styling to a HOME row", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Row 1 (week 2, DET @ BUF) is a HOME game for the selected team.
+    expect(rows[1].className).toContain("bg-emerald-50");
+  });
+
+  it("applies away styling to an AWAY row", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Row 0 (week 1, BUF @ HOU) is an AWAY game for the selected team.
+    expect(rows[0].className).toContain("bg-sky-50");
+  });
+});
+
+describe("NFLTeamSchedules Opp Power color scale", () => {
+  it("colors the Opp Power cell using the NFL-calibrated score-based rating scale", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Houston Texans opponent rating is 60.0 in the mocked current-rating
+    // board — the NFL rating-presentation scale's "good" (54-61.9) tier,
+    // not a rank-only red/green split.
+    const cell = within(rows[0]).getByText("#15 · 60.0");
+    expect(cell.className).toContain("bg-emerald-50");
+  });
+
+  it("gives a stronger opponent rating a visibly different tier than a weaker one", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const rows = screen.getAllByRole("row").slice(1);
+    // Houston Texans (60.0, "good") vs. Detroit Lions (65.0, "strong").
+    const houCell = within(rows[0]).getByText("#15 · 60.0");
+    const detCell = within(rows[1]).getByText("#8 · 65.0");
+    expect(houCell.className).not.toBe(detCell.className);
+  });
+});
+
+describe("NFLTeamSchedules matchup links", () => {
+  it("keeps the semantic matchup link unchanged after the column/styling rework", () => {
+    renderRoute("/nfl/team-schedules/buffalo-bills");
+    const link = screen.getByRole("link", { name: /BUF at Houston Texans/i });
+    expect(link.getAttribute("href")).toBe("/nfl/matchups/buffalo-bills-at-houston-texans");
   });
 });
