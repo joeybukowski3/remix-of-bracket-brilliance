@@ -176,13 +176,12 @@ describe("NFLTeamSchedules schedule table", () => {
     expect(within(rows[1]).getAllByText("HOME").length).toBeGreaterThan(0);
   });
 
-  it("renders missing projection data and win probability safely as a placeholder, never invented", () => {
+  it("renders projected total and win probability safely as a placeholder, never invented", () => {
     renderRoute("/nfl/team-schedules/buffalo-bills");
     const rows = screen.getAllByRole("row").slice(1);
-    // Week 1 total is null in the real published artifact (thin sample).
-    expect(within(rows[0]).getAllByText("N/A").length).toBeGreaterThan(0);
-    // No win-probability model exists anywhere in the repository.
-    expect(within(rows[0]).getAllByText("—").length).toBeGreaterThan(0);
+    // No projected-total model is exposed by the committed projection API yet.
+    // No win-probability model exists anywhere in the repository either.
+    expect(within(rows[0]).getAllByText("—").length).toBeGreaterThanOrEqual(2);
   });
 
   it("moves secondary info (date, location, opponent record, total) into a compact mobile-only line without dropping it", () => {

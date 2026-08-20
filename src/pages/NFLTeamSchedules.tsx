@@ -10,7 +10,7 @@ import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { deriveStandings, formatStandingRecord, type CanonicalNflTeam } from "@/lib/nfl/standings";
 import type { CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 import { buildTeamSchedule, type TeamScheduleLocation, type TeamScheduleRow } from "@/lib/nfl/teamScheduleView";
-import { formatProjectedSpread, formatProjectedTotal, projectionFor } from "@/lib/nfl/projectionData";
+import { formatProjectedSpread, projectionFor } from "@/lib/nfl/projectionData";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import NflMetricStrip, { type NflMetric } from "@/components/nfl/ui/NflMetricStrip";
@@ -289,7 +289,7 @@ export default function NFLTeamSchedules() {
                           }
                           opponentRating={ratingByAbbr.get(row.opponent.abbr) ?? null}
                           spread={formatProjectedSpread(projection)}
-                          total={formatProjectedTotal(projection)}
+                          total={NA}
                         />
                       );
                     })}
