@@ -1,10 +1,10 @@
 {
   "date": "2026-08-20",
-  "generatedAt": "2026-08-20T13:25:03.677Z",
+  "generatedAt": "2026-08-20T15:01:59.550Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Great American Ball Park (1.25) and Camden Yards (1.10) are the primary power parks in play, while Rate Field (1.07) and Daikin Park (1.04) offer modest boosts. The top three model targets all face right-handers in favorable venues, with Báez and Burleson benefiting from the GABP boost against Singer and Alvarez drawing the best individual matchup at home against Rodriguez.",
-    "modelNote": "The model is prioritizing barrel rate and hard-hit rate above all other inputs today, elevating Báez and Alvarez despite moderate park factors because their 62.5% and 53.4% hard-hit marks respectively dwarf the field."
+    "slateOverview": "Great American Ball Park (1.25) and Camden Yards (1.10) are the primary power parks in play, while Rate Field (1.07) and Daikin Park (1.04) offer modest boosts. The top three HR scores all land in favorable venues against right-handers with HR-allowed rates of 61.8-87.8, and the model is clearly keyed on park-plus-pitcher synergy over raw barrel rates.",
+    "modelNote": "The model is overweighting parkFactor and opposingPitcherHrVs, elevating Báez and Burleson despite modest barrel numbers, while still giving Alvarez the top spot due to elite xBA and HR/FB in a slightly favorable home park."
   },
   "bestBets": [
     {
@@ -18,11 +18,11 @@
         "HH=53.4%"
       ],
       "bullets": [
-        "hrScore=88.2",
+        "hrScore=88.3",
         "park=1.04"
       ],
-      "hrOddsYes": "+242",
-      "marketImpliedProbability": 0.29239766081871343,
+      "hrOddsYes": "+241",
+      "marketImpliedProbability": 0.2932551319648094,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -75,7 +75,7 @@
         "Hard Hit%=49.5"
       ],
       "bullets": [
-        "HR score 75.9 (#4)",
+        "HR score 76.2 (#4)",
         "Pitcher HR VS 61.8 at park 1.25"
       ],
       "hrOddsYes": "+304",
@@ -115,7 +115,7 @@
         "HH=49.5%"
       ],
       "bullets": [
-        "hrScore=75.9",
+        "hrScore=76.2",
         "park=1.25"
       ],
       "hrOddsYes": "+304",
@@ -172,11 +172,11 @@
         "Hard Hit%=50.1"
       ],
       "bullets": [
-        "HR score 73.1 (#7)",
+        "HR score 73.3 (#7)",
         "Pitcher HR VS 82.8 at park 0.98"
       ],
-      "hrOddsYes": "+268",
-      "marketImpliedProbability": 0.2717391304347826,
+      "hrOddsYes": "+267",
+      "marketImpliedProbability": 0.2724795640326976,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -191,7 +191,7 @@
         "Hard Hit%=48.0"
       ],
       "bullets": [
-        "HR score 69.6 (#8)",
+        "HR score 69.8 (#8)",
         "Pitcher HR VS 82.8 at park 0.98"
       ],
       "hrOddsYes": "+700",
@@ -212,11 +212,11 @@
         "HH=50.1%"
       ],
       "bullets": [
-        "hrScore=73.1",
+        "hrScore=73.3",
         "park=0.98"
       ],
-      "hrOddsYes": "+268",
-      "marketImpliedProbability": 0.2717391304347826,
+      "hrOddsYes": "+267",
+      "marketImpliedProbability": 0.2724795640326976,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -231,7 +231,7 @@
         "HH=48%"
       ],
       "bullets": [
-        "hrScore=69.6",
+        "hrScore=69.8",
         "park=0.98"
       ],
       "hrOddsYes": "+700",
@@ -240,40 +240,40 @@
       "hrValueEdge": null
     },
     {
-      "player": "Ryan Vilade",
+      "player": "Jorge Mateo",
       "team": "TB",
       "opponent": "TOR",
       "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 25,
       "topStats": [
         "Pitcher HR VS=82.8",
-        "Hard Hit%=38.6"
+        "Hard Hit%=45.2"
       ],
       "bullets": [
-        "HR score 57.2 (#25)",
+        "HR score 57.0 (#25)",
         "Pitcher HR VS 82.8 at park 0.98"
       ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
+      "hrOddsYes": "+750",
+      "marketImpliedProbability": 0.11764705882352941,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Andrés Chaparro",
-      "team": "WSH",
-      "opponent": "TEX",
-      "opposingPitcher": "Jacob deGrom",
-      "hrScoreRank": 21,
+      "player": "Cam Smith",
+      "team": "HOU",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 14,
       "topStats": [
-        "Pitcher HR VS=58.1",
-        "Hard Hit%=49.4"
+        "Pitcher HR VS=87.8",
+        "Hard Hit%=45.2"
       ],
       "bullets": [
-        "HR score 58.1 (#21)",
-        "Pitcher HR VS 58.1 at park 0.99"
+        "HR score 63.4 (#14)",
+        "Pitcher HR VS 87.8 at park 1.04"
       ],
-      "hrOddsYes": "+590",
-      "marketImpliedProbability": 0.14492753623188406,
+      "hrOddsYes": "+574",
+      "marketImpliedProbability": 0.14836795252225518,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
