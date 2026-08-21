@@ -12,6 +12,7 @@ import {
 import type { CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 import type { MarketArtifact } from "@/lib/nfl/marketData";
 import type { ProjectionsArtifact } from "@/lib/nfl/projectionData";
+import { getNflRatingHeatClass } from "@/lib/nfl/ratingPresentation";
 import type { CanonicalNflTeam, NflGameRecord } from "@/lib/nfl/standings";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 
@@ -154,11 +155,21 @@ describe("WeeklyCommandCenter", () => {
     renderDashboard();
     const header = screen.getByTestId("mobile-game-board-sticky-header");
     expect(header.className).toContain("sticky");
-    expect(header.className).toContain("top-0");
+    // Offset below the site's own sticky header (72px) so it doesn't hide underneath it.
+    expect(header.className).toContain("top-[72px]");
+    expect(header.className).toMatch(/\bz-\d+/);
     expect(within(header).getByText("Game")).toBeTruthy();
     expect(within(header).getByText("Market")).toBeTruthy();
     expect(within(header).getByText("JKB")).toBeTruthy();
     expect(within(header).getByText("Gap")).toBeTruthy();
+  });
+
+  it("keeps the mobile sticky header outside any overflow-hidden ancestor, so it can stick to the viewport", () => {
+    renderDashboard();
+    const header = screen.getByTestId("mobile-game-board-sticky-header");
+    for (let node = header.parentElement; node && node !== document.body; node = node.parentElement) {
+      expect(node.className ?? "").not.toContain("overflow-hidden");
+    }
   });
 
   it("provides Power Ratings and deeper NFL navigation funnels", () => {
@@ -190,6 +201,44 @@ describe("WeeklyCommandCenter", () => {
     expect(within(mobile).getByText("Bottom 5")).toBeTruthy();
     for (const t of dashboard.powerWatchBottom) {
       expect(within(mobile).getByText(`#${t.rating?.ovrRank}`)).toBeTruthy();
+    }
+  });
+
+  it("renders the mobile Top 5 and Bottom 5 Power Watch lists as visually distinct bordered mini-tables with a gap between them", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    const topHeader = within(mobile).getByText("Top 5");
+    const bottomHeader = within(mobile).getByText("Bottom 5");
+    const topCard = topHeader.closest("div") as HTMLElement;
+    const bottomCard = bottomHeader.closest("div") as HTMLElement;
+    expect(topCard).not.toBe(bottomCard);
+    expect(topCard.className).toContain("border");
+    expect(bottomCard.className).toContain("border");
+    expect(mobile.className).toContain("gap-");
+  });
+
+  it("gives the mobile Top 5 header a restrained positive tone and the Bottom 5 header a restrained negative tone", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    const topHeader = within(mobile).getByText("Top 5");
+    const bottomHeader = within(mobile).getByText("Bottom 5");
+    expect(topHeader.className).toContain("emerald");
+    expect(bottomHeader.className).toContain("rose");
+  });
+
+  it("colors Power Watch OVR values with the existing NFL rating heat scale, consistently by value across Top 5 and Bottom 5", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    const desktop = screen.getByTestId("power-watch-desktop");
+    for (const team of [...dashboard.powerWatch, ...dashboard.powerWatchBottom]) {
+      const ovrText = team.rating!.ovr.toFixed(1);
+      const heatClass = getNflRatingHeatClass(team.rating!.ovr);
+      for (const container of [mobile, desktop]) {
+        const cell = within(container).getByText(ovrText);
+        for (const cls of heatClass.split(" ")) {
+          expect(cell.className).toContain(cls);
+        }
+      }
     }
   });
 

@@ -5,6 +5,7 @@ import type { NflDataMeta } from "@/lib/nfl/standings";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 import { formatTotal } from "@/lib/nfl/marketData";
 import { modelMarketGapBadgeColor } from "@/lib/nfl/gapColor";
+import { getNflRatingHeatClass } from "@/lib/nfl/ratingPresentation";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   WEEKLY_RANKING_POSITIONS,
@@ -262,7 +263,7 @@ function TeamIdentity({ team, align = "left" }: { team: WeeklyDashboardTeam; ali
 
 function DesktopGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
   return (
-    <div className="hidden md:block">
+    <div className="hidden overflow-hidden rounded-b-lg md:block">
       <table className="w-full table-fixed border-collapse text-left">
         <caption className="sr-only">NFL weekly games with market and model spread comparisons</caption>
         <colgroup>
@@ -312,11 +313,11 @@ function MobileGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
     <div className="md:hidden" data-testid="mobile-game-board">
       <div
         data-testid="mobile-game-board-sticky-header"
-        className="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_58px_58px_66px] border-b border-slate-200 bg-slate-50/95 px-2 py-1 text-[8px] font-bold uppercase tracking-wider text-slate-500 backdrop-blur"
+        className="sticky top-[72px] z-20 grid grid-cols-[minmax(0,1fr)_58px_58px_66px] border-b border-slate-200 bg-slate-50 px-2 py-1 text-[8px] font-bold uppercase tracking-wider text-slate-500"
       >
         <span>Game</span><span className="text-center">Market</span><span className="text-center">JKB</span><span className="text-center">Gap</span>
       </div>
-      <div className="divide-y divide-slate-200">
+      <div className="divide-y divide-slate-200 overflow-hidden rounded-b-lg">
         {games.map((game) => (
           <Link key={game.gameId} to={game.matchupHref} className="group block px-2 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" aria-label={`${game.away.name} ${game.neutralSite ? "versus" : "at"} ${game.home.name} matchup details`}>
             <div className="mb-1 flex items-center justify-between gap-2 text-[9px] font-semibold text-slate-500">
@@ -346,7 +347,7 @@ function MobileGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
 
 function GameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white" aria-labelledby="weekly-game-board-title">
+    <section className="rounded-lg border border-slate-200 bg-white" aria-labelledby="weekly-game-board-title">
       <ModuleHeader title="Weekly Game Board" detail="Market totals are reference only · spread comparison is descriptive" action={<Link to="/nfl/matchups" className="text-[10px] font-bold text-sky-700 hover:underline">All matchups</Link>} />
       <span id="weekly-game-board-title" className="sr-only">Weekly Game Board</span>
       {games.length === 0 ? <p className="px-4 py-8 text-center text-sm text-slate-500">No regular-season games are available for this week.</p> : <><DesktopGameBoard games={games} /><MobileGameBoard games={games} /></>}
@@ -464,7 +465,7 @@ function PowerWatchRow({ team }: { team: WeeklyDashboardTeam }) {
       <span className="text-[10px] font-black tabular-nums text-slate-400">#{team.rating?.ovrRank}</span>
       <TeamLogo team={team} className="h-5 w-5" />
       <span className="truncate text-[10px] font-bold text-slate-900">{team.name}</span>
-      <span className="text-[11px] font-black tabular-nums text-slate-800">{team.rating?.ovr.toFixed(1)}</span>
+      <span className={`rounded px-1.5 py-0.5 text-[11px] font-black tabular-nums ${getNflRatingHeatClass(team.rating?.ovr)}`}>{team.rating?.ovr.toFixed(1)}</span>
     </li>
   );
 }
@@ -490,16 +491,24 @@ function DesktopPowerWatch({ top, bottom }: { top: readonly WeeklyDashboardTeam[
   );
 }
 
-function MobilePowerWatchTable({ label, teams }: { label: string; teams: readonly WeeklyDashboardTeam[] }) {
+function MobilePowerWatchTable({
+  label,
+  teams,
+  tone,
+}: {
+  label: string;
+  teams: readonly WeeklyDashboardTeam[];
+  tone: "positive" | "negative";
+}) {
   return (
-    <div className="min-w-0">
-      <p className="px-1 pb-1 text-[8px] font-black uppercase tracking-[0.08em] text-slate-400">{label}</p>
+    <div className="min-w-0 rounded-md border border-slate-200 bg-white p-1.5">
+      <p className={`px-0.5 pb-1 text-[10px] font-bold uppercase tracking-[0.06em] sm:text-[11px] ${tone === "positive" ? "text-emerald-700" : "text-rose-700"}`}>{label}</p>
       <ol className="space-y-0.5">
         {teams.map((team) => (
           <li key={team.abbr} className="flex items-center gap-1.5 rounded bg-slate-50 px-1.5 py-1">
             <span className="w-6 shrink-0 text-[9px] font-black tabular-nums text-slate-400">#{team.rating?.ovrRank}</span>
             <TeamLogo team={team} className="h-4 w-4" />
-            <span className="ml-auto text-[10px] font-black tabular-nums text-slate-800">{team.rating?.ovr.toFixed(1)}</span>
+            <span className={`ml-auto rounded px-1 text-[10px] font-black tabular-nums ${getNflRatingHeatClass(team.rating?.ovr)}`}>{team.rating?.ovr.toFixed(1)}</span>
           </li>
         ))}
       </ol>
@@ -509,9 +518,9 @@ function MobilePowerWatchTable({ label, teams }: { label: string; teams: readonl
 
 function MobilePowerWatch({ top, bottom }: { top: readonly WeeklyDashboardTeam[]; bottom: readonly WeeklyDashboardTeam[] }) {
   return (
-    <div className="grid grid-cols-2 gap-2 px-2.5 py-2 md:hidden" data-testid="power-watch-mobile">
-      <MobilePowerWatchTable label="Top 5" teams={top} />
-      <MobilePowerWatchTable label="Bottom 5" teams={bottom} />
+    <div className="grid grid-cols-2 gap-2.5 px-2.5 py-2 md:hidden" data-testid="power-watch-mobile">
+      <MobilePowerWatchTable label="Top 5" teams={top} tone="positive" />
+      <MobilePowerWatchTable label="Bottom 5" teams={bottom} tone="negative" />
     </div>
   );
 }
