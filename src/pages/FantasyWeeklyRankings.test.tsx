@@ -521,27 +521,27 @@ describe("Week 1 Fantasy Rankings — positions and matchup context", () => {
 describe("Week 1 Fantasy Rankings — compact layout", () => {
   beforeEach(() => stubCompactViewport(true));
 
-  it("drops the wide table for stacked rows", () => {
+  it("stays a dense table instead of dropping to stacked cards", () => {
     renderPage();
-    expect(screen.queryByRole("table")).toBeNull();
-    expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.queryByRole("listitem")).toBeNull();
   });
 
   it("keeps rank, player, team, opponent, projected PPG, matchup and FPA rank", () => {
     renderPage();
-    const first = screen.getAllByRole("listitem")[0];
+    const first = cells(dataRows()[0]);
     const houston = getPointsAllowedTeam("hou")!.byPosition.QB;
 
-    expect(within(first).getByText("1")).toBeTruthy();
-    expect(within(first).getByText("Josh Allen")).toBeTruthy();
-    expect(within(first).getByText("buf")).toBeTruthy();
-    expect(within(first).getByText("@ HOU")).toBeTruthy();
-    expect(within(first).getByText("23.3")).toBeTruthy();
-    expect(within(first).getByText(`FPA #${houston.rank}`)).toBeTruthy();
-    expect(first.textContent).toMatch(/Great|Good|Neutral|Tough|Very Tough/);
+    expect(first[0].textContent).toBe("1");
+    expect(first[1].textContent).toContain("Josh Allen");
+    expect(first[1].textContent).toContain("BUF");
+    expect(first[2].textContent).toBe("23.3");
+    expect(first[3].textContent).toBe("@ HOU");
+    expect(first[5].textContent).toBe(String(houston.rank));
+    expect(first[4].textContent).toMatch(/Great|Good|Neutral|Tough|Very Tough/);
   });
 
-  // The toggle only drives the stat columns, which the compact list does not
+  // The toggle only drives the stat columns, which the compact table does not
   // render — showing it there would be a control with no visible effect.
   it("hides the stat display toggle", () => {
     renderPage();
@@ -552,10 +552,10 @@ describe("Week 1 Fantasy Rankings — compact layout", () => {
   it("stays in fantasy-rank order and still switches positions", () => {
     renderPage();
     fireEvent.click(positionTab("TE"));
-    const items = screen.getAllByRole("listitem");
-    expect(within(items[0]).getByText("Brock Bowers")).toBeTruthy();
-    expect(within(items[0]).getByText("vs MIA")).toBeTruthy();
-    expect(within(items[0]).getByText("1")).toBeTruthy();
+    const first = cells(dataRows()[0]);
+    expect(first[1].textContent).toContain("Brock Bowers");
+    expect(first[3].textContent).toBe("vs MIA");
+    expect(first[0].textContent).toBe("1");
   });
 
   it("keeps the shared site container", () => {

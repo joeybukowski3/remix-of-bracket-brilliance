@@ -369,12 +369,12 @@ describe("2025 matchup shading on playoff weeks", () => {
 describe.each(PAR_POSITIONS)("%s compact layout", (position) => {
   beforeEach(() => stubCompactViewport(true));
 
-  it("renders two-line cards instead of a scrolling table", () => {
+  it("stays a dense spreadsheet-style table rather than dropping to cards", () => {
     render(<PositionParBoard position={position} query="" />);
-    expect(screen.queryByRole("table")).toBeNull();
-    expect(screen.getAllByRole("listitem").length).toBeGreaterThan(
-      PAR_POSITION_LIMITS[position] - 1,
-    );
+    const table = screen.getByRole("table");
+    expect(table).toBeTruthy();
+    // Header row + at least one row per tiered player.
+    expect(screen.getAllByRole("row").length).toBeGreaterThan(PAR_POSITION_LIMITS[position]);
   });
 
   it("offers no column-group toggle", () => {
@@ -385,16 +385,15 @@ describe.each(PAR_POSITIONS)("%s compact layout", (position) => {
   });
 });
 
-describe("compact card detail", () => {
+describe("compact table row detail", () => {
   beforeEach(() => stubCompactViewport(true));
 
-  it("keeps tier, rank, player, PAR/G and projected PPG on the collapsed card", () => {
+  it("keeps tier, rank, player and PAR/G on the collapsed row", () => {
     render(<PositionParBoard position="RB" query="jahmyr gibbs" />);
-    const card = screen.getAllByRole("listitem")[0];
-    expect(within(card).getByText("T1")).toBeTruthy();
-    expect(within(card).getByText("RB1")).toBeTruthy();
-    expect(within(card).getByText("Jahmyr Gibbs")).toBeTruthy();
-    expect(within(card).getByText(/proj PPG/)).toBeTruthy();
+    const row = screen.getAllByRole("row").at(-1)!;
+    expect(within(row).getByText("T1")).toBeTruthy();
+    expect(within(row).getByText("RB1")).toBeTruthy();
+    expect(within(row).getByText("Jahmyr Gibbs")).toBeTruthy();
   });
 
   it("moves evidence, context and playoff fields behind tap-to-expand", () => {
