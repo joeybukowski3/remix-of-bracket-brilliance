@@ -5,6 +5,7 @@ import type { NflDataMeta } from "@/lib/nfl/standings";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 import { formatTotal } from "@/lib/nfl/marketData";
 import { modelMarketGapBadgeColor } from "@/lib/nfl/gapColor";
+import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   WEEKLY_RANKING_POSITIONS,
 } from "@/lib/fantasy/weeklyRankings";
@@ -55,6 +56,19 @@ function TeamLogo({ team, className }: { team: WeeklyDashboardTeam; className: s
     );
   }
   return <img src={team.logoUrl} alt="" aria-hidden className={`${className} shrink-0 object-contain`} loading="lazy" onError={() => setFailed(true)} />;
+}
+
+function GapBadgeContent({ game }: { game: WeeklyDashboardGame }) {
+  const gapText = game.modelLeanTeam ? game.formattedComparison.split(" ")[1] : null;
+  if (game.modelLeanTeam && gapText) {
+    return (
+      <>
+        <TeamLogo team={game.modelLeanTeam} className="h-3.5 w-3.5" />
+        <span>{gapText}</span>
+      </>
+    );
+  }
+  return <>{game.formattedComparison}</>;
 }
 
 function ModuleHeader({ title, detail, action }: { title: string; detail?: string; action?: React.ReactNode }) {
@@ -232,29 +246,29 @@ function DesktopGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) 
         </colgroup>
         <thead className="bg-slate-50 text-[9px] font-bold uppercase tracking-wider text-slate-500">
           <tr>
-            <th className="px-3 py-2">Kickoff</th><th className="px-2 py-2 text-right">Away</th><th className="py-2 text-center">At</th>
-            <th className="px-2 py-2">Home</th><th className="px-2 py-2 text-center">Market</th><th className="px-2 py-2 text-center">JKB</th>
-            <th className="px-2 py-2 text-center">Model vs Market</th><th className="px-2 py-2 text-center">Total</th><th><span className="sr-only">Open</span></th>
+            <th className="px-3 py-2">Kickoff</th><th className="border-l border-slate-200 px-2 py-2 text-right">Away</th><th className="border-l border-slate-200 py-2 text-center">At</th>
+            <th className="px-2 py-2">Home</th><th className="border-l border-slate-200 px-2 py-2 text-center">Market</th><th className="border-l border-slate-200 px-2 py-2 text-center">JKB</th>
+            <th className="border-l border-slate-200 px-2 py-2 text-center">Model vs Market</th><th className="border-l border-slate-200 px-2 py-2 text-center">Total</th><th><span className="sr-only">Open</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {games.map((game) => (
             <tr key={game.gameId} className="group bg-white transition-colors hover:bg-sky-50/50">
               <td className="px-3 py-2.5 text-[10px] font-bold tabular-nums text-slate-600">{kickoffLabel(game.kickoffUtc)}</td>
-              <td className="px-2 py-2"><TeamIdentity team={game.away} align="right" /></td>
-              <td className="text-center text-[9px] font-bold uppercase text-slate-400">{game.neutralSite ? "vs" : "at"}</td>
+              <td className="border-l border-slate-200 px-2 py-2"><TeamIdentity team={game.away} align="right" /></td>
+              <td className="border-l border-slate-200 text-center text-[9px] font-bold uppercase text-slate-400">{game.neutralSite ? "vs" : "at"}</td>
               <td className="px-2 py-2"><TeamIdentity team={game.home} /></td>
-              <td className="px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800">{game.market?.formattedSpread ?? "N/A"}</td>
-              <td className="px-2 py-2 text-center text-[11px] font-bold tabular-nums text-emerald-800">{game.projection?.formattedSpread ?? "N/A"}</td>
-              <td className="px-2 py-2 text-center">
+              <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800">{game.market?.formattedSpread ?? "N/A"}</td>
+              <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-emerald-800">{game.projection?.formattedSpread ?? "N/A"}</td>
+              <td className="border-l border-slate-200 px-2 py-2 text-center">
                 <span
-                  className="inline-flex rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
+                  className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
                   style={modelMarketGapBadgeColor(game.absoluteModelMarketGap)}
                 >
-                  {game.formattedComparison}
+                  <GapBadgeContent game={game} />
                 </span>
               </td>
-              <td className="px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-700">{formatTotal(game.market?.total)}</td>
+              <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-700">{formatTotal(game.market?.total)}</td>
               <td className="pr-2 text-right">
                 <Link to={game.matchupHref} aria-label={`${game.away.name} ${game.neutralSite ? "versus" : "at"} ${game.home.name} matchup details`} className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-500 hover:bg-slate-900 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
                   <ChevronRight className="h-4 w-4" aria-hidden />
@@ -336,10 +350,10 @@ function ModelGapList({ games }: { games: readonly WeeklyDashboardGame[] }) {
                   <span className="block truncate text-[9px] text-slate-500">Market {game.market?.formattedSpread} · JKB {game.projection?.formattedSpread}</span>
                 </span>
                 <span
-                  className="rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
+                  className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
                   style={modelMarketGapBadgeColor(game.absoluteModelMarketGap)}
                 >
-                  {game.formattedComparison}
+                  <GapBadgeContent game={game} />
                 </span>
               </Link>
             </li>
@@ -350,6 +364,21 @@ function ModelGapList({ games }: { games: readonly WeeklyDashboardGame[] }) {
   );
 }
 
+function FantasyPlayerLogo({ teamAbbr }: { teamAbbr: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!teamAbbr || failed) return null;
+  return (
+    <img
+      src={nflLogoUrl(teamAbbr.toLowerCase())}
+      alt=""
+      aria-hidden
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-4 w-4 shrink-0 object-contain"
+    />
+  );
+}
+
 function FantasyRows({ rows }: { rows: readonly WeeklyDashboardFantasyLeader[] }) {
   return (
     <ol className="divide-y divide-slate-100">
@@ -357,7 +386,10 @@ function FantasyRows({ rows }: { rows: readonly WeeklyDashboardFantasyLeader[] }
         <li key={row.key} className="grid min-h-9 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1.5 px-2.5 py-1.5">
           <span className="text-[9px] font-black tabular-nums text-slate-400">{row.rank}</span>
           <span className="min-w-0">
-            <span className="block truncate text-[10px] font-bold text-slate-900">{row.player}</span>
+            <span className="flex min-w-0 items-center gap-1">
+              <FantasyPlayerLogo teamAbbr={row.teamAbbr} />
+              <span className="truncate text-[10px] font-bold text-slate-900">{row.player}</span>
+            </span>
             <span className="block text-[8px] font-semibold uppercase text-slate-500">{row.teamAbbr?.toUpperCase() ?? "FA"} · {row.opponentLabel}</span>
           </span>
           <span className="text-right text-[9px] font-semibold text-violet-800">
