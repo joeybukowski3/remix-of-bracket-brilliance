@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { NflDataMeta } from "@/lib/nfl/standings";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 import { formatTotal } from "@/lib/nfl/marketData";
+import { modelMarketGapBadgeColor } from "@/lib/nfl/gapColor";
 import {
   WEEKLY_RANKING_POSITIONS,
 } from "@/lib/fantasy/weeklyRankings";
@@ -116,37 +117,86 @@ function CommandHeader({
   );
 }
 
+function SignalLabel({ children }: { children: React.ReactNode }) {
+  return <p className="truncate text-[8px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:text-[9px]">{children}</p>;
+}
+
+function SignalDetail({ children }: { children: React.ReactNode }) {
+  return <p className="mt-0.5 hidden truncate text-[10px] text-slate-500 sm:block">{children}</p>;
+}
+
+function GapSignalTile({ gap }: { gap: WeeklyDashboardGame | null }) {
+  return (
+    <div className="min-w-0 px-2.5 py-2.5 sm:px-4">
+      <SignalLabel>Largest Model vs Market Gap</SignalLabel>
+      {gap ? (
+        <>
+          <div className="mt-1 flex items-center gap-1.5">
+            {gap.modelLeanTeam && (
+              <div className="flex shrink-0 flex-col items-center">
+                <TeamLogo team={gap.modelLeanTeam} className="h-6 w-6" />
+                <span className="mt-0.5 text-[7px] font-black uppercase text-slate-600">{gap.modelLeanTeam.abbr}</span>
+              </div>
+            )}
+            <p className="truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">{gap.formattedComparison}</p>
+          </div>
+          <SignalDetail>{`${gap.away.abbr.toUpperCase()} @ ${gap.home.abbr.toUpperCase()}`}</SignalDetail>
+        </>
+      ) : (
+        <>
+          <p className="mt-0.5 truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">N/A</p>
+          <SignalDetail>Awaiting comparable lines</SignalDetail>
+        </>
+      )}
+    </div>
+  );
+}
+
+function TotalSignalTile({ game }: { game: WeeklyDashboardGame | null }) {
+  return (
+    <div className="min-w-0 px-2.5 py-2.5 sm:px-4">
+      <SignalLabel>Highest Market Total</SignalLabel>
+      {game ? (
+        <>
+          <div className="mt-1 flex items-center gap-1.5">
+            <div className="flex shrink-0 items-end gap-1">
+              {[game.away, game.home].map((team) => (
+                <div key={team.abbr} className="flex flex-col items-center">
+                  <TeamLogo team={team} className="h-6 w-6" />
+                  <span className="mt-0.5 text-[7px] font-black uppercase text-slate-600">{team.abbr}</span>
+                </div>
+              ))}
+            </div>
+            <p className="truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">{formatTotal(game.market?.total)}</p>
+          </div>
+          <SignalDetail>Market reference total</SignalDetail>
+        </>
+      ) : (
+        <>
+          <p className="mt-0.5 truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">Unavailable</p>
+          <SignalDetail>No market total available</SignalDetail>
+        </>
+      )}
+    </div>
+  );
+}
+
 function SignalStrip({ dashboard }: { dashboard: WeeklyDashboard }) {
   const gap = dashboard.highlights.largestGap;
   const highestTotal = dashboard.highlights.highestMarketTotal;
   const fantasy = dashboard.highlights.topFantasyProjection;
-  const signals = [
-    {
-      label: "Largest Model vs Market Gap",
-      value: gap?.formattedComparison ?? "N/A",
-      detail: gap ? `${gap.away.abbr.toUpperCase()} @ ${gap.home.abbr.toUpperCase()}` : "Awaiting comparable lines",
-    },
-    {
-      label: "Highest Market Total",
-      value: highestTotal ? `${highestTotal.away.abbr.toUpperCase()}/${highestTotal.home.abbr.toUpperCase()} ${formatTotal(highestTotal.market?.total)}` : "Unavailable",
-      detail: highestTotal ? "Market reference total" : "No market total available",
-    },
-    {
-      label: "Top Fantasy Pick",
-      value: fantasy ? `${fantasy.player} · ${fantasy.position}${fantasy.rank}` : "Unavailable",
-      detail: fantasy ? `${fantasy.projectedPpg.toFixed(1)} 2026 projected PPG` : "Rankings unavailable",
-    },
-  ];
 
   return (
     <section aria-label="Weekly headline signals" className="grid grid-cols-3 divide-x divide-slate-200 rounded-lg border border-slate-200 bg-white">
-      {signals.map((signal) => (
-        <div key={signal.label} className="min-w-0 px-2.5 py-2.5 sm:px-4">
-          <p className="truncate text-[8px] font-bold uppercase tracking-[0.08em] text-slate-500 sm:text-[9px]">{signal.label}</p>
-          <p className="mt-0.5 truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">{signal.value}</p>
-          <p className="mt-0.5 hidden truncate text-[10px] text-slate-500 sm:block">{signal.detail}</p>
-        </div>
-      ))}
+      <GapSignalTile gap={gap} />
+      <TotalSignalTile game={highestTotal} />
+      <div className="min-w-0 px-2.5 py-2.5 sm:px-4">
+        <SignalLabel>Top Fantasy Pick</SignalLabel>
+        <p className="mt-0.5 truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">
+          {fantasy ? `${fantasy.player} · ${fantasy.position}${fantasy.rank}` : "Unavailable"}
+        </p>
+        <SignalDetail>{fantasy ? `${fantasy.projectedPpg.toFixed(1)} 2026 projected PPG` : "Rankings unavailable"}</SignalDetail>
+      </div>
     </section>
   );
 }
@@ -197,7 +247,10 @@ function DesktopGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) 
               <td className="px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800">{game.market?.formattedSpread ?? "N/A"}</td>
               <td className="px-2 py-2 text-center text-[11px] font-bold tabular-nums text-emerald-800">{game.projection?.formattedSpread ?? "N/A"}</td>
               <td className="px-2 py-2 text-center">
-                <span className={`inline-flex rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums ${game.absoluteModelMarketGap === null ? "bg-slate-100 text-slate-500" : game.absoluteModelMarketGap === 0 ? "bg-slate-100 text-slate-700" : "bg-sky-100 text-sky-900"}`}>
+                <span
+                  className="inline-flex rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
+                  style={modelMarketGapBadgeColor(game.absoluteModelMarketGap)}
+                >
                   {game.formattedComparison}
                 </span>
               </td>
@@ -218,8 +271,11 @@ function DesktopGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) 
 function MobileGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
   return (
     <div className="md:hidden" data-testid="mobile-game-board">
-      <div className="grid grid-cols-[minmax(0,1fr)_58px_58px_66px] border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-[8px] font-bold uppercase tracking-wider text-slate-500">
-        <span>Matchup</span><span className="text-center">Market</span><span className="text-center">JKB</span><span className="text-center">Gap</span>
+      <div
+        data-testid="mobile-game-board-sticky-header"
+        className="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_58px_58px_66px] border-b border-slate-200 bg-slate-50/95 px-2 py-1 text-[8px] font-bold uppercase tracking-wider text-slate-500 backdrop-blur"
+      >
+        <span>Game</span><span className="text-center">Market</span><span className="text-center">JKB</span><span className="text-center">Gap</span>
       </div>
       <div className="divide-y divide-slate-200">
         {games.map((game) => (
@@ -279,7 +335,12 @@ function ModelGapList({ games }: { games: readonly WeeklyDashboardGame[] }) {
                   <span className="block truncate text-[11px] font-bold uppercase text-slate-900">{game.away.abbr} {game.neutralSite ? "vs" : "@"} {game.home.abbr}</span>
                   <span className="block truncate text-[9px] text-slate-500">Market {game.market?.formattedSpread} · JKB {game.projection?.formattedSpread}</span>
                 </span>
-                <span className="rounded bg-sky-100 px-1.5 py-1 text-[10px] font-extrabold tabular-nums text-sky-900">{game.formattedComparison}</span>
+                <span
+                  className="rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
+                  style={modelMarketGapBadgeColor(game.absoluteModelMarketGap)}
+                >
+                  {game.formattedComparison}
+                </span>
               </Link>
             </li>
           ))}

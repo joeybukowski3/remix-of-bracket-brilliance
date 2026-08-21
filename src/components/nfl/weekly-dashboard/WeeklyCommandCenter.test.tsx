@@ -112,10 +112,16 @@ describe("WeeklyCommandCenter", () => {
     expect(screen.getByTestId("desktop-fantasy-leaders")).not.toHaveAttribute("aria-hidden");
   });
 
-  it("shows the canonical highest market total in the middle headline tile", () => {
+  it("shows the canonical highest market total in the middle headline tile with both team logos", () => {
     renderDashboard();
+    const highestTotal = dashboard.highlights.highestMarketTotal;
+    expect(highestTotal).not.toBeNull();
     expect(screen.getByText("Highest Market Total")).toBeTruthy();
-    expect(screen.getByText(/^[A-Z]{2,3}\/[A-Z]{2,3} \d/)).toBeTruthy();
+    const signals = screen.getByRole("region", { name: "Weekly headline signals" });
+    const totalTile = within(signals).getByText("Highest Market Total").closest("div") as HTMLElement;
+    expect(totalTile.querySelectorAll("img")).toHaveLength(2);
+    expect(within(totalTile).getByText(highestTotal!.away.abbr)).toBeTruthy();
+    expect(within(totalTile).getByText(highestTotal!.home.abbr)).toBeTruthy();
     expect(screen.queryByText("Highest-Rated Team Playing")).toBeNull();
     expect(screen.queryByText("Largest Total Gap")).toBeNull();
   });
@@ -129,6 +135,30 @@ describe("WeeklyCommandCenter", () => {
     const signals = screen.getByRole("region", { name: "Weekly headline signals" });
     expect(within(signals).getByText("Unavailable")).toBeTruthy();
     expect(within(signals).getByText("No market total available")).toBeTruthy();
+  });
+
+  it("shows the model-lean team logo and abbreviation on the largest gap headline tile", () => {
+    renderDashboard();
+    const gap = dashboard.highlights.largestGap;
+    expect(gap).not.toBeNull();
+    const signals = screen.getByRole("region", { name: "Weekly headline signals" });
+    const gapTile = within(signals).getByText("Largest Model vs Market Gap").closest("div") as HTMLElement;
+    if (gap!.modelLeanTeam) {
+      expect(gapTile.querySelectorAll("img")).toHaveLength(1);
+      expect(within(gapTile).getByText(gap!.modelLeanTeam.abbr)).toBeTruthy();
+    }
+    expect(within(gapTile).getByText(gap!.formattedComparison)).toBeTruthy();
+  });
+
+  it("renders a sticky, compact mobile header row with the column labels", () => {
+    renderDashboard();
+    const header = screen.getByTestId("mobile-game-board-sticky-header");
+    expect(header.className).toContain("sticky");
+    expect(header.className).toContain("top-0");
+    expect(within(header).getByText("Game")).toBeTruthy();
+    expect(within(header).getByText("Market")).toBeTruthy();
+    expect(within(header).getByText("JKB")).toBeTruthy();
+    expect(within(header).getByText("Gap")).toBeTruthy();
   });
 
   it("provides Power Ratings and deeper NFL navigation funnels", () => {
