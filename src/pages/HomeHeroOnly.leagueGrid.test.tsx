@@ -55,7 +55,7 @@ describe("HomeHeroOnly league grid", () => {
 
   it("still links the NFL tile to its route", () => {
     renderHome();
-    const link = screen.getAllByRole("link").find((node) => node.getAttribute("href") === "/nfl/guide");
+    const link = screen.getAllByRole("link").find((node) => node.getAttribute("href") === "/nfl");
     expect(link).toBeTruthy();
   });
 

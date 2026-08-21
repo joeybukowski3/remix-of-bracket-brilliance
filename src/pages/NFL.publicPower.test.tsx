@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import NFL from "@/pages/NFL";
+import NFL from "@/pages/NFLPowerRatings";
 
 const ROOT = resolve(__dirname, "../..");
 const NFL_DATA = join(ROOT, "public", "data", "nfl");

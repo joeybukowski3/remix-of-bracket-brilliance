@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import NFL from "@/pages/NFL";
+import NFL from "@/pages/NFLPowerRatings";
 
 vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
 vi.mock("@/hooks/useNflV03PublicPowerRatings", () => ({
