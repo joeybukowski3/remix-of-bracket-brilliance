@@ -1,10 +1,10 @@
 {
   "date": "2026-08-21",
-  "generatedAt": "2026-08-21T13:24:11.090Z",
+  "generatedAt": "2026-08-21T16:03:41.375Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Camden Yards and Rate Field are the clearest power spots today with 1.1 and 1.07 park factors, while T-Mobile Park (0.93) and loanDepot park (0.88) suppress fly-ball carry. Peralta and Manaea both carry elevated HR/9 rates (46.8 and 63.6) against right-handed power bats, and Chandler’s 43.2 HR/9 vs lefties sets up Ohtani in a favorable matchup.",
-    "modelNote": "The model is overweighting barrel rate, recent HR volume, and opposing pitcher HR vulnerability, which is why Alonso, Ohtani, and Murakami occupy the top three spots despite varying park factors."
+    "slateOverview": "Camden Yards and Rate Field lead the slate with 1.07-1.1 park factors, while T-Mobile Park and loanDepot park suppress power at 0.88-0.93. Peralta and Manaea both carry elevated HR/9 rates (46.8-63.6) against right-handed power bats, creating favorable conditions for Alonso, Murakami, and Vargas. Chandler's 43.2 HR/9 vs Ohtani adds another high-leverage matchup in a neutral park.",
+    "modelNote": "The model is prioritizing barrel rate and recent HR volume over park factors, elevating Alonso to the top spot despite a 1.1 park factor while pushing Alvarez down the list despite strong exit velocity due to his 0 HR in the last seven days."
   },
   "bestBets": [
     {
@@ -18,11 +18,11 @@
         "HH=56.3%"
       ],
       "bullets": [
-        "park=1.1",
-        "hrScore=71.7"
+        "hrScore=71.7",
+        "park=1.1"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,11 +37,11 @@
         "HH=52.5%"
       ],
       "bullets": [
-        "park=1.1",
-        "hrScore=70.6"
+        "hrScore=70.6",
+        "park=1.1"
       ],
-      "hrOddsYes": "+213",
-      "marketImpliedProbability": 0.3194888178913738,
+      "hrOddsYes": "+235",
+      "marketImpliedProbability": 0.29850746268656714,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,15 +52,15 @@
       "opposingPitcher": "Sean Manaea",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=20.6%",
-        "HH=58.8%"
+        "Pitcher HR VS=63.6",
+        "Hard Hit%=58.8"
       ],
       "bullets": [
-        "park=1.07",
-        "hrScore=69.5"
+        "HR score 69.5 (#3)",
+        "Pitcher HR VS 63.6 at park 1.07"
       ],
-      "hrOddsYes": "+339",
-      "marketImpliedProbability": 0.22779043280182232,
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -78,8 +78,8 @@
         "HR score 68.2 (#4)",
         "Pitcher HR VS 63.6 at park 1.07"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -105,6 +105,25 @@
   ],
   "valueBets": [
     {
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=20.6%",
+        "HH=58.8%"
+      ],
+      "bullets": [
+        "hrScore=69.5",
+        "park=1.07"
+      ],
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Miguel Vargas",
       "team": "CWS",
       "opponent": "NYM",
@@ -115,14 +134,35 @@
         "HH=46.5%"
       ],
       "bullets": [
-        "park=1.07",
-        "hrScore=68.2"
+        "hrScore=68.2",
+        "park=1.07"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
+    {
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Pitcher HR VS=63.7",
+        "Hard Hit%=51.4"
+      ],
+      "bullets": [
+        "HR score 64.9 (#6)",
+        "Pitcher HR VS 63.7 at park 0.88"
+      ],
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
     {
       "player": "Pete Crow-Armstrong",
       "team": "CHC",
@@ -134,8 +174,8 @@
         "HH=49%"
       ],
       "bullets": [
-        "park=0.93",
-        "hrScore=65"
+        "hrScore=65",
+        "park=0.93"
       ],
       "hrOddsYes": "+330",
       "marketImpliedProbability": 0.23255813953488372,
@@ -153,89 +193,11 @@
         "HH=51.4%"
       ],
       "bullets": [
-        "park=0.88",
-        "hrScore=64.9"
+        "hrScore=64.9",
+        "park=0.88"
       ],
-      "hrOddsYes": "+440",
-      "marketImpliedProbability": 0.18518518518518517,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Eduardo Valencia",
-      "team": "DET",
-      "opponent": "KC",
-      "opposingPitcher": "Noah Cameron",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Hard Hit%=52.4",
-        "Pitcher HR VS=52.3"
-      ],
-      "bullets": [
-        "HR score 63.0 (#7)",
-        "Pitcher HR VS 52.3 at park 0.96"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "CIN",
-      "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=65.5",
-        "Hard Hit%=42.5"
-      ],
-      "bullets": [
-        "HR score 61.8 (#8)",
-        "Pitcher HR VS 65.5 at park 1.01"
-      ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Eduardo Valencia",
-      "team": "DET",
-      "opponent": "KC",
-      "opposingPitcher": "Noah Cameron",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=23.8%",
-        "HH=52.4%"
-      ],
-      "bullets": [
-        "park=0.96",
-        "hrScore=63"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "CIN",
-      "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=7.4%",
-        "HH=42.5%"
-      ],
-      "bullets": [
-        "park=1.01",
-        "hrScore=61.8"
-      ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -253,8 +215,8 @@
         "HR score 57.9 (#12)",
         "Pitcher HR VS 63.7 at park 0.88"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+700",
+      "marketImpliedProbability": 0.125,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -272,8 +234,8 @@
         "HR score 52.1 (#25)",
         "Pitcher HR VS 52.8 at park 1.01"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+583",
+      "marketImpliedProbability": 0.14641288433382138,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
