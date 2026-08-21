@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import TeamLogo from "@/components/TeamLogo";
 import {
   NflTableScroller,
   NFL_TABLE_HEAD_ROW,
   NFL_TABLE_ROW,
 } from "@/components/nfl/ui/NflTable";
+import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { getPercentileGradientColor, getRankGradientColor } from "@/lib/fantasy/parPresentation";
 import { MATCHUP_GRADE_TEAM_COUNT, type MatchupGrade } from "@/lib/fantasy/matchupGrade";
 import { formatPercentile } from "@/lib/fantasy/teamPercentiles";
@@ -133,9 +135,10 @@ function ppgLabel(value: number): string {
  * The Week 1 rankings board.
  *
  * Wide layout is a real table so ranks stay comparable down a column. Below
- * `md` it becomes stacked two-line rows carrying rank, player, team/opponent,
- * projected PPG, matchup grade and FPA rank — the secondary team-context stats
- * drop out rather than forcing a horizontal scroll, and the compact list always
+ * `md` it stays a table — a dense spreadsheet-style one carrying rank, player,
+ * projected PPG, opponent, matchup grade and FPA rank — rather than
+ * dropping to stacked cards. The secondary team-context stat columns drop out
+ * rather than forcing a horizontal scroll, and the compact table always
  * renders in fantasy-rank order.
  *
  * Projected PPG is the only column that sets the fantasy ranking, so it is the
@@ -194,38 +197,71 @@ export default function WeeklyRankingsTable({
       </div>
 
       {isCompact ? (
-        <ul className="divide-y divide-slate-100">
-          {rows.map((row) => (
-            <li key={row.key} className="flex items-center gap-2 px-3 py-2">
-              <span className="w-6 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-500">
-                {row.rank}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold leading-4 text-slate-900">
-                  {row.player}
-                </p>
-                <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
-                  <span className="font-semibold uppercase text-slate-600">
-                    {row.teamAbbr ?? "—"}
-                  </span>{" "}
-                  <span>{row.opponentLabel}</span>
-                  {row.fpa && (
-                    <>
-                      {" · "}
-                      <span className="tabular-nums">FPA #{row.fpa.rank}</span>
-                    </>
-                  )}
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="text-sm font-bold tabular-nums leading-4 text-slate-950">
-                  {ppgLabel(row.projectedPpg)}
-                </span>
-                <MatchupBadge grade={row.grade} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <NflTableScroller label={`Week ${WEEKLY_RANKINGS_WEEK} ${position} rankings`}>
+          <table className="w-full min-w-[340px] border-collapse text-[11px]">
+            <thead>
+              <tr className={cn(NFL_TABLE_HEAD_ROW, "text-[9px]")}>
+                <th scope="col" className="w-7 px-1.5 py-1.5 text-right">
+                  Rk
+                </th>
+                <th scope="col" className="px-1.5 py-1.5 text-left">
+                  Player
+                </th>
+                <th scope="col" className="w-12 px-1.5 py-1.5 text-right">
+                  Proj PPG
+                </th>
+                <th scope="col" className="w-11 px-1.5 py-1.5 text-left">
+                  Opp
+                </th>
+                <th scope="col" className="w-11 px-1.5 py-1.5 text-left">
+                  Match
+                </th>
+                <th scope="col" className="w-9 px-1.5 py-1.5 text-right">
+                  FPA Rk
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const normalizedTeam = row.teamAbbr?.toUpperCase();
+                return (
+                  <tr key={row.key} className={cn(NFL_TABLE_ROW, "h-8")}>
+                    <td className="px-1.5 py-1 text-right font-semibold tabular-nums text-slate-500">
+                      {row.rank}
+                    </td>
+                    <td className="max-w-0 px-1.5 py-1">
+                      <div className="flex min-w-0 items-center gap-1">
+                        <TeamLogo
+                          name={normalizedTeam ?? "FA"}
+                          logo={normalizedTeam ? nflLogoUrl(normalizedTeam) : undefined}
+                          className="h-4 w-4 shrink-0"
+                        />
+                        <span className="min-w-0 truncate text-[12px] font-semibold leading-4 text-slate-900">
+                          {row.player}
+                        </span>
+                        <span className="shrink-0 text-[10px] font-semibold uppercase leading-4 text-slate-500">
+                          {normalizedTeam ?? "—"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-1.5 py-1 text-right text-[12px] font-bold tabular-nums text-slate-950">
+                      {ppgLabel(row.projectedPpg)}
+                    </td>
+                    <td className="max-w-0 truncate px-1.5 py-1 text-slate-600">
+                      {row.opponentLabel}
+                    </td>
+                    <td className="px-1.5 py-1">
+                      <MatchupBadge grade={row.grade} />
+                    </td>
+                    <td className="px-1.5 py-1 text-right">
+                      <FpaRankCell rank={row.fpa?.rank} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </NflTableScroller>
       ) : (
         <NflTableScroller label={`Week ${WEEKLY_RANKINGS_WEEK} ${position} rankings`}>
           <table className="w-full min-w-[720px] border-collapse text-xs">
