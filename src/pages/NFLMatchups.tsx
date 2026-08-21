@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import LastUpdated from "@/components/nfl/LastUpdated";
@@ -6,7 +7,8 @@ import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
-import { buildWeekMatchups, getAvailableWeeks, type NflMatchup } from "@/lib/nfl/matchups";
+import { buildWeekMatchups, type NflMatchup } from "@/lib/nfl/matchups";
+import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
 import MatchupCard, { type MatchupCardOvr } from "@/components/nfl/matchups/MatchupCard";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
@@ -16,7 +18,6 @@ import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
 
 const CURRENT_SEASON = 2026;
-const DEFAULT_WEEK = 1;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
 
 function etDateKey(iso: string | null): string {
@@ -53,6 +54,8 @@ function groupByDay(matchups: NflMatchup[]): DayGroup[] {
 }
 
 export default function NFLMatchups() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
   // Optional enrichment, loaded independently of the schedule: a missing or
@@ -66,7 +69,6 @@ export default function NFLMatchups() {
   // Universal current 2026 OVR/rank -- the only source for the "Power" line
   // on each card. Never the guide's frozen 2025-preseason powerRank/overallPct.
   const currentRating = useNflCurrentRating2026();
-  const [selectedWeek, setSelectedWeek] = useState(DEFAULT_WEEK);
 
   usePageSeo({
     title: `${CURRENT_SEASON} NFL Weekly Matchups | Joe Knows Ball`,
@@ -75,10 +77,14 @@ export default function NFLMatchups() {
     noindex: seo.noindex ?? false,
   });
 
-  const weeks = useMemo(() => getAvailableWeeks(data?.games ?? []), [data]);
-  const activeWeek = weeks.includes(selectedWeek) ? selectedWeek : (weeks[0] ?? DEFAULT_WEEK);
+  const weekSelection = useMemo(
+    () => resolveNflWeekSelection(data?.games ?? [], { search: location.search }),
+    [data, location.search]
+  );
+  const weeks = weekSelection.availableWeeks;
+  const activeWeek = weekSelection.week;
   const matchups = useMemo(
-    () => (data ? buildWeekMatchups(data.games, GUIDE, activeWeek) : []),
+    () => (data && activeWeek !== null ? buildWeekMatchups(data.games, GUIDE, activeWeek) : []),
     [data, activeWeek]
   );
   const dayGroups = useMemo(() => groupByDay(matchups), [matchups]);
@@ -102,8 +108,12 @@ export default function NFLMatchups() {
             label="Select week"
             size="sm"
             options={weeks}
-            value={activeWeek}
-            onChange={setSelectedWeek}
+            value={activeWeek ?? weeks[0]}
+            onChange={(week) => {
+              const params = new URLSearchParams(location.search);
+              params.set("week", String(week));
+              navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+            }}
             formatOption={(week) => `W${week}`}
           />
         )}

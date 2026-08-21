@@ -56,9 +56,21 @@ describe("buildWeekMatchups (2026 Week 1)", () => {
     const slugs = matchups.map((m) => m.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
     for (const m of matchups) {
-      expect(m.slug).toBe(`${m.away.slug}-at-${m.home.slug}`);
+      expect(m.slug).toBe(buildMatchupSlug(m.away.slug, m.home.slug, m.neutralSite));
       expect(m.slug).toMatch(/^[a-z0-9-]+$/);
     }
+  });
+
+  it("propagates neutral-site identity into the matchup and slug", () => {
+    const neutral = matchups.find((m) => m.gameId === "2026_01_SF_LA");
+    expect(neutral?.neutralSite).toBe(true);
+    expect(neutral?.slug).toBe("san-francisco-49ers-vs-la-rams");
+  });
+
+  it("keeps normal home/away identity unchanged", () => {
+    const opener = matchups.find((m) => m.gameId === "2026_01_NE_SEA");
+    expect(opener?.neutralSite).toBe(false);
+    expect(opener?.slug).toBe("new-england-patriots-at-seattle-seahawks");
   });
 
   it("resolves home and away canonical teams correctly", () => {
@@ -88,7 +100,7 @@ describe("buildWeekMatchups (2026 Week 1)", () => {
     const bad: NflGameRecord = {
       gameId: "2026_01_XXX_YYY", season: 2026, week: 1, seasonType: "REG",
       dateUtc: "2026-09-10T00:20:00.000Z", homeTeam: "X", awayTeam: "Y",
-      homeAbbr: "xxx", awayAbbr: "yyy", status: "scheduled", stadium: null,
+      homeAbbr: "xxx", awayAbbr: "yyy", status: "scheduled", stadium: null, neutralSite: false,
     };
     const withBad = buildWeekMatchups([...GAMES, bad], GUIDE, 1);
     expect(withBad).toHaveLength(16); // bad game dropped, others intact
@@ -100,6 +112,11 @@ describe("getMatchupBySlug", () => {
   it("resolves the correct game for a valid slug", () => {
     const m = getMatchupBySlug(GAMES, GUIDE, "new-england-patriots-at-seattle-seahawks");
     expect(m?.gameId).toBe("2026_01_NE_SEA");
+  });
+
+  it("resolves a neutral-site game only by its canonical `-vs-` identity", () => {
+    expect(getMatchupBySlug(GAMES, GUIDE, "san-francisco-49ers-vs-la-rams")?.gameId).toBe("2026_01_SF_LA");
+    expect(getMatchupBySlug(GAMES, GUIDE, "san-francisco-49ers-at-la-rams")).toBeNull();
   });
 
   it("returns null for an unknown/invalid slug", () => {

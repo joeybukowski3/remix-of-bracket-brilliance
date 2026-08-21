@@ -16,6 +16,7 @@
  */
 
 import type { NflGameRecord } from "@/lib/nfl/standings";
+export { getAvailableRegularSeasonWeeks as getAvailableWeeks } from "@/lib/nfl/weekSelection";
 import type { NflSeasonGuide, NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 
 /** One side of a matchup: the resolved guide/power-rating team for a schedule slot. */
@@ -68,15 +69,6 @@ export function buildMatchupSlug(awaySlug: string, homeSlug: string, neutralSite
   return `${awaySlug}${joiner}${homeSlug}`.toLowerCase();
 }
 
-/** Regular-season week numbers present in the schedule, ascending. */
-export function getAvailableWeeks(games: NflGameRecord[]): number[] {
-  const weeks = new Set<number>();
-  for (const game of games) {
-    if (game.seasonType === "REG") weeks.add(game.week);
-  }
-  return [...weeks].sort((a, b) => a - b);
-}
-
 /** Comparable kickoff time; games without a time sort last but keep a stable order. */
 function kickoffSortKey(game: NflGameRecord): number {
   if (!game.dateUtc) return Number.POSITIVE_INFINITY;
@@ -94,7 +86,7 @@ export function buildMatchupFromGame(game: NflGameRecord, guide: NflSeasonGuide)
   if (!away || !home) return null;
 
   return {
-    slug: buildMatchupSlug(away.slug, home.slug, false),
+    slug: buildMatchupSlug(away.slug, home.slug, game.neutralSite),
     gameId: game.gameId,
     season: game.season,
     week: game.week,
@@ -103,7 +95,7 @@ export function buildMatchupFromGame(game: NflGameRecord, guide: NflSeasonGuide)
     stadium: game.stadium,
     away,
     home,
-    neutralSite: false,
+    neutralSite: game.neutralSite,
     spread: null,
   };
 }

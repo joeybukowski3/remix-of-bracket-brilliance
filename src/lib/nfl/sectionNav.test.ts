@@ -10,6 +10,7 @@ import {
 
 const LIVE_NFL_ROUTES = new Set([
   "/nfl",
+  "/nfl/power-ratings",
   "/16-0",
   "/nfl/standings",
   "/nfl/schedule",
@@ -27,6 +28,7 @@ describe("NFL section navigation", () => {
   it("contains the major NFL destinations in order", () => {
     expect(NFL_SECTION_NAV_ITEMS.map((item) => item.to)).toEqual([
       "/nfl",
+      "/nfl/power-ratings",
       "/16-0",
       "/nfl/standings",
       "/nfl/schedule",
@@ -49,6 +51,8 @@ describe("NFL section navigation", () => {
   });
 
   it("names the current destination for the mobile menu trigger", () => {
+    expect(getActiveNflSectionLabel("/nfl")).toBe("Weekly Command Center");
+    expect(getActiveNflSectionLabel("/nfl/power-ratings")).toBe("Power Ratings");
     expect(getActiveNflSectionLabel("/nfl/standings")).toBe("Standings by Division");
     expect(getActiveNflSectionLabel("/nfl/guide/team/seattle-seahawks")).toBe("2026 Team Guide");
     expect(getActiveNflSectionLabel("/fantasy-football")).toBe("Fantasy Football");
@@ -79,6 +83,7 @@ describe("NFL section navigation", () => {
 
   it("opens the active category for route families", () => {
     expect(getActiveNflSectionCategoryId("/nfl")).toBe("overview");
+    expect(getActiveNflSectionCategoryId("/nfl/power-ratings")).toBe("overview");
     expect(getActiveNflSectionCategoryId("/nfl/standings")).toBe("season");
     expect(getActiveNflSectionCategoryId("/nfl/guide")).toBe("team-intelligence");
     expect(getActiveNflSectionCategoryId("/nfl/guide/regression")).toBe("team-intelligence");

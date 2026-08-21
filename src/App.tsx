@@ -40,6 +40,7 @@ import MlbStrikeoutPropsXExport from "./pages/MlbStrikeoutPropsXExport";
 import MlbPowerRankings from "./pages/MlbPowerRankings";
 import MlbVulnerablePitchers from "./pages/MlbVulnerablePitchers";
 import NFL from "./pages/NFL";
+import NFLPowerRatings from "./pages/NFLPowerRatings";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSchedule from "./pages/NFLSchedule";
 import NFLTeamSchedules from "./pages/NFLTeamSchedules";
@@ -153,6 +154,7 @@ const App = () => (
           />
           <Route path="/nfl" element={<NflPlatformLayout />}>
             <Route index element={<NFL />} />
+            <Route path="power-ratings" element={<NFLPowerRatings />} />
             <Route path="standings" element={<NFLStandings />} />
             <Route path="schedule" element={<NFLSchedule />} />
             <Route path="team-schedules" element={<NFLTeamSchedules />} />

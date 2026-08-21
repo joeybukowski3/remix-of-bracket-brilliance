@@ -106,6 +106,12 @@ describe("NFLMatchups landing", () => {
     expect(screen.getAllByText("Seattle Seahawks").length).toBeGreaterThan(0);
   });
 
+  it("honors an explicit week query from the shared resolver", () => {
+    renderRoute("/nfl/matchups?week=2");
+    expect(screen.getByRole("button", { name: "W2" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getAllByText(/View matchup breakdown/i)).toHaveLength(16);
+  });
+
   it("links each game card to its detail page", () => {
     renderRoute("/nfl/matchups");
     const link = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks/i });
