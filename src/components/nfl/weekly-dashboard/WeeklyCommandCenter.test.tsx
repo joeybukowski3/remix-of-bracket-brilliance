@@ -93,18 +93,42 @@ describe("WeeklyCommandCenter", () => {
 
   it("renders Model vs Market gaps without pick or best-bet language", () => {
     renderDashboard();
-    expect(screen.getByRole("heading", { name: "Largest Gaps" })).toBeTruthy();
-    expect(screen.getByText(/descriptive, not picks/i)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Largest Model-vs-Market Gaps" })).toBeTruthy();
+    expect(screen.getByText(/descriptive comparison · not picks/i)).toBeTruthy();
     expect(screen.queryByText(/best bet/i)).toBeNull();
+    const logoPairs = screen.getAllByTestId("gap-team-logos");
+    expect(logoPairs).toHaveLength(5);
+    expect(logoPairs.every((pair) => pair.querySelectorAll("img").length === 2)).toBe(true);
   });
 
-  it("switches the compact fantasy leader position and links to the full rankings", () => {
+  it("frames fantasy rows as Week 1 position picks and links to the full rankings", () => {
     renderDashboard();
+    expect(screen.getByRole("heading", { name: "Top Fantasy Picks — Week 1" })).toBeTruthy();
+    expect(screen.getByText(/top 5 per position from the canonical weekly rankings/i)).toBeTruthy();
     const selector = screen.getByRole("group", { name: "Fantasy position" });
     fireEvent.click(within(selector).getByRole("button", { name: "WR" }));
     expect(within(selector).getByRole("button", { name: "WR" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("link", { name: "Full rankings" }).getAttribute("href")).toBe("/fantasy-football/weekly-rankings");
+    expect(screen.getByRole("link", { name: "View full rankings" }).getAttribute("href")).toBe("/fantasy-football/weekly-rankings");
     expect(screen.getByTestId("desktop-fantasy-leaders")).not.toHaveAttribute("aria-hidden");
+  });
+
+  it("shows the canonical highest market total in the middle headline tile", () => {
+    renderDashboard();
+    expect(screen.getByText("Highest Market Total")).toBeTruthy();
+    expect(screen.getByText(/^[A-Z]{2,3}\/[A-Z]{2,3} \d/)).toBeTruthy();
+    expect(screen.queryByText("Highest-Rated Team Playing")).toBeNull();
+    expect(screen.queryByText("Largest Total Gap")).toBeNull();
+  });
+
+  it("shows a clear unavailable state when the week has no market total", () => {
+    const unavailableDashboard = {
+      ...dashboard,
+      highlights: { ...dashboard.highlights, highestMarketTotal: null },
+    };
+    renderDashboard({ dashboard: unavailableDashboard });
+    const signals = screen.getByRole("region", { name: "Weekly headline signals" });
+    expect(within(signals).getByText("Unavailable")).toBeTruthy();
+    expect(within(signals).getByText("No market total available")).toBeTruthy();
   });
 
   it("provides Power Ratings and deeper NFL navigation funnels", () => {
@@ -128,6 +152,6 @@ describe("WeeklyCommandCenter", () => {
     renderDashboard({ artifactErrors: ["Market unavailable"] });
     expect(screen.getByRole("status")).toHaveTextContent(/supporting data is unavailable/i);
     expect(screen.getByRole("heading", { name: "Weekly Game Board" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Fantasy Leaders" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Top Fantasy Picks — Week 1" })).toBeTruthy();
   });
 });

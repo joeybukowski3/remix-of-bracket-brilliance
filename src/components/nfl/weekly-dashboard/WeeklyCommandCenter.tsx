@@ -16,12 +16,12 @@ import type {
 } from "@/lib/nfl/weeklyDashboard";
 
 const EXPLORE_LINKS = [
-  { to: "/nfl/matchups", label: "Weekly Matchups", detail: "Full matchup analysis", icon: CalendarDays },
-  { to: "/nfl/power-ratings", label: "Power Ratings", detail: "All 32 current ratings", icon: Gauge },
-  { to: "/nfl/team-schedules", label: "Team Schedules", detail: "Team-by-team slates", icon: ListTree },
-  { to: "/nfl/analytics", label: "Performance Analytics", detail: "Offense and defense", icon: BarChart3 },
-  { to: "/fantasy-football/weekly-rankings", label: "Fantasy Rankings", detail: "Complete weekly boards", icon: Sparkles },
-  { to: "/nfl/guide", label: "2026 Team Guide", detail: "Previews and research", icon: Users },
+  { to: "/nfl/matchups", label: "Weekly Matchups", detail: "Full matchup analysis", icon: CalendarDays, iconClass: "border-sky-200 bg-sky-50 text-sky-800" },
+  { to: "/nfl/power-ratings", label: "Power Ratings", detail: "All 32 current ratings", icon: Gauge, iconClass: "border-blue-200 bg-blue-50 text-blue-800" },
+  { to: "/nfl/team-schedules", label: "Team Schedules", detail: "Team-by-team slates", icon: ListTree, iconClass: "border-emerald-200 bg-emerald-50 text-emerald-800" },
+  { to: "/nfl/analytics", label: "Performance Analytics", detail: "Offense and defense", icon: BarChart3, iconClass: "border-teal-200 bg-teal-50 text-teal-800" },
+  { to: "/fantasy-football/weekly-rankings", label: "Fantasy Rankings", detail: "Complete weekly boards", icon: Sparkles, iconClass: "border-violet-200 bg-violet-50 text-violet-800" },
+  { to: "/nfl/guide", label: "2026 Team Guide", detail: "Previews and research", icon: Users, iconClass: "border-amber-200 bg-amber-50 text-amber-800" },
 ] as const;
 
 function kickoffLabel(iso: string | null): string {
@@ -118,7 +118,7 @@ function CommandHeader({
 
 function SignalStrip({ dashboard }: { dashboard: WeeklyDashboard }) {
   const gap = dashboard.highlights.largestGap;
-  const rated = dashboard.highlights.highestRatedTeamPlaying;
+  const highestTotal = dashboard.highlights.highestMarketTotal;
   const fantasy = dashboard.highlights.topFantasyProjection;
   const signals = [
     {
@@ -127,14 +127,14 @@ function SignalStrip({ dashboard }: { dashboard: WeeklyDashboard }) {
       detail: gap ? `${gap.away.abbr.toUpperCase()} @ ${gap.home.abbr.toUpperCase()}` : "Awaiting comparable lines",
     },
     {
-      label: "Highest-Rated Team Playing",
-      value: rated ? `${rated.abbr.toUpperCase()} #${rated.rating?.ovrRank}` : "N/A",
-      detail: rated?.rating ? `${rated.rating.ovr.toFixed(1)} current OVR` : "Ratings unavailable",
+      label: "Highest Market Total",
+      value: highestTotal ? `${highestTotal.away.abbr.toUpperCase()}/${highestTotal.home.abbr.toUpperCase()} ${formatTotal(highestTotal.market?.total)}` : "Unavailable",
+      detail: highestTotal ? "Market reference total" : "No market total available",
     },
     {
-      label: "Top Fantasy Projection",
-      value: fantasy ? `${fantasy.player} ${fantasy.projectedPpg.toFixed(1)}` : "N/A",
-      detail: fantasy ? `${fantasy.position}${fantasy.rank} · projected PPG` : "Rankings unavailable",
+      label: "Top Fantasy Pick",
+      value: fantasy ? `${fantasy.player} · ${fantasy.position}${fantasy.rank}` : "Unavailable",
+      detail: fantasy ? `${fantasy.projectedPpg.toFixed(1)} 2026 projected PPG` : "Rankings unavailable",
     },
   ];
 
@@ -262,18 +262,22 @@ function GameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
 function ModelGapList({ games }: { games: readonly WeeklyDashboardGame[] }) {
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      <ModuleHeader title="Largest Gaps" detail="Model vs Market · descriptive, not picks" />
+      <ModuleHeader title="Largest Model-vs-Market Gaps" detail="Descriptive comparison · not picks" />
       {games.length === 0 ? (
         <p className="px-4 py-6 text-xs leading-5 text-slate-500">Comparable market and projection data are not available yet.</p>
       ) : (
         <ol className="divide-y divide-slate-100">
           {games.slice(0, 5).map((game, index) => (
             <li key={game.gameId}>
-              <Link to={game.matchupHref} className="grid min-h-11 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500">
+              <Link to={game.matchupHref} className="grid min-h-12 grid-cols-[18px_38px_minmax(0,1fr)_auto] items-center gap-1.5 px-3 py-2 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500">
                 <span className="text-[10px] font-black tabular-nums text-slate-400">{index + 1}</span>
+                <span className="flex items-center" aria-hidden data-testid="gap-team-logos">
+                  <TeamLogo team={game.away} className="relative z-10 h-6 w-6 rounded-full bg-white p-0.5 ring-1 ring-slate-200" />
+                  <TeamLogo team={game.home} className="-ml-2 h-6 w-6 rounded-full bg-white p-0.5 ring-1 ring-slate-200" />
+                </span>
                 <span className="min-w-0">
                   <span className="block truncate text-[11px] font-bold uppercase text-slate-900">{game.away.abbr} {game.neutralSite ? "vs" : "@"} {game.home.abbr}</span>
-                  <span className="block truncate text-[9px] text-slate-500">JKB {game.projection?.formattedSpread} · Market {game.market?.formattedSpread}</span>
+                  <span className="block truncate text-[9px] text-slate-500">Market {game.market?.formattedSpread} · JKB {game.projection?.formattedSpread}</span>
                 </span>
                 <span className="rounded bg-sky-100 px-1.5 py-1 text-[10px] font-extrabold tabular-nums text-sky-900">{game.formattedComparison}</span>
               </Link>
@@ -295,18 +299,21 @@ function FantasyRows({ rows }: { rows: readonly WeeklyDashboardFantasyLeader[] }
             <span className="block truncate text-[10px] font-bold text-slate-900">{row.player}</span>
             <span className="block text-[8px] font-semibold uppercase text-slate-500">{row.teamAbbr?.toUpperCase() ?? "FA"} · {row.opponentLabel}</span>
           </span>
-          <span className="text-[11px] font-black tabular-nums text-violet-800">{row.projectedPpg.toFixed(1)}</span>
+          <span className="text-right text-[9px] font-semibold text-violet-800">
+            <span className="block text-[11px] font-black tabular-nums">{row.projectedPpg.toFixed(1)}</span>
+            <span className="block uppercase tracking-wide">Proj PPG</span>
+          </span>
         </li>
       ))}
     </ol>
   );
 }
 
-function FantasyLeaders({ leaders }: { leaders: WeeklyDashboard["fantasyLeaders"] }) {
+function TopFantasyPicks({ leaders, week }: { leaders: WeeklyDashboard["fantasyLeaders"]; week: number }) {
   const [position, setPosition] = useState<WeeklyDashboardPosition>("QB");
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      <ModuleHeader title="Fantasy Leaders" detail="Top 5 by canonical projected PPG" action={<Link to="/fantasy-football/weekly-rankings" className="text-[10px] font-bold text-violet-700 hover:underline">Full rankings</Link>} />
+      <ModuleHeader title={`Top Fantasy Picks — Week ${week}`} detail="Top 5 per position from the canonical weekly rankings" action={<Link to="/fantasy-football/weekly-rankings" className="text-[10px] font-bold text-violet-700 hover:underline">View full rankings</Link>} />
       <div className="border-b border-slate-200 p-2 md:hidden">
         <div role="group" aria-label="Fantasy position" className="grid grid-cols-4 gap-1">
           {WEEKLY_RANKING_POSITIONS.map((option) => (
@@ -318,7 +325,7 @@ function FantasyLeaders({ leaders }: { leaders: WeeklyDashboard["fantasyLeaders"
       <div className="hidden grid-cols-4 divide-x divide-slate-200 md:grid" data-testid="desktop-fantasy-leaders">
         {WEEKLY_RANKING_POSITIONS.map((option) => (
           <div key={option} className="min-w-0">
-            <div className="border-b border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-600">{option}</div>
+            <div className="border-b border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-600">Top {option} plays</div>
             <FantasyRows rows={leaders[option]} />
           </div>
         ))}
@@ -352,9 +359,11 @@ function ExploreNfl() {
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <ModuleHeader title="Explore NFL" detail="Go deeper across Joe Knows Ball" />
       <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 lg:grid-cols-3">
-        {EXPLORE_LINKS.map(({ to, label, detail, icon: Icon }) => (
+        {EXPLORE_LINKS.map(({ to, label, detail, icon: Icon, iconClass }) => (
           <Link key={to} to={to} className="group flex min-h-14 min-w-0 items-center gap-2.5 px-3 py-2 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500">
-            <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+            <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border ${iconClass}`}>
+              <Icon className="h-4 w-4" aria-hidden />
+            </span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[10px] font-bold text-slate-900">{label}</span><span className="hidden truncate text-[9px] text-slate-500 sm:block">{detail}</span></span>
             <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-sky-700" aria-hidden />
           </Link>
@@ -395,7 +404,7 @@ export default function WeeklyCommandCenter({
           <PowerWatch teams={dashboard.powerWatch} />
         </div>
       </div>
-      <FantasyLeaders leaders={dashboard.fantasyLeaders} />
+      <TopFantasyPicks leaders={dashboard.fantasyLeaders} week={dashboard.week} />
       <ExploreNfl />
     </div>
   );

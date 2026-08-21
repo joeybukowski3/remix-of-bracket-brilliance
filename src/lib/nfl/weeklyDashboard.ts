@@ -96,7 +96,7 @@ export type WeeklyDashboard = {
   powerWatch: WeeklyDashboardTeam[];
   highlights: {
     largestGap: WeeklyDashboardGame | null;
-    highestRatedTeamPlaying: WeeklyDashboardTeam | null;
+    highestMarketTotal: WeeklyDashboardGame | null;
     topFantasyProjection: WeeklyDashboardFantasyLeader | null;
   };
   diagnostics: WeeklyDashboardDiagnostics;
@@ -285,12 +285,9 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
       return identity ? [toTeam(identity, rating)] : [];
     })
     .slice(0, 5);
-  const playingTeams = [...new Map(
-    dashboardGames.flatMap((game) => [game.away, game.home]).map((team) => [team.abbr, team]),
-  ).values()];
-  const highestRatedTeamPlaying = playingTeams
-    .filter((team) => team.rating)
-    .sort((a, b) => a.rating!.ovrRank - b.rating!.ovrRank || a.abbr.localeCompare(b.abbr))[0] ?? null;
+  const highestMarketTotal = dashboardGames
+    .filter((game) => game.market?.total != null && Number.isFinite(game.market.total))
+    .sort((a, b) => b.market!.total! - a.market!.total! || a.gameId.localeCompare(b.gameId))[0] ?? null;
   const topFantasyProjection = WEEKLY_RANKING_POSITIONS
     .flatMap((position) => fantasyLeaders[position])
     .sort((a, b) => b.projectedPpg - a.projectedPpg || a.position.localeCompare(b.position) || a.rank - b.rank)[0] ?? null;
@@ -305,7 +302,7 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
     powerWatch,
     highlights: {
       largestGap: largestModelMarketGaps[0] ?? null,
-      highestRatedTeamPlaying,
+      highestMarketTotal,
       topFantasyProjection,
     },
     diagnostics: {

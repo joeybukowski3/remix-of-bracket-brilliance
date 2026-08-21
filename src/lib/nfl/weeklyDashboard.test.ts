@@ -75,7 +75,7 @@ function rating(abbr: string, rank: number, value = 70 - rank): CurrentRatingRow
   };
 }
 
-function market(gameId: string, awayAbbr: string, homeAbbr: string, homeSpread: number | null, total = 44.5): MarketCurrentGame {
+function market(gameId: string, awayAbbr: string, homeAbbr: string, homeSpread: number | null, total: number | null = 44.5): MarketCurrentGame {
   return {
     gameId,
     season: 2026,
@@ -258,6 +258,37 @@ describe("buildWeeklyDashboard Model vs Market", () => {
     expect(result.games[0]).not.toHaveProperty("projectedTotal");
     expect(result.games[0]).not.toHaveProperty("totalAdvantage");
     expect(result.games[0]).not.toHaveProperty("overUnderLean");
+  });
+
+  it("selects the highest canonical market total with a deterministic gameId tie-break", () => {
+    const tiedGames = [
+      game("z-total", "aaa", "bbb", "2026-09-10T17:00:00Z"),
+      game("a-total", "bbb", "ccc", "2026-09-11T17:00:00Z"),
+      game("lower-total", "ccc", "aaa", "2026-09-12T17:00:00Z"),
+    ];
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: tiedGames,
+      teams: TEAMS,
+      marketArtifact: marketArtifact([
+        market("z-total", "aaa", "bbb", -3, 47.5),
+        market("a-total", "bbb", "ccc", -2, 47.5),
+        market("lower-total", "ccc", "aaa", -1, 44),
+      ]),
+    });
+    expect(result.highlights.highestMarketTotal?.gameId).toBe("a-total");
+  });
+
+  it("exposes an unavailable highest-total state when no market total exists", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game("one", "aaa", "bbb", null)],
+      teams: TEAMS,
+      marketArtifact: marketArtifact([market("one", "aaa", "bbb", -3, null)]),
+    });
+    expect(result.highlights.highestMarketTotal).toBeNull();
   });
 });
 
