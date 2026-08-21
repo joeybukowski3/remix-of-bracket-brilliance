@@ -1,10 +1,10 @@
 {
   "date": "2026-08-21",
-  "generatedAt": "2026-08-21T13:24:11.090Z",
+  "generatedAt": "2026-08-21T15:00:18.937Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Camden Yards and Rate Field are the clearest power spots today with 1.1 and 1.07 park factors, while T-Mobile Park (0.93) and loanDepot park (0.88) suppress fly-ball carry. Peralta and Manaea both carry elevated HR/9 rates (46.8 and 63.6) against right-handed power bats, and Chandler’s 43.2 HR/9 vs lefties sets up Ohtani in a favorable matchup.",
-    "modelNote": "The model is overweighting barrel rate, recent HR volume, and opposing pitcher HR vulnerability, which is why Alonso, Ohtani, and Murakami occupy the top three spots despite varying park factors."
+    "slateOverview": "Camden Yards (1.1) and Dodger Stadium (1.1) are the only two parks above neutral, while Rate Field (1.07) and Chase Field (1.01) offer slight boosts. Peralta and Chandler are both right-handers allowing 43-47 HR/1000 PA, and Manaea’s 63.6 HR/1000 PA against lefties sets up the top two CWS bats. No weather flags noted.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR rate, which is why Alonso, Ohtani, and Murakami occupy the top three spots despite varying recent power trends."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "park=1.1",
         "hrScore=71.7"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "park=1.1",
         "hrScore=70.6"
       ],
-      "hrOddsYes": "+213",
-      "marketImpliedProbability": 0.3194888178913738,
+      "hrOddsYes": "+235",
+      "marketImpliedProbability": 0.29850746268656714,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -78,8 +78,8 @@
         "HR score 68.2 (#4)",
         "Pitcher HR VS 63.6 at park 1.07"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -118,8 +118,8 @@
         "park=1.07",
         "hrScore=68.2"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -156,8 +156,8 @@
         "park=0.88",
         "hrScore=64.9"
       ],
-      "hrOddsYes": "+440",
-      "marketImpliedProbability": 0.18518518518518517,
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -240,25 +240,6 @@
       "hrValueEdge": null
     },
     {
-      "player": "Andrés Chaparro",
-      "team": "WSH",
-      "opponent": "MIA",
-      "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 12,
-      "topStats": [
-        "Pitcher HR VS=63.7",
-        "Hard Hit%=48.3"
-      ],
-      "bullets": [
-        "HR score 57.9 (#12)",
-        "Pitcher HR VS 63.7 at park 0.88"
-      ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Tyler Stephenson",
       "team": "CIN",
       "opponent": "AZ",
@@ -272,8 +253,27 @@
         "HR score 52.1 (#25)",
         "Pitcher HR VS 52.8 at park 1.01"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+583",
+      "marketImpliedProbability": 0.14641288433382138,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Dominic Canzone",
+      "team": "SEA",
+      "opponent": "CHC",
+      "opposingPitcher": "Matthew Boyd",
+      "hrScoreRank": 22,
+      "topStats": [
+        "Pitcher HR VS=61.1",
+        "Hard Hit%=45.3"
+      ],
+      "bullets": [
+        "HR score 54.8 (#22)",
+        "Pitcher HR VS 61.1 at park 0.93"
+      ],
+      "hrOddsYes": "+560",
+      "marketImpliedProbability": 0.15151515151515152,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
