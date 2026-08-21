@@ -1,276 +1,238 @@
 {
-  "date": "2026-08-20",
-  "generatedAt": "2026-08-20T16:03:31.426Z",
+  "date": "2026-08-21",
+  "generatedAt": "2026-08-21T08:01:50.547Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Great American Ball Park (1.25) and Camden Yards (1.10) are the primary power parks in play, while Rate Field (1.07) and Daikin Park (1.04) offer modest boosts. The top three HR scores all land in hitter-friendly venues against right-handers with elevated HR/FB rates, and the weather is neutral across the slate.",
-    "modelNote": "The model is prioritizing barrel rate, park factor, and recent HR volume over raw xBA, which is why Báez and Murakami vaulted ahead of more traditional power bats despite lower xBA marks."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Camden Yards (1.1) and Dodger Stadium (1.1) leading the way, while Rate Field (1.07) and Chase Field (1.01) also play neutral-to-favorable. The top matchups include Alonso vs. Peralta in Baltimore and Ohtani vs. Chandler in LA, both righty-on-righty with elevated barrel and hard-hit rates. Park factors and recent HR trends outweigh opposing pitcher HR vulnerability in the model’s top selections.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over raw opposing pitcher HR allowed, which is why Alonso and Ohtani rank 1-2 despite middling opposing pitcher metrics."
   },
   "bestBets": [
     {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=17.5%",
-        "HH=53.4%"
+        "barrel=14.1%",
+        "HH=56.5%"
       ],
       "bullets": [
-        "hrScore=88.2",
-        "park=1.04"
+        "barrel=14.1%",
+        "park=1.1"
       ],
-      "hrOddsYes": "+241",
-      "marketImpliedProbability": 0.2932551319648094,
+      "hrOddsYes": "+355",
+      "marketImpliedProbability": 0.21978021978021978,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Joshua Báez",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "PIT",
+      "opposingPitcher": "Bubba Chandler",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=25%",
-        "HH=62.5%"
+        "barrel=16.7%",
+        "HH=52.5%"
       ],
       "bullets": [
-        "hrScore=83.3",
-        "park=1.25"
+        "barrel=16.7%",
+        "park=1.1"
       ],
-      "hrOddsYes": "+386",
-      "marketImpliedProbability": 0.205761316872428,
+      "hrOddsYes": "+230",
+      "marketImpliedProbability": 0.30303030303030304,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
-      "opponent": "ATL",
-      "opposingPitcher": "Grant Holmes",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=20.9%",
-        "HH=59.7%"
+        "Pitcher HR VS=63.7",
+        "Hard Hit%=59.7"
       ],
       "bullets": [
-        "hrScore=77.2",
-        "park=1.07"
+        "HR score 70.2 (#3)",
+        "Pitcher HR VS 63.7 at park 1.07"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=61.8",
-        "Hard Hit%=49.5"
-      ],
-      "bullets": [
-        "HR score 76.2 (#4)",
-        "Pitcher HR VS 61.8 at park 1.25"
-      ],
-      "hrOddsYes": "+304",
-      "marketImpliedProbability": 0.24752475247524752,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Miguel Vargas",
       "team": "CWS",
-      "opponent": "ATL",
-      "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 5,
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=63.6",
+        "Pitcher HR VS=63.7",
         "Hard Hit%=46.5"
       ],
       "bullets": [
-        "HR score 74.4 (#5)",
-        "Pitcher HR VS 63.6 at park 1.07"
+        "HR score 68.8 (#4)",
+        "Pitcher HR VS 63.7 at park 1.07"
       ],
-      "hrOddsYes": "+369",
-      "marketImpliedProbability": 0.21321961620469082,
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=63.6",
+        "Hard Hit%=50.0"
+      ],
+      "bullets": [
+        "HR score 66.0 (#5)",
+        "Pitcher HR VS 63.6 at park 0.88"
+      ],
+      "hrOddsYes": "+410",
+      "marketImpliedProbability": 0.19607843137254902,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
-      "hrScoreRank": 4,
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 3,
       "topStats": [
-        "barrel=11.6%",
-        "HH=49.5%"
+        "barrel=20.9%",
+        "HH=59.7%"
       ],
       "bullets": [
-        "hrScore=76.2",
-        "park=1.25"
+        "barrel=20.9%",
+        "HH=59.7%"
       ],
-      "hrOddsYes": "+304",
-      "marketImpliedProbability": 0.24752475247524752,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Miguel Vargas",
       "team": "CWS",
-      "opponent": "ATL",
-      "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 5,
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=14.6%",
         "HH=46.5%"
       ],
       "bullets": [
-        "hrScore=74.4",
+        "barrel=14.6%",
         "park=1.07"
       ],
-      "hrOddsYes": "+369",
-      "marketImpliedProbability": 0.21321961620469082,
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "CWS",
-      "opposingPitcher": "Anthony Kay",
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=15.8%",
-        "HH=49.9%"
+        "Pitcher HR VS=58.5",
+        "Hard Hit%=49.0"
       ],
       "bullets": [
-        "hrScore=73.7",
-        "park=1.07"
+        "HR score 65.3 (#6)",
+        "Pitcher HR VS 58.5 at park 0.93"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=82.8",
-        "Hard Hit%=50.1"
-      ],
-      "bullets": [
-        "HR score 73.3 (#7)",
-        "Pitcher HR VS 82.8 at park 0.98"
-      ],
-      "hrOddsYes": "+267",
-      "marketImpliedProbability": 0.2724795640326976,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yandy Díaz",
-      "team": "TB",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=82.8",
-        "Hard Hit%=48.0"
-      ],
-      "bullets": [
-        "HR score 69.7 (#8)",
-        "Pitcher HR VS 82.8 at park 0.98"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
+      "hrOddsYes": "+295",
+      "marketImpliedProbability": 0.25316455696202533,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 7,
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 5,
       "topStats": [
-        "barrel=13.4%",
-        "HH=50.1%"
+        "barrel=16.7%",
+        "HH=50%"
       ],
       "bullets": [
-        "hrScore=73.3",
-        "park=0.98"
+        "barrel=16.7%",
+        "park=0.88"
       ],
-      "hrOddsYes": "+267",
-      "marketImpliedProbability": 0.2724795640326976,
+      "hrOddsYes": "+410",
+      "marketImpliedProbability": 0.19607843137254902,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Yandy Díaz",
-      "team": "TB",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 8,
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
+      "hrScoreRank": 6,
       "topStats": [
-        "barrel=7.2%",
-        "HH=48%"
+        "barrel=12.5%",
+        "HH=49%"
       ],
       "bullets": [
-        "hrScore=69.7",
-        "park=0.98"
+        "barrel=12.5%",
+        "park=0.93"
       ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
+      "hrOddsYes": "+295",
+      "marketImpliedProbability": 0.25316455696202533,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Jorge Mateo",
-      "team": "TB",
-      "opponent": "TOR",
-      "opposingPitcher": "Shane Bieber",
-      "hrScoreRank": 25,
+      "player": "Andrés Chaparro",
+      "team": "WSH",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 12,
       "topStats": [
-        "Pitcher HR VS=82.8",
-        "Hard Hit%=45.2"
+        "Pitcher HR VS=63.6",
+        "Hard Hit%=49.4"
       ],
       "bullets": [
-        "HR score 57.0 (#25)",
-        "Pitcher HR VS 82.8 at park 0.98"
+        "HR score 59.2 (#12)",
+        "Pitcher HR VS 63.6 at park 0.88"
       ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
+      "hrOddsYes": "+625",
+      "marketImpliedProbability": 0.13793103448275862,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Michael Harris II",
-      "team": "ATL",
-      "opponent": "CWS",
-      "opposingPitcher": "Anthony Kay",
-      "hrScoreRank": 24,
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "AZ",
+      "opposingPitcher": "Eduardo Rodriguez",
+      "hrScoreRank": 16,
       "topStats": [
-        "Pitcher HR VS=56.5",
-        "Hard Hit%=48.9"
+        "Pitcher HR VS=52.3",
+        "Hard Hit%=51.4"
       ],
       "bullets": [
-        "HR score 57.1 (#24)",
-        "Pitcher HR VS 56.5 at park 1.07"
+        "HR score 58.3 (#16)",
+        "Pitcher HR VS 52.3 at park 1.01"
       ],
       "hrOddsYes": "+600",
       "marketImpliedProbability": 0.14285714285714285,
