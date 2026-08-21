@@ -35,7 +35,7 @@ describe("HomeHeroOnly 16-0 tile", () => {
   it("still renders the existing NFL league tile alongside the new tile", () => {
     renderHome();
     const links = screen.getAllByRole("link");
-    const nflTile = links.find((link) => link.getAttribute("href") === "/nfl/guide");
+    const nflTile = links.find((link) => link.getAttribute("href") === "/nfl");
     expect(nflTile).toBeTruthy();
   });
 });

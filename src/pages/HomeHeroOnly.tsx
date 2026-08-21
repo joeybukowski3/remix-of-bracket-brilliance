@@ -7,7 +7,7 @@ import SiteShell from "@/components/layout/SiteShell";
 const sports = [
   { id: "mlb", name: "MLB", route: "/mlb", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png", logoAlt: "MLB logo" },
   { id: "cfb", name: "College Football", route: "/college-football", logo: "/images/leagues/ncaa.svg", logoAlt: "NCAA logo", logoClassName: "h-16 w-16 object-contain", hideLogoFallback: true },
-  { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png", logoAlt: "NFL logo" },
+  { id: "nfl", name: "NFL", route: "/nfl", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png", logoAlt: "NFL logo" },
   { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", logoAlt: "NBA logo", locked: true },
   { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg", logoAlt: "PGA logo" },
 ] as const;

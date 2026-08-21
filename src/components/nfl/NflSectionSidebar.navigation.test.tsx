@@ -14,7 +14,8 @@ function renderAt(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/nfl" element={<NflPlatformLayout />}>
-          <Route index element={<h1>Power Ratings</h1>} />
+          <Route index element={<h1>Weekly Command Center</h1>} />
+          <Route path="power-ratings" element={<h1>Power Ratings</h1>} />
           <Route path="standings" element={<h1>Standings</h1>} />
           <Route path="guide" element={<h1>Guide</h1>} />
           <Route path="guide/team/:teamSlug" element={<h1>Team</h1>} />
@@ -50,6 +51,12 @@ describe("NFL navigation architecture", () => {
     const nav = screen.getByRole("navigation", { name: "NFL sitemap" });
     const active = within(nav).getByRole("link", { name: /Standings by Division/i });
     expect(active.getAttribute("aria-current")).toBe("page");
+  });
+
+  it("keeps Power Ratings directly accessible at its dedicated route", () => {
+    renderAt("/nfl/power-ratings");
+    expect(screen.getByRole("heading", { name: "Power Ratings" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Power Ratings/i }).getAttribute("aria-current")).toBe("page");
   });
 
   it("opens the mobile drawer and closes it after navigating", () => {

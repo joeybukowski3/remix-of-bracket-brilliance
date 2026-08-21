@@ -5,7 +5,7 @@ const navItems = [
   { to: "/", label: "Home" },
   { to: "/mlb", label: "MLB" },
   { to: "/college-football", label: "College Football" },
-  { to: "/nfl/guide", label: "NFL" },
+  { to: "/nfl", label: "NFL" },
   { to: "/fantasy-football", label: "Fantasy" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },

@@ -1,5 +1,6 @@
 import type { WeeklyRankingRow } from "@/lib/fantasy/weeklyRankings";
 import { WEEKLY_RANKING_POSITIONS } from "@/lib/fantasy/weeklyRankings";
+import { computePpgPercentiles } from "@/lib/fantasy/ppgPercentile";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
 import type { CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 import {
@@ -75,6 +76,8 @@ export type WeeklyDashboardFantasyLeader = {
   teamAbbr: string | null;
   projectedPpg: number;
   opponentLabel: string;
+  /** 0-100 within this row's own position population; null when unranked. */
+  ppgPercentile: number | null;
 };
 
 export type WeeklyDashboardDiagnostics = {
@@ -94,9 +97,10 @@ export type WeeklyDashboard = {
   largestModelMarketGaps: WeeklyDashboardGame[];
   fantasyLeaders: Record<WeeklyDashboardPosition, WeeklyDashboardFantasyLeader[]>;
   powerWatch: WeeklyDashboardTeam[];
+  powerWatchBottom: WeeklyDashboardTeam[];
   highlights: {
     largestGap: WeeklyDashboardGame | null;
-    highestRatedTeamPlaying: WeeklyDashboardTeam | null;
+    highestMarketTotal: WeeklyDashboardGame | null;
     topFantasyProjection: WeeklyDashboardFantasyLeader | null;
   };
   diagnostics: WeeklyDashboardDiagnostics;
@@ -173,9 +177,13 @@ function buildFantasyLeaders(
   rows: BuildWeeklyDashboardInput["fantasyRows"],
 ): Record<WeeklyDashboardPosition, WeeklyDashboardFantasyLeader[]> {
   return Object.fromEntries(
-    WEEKLY_RANKING_POSITIONS.map((position) => [
-      position,
-      (rows?.[position] ?? []).slice(0, 5).map((row) => ({
+    WEEKLY_RANKING_POSITIONS.map((position) => {
+      // Percentile is computed against the FULL position population, not the
+      // top-5 slice shown on the card — otherwise every displayed row would
+      // trivially land near the top of its own tiny sample.
+      const positionRows = rows?.[position] ?? [];
+      const percentiles = computePpgPercentiles(positionRows);
+      const leaders = positionRows.slice(0, 5).map((row) => ({
         key: row.key,
         rank: row.rank,
         player: row.player,
@@ -183,8 +191,10 @@ function buildFantasyLeaders(
         teamAbbr: row.teamAbbr,
         projectedPpg: row.projectedPpg,
         opponentLabel: row.opponentLabel,
-      })),
-    ]),
+        ppgPercentile: percentiles.get(row.key) ?? null,
+      }));
+      return [position, leaders];
+    }),
   ) as Record<WeeklyDashboardPosition, WeeklyDashboardFantasyLeader[]>;
 }
 
@@ -278,19 +288,21 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
         (b.absoluteModelMarketGap ?? 0) - (a.absoluteModelMarketGap ?? 0) || a.gameId.localeCompare(b.gameId),
     );
   const fantasyLeaders = buildFantasyLeaders(input.fantasyRows);
-  const powerWatch = [...ratingByAbbr.values()]
+  // Same canonical current-OVR ordering feeds both ends of Power Watch, so
+  // Top 5 and Bottom 5 can never drift apart or use different sources.
+  const ratedTeamsByOvr = [...ratingByAbbr.values()]
     .sort((a, b) => a.rank - b.rank || a.abbr.localeCompare(b.abbr))
     .flatMap((rating) => {
       const identity = teamByAbbr.get(rating.abbr);
       return identity ? [toTeam(identity, rating)] : [];
-    })
-    .slice(0, 5);
-  const playingTeams = [...new Map(
-    dashboardGames.flatMap((game) => [game.away, game.home]).map((team) => [team.abbr, team]),
-  ).values()];
-  const highestRatedTeamPlaying = playingTeams
-    .filter((team) => team.rating)
-    .sort((a, b) => a.rating!.ovrRank - b.rating!.ovrRank || a.abbr.localeCompare(b.abbr))[0] ?? null;
+    });
+  const powerWatch = ratedTeamsByOvr.slice(0, 5);
+  // Bottom 5 stays in ascending-rank order (e.g. #28 first, #32 last); avoid
+  // overlap with the top slice when the rated population is small.
+  const powerWatchBottom = ratedTeamsByOvr.length > 5 ? ratedTeamsByOvr.slice(-5) : [];
+  const highestMarketTotal = dashboardGames
+    .filter((game) => game.market?.total != null && Number.isFinite(game.market.total))
+    .sort((a, b) => b.market!.total! - a.market!.total! || a.gameId.localeCompare(b.gameId))[0] ?? null;
   const topFantasyProjection = WEEKLY_RANKING_POSITIONS
     .flatMap((position) => fantasyLeaders[position])
     .sort((a, b) => b.projectedPpg - a.projectedPpg || a.position.localeCompare(b.position) || a.rank - b.rank)[0] ?? null;
@@ -303,9 +315,10 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
     largestModelMarketGaps,
     fantasyLeaders,
     powerWatch,
+    powerWatchBottom,
     highlights: {
       largestGap: largestModelMarketGaps[0] ?? null,
-      highestRatedTeamPlaying,
+      highestMarketTotal,
       topFantasyProjection,
     },
     diagnostics: {

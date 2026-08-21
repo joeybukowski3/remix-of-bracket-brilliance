@@ -31,6 +31,14 @@ describe("SiteHeader navigation", () => {
     expect(pgaLinks[0]).toHaveAttribute("href", "/pga");
   });
 
+  it("points NFL navigation to the Weekly Command Center landing page", () => {
+    renderHeader("/nfl");
+
+    const nflLinks = screen.getAllByRole("link", { name: "NFL" });
+    expect(nflLinks.length).toBeGreaterThan(0);
+    expect(nflLinks.every((link) => link.getAttribute("href") === "/nfl")).toBe(true);
+  });
+
   it("preserves the remaining primary navigation items", () => {
     const { container } = renderHeader();
 

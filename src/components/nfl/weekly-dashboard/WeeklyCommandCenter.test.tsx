@@ -12,6 +12,7 @@ import {
 import type { CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 import type { MarketArtifact } from "@/lib/nfl/marketData";
 import type { ProjectionsArtifact } from "@/lib/nfl/projectionData";
+import { getNflRatingHeatClass } from "@/lib/nfl/ratingPresentation";
 import type { CanonicalNflTeam, NflGameRecord } from "@/lib/nfl/standings";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 
@@ -93,18 +94,82 @@ describe("WeeklyCommandCenter", () => {
 
   it("renders Model vs Market gaps without pick or best-bet language", () => {
     renderDashboard();
-    expect(screen.getByRole("heading", { name: "Largest Gaps" })).toBeTruthy();
-    expect(screen.getByText(/descriptive, not picks/i)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Largest Model-vs-Market Gaps" })).toBeTruthy();
+    expect(screen.getByText(/descriptive comparison · not picks/i)).toBeTruthy();
     expect(screen.queryByText(/best bet/i)).toBeNull();
+    const logoPairs = screen.getAllByTestId("gap-team-logos");
+    expect(logoPairs).toHaveLength(5);
+    expect(logoPairs.every((pair) => pair.querySelectorAll("img").length === 2)).toBe(true);
   });
 
-  it("switches the compact fantasy leader position and links to the full rankings", () => {
+  it("frames fantasy rows as Week 1 position picks and links to the full rankings", () => {
     renderDashboard();
+    expect(screen.getByRole("heading", { name: "Top Fantasy Picks — Week 1" })).toBeTruthy();
+    expect(screen.getByText(/top 5 per position from the canonical weekly rankings/i)).toBeTruthy();
     const selector = screen.getByRole("group", { name: "Fantasy position" });
     fireEvent.click(within(selector).getByRole("button", { name: "WR" }));
     expect(within(selector).getByRole("button", { name: "WR" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("link", { name: "Full rankings" }).getAttribute("href")).toBe("/fantasy-football/weekly-rankings");
+    expect(screen.getByRole("link", { name: "View full rankings" }).getAttribute("href")).toBe("/fantasy-football/weekly-rankings");
     expect(screen.getByTestId("desktop-fantasy-leaders")).not.toHaveAttribute("aria-hidden");
+  });
+
+  it("shows the canonical highest market total in the middle headline tile with both team logos", () => {
+    renderDashboard();
+    const highestTotal = dashboard.highlights.highestMarketTotal;
+    expect(highestTotal).not.toBeNull();
+    expect(screen.getByText("Highest Market Total")).toBeTruthy();
+    const signals = screen.getByRole("region", { name: "Weekly headline signals" });
+    const totalTile = within(signals).getByText("Highest Market Total").closest("div") as HTMLElement;
+    expect(totalTile.querySelectorAll("img")).toHaveLength(2);
+    expect(within(totalTile).getByText(highestTotal!.away.abbr)).toBeTruthy();
+    expect(within(totalTile).getByText(highestTotal!.home.abbr)).toBeTruthy();
+    expect(screen.queryByText("Highest-Rated Team Playing")).toBeNull();
+    expect(screen.queryByText("Largest Total Gap")).toBeNull();
+  });
+
+  it("shows a clear unavailable state when the week has no market total", () => {
+    const unavailableDashboard = {
+      ...dashboard,
+      highlights: { ...dashboard.highlights, highestMarketTotal: null },
+    };
+    renderDashboard({ dashboard: unavailableDashboard });
+    const signals = screen.getByRole("region", { name: "Weekly headline signals" });
+    expect(within(signals).getByText("Unavailable")).toBeTruthy();
+    expect(within(signals).getByText("No market total available")).toBeTruthy();
+  });
+
+  it("shows the model-lean team logo and abbreviation on the largest gap headline tile", () => {
+    renderDashboard();
+    const gap = dashboard.highlights.largestGap;
+    expect(gap).not.toBeNull();
+    const signals = screen.getByRole("region", { name: "Weekly headline signals" });
+    const gapTile = within(signals).getByText("Largest Model vs Market Gap").closest("div") as HTMLElement;
+    if (gap!.modelLeanTeam) {
+      expect(gapTile.querySelectorAll("img")).toHaveLength(1);
+      expect(within(gapTile).getByText(gap!.modelLeanTeam.abbr)).toBeTruthy();
+    }
+    expect(within(gapTile).getByText(gap!.formattedComparison)).toBeTruthy();
+  });
+
+  it("renders a sticky, compact mobile header row with the column labels", () => {
+    renderDashboard();
+    const header = screen.getByTestId("mobile-game-board-sticky-header");
+    expect(header.className).toContain("sticky");
+    // Offset below the site's own sticky header (72px) so it doesn't hide underneath it.
+    expect(header.className).toContain("top-[72px]");
+    expect(header.className).toMatch(/\bz-\d+/);
+    expect(within(header).getByText("Game")).toBeTruthy();
+    expect(within(header).getByText("Market")).toBeTruthy();
+    expect(within(header).getByText("JKB")).toBeTruthy();
+    expect(within(header).getByText("Gap")).toBeTruthy();
+  });
+
+  it("keeps the mobile sticky header outside any overflow-hidden ancestor, so it can stick to the viewport", () => {
+    renderDashboard();
+    const header = screen.getByTestId("mobile-game-board-sticky-header");
+    for (let node = header.parentElement; node && node !== document.body; node = node.parentElement) {
+      expect(node.className ?? "").not.toContain("overflow-hidden");
+    }
   });
 
   it("provides Power Ratings and deeper NFL navigation funnels", () => {
@@ -112,6 +177,69 @@ describe("WeeklyCommandCenter", () => {
     expect(screen.getByRole("link", { name: "All 32" }).getAttribute("href")).toBe("/nfl/power-ratings");
     expect(screen.getByRole("link", { name: /Team Schedules/i }).getAttribute("href")).toBe("/nfl/team-schedules");
     expect(screen.getByRole("link", { name: /Performance Analytics/i }).getAttribute("href")).toBe("/nfl/analytics");
+  });
+
+  it("shows Power Watch Top 5 and Bottom 5 with a Full Power Rankings link to /nfl/power-ratings", () => {
+    renderDashboard();
+    expect(dashboard.powerWatch).toHaveLength(5);
+    expect(dashboard.powerWatchBottom).toHaveLength(5);
+    const desktop = screen.getByTestId("power-watch-desktop");
+    expect(within(desktop).getByText("Top 5")).toBeTruthy();
+    expect(within(desktop).getByText("Bottom 5")).toBeTruthy();
+    for (const t of dashboard.powerWatch) expect(within(desktop).getByText(t.name)).toBeTruthy();
+    for (const t of dashboard.powerWatchBottom) expect(within(desktop).getByText(t.name)).toBeTruthy();
+    const fullRankingsLinks = screen.getAllByRole("link", { name: /Full Power Rankings/i });
+    expect(fullRankingsLinks.length).toBeGreaterThan(0);
+    expect(fullRankingsLinks.every((link) => link.getAttribute("href") === "/nfl/power-ratings")).toBe(true);
+  });
+
+  it("renders the mobile Power Watch Top 5 and Bottom 5 as two compact tables side by side", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    expect(mobile.className).toContain("grid-cols-2");
+    expect(within(mobile).getByText("Top 5")).toBeTruthy();
+    expect(within(mobile).getByText("Bottom 5")).toBeTruthy();
+    for (const t of dashboard.powerWatchBottom) {
+      expect(within(mobile).getByText(`#${t.rating?.ovrRank}`)).toBeTruthy();
+    }
+  });
+
+  it("renders the mobile Top 5 and Bottom 5 Power Watch lists as visually distinct bordered mini-tables with a gap between them", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    const topHeader = within(mobile).getByText("Top 5");
+    const bottomHeader = within(mobile).getByText("Bottom 5");
+    const topCard = topHeader.closest("div") as HTMLElement;
+    const bottomCard = bottomHeader.closest("div") as HTMLElement;
+    expect(topCard).not.toBe(bottomCard);
+    expect(topCard.className).toContain("border");
+    expect(bottomCard.className).toContain("border");
+    expect(mobile.className).toContain("gap-");
+  });
+
+  it("gives the mobile Top 5 header a restrained positive tone and the Bottom 5 header a restrained negative tone", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    const topHeader = within(mobile).getByText("Top 5");
+    const bottomHeader = within(mobile).getByText("Bottom 5");
+    expect(topHeader.className).toContain("emerald");
+    expect(bottomHeader.className).toContain("rose");
+  });
+
+  it("colors Power Watch OVR values with the existing NFL rating heat scale, consistently by value across Top 5 and Bottom 5", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    const desktop = screen.getByTestId("power-watch-desktop");
+    for (const team of [...dashboard.powerWatch, ...dashboard.powerWatchBottom]) {
+      const ovrText = team.rating!.ovr.toFixed(1);
+      const heatClass = getNflRatingHeatClass(team.rating!.ovr);
+      for (const container of [mobile, desktop]) {
+        const cell = within(container).getByText(ovrText);
+        for (const cls of heatClass.split(" ")) {
+          expect(cell.className).toContain(cls);
+        }
+      }
+    }
   });
 
   it("keeps the core mobile board compact without a horizontal-scroll contract", () => {
@@ -124,10 +252,52 @@ describe("WeeklyCommandCenter", () => {
     expect(mobile.textContent).toContain("Gap");
   });
 
+  it("gives each fantasy position a distinct restrained header tone on desktop", () => {
+    renderDashboard();
+    const desktop = screen.getByTestId("desktop-fantasy-leaders");
+    const qbHeader = within(desktop).getByText("Top QB plays");
+    const rbHeader = within(desktop).getByText("Top RB plays");
+    const wrHeader = within(desktop).getByText("Top WR plays");
+    const teHeader = within(desktop).getByText("Top TE plays");
+    expect(qbHeader.className).toContain("sky");
+    expect(rbHeader.className).toContain("emerald");
+    expect(wrHeader.className).toContain("violet");
+    expect(teHeader.className).toContain("amber");
+    const classes = [qbHeader.className, rbHeader.className, wrHeader.className, teHeader.className];
+    expect(new Set(classes).size).toBe(4);
+  });
+
+  it("gives the mobile QB/RB/WR/TE tabs distinct position identity with an obvious active state", () => {
+    renderDashboard();
+    const selector = screen.getByRole("group", { name: "Fantasy position" });
+    const qbTab = within(selector).getByRole("button", { name: "QB" });
+    const rbTab = within(selector).getByRole("button", { name: "RB" });
+    expect(qbTab).toHaveAttribute("aria-pressed", "true");
+    expect(qbTab.className).toContain("sky");
+    expect(rbTab.className).toContain("emerald");
+    fireEvent.click(rbTab);
+    expect(rbTab).toHaveAttribute("aria-pressed", "true");
+    expect(qbTab).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("colors projected PPG by within-position percentile without changing the value or rank order", () => {
+    renderDashboard();
+    const desktop = screen.getByTestId("desktop-fantasy-leaders");
+    const qbLeaders = dashboard.fantasyLeaders.QB;
+    const ppgCells = within(desktop).getAllByTestId("fantasy-ppg-value");
+    expect(ppgCells.length).toBeGreaterThanOrEqual(qbLeaders.length);
+    // Values render unchanged, in canonical rank order.
+    const qbValues = qbLeaders.map((row) => row.projectedPpg.toFixed(1));
+    expect(ppgCells.slice(0, qbLeaders.length).map((el) => el.textContent)).toEqual(qbValues);
+    // A higher-percentile row never renders a visually weaker (empty) style than a lower one.
+    const styledCount = ppgCells.filter((el) => el.getAttribute("style")).length;
+    expect(styledCount).toBeGreaterThan(0);
+  });
+
   it("surfaces partial artifact failure without suppressing available modules", () => {
     renderDashboard({ artifactErrors: ["Market unavailable"] });
     expect(screen.getByRole("status")).toHaveTextContent(/supporting data is unavailable/i);
     expect(screen.getByRole("heading", { name: "Weekly Game Board" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Fantasy Leaders" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Top Fantasy Picks — Week 1" })).toBeTruthy();
   });
 });

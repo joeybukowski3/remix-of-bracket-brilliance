@@ -14,7 +14,8 @@ function renderNflRoute(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/nfl" element={<NflPlatformLayout />}>
-          <Route index element={<h1>Power Ratings Page</h1>} />
+          <Route index element={<h1>Weekly Command Center Page</h1>} />
+          <Route path="power-ratings" element={<h1>Power Ratings Page</h1>} />
           <Route path="standings" element={<h1>Standings Page</h1>} />
           <Route path="schedule" element={<h1>Schedule Page</h1>} />
           <Route path="matchups" element={<h1>Matchups Page</h1>} />
@@ -35,7 +36,8 @@ const CATEGORY_LABELS = NFL_SECTION_NAV_CATEGORIES.map((category) => category.la
 
 describe("NflPlatformLayout", () => {
   it.each([
-    ["/nfl", "Power Ratings Page"],
+    ["/nfl", "Weekly Command Center Page"],
+    ["/nfl/power-ratings", "Power Ratings Page"],
     ["/nfl/standings", "Standings Page"],
     ["/nfl/schedule", "Schedule Page"],
     ["/nfl/matchups", "Matchups Page"],
@@ -95,6 +97,7 @@ describe("NflPlatformLayout", () => {
     it("shows every current nav destination immediately, with no click required", () => {
       renderNflRoute("/nfl");
       const destinations = [
+        "Weekly Command Center",
         "Power Ratings",
         "16-0 Draft Game",
         "Standings by Division",
