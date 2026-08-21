@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
@@ -8,21 +8,16 @@ import WeeklyRankingsTable, {
 } from "@/components/fantasy/WeeklyRankingsTable";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
-import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
-import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
-import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
+import { useWeeklyFantasyRankings } from "@/hooks/useWeeklyFantasyRankings";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
 import {
-  buildWeekOpponentMap,
-  buildWeeklyRankingRows,
   DEFAULT_WEEKLY_RANKING_POSITION,
   WEEKLY_RANKING_POSITIONS,
   WEEKLY_RANKINGS_SEASON,
   WEEKLY_RANKINGS_WEEK,
 } from "@/lib/fantasy/weeklyRankings";
-import { createWeeklyStatResolver } from "@/lib/fantasy/weeklyStatResolver";
 
 /** Below Tailwind's `md` the table becomes compact stacked rows. */
 const MOBILE_QUERY = "(max-width: 767px)";
@@ -55,29 +50,8 @@ export default function FantasyWeeklyRankings() {
   const isCompact = useIsCompactLayout(MOBILE_QUERY);
 
   const season = useNflSeasonData(WEEKLY_RANKINGS_SEASON);
-  const epa = useNflMatchupEpa();
-  const metrics = useNflMatchupMetrics();
-  const success = useNflSuccessRates();
-
-  const opponentMap = useMemo(
-    () => buildWeekOpponentMap(season.data?.games ?? [], WEEKLY_RANKINGS_WEEK),
-    [season.data],
-  );
-
-  const resolveStat = useMemo(
-    () =>
-      createWeeklyStatResolver({
-        epa: epa.artifact,
-        metrics: metrics.artifact,
-        success: success.artifact,
-      }),
-    [epa.artifact, metrics.artifact, success.artifact],
-  );
-
-  const rows = useMemo(
-    () => buildWeeklyRankingRows(position, opponentMap, resolveStat),
-    [position, opponentMap, resolveStat],
-  );
+  const weekly = useWeeklyFantasyRankings(season.data?.games ?? [], WEEKLY_RANKINGS_WEEK);
+  const rows = weekly.rowsByPosition[position];
 
   const unresolved = rows.filter((row) => row.unresolvedReason).length;
 

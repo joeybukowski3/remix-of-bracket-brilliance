@@ -30,10 +30,17 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
   {
     id: "overview",
     label: "NFL Overview",
-    description: "Platform home and core team ratings.",
+    description: "Weekly command center and core team ratings.",
     items: [
       {
         to: "/nfl",
+        label: "Weekly Command Center",
+        shortLabel: "Command Center",
+        description: "The current NFL week, complete game slate and model intelligence.",
+        icon: "🏈",
+      },
+      {
+        to: "/nfl/power-ratings",
         label: "Power Ratings",
         shortLabel: "Power",
         description: "Overall, offense and defense ratings for all 32 teams.",
