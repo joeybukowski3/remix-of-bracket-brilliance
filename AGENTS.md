@@ -1,132 +1,84 @@
-# AGENTS.md
-Read this file first before making changes in this repository.
+# JoeKnowsBall Agent Guide
 
-## Session Startup
-Before doing anything else:
-1. Read `SOUL.md` — this is who you are
-2. Read `USER.md` — this is who you're helping
-3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context
+This file is the routine entry point for repository work. Keep it concise; route to the smallest set of durable documents relevant to the task.
 
-Don't ask permission. Just do it.
+## Repository purpose
 
-## Memory
-You wake up fresh each session. These files are your continuity.
-- **Daily notes:** `memory/YYYY-MM-DD.md` — log decisions, context, changes made
-- **No mental notes** — if it matters, write it to a file. Files survive restarts. Memory doesn't.
-- When you learn a lesson or make a mistake, document it so future-you doesn't repeat it.
+JoeKnowsBall is a React and TypeScript sports-research application for model-informed rankings, matchups, props, picks, and related analysis. It includes MLB, PGA, NFL, fantasy football, college sports, and additional research tools. Use [docs/PROJECT.md](docs/PROJECT.md) when product context is relevant and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) when system boundaries or data flow are relevant.
 
-## Purpose
-This is joeknowsball.com — a React/TypeScript sports betting analysis app covering MLB, PGA, and other sports. It uses Vite for bundling, Tailwind + Shadcn/ui for styling, Supabase for data, and Vercel for deployment.
+## Authority hierarchy
 
-## Stack
-- **Framework:** React 18 + TypeScript + Vite
-- **Styling:** Tailwind CSS + Shadcn/ui components
-- **Data:** Supabase (`@supabase/supabase-js`)
-- **Routing:** React Router v6
-- **State/fetching:** TanStack React Query
-- **Testing:** Vitest + Playwright
-- **Local dev:** `npm run dev` or `bun run dev`
-- **Build:** `npm run build`
+When sources conflict, use this order:
 
-## Source Structure
-- `src/pages/` — route-level page components
-- `src/components/` — reusable UI components
-- `src/hooks/` — custom React hooks
-- `src/integrations/` — external service connectors (Supabase etc.)
-- `src/lib/` — shared utilities
-- `src/data/` — static/local data files
-- `api/` — Vercel serverless handlers
-- `scripts/` — data generation pipeline (PGA, MLB HR props, SEO)
-- `public/` — static assets and generated data files
-- `supabase/` — Supabase config and migrations
+1. Current explicit user instruction
+2. Approved active plan
+3. `docs/DECISIONS.md`
+4. Relevant current model documentation
+5. Relevant current feature documentation
+6. Project, architecture, data, and brand documentation
+7. Current implementation and tests
+8. Completed plans, audits, migrations, memory, and PR history
+9. Chat history
 
-## Working Rules
-- This is a component-based React app. Do not flatten it into plain HTML/JS.
-- Match existing Shadcn/ui component patterns. Do not introduce new UI libraries.
-- Match existing TypeScript conventions. Do not weaken types with `any` unless explicitly asked.
-- Prefer editing source files in `src/` over anything in `dist/` — dist is build output.
-- Do not hand-edit generated files in `public/data/` unless explicitly asked for artifact-level changes.
-- Make minimal, scoped edits. Avoid opportunistic cleanup unless requested.
+If authoritative documentation and implementation disagree, do not silently choose one. Investigate the mismatch and report it before implementing a resolution.
 
-## Ask Before Changing
-Stop and confirm before touching any of the following:
-- `vercel.json` — deployment and routing config
-- `vite.config.ts` — build configuration
-- `tailwind.config.ts` — design token configuration
-- `supabase/` — database migrations or config
-- `.github/workflows/` — CI/CD automation
-- Environment variable contracts (`.env`, `.env.example`)
-- Routing structure in `src/App.tsx`
+## Startup and context routing
 
-## Scripts — Data Pipeline
-These scripts generate content and data files. Run from repo root:
-- `npm run mlb:hr-props` — generates MLB HR props data
-- `npm run pga:generate` — generates PGA tournament package
-- `npm run seo:generate` — generates SEO files
-- Generated outputs typically land in `public/data/` — do not treat them as source files.
+1. Read this file.
+2. Restate the task, scope, and success criteria before changing files.
+3. Read only the context needed for the task:
+   - Product scope: `docs/PROJECT.md`
+   - System structure or data flow: `docs/ARCHITECTURE.md`
+   - Tests and browser verification: `docs/TESTING.md`
+   - Durable decisions: `docs/DECISIONS.md`
+   - Sports models or pipelines: relevant current model, feature, and data documentation; then producers, consumers, and tests
+4. Inspect the relevant implementation and immediate callers before editing.
+5. Check `git status` and preserve unrelated worktree changes.
 
-## Risk Areas
-These files are central and changes can break unrelated behavior:
-- `src/App.tsx` — routing and top-level layout
-- `src/main.tsx` — app entry point
-- `src/integrations/` — Supabase client setup
-- Any file in `src/hooks/` used across multiple pages
+Normal startup does not require reading `SOUL.md`, `USER.md`, or daily files in `memory/`. Those files remain historical provenance and may be consulted only when a task specifically requires them.
 
-Inspect surrounding usage before editing any of these.
+## Investigation and implementation
 
-## Red Lines
-- Don't exfiltrate private data. Ever.
-- Don't run destructive commands without asking.
-- `trash` > `rm` — recoverable beats gone forever.
-- When in doubt, ask.
+- For investigations, gather evidence and report findings; do not implement unless asked.
+- For implementation, make the smallest scoped change that satisfies the approved goal.
+- Treat ambiguity that would materially change the result as a reason to stop and ask.
+- Do not change sports-model methodology, weights, formulas, thresholds, or interpretation unless explicitly authorized. Read the relevant model documentation first.
+- Do not perform unrelated cleanup or rewrite historical documentation to make it appear current.
 
-## Automated Browser Analytics
-All automated browser testing, screenshots, debugging, and visual verification must use the repository's Playwright analytics-blocking setup. Automated browser sessions must not send Google Analytics or Google Tag Manager traffic. Do not bypass or remove this protection.
+## Git safety
 
-## External vs Internal
-**Do freely:** read files, explore, organize, run dev server, run scripts locally.
-**Ask first:** deploying to Vercel, pushing to main, sending anything externally, touching Supabase migrations.
+- Never discard, overwrite, stage, or commit unrelated changes.
+- Stage approved paths by exact filename. Never use `git add .` or `git add -A` in a dirty worktree.
+- Do not push, merge, rebase, deploy, or modify `main` without explicit authorization.
+- Do not use destructive Git commands unless the user explicitly requests them and the exact targets are verified.
 
----
+## Generated data
 
-## Code Update Rules
-These apply before and during every code change.
+- Treat `dist/`, `public/data/`, `data/generated/`, and documented pipeline artifacts as generated unless authoritative documentation identifies a specific maintained exception.
+- Change the producer or source input, not a generated artifact, unless artifact-level editing is explicitly requested.
+- Before running a generator, inspect its command, inputs, outputs, network requirements, and working-tree impact.
+- Do not run production-writing, publishing, grading, posting, email, or synchronization modes while performing ordinary verification. Prefer documented dry-run, preview, temporary-output, or validation modes.
 
-**Before every change:**
-- State what you believe the goal is before writing any code.
-- If the goal is ambiguous, stop and surface it. Do not guess.
-- Read the relevant file, component, and immediate callers before touching anything.
-- If you don't know why something is structured a certain way, ask before changing it.
+## Workflow and production safety
 
-**Making changes:**
-- Write the minimum code that solves the problem. Nothing more.
-- Touch only what is necessary. Do not clean up or reformat adjacent code.
-- Match the existing style, naming, and TypeScript conventions of the file exactly.
-- If two patterns conflict, pick the more recent one and flag it. Do not blend them.
-- Push back when a simpler approach exists.
+- `.github/workflows/`, `vercel.json`, deployment settings, environment-variable contracts, `supabase/`, and external publishing integrations are production-sensitive.
+- Inspect them freely, but obtain explicit approval before modifying them or triggering a workflow, deployment, migration, live post, email, or external write.
+- Never expose secrets or copy private environment values into commands, logs, fixtures, or documentation.
+- Repository evidence currently shows both Vercel configuration and a GitHub Pages deployment workflow; see `docs/ARCHITECTURE.md` and do not assume the authoritative production path.
 
-**Verifying changes:**
-- Define what success looks like before finishing.
-- Verify output matches actual intent, not just the literal instruction.
-- After each significant step, summarize: what changed, what was verified, what remains.
-- If anything was skipped or unverified, say so before marking done.
+## Testing
 
-**Reporting changes:**
-When you finish work, report exactly which files changed and label each as:
-- source file
-- generated file
-- config file
-- documentation file
+- Follow `docs/TESTING.md` and choose validation proportional to the change.
+- Prefer focused tests first; expand to the relevant suite, lint, and build when warranted.
+- Do not claim success for checks that were not run. Report skipped checks and known unrelated failures.
+- Automated browser testing, screenshots, and visual debugging must use the repository's analytics-blocking Playwright fixture or helpers. Never allow automated Google Analytics or Google Tag Manager traffic.
 
-If you intentionally changed a generated artifact, say why.
+## Final report
 
-**Fail loud:**
-- "Done" is wrong if anything was skipped silently.
-- "It works" is wrong if it was not tested or verified.
-- If you lose track of the goal, stop and restate before continuing.
-- Surface uncertainty. Never hide it.
+Report:
 
-**Token efficiency:**
-- Be concise. Omit filler and redundant explanation.
-- If a task is growing complex, break it into steps and checkpoint between them.
-- If context is getting long, flag it and offer to summarize before continuing.
+- the outcome and behavior established
+- every changed file, labeled as source, generated, config, or documentation
+- validation commands and results
+- conflicts, uncertainties, skipped checks, and remaining work
+- confirmation that unrelated worktree changes were preserved
