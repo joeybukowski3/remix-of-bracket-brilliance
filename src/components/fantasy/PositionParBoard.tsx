@@ -1,6 +1,8 @@
 import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import TeamLogo from "@/components/TeamLogo";
 import { NflTableScroller } from "@/components/nfl/ui/NflTable";
+import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { PAR_POSITION_LIMITS } from "@/lib/fantasy/parRankings";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
@@ -129,21 +131,50 @@ export default function PositionParBoard({
       </div>
 
       {isCompact ? (
-        <ul className="divide-y divide-slate-100">
-          {tieredRows.map((entry) => (
-            <MobileRow key={entry.row.key} entry={entry} scales={scales} config={config} />
-          ))}
-          {outsideRows.length > 0 && (
-            <>
-              <li className="bg-slate-200/80 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700">
-                Outside Draft Pool
-              </li>
-              {outsideRows.map((entry) => (
-                <MobileRow key={entry.row.key} entry={entry} scales={scales} config={config} />
+        <NflTableScroller label={`${config.name} research board`}>
+          <table className="w-full min-w-[300px] border-collapse text-left text-[11px]">
+            <thead>
+              <tr className="bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
+                <th scope="col" className="w-7 px-1.5 py-1.5 text-center">
+                  Tier
+                </th>
+                <th scope="col" className="w-9 px-1.5 py-1.5 text-center">
+                  Rk
+                </th>
+                <th scope="col" className="px-1.5 py-1.5 text-left">
+                  Player
+                </th>
+                <th scope="col" className="w-14 px-1.5 py-1.5 text-center">
+                  PAR/G
+                </th>
+                <th scope="col" className="w-6 px-1 py-1.5">
+                  <span className="sr-only">Details</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {tieredRows.map((entry) => (
+                <CompactRow key={entry.row.key} entry={entry} scales={scales} config={config} />
               ))}
-            </>
-          )}
-        </ul>
+              {outsideRows.length > 0 && (
+                <>
+                  <tr className="bg-slate-200/80">
+                    <th
+                      scope="colgroup"
+                      colSpan={5}
+                      className="border-y border-slate-300 px-2 py-1 text-left text-[9px] font-bold uppercase tracking-[0.1em] text-slate-700"
+                    >
+                      Outside Draft Pool
+                    </th>
+                  </tr>
+                  {outsideRows.map((entry) => (
+                    <CompactRow key={entry.row.key} entry={entry} scales={scales} config={config} />
+                  ))}
+                </>
+              )}
+            </tbody>
+          </table>
+        </NflTableScroller>
       ) : (
         <NflTableScroller label={`${config.name} research board`} className="max-h-[72vh]">
           <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-xs">
@@ -367,7 +398,13 @@ function isTextSelection(event: { currentTarget: HTMLElement }): boolean {
   return event.currentTarget.contains(selection.anchorNode);
 }
 
-function MobileRow({
+/**
+ * Mobile row for the dense spreadsheet-style table: Tier | Rk | Player | PAR/G,
+ * one line, ~36px tall. Everything else (season PAR, evidence metrics, team
+ * context, playoff weeks, 2025 finish) moves behind the same tap-to-expand
+ * detail panel the desktop grid uses, just rendered as a full-width row.
+ */
+function CompactRow({
   entry,
   scales,
   config,
@@ -382,69 +419,93 @@ function MobileRow({
     entry;
 
   return (
-    <li
-      onClick={(event) => {
-        if (isTextSelection(event)) return;
-        toggle();
-      }}
-      className={cn(
-        "group cursor-pointer px-3 py-2",
-        isTierStart && "border-t-2 border-t-slate-300",
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <TierBadge tier={row.tier} />
-        <span className="text-[11px] font-bold tabular-nums text-slate-800">
+    <>
+      <tr
+        onClick={(event) => {
+          if (isTextSelection(event)) return;
+          toggle();
+        }}
+        className={cn(
+          "group cursor-pointer border-b border-slate-100 hover:bg-slate-50",
+          isTierStart && "[&>td]:border-t-2 [&>td]:border-t-slate-300",
+        )}
+      >
+        <td className="px-1.5 py-1 text-center">
+          <TierBadge tier={row.tier} />
+        </td>
+        <td className="px-1.5 py-1 text-center text-[10px] font-bold tabular-nums text-slate-800">
           {positionRankLabel ?? "—"}
-        </span>
-        <PlayerIdentity player={row.player} team={row.team} />
-      </div>
-      <div className="mt-1.5 flex items-center gap-3">
-        <ParPerGameValue value={row.par?.parPerGame} thresholds={scales.par} size="mobile" />
-        <span className="text-[11px] font-semibold tabular-nums text-slate-600">
-          {row.par ? `${row.par.projectedPpg.toFixed(2)} proj PPG` : "No PAR projection"}
-        </span>
-        <ExpandControl
-          label={`${expanded ? "Hide" : "Show"} details for ${row.player}`}
-          expanded={expanded}
-          onClick={toggle}
-          className="ml-auto"
-        />
-      </div>
-      {expanded && (
-        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 rounded bg-slate-50 px-2 py-2 text-[10px] text-slate-600">
-          <div className="flex items-start justify-between gap-2">
-            <dt className="text-slate-500">Season PAR</dt>
-            <dd>
-              <SeasonParStack
-                projectedSeasonPar={row.par?.projectedSeasonPar}
-                actualSeasonPar={actual2025?.seasonPar}
-              />
-            </dd>
+        </td>
+        <td className="max-w-0 px-1.5 py-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <TeamLogo
+              name={row.team?.toUpperCase() ?? "FA"}
+              logo={row.team ? nflLogoUrl(row.team.toUpperCase()) : undefined}
+              className="h-4 w-4 shrink-0"
+            />
+            <span className="min-w-0 truncate text-[12px] font-bold leading-4 text-slate-950">
+              {row.player}
+            </span>
+            <span className="shrink-0 text-[10px] font-bold uppercase leading-4 text-slate-500">
+              {row.team?.toUpperCase() ?? "FA"}
+            </span>
           </div>
-          {config.metricLabels.map((label, index) => (
-            <MobileDetail key={label} label={label} value={formatRank(metrics[index])} />
-          ))}
-          <MobileDetail label="Last 8 Rk" value={formatRank(lateSeasonRank)} />
-          <MobileDetail label="Strength of Schedule" value={formatRank(teamContext.strengthOfSchedule)} />
-          <MobileDetail label="O-Line Rank" value={formatRank(teamContext.offensiveLineRank)} />
-          {(["playoffWeek15Opponent", "playoffWeek16Opponent", "playoffWeek17Opponent"] as const).map(
-            (field, index) => (
-              <div key={field} className="flex items-baseline justify-between gap-2">
-                <dt className="truncate text-slate-500">{`W1${5 + index}`}</dt>
-                <dd>
-                  <MatchupOpponentChip opponent={teamContext[field]} position={row.position} />
+        </td>
+        <td className="px-1.5 py-1 text-center">
+          <ParPerGameValue value={row.par?.parPerGame} thresholds={scales.par} />
+        </td>
+        <td className="px-1 py-1 text-center">
+          <ExpandControl
+            label={`${expanded ? "Hide" : "Show"} details for ${row.player}`}
+            expanded={expanded}
+            onClick={toggle}
+          />
+        </td>
+      </tr>
+      {expanded && (
+        <tr className="bg-slate-50">
+          <td colSpan={5} className="px-3 py-2">
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-600">
+              <div className="flex items-start justify-between gap-2">
+                <dt className="text-slate-500">Proj PPG</dt>
+                <dd className="font-semibold tabular-nums text-slate-800">
+                  {row.par ? row.par.projectedPpg.toFixed(2) : "—"}
                 </dd>
               </div>
-            ),
-          )}
-          <div className="col-span-2 border-t border-slate-200 pt-1 leading-5">
-            <SeasonFinish2025 rank={entry.seasonRank2025} />
-            <ParDetail row={row} />
-          </div>
-        </dl>
+              <div className="flex items-start justify-between gap-2">
+                <dt className="text-slate-500">Season PAR</dt>
+                <dd>
+                  <SeasonParStack
+                    projectedSeasonPar={row.par?.projectedSeasonPar}
+                    actualSeasonPar={actual2025?.seasonPar}
+                  />
+                </dd>
+              </div>
+              {config.metricLabels.map((label, index) => (
+                <MobileDetail key={label} label={label} value={formatRank(metrics[index])} />
+              ))}
+              <MobileDetail label="Last 8 Rk" value={formatRank(lateSeasonRank)} />
+              <MobileDetail label="Strength of Schedule" value={formatRank(teamContext.strengthOfSchedule)} />
+              <MobileDetail label="O-Line Rank" value={formatRank(teamContext.offensiveLineRank)} />
+              {(["playoffWeek15Opponent", "playoffWeek16Opponent", "playoffWeek17Opponent"] as const).map(
+                (field, index) => (
+                  <div key={field} className="flex items-baseline justify-between gap-2">
+                    <dt className="truncate text-slate-500">{`W1${5 + index}`}</dt>
+                    <dd>
+                      <MatchupOpponentChip opponent={teamContext[field]} position={row.position} />
+                    </dd>
+                  </div>
+                ),
+              )}
+              <div className="col-span-2 border-t border-slate-200 pt-1 leading-5">
+                <SeasonFinish2025 rank={entry.seasonRank2025} />
+                <ParDetail row={row} />
+              </div>
+            </dl>
+          </td>
+        </tr>
       )}
-    </li>
+    </>
   );
 }
 

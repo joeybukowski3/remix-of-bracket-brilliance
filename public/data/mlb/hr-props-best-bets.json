@@ -1,10 +1,10 @@
 {
   "date": "2026-08-21",
-  "generatedAt": "2026-08-21T08:01:50.547Z",
+  "generatedAt": "2026-08-21T13:24:11.090Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Camden Yards (1.1) and Dodger Stadium (1.1) leading the way, while Rate Field (1.07) and Chase Field (1.01) also play neutral-to-favorable. The top matchups include Alonso vs. Peralta in Baltimore and Ohtani vs. Chandler in LA, both righty-on-righty with elevated barrel and hard-hit rates. Park factors and recent HR trends outweigh opposing pitcher HR vulnerability in the model’s top selections.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over raw opposing pitcher HR allowed, which is why Alonso and Ohtani rank 1-2 despite middling opposing pitcher metrics."
+    "slateOverview": "Camden Yards and Rate Field are the clearest power spots today with 1.1 and 1.07 park factors, while T-Mobile Park (0.93) and loanDepot park (0.88) suppress fly-ball carry. Peralta and Manaea both carry elevated HR/9 rates (46.8 and 63.6) against right-handed power bats, and Chandler’s 43.2 HR/9 vs lefties sets up Ohtani in a favorable matchup.",
+    "modelNote": "The model is overweighting barrel rate, recent HR volume, and opposing pitcher HR vulnerability, which is why Alonso, Ohtani, and Murakami occupy the top three spots despite varying park factors."
   },
   "bestBets": [
     {
@@ -14,15 +14,15 @@
       "opposingPitcher": "Freddy Peralta",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=14.1%",
-        "HH=56.5%"
+        "barrel=14%",
+        "HH=56.3%"
       ],
       "bullets": [
-        "barrel=14.1%",
-        "park=1.1"
+        "park=1.1",
+        "hrScore=71.7"
       ],
-      "hrOddsYes": "+355",
-      "marketImpliedProbability": 0.21978021978021978,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,11 +37,11 @@
         "HH=52.5%"
       ],
       "bullets": [
-        "barrel=16.7%",
-        "park=1.1"
+        "park=1.1",
+        "hrScore=70.6"
       ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
+      "hrOddsYes": "+213",
+      "marketImpliedProbability": 0.3194888178913738,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,15 +52,15 @@
       "opposingPitcher": "Sean Manaea",
       "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=63.7",
-        "Hard Hit%=59.7"
+        "barrel=20.6%",
+        "HH=58.8%"
       ],
       "bullets": [
-        "HR score 70.2 (#3)",
-        "Pitcher HR VS 63.7 at park 1.07"
+        "park=1.07",
+        "hrScore=69.5"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+339",
+      "marketImpliedProbability": 0.22779043280182232,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -71,52 +71,52 @@
       "opposingPitcher": "Sean Manaea",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=63.7",
+        "Pitcher HR VS=63.6",
         "Hard Hit%=46.5"
       ],
       "bullets": [
-        "HR score 68.8 (#4)",
-        "Pitcher HR VS 63.7 at park 1.07"
+        "HR score 68.2 (#4)",
+        "Pitcher HR VS 63.6 at park 1.07"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "MIA",
-      "opposingPitcher": "Ryan Gusto",
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=63.6",
-        "Hard Hit%=50.0"
+        "Pitcher HR VS=58.6",
+        "Hard Hit%=49.0"
       ],
       "bullets": [
-        "HR score 66.0 (#5)",
-        "Pitcher HR VS 63.6 at park 0.88"
+        "HR score 65.0 (#5)",
+        "Pitcher HR VS 58.6 at park 0.93"
       ],
-      "hrOddsYes": "+410",
-      "marketImpliedProbability": 0.19607843137254902,
+      "hrOddsYes": "+330",
+      "marketImpliedProbability": 0.23255813953488372,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Munetaka Murakami",
+      "player": "Miguel Vargas",
       "team": "CWS",
       "opponent": "NYM",
       "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=20.9%",
-        "HH=59.7%"
+        "barrel=14.5%",
+        "HH=46.5%"
       ],
       "bullets": [
-        "barrel=20.9%",
-        "HH=59.7%"
+        "park=1.07",
+        "hrScore=68.2"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
@@ -124,80 +124,118 @@
       "hrValueEdge": null
     },
     {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "NYM",
-      "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=14.6%",
-        "HH=46.5%"
-      ],
-      "bullets": [
-        "barrel=14.6%",
-        "park=1.07"
-      ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Pete Crow-Armstrong",
       "team": "CHC",
       "opponent": "SEA",
       "opposingPitcher": "Emerson Hancock",
-      "hrScoreRank": 6,
+      "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=58.5",
-        "Hard Hit%=49.0"
+        "barrel=12.5%",
+        "HH=49%"
       ],
       "bullets": [
-        "HR score 65.3 (#6)",
-        "Pitcher HR VS 58.5 at park 0.93"
+        "park=0.93",
+        "hrScore=65"
       ],
-      "hrOddsYes": "+295",
-      "marketImpliedProbability": 0.25316455696202533,
+      "hrOddsYes": "+330",
+      "marketImpliedProbability": 0.23255813953488372,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=16.2%",
+        "HH=51.4%"
+      ],
+      "bullets": [
+        "park=0.88",
+        "hrScore=64.9"
+      ],
+      "hrOddsYes": "+440",
+      "marketImpliedProbability": 0.18518518518518517,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Eduardo Valencia",
+      "team": "DET",
+      "opponent": "KC",
+      "opposingPitcher": "Noah Cameron",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=52.4",
+        "Pitcher HR VS=52.3"
+      ],
+      "bullets": [
+        "HR score 63.0 (#7)",
+        "Pitcher HR VS 52.3 at park 0.96"
+      ],
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Gabriel Moreno",
+      "team": "AZ",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=65.5",
+        "Hard Hit%=42.5"
+      ],
+      "bullets": [
+        "HR score 61.8 (#8)",
+        "Pitcher HR VS 65.5 at park 1.01"
+      ],
+      "hrOddsYes": "+750",
+      "marketImpliedProbability": 0.11764705882352941,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "MIA",
-      "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 5,
+      "player": "Eduardo Valencia",
+      "team": "DET",
+      "opponent": "KC",
+      "opposingPitcher": "Noah Cameron",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=16.7%",
-        "HH=50%"
+        "barrel=23.8%",
+        "HH=52.4%"
       ],
       "bullets": [
-        "barrel=16.7%",
-        "park=0.88"
+        "park=0.96",
+        "hrScore=63"
       ],
-      "hrOddsYes": "+410",
-      "marketImpliedProbability": 0.19607843137254902,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "SEA",
-      "opposingPitcher": "Emerson Hancock",
-      "hrScoreRank": 6,
+      "player": "Gabriel Moreno",
+      "team": "AZ",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=12.5%",
-        "HH=49%"
+        "barrel=7.4%",
+        "HH=42.5%"
       ],
       "bullets": [
-        "barrel=12.5%",
-        "park=0.93"
+        "park=1.01",
+        "hrScore=61.8"
       ],
-      "hrOddsYes": "+295",
-      "marketImpliedProbability": 0.25316455696202533,
+      "hrOddsYes": "+750",
+      "marketImpliedProbability": 0.11764705882352941,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -208,34 +246,34 @@
       "opposingPitcher": "Ryan Gusto",
       "hrScoreRank": 12,
       "topStats": [
-        "Pitcher HR VS=63.6",
-        "Hard Hit%=49.4"
+        "Pitcher HR VS=63.7",
+        "Hard Hit%=48.3"
       ],
       "bullets": [
-        "HR score 59.2 (#12)",
-        "Pitcher HR VS 63.6 at park 0.88"
+        "HR score 57.9 (#12)",
+        "Pitcher HR VS 63.7 at park 0.88"
       ],
-      "hrOddsYes": "+625",
-      "marketImpliedProbability": 0.13793103448275862,
+      "hrOddsYes": "+650",
+      "marketImpliedProbability": 0.13333333333333333,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
+      "player": "Tyler Stephenson",
       "team": "CIN",
       "opponent": "AZ",
       "opposingPitcher": "Eduardo Rodriguez",
-      "hrScoreRank": 16,
+      "hrScoreRank": 25,
       "topStats": [
-        "Pitcher HR VS=52.3",
-        "Hard Hit%=51.4"
+        "Pitcher HR VS=52.8",
+        "Hard Hit%=45.7"
       ],
       "bullets": [
-        "HR score 58.3 (#16)",
-        "Pitcher HR VS 52.3 at park 1.01"
+        "HR score 52.1 (#25)",
+        "Pitcher HR VS 52.8 at park 1.01"
       ],
-      "hrOddsYes": "+600",
-      "marketImpliedProbability": 0.14285714285714285,
+      "hrOddsYes": "+650",
+      "marketImpliedProbability": 0.13333333333333333,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
