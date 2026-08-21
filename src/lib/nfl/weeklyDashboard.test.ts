@@ -321,4 +321,75 @@ describe("buildWeeklyDashboard fantasy and ratings", () => {
     expect(result.fantasyLeaders).not.toHaveProperty("DST");
     expect(result.powerWatch.map((row) => row.abbr)).toEqual(["aaa", "bbb", "ccc"]);
   });
+
+  it("computes ppgPercentile against the full position population, not just the Top 5 slice", () => {
+    // 10 rows: the Top 5 slice alone would make row #5 look like the worst of
+    // its (tiny) sample. Against the full 10-row population it should read as
+    // solidly above the middle, and the #1 row should read as elite (>=95).
+    const rows = Array.from({ length: 10 }, (_, i) =>
+      fantasyRow("QB", i + 1, `Player ${i + 1}`, 30 - i),
+    );
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game("one", "aaa", "bbb", null)],
+      teams: TEAMS,
+      fantasyRows: { QB: rows },
+    });
+    const [first, , , , fifth] = result.fantasyLeaders.QB;
+    expect(first.ppgPercentile).toBe(100);
+    expect(fifth.ppgPercentile).toBeGreaterThan(50);
+    expect(fifth.ppgPercentile).toBeLessThan(first.ppgPercentile!);
+  });
+
+  it("keeps QB and TE percentiles independent even when their PPG scales differ", () => {
+    // TE's best value (14) is far below QB's worst value (17) in raw PPG, but
+    // each position's top row must still read as the top of ITS OWN population.
+    const qbRows = [
+      fantasyRow("QB", 1, "QB One", 25),
+      fantasyRow("QB", 2, "QB Two", 20),
+      fantasyRow("QB", 3, "QB Three", 17),
+    ];
+    const teRows = [
+      fantasyRow("TE", 1, "TE One", 14),
+      fantasyRow("TE", 2, "TE Two", 9),
+      fantasyRow("TE", 3, "TE Three", 6),
+    ];
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game("one", "aaa", "bbb", null)],
+      teams: TEAMS,
+      fantasyRows: { QB: qbRows, TE: teRows },
+    });
+    expect(result.fantasyLeaders.QB[0].ppgPercentile).toBe(100);
+    expect(result.fantasyLeaders.TE[0].ppgPercentile).toBe(100);
+  });
+
+  it("derives Power Watch Top 5 and Bottom 5 from the same canonical OVR ordering with correct ordering", () => {
+    const teams = Array.from({ length: 8 }, (_, i) => team(`t${i}`, `Team ${i}`));
+    const ratings = teams.map((t, i) => rating(t.abbr, i + 1));
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game("one", "t0", "t1", null)],
+      teams,
+      currentRatings: ratings,
+    });
+    expect(result.powerWatch.map((t) => t.abbr)).toEqual(["t0", "t1", "t2", "t3", "t4"]);
+    expect(result.powerWatchBottom.map((t) => t.abbr)).toEqual(["t3", "t4", "t5", "t6", "t7"]);
+    expect(result.powerWatchBottom.map((t) => t.rating?.ovrRank)).toEqual([4, 5, 6, 7, 8]);
+  });
+
+  it("returns an empty Power Watch Bottom 5 rather than overlapping Top 5 for small rated populations", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game("one", "aaa", "bbb", null)],
+      teams: TEAMS,
+      currentRatings: RATINGS,
+    });
+    expect(result.powerWatch.map((t) => t.abbr)).toEqual(["aaa", "bbb", "ccc"]);
+    expect(result.powerWatchBottom).toEqual([]);
+  });
 });

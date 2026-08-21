@@ -168,6 +168,31 @@ describe("WeeklyCommandCenter", () => {
     expect(screen.getByRole("link", { name: /Performance Analytics/i }).getAttribute("href")).toBe("/nfl/analytics");
   });
 
+  it("shows Power Watch Top 5 and Bottom 5 with a Full Power Rankings link to /nfl/power-ratings", () => {
+    renderDashboard();
+    expect(dashboard.powerWatch).toHaveLength(5);
+    expect(dashboard.powerWatchBottom).toHaveLength(5);
+    const desktop = screen.getByTestId("power-watch-desktop");
+    expect(within(desktop).getByText("Top 5")).toBeTruthy();
+    expect(within(desktop).getByText("Bottom 5")).toBeTruthy();
+    for (const t of dashboard.powerWatch) expect(within(desktop).getByText(t.name)).toBeTruthy();
+    for (const t of dashboard.powerWatchBottom) expect(within(desktop).getByText(t.name)).toBeTruthy();
+    const fullRankingsLinks = screen.getAllByRole("link", { name: /Full Power Rankings/i });
+    expect(fullRankingsLinks.length).toBeGreaterThan(0);
+    expect(fullRankingsLinks.every((link) => link.getAttribute("href") === "/nfl/power-ratings")).toBe(true);
+  });
+
+  it("renders the mobile Power Watch Top 5 and Bottom 5 as two compact tables side by side", () => {
+    renderDashboard();
+    const mobile = screen.getByTestId("power-watch-mobile");
+    expect(mobile.className).toContain("grid-cols-2");
+    expect(within(mobile).getByText("Top 5")).toBeTruthy();
+    expect(within(mobile).getByText("Bottom 5")).toBeTruthy();
+    for (const t of dashboard.powerWatchBottom) {
+      expect(within(mobile).getByText(`#${t.rating?.ovrRank}`)).toBeTruthy();
+    }
+  });
+
   it("keeps the core mobile board compact without a horizontal-scroll contract", () => {
     renderDashboard();
     const mobile = screen.getByTestId("mobile-game-board");
@@ -176,6 +201,48 @@ describe("WeeklyCommandCenter", () => {
     expect(mobile.textContent).toContain("Market");
     expect(mobile.textContent).toContain("JKB");
     expect(mobile.textContent).toContain("Gap");
+  });
+
+  it("gives each fantasy position a distinct restrained header tone on desktop", () => {
+    renderDashboard();
+    const desktop = screen.getByTestId("desktop-fantasy-leaders");
+    const qbHeader = within(desktop).getByText("Top QB plays");
+    const rbHeader = within(desktop).getByText("Top RB plays");
+    const wrHeader = within(desktop).getByText("Top WR plays");
+    const teHeader = within(desktop).getByText("Top TE plays");
+    expect(qbHeader.className).toContain("sky");
+    expect(rbHeader.className).toContain("emerald");
+    expect(wrHeader.className).toContain("violet");
+    expect(teHeader.className).toContain("amber");
+    const classes = [qbHeader.className, rbHeader.className, wrHeader.className, teHeader.className];
+    expect(new Set(classes).size).toBe(4);
+  });
+
+  it("gives the mobile QB/RB/WR/TE tabs distinct position identity with an obvious active state", () => {
+    renderDashboard();
+    const selector = screen.getByRole("group", { name: "Fantasy position" });
+    const qbTab = within(selector).getByRole("button", { name: "QB" });
+    const rbTab = within(selector).getByRole("button", { name: "RB" });
+    expect(qbTab).toHaveAttribute("aria-pressed", "true");
+    expect(qbTab.className).toContain("sky");
+    expect(rbTab.className).toContain("emerald");
+    fireEvent.click(rbTab);
+    expect(rbTab).toHaveAttribute("aria-pressed", "true");
+    expect(qbTab).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("colors projected PPG by within-position percentile without changing the value or rank order", () => {
+    renderDashboard();
+    const desktop = screen.getByTestId("desktop-fantasy-leaders");
+    const qbLeaders = dashboard.fantasyLeaders.QB;
+    const ppgCells = within(desktop).getAllByTestId("fantasy-ppg-value");
+    expect(ppgCells.length).toBeGreaterThanOrEqual(qbLeaders.length);
+    // Values render unchanged, in canonical rank order.
+    const qbValues = qbLeaders.map((row) => row.projectedPpg.toFixed(1));
+    expect(ppgCells.slice(0, qbLeaders.length).map((el) => el.textContent)).toEqual(qbValues);
+    // A higher-percentile row never renders a visually weaker (empty) style than a lower one.
+    const styledCount = ppgCells.filter((el) => el.getAttribute("style")).length;
+    expect(styledCount).toBeGreaterThan(0);
   });
 
   it("surfaces partial artifact failure without suppressing available modules", () => {

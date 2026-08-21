@@ -9,6 +9,7 @@ import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   WEEKLY_RANKING_POSITIONS,
 } from "@/lib/fantasy/weeklyRankings";
+import { ppgPercentileStyle } from "@/lib/fantasy/ppgPercentile";
 import type {
   WeeklyDashboard,
   WeeklyDashboardFantasyLeader,
@@ -25,6 +26,30 @@ const EXPLORE_LINKS = [
   { to: "/fantasy-football/weekly-rankings", label: "Fantasy Rankings", detail: "Complete weekly boards", icon: Sparkles, iconClass: "border-violet-200 bg-violet-50 text-violet-800" },
   { to: "/nfl/guide", label: "2026 Team Guide", detail: "Previews and research", icon: Users, iconClass: "border-amber-200 bg-amber-50 text-amber-800" },
 ] as const;
+
+/** Restrained, position-specific tone reused for both the desktop column headers and the mobile tabs. */
+const POSITION_THEME: Record<WeeklyDashboardPosition, { header: string; tabActive: string; tabInactive: string }> = {
+  QB: {
+    header: "bg-sky-50 text-sky-800",
+    tabActive: "border-sky-700 bg-sky-700 text-white",
+    tabInactive: "border-sky-200 bg-sky-50 text-sky-800",
+  },
+  RB: {
+    header: "bg-emerald-50 text-emerald-800",
+    tabActive: "border-emerald-700 bg-emerald-700 text-white",
+    tabInactive: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  },
+  WR: {
+    header: "bg-violet-50 text-violet-800",
+    tabActive: "border-violet-700 bg-violet-700 text-white",
+    tabInactive: "border-violet-200 bg-violet-50 text-violet-800",
+  },
+  TE: {
+    header: "bg-amber-50 text-amber-800",
+    tabActive: "border-amber-700 bg-amber-700 text-white",
+    tabInactive: "border-amber-200 bg-amber-50 text-amber-800",
+  },
+};
 
 function kickoffLabel(iso: string | null): string {
   if (!iso) return "TBD";
@@ -392,9 +417,15 @@ function FantasyRows({ rows }: { rows: readonly WeeklyDashboardFantasyLeader[] }
             </span>
             <span className="block text-[8px] font-semibold uppercase text-slate-500">{row.teamAbbr?.toUpperCase() ?? "FA"} · {row.opponentLabel}</span>
           </span>
-          <span className="text-right text-[9px] font-semibold text-violet-800">
-            <span className="block text-[11px] font-black tabular-nums">{row.projectedPpg.toFixed(1)}</span>
-            <span className="block uppercase tracking-wide">Proj PPG</span>
+          <span className="flex flex-col items-end gap-0.5 text-right">
+            <span
+              data-testid="fantasy-ppg-value"
+              className="rounded px-1.5 py-0.5 text-[11px] font-black tabular-nums"
+              style={ppgPercentileStyle(row.ppgPercentile) ?? undefined}
+            >
+              {row.projectedPpg.toFixed(1)}
+            </span>
+            <span className="text-[8px] font-semibold uppercase tracking-wide text-slate-500">Proj PPG</span>
           </span>
         </li>
       ))}
@@ -410,7 +441,7 @@ function TopFantasyPicks({ leaders, week }: { leaders: WeeklyDashboard["fantasyL
       <div className="border-b border-slate-200 p-2 md:hidden">
         <div role="group" aria-label="Fantasy position" className="grid grid-cols-4 gap-1">
           {WEEKLY_RANKING_POSITIONS.map((option) => (
-            <button key={option} type="button" onClick={() => setPosition(option)} aria-pressed={position === option} className={`min-h-9 rounded border text-[10px] font-black focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${position === option ? "border-violet-800 bg-violet-800 text-white" : "border-slate-200 bg-white text-slate-600"}`}>{option}</button>
+            <button key={option} type="button" onClick={() => setPosition(option)} aria-pressed={position === option} className={`min-h-9 rounded border text-[10px] font-black focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${position === option ? POSITION_THEME[option].tabActive : POSITION_THEME[option].tabInactive}`}>{option}</button>
           ))}
         </div>
       </div>
@@ -418,7 +449,7 @@ function TopFantasyPicks({ leaders, week }: { leaders: WeeklyDashboard["fantasyL
       <div className="hidden grid-cols-4 divide-x divide-slate-200 md:grid" data-testid="desktop-fantasy-leaders">
         {WEEKLY_RANKING_POSITIONS.map((option) => (
           <div key={option} className="min-w-0">
-            <div className="border-b border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-slate-600">Top {option} plays</div>
+            <div className={`border-b border-slate-100 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider ${POSITION_THEME[option].header}`}>Top {option} plays</div>
             <FantasyRows rows={leaders[option]} />
           </div>
         ))}
@@ -427,21 +458,78 @@ function TopFantasyPicks({ leaders, week }: { leaders: WeeklyDashboard["fantasyL
   );
 }
 
-function PowerWatch({ teams }: { teams: readonly WeeklyDashboardTeam[] }) {
+function PowerWatchRow({ team }: { team: WeeklyDashboardTeam }) {
+  return (
+    <li className="grid min-h-9 grid-cols-[24px_24px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-1">
+      <span className="text-[10px] font-black tabular-nums text-slate-400">#{team.rating?.ovrRank}</span>
+      <TeamLogo team={team} className="h-5 w-5" />
+      <span className="truncate text-[10px] font-bold text-slate-900">{team.name}</span>
+      <span className="text-[11px] font-black tabular-nums text-slate-800">{team.rating?.ovr.toFixed(1)}</span>
+    </li>
+  );
+}
+
+function PowerWatchGroupLabel({ children }: { children: React.ReactNode }) {
+  return <p className="px-3 pb-1 pt-2 text-[8px] font-black uppercase tracking-[0.08em] text-slate-400">{children}</p>;
+}
+
+function DesktopPowerWatch({ top, bottom }: { top: readonly WeeklyDashboardTeam[]; bottom: readonly WeeklyDashboardTeam[] }) {
+  return (
+    <div className="hidden md:block" data-testid="power-watch-desktop">
+      <PowerWatchGroupLabel>Top 5</PowerWatchGroupLabel>
+      <ol className="divide-y divide-slate-100">{top.map((team) => <PowerWatchRow key={team.abbr} team={team} />)}</ol>
+      {bottom.length > 0 && (
+        <>
+          <div className="border-t border-slate-100">
+            <PowerWatchGroupLabel>Bottom 5</PowerWatchGroupLabel>
+          </div>
+          <ol className="divide-y divide-slate-100">{bottom.map((team) => <PowerWatchRow key={team.abbr} team={team} />)}</ol>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MobilePowerWatchTable({ label, teams }: { label: string; teams: readonly WeeklyDashboardTeam[] }) {
+  return (
+    <div className="min-w-0">
+      <p className="px-1 pb-1 text-[8px] font-black uppercase tracking-[0.08em] text-slate-400">{label}</p>
+      <ol className="space-y-0.5">
+        {teams.map((team) => (
+          <li key={team.abbr} className="flex items-center gap-1.5 rounded bg-slate-50 px-1.5 py-1">
+            <span className="w-6 shrink-0 text-[9px] font-black tabular-nums text-slate-400">#{team.rating?.ovrRank}</span>
+            <TeamLogo team={team} className="h-4 w-4" />
+            <span className="ml-auto text-[10px] font-black tabular-nums text-slate-800">{team.rating?.ovr.toFixed(1)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function MobilePowerWatch({ top, bottom }: { top: readonly WeeklyDashboardTeam[]; bottom: readonly WeeklyDashboardTeam[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 px-2.5 py-2 md:hidden" data-testid="power-watch-mobile">
+      <MobilePowerWatchTable label="Top 5" teams={top} />
+      <MobilePowerWatchTable label="Bottom 5" teams={bottom} />
+    </div>
+  );
+}
+
+function PowerWatch({ top, bottom }: { top: readonly WeeklyDashboardTeam[]; bottom: readonly WeeklyDashboardTeam[] }) {
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      <ModuleHeader title="Power Watch" detail="Top 5 current OVR" action={<Link to="/nfl/power-ratings" className="text-[10px] font-bold text-sky-700 hover:underline">All 32</Link>} />
-      {teams.length === 0 ? <p className="px-4 py-6 text-xs text-slate-500">Current ratings are unavailable.</p> : (
-        <ol className="divide-y divide-slate-100">
-          {teams.map((team) => (
-            <li key={team.abbr} className="grid min-h-10 grid-cols-[24px_26px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-1.5">
-              <span className="text-[10px] font-black tabular-nums text-slate-400">#{team.rating?.ovrRank}</span>
-              <TeamLogo team={team} className="h-6 w-6" />
-              <span className="truncate text-[10px] font-bold text-slate-900">{team.name}</span>
-              <span className="text-[11px] font-black tabular-nums text-slate-800">{team.rating?.ovr.toFixed(1)}</span>
-            </li>
-          ))}
-        </ol>
+      <ModuleHeader title="Power Watch" detail="Top 5 + Bottom 5 current OVR" action={<Link to="/nfl/power-ratings" className="text-[10px] font-bold text-sky-700 hover:underline">All 32</Link>} />
+      {top.length === 0 ? (
+        <p className="px-4 py-6 text-xs text-slate-500">Current ratings are unavailable.</p>
+      ) : (
+        <>
+          <DesktopPowerWatch top={top} bottom={bottom} />
+          <MobilePowerWatch top={top} bottom={bottom} />
+          <div className="border-t border-slate-100 px-3 py-2 text-center">
+            <Link to="/nfl/power-ratings" className="text-[10px] font-bold text-sky-700 hover:underline">Full Power Rankings →</Link>
+          </div>
+        </>
       )}
     </section>
   );
@@ -494,7 +582,7 @@ export default function WeeklyCommandCenter({
         <GameBoard games={dashboard.games} />
         <div className="grid min-w-0 gap-3 sm:grid-cols-2 2xl:grid-cols-1">
           <ModelGapList games={dashboard.largestModelMarketGaps} />
-          <PowerWatch teams={dashboard.powerWatch} />
+          <PowerWatch top={dashboard.powerWatch} bottom={dashboard.powerWatchBottom} />
         </div>
       </div>
       <TopFantasyPicks leaders={dashboard.fantasyLeaders} week={dashboard.week} />
