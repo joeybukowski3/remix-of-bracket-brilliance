@@ -42,6 +42,12 @@ export type HistoricalUniverseAudit = {
   excludedInactiveRoster: number;
   unresolvedIdentity: number;
   notOnInjuryReport: number;
+  /**
+   * Rows that would have been excluded by an "Out" injury-report status but
+   * were RETAINED because `injuryExclusionMode: "context-only"` was passed.
+   * Only populated in that mode; always 0 under the default "apply" mode.
+   */
+  injuryContextOnlyRetained: number;
 };
 
 function emptyHistoricalRow(
@@ -83,7 +89,23 @@ export function buildHistoricalRankingUniverse(input: {
   rosters: readonly HistoricalRosterWeek[];
   injuries: readonly HistoricalInjuryWeek[];
   schedule: readonly HistoricalScheduleTeamWeek[];
+  /**
+   * "apply" (default): an "Out" injury-report status excludes the row from
+   * the universe, matching the Phase B backtest's original behavior. This is
+   * PRESERVED for existing callers.
+   *
+   * "context-only": injury-report status is still resolved and recorded (see
+   * `availability` map) but never excludes a row from the universe. Use this
+   * when the source's `date_modified` cannot be proven to precede kickoff
+   * (see Phase 1B eligibility audit, src/lib/fantasy/weekly/README.md) --
+   * the nflverse weekly injury report has no verified as-of/kickoff
+   * comparison, and sampled `date_modified` values reach into the target
+   * week's game day itself, so "apply" is not leakage-safe for a canonical
+   * training-row existence decision.
+   */
+  injuryExclusionMode?: "apply" | "context-only";
 }): { rows: HistoricalPlayerWeek[]; availability: Map<string, FantasyAvailabilityStatus>; audit: HistoricalUniverseAudit } {
+  const injuryExclusionMode = input.injuryExclusionMode ?? "apply";
   const outcomeByKey = new Map(input.outcomes.map((row) => [`${row.season}|${row.week}|${row.playerId}`, row]));
   const injuryByKey = new Map(input.injuries.map((row) => [`${row.season}|${row.week}|${row.gsisId}`, row]));
   const scheduleByKey = new Map(input.schedule.map((row) => [
@@ -95,6 +117,7 @@ export function buildHistoricalRankingUniverse(input: {
     rosterRows: input.rosters.length, includedRows: 0, statOutcomeRows: 0, eligibleZeroRows: 0,
     excludedOut: 0, excludedReserve: 0, excludedByeOrMissingSchedule: 0,
     excludedInactiveRoster: 0, unresolvedIdentity: 0, notOnInjuryReport: 0,
+    injuryContextOnlyRetained: 0,
   };
   const seen = new Set<string>();
 
@@ -133,8 +156,11 @@ export function buildHistoricalRankingUniverse(input: {
       sourceAsOf: null,
     }, { season: roster.season, week: roster.week });
     if (normalizedAvailability.status === "out") {
-      audit.excludedOut += 1;
-      continue;
+      if (injuryExclusionMode === "apply") {
+        audit.excludedOut += 1;
+        continue;
+      }
+      audit.injuryContextOnlyRetained += 1;
     }
     if (normalizedAvailability.status === "reserve") {
       audit.excludedReserve += 1;
