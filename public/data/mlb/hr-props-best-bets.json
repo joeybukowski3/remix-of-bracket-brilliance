@@ -1,10 +1,10 @@
 {
   "date": "2026-08-22",
-  "generatedAt": "2026-08-22T13:10:20.682Z",
+  "generatedAt": "2026-08-22T14:45:20.784Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a pronounced home-run environment at Camden Yards (parkFactor 1.1) and Globe Life Field (0.99), while loanDepot park (0.88) and Petco (0.89) suppress power. Favorable right-handed pitching matchups for Conine vs Irvin and Ohtani vs Jones stand out, with lefty McClanahan facing Alonso at the hitter-friendly Camden Yards. No major weather overlays are noted.",
-    "modelNote": "The model is prioritizing barrel rate, recent HR volume, and opposing pitcher HR vulnerability, elevating Conine to the top spot despite the pitcher-friendly park due to his elite 16.7 barrel rate and 72.1 hrScore."
+    "slateOverview": "Today's slate features a pronounced HR-friendly environment at Camden Yards (1.1 park factor) and Globe Life Field (0.99), where lefty Shane McClanahan and righty Ryan Johnson respectively face power bats in elevated launch spots. LoanDepot park's 0.88 factor suppresses Griffin Conine's raw power, yet his elite 54.4 hard-hit rate and 72.1 hrScore still surface as the top signal. Weather is neutral across venues, so park and platoon edges dominate opportunity creation.",
+    "modelNote": "The model is overweighting recent barrel authority and hard contact (hardHitRate, barrelRate) while discounting park suppression when underlying quality metrics remain elite, which is why Conine leads despite the pitcher-friendly home venue."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=16.7%",
         "park=0.88"
       ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "barrel=16.6%",
         "park=1.1"
       ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,12 +52,12 @@
       "opposingPitcher": "Shane McClanahan",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=14.1%",
-        "HH=56.2%"
+        "Pitcher HR VS=57.7",
+        "Hard Hit%=56.2"
       ],
       "bullets": [
-        "HH=56.2%",
-        "park=1.1"
+        "HR score 67.9 (#3)",
+        "Pitcher HR VS 57.7 at park 1.10"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -78,8 +78,8 @@
         "HR score 63.0 (#4)",
         "Pitcher HR VS 72.8 at park 0.99"
       ],
-      "hrOddsYes": "+427",
-      "marketImpliedProbability": 0.18975332068311196,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -97,32 +97,13 @@
         "HR score 62.9 (#5)",
         "Pitcher HR VS 82.1 at park 0.99"
       ],
-      "hrOddsYes": "+387",
-      "marketImpliedProbability": 0.2053388090349076,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
-    {
-      "player": "Brandon Nimmo",
-      "team": "TEX",
-      "opponent": "LAA",
-      "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=10.2%",
-        "HH=51.2%"
-      ],
-      "bullets": [
-        "HH=51.2%",
-        "park=0.99"
-      ],
-      "hrOddsYes": "+427",
-      "marketImpliedProbability": 0.18975332068311196,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Mike Trout",
       "team": "LAA",
@@ -137,8 +118,8 @@
         "barrel=15.9%",
         "park=0.99"
       ],
-      "hrOddsYes": "+387",
-      "marketImpliedProbability": 0.2053388090349076,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -156,8 +137,8 @@
         "barrel=15.4%",
         "park=0.99"
       ],
-      "hrOddsYes": "+322",
-      "marketImpliedProbability": 0.23696682464454977,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -175,70 +156,13 @@
         "HR score 61.4 (#7)",
         "Pitcher HR VS 42.6 at park 1.07"
       ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "NYM",
-      "opposingPitcher": "Christian Scott",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=46.8",
-        "Pitcher HR VS=42.6"
-      ],
-      "bullets": [
-        "HR score 60.8 (#8)",
-        "Pitcher HR VS 42.6 at park 1.07"
-      ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
+      "hrOddsYes": "+270",
+      "marketImpliedProbability": 0.2702702702702703,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
-    {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "NYM",
-      "opposingPitcher": "Christian Scott",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=20.4%",
-        "HH=58.7%"
-      ],
-      "bullets": [
-        "barrel=20.4%",
-        "park=1.07"
-      ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "NYM",
-      "opposingPitcher": "Christian Scott",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=15%",
-        "HH=46.8%"
-      ],
-      "bullets": [
-        "barrel=15%",
-        "park=1.07"
-      ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Max Muncy",
       "team": "LAD",
@@ -246,12 +170,12 @@
       "opposingPitcher": "Jared Jones",
       "hrScoreRank": 20,
       "topStats": [
-        "Pitcher HR VS=53.5",
-        "Hard Hit%=45.7"
+        "barrel=13.8%",
+        "HH=45.7%"
       ],
       "bullets": [
-        "HR score 57.2 (#20)",
-        "Pitcher HR VS 53.5 at park 1.10"
+        "barrel=13.8%",
+        "park=1.1"
       ],
       "hrOddsYes": "+900",
       "marketImpliedProbability": 0.1,
@@ -265,12 +189,12 @@
       "opposingPitcher": "Rhett Lowder",
       "hrScoreRank": 18,
       "topStats": [
-        "Pitcher HR VS=62.8",
-        "Hard Hit%=43.1"
+        "barrel=7.6%",
+        "HH=43.1%"
       ],
       "bullets": [
-        "HR score 57.7 (#18)",
-        "Pitcher HR VS 62.8 at park 1.01"
+        "barrel=7.6%",
+        "park=1.01"
       ],
       "hrOddsYes": "+850",
       "marketImpliedProbability": 0.10526315789473684,
