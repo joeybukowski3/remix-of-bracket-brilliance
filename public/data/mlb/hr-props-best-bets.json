@@ -1,10 +1,10 @@
 {
   "date": "2026-08-22",
-  "generatedAt": "2026-08-22T14:45:20.784Z",
+  "generatedAt": "2026-08-22T15:57:50.917Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a pronounced HR-friendly environment at Camden Yards (1.1 park factor) and Globe Life Field (0.99), where lefty Shane McClanahan and righty Ryan Johnson respectively face power bats in elevated launch spots. LoanDepot park's 0.88 factor suppresses Griffin Conine's raw power, yet his elite 54.4 hard-hit rate and 72.1 hrScore still surface as the top signal. Weather is neutral across venues, so park and platoon edges dominate opportunity creation.",
-    "modelNote": "The model is overweighting recent barrel authority and hard contact (hardHitRate, barrelRate) while discounting park suppression when underlying quality metrics remain elite, which is why Conine leads despite the pitcher-friendly home venue."
+    "slateOverview": "Today's slate features a pronounced home-run environment at Camden Yards (1.10 PF) and Globe Life Field (0.99 PF) where lefty-lefty and righty-righty matchups against McClanahan and Johnson elevate barrel rates. LoanDepot park (0.88 PF) and Petco (0.89 PF) suppress power, but Conine’s 54.4 HH% and Tatis’s 53.1 HH% still clear the depressed park factors. Warm, low-wind conditions across the East Coast further amplify fly-ball carry for the top three model names.",
+    "modelNote": "The model is overweighting recent barrel authority and opposing-pitcher HR vulnerability—Conine’s 72.1 hrScore is driven by an 8:1 HR/FB rate and 80 HR/PA allowed by Irvin, while Ohtani and Alonso benefit from 3 HR in the last 7 days against below-average fly-ball arms."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=16.7%",
         "park=0.88"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "barrel=16.6%",
         "park=1.1"
       ],
-      "hrOddsYes": "+240",
-      "marketImpliedProbability": 0.29411764705882354,
+      "hrOddsYes": "+230",
+      "marketImpliedProbability": 0.30303030303030304,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -78,8 +78,8 @@
         "HR score 63.0 (#4)",
         "Pitcher HR VS 72.8 at park 0.99"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
+      "hrOddsYes": "+427",
+      "marketImpliedProbability": 0.18975332068311196,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -97,8 +97,8 @@
         "HR score 62.9 (#5)",
         "Pitcher HR VS 82.1 at park 0.99"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+387",
+      "marketImpliedProbability": 0.2053388090349076,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -118,8 +118,8 @@
         "barrel=15.9%",
         "park=0.99"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+387",
+      "marketImpliedProbability": 0.2053388090349076,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -137,8 +137,8 @@
         "barrel=15.4%",
         "park=0.99"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+322",
+      "marketImpliedProbability": 0.23696682464454977,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -156,13 +156,32 @@
         "HR score 61.4 (#7)",
         "Pitcher HR VS 42.6 at park 1.07"
       ],
-      "hrOddsYes": "+270",
-      "marketImpliedProbability": 0.2702702702702703,
+      "hrOddsYes": "+265",
+      "marketImpliedProbability": 0.273972602739726,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
+    {
+      "player": "Gabriel Moreno",
+      "team": "AZ",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 18,
+      "topStats": [
+        "barrel=7.6%",
+        "HH=43.1%"
+      ],
+      "bullets": [
+        "barrel=7.6%",
+        "park=1.01"
+      ],
+      "hrOddsYes": "+900",
+      "marketImpliedProbability": 0.1,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Max Muncy",
       "team": "LAD",
@@ -179,25 +198,6 @@
       ],
       "hrOddsYes": "+900",
       "marketImpliedProbability": 0.1,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "CIN",
-      "opposingPitcher": "Rhett Lowder",
-      "hrScoreRank": 18,
-      "topStats": [
-        "barrel=7.6%",
-        "HH=43.1%"
-      ],
-      "bullets": [
-        "barrel=7.6%",
-        "park=1.01"
-      ],
-      "hrOddsYes": "+850",
-      "marketImpliedProbability": 0.10526315789473684,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
