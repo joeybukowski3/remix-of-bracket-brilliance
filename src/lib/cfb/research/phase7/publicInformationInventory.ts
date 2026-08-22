@@ -1,0 +1,87 @@
+export type FeasibilityClass = "AVAILABLE_NOW" | "AVAILABLE_WITH_SMALL_EXTENSION" | "REQUIRES_NEW_DATA_PROJECT" | "NOT_HISTORICALLY_RELIABLE";
+
+export type InformationCandidate = {
+  candidate: string;
+  classification: FeasibilityClass;
+  notes: string;
+};
+
+/**
+ * Section 19 — documented inventory of plausible non-market pregame
+ * information sources, based on the CFBD endpoint probes performed in this
+ * phase (see cfb-research-phase7-fetch.ts and the Phase 7 final report).
+ * Classification only; implementation status for each is reported
+ * separately in phase7-recommendation.json.
+ */
+export const PUBLIC_INFORMATION_INVENTORY: InformationCandidate[] = [
+  {
+    candidate: "QB continuity (returning primary starter)",
+    classification: "AVAILABLE_WITH_SMALL_EXTENSION",
+    notes: "CFBD /player/usage (position=QB) has clean 2018-2025 coverage; usage.pass identifies the primary passer per team/season. Implemented in Phase 7 (qbContinuity.ts).",
+  },
+  {
+    candidate: "Returning production (offense)",
+    classification: "AVAILABLE_NOW",
+    notes: "Already ingested and used as a Phase 3 prior feature.",
+  },
+  {
+    candidate: "Roster talent composite",
+    classification: "AVAILABLE_NOW",
+    notes: "Already ingested and used as a Phase 3 prior feature.",
+  },
+  {
+    candidate: "Transfer portal net movement",
+    classification: "AVAILABLE_WITH_SMALL_EXTENSION",
+    notes: "CFBD /player/portal has zero rows before 2021, then clean coverage 2021-2025. Implemented in Phase 7 for 2021+ only (transferFeatures.ts).",
+  },
+  {
+    candidate: "Coaching continuity (head coach)",
+    classification: "AVAILABLE_WITH_SMALL_EXTENSION",
+    notes: "CFBD /coaches (bulk, by year) has clean 2018-2025 coverage. Implemented in Phase 7 (coachingContinuity.ts).",
+  },
+  {
+    candidate: "Injuries (game-specific availability)",
+    classification: "NOT_HISTORICALLY_RELIABLE",
+    notes: "No CFBD endpoint for historical injury reports was probed or used; distinguished from QB continuity (structural) per Section 8. Not scraped in this phase per the explicit prohibition on ad-hoc injury-site scraping.",
+  },
+  {
+    candidate: "Suspensions",
+    classification: "NOT_HISTORICALLY_RELIABLE",
+    notes: "No clean historical CFBD source identified; would require a dedicated ingestion project.",
+  },
+  {
+    candidate: "Depth chart changes (non-QB)",
+    classification: "REQUIRES_NEW_DATA_PROJECT",
+    notes: "CFBD /roster has no per-week depth-chart snapshot; only a season-level roster listing.",
+  },
+  {
+    candidate: "Weather",
+    classification: "REQUIRES_NEW_DATA_PROJECT",
+    notes: "Not probed in this phase; would require a dedicated ingestion project plus a game-to-forecast/actuals join. Deferred.",
+  },
+  {
+    candidate: "Travel distance",
+    classification: "REQUIRES_NEW_DATA_PROJECT",
+    notes: "CFBD /games in this dataset carries no venue coordinates; would require a separate venue-geocoding dataset.",
+  },
+  {
+    candidate: "Rest days / short week / bye week",
+    classification: "AVAILABLE_NOW",
+    notes: "Derivable directly from existing kickoffUtc timestamps; implemented in Phase 7 (contextVariables.ts).",
+  },
+  {
+    candidate: "Altitude",
+    classification: "REQUIRES_NEW_DATA_PROJECT",
+    notes: "Would require a venue elevation dataset; not present in current ingestion.",
+  },
+  {
+    candidate: "Rivalry / neutral site / postseason / rematch",
+    classification: "AVAILABLE_NOW",
+    notes: "neutralSite and gameType already normalized; rematch derivable from prior-season schedule. Rivalry flag itself not implemented (subjective without a maintained list) — neutral/postseason/rematch implemented in Phase 7.",
+  },
+  {
+    candidate: "Conference championship / bowl context",
+    classification: "AVAILABLE_NOW",
+    notes: "gameType already distinguishes postseason from regular season.",
+  },
+];
