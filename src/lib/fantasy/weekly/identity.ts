@@ -32,6 +32,12 @@ const TEAM_ALIASES: Readonly<Record<string, string>> = {
   LAR: "lar",
   WAS: "wsh",
   WSH: "wsh",
+  // nflverse's weekly-rosters release switched the Cardinals' team code from
+  // "ARI" to "AZ" (observed in the 2026-08-22 refresh); the schedule source
+  // (public/data/nfl/2026/games.json) still uses "ari". Exact, reviewed
+  // alias -- no fuzzy matching.
+  AZ: "ari",
+  ARI: "ari",
 };
 
 export function normalizeNflTeamAbbr(value: string | null | undefined): string | null {
