@@ -1,0 +1,441 @@
+{
+  "results": [
+    {
+      "label": "NONE",
+      "n": 3939,
+      "scoreMae": {
+        "home": 9.648488050236873,
+        "away": 8.975909557335674,
+        "margin": 12.9517372357556,
+        "total": 13.236794080549398
+      },
+      "totalCalibration": {
+        "slope": 0.6573188057972003,
+        "intercept": 18.81038996321537
+      },
+      "marginCalibration": {
+        "slope": 0.9293918638061205,
+        "intercept": 0.6844261673549372
+      },
+      "brierScore": 0.19034785796782852,
+      "logLoss": 0.5590348360483519,
+      "calibrationBuckets": [
+        {
+          "label": "50-55",
+          "n": 557,
+          "meanPredicted": 0.5239652588795208,
+          "empiricalWinRate": 0.526032315978456
+        },
+        {
+          "label": "55-60",
+          "n": 517,
+          "meanPredicted": 0.5749683881423632,
+          "empiricalWinRate": 0.6073500967117988
+        },
+        {
+          "label": "60-70",
+          "n": 1029,
+          "meanPredicted": 0.6474644257970228,
+          "empiricalWinRate": 0.6433430515063168
+        },
+        {
+          "label": "70-80",
+          "n": 803,
+          "meanPredicted": 0.7480966036581739,
+          "empiricalWinRate": 0.7459526774595268
+        },
+        {
+          "label": "80-90",
+          "n": 632,
+          "meanPredicted": 0.8453583015086229,
+          "empiricalWinRate": 0.8544303797468354
+        },
+        {
+          "label": "90+",
+          "n": 382,
+          "meanPredicted": 0.9455557316049324,
+          "empiricalWinRate": 0.9528795811518325
+        }
+      ],
+      "expectedCalibrationError": 0.0082618431098524,
+      "intervalCoverage": {
+        "50": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.5219387755102041,
+            "meanWidth": 22.844215636662337
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.5033163265306122,
+            "meanWidth": 22.844215636662337
+          }
+        },
+        "80": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.8165816326530613,
+            "meanWidth": 43.404722267495146
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.811734693877551,
+            "meanWidth": 43.404722267495146
+          }
+        },
+        "90": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9089285714285714,
+            "meanWidth": 55.70935791218968
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9081632653061225,
+            "meanWidth": 55.70935791218968
+          }
+        },
+        "95": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9553571428571429,
+            "meanWidth": 66.38179442191847
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9553571428571429,
+            "meanWidth": 66.38179442191847
+          }
+        }
+      }
+    },
+    {
+      "label": "LINEAR",
+      "n": 3939,
+      "scoreMae": {
+        "home": 9.631507360943196,
+        "away": 8.946151719182765,
+        "margin": 12.951737235755598,
+        "total": 13.11549743791967
+      },
+      "totalCalibration": {
+        "slope": 0.893608878101073,
+        "intercept": 5.356491194573707
+      },
+      "marginCalibration": {
+        "slope": 0.9293918638061205,
+        "intercept": 0.6844261673549372
+      },
+      "brierScore": 0.1903467609410999,
+      "logLoss": 0.5590336334227103,
+      "calibrationBuckets": [
+        {
+          "label": "50-55",
+          "n": 555,
+          "meanPredicted": 0.5239391451405079,
+          "empiricalWinRate": 0.5243243243243243
+        },
+        {
+          "label": "55-60",
+          "n": 516,
+          "meanPredicted": 0.5749841203528188,
+          "empiricalWinRate": 0.6085271317829457
+        },
+        {
+          "label": "60-70",
+          "n": 1028,
+          "meanPredicted": 0.647563205382678,
+          "empiricalWinRate": 0.6449416342412452
+        },
+        {
+          "label": "70-80",
+          "n": 802,
+          "meanPredicted": 0.7481820836779306,
+          "empiricalWinRate": 0.743142144638404
+        },
+        {
+          "label": "80-90",
+          "n": 629,
+          "meanPredicted": 0.8450719421031541,
+          "empiricalWinRate": 0.8537360890302067
+        },
+        {
+          "label": "90+",
+          "n": 390,
+          "meanPredicted": 0.9451830713092689,
+          "empiricalWinRate": 0.9512820512820512
+        }
+      ],
+      "expectedCalibrationError": 0.008185542141468896,
+      "intervalCoverage": {
+        "50": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.5198979591836734,
+            "meanWidth": 22.77299176403262
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.5063775510204082,
+            "meanWidth": 22.77299176403262
+          }
+        },
+        "80": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.8153061224489796,
+            "meanWidth": 43.269394687879604
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.8104591836734694,
+            "meanWidth": 43.269394687879604
+          }
+        },
+        "90": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9079081632653061,
+            "meanWidth": 55.53566684415962
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9099489795918367,
+            "meanWidth": 55.53566684415962
+          }
+        },
+        "95": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9540816326530612,
+            "meanWidth": 66.17482874859138
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.960204081632653,
+            "meanWidth": 66.17482874859138
+          }
+        }
+      }
+    },
+    {
+      "label": "SEASON_AWARE",
+      "n": 3939,
+      "scoreMae": {
+        "home": 9.632957276876446,
+        "away": 8.970393051672248,
+        "margin": 12.9517372357556,
+        "total": 13.153119830265304
+      },
+      "totalCalibration": {
+        "slope": 0.8839227047893037,
+        "intercept": 6.23372881614678
+      },
+      "marginCalibration": {
+        "slope": 0.9293918638061206,
+        "intercept": 0.6844261673549363
+      },
+      "brierScore": 0.19034725677972203,
+      "logLoss": 0.559034402473022,
+      "calibrationBuckets": [
+        {
+          "label": "50-55",
+          "n": 557,
+          "meanPredicted": 0.5239964045078767,
+          "empiricalWinRate": 0.526032315978456
+        },
+        {
+          "label": "55-60",
+          "n": 515,
+          "meanPredicted": 0.5750096952431082,
+          "empiricalWinRate": 0.6077669902912621
+        },
+        {
+          "label": "60-70",
+          "n": 1029,
+          "meanPredicted": 0.6474914012503052,
+          "empiricalWinRate": 0.6433430515063168
+        },
+        {
+          "label": "70-80",
+          "n": 802,
+          "meanPredicted": 0.7481038299709829,
+          "empiricalWinRate": 0.7456359102244389
+        },
+        {
+          "label": "80-90",
+          "n": 632,
+          "meanPredicted": 0.8452708336446448,
+          "empiricalWinRate": 0.8544303797468354
+        },
+        {
+          "label": "90+",
+          "n": 385,
+          "meanPredicted": 0.9455069009459255,
+          "empiricalWinRate": 0.9506493506493506
+        }
+      ],
+      "expectedCalibrationError": 0.008168522814950917,
+      "intervalCoverage": {
+        "50": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.5211734693877551,
+            "meanWidth": 22.80856036269556
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.5122448979591837,
+            "meanWidth": 22.80856036269556
+          }
+        },
+        "80": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.8160714285714286,
+            "meanWidth": 43.33697613479595
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.811734693877551,
+            "meanWidth": 43.33697613479595
+          }
+        },
+        "90": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9081632653061225,
+            "meanWidth": 55.62240669221806
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9086734693877551,
+            "meanWidth": 55.62240669221806
+          }
+        },
+        "95": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9545918367346938,
+            "meanWidth": 66.27818565266989
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9599489795918368,
+            "meanWidth": 66.27818565266989
+          }
+        }
+      }
+    },
+    {
+      "label": "WEEK_SEGMENT_AWARE",
+      "n": 3939,
+      "scoreMae": {
+        "home": 9.633199434808756,
+        "away": 8.979672464297385,
+        "margin": 12.9517372357556,
+        "total": 13.174464119764714
+      },
+      "totalCalibration": {
+        "slope": 0.8342121566478904,
+        "intercept": 8.956236351384604
+      },
+      "marginCalibration": {
+        "slope": 0.9293918638061202,
+        "intercept": 0.6844261673549386
+      },
+      "brierScore": 0.19034743290256556,
+      "logLoss": 0.5590383529086138,
+      "calibrationBuckets": [
+        {
+          "label": "50-55",
+          "n": 557,
+          "meanPredicted": 0.5239679330939166,
+          "empiricalWinRate": 0.526032315978456
+        },
+        {
+          "label": "55-60",
+          "n": 515,
+          "meanPredicted": 0.5749123650492287,
+          "empiricalWinRate": 0.6077669902912621
+        },
+        {
+          "label": "60-70",
+          "n": 1031,
+          "meanPredicted": 0.6474149185478955,
+          "empiricalWinRate": 0.6430649854510184
+        },
+        {
+          "label": "70-80",
+          "n": 802,
+          "meanPredicted": 0.7480854989811742,
+          "empiricalWinRate": 0.7468827930174564
+        },
+        {
+          "label": "80-90",
+          "n": 632,
+          "meanPredicted": 0.845284555003102,
+          "empiricalWinRate": 0.8528481012658228
+        },
+        {
+          "label": "90+",
+          "n": 383,
+          "meanPredicted": 0.9455206625605344,
+          "empiricalWinRate": 0.9530026109660574
+        }
+      ],
+      "expectedCalibrationError": 0.007950278558538873,
+      "intervalCoverage": {
+        "50": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.5214285714285715,
+            "meanWidth": 22.837319171013352
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.5119897959183674,
+            "meanWidth": 22.837319171013352
+          }
+        },
+        "80": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.8163265306122449,
+            "meanWidth": 43.39161876764699
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.8104591836734694,
+            "meanWidth": 43.391618767647
+          }
+        },
+        "90": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9086734693877551,
+            "meanWidth": 55.69253975221043
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9081632653061225,
+            "meanWidth": 55.69253975221043
+          }
+        },
+        "95": {
+          "margin": {
+            "n": 3920,
+            "coverage": 0.9551020408163265,
+            "meanWidth": 66.36175434821943
+          },
+          "total": {
+            "n": 3920,
+            "coverage": 0.9596938775510204,
+            "meanWidth": 66.36175434821943
+          }
+        }
+      }
+    }
+  ],
+  "winningMethod": "LINEAR"
+}
