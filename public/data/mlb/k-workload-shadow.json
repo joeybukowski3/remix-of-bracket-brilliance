@@ -3,34 +3,264 @@
   "modelVersion": "mlb-k-workload-v2",
   "teamKAdjustmentModelVersion": "team-k-adjustment-v1",
   "mode": "shadow",
-  "date": "2026-08-21",
-  "generatedAt": "2026-08-21T14:59:48.923Z",
+  "date": "2026-08-22",
+  "generatedAt": "2026-08-22T07:49:10.550Z",
   "summary": {
     "gameCount": 15,
-    "pitcherCount": 28,
-    "successfulWorkloadFetches": 28,
-    "workloadOnlyKsAvailable": 28,
-    "teamAdjustedKsAvailable": 28,
-    "averageSignedKsChange": -0.019,
-    "averageAbsoluteKsChange": 0.136,
-    "generatedAt": "2026-08-21T14:59:48.923Z"
+    "pitcherCount": 29,
+    "successfulWorkloadFetches": 29,
+    "workloadOnlyKsAvailable": 29,
+    "teamAdjustedKsAvailable": 29,
+    "averageSignedKsChange": 0.003,
+    "averageAbsoluteKsChange": 0.193,
+    "generatedAt": "2026-08-22T07:49:10.550Z"
   },
   "leagueContext": {
     "pitchesPerPA": 3.885,
     "kRate": 0.2212,
-    "whiffRate": 0.246,
-    "bbRate": 0.0892,
-    "contactRate": 0.754
+    "whiffRate": 0.25,
+    "bbRate": 0.0893,
+    "contactRate": 0.75
   },
   "pitchers": [
     {
-      "gamePk": 823746,
+      "gamePk": 823509,
+      "gameKey": "TOR@NYY",
+      "gameDate": "2026-08-22T17:35:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Yankee Stadium",
+      "pitcherId": 656302,
+      "pitcher": "Dylan Cease",
+      "teamId": 141,
+      "team": "TOR",
+      "opponentId": 147,
+      "opponent": "NYY",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.3635,
+        "seasonBattersFaced": 553,
+        "recentKRate": 0.3487,
+        "recentBattersFaced": 152,
+        "bbRate": 0.1067,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.99,
+        "recent14PitchesPerPA": 3.982,
+        "seasonPlateAppearances": 4761,
+        "recent14PlateAppearances": 388,
+        "seasonKRate": 0.2478,
+        "recent14KRate": 0.2732,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 104.24,
+        "recentBfAverage": 24.67,
+        "recentIpAverage": 6.33,
+        "opponentPitchesPerPA": 3.988
+      },
+      "projection": {
+        "expectedPitchLimit": 99.13,
+        "expectedBF": 24.79,
+        "expectedInnings": 6.218,
+        "temporaryKRate": 0.3433,
+        "workloadOnlyProjectedKs": 8.509,
+        "teamAdjustedKRate": 0.3403,
+        "fullShadowProjectedKs": 8.436,
+        "teamAdjustmentKsDelta": -0.073
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.3403,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.3635,
+            "regressedSeasonKRate": 0.3257,
+            "recentAdjustment": 0.0046,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.3303
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2478,
+            "regressedSeasonKRate": 0.2449,
+            "seasonAdjustment": 0.0083,
+            "recentAdjustment": 0.0018,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2449,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.01,
+            "movementFromPitcherBaseline": 0.01
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "favorable",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823509,
+      "gameKey": "TOR@NYY",
+      "gameDate": "2026-08-22T17:35:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Yankee Stadium",
+      "pitcherId": 677960,
+      "pitcher": "Ryan Weathers",
+      "teamId": 147,
+      "team": "NYY",
+      "opponentId": 141,
+      "opponent": "TOR",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2541,
+        "seasonBattersFaced": 551,
+        "recentKRate": 0.2113,
+        "recentBattersFaced": 142,
+        "bbRate": 0.069,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.8,
+        "recent14PitchesPerPA": 3.682,
+        "seasonPlateAppearances": 4849,
+        "recent14PlateAppearances": 462,
+        "seasonKRate": 0.1959,
+        "recent14KRate": 0.1991,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 98.24,
+        "recentBfAverage": 23.76,
+        "recentIpAverage": 6.35,
+        "opponentPitchesPerPA": 3.77
+      },
+      "projection": {
+        "expectedPitchLimit": 94.81,
+        "expectedBF": 24.663,
+        "expectedInnings": 6.22,
+        "temporaryKRate": 0.2401,
+        "workloadOnlyProjectedKs": 5.923,
+        "teamAdjustedKRate": 0.2307,
+        "fullShadowProjectedKs": 5.69,
+        "teamAdjustmentKsDelta": -0.233
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2307,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2541,
+            "regressedSeasonKRate": 0.2453,
+            "recentAdjustment": -0.0068,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2385
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.1959,
+            "regressedSeasonKRate": 0.1987,
+            "seasonAdjustment": -0.0079,
+            "recentAdjustment": 0,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.1987,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0079,
+            "movementFromPitcherBaseline": -0.0079
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823743,
       "gameKey": "ATL@MIL",
-      "gameDate": "2026-08-21T20:10:00Z",
+      "gameDate": "2026-08-22T18:10:00Z",
       "gameStatus": "Scheduled",
       "venue": "American Family Field",
-      "pitcherId": 519242,
-      "pitcher": "Chris Sale",
+      "pitcherId": 527048,
+      "pitcher": "Martín Pérez",
       "teamId": 144,
       "team": "ATL",
       "opponentId": 158,
@@ -39,23 +269,23 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.309,
-        "seasonBattersFaced": 517,
-        "recentKRate": 0.384,
-        "recentBattersFaced": 125,
-        "bbRate": 0.054,
-        "whiffRate": 0.3,
-        "xera": 3.06,
-        "hand": "L",
-        "source": "hr-props-raw"
+        "seasonKRate": 0.1702,
+        "seasonBattersFaced": 423,
+        "recentKRate": 0.1721,
+        "recentBattersFaced": 122,
+        "bbRate": 0.1064,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.999,
-        "recent14PitchesPerPA": 4.132,
-        "seasonPlateAppearances": 4967,
-        "recent14PlateAppearances": 479,
-        "seasonKRate": 0.2164,
-        "recent14KRate": 0.2547,
+        "seasonPitchesPerPA": 3.998,
+        "recent14PitchesPerPA": 4.103,
+        "seasonPlateAppearances": 5000,
+        "recent14PlateAppearances": 477,
+        "seasonKRate": 0.2168,
+        "recent14KRate": 0.2453,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -65,20 +295,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 97.81,
-        "recentBfAverage": 22.14,
-        "recentIpAverage": 5.95,
-        "opponentPitchesPerPA": 4.032
+        "recentPitchAverage": 72.62,
+        "recentBfAverage": 20.95,
+        "recentIpAverage": 5.1,
+        "opponentPitchesPerPA": 4.024
       },
       "projection": {
-        "expectedPitchLimit": 94.5,
-        "expectedBF": 22.985,
-        "expectedInnings": 5.822,
-        "temporaryKRate": 0.3065,
-        "workloadOnlyProjectedKs": 7.045,
-        "teamAdjustedKRate": 0.2988,
-        "fullShadowProjectedKs": 6.868,
-        "teamAdjustmentKsDelta": -0.177
+        "expectedPitchLimit": 76.37,
+        "expectedBF": 19.669,
+        "expectedInnings": 4.983,
+        "temporaryKRate": 0.1767,
+        "workloadOnlyProjectedKs": 3.475,
+        "teamAdjustedKRate": 0.1841,
+        "fullShadowProjectedKs": 3.621,
+        "teamAdjustmentKsDelta": 0.146
       },
       "confidence": {
         "score": 1,
@@ -86,36 +316,37 @@
         "publicEligible": true
       },
       "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2988,
+        "adjustedKRate": 0.1841,
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.309,
-            "regressedSeasonKRate": 0.2845,
-            "recentAdjustment": 0.008,
-            "whiffAdjustment": 0.0054,
-            "baselineKRate": 0.2979
+            "observedSeasonKRate": 0.1702,
+            "regressedSeasonKRate": 0.1866,
+            "recentAdjustment": -0.0029,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1837
           },
           "opponent": {
-            "observedSeasonKRate": 0.2164,
-            "regressedSeasonKRate": 0.2169,
-            "seasonAdjustment": -0.0015,
-            "recentAdjustment": 0.0024,
+            "observedSeasonKRate": 0.2168,
+            "regressedSeasonKRate": 0.2173,
+            "seasonAdjustment": -0.0014,
+            "recentAdjustment": 0.0018,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2169,
+            "regressedHandednessKRate": 0.2173,
             "handednessAdjustment": 0
           },
           "totals": {
-            "opponentAdjustment": 0.0009,
-            "movementFromPitcherBaseline": 0.0009
+            "opponentAdjustment": 0.0004,
+            "movementFromPitcherBaseline": 0.0004
           }
         },
         "diagnostics": {
-          "pitcherHand": "L",
+          "pitcherHand": null,
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -127,22 +358,24 @@
           "grade": "A"
         },
         "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ]
     },
     {
-      "gamePk": 823746,
+      "gamePk": 823743,
       "gameKey": "ATL@MIL",
-      "gameDate": "2026-08-21T20:10:00Z",
+      "gameDate": "2026-08-22T18:10:00Z",
       "gameStatus": "Scheduled",
       "venue": "American Family Field",
-      "pitcherId": 694819,
-      "pitcher": "Jacob Misiorowski",
+      "pitcherId": 701656,
+      "pitcher": "Logan Henderson",
       "teamId": 158,
       "team": "MIL",
       "opponentId": 144,
@@ -151,135 +384,23 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.398,
-        "seasonBattersFaced": 527,
-        "recentKRate": 0.4154,
-        "recentBattersFaced": 130,
-        "bbRate": 0.059,
-        "whiffRate": 0.381,
-        "xera": 1.93,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.884,
-        "recent14PitchesPerPA": 3.877,
-        "seasonPlateAppearances": 4796,
-        "recent14PlateAppearances": 422,
-        "seasonKRate": 0.2164,
-        "recent14KRate": 0.2559,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 89.14,
-        "recentBfAverage": 22.14,
-        "recentIpAverage": 5.9,
-        "opponentPitchesPerPA": 3.882
-      },
-      "projection": {
-        "expectedPitchLimit": 88.26,
-        "expectedBF": 22.528,
-        "expectedInnings": 5.755,
-        "temporaryKRate": 0.3684,
-        "workloadOnlyProjectedKs": 8.3,
-        "teamAdjustedKRate": 0.3643,
-        "fullShadowProjectedKs": 8.207,
-        "teamAdjustmentKsDelta": -0.093
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.3643,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.398,
-            "regressedSeasonKRate": 0.3494,
-            "recentAdjustment": 0.008,
-            "whiffAdjustment": 0.006,
-            "baselineKRate": 0.3634
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2164,
-            "regressedSeasonKRate": 0.217,
-            "seasonAdjustment": -0.0015,
-            "recentAdjustment": 0.0024,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.217,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.001,
-            "movementFromPitcherBaseline": 0.001
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 823420,
-      "gameKey": "STL@PHI",
-      "gameDate": "2026-08-21T22:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Citizens Bank Park",
-      "pitcherId": 666200,
-      "pitcher": "Jesús Luzardo",
-      "teamId": 143,
-      "team": "PHI",
-      "opponentId": 138,
-      "opponent": "STL",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.2979,
-        "seasonBattersFaced": 621,
-        "recentKRate": 0.3101,
-        "recentBattersFaced": 158,
-        "bbRate": 0.0741,
+        "seasonKRate": 0.3125,
+        "seasonBattersFaced": 240,
+        "recentKRate": 0.3178,
+        "recentBattersFaced": 129,
+        "bbRate": 0.05,
         "whiffRate": null,
         "xera": null,
         "hand": null,
         "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.861,
-        "recent14PitchesPerPA": 3.925,
-        "seasonPlateAppearances": 4893,
-        "recent14PlateAppearances": 509,
-        "seasonKRate": 0.2042,
-        "recent14KRate": 0.2004,
+        "seasonPitchesPerPA": 3.882,
+        "recent14PitchesPerPA": 3.882,
+        "seasonPlateAppearances": 4833,
+        "recent14PlateAppearances": 422,
+        "seasonKRate": 0.2164,
+        "recent14KRate": 0.2512,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -289,20 +410,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 102.19,
-        "recentBfAverage": 27.38,
-        "recentIpAverage": 6.9,
-        "opponentPitchesPerPA": 3.877
+        "recentPitchAverage": 88.43,
+        "recentBfAverage": 22.67,
+        "recentIpAverage": 6.17,
+        "opponentPitchesPerPA": 3.882
       },
       "projection": {
-        "expectedPitchLimit": 97.66,
-        "expectedBF": 25.955,
-        "expectedInnings": 6.702,
-        "temporaryKRate": 0.2918,
-        "workloadOnlyProjectedKs": 7.573,
+        "expectedPitchLimit": 87.75,
+        "expectedBF": 22.625,
+        "expectedInnings": 5.951,
+        "temporaryKRate": 0.303,
+        "workloadOnlyProjectedKs": 6.856,
         "teamAdjustedKRate": 0.2797,
-        "fullShadowProjectedKs": 7.26,
-        "teamAdjustmentKsDelta": -0.313
+        "fullShadowProjectedKs": 6.328,
+        "teamAdjustmentKsDelta": -0.528
       },
       "confidence": {
         "score": 1,
@@ -319,24 +440,599 @@
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.2979,
-            "regressedSeasonKRate": 0.2792,
-            "recentAdjustment": 0.0062,
+            "observedSeasonKRate": 0.3125,
+            "regressedSeasonKRate": 0.271,
+            "recentAdjustment": 0.008,
             "whiffAdjustment": 0,
-            "baselineKRate": 0.2854
+            "baselineKRate": 0.279
           },
           "opponent": {
-            "observedSeasonKRate": 0.2042,
-            "regressedSeasonKRate": 0.206,
-            "seasonAdjustment": -0.0053,
-            "recentAdjustment": -0.0004,
+            "observedSeasonKRate": 0.2164,
+            "regressedSeasonKRate": 0.217,
+            "seasonAdjustment": -0.0015,
+            "recentAdjustment": 0.0021,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.206,
+            "regressedHandednessKRate": 0.217,
             "handednessAdjustment": 0
           },
           "totals": {
-            "opponentAdjustment": -0.0057,
-            "movementFromPitcherBaseline": -0.0057
+            "opponentAdjustment": 0.0006,
+            "movementFromPitcherBaseline": 0.0006
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.759,
+          "grade": "B"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823831,
+      "gameKey": "WSH@MIA",
+      "gameDate": "2026-08-22T20:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "loanDepot park",
+      "pitcherId": 663623,
+      "pitcher": "Jake Irvin",
+      "teamId": 120,
+      "team": "WSH",
+      "opponentId": 146,
+      "opponent": "MIA",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.23,
+        "seasonBattersFaced": 313,
+        "recentKRate": 0.2269,
+        "recentBattersFaced": 119,
+        "bbRate": 0.099,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.808,
+        "recent14PitchesPerPA": 3.813,
+        "seasonPlateAppearances": 4849,
+        "recent14PlateAppearances": 418,
+        "seasonKRate": 0.2172,
+        "recent14KRate": 0.2368,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 84.62,
+        "recentBfAverage": 21.05,
+        "recentIpAverage": 4.9,
+        "opponentPitchesPerPA": 3.81
+      },
+      "projection": {
+        "expectedPitchLimit": 85.01,
+        "expectedBF": 21.87,
+        "expectedInnings": 5.008,
+        "temporaryKRate": 0.2283,
+        "workloadOnlyProjectedKs": 4.992,
+        "teamAdjustedKRate": 0.2266,
+        "fullShadowProjectedKs": 4.956,
+        "teamAdjustmentKsDelta": -0.036
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2266,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.23,
+            "regressedSeasonKRate": 0.2266,
+            "recentAdjustment": 0.0001,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2267
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2172,
+            "regressedSeasonKRate": 0.2176,
+            "seasonAdjustment": -0.0013,
+            "recentAdjustment": 0.0012,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2176,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0001,
+            "movementFromPitcherBaseline": -0.0001
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.852,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823831,
+      "gameKey": "WSH@MIA",
+      "gameDate": "2026-08-22T20:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "loanDepot park",
+      "pitcherId": 691587,
+      "pitcher": "Eury Pérez",
+      "teamId": 146,
+      "team": "MIA",
+      "opponentId": 120,
+      "opponent": "WSH",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2692,
+        "seasonBattersFaced": 494,
+        "recentKRate": 0.2621,
+        "recentBattersFaced": 145,
+        "bbRate": 0.0992,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.813,
+        "recent14PitchesPerPA": 3.812,
+        "seasonPlateAppearances": 5009,
+        "recent14PlateAppearances": 409,
+        "seasonKRate": 0.2172,
+        "recent14KRate": 0.2421,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 97.9,
+        "recentBfAverage": 24,
+        "recentIpAverage": 6.14,
+        "opponentPitchesPerPA": 3.813
+      },
+      "projection": {
+        "expectedPitchLimit": 94.57,
+        "expectedBF": 24.523,
+        "expectedInnings": 6.066,
+        "temporaryKRate": 0.2619,
+        "workloadOnlyProjectedKs": 6.423,
+        "teamAdjustedKRate": 0.257,
+        "fullShadowProjectedKs": 6.302,
+        "teamAdjustmentKsDelta": -0.121
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.257,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2692,
+            "regressedSeasonKRate": 0.2554,
+            "recentAdjustment": 0.0013,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2567
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2172,
+            "regressedSeasonKRate": 0.2176,
+            "seasonAdjustment": -0.0013,
+            "recentAdjustment": 0.0015,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2176,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0003,
+            "movementFromPitcherBaseline": 0.0003
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823422,
+      "gameKey": "STL@PHI",
+      "gameDate": "2026-08-22T22:05:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Citizens Bank Park",
+      "pitcherId": 691725,
+      "pitcher": "Andrew Painter",
+      "teamId": 143,
+      "team": "PHI",
+      "opponentId": 138,
+      "opponent": "STL",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1794,
+        "seasonBattersFaced": 340,
+        "recentKRate": 0.2033,
+        "recentBattersFaced": 123,
+        "bbRate": 0.0882,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.864,
+        "recent14PitchesPerPA": 3.933,
+        "seasonPlateAppearances": 4936,
+        "recent14PlateAppearances": 507,
+        "seasonKRate": 0.205,
+        "recent14KRate": 0.217,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 82.48,
+        "recentBfAverage": 20.62,
+        "recentIpAverage": 4.73,
+        "opponentPitchesPerPA": 3.881
+      },
+      "projection": {
+        "expectedPitchLimit": 83.46,
+        "expectedBF": 21.194,
+        "expectedInnings": 4.837,
+        "temporaryKRate": 0.1899,
+        "workloadOnlyProjectedKs": 4.026,
+        "teamAdjustedKRate": 0.1921,
+        "fullShadowProjectedKs": 4.071,
+        "teamAdjustmentKsDelta": 0.045
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.1921,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.1794,
+            "regressedSeasonKRate": 0.1949,
+            "recentAdjustment": 0.0017,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1966
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.205,
+            "regressedSeasonKRate": 0.2068,
+            "seasonAdjustment": -0.0051,
+            "recentAdjustment": 0.0006,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2068,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0044,
+            "movementFromPitcherBaseline": -0.0044
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.887,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824798,
+      "gameKey": "TB@BAL",
+      "gameDate": "2026-08-22T23:05:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Oriole Park at Camden Yards",
+      "pitcherId": 663556,
+      "pitcher": "Shane McClanahan",
+      "teamId": 139,
+      "team": "TB",
+      "opponentId": 110,
+      "opponent": "BAL",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2222,
+        "seasonBattersFaced": 423,
+        "recentKRate": 0.1892,
+        "recentBattersFaced": 111,
+        "bbRate": 0.0827,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 4.001,
+        "recent14PitchesPerPA": 4.1,
+        "seasonPlateAppearances": 4871,
+        "recent14PlateAppearances": 460,
+        "seasonKRate": 0.2439,
+        "recent14KRate": 0.2457,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 65.29,
+        "recentBfAverage": 16.95,
+        "recentIpAverage": 4.22,
+        "opponentPitchesPerPA": 4.026
+      },
+      "projection": {
+        "expectedPitchLimit": 71.09,
+        "expectedBF": 17.41,
+        "expectedInnings": 4.209,
+        "temporaryKRate": 0.2143,
+        "workloadOnlyProjectedKs": 3.732,
+        "teamAdjustedKRate": 0.2227,
+        "fullShadowProjectedKs": 3.877,
+        "teamAdjustmentKsDelta": 0.145
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2227,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2222,
+            "regressedSeasonKRate": 0.2219,
+            "recentAdjustment": -0.0065,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2154
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2439,
+            "regressedSeasonKRate": 0.2414,
+            "seasonAdjustment": 0.0071,
+            "recentAdjustment": 0.0003,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2414,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0073,
+            "movementFromPitcherBaseline": 0.0073
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "favorable",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824798,
+      "gameKey": "TB@BAL",
+      "gameDate": "2026-08-22T23:05:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Oriole Park at Camden Yards",
+      "pitcherId": 687064,
+      "pitcher": "Brandon Young",
+      "teamId": 110,
+      "team": "BAL",
+      "opponentId": 139,
+      "opponent": "TB",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1893,
+        "seasonBattersFaced": 507,
+        "recentKRate": 0.2014,
+        "recentBattersFaced": 144,
+        "bbRate": 0.0828,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.776,
+        "recent14PitchesPerPA": 3.605,
+        "seasonPlateAppearances": 4837,
+        "recent14PlateAppearances": 474,
+        "seasonKRate": 0.1879,
+        "recent14KRate": 0.1582,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 93.76,
+        "recentBfAverage": 23.29,
+        "recentIpAverage": 5.14,
+        "opponentPitchesPerPA": 3.734
+      },
+      "projection": {
+        "expectedPitchLimit": 91.59,
+        "expectedBF": 24.095,
+        "expectedInnings": 5.335,
+        "temporaryKRate": 0.1959,
+        "workloadOnlyProjectedKs": 4.721,
+        "teamAdjustedKRate": 0.1865,
+        "fullShadowProjectedKs": 4.494,
+        "teamAdjustmentKsDelta": -0.227
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.1865,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.1893,
+            "regressedSeasonKRate": 0.1984,
+            "recentAdjustment": 0.0006,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.199
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.1879,
+            "regressedSeasonKRate": 0.1916,
+            "seasonAdjustment": -0.0104,
+            "recentAdjustment": -0.0021,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.1916,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0125,
+            "movementFromPitcherBaseline": -0.0125
           }
         },
         "diagnostics": {
@@ -363,1593 +1059,13 @@
       ]
     },
     {
-      "gamePk": 823510,
-      "gameKey": "TOR@NYY",
-      "gameDate": "2026-08-21T23:05:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Yankee Stadium",
-      "pitcherId": 689254,
-      "pitcher": "Mason Fluharty",
-      "teamId": 141,
-      "team": "TOR",
-      "opponentId": 147,
-      "opponent": "NYY",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.263,
-        "seasonBattersFaced": 17,
-        "recentKRate": 0.2353,
-        "recentBattersFaced": 17,
-        "bbRate": 0.094,
-        "whiffRate": 0.285,
-        "xera": 2.76,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.988,
-        "recent14PitchesPerPA": 4.008,
-        "seasonPlateAppearances": 4728,
-        "recent14PlateAppearances": 390,
-        "seasonKRate": 0.247,
-        "recent14KRate": 0.2744,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "opener",
-      "inputs": {
-        "role": "opener",
-        "recentSamples": 3,
-        "recentStarts": 3,
-        "recentAppearances": 8,
-        "recentPitchAverage": 21.83,
-        "recentBfAverage": 5.67,
-        "recentIpAverage": 1.28,
-        "opponentPitchesPerPA": 3.993
-      },
-      "projection": {
-        "expectedPitchLimit": 26.36,
-        "expectedBF": 6.274,
-        "expectedInnings": 1.346,
-        "temporaryKRate": 0.2502,
-        "workloadOnlyProjectedKs": 1.57,
-        "teamAdjustedKRate": 0.2394,
-        "fullShadowProjectedKs": 1.502,
-        "teamAdjustmentKsDelta": -0.068
-      },
-      "confidence": {
-        "score": 0.67,
-        "grade": "B",
-        "publicEligible": true
-      },
-      "flags": [
-        "OPENER_WORKLOAD_CAP",
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2394,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.263,
-            "regressedSeasonKRate": 0.2245,
-            "recentAdjustment": 0.0011,
-            "whiffAdjustment": 0.0039,
-            "baselineKRate": 0.2295
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.247,
-            "regressedSeasonKRate": 0.2441,
-            "seasonAdjustment": 0.008,
-            "recentAdjustment": 0.0019,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2441,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0099,
-            "movementFromPitcherBaseline": 0.0099
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "favorable",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.472,
-          "grade": "C"
-        },
-        "flags": [
-          "LOW_PITCHER_SAMPLE",
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [
-        "OPENER_WORKLOAD_CAP"
-      ],
-      "teamKFlags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 823510,
-      "gameKey": "TOR@NYY",
-      "gameDate": "2026-08-21T23:05:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Yankee Stadium",
-      "pitcherId": 693645,
-      "pitcher": "Cam Schlittler",
-      "teamId": 147,
-      "team": "NYY",
-      "opponentId": 141,
-      "opponent": "TOR",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.314,
-        "seasonBattersFaced": 602,
-        "recentKRate": 0.391,
-        "recentBattersFaced": 133,
-        "bbRate": 0.056,
-        "whiffRate": 0.288,
-        "xera": 2.92,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.798,
-        "recent14PitchesPerPA": 3.731,
-        "seasonPlateAppearances": 4812,
-        "recent14PlateAppearances": 472,
-        "seasonKRate": 0.1958,
-        "recent14KRate": 0.2055,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 93.76,
-        "recentBfAverage": 22.24,
-        "recentIpAverage": 5.57,
-        "opponentPitchesPerPA": 3.781
-      },
-      "projection": {
-        "expectedPitchLimit": 91.59,
-        "expectedBF": 23.527,
-        "expectedInnings": 5.594,
-        "temporaryKRate": 0.3097,
-        "workloadOnlyProjectedKs": 7.285,
-        "teamAdjustedKRate": 0.2956,
-        "fullShadowProjectedKs": 6.955,
-        "teamAdjustmentKsDelta": -0.33
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2956,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.314,
-            "regressedSeasonKRate": 0.2909,
-            "recentAdjustment": 0.008,
-            "whiffAdjustment": 0.0042,
-            "baselineKRate": 0.3031
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.1958,
-            "regressedSeasonKRate": 0.1986,
-            "seasonAdjustment": -0.0079,
-            "recentAdjustment": 0.0004,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.1986,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0075,
-            "movementFromPitcherBaseline": -0.0075
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "difficult",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824721,
-      "gameKey": "SF@BOS",
-      "gameDate": "2026-08-21T23:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Fenway Park",
-      "pitcherId": 657277,
-      "pitcher": "Logan Webb",
-      "teamId": 137,
-      "team": "SF",
-      "opponentId": 111,
-      "opponent": "BOS",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.196,
-        "seasonBattersFaced": 560,
-        "recentKRate": 0.2027,
-        "recentBattersFaced": 148,
-        "bbRate": 0.057,
-        "whiffRate": 0.208,
-        "xera": 3.62,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.829,
-        "recent14PitchesPerPA": 3.939,
-        "seasonPlateAppearances": 4809,
-        "recent14PlateAppearances": 474,
-        "seasonKRate": 0.215,
-        "recent14KRate": 0.1941,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 92.86,
-        "recentBfAverage": 24.43,
-        "recentIpAverage": 6.51,
-        "opponentPitchesPerPA": 3.856
-      },
-      "projection": {
-        "expectedPitchLimit": 90.94,
-        "expectedBF": 23.878,
-        "expectedInnings": 6.275,
-        "temporaryKRate": 0.2005,
-        "workloadOnlyProjectedKs": 4.788,
-        "teamAdjustedKRate": 0.1956,
-        "fullShadowProjectedKs": 4.671,
-        "teamAdjustmentKsDelta": -0.117
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1956,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.196,
-            "regressedSeasonKRate": 0.2026,
-            "recentAdjustment": 0,
-            "whiffAdjustment": -0.0038,
-            "baselineKRate": 0.1988
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.215,
-            "regressedSeasonKRate": 0.2157,
-            "seasonAdjustment": -0.0019,
-            "recentAdjustment": -0.0014,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2157,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0033,
-            "movementFromPitcherBaseline": -0.0033
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824721,
-      "gameKey": "SF@BOS",
-      "gameDate": "2026-08-21T23:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Fenway Park",
-      "pitcherId": 543243,
-      "pitcher": "Sonny Gray",
-      "teamId": 111,
-      "team": "BOS",
-      "opponentId": 137,
-      "opponent": "SF",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.218,
-        "seasonBattersFaced": 536,
-        "recentKRate": 0.2078,
-        "recentBattersFaced": 154,
-        "bbRate": 0.063,
-        "whiffRate": 0.227,
-        "xera": 3.6,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.857,
-        "recent14PitchesPerPA": 3.904,
-        "seasonPlateAppearances": 4746,
-        "recent14PlateAppearances": 394,
-        "seasonKRate": 0.2122,
-        "recent14KRate": 0.2487,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 89.29,
-        "recentBfAverage": 25.71,
-        "recentIpAverage": 6.33,
-        "opponentPitchesPerPA": 3.868
-      },
-      "projection": {
-        "expectedPitchLimit": 88.37,
-        "expectedBF": 23.848,
-        "expectedInnings": 6.15,
-        "temporaryKRate": 0.2152,
-        "workloadOnlyProjectedKs": 5.132,
-        "teamAdjustedKRate": 0.2142,
-        "fullShadowProjectedKs": 5.108,
-        "teamAdjustmentKsDelta": -0.024
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2142,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.218,
-            "regressedSeasonKRate": 0.2189,
-            "recentAdjustment": -0.0022,
-            "whiffAdjustment": -0.0019,
-            "baselineKRate": 0.2147
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2122,
-            "regressedSeasonKRate": 0.2132,
-            "seasonAdjustment": -0.0028,
-            "recentAdjustment": 0.0022,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2132,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0006,
-            "movementFromPitcherBaseline": -0.0006
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 823830,
-      "gameKey": "WSH@MIA",
-      "gameDate": "2026-08-21T23:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "loanDepot park",
-      "pitcherId": 695418,
-      "pitcher": "Brad Lord",
-      "teamId": 120,
-      "team": "WSH",
-      "opponentId": 146,
-      "opponent": "MIA",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.212,
-        "seasonBattersFaced": 29,
-        "recentKRate": 0.1935,
-        "recentBattersFaced": 93,
-        "bbRate": 0.093,
-        "whiffRate": 0.205,
-        "xera": 4.32,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.81,
-        "recent14PitchesPerPA": 3.849,
-        "seasonPlateAppearances": 4811,
-        "recent14PlateAppearances": 417,
-        "seasonKRate": 0.2172,
-        "recent14KRate": 0.2398,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 60.24,
-        "recentBfAverage": 12.67,
-        "recentIpAverage": 2.67,
-        "opponentPitchesPerPA": 3.82
-      },
-      "projection": {
-        "expectedPitchLimit": 67.45,
-        "expectedBF": 15.911,
-        "expectedInnings": 3.012,
-        "temporaryKRate": 0.2072,
-        "workloadOnlyProjectedKs": 3.297,
-        "teamAdjustedKRate": 0.2108,
-        "fullShadowProjectedKs": 3.354,
-        "teamAdjustmentKsDelta": 0.057
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2108,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.212,
-            "regressedSeasonKRate": 0.22,
-            "recentAdjustment": -0.0053,
-            "whiffAdjustment": -0.0041,
-            "baselineKRate": 0.2106
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2172,
-            "regressedSeasonKRate": 0.2177,
-            "seasonAdjustment": -0.0012,
-            "recentAdjustment": 0.0014,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2177,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0001,
-            "movementFromPitcherBaseline": 0.0001
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.487,
-          "grade": "C"
-        },
-        "flags": [
-          "LOW_PITCHER_SAMPLE",
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 823830,
-      "gameKey": "WSH@MIA",
-      "gameDate": "2026-08-21T23:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "loanDepot park",
-      "pitcherId": 687473,
-      "pitcher": "Ryan Gusto",
-      "teamId": 146,
-      "team": "MIA",
-      "opponentId": 120,
-      "opponent": "WSH",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.207,
-        "seasonBattersFaced": 200,
-        "recentKRate": 0.2087,
-        "recentBattersFaced": 115,
-        "bbRate": 0.059,
-        "whiffRate": 0.212,
-        "xera": 4.23,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.813,
-        "recent14PitchesPerPA": 3.824,
-        "seasonPlateAppearances": 4971,
-        "recent14PlateAppearances": 408,
-        "seasonKRate": 0.2177,
-        "recent14KRate": 0.2451,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 69.24,
-        "recentBfAverage": 20.1,
-        "recentIpAverage": 4.6,
-        "opponentPitchesPerPA": 3.816
-      },
-      "projection": {
-        "expectedPitchLimit": 73.93,
-        "expectedBF": 19.628,
-        "expectedInnings": 4.635,
-        "temporaryKRate": 0.2081,
-        "workloadOnlyProjectedKs": 4.084,
-        "teamAdjustedKRate": 0.2102,
-        "fullShadowProjectedKs": 4.126,
-        "teamAdjustmentKsDelta": 0.042
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2102,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.207,
-            "regressedSeasonKRate": 0.2141,
-            "recentAdjustment": -0.0011,
-            "whiffAdjustment": -0.0034,
-            "baselineKRate": 0.2096
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2177,
-            "regressedSeasonKRate": 0.218,
-            "seasonAdjustment": -0.0011,
-            "recentAdjustment": 0.0017,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.218,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0006,
-            "movementFromPitcherBaseline": 0.0006
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.707,
-          "grade": "B"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824800,
-      "gameKey": "TB@BAL",
-      "gameDate": "2026-08-21T23:15:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Oriole Park at Camden Yards",
-      "pitcherId": 642547,
-      "pitcher": "Freddy Peralta",
-      "teamId": 139,
-      "team": "TB",
-      "opponentId": 110,
-      "opponent": "BAL",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.215,
-        "seasonBattersFaced": 573,
-        "recentKRate": 0.1953,
-        "recentBattersFaced": 128,
-        "bbRate": 0.092,
-        "whiffRate": 0.264,
-        "xera": 4.09,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 4.004,
-        "recent14PitchesPerPA": 4.151,
-        "seasonPlateAppearances": 4840,
-        "recent14PlateAppearances": 463,
-        "seasonKRate": 0.2442,
-        "recent14KRate": 0.2527,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 86.43,
-        "recentBfAverage": 20.81,
-        "recentIpAverage": 4.75,
-        "opponentPitchesPerPA": 4.041
-      },
-      "projection": {
-        "expectedPitchLimit": 86.31,
-        "expectedBF": 21.166,
-        "expectedInnings": 4.846,
-        "temporaryKRate": 0.2141,
-        "workloadOnlyProjectedKs": 4.531,
-        "teamAdjustedKRate": 0.222,
-        "fullShadowProjectedKs": 4.699,
-        "teamAdjustmentKsDelta": 0.168
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.222,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.215,
-            "regressedSeasonKRate": 0.2166,
-            "recentAdjustment": -0.0043,
-            "whiffAdjustment": 0.0018,
-            "baselineKRate": 0.2141
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2442,
-            "regressedSeasonKRate": 0.2417,
-            "seasonAdjustment": 0.0072,
-            "recentAdjustment": 0.0007,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2417,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0079,
-            "movementFromPitcherBaseline": 0.0079
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "favorable",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824800,
-      "gameKey": "TB@BAL",
-      "gameDate": "2026-08-21T23:15:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Oriole Park at Camden Yards",
-      "pitcherId": 669432,
-      "pitcher": "Trevor Rogers",
-      "teamId": 110,
-      "team": "BAL",
-      "opponentId": 139,
-      "opponent": "TB",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.204,
-        "seasonBattersFaced": 529,
-        "recentKRate": 0.2653,
-        "recentBattersFaced": 147,
-        "bbRate": 0.066,
-        "whiffRate": 0.236,
-        "xera": 3.97,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.777,
-        "recent14PitchesPerPA": 3.665,
-        "seasonPlateAppearances": 4803,
-        "recent14PlateAppearances": 477,
-        "seasonKRate": 0.1872,
-        "recent14KRate": 0.1509,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 91.05,
-        "recentBfAverage": 23.71,
-        "recentIpAverage": 5.63,
-        "opponentPitchesPerPA": 3.749
-      },
-      "projection": {
-        "expectedPitchLimit": 89.63,
-        "expectedBF": 23.842,
-        "expectedInnings": 5.661,
-        "temporaryKRate": 0.2197,
-        "workloadOnlyProjectedKs": 5.239,
-        "teamAdjustedKRate": 0.2026,
-        "fullShadowProjectedKs": 4.83,
-        "teamAdjustmentKsDelta": -0.409
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2026,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.204,
-            "regressedSeasonKRate": 0.2087,
-            "recentAdjustment": 0.008,
-            "whiffAdjustment": -0.001,
-            "baselineKRate": 0.2157
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.1872,
-            "regressedSeasonKRate": 0.191,
-            "seasonAdjustment": -0.0106,
-            "recentAdjustment": -0.0025,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.191,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0131,
-            "movementFromPitcherBaseline": -0.0131
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "difficult",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824559,
-      "gameKey": "NYM@CWS",
-      "gameDate": "2026-08-21T23:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Rate Field",
-      "pitcherId": 640455,
-      "pitcher": "Sean Manaea",
-      "teamId": 121,
-      "team": "NYM",
-      "opponentId": 145,
-      "opponent": "CWS",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.235,
-        "seasonBattersFaced": 289,
-        "recentKRate": 0.2566,
-        "recentBattersFaced": 152,
-        "bbRate": 0.077,
-        "whiffRate": 0.231,
-        "xera": 4.53,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.861,
-        "recent14PitchesPerPA": 4.004,
-        "seasonPlateAppearances": 4844,
-        "recent14PlateAppearances": 469,
-        "seasonKRate": 0.2389,
-        "recent14KRate": 0.2281,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 92.71,
-        "recentBfAverage": 25.86,
-        "recentIpAverage": 6.27,
-        "opponentPitchesPerPA": 3.897
-      },
-      "projection": {
-        "expectedPitchLimit": 90.83,
-        "expectedBF": 24.202,
-        "expectedInnings": 6.131,
-        "temporaryKRate": 0.2346,
-        "workloadOnlyProjectedKs": 5.678,
-        "teamAdjustedKRate": 0.2382,
-        "fullShadowProjectedKs": 5.765,
-        "teamAdjustmentKsDelta": 0.087
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2382,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.235,
-            "regressedSeasonKRate": 0.2293,
-            "recentAdjustment": 0.0054,
-            "whiffAdjustment": -0.0015,
-            "baselineKRate": 0.2333
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2389,
-            "regressedSeasonKRate": 0.2369,
-            "seasonAdjustment": 0.0055,
-            "recentAdjustment": -0.0005,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2369,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.005,
-            "movementFromPitcherBaseline": 0.005
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "favorable",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.822,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824559,
-      "gameKey": "NYM@CWS",
-      "gameDate": "2026-08-21T23:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Rate Field",
-      "pitcherId": 680732,
-      "pitcher": "Sean Burke",
-      "teamId": 145,
-      "team": "CWS",
-      "opponentId": 121,
-      "opponent": "NYM",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.27,
-        "seasonBattersFaced": 479,
-        "recentKRate": 0.2868,
-        "recentBattersFaced": 136,
-        "bbRate": 0.074,
-        "whiffRate": 0.258,
-        "xera": 3.6,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.934,
-        "recent14PitchesPerPA": 4.028,
-        "seasonPlateAppearances": 4799,
-        "recent14PlateAppearances": 398,
-        "seasonKRate": 0.2265,
-        "recent14KRate": 0.2286,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 87.67,
-        "recentBfAverage": 22.43,
-        "recentIpAverage": 5.48,
-        "opponentPitchesPerPA": 3.957
-      },
-      "projection": {
-        "expectedPitchLimit": 87.2,
-        "expectedBF": 22.173,
-        "expectedInnings": 5.43,
-        "temporaryKRate": 0.2621,
-        "workloadOnlyProjectedKs": 5.812,
-        "teamAdjustedKRate": 0.2649,
-        "fullShadowProjectedKs": 5.874,
-        "teamAdjustmentKsDelta": 0.062
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2649,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.27,
-            "regressedSeasonKRate": 0.2556,
-            "recentAdjustment": 0.0062,
-            "whiffAdjustment": 0.0012,
-            "baselineKRate": 0.263
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2265,
-            "regressedSeasonKRate": 0.2259,
-            "seasonAdjustment": 0.0017,
-            "recentAdjustment": 0.0002,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2259,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0018,
-            "movementFromPitcherBaseline": 0.0018
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824072,
-      "gameKey": "DET@KC",
-      "gameDate": "2026-08-22T00:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Kauffman Stadium",
-      "pitcherId": 675512,
-      "pitcher": "Troy Melton",
-      "teamId": 116,
-      "team": "DET",
-      "opponentId": 118,
-      "opponent": "KC",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.222,
-        "seasonBattersFaced": 329,
-        "recentKRate": 0.2286,
-        "recentBattersFaced": 140,
-        "bbRate": 0.076,
-        "whiffRate": 0.259,
-        "xera": 3.06,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.811,
-        "recent14PitchesPerPA": 3.888,
-        "seasonPlateAppearances": 4830,
-        "recent14PlateAppearances": 447,
-        "seasonKRate": 0.2099,
-        "recent14KRate": 0.1969,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 91.43,
-        "recentBfAverage": 23.1,
-        "recentIpAverage": 5.75,
-        "opponentPitchesPerPA": 3.83
-      },
-      "projection": {
-        "expectedPitchLimit": 89.91,
-        "expectedBF": 23.341,
-        "expectedInnings": 5.703,
-        "temporaryKRate": 0.2242,
-        "workloadOnlyProjectedKs": 5.233,
-        "teamAdjustedKRate": 0.22,
-        "fullShadowProjectedKs": 5.135,
-        "teamAdjustmentKsDelta": -0.098
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.22,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.222,
-            "regressedSeasonKRate": 0.2217,
-            "recentAdjustment": 0.0014,
-            "whiffAdjustment": 0.0013,
-            "baselineKRate": 0.2244
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2099,
-            "regressedSeasonKRate": 0.2112,
-            "seasonAdjustment": -0.0035,
-            "recentAdjustment": -0.0009,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2112,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0044,
-            "movementFromPitcherBaseline": -0.0044
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "difficult",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.873,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824072,
-      "gameKey": "DET@KC",
-      "gameDate": "2026-08-22T00:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Kauffman Stadium",
-      "pitcherId": 702070,
-      "pitcher": "Noah Cameron",
-      "teamId": 118,
-      "team": "KC",
-      "opponentId": 116,
-      "opponent": "DET",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.217,
-        "seasonBattersFaced": 556,
-        "recentKRate": 0.225,
-        "recentBattersFaced": 160,
-        "bbRate": 0.074,
-        "whiffRate": 0.264,
-        "xera": 4.17,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.922,
-        "recent14PitchesPerPA": 3.811,
-        "seasonPlateAppearances": 4836,
-        "recent14PlateAppearances": 417,
-        "seasonKRate": 0.2252,
-        "recent14KRate": 0.199,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 104.29,
-        "recentBfAverage": 26.81,
-        "recentIpAverage": 7.4,
-        "opponentPitchesPerPA": 3.894
-      },
-      "projection": {
-        "expectedPitchLimit": 99.17,
-        "expectedBF": 25.937,
-        "expectedInnings": 7.045,
-        "temporaryKRate": 0.2211,
-        "workloadOnlyProjectedKs": 5.735,
-        "teamAdjustedKRate": 0.2209,
-        "fullShadowProjectedKs": 5.729,
-        "teamAdjustmentKsDelta": -0.006
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2209,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.217,
-            "regressedSeasonKRate": 0.2181,
-            "recentAdjustment": 0.0014,
-            "whiffAdjustment": 0.0018,
-            "baselineKRate": 0.2213
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2252,
-            "regressedSeasonKRate": 0.2247,
-            "seasonAdjustment": 0.0012,
-            "recentAdjustment": -0.0016,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2247,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0004,
-            "movementFromPitcherBaseline": -0.0004
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824152,
-      "gameKey": "ATH@HOU",
-      "gameDate": "2026-08-22T00:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Daikin Park",
-      "pitcherId": 669372,
-      "pitcher": "J.T. Ginn",
-      "teamId": 133,
-      "team": "ATH",
-      "opponentId": 117,
-      "opponent": "HOU",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.214,
-        "seasonBattersFaced": 505,
-        "recentKRate": 0.2286,
-        "recentBattersFaced": 140,
-        "bbRate": 0.099,
-        "whiffRate": 0.273,
-        "xera": 3.97,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.879,
-        "recent14PitchesPerPA": 3.848,
-        "seasonPlateAppearances": 4840,
-        "recent14PlateAppearances": 389,
-        "seasonKRate": 0.2153,
-        "recent14KRate": 0.2288,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 89.62,
-        "recentBfAverage": 24.48,
-        "recentIpAverage": 5.79,
-        "opponentPitchesPerPA": 3.871
-      },
-      "projection": {
-        "expectedPitchLimit": 88.61,
-        "expectedBF": 23.443,
-        "expectedInnings": 5.743,
-        "temporaryKRate": 0.2209,
-        "workloadOnlyProjectedKs": 5.179,
-        "teamAdjustedKRate": 0.2202,
-        "fullShadowProjectedKs": 5.162,
-        "teamAdjustmentKsDelta": -0.017
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2202,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.214,
-            "regressedSeasonKRate": 0.216,
-            "recentAdjustment": 0.0025,
-            "whiffAdjustment": 0.0027,
-            "baselineKRate": 0.2212
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2153,
-            "regressedSeasonKRate": 0.2159,
-            "seasonAdjustment": -0.0018,
-            "recentAdjustment": 0.0008,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2159,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.001,
-            "movementFromPitcherBaseline": -0.001
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824152,
-      "gameKey": "ATH@HOU",
-      "gameDate": "2026-08-22T00:10:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Daikin Park",
-      "pitcherId": 669713,
-      "pitcher": "Hayden Wesneski",
-      "teamId": 117,
-      "team": "HOU",
-      "opponentId": 133,
-      "opponent": "ATH",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.189,
-        "seasonBattersFaced": 95,
-        "recentKRate": 0.1618,
-        "recentBattersFaced": 136,
-        "bbRate": 0.074,
-        "whiffRate": 0.274,
-        "xera": 4.47,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.803,
-        "recent14PitchesPerPA": 3.724,
-        "seasonPlateAppearances": 4864,
-        "recent14PlateAppearances": 449,
-        "seasonKRate": 0.2235,
-        "recent14KRate": 0.1715,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 80.48,
-        "recentBfAverage": 22.95,
-        "recentIpAverage": 5.38,
-        "opponentPitchesPerPA": 3.783
-      },
-      "projection": {
-        "expectedPitchLimit": 82.02,
-        "expectedBF": 22.126,
-        "expectedInnings": 5.36,
-        "temporaryKRate": 0.1939,
-        "workloadOnlyProjectedKs": 4.29,
-        "teamAdjustedKRate": 0.2031,
-        "fullShadowProjectedKs": 4.494,
-        "teamAdjustmentKsDelta": 0.204
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2031,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.189,
-            "regressedSeasonKRate": 0.2108,
-            "recentAdjustment": -0.008,
-            "whiffAdjustment": 0.0028,
-            "baselineKRate": 0.2056
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2235,
-            "regressedSeasonKRate": 0.2232,
-            "seasonAdjustment": 0.0007,
-            "recentAdjustment": -0.0032,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2232,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0025,
-            "movementFromPitcherBaseline": -0.0025
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.572,
-          "grade": "C"
-        },
-        "flags": [
-          "LOW_PITCHER_SAMPLE",
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 822857,
+      "gamePk": 822858,
       "gameKey": "LAA@TEX",
-      "gameDate": "2026-08-22T00:15:00Z",
+      "gameDate": "2026-08-22T23:05:00Z",
       "gameStatus": "Scheduled",
       "venue": "Globe Life Field",
-      "pitcherId": 672282,
-      "pitcher": "Reid Detmers",
+      "pitcherId": 696270,
+      "pitcher": "Ryan Johnson",
       "teamId": 108,
       "team": "LAA",
       "opponentId": 140,
@@ -1958,698 +1074,23 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.288,
-        "seasonBattersFaced": 579,
-        "recentKRate": 0.3465,
-        "recentBattersFaced": 127,
-        "bbRate": 0.074,
-        "whiffRate": 0.296,
-        "xera": 3.32,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.864,
-        "recent14PitchesPerPA": 3.982,
-        "seasonPlateAppearances": 4765,
-        "recent14PlateAppearances": 434,
-        "seasonKRate": 0.2298,
-        "recent14KRate": 0.2488,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 86.86,
-        "recentBfAverage": 21.81,
-        "recentIpAverage": 5.98,
-        "opponentPitchesPerPA": 3.893
-      },
-      "projection": {
-        "expectedPitchLimit": 86.62,
-        "expectedBF": 22.094,
-        "expectedInnings": 5.78,
-        "temporaryKRate": 0.2871,
-        "workloadOnlyProjectedKs": 6.343,
-        "teamAdjustedKRate": 0.2878,
-        "fullShadowProjectedKs": 6.359,
-        "teamAdjustmentKsDelta": 0.016
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2878,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.288,
-            "regressedSeasonKRate": 0.2708,
-            "recentAdjustment": 0.008,
-            "whiffAdjustment": 0.005,
-            "baselineKRate": 0.2838
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2298,
-            "regressedSeasonKRate": 0.2288,
-            "seasonAdjustment": 0.0027,
-            "recentAdjustment": 0.0013,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2288,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0039,
-            "movementFromPitcherBaseline": 0.0039
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 822857,
-      "gameKey": "LAA@TEX",
-      "gameDate": "2026-08-22T00:15:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Globe Life Field",
-      "pitcherId": 669022,
-      "pitcher": "MacKenzie Gore",
-      "teamId": 140,
-      "team": "TEX",
-      "opponentId": 108,
-      "opponent": "LAA",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.258,
-        "seasonBattersFaced": 597,
-        "recentKRate": 0.2617,
-        "recentBattersFaced": 149,
-        "bbRate": 0.085,
-        "whiffRate": 0.263,
-        "xera": 3.86,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.899,
-        "recent14PitchesPerPA": 3.995,
-        "seasonPlateAppearances": 4798,
-        "recent14PlateAppearances": 443,
-        "seasonKRate": 0.2509,
-        "recent14KRate": 0.237,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 98.52,
-        "recentBfAverage": 24.81,
-        "recentIpAverage": 5.78,
-        "opponentPitchesPerPA": 3.923
-      },
-      "projection": {
-        "expectedPitchLimit": 95.02,
-        "expectedBF": 24.425,
-        "expectedInnings": 5.803,
-        "temporaryKRate": 0.2509,
-        "workloadOnlyProjectedKs": 6.129,
-        "teamAdjustedKRate": 0.2616,
-        "fullShadowProjectedKs": 6.39,
-        "teamAdjustmentKsDelta": 0.261
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2616,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.258,
-            "regressedSeasonKRate": 0.2488,
-            "recentAdjustment": 0.0026,
-            "whiffAdjustment": 0.0017,
-            "baselineKRate": 0.2531
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2509,
-            "regressedSeasonKRate": 0.2476,
-            "seasonAdjustment": 0.0093,
-            "recentAdjustment": -0.0007,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2476,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0086,
-            "movementFromPitcherBaseline": 0.0086
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "favorable",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824317,
-      "gameKey": "CLE@COL",
-      "gameDate": "2026-08-22T00:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Coors Field",
-      "pitcherId": 676282,
-      "pitcher": "Joey Cantillo",
-      "teamId": 114,
-      "team": "CLE",
-      "opponentId": 115,
-      "opponent": "COL",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.256,
-        "seasonBattersFaced": 542,
-        "recentKRate": 0.3036,
-        "recentBattersFaced": 112,
-        "bbRate": 0.109,
-        "whiffRate": 0.307,
-        "xera": 3.86,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.733,
-        "recent14PitchesPerPA": 3.737,
-        "seasonPlateAppearances": 4833,
-        "recent14PlateAppearances": 419,
-        "seasonKRate": 0.227,
-        "recent14KRate": 0.21,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 71.24,
-        "recentBfAverage": 17.24,
-        "recentIpAverage": 4.06,
-        "opponentPitchesPerPA": 3.734
-      },
-      "projection": {
-        "expectedPitchLimit": 75.37,
-        "expectedBF": 19.154,
-        "expectedInnings": 4.224,
-        "temporaryKRate": 0.2618,
-        "workloadOnlyProjectedKs": 5.015,
-        "teamAdjustedKRate": 0.2614,
-        "fullShadowProjectedKs": 5.007,
-        "teamAdjustmentKsDelta": -0.008
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2614,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.256,
-            "regressedSeasonKRate": 0.2466,
-            "recentAdjustment": 0.008,
-            "whiffAdjustment": 0.006,
-            "baselineKRate": 0.2606
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.227,
-            "regressedSeasonKRate": 0.2263,
-            "seasonAdjustment": 0.0018,
-            "recentAdjustment": -0.001,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2263,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0008,
-            "movementFromPitcherBaseline": 0.0008
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "neutral",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 824317,
-      "gameKey": "CLE@COL",
-      "gameDate": "2026-08-22T00:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Coors Field",
-      "pitcherId": 685299,
-      "pitcher": "Tanner Gordon",
-      "teamId": 115,
-      "team": "COL",
-      "opponentId": 114,
-      "opponent": "CLE",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.199,
-        "seasonBattersFaced": 108,
-        "recentKRate": 0.1575,
-        "recentBattersFaced": 127,
-        "bbRate": 0.042,
-        "whiffRate": 0.23,
-        "xera": 4.85,
-        "hand": "R",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.954,
-        "recent14PitchesPerPA": 3.803,
-        "seasonPlateAppearances": 4812,
-        "recent14PlateAppearances": 417,
-        "seasonKRate": 0.2172,
-        "recent14KRate": 0.1679,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 81.29,
-        "recentBfAverage": 21.95,
-        "recentIpAverage": 4.63,
-        "opponentPitchesPerPA": 3.917
-      },
-      "projection": {
-        "expectedPitchLimit": 82.61,
-        "expectedBF": 21.393,
-        "expectedInnings": 4.785,
-        "temporaryKRate": 0.1949,
-        "workloadOnlyProjectedKs": 4.17,
-        "teamAdjustedKRate": 0.1994,
-        "fullShadowProjectedKs": 4.266,
-        "teamAdjustmentKsDelta": 0.096
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1994,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.199,
-            "regressedSeasonKRate": 0.2134,
-            "recentAdjustment": -0.008,
-            "whiffAdjustment": -0.0016,
-            "baselineKRate": 0.2038
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2172,
-            "regressedSeasonKRate": 0.2176,
-            "seasonAdjustment": -0.0013,
-            "recentAdjustment": -0.0031,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2176,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.0044,
-            "movementFromPitcherBaseline": -0.0044
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "difficult",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.589,
-          "grade": "C"
-        },
-        "flags": [
-          "LOW_PITCHER_SAMPLE",
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "LOW_PITCHER_SAMPLE",
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 825045,
-      "gameKey": "CIN@ARI",
-      "gameDate": "2026-08-22T01:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Chase Field",
-      "pitcherId": 666157,
-      "pitcher": "Nick Lodolo",
-      "teamId": 113,
-      "team": "CIN",
-      "opponentId": 109,
-      "opponent": "ARI",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.18,
-        "seasonBattersFaced": 316,
-        "recentKRate": 0.2083,
-        "recentBattersFaced": 120,
-        "bbRate": 0.092,
-        "whiffRate": 0.219,
-        "xera": 5.98,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.943,
-        "recent14PitchesPerPA": 4.1,
-        "seasonPlateAppearances": 4846,
-        "recent14PlateAppearances": 432,
-        "seasonKRate": 0.1931,
-        "recent14KRate": 0.1921,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 78.95,
-        "recentBfAverage": 20.24,
-        "recentIpAverage": 4.86,
-        "opponentPitchesPerPA": 3.982
-      },
-      "projection": {
-        "expectedPitchLimit": 80.93,
-        "expectedBF": 20.294,
-        "expectedInnings": 4.861,
-        "temporaryKRate": 0.1937,
-        "workloadOnlyProjectedKs": 3.932,
-        "teamAdjustedKRate": 0.1867,
-        "fullShadowProjectedKs": 3.789,
-        "teamAdjustmentKsDelta": -0.143
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1867,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.18,
-            "regressedSeasonKRate": 0.196,
-            "recentAdjustment": 0.0025,
-            "whiffAdjustment": -0.0027,
-            "baselineKRate": 0.1957
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.1931,
-            "regressedSeasonKRate": 0.1962,
-            "seasonAdjustment": -0.0087,
-            "recentAdjustment": -0.0003,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.1962,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": -0.009,
-            "movementFromPitcherBaseline": -0.009
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "difficult",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.856,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 825045,
-      "gameKey": "CIN@ARI",
-      "gameDate": "2026-08-22T01:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Chase Field",
-      "pitcherId": 593958,
-      "pitcher": "Eduardo Rodriguez",
-      "teamId": 109,
-      "team": "ARI",
-      "opponentId": 113,
-      "opponent": "CIN",
-      "isHome": true,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.173,
-        "seasonBattersFaced": 613,
-        "recentKRate": 0.1788,
-        "recentBattersFaced": 151,
-        "bbRate": 0.077,
-        "whiffRate": 0.206,
-        "xera": 4.72,
-        "hand": "L",
-        "source": "hr-props-raw"
-      },
-      "opponentContext": {
-        "seasonPitchesPerPA": 3.939,
-        "recent14PitchesPerPA": 4.07,
-        "seasonPlateAppearances": 4787,
-        "recent14PlateAppearances": 457,
-        "seasonKRate": 0.2549,
-        "recent14KRate": 0.267,
-        "warnings": []
-      },
-      "modelVersion": "mlb-k-workload-v2",
-      "role": "starter",
-      "inputs": {
-        "role": "starter",
-        "recentSamples": 6,
-        "recentStarts": 6,
-        "recentAppearances": 8,
-        "recentPitchAverage": 101.81,
-        "recentBfAverage": 26.1,
-        "recentIpAverage": 6.3,
-        "opponentPitchesPerPA": 3.972
-      },
-      "projection": {
-        "expectedPitchLimit": 97.38,
-        "expectedBF": 25.069,
-        "expectedInnings": 6.216,
-        "temporaryKRate": 0.1829,
-        "workloadOnlyProjectedKs": 4.585,
-        "teamAdjustedKRate": 0.1911,
-        "fullShadowProjectedKs": 4.791,
-        "teamAdjustmentKsDelta": 0.206
-      },
-      "confidence": {
-        "score": 1,
-        "grade": "A",
-        "publicEligible": true
-      },
-      "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ],
-      "teamKAdjustment": {
-        "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1911,
-        "components": {
-          "leagueKRate": 0.2212,
-          "pitcher": {
-            "observedSeasonKRate": 0.173,
-            "regressedSeasonKRate": 0.1849,
-            "recentAdjustment": -0.0012,
-            "whiffAdjustment": -0.004,
-            "baselineKRate": 0.1796
-          },
-          "opponent": {
-            "observedSeasonKRate": 0.2549,
-            "regressedSeasonKRate": 0.2511,
-            "seasonAdjustment": 0.0105,
-            "recentAdjustment": 0.001,
-            "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2511,
-            "handednessAdjustment": 0
-          },
-          "totals": {
-            "opponentAdjustment": 0.0115,
-            "movementFromPitcherBaseline": 0.0115
-          }
-        },
-        "diagnostics": {
-          "pitcherHand": "L",
-          "opponentKEnvironment": "favorable",
-          "hardBounds": [
-            0.12,
-            0.38
-          ]
-        },
-        "confidence": {
-          "score": 0.9,
-          "grade": "A"
-        },
-        "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
-        ]
-      },
-      "workloadFlags": [],
-      "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
-      ]
-    },
-    {
-      "gamePk": 823262,
-      "gameKey": "MIN@SD",
-      "gameDate": "2026-08-22T01:40:00Z",
-      "gameStatus": "Scheduled",
-      "venue": "Petco Park",
-      "pitcherId": 687570,
-      "pitcher": "Connor Prielipp",
-      "teamId": 142,
-      "team": "MIN",
-      "opponentId": 135,
-      "opponent": "SD",
-      "isHome": false,
-      "workloadFetchOk": true,
-      "workloadFetchError": null,
-      "pitcherContext": {
-        "seasonKRate": 0.2461,
-        "seasonBattersFaced": 382,
-        "recentKRate": 0.2889,
-        "recentBattersFaced": 135,
-        "bbRate": 0.0942,
+        "seasonKRate": 0.1796,
+        "seasonBattersFaced": 245,
+        "recentKRate": 0.1803,
+        "recentBattersFaced": 122,
+        "bbRate": 0.1061,
         "whiffRate": null,
         "xera": null,
         "hand": null,
         "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.922,
-        "recent14PitchesPerPA": 3.805,
-        "seasonPlateAppearances": 4758,
-        "recent14PlateAppearances": 411,
-        "seasonKRate": 0.2182,
-        "recent14KRate": 0.1995,
+        "seasonPitchesPerPA": 3.862,
+        "recent14PitchesPerPA": 3.923,
+        "seasonPlateAppearances": 4806,
+        "recent14PlateAppearances": 444,
+        "seasonKRate": 0.2299,
+        "recent14KRate": 0.2455,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -2659,20 +1100,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 89.1,
-        "recentBfAverage": 22.57,
-        "recentIpAverage": 5.21,
-        "opponentPitchesPerPA": 3.893
+        "recentPitchAverage": 82.62,
+        "recentBfAverage": 20.38,
+        "recentIpAverage": 4.62,
+        "opponentPitchesPerPA": 3.878
       },
       "projection": {
-        "expectedPitchLimit": 88.23,
-        "expectedBF": 22.631,
-        "expectedInnings": 5.274,
-        "temporaryKRate": 0.2532,
-        "workloadOnlyProjectedKs": 5.73,
-        "teamAdjustedKRate": 0.2434,
-        "fullShadowProjectedKs": 5.508,
-        "teamAdjustmentKsDelta": -0.222
+        "expectedPitchLimit": 83.57,
+        "expectedBF": 21.142,
+        "expectedInnings": 4.756,
+        "temporaryKRate": 0.1847,
+        "workloadOnlyProjectedKs": 3.904,
+        "teamAdjustedKRate": 0.1984,
+        "fullShadowProjectedKs": 4.195,
+        "teamAdjustmentKsDelta": 0.291
       },
       "confidence": {
         "score": 1,
@@ -2685,23 +1126,371 @@
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2434,
+        "adjustedKRate": 0.1984,
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.2461,
-            "regressedSeasonKRate": 0.2375,
-            "recentAdjustment": 0.008,
+            "observedSeasonKRate": 0.1796,
+            "regressedSeasonKRate": 0.1983,
+            "recentAdjustment": -0.0036,
             "whiffAdjustment": 0,
-            "baselineKRate": 0.2455
+            "baselineKRate": 0.1947
           },
           "opponent": {
-            "observedSeasonKRate": 0.2182,
-            "regressedSeasonKRate": 0.2185,
-            "seasonAdjustment": -0.0009,
-            "recentAdjustment": -0.0012,
+            "observedSeasonKRate": 0.2299,
+            "regressedSeasonKRate": 0.229,
+            "seasonAdjustment": 0.0027,
+            "recentAdjustment": 0.001,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2185,
+            "regressedHandednessKRate": 0.229,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0037,
+            "movementFromPitcherBaseline": 0.0037
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.765,
+          "grade": "B"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 822858,
+      "gameKey": "LAA@TEX",
+      "gameDate": "2026-08-22T23:05:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Globe Life Field",
+      "pitcherId": 674003,
+      "pitcher": "Cody Bradford",
+      "teamId": 140,
+      "team": "TEX",
+      "opponentId": 108,
+      "opponent": "LAA",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1538,
+        "seasonBattersFaced": 65,
+        "recentKRate": 0.1538,
+        "recentBattersFaced": 65,
+        "bbRate": 0.0615,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.906,
+        "recent14PitchesPerPA": 4.052,
+        "seasonPlateAppearances": 4834,
+        "recent14PlateAppearances": 446,
+        "seasonKRate": 0.252,
+        "recent14KRate": 0.2422,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 3,
+        "recentStarts": 3,
+        "recentAppearances": 3,
+        "recentPitchAverage": 77.17,
+        "recentBfAverage": 21.5,
+        "recentIpAverage": 5.06,
+        "opponentPitchesPerPA": 3.943
+      },
+      "projection": {
+        "expectedPitchLimit": 79.64,
+        "expectedBF": 20.655,
+        "expectedInnings": 5.026,
+        "temporaryKRate": 0.1618,
+        "workloadOnlyProjectedKs": 3.341,
+        "teamAdjustedKRate": 0.2059,
+        "fullShadowProjectedKs": 4.253,
+        "teamAdjustmentKsDelta": 0.912
+      },
+      "confidence": {
+        "score": 0.67,
+        "grade": "B",
+        "publicEligible": true
+      },
+      "flags": [
+        "LOW_PITCHER_SAMPLE",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2059,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.1538,
+            "regressedSeasonKRate": 0.2047,
+            "recentAdjustment": -0.008,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1967
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.252,
+            "regressedSeasonKRate": 0.2486,
+            "seasonAdjustment": 0.0096,
+            "recentAdjustment": -0.0004,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2486,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0092,
+            "movementFromPitcherBaseline": 0.0092
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "favorable",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.534,
+          "grade": "C"
+        },
+        "flags": [
+          "LOW_PITCHER_SAMPLE",
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "LOW_PITCHER_SAMPLE",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824151,
+      "gameKey": "ATH@HOU",
+      "gameDate": "2026-08-22T23:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Daikin Park",
+      "pitcherId": 682052,
+      "pitcher": "Jacob Lopez",
+      "teamId": 133,
+      "team": "ATH",
+      "opponentId": 117,
+      "opponent": "HOU",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2051,
+        "seasonBattersFaced": 356,
+        "recentKRate": 0.2836,
+        "recentBattersFaced": 134,
+        "bbRate": 0.118,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.881,
+        "recent14PitchesPerPA": 3.829,
+        "seasonPlateAppearances": 4874,
+        "recent14PlateAppearances": 387,
+        "seasonKRate": 0.215,
+        "recent14KRate": 0.2171,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 91.81,
+        "recentBfAverage": 23.24,
+        "recentIpAverage": 5.78,
+        "opponentPitchesPerPA": 3.868
+      },
+      "projection": {
+        "expectedPitchLimit": 90.18,
+        "expectedBF": 23.286,
+        "expectedInnings": 5.721,
+        "temporaryKRate": 0.2254,
+        "workloadOnlyProjectedKs": 5.25,
+        "teamAdjustedKRate": 0.217,
+        "fullShadowProjectedKs": 5.053,
+        "teamAdjustmentKsDelta": -0.197
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.217,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2051,
+            "regressedSeasonKRate": 0.2109,
+            "recentAdjustment": 0.008,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2189
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.215,
+            "regressedSeasonKRate": 0.2157,
+            "seasonAdjustment": -0.0019,
+            "recentAdjustment": 0.0001,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2157,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0018,
+            "movementFromPitcherBaseline": -0.0018
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824151,
+      "gameKey": "ATH@HOU",
+      "gameDate": "2026-08-22T23:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Daikin Park",
+      "pitcherId": 686613,
+      "pitcher": "Hunter Brown",
+      "teamId": 117,
+      "team": "HOU",
+      "opponentId": 133,
+      "opponent": "ATH",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2474,
+        "seasonBattersFaced": 291,
+        "recentKRate": 0.2391,
+        "recentBattersFaced": 138,
+        "bbRate": 0.1375,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.81,
+        "recent14PitchesPerPA": 3.838,
+        "seasonPlateAppearances": 4899,
+        "recent14PlateAppearances": 444,
+        "seasonKRate": 0.2237,
+        "recent14KRate": 0.1779,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 92.43,
+        "recentBfAverage": 22.76,
+        "recentIpAverage": 5.46,
+        "opponentPitchesPerPA": 3.817
+      },
+      "projection": {
+        "expectedPitchLimit": 90.63,
+        "expectedBF": 23.4,
+        "expectedInnings": 5.507,
+        "temporaryKRate": 0.2424,
+        "workloadOnlyProjectedKs": 5.672,
+        "teamAdjustedKRate": 0.2352,
+        "fullShadowProjectedKs": 5.504,
+        "teamAdjustmentKsDelta": -0.168
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2352,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2474,
+            "regressedSeasonKRate": 0.2367,
+            "recentAdjustment": 0.0005,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2372
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2237,
+            "regressedSeasonKRate": 0.2234,
+            "seasonAdjustment": 0.0008,
+            "recentAdjustment": -0.0028,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2234,
             "handednessAdjustment": 0
           },
           "totals": {
@@ -2718,6 +1507,121 @@
           ]
         },
         "confidence": {
+          "score": 0.824,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824560,
+      "gameKey": "NYM@CWS",
+      "gameDate": "2026-08-22T23:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Rate Field",
+      "pitcherId": 681035,
+      "pitcher": "Christian Scott",
+      "teamId": 121,
+      "team": "NYM",
+      "opponentId": 145,
+      "opponent": "CWS",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2861,
+        "seasonBattersFaced": 367,
+        "recentKRate": 0.2985,
+        "recentBattersFaced": 134,
+        "bbRate": 0.0954,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.859,
+        "recent14PitchesPerPA": 3.966,
+        "seasonPlateAppearances": 4879,
+        "recent14PlateAppearances": 468,
+        "seasonKRate": 0.2386,
+        "recent14KRate": 0.2286,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 89.76,
+        "recentBfAverage": 23.38,
+        "recentIpAverage": 5.19,
+        "opponentPitchesPerPA": 3.886
+      },
+      "projection": {
+        "expectedPitchLimit": 88.71,
+        "expectedBF": 23.023,
+        "expectedInnings": 5.291,
+        "temporaryKRate": 0.2814,
+        "workloadOnlyProjectedKs": 6.478,
+        "teamAdjustedKRate": 0.2752,
+        "fullShadowProjectedKs": 6.336,
+        "teamAdjustmentKsDelta": -0.142
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2752,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2861,
+            "regressedSeasonKRate": 0.2632,
+            "recentAdjustment": 0.0071,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2703
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2386,
+            "regressedSeasonKRate": 0.2367,
+            "seasonAdjustment": 0.0054,
+            "recentAdjustment": -0.0005,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2367,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0049,
+            "movementFromPitcherBaseline": 0.0049
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "favorable",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
           "score": 0.9,
           "grade": "A"
         },
@@ -2733,38 +1637,38 @@
       ]
     },
     {
-      "gamePk": 823911,
-      "gameKey": "PIT@LAD",
-      "gameDate": "2026-08-22T02:10:00Z",
+      "gamePk": 824560,
+      "gameKey": "NYM@CWS",
+      "gameDate": "2026-08-22T23:10:00Z",
       "gameStatus": "Scheduled",
-      "venue": "UNIQLO Field at Dodger Stadium",
-      "pitcherId": 696149,
-      "pitcher": "Bubba Chandler",
-      "teamId": 134,
-      "team": "PIT",
-      "opponentId": 119,
-      "opponent": "LAD",
-      "isHome": false,
+      "venue": "Rate Field",
+      "pitcherId": 622491,
+      "pitcher": "Luis Castillo",
+      "teamId": 145,
+      "team": "CWS",
+      "opponentId": 121,
+      "opponent": "NYM",
+      "isHome": true,
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.205,
-        "seasonBattersFaced": 508,
-        "recentKRate": 0.2266,
-        "recentBattersFaced": 128,
-        "bbRate": 0.121,
-        "whiffRate": 0.231,
-        "xera": 4.06,
-        "hand": "R",
-        "source": "hr-props-raw"
+        "seasonKRate": 0.1987,
+        "seasonBattersFaced": 458,
+        "recentKRate": 0.1748,
+        "recentBattersFaced": 143,
+        "bbRate": 0.0699,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.923,
-        "recent14PitchesPerPA": 3.827,
-        "seasonPlateAppearances": 4888,
-        "recent14PlateAppearances": 445,
-        "seasonKRate": 0.2046,
-        "recent14KRate": 0.2022,
+        "seasonPitchesPerPA": 3.933,
+        "recent14PitchesPerPA": 3.988,
+        "seasonPlateAppearances": 4835,
+        "recent14PlateAppearances": 404,
+        "seasonKRate": 0.2267,
+        "recent14KRate": 0.2252,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -2774,20 +1678,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 89,
-        "recentBfAverage": 21.29,
-        "recentIpAverage": 5.33,
-        "opponentPitchesPerPA": 3.899
+        "recentPitchAverage": 93.38,
+        "recentBfAverage": 23.24,
+        "recentIpAverage": 5.38,
+        "opponentPitchesPerPA": 3.947
       },
       "projection": {
-        "expectedPitchLimit": 88.16,
-        "expectedBF": 22.147,
-        "expectedInnings": 5.328,
-        "temporaryKRate": 0.2121,
-        "workloadOnlyProjectedKs": 4.698,
-        "teamAdjustedKRate": 0.206,
-        "fullShadowProjectedKs": 4.562,
-        "teamAdjustmentKsDelta": -0.136
+        "expectedPitchLimit": 91.31,
+        "expectedBF": 23.171,
+        "expectedInnings": 5.435,
+        "temporaryKRate": 0.1957,
+        "workloadOnlyProjectedKs": 4.535,
+        "teamAdjustedKRate": 0.201,
+        "fullShadowProjectedKs": 4.657,
+        "teamAdjustmentKsDelta": 0.122
       },
       "confidence": {
         "score": 1,
@@ -2795,37 +1699,38 @@
         "publicEligible": true
       },
       "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.206,
+        "adjustedKRate": 0.201,
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.205,
-            "regressedSeasonKRate": 0.2096,
-            "recentAdjustment": 0.0034,
-            "whiffAdjustment": -0.0015,
-            "baselineKRate": 0.2115
+            "observedSeasonKRate": 0.1987,
+            "regressedSeasonKRate": 0.2055,
+            "recentAdjustment": -0.0061,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1994
           },
           "opponent": {
-            "observedSeasonKRate": 0.2046,
-            "regressedSeasonKRate": 0.2064,
-            "seasonAdjustment": -0.0052,
-            "recentAdjustment": -0.0003,
+            "observedSeasonKRate": 0.2267,
+            "regressedSeasonKRate": 0.2261,
+            "seasonAdjustment": 0.0017,
+            "recentAdjustment": -0.0001,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2064,
+            "regressedHandednessKRate": 0.2261,
             "handednessAdjustment": 0
           },
           "totals": {
-            "opponentAdjustment": -0.0054,
-            "movementFromPitcherBaseline": -0.0054
+            "opponentAdjustment": 0.0017,
+            "movementFromPitcherBaseline": 0.0017
           }
         },
         "diagnostics": {
-          "pitcherHand": "R",
-          "opponentKEnvironment": "difficult",
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
             0.38
@@ -2836,47 +1741,167 @@
           "grade": "A"
         },
         "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ]
     },
     {
-      "gamePk": 823911,
-      "gameKey": "PIT@LAD",
-      "gameDate": "2026-08-22T02:10:00Z",
+      "gamePk": 824073,
+      "gameKey": "DET@KC",
+      "gameDate": "2026-08-22T23:15:00Z",
       "gameStatus": "Scheduled",
-      "venue": "UNIQLO Field at Dodger Stadium",
-      "pitcherId": 808967,
-      "pitcher": "Yoshinobu Yamamoto",
-      "teamId": 119,
-      "team": "LAD",
-      "opponentId": 134,
-      "opponent": "PIT",
+      "venue": "Kauffman Stadium",
+      "pitcherId": 623454,
+      "pitcher": "Drew Anderson",
+      "teamId": 116,
+      "team": "DET",
+      "opponentId": 118,
+      "opponent": "KC",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2593,
+        "seasonBattersFaced": 81,
+        "recentKRate": 0.2593,
+        "recentBattersFaced": 81,
+        "bbRate": 0.1111,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.808,
+        "recent14PitchesPerPA": 3.864,
+        "seasonPlateAppearances": 4867,
+        "recent14PlateAppearances": 448,
+        "seasonKRate": 0.2092,
+        "recent14KRate": 0.2031,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 5,
+        "recentStarts": 5,
+        "recentAppearances": 8,
+        "recentPitchAverage": 63.8,
+        "recentBfAverage": 16.93,
+        "recentIpAverage": 4.13,
+        "opponentPitchesPerPA": 3.822
+      },
+      "projection": {
+        "expectedPitchLimit": 70.02,
+        "expectedBF": 17.835,
+        "expectedInnings": 4.177,
+        "temporaryKRate": 0.2548,
+        "workloadOnlyProjectedKs": 4.544,
+        "teamAdjustedKRate": 0.2334,
+        "fullShadowProjectedKs": 4.163,
+        "teamAdjustmentKsDelta": -0.381
+      },
+      "confidence": {
+        "score": 0.917,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "LOW_PITCHER_SAMPLE",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2334,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2593,
+            "regressedSeasonKRate": 0.2322,
+            "recentAdjustment": 0.0054,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2376
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2092,
+            "regressedSeasonKRate": 0.2105,
+            "seasonAdjustment": -0.0038,
+            "recentAdjustment": -0.0005,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2105,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0042,
+            "movementFromPitcherBaseline": -0.0042
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.554,
+          "grade": "C"
+        },
+        "flags": [
+          "LOW_PITCHER_SAMPLE",
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "LOW_PITCHER_SAMPLE",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824073,
+      "gameKey": "DET@KC",
+      "gameDate": "2026-08-22T23:15:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Kauffman Stadium",
+      "pitcherId": 608379,
+      "pitcher": "Michael Wacha",
+      "teamId": 118,
+      "team": "KC",
+      "opponentId": 116,
+      "opponent": "DET",
       "isHome": true,
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.245,
-        "seasonBattersFaced": 556,
-        "recentKRate": 0.2278,
-        "recentBattersFaced": 158,
-        "bbRate": 0.061,
-        "whiffRate": 0.259,
-        "xera": 3.08,
-        "hand": "R",
-        "source": "hr-props-raw"
+        "seasonKRate": 0.1899,
+        "seasonBattersFaced": 632,
+        "recentKRate": 0.1655,
+        "recentBattersFaced": 145,
+        "bbRate": 0.0649,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.905,
-        "recent14PitchesPerPA": 3.794,
-        "seasonPlateAppearances": 5012,
-        "recent14PlateAppearances": 403,
-        "seasonKRate": 0.241,
-        "recent14KRate": 0.2333,
+        "seasonPitchesPerPA": 3.923,
+        "recent14PitchesPerPA": 3.83,
+        "seasonPlateAppearances": 4876,
+        "recent14PlateAppearances": 411,
+        "seasonKRate": 0.2244,
+        "recent14KRate": 0.2019,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -2886,20 +1911,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 100.38,
-        "recentBfAverage": 25.48,
-        "recentIpAverage": 6.59,
-        "opponentPitchesPerPA": 3.878
+        "recentPitchAverage": 91.19,
+        "recentBfAverage": 23.67,
+        "recentIpAverage": 5.9,
+        "opponentPitchesPerPA": 3.899
       },
       "projection": {
-        "expectedPitchLimit": 96.35,
-        "expectedBF": 25.069,
-        "expectedInnings": 6.416,
-        "temporaryKRate": 0.2367,
-        "workloadOnlyProjectedKs": 5.933,
-        "teamAdjustedKRate": 0.2437,
-        "fullShadowProjectedKs": 6.109,
-        "teamAdjustmentKsDelta": 0.176
+        "expectedPitchLimit": 89.74,
+        "expectedBF": 23.242,
+        "expectedInnings": 5.807,
+        "temporaryKRate": 0.1878,
+        "workloadOnlyProjectedKs": 4.365,
+        "teamAdjustedKRate": 0.1906,
+        "fullShadowProjectedKs": 4.43,
+        "teamAdjustmentKsDelta": 0.065
       },
       "confidence": {
         "score": 1,
@@ -2907,36 +1932,267 @@
         "publicEligible": true
       },
       "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2437,
+        "adjustedKRate": 0.1906,
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.245,
-            "regressedSeasonKRate": 0.2387,
-            "recentAdjustment": -0.0022,
-            "whiffAdjustment": 0.0013,
-            "baselineKRate": 0.2378
+            "observedSeasonKRate": 0.1899,
+            "regressedSeasonKRate": 0.1974,
+            "recentAdjustment": -0.0064,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.191
           },
           "opponent": {
-            "observedSeasonKRate": 0.241,
-            "regressedSeasonKRate": 0.2389,
-            "seasonAdjustment": 0.0062,
-            "recentAdjustment": -0.0004,
+            "observedSeasonKRate": 0.2244,
+            "regressedSeasonKRate": 0.224,
+            "seasonAdjustment": 0.001,
+            "recentAdjustment": -0.0014,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2389,
+            "regressedHandednessKRate": 0.224,
             "handednessAdjustment": 0
           },
           "totals": {
-            "opponentAdjustment": 0.0058,
-            "movementFromPitcherBaseline": 0.0058
+            "opponentAdjustment": -0.0004,
+            "movementFromPitcherBaseline": -0.0004
           }
         },
         "diagnostics": {
-          "pitcherHand": "R",
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823910,
+      "gameKey": "PIT@LAD",
+      "gameDate": "2026-08-22T23:15:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "UNIQLO Field at Dodger Stadium",
+      "pitcherId": 683003,
+      "pitcher": "Jared Jones",
+      "teamId": 134,
+      "team": "PIT",
+      "opponentId": 119,
+      "opponent": "LAD",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2677,
+        "seasonBattersFaced": 269,
+        "recentKRate": 0.264,
+        "recentBattersFaced": 125,
+        "bbRate": 0.0781,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.927,
+        "recent14PitchesPerPA": 3.844,
+        "seasonPlateAppearances": 4931,
+        "recent14PlateAppearances": 450,
+        "seasonKRate": 0.2056,
+        "recent14KRate": 0.22,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 78.95,
+        "recentBfAverage": 20.81,
+        "recentIpAverage": 4.57,
+        "opponentPitchesPerPA": 3.906
+      },
+      "projection": {
+        "expectedPitchLimit": 80.93,
+        "expectedBF": 20.75,
+        "expectedInnings": 4.694,
+        "temporaryKRate": 0.2613,
+        "workloadOnlyProjectedKs": 5.423,
+        "teamAdjustedKRate": 0.247,
+        "fullShadowProjectedKs": 5.125,
+        "teamAdjustmentKsDelta": -0.298
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.247,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2677,
+            "regressedSeasonKRate": 0.2479,
+            "recentAdjustment": 0.0032,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2511
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2056,
+            "regressedSeasonKRate": 0.2073,
+            "seasonAdjustment": -0.0049,
+            "recentAdjustment": 0.0008,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2073,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0041,
+            "movementFromPitcherBaseline": -0.0041
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.796,
+          "grade": "B"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823910,
+      "gameKey": "PIT@LAD",
+      "gameDate": "2026-08-22T23:15:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "UNIQLO Field at Dodger Stadium",
+      "pitcherId": 669373,
+      "pitcher": "Tarik Skubal",
+      "teamId": 119,
+      "team": "LAD",
+      "opponentId": 134,
+      "opponent": "PIT",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.3027,
+        "seasonBattersFaced": 446,
+        "recentKRate": 0.3087,
+        "recentBattersFaced": 149,
+        "bbRate": 0.0448,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.908,
+        "recent14PitchesPerPA": 3.885,
+        "seasonPlateAppearances": 5054,
+        "recent14PlateAppearances": 400,
+        "seasonKRate": 0.2418,
+        "recent14KRate": 0.25,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 95.9,
+        "recentBfAverage": 24.67,
+        "recentIpAverage": 6.03,
+        "opponentPitchesPerPA": 3.902
+      },
+      "projection": {
+        "expectedPitchLimit": 93.13,
+        "expectedBF": 24.147,
+        "expectedInnings": 5.961,
+        "temporaryKRate": 0.2945,
+        "workloadOnlyProjectedKs": 7.112,
+        "teamAdjustedKRate": 0.2908,
+        "fullShadowProjectedKs": 7.022,
+        "teamAdjustmentKsDelta": -0.09
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2908,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.3027,
+            "regressedSeasonKRate": 0.2775,
+            "recentAdjustment": 0.0063,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2837
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2418,
+            "regressedSeasonKRate": 0.2396,
+            "seasonAdjustment": 0.0064,
+            "recentAdjustment": 0.0006,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2396,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0071,
+            "movementFromPitcherBaseline": 0.0071
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -2948,22 +2204,24 @@
           "grade": "A"
         },
         "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ]
     },
     {
-      "gamePk": 823101,
+      "gamePk": 823100,
       "gameKey": "CHC@SEA",
-      "gameDate": "2026-08-22T02:10:00Z",
+      "gameDate": "2026-08-22T23:15:00Z",
       "gameStatus": "Scheduled",
       "venue": "T-Mobile Park",
-      "pitcherId": 571510,
-      "pitcher": "Matthew Boyd",
+      "pitcherId": 656849,
+      "pitcher": "David Peterson",
       "teamId": 112,
       "team": "CHC",
       "opponentId": 136,
@@ -2972,23 +2230,23 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.192,
-        "seasonBattersFaced": 354,
-        "recentKRate": 0.1329,
-        "recentBattersFaced": 158,
-        "bbRate": 0.073,
-        "whiffRate": 0.223,
-        "xera": 4.98,
-        "hand": "L",
-        "source": "hr-props-raw"
+        "seasonKRate": 0.1875,
+        "seasonBattersFaced": 368,
+        "recentKRate": 0.1844,
+        "recentBattersFaced": 141,
+        "bbRate": 0.1005,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.913,
-        "recent14PitchesPerPA": 3.984,
-        "seasonPlateAppearances": 4780,
-        "recent14PlateAppearances": 427,
-        "seasonKRate": 0.2308,
-        "recent14KRate": 0.2412,
+        "seasonPitchesPerPA": 3.906,
+        "recent14PitchesPerPA": 3.954,
+        "seasonPlateAppearances": 4822,
+        "recent14PlateAppearances": 435,
+        "seasonKRate": 0.2302,
+        "recent14KRate": 0.2414,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -2998,20 +2256,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 94.86,
-        "recentBfAverage": 26.67,
-        "recentIpAverage": 6.41,
-        "opponentPitchesPerPA": 3.93
+        "recentPitchAverage": 90.29,
+        "recentBfAverage": 24.33,
+        "recentIpAverage": 5.51,
+        "opponentPitchesPerPA": 3.918
       },
       "projection": {
-        "expectedPitchLimit": 92.38,
-        "expectedBF": 24.61,
-        "expectedInnings": 6.261,
-        "temporaryKRate": 0.1856,
-        "workloadOnlyProjectedKs": 4.567,
-        "teamAdjustedKRate": 0.1959,
-        "fullShadowProjectedKs": 4.821,
-        "teamAdjustmentKsDelta": 0.254
+        "expectedPitchLimit": 89.09,
+        "expectedBF": 23.295,
+        "expectedInnings": 5.533,
+        "temporaryKRate": 0.1907,
+        "workloadOnlyProjectedKs": 4.443,
+        "teamAdjustedKRate": 0.1999,
+        "fullShadowProjectedKs": 4.657,
+        "teamAdjustmentKsDelta": 0.214
       },
       "confidence": {
         "score": 1,
@@ -3019,36 +2277,37 @@
         "publicEligible": true
       },
       "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1959,
+        "adjustedKRate": 0.1999,
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.192,
-            "regressedSeasonKRate": 0.2025,
-            "recentAdjustment": -0.008,
-            "whiffAdjustment": -0.0023,
-            "baselineKRate": 0.1922
+            "observedSeasonKRate": 0.1875,
+            "regressedSeasonKRate": 0.1994,
+            "recentAdjustment": -0.003,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1964
           },
           "opponent": {
-            "observedSeasonKRate": 0.2308,
-            "regressedSeasonKRate": 0.2297,
-            "seasonAdjustment": 0.003,
-            "recentAdjustment": 0.0007,
+            "observedSeasonKRate": 0.2302,
+            "regressedSeasonKRate": 0.2292,
+            "seasonAdjustment": 0.0028,
+            "recentAdjustment": 0.0008,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2297,
+            "regressedHandednessKRate": 0.2292,
             "handednessAdjustment": 0
           },
           "totals": {
-            "opponentAdjustment": 0.0037,
-            "movementFromPitcherBaseline": 0.0037
+            "opponentAdjustment": 0.0036,
+            "movementFromPitcherBaseline": 0.0036
           }
         },
         "diagnostics": {
-          "pitcherHand": "L",
+          "pitcherHand": null,
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -3060,22 +2319,24 @@
           "grade": "A"
         },
         "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ]
     },
     {
-      "gamePk": 823101,
+      "gamePk": 823100,
       "gameKey": "CHC@SEA",
-      "gameDate": "2026-08-22T02:10:00Z",
+      "gameDate": "2026-08-22T23:15:00Z",
       "gameStatus": "Scheduled",
       "venue": "T-Mobile Park",
-      "pitcherId": 676106,
-      "pitcher": "Emerson Hancock",
+      "pitcherId": 807739,
+      "pitcher": "Kade Anderson",
       "teamId": 136,
       "team": "SEA",
       "opponentId": 112,
@@ -3084,23 +2345,385 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.231,
-        "seasonBattersFaced": 516,
-        "recentKRate": 0.2045,
-        "recentBattersFaced": 132,
-        "bbRate": 0.062,
-        "whiffRate": 0.237,
-        "xera": 3.97,
-        "hand": "R",
-        "source": "hr-props-raw"
+        "seasonKRate": null,
+        "seasonBattersFaced": null,
+        "recentKRate": null,
+        "recentBattersFaced": null,
+        "bbRate": null,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
       },
       "opponentContext": {
-        "seasonPitchesPerPA": 3.975,
-        "recent14PitchesPerPA": 4.054,
-        "seasonPlateAppearances": 5041,
-        "recent14PlateAppearances": 424,
-        "seasonKRate": 0.2182,
-        "recent14KRate": 0.2264,
+        "seasonPitchesPerPA": 3.973,
+        "recent14PitchesPerPA": 4.005,
+        "seasonPlateAppearances": 5086,
+        "recent14PlateAppearances": 432,
+        "seasonKRate": 0.2184,
+        "recent14KRate": 0.2245,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 0,
+        "recentStarts": 0,
+        "recentAppearances": 0,
+        "recentPitchAverage": null,
+        "recentBfAverage": null,
+        "recentIpAverage": null,
+        "opponentPitchesPerPA": 3.981
+      },
+      "projection": {
+        "expectedPitchLimit": 86,
+        "expectedBF": 21.603,
+        "expectedInnings": 5.185,
+        "temporaryKRate": 0.2212,
+        "workloadOnlyProjectedKs": 4.779,
+        "teamAdjustedKRate": 0.2207,
+        "fullShadowProjectedKs": 4.768,
+        "teamAdjustmentKsDelta": -0.011
+      },
+      "confidence": {
+        "score": 0.15,
+        "grade": "D",
+        "publicEligible": false
+      },
+      "flags": [
+        "NO_STARTS_AVAILABLE",
+        "LOW_RECENT_APPEARANCE_SAMPLE",
+        "RECENT_PITCH_COUNTS_MISSING",
+        "PITCHER_SEASON_K_RATE_MISSING",
+        "PITCHER_RECENT_K_RATE_MISSING",
+        "PITCHER_K_RATE_MISSING",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2207,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": null,
+            "regressedSeasonKRate": 0.2212,
+            "recentAdjustment": 0,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2212
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2184,
+            "regressedSeasonKRate": 0.2187,
+            "seasonAdjustment": -0.0009,
+            "recentAdjustment": 0.0004,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2187,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0005,
+            "movementFromPitcherBaseline": -0.0005
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.35,
+          "grade": "D"
+        },
+        "flags": [
+          "PITCHER_K_RATE_MISSING",
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [
+        "NO_STARTS_AVAILABLE",
+        "LOW_RECENT_APPEARANCE_SAMPLE",
+        "RECENT_PITCH_COUNTS_MISSING",
+        "PITCHER_SEASON_K_RATE_MISSING",
+        "PITCHER_RECENT_K_RATE_MISSING"
+      ],
+      "teamKFlags": [
+        "PITCHER_K_RATE_MISSING",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824718,
+      "gameKey": "SF@BOS",
+      "gameDate": "2026-08-22T23:15:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Fenway Park",
+      "pitcherId": 694918,
+      "pitcher": "Blade Tidwell",
+      "teamId": 137,
+      "team": "SF",
+      "opponentId": 111,
+      "opponent": "BOS",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1587,
+        "seasonBattersFaced": 63,
+        "recentKRate": 0.1553,
+        "recentBattersFaced": 103,
+        "bbRate": 0.1111,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.83,
+        "recent14PitchesPerPA": 3.938,
+        "seasonPlateAppearances": 4848,
+        "recent14PlateAppearances": 471,
+        "seasonKRate": 0.2139,
+        "recent14KRate": 0.1699,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 5,
+        "recentStarts": 5,
+        "recentAppearances": 8,
+        "recentPitchAverage": 81.93,
+        "recentBfAverage": 20.4,
+        "recentIpAverage": 4.69,
+        "opponentPitchesPerPA": 3.857
+      },
+      "projection": {
+        "expectedPitchLimit": 83.07,
+        "expectedBF": 21.139,
+        "expectedInnings": 4.804,
+        "temporaryKRate": 0.1653,
+        "workloadOnlyProjectedKs": 3.494,
+        "teamAdjustedKRate": 0.1932,
+        "fullShadowProjectedKs": 4.084,
+        "teamAdjustmentKsDelta": 0.59
+      },
+      "confidence": {
+        "score": 0.917,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "LOW_PITCHER_SAMPLE",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.1932,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.1587,
+            "regressedSeasonKRate": 0.2062,
+            "recentAdjustment": -0.008,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1982
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2139,
+            "regressedSeasonKRate": 0.2147,
+            "seasonAdjustment": -0.0023,
+            "recentAdjustment": -0.0028,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2147,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0051,
+            "movementFromPitcherBaseline": -0.0051
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.531,
+          "grade": "C"
+        },
+        "flags": [
+          "LOW_PITCHER_SAMPLE",
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "LOW_PITCHER_SAMPLE",
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824718,
+      "gameKey": "SF@BOS",
+      "gameDate": "2026-08-22T23:15:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Fenway Park",
+      "pitcherId": 663776,
+      "pitcher": "Patrick Sandoval",
+      "teamId": 111,
+      "team": "BOS",
+      "opponentId": 137,
+      "opponent": "SF",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2188,
+        "seasonBattersFaced": 160,
+        "recentKRate": 0.2128,
+        "recentBattersFaced": 141,
+        "bbRate": 0.1,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.856,
+        "recent14PitchesPerPA": 3.868,
+        "seasonPlateAppearances": 4783,
+        "recent14PlateAppearances": 402,
+        "seasonKRate": 0.213,
+        "recent14KRate": 0.2562,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 7,
+        "recentPitchAverage": 87.14,
+        "recentBfAverage": 24,
+        "recentIpAverage": 4.92,
+        "opponentPitchesPerPA": 3.859
+      },
+      "projection": {
+        "expectedPitchLimit": 86.82,
+        "expectedBF": 23.024,
+        "expectedInnings": 5.102,
+        "temporaryKRate": 0.2176,
+        "workloadOnlyProjectedKs": 5.011,
+        "teamAdjustedKRate": 0.2187,
+        "fullShadowProjectedKs": 5.035,
+        "teamAdjustmentKsDelta": 0.024
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2187,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2188,
+            "regressedSeasonKRate": 0.2201,
+            "recentAdjustment": -0.0015,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2186
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.213,
+            "regressedSeasonKRate": 0.214,
+            "seasonAdjustment": -0.0025,
+            "recentAdjustment": 0.0026,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.214,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0001,
+            "movementFromPitcherBaseline": 0.0001
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.656,
+          "grade": "B"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 825044,
+      "gameKey": "CIN@ARI",
+      "gameDate": "2026-08-23T00:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Chase Field",
+      "pitcherId": 695076,
+      "pitcher": "Rhett Lowder",
+      "teamId": 113,
+      "team": "CIN",
+      "opponentId": 109,
+      "opponent": "ARI",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1881,
+        "seasonBattersFaced": 420,
+        "recentKRate": 0.1704,
+        "recentBattersFaced": 135,
+        "bbRate": 0.0881,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.941,
+        "recent14PitchesPerPA": 4.042,
+        "seasonPlateAppearances": 4889,
+        "recent14PlateAppearances": 430,
+        "seasonKRate": 0.1923,
+        "recent14KRate": 0.1814,
         "warnings": []
       },
       "modelVersion": "mlb-k-workload-v2",
@@ -3110,20 +2733,20 @@
         "recentSamples": 6,
         "recentStarts": 6,
         "recentAppearances": 8,
-        "recentPitchAverage": 91.57,
-        "recentBfAverage": 24.52,
-        "recentIpAverage": 5.62,
-        "opponentPitchesPerPA": 3.995
+        "recentPitchAverage": 91.14,
+        "recentBfAverage": 24.19,
+        "recentIpAverage": 5.76,
+        "opponentPitchesPerPA": 3.966
       },
       "projection": {
-        "expectedPitchLimit": 90.01,
-        "expectedBF": 23.228,
-        "expectedInnings": 5.606,
-        "temporaryKRate": 0.2225,
-        "workloadOnlyProjectedKs": 5.169,
-        "teamAdjustedKRate": 0.2222,
-        "fullShadowProjectedKs": 5.161,
-        "teamAdjustmentKsDelta": -0.008
+        "expectedPitchLimit": 89.7,
+        "expectedBF": 23.168,
+        "expectedInnings": 5.701,
+        "temporaryKRate": 0.1878,
+        "workloadOnlyProjectedKs": 4.351,
+        "teamAdjustedKRate": 0.1832,
+        "fullShadowProjectedKs": 4.244,
+        "teamAdjustmentKsDelta": -0.107
       },
       "confidence": {
         "score": 1,
@@ -3131,36 +2754,267 @@
         "publicEligible": true
       },
       "flags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.2222,
+        "adjustedKRate": 0.1832,
         "components": {
           "leagueKRate": 0.2212,
           "pitcher": {
-            "observedSeasonKRate": 0.231,
-            "regressedSeasonKRate": 0.2283,
-            "recentAdjustment": -0.0047,
-            "whiffAdjustment": -0.0009,
-            "baselineKRate": 0.2226
+            "observedSeasonKRate": 0.1881,
+            "regressedSeasonKRate": 0.1988,
+            "recentAdjustment": -0.0057,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1931
           },
           "opponent": {
-            "observedSeasonKRate": 0.2182,
-            "regressedSeasonKRate": 0.2185,
-            "seasonAdjustment": -0.0009,
-            "recentAdjustment": 0.0005,
+            "observedSeasonKRate": 0.1923,
+            "regressedSeasonKRate": 0.1954,
+            "seasonAdjustment": -0.009,
+            "recentAdjustment": -0.0009,
             "observedHandednessKRate": null,
-            "regressedHandednessKRate": 0.2185,
+            "regressedHandednessKRate": 0.1954,
             "handednessAdjustment": 0
           },
           "totals": {
-            "opponentAdjustment": -0.0004,
-            "movementFromPitcherBaseline": -0.0004
+            "opponentAdjustment": -0.0099,
+            "movementFromPitcherBaseline": -0.0099
           }
         },
         "diagnostics": {
-          "pitcherHand": "R",
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 825044,
+      "gameKey": "CIN@ARI",
+      "gameDate": "2026-08-23T00:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Chase Field",
+      "pitcherId": 647336,
+      "pitcher": "Michael Soroka",
+      "teamId": 109,
+      "team": "ARI",
+      "opponentId": 113,
+      "opponent": "CIN",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2347,
+        "seasonBattersFaced": 375,
+        "recentKRate": 0.2333,
+        "recentBattersFaced": 120,
+        "bbRate": 0.056,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.943,
+        "recent14PitchesPerPA": 4.136,
+        "seasonPlateAppearances": 4821,
+        "recent14PlateAppearances": 456,
+        "seasonKRate": 0.2547,
+        "recent14KRate": 0.2719,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 70.48,
+        "recentBfAverage": 18.86,
+        "recentIpAverage": 4.79,
+        "opponentPitchesPerPA": 3.991
+      },
+      "projection": {
+        "expectedPitchLimit": 74.82,
+        "expectedBF": 18.786,
+        "expectedInnings": 4.708,
+        "temporaryKRate": 0.2328,
+        "workloadOnlyProjectedKs": 4.373,
+        "teamAdjustedKRate": 0.2424,
+        "fullShadowProjectedKs": 4.554,
+        "teamAdjustmentKsDelta": 0.181
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2424,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2347,
+            "regressedSeasonKRate": 0.23,
+            "recentAdjustment": 0.0007,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2307
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2547,
+            "regressedSeasonKRate": 0.251,
+            "seasonAdjustment": 0.0104,
+            "recentAdjustment": 0.0013,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.251,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0117,
+            "movementFromPitcherBaseline": 0.0117
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "favorable",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824316,
+      "gameKey": "CLE@COL",
+      "gameDate": "2026-08-23T00:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Coors Field",
+      "pitcherId": 676440,
+      "pitcher": "Tanner Bibee",
+      "teamId": 114,
+      "team": "CLE",
+      "opponentId": 115,
+      "opponent": "COL",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1909,
+        "seasonBattersFaced": 613,
+        "recentKRate": 0.1923,
+        "recentBattersFaced": 156,
+        "bbRate": 0.0701,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.736,
+        "recent14PitchesPerPA": 3.745,
+        "seasonPlateAppearances": 4872,
+        "recent14PlateAppearances": 419,
+        "seasonKRate": 0.2272,
+        "recent14KRate": 0.222,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 97.95,
+        "recentBfAverage": 26.05,
+        "recentIpAverage": 6.21,
+        "opponentPitchesPerPA": 3.738
+      },
+      "projection": {
+        "expectedPitchLimit": 94.61,
+        "expectedBF": 25.568,
+        "expectedInnings": 6.185,
+        "temporaryKRate": 0.1948,
+        "workloadOnlyProjectedKs": 4.98,
+        "teamAdjustedKRate": 0.1987,
+        "fullShadowProjectedKs": 5.08,
+        "teamAdjustmentKsDelta": 0.1
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.1987,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.1909,
+            "regressedSeasonKRate": 0.1983,
+            "recentAdjustment": -0.0012,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.1971
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2272,
+            "regressedSeasonKRate": 0.2266,
+            "seasonAdjustment": 0.0019,
+            "recentAdjustment": -0.0003,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2266,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": 0.0016,
+            "movementFromPitcherBaseline": 0.0016
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
           "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
@@ -3172,12 +3026,359 @@
           "grade": "A"
         },
         "flags": [
-          "HAND_SPLIT_UNAVAILABLE"
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "HAND_SPLIT_UNAVAILABLE"
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824316,
+      "gameKey": "CLE@COL",
+      "gameDate": "2026-08-23T00:10:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Coors Field",
+      "pitcherId": 687312,
+      "pitcher": "Gabriel Hughes",
+      "teamId": 115,
+      "team": "COL",
+      "opponentId": 114,
+      "opponent": "CLE",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2092,
+        "seasonBattersFaced": 153,
+        "recentKRate": 0.1938,
+        "recentBattersFaced": 129,
+        "bbRate": 0.0784,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.948,
+        "recent14PitchesPerPA": 3.783,
+        "seasonPlateAppearances": 4858,
+        "recent14PlateAppearances": 424,
+        "seasonKRate": 0.2163,
+        "recent14KRate": 0.1651,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 81.9,
+        "recentBfAverage": 21.57,
+        "recentIpAverage": 4.56,
+        "opponentPitchesPerPA": 3.907
+      },
+      "projection": {
+        "expectedPitchLimit": 83.05,
+        "expectedBF": 21.368,
+        "expectedInnings": 4.727,
+        "temporaryKRate": 0.207,
+        "workloadOnlyProjectedKs": 4.422,
+        "teamAdjustedKRate": 0.2068,
+        "fullShadowProjectedKs": 4.419,
+        "teamAdjustmentKsDelta": -0.003
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2068,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2092,
+            "regressedSeasonKRate": 0.216,
+            "recentAdjustment": -0.0044,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2115
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2163,
+            "regressedSeasonKRate": 0.2169,
+            "seasonAdjustment": -0.0015,
+            "recentAdjustment": -0.0032,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2169,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0048,
+            "movementFromPitcherBaseline": -0.0048
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "difficult",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.647,
+          "grade": "C"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823261,
+      "gameKey": "MIN@SD",
+      "gameDate": "2026-08-23T00:40:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Petco Park",
+      "pitcherId": 665152,
+      "pitcher": "Dean Kremer",
+      "teamId": 142,
+      "team": "MIN",
+      "opponentId": 135,
+      "opponent": "SD",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2442,
+        "seasonBattersFaced": 217,
+        "recentKRate": 0.2214,
+        "recentBattersFaced": 131,
+        "bbRate": 0.0737,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.92,
+        "recent14PitchesPerPA": 3.782,
+        "seasonPlateAppearances": 4792,
+        "recent14PlateAppearances": 412,
+        "seasonKRate": 0.2185,
+        "recent14KRate": 0.2087,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 87.19,
+        "recentBfAverage": 22.1,
+        "recentIpAverage": 5.48,
+        "opponentPitchesPerPA": 3.886
+      },
+      "projection": {
+        "expectedPitchLimit": 86.86,
+        "expectedBF": 22.263,
+        "expectedInnings": 5.436,
+        "temporaryKRate": 0.2362,
+        "workloadOnlyProjectedKs": 5.257,
+        "teamAdjustedKRate": 0.2294,
+        "fullShadowProjectedKs": 5.107,
+        "teamAdjustmentKsDelta": -0.15
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2294,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2442,
+            "regressedSeasonKRate": 0.2332,
+            "recentAdjustment": -0.0024,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2308
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2185,
+            "regressedSeasonKRate": 0.2188,
+            "seasonAdjustment": -0.0008,
+            "recentAdjustment": -0.0006,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2188,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0015,
+            "movementFromPitcherBaseline": -0.0015
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.729,
+          "grade": "B"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 823261,
+      "gameKey": "MIN@SD",
+      "gameDate": "2026-08-23T00:40:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Petco Park",
+      "pitcherId": 663554,
+      "pitcher": "Casey Mize",
+      "teamId": 135,
+      "team": "SD",
+      "opponentId": 142,
+      "opponent": "MIN",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.2328,
+        "seasonBattersFaced": 408,
+        "recentKRate": 0.1797,
+        "recentBattersFaced": 128,
+        "bbRate": 0.0613,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.859,
+        "recent14PitchesPerPA": 3.753,
+        "seasonPlateAppearances": 4877,
+        "recent14PlateAppearances": 417,
+        "seasonKRate": 0.2137,
+        "recent14KRate": 0.2254,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 82.81,
+        "recentBfAverage": 21.57,
+        "recentIpAverage": 5.22,
+        "opponentPitchesPerPA": 3.832
+      },
+      "projection": {
+        "expectedPitchLimit": 83.7,
+        "expectedBF": 21.746,
+        "expectedInnings": 5.221,
+        "temporaryKRate": 0.219,
+        "workloadOnlyProjectedKs": 4.762,
+        "teamAdjustedKRate": 0.2193,
+        "fullShadowProjectedKs": 4.769,
+        "teamAdjustmentKsDelta": 0.007
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2193,
+        "components": {
+          "leagueKRate": 0.2212,
+          "pitcher": {
+            "observedSeasonKRate": 0.2328,
+            "regressedSeasonKRate": 0.229,
+            "recentAdjustment": -0.008,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.221
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2137,
+            "regressedSeasonKRate": 0.2145,
+            "seasonAdjustment": -0.0024,
+            "recentAdjustment": 0.0007,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2145,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0017,
+            "movementFromPitcherBaseline": -0.0017
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ]
     }
   ]
