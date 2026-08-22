@@ -1,0 +1,82 @@
+import type { WeeklyFantasyProjectionTrainingRow } from "../../contract";
+
+/**
+ * Minimal deterministic row builder for Phase 2 model unit tests. Not used by
+ * any generator. Uses a plain object spread (defaults, then overrides) rather
+ * than per-field `??` so an explicit `null` override (e.g. simulating a
+ * missing feature) is preserved instead of silently falling back to the
+ * default value.
+ */
+export function makeRow(overrides: Partial<WeeklyFantasyProjectionTrainingRow> & { season: number; week: number; playerId: string }): WeeklyFantasyProjectionTrainingRow {
+  const defaults: WeeklyFantasyProjectionTrainingRow = {
+    schemaVersion: "weekly-fantasy-projection-training-row-v2",
+    season: overrides.season,
+    week: overrides.week,
+    playerId: overrides.playerId,
+    playerName: "Test Player",
+    position: "WR",
+    team: "aaa",
+    opponent: "bbb",
+    homeAway: "home",
+    kickoff: "2024-09-08",
+    historicalUniverseEligible: true,
+    projectionCandidate: true,
+    actualFantasyPoints: 10,
+    hasPriorSeason: true,
+    rookieOrNoPriorHistory: false,
+    priorSeasonPpg: 12,
+    priorSeasonGames: 16,
+    priorSeasonAttempts: null,
+    priorSeasonCarries: null,
+    priorSeasonTargets: 5,
+    priorSeasonReceptions: 3,
+    priorSeasonSnapRate: null,
+    gamesPlayedPrior: 3,
+    weeksSinceLastAppearance: 1,
+    seasonPpgPrior: 11,
+    last3PpgPrior: 11,
+    last5PpgPrior: 11,
+    teamChangedFromPriorSeason: false,
+    passAttemptsSeasonPrior: null,
+    passAttemptsLast3: null,
+    passingYardsSeasonPrior: null,
+    passingTdsSeasonPrior: null,
+    interceptionsSeasonPrior: null,
+    carriesSeasonPrior: 2,
+    rushingYardsSeasonPrior: null,
+    rushingTdsSeasonPrior: null,
+    carriesLast3: null,
+    targetsSeasonPrior: 6,
+    targetsLast3: 6,
+    receptionsSeasonPrior: 4,
+    rushYardsSeasonPrior: null,
+    receivingYardsSeasonPrior: 55,
+    targetShareSeasonPrior: 0.2,
+    receivingAirYardsSeasonPrior: 60,
+    airYardsShareSeasonPrior: 0.18,
+    snapShareSeasonPrior: 0.6,
+    snapShareLast3: 0.6,
+    snapCoverageAvailable: true,
+    teamOffensiveEpaPrior: 0.05,
+    teamPassEpaPrior: 0.05,
+    teamRushEpaPrior: -0.02,
+    teamOffensivePlaysPrior: 64,
+    teamPassRatePrior: 0.58,
+    opponentDefensiveEpaPrior: 0.0,
+    opponentPassDefenseEpaPrior: 0.0,
+    opponentRushDefenseEpaPrior: 0.0,
+    opponentPositionFpaPrior: 14,
+    opponentPositionFpaGamesPrior: 3,
+    opponentPositionFpaPriorSeason: 14,
+    shortWeek: false,
+    byeReturn: false,
+    restDays: 7,
+    starterStatus: "unknown",
+    provenance: {
+      generatedAt: "2024-01-01T00:00:00.000Z",
+      sourceManifests: [],
+      scheduleSource: { url: "https://example.test/games.csv", retrievedAtUtc: "2024-01-01T00:00:00.000Z", sha256: "0".repeat(64) },
+    },
+  };
+  return { ...defaults, ...overrides };
+}
