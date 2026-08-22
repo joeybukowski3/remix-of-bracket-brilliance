@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, Search } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import PositionParBoard from "@/components/fantasy/PositionParBoard";
-import LegacyPositionBoard, { type MobileGroup } from "@/components/fantasy/LegacyPositionBoard";
+import LegacyPositionBoard from "@/components/fantasy/LegacyPositionBoard";
 import { MatchupOpponentCell, PositionRankBadge } from "@/components/fantasy/ParBoardCells";
 import { getPositionTone, POSITION_TONES, POSITION_TONE_NAMES, type PositionTone } from "@/lib/fantasy/positionTone";
 import { getOverallRowContext } from "@/lib/fantasy/overallRowContext";
@@ -27,7 +27,6 @@ type PositionFilter = "ALL" | FantasyPosition;
 type BoardVariant = "par" | "legacy";
 
 const POSITION_FILTERS: readonly PositionFilter[] = ["ALL", ...PAR_POSITIONS];
-const MOBILE_GROUPS: readonly MobileGroup[] = ["Metrics", "Model", "Context", "Playoffs"];
 const BOARD_VARIANTS: ReadonlyArray<{ value: BoardVariant; label: string }> = [
   { value: "par", label: "PAR board" },
   { value: "legacy", label: "Legacy board" },
@@ -37,7 +36,6 @@ export default function FantasyParBoard() {
   const [position, setPosition] = useState<PositionFilter>("ALL");
   const [query, setQuery] = useState("");
   const [variant, setVariant] = useState<BoardVariant>("par");
-  const [mobileGroup, setMobileGroup] = useState<MobileGroup>("Metrics");
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
 
   const positionCounts = useMemo(
@@ -50,9 +48,9 @@ export default function FantasyParBoard() {
       <div className="border-b border-slate-200 bg-slate-950 px-4 py-4 text-white sm:px-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 id="fantasy-board-title" className="text-base font-bold tracking-tight sm:text-lg">2026 fantasy research board</h2>
+            <h2 id="fantasy-board-title" className="text-base font-bold tracking-tight sm:text-lg">2026 rest-of-season research board</h2>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300 sm:text-[13px]">
-              JKB rankings and position evidence, with draft-pool tiers derived from approved projected PAR/G.
+              Season Projection and Projected PPG, with draft-pool tiers derived from approved projected PAR/G.
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -93,21 +91,6 @@ export default function FantasyParBoard() {
         {position !== "ALL" && (
           <BoardVariantToggle variant={variant} onChange={setVariant} />
         )}
-        {position !== "ALL" && variant === "legacy" && (
-          <div className="mt-3 grid grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1 md:hidden" aria-label="Mobile table columns">
-            {MOBILE_GROUPS.map((group) => (
-              <button
-                key={group}
-                type="button"
-                aria-pressed={mobileGroup === group}
-                onClick={() => setMobileGroup(group)}
-                className={cn("min-h-11 rounded-md px-1 text-[11px] font-semibold", mobileGroup === group ? "bg-white text-slate-950 shadow-sm" : "text-slate-600")}
-              >
-                {group}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {position === "ALL" && <OverallBoard query={deferredQuery} />}
@@ -115,7 +98,7 @@ export default function FantasyParBoard() {
         <PositionParBoard position={position} query={deferredQuery} />
       )}
       {position !== "ALL" && variant === "legacy" && (
-        <LegacyPositionBoard position={position} query={deferredQuery} mobileGroup={mobileGroup} />
+        <LegacyPositionBoard position={position} query={deferredQuery} mobileGroup="Metrics" />
       )}
     </section>
   );

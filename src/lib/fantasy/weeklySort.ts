@@ -1,11 +1,10 @@
 /**
- * Exploratory table sorting for the Week-1 rankings board.
+ * Exploratory sorting for the season-baseline matchup-context rows.
+ * The public Weekly Rankings route does not render this order because it is
+ * not canonical weekly ranking authority.
  *
- * THIS IS A TABLE SORT, NOT A RANKING. The fantasy ranking authority remains
- * projected PPG: `row.rank` is assigned once by `buildWeeklyRankingRows` and is
- * never recomputed here. Sorting by Pass EPA reorders the rows on screen and
- * leaves each row carrying its own fantasy rank, so a player sorted to the top
- * of an EPA column still shows the fantasy rank they actually hold.
+ * THIS IS A RESEARCH SORT, NOT A WEEKLY RANKING. `row.rank` is the season-PPG
+ * baseline assigned by `buildWeeklyRankingRows` and is never recomputed here.
  *
  * Stat columns sort on the RAW metric, not the percentile. The two are strictly
  * monotonic with each other (`computeTeamPercentiles` gives equal percentiles
@@ -30,7 +29,7 @@ export type WeeklySort = {
   direction: WeeklySortDirection;
 };
 
-/** Projected PPG descending — the fantasy ranking order. */
+/** Season projected PPG descending — the baseline research order. */
 export const DEFAULT_WEEKLY_SORT: WeeklySort = { key: "projPpg", direction: "desc" };
 
 export function statSortKey(columnId: string): WeeklySortKey {
@@ -83,8 +82,8 @@ function sortValue(
 }
 
 /**
- * A new array in the requested order. Ties break on fantasy rank ascending, so
- * the order is deterministic and equal values stay in fantasy-rank sequence.
+ * A new array in the requested order. Ties break on baseline rank ascending,
+ * so the order is deterministic.
  */
 export function sortWeeklyRows(
   rows: readonly WeeklyRankingRow[],

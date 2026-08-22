@@ -44,7 +44,12 @@ describe("/fantasy-football research board", () => {
 
   it("renders the full JKB board and PAR methodology", () => {
     renderPage();
-    expect(screen.getByRole("heading", { level: 1, name: "2026 Fantasy PAR Rankings" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: "2026 Rest-of-Season Rankings" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Rest of Season" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Weekly Rankings" })).toHaveAttribute(
+      "href",
+      "/fantasy-football/weekly-rankings",
+    );
     expect(screen.getByRole("region", { name: "Overall fantasy rankings" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: /How this board is built/i })).toBeTruthy();
     expect(screen.queryByText(/Consensus position rank never assigns a tier/i)).toBeNull();
@@ -155,7 +160,7 @@ describe("/fantasy-football research board", () => {
     expect(screen.getByText("Late / Last 8 Rk")).toBeTruthy();
     expect(screen.getByText("Tier 1")).toBeTruthy();
     expect(screen.queryByText("'26 proj")).toBeNull();
-    expect(screen.getByRole("button", { name: "Model" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Model" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "PAR board" }));
     expect(screen.getAllByText("'26 proj").length).toBeGreaterThan(0);
@@ -294,6 +299,6 @@ describe("/fantasy-football research board", () => {
   it("is reachable through the existing app route", async () => {
     window.history.pushState({}, "", "/fantasy-football");
     render(<App />);
-    expect(await screen.findByRole("heading", { level: 1, name: "2026 Fantasy PAR Rankings" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: "2026 Rest-of-Season Rankings" })).toBeTruthy();
   });
 });

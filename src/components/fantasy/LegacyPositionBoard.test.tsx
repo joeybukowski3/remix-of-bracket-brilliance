@@ -1,6 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import LegacyPositionBoard from "@/components/fantasy/LegacyPositionBoard";
+import { FANTASY_RANKINGS } from "@/lib/fantasy/rankings";
+
+afterEach(() => vi.unstubAllGlobals());
+
+function stubCompactViewport() {
+  vi.stubGlobal("matchMedia", vi.fn(() => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+  })));
+}
 
 /**
  * Guards the pre-redesign board restored for side-by-side review. These assert
@@ -8,6 +21,26 @@ import LegacyPositionBoard from "@/components/fantasy/LegacyPositionBoard";
  * drifts from what was deleted.
  */
 describe("restored legacy position board", () => {
+  it("renders a fixed compact core with unchanged legacy ranking values", () => {
+    stubCompactViewport();
+    render(<LegacyPositionBoard position="RB" query="jahmyr gibbs" mobileGroup="Metrics" />);
+    const table = screen.getByRole("table");
+    expect(table.className).toContain("table-fixed");
+    expect(table.className).not.toContain("min-w-");
+
+    const source = FANTASY_RANKINGS.rows.find((row) => row.player === "Jahmyr Gibbs")!;
+    const row = screen.getAllByRole("row").find((item) => within(item).queryByText("Jahmyr Gibbs"))!;
+    const cells = Array.from(row.querySelectorAll("td"));
+    expect(cells[0].textContent).toBe(String(source.positionRank));
+    expect(cells[2].textContent).toBe(String(source.projectionRank));
+    expect(cells[3].textContent).toBe(String(source.averageRank));
+
+    fireEvent.click(screen.getByRole("button", { name: "Show details for Jahmyr Gibbs" }));
+    expect(screen.getByText("Touches Rk")).toBeTruthy();
+    expect(screen.getByText("Strength of Schedule")).toBeTruthy();
+    expect(screen.getByText("W17")).toBeTruthy();
+  });
+
   it("renders full-width tier header rows, with tier chips mobile-only as before", () => {
     render(<LegacyPositionBoard position="RB" query="" mobileGroup="Metrics" />);
     expect(screen.getByText("Tier 1")).toBeTruthy();

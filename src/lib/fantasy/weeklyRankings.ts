@@ -1,7 +1,12 @@
 /**
- * Week-1 fantasy rankings — V1 data layer.
+ * Selected-week fantasy matchup context — V1 data layer.
  *
- * RANKING AUTHORITY: projected PPG, and nothing else. Rows are sorted by the
+ * This module does NOT provide true weekly rankings. `projectedPpg` and the
+ * resulting order are season baselines. The Weekly Rankings route deliberately
+ * does not render these rows until a canonical player-level weekly projection
+ * or deterministic weekly score exists.
+ *
+ * BASELINE ORDER ONLY: projected PPG, and nothing else. Rows are sorted by the
  * approved `2026 Projected PPG` already published through
  * `src/lib/fantasy/parRankings.ts`. No projection is created, adjusted or
  * re-derived here, and PAR arithmetic is untouched. The matchup grade and the
@@ -17,7 +22,7 @@
  *
  * Every join reuses an existing canonical source:
  *   - player universe, name, team, PPG  -> FANTASY_POSITION_RESEARCH_BOARDS
- *   - week 1 opponent + home/away       -> public/data/nfl/<season>/games.json
+ *   - selected opponent + home/away     -> public/data/nfl/<season>/games.json
  *   - opponent fantasy points allowed   -> pointsAllowed2025.ts (2025 actual)
  *   - team offensive context stats      -> the generated NFL matchup artifacts
  *
@@ -38,7 +43,7 @@ import type { NflGameRecord } from "@/lib/nfl/standings";
 
 /** The season this V1 page ranks. */
 export const WEEKLY_RANKINGS_SEASON = 2026;
-/** The week this V1 page ranks. Widening to a week picker is a later phase. */
+/** Preseason and invalid-query fallback week. */
 export const WEEKLY_RANKINGS_WEEK = 1;
 
 /** Positions this page supports. K and DST are deliberately out of V1. */
@@ -279,7 +284,7 @@ export type WeeklyUnresolvedReason = "no-team" | "no-game";
 export type WeeklyRankingRow = {
   /** Stable key from the PAR source id. */
   key: string;
-  /** 1-based rank within the position, by projected PPG. */
+  /** 1-based season-baseline rank within the position, never a weekly rank. */
   rank: number;
   player: string;
   position: FantasyPosition;
@@ -299,7 +304,9 @@ export type WeeklyRankingRow = {
 };
 
 /**
- * Every ranked player at one position, ordered by projected PPG descending.
+ * Season-baseline player context at one position, ordered by projected PPG.
+ * This deterministic order supports research/tests but is not weekly authority
+ * and must not be published as the Weekly Rankings order.
  *
  * A player with no resolvable team, or whose team has no game that week (a bye
  * in a later week, or a schedule gap), still appears — projected PPG is the

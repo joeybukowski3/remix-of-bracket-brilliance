@@ -109,7 +109,7 @@ describe("WeeklyCommandCenter", () => {
     const selector = screen.getByRole("group", { name: "Fantasy position" });
     fireEvent.click(within(selector).getByRole("button", { name: "WR" }));
     expect(within(selector).getByRole("button", { name: "WR" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("link", { name: "View full rankings" }).getAttribute("href")).toBe("/fantasy-football/weekly-rankings");
+    expect(screen.getByRole("link", { name: "View full rankings" }).getAttribute("href")).toBe("/fantasy-football/weekly-rankings?week=1");
     expect(screen.getByTestId("desktop-fantasy-leaders")).not.toHaveAttribute("aria-hidden");
   });
 
