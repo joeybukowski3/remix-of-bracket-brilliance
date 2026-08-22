@@ -1,0 +1,206 @@
+{
+  "noPrior": {
+    "configLabel": "no-prior-iterative-2020-2025",
+    "method": {
+      "kind": "NO_PRIOR_ITERATIVE"
+    },
+    "n": 3991,
+    "overall": {
+      "n": 3859,
+      "mae": 14.438099925969604,
+      "rmse": 18.452071623489754,
+      "correlation": 0.5136665541311698,
+      "calibrationSlope": 0.6118158552828082,
+      "calibrationIntercept": 1.4695906071967362,
+      "directionalAccuracy": 0.6905934179839337
+    },
+    "weeks1to4": {
+      "n": 733,
+      "mae": 17.789923637275518,
+      "rmse": 22.908845579507002,
+      "correlation": 0.44534489486518364,
+      "calibrationSlope": 0.4384965449293487,
+      "calibrationIntercept": 3.1851839490367966,
+      "directionalAccuracy": 0.6493860845839018
+    },
+    "weeks5to8": {
+      "n": 1186,
+      "mae": 14.334506072385476,
+      "rmse": 18.103276775860596,
+      "correlation": 0.4860767889951095,
+      "calibrationSlope": 0.5487161866269542,
+      "calibrationIntercept": 1.8517432279514958,
+      "directionalAccuracy": 0.6677908937605397
+    },
+    "weeks9plus": {
+      "n": 1940,
+      "mae": 13.234994529043664,
+      "rmse": 16.692064850217857,
+      "correlation": 0.5806384430340101,
+      "calibrationSlope": 0.810144914286849,
+      "calibrationIntercept": 0.4580493518714377,
+      "directionalAccuracy": 0.7201030927835051
+    },
+    "bySeason": {
+      "2020": {
+        "n": 446,
+        "mae": 15.882956205029473,
+        "rmse": 20.437831491180887,
+        "correlation": 0.44568137965285576,
+        "calibrationSlope": 0.5093989332062604,
+        "calibrationIntercept": 0.48838325106256475,
+        "directionalAccuracy": 0.6614349775784754
+      },
+      "2021": {
+        "n": 667,
+        "mae": 14.759774388873312,
+        "rmse": 18.842167694329977,
+        "correlation": 0.5233587191406709,
+        "calibrationSlope": 0.6424434512629584,
+        "calibrationIntercept": 0.8397389075416011,
+        "directionalAccuracy": 0.6926536731634183
+      },
+      "2022": {
+        "n": 667,
+        "mae": 13.94027193639439,
+        "rmse": 17.8280715153801,
+        "correlation": 0.5167342427437251,
+        "calibrationSlope": 0.6201902684453346,
+        "calibrationIntercept": 1.0511734149800032,
+        "directionalAccuracy": 0.6701649175412294
+      },
+      "2023": {
+        "n": 687,
+        "mae": 14.371542134633618,
+        "rmse": 18.249634798784257,
+        "correlation": 0.5093202371449973,
+        "calibrationSlope": 0.6030450552093809,
+        "calibrationIntercept": 1.5196472050262106,
+        "directionalAccuracy": 0.7147016011644832
+      },
+      "2024": {
+        "n": 693,
+        "mae": 14.20823120485731,
+        "rmse": 18.019885771283064,
+        "correlation": 0.5228554274553244,
+        "calibrationSlope": 0.6235721844641456,
+        "calibrationIntercept": 2.3565768317551856,
+        "directionalAccuracy": 0.7012987012987013
+      },
+      "2025": {
+        "n": 699,
+        "mae": 13.977603113677688,
+        "rmse": 17.940296598610466,
+        "correlation": 0.5424604107213717,
+        "calibrationSlope": 0.6414136392650753,
+        "calibrationIntercept": 2.0644821573223777,
+        "directionalAccuracy": 0.6924177396280401
+      }
+    }
+  },
+  "withPrior": {
+    "configLabel": "iterative-with-prior-final",
+    "method": {
+      "kind": "ITERATIVE_WITH_PRIOR",
+      "decay": {
+        "method": "PRECISION_WEIGHTED",
+        "priorGamesWeight": 8
+      }
+    },
+    "priorFeatureSet": "PRIOR_D",
+    "priorLambda": 3,
+    "n": 4447,
+    "overall": {
+      "n": 4447,
+      "mae": 13.166523388313548,
+      "rmse": 16.595124809035415,
+      "correlation": 0.5830574636598573,
+      "calibrationSlope": 0.884290253072261,
+      "calibrationIntercept": 0.7836977935446985,
+      "directionalAccuracy": 0.6935012367888465
+    },
+    "weeks1to4": {
+      "n": 1290,
+      "mae": 13.78840581408564,
+      "rmse": 17.338313901383046,
+      "correlation": 0.5995212444849234,
+      "calibrationSlope": 0.8791660469891821,
+      "calibrationIntercept": 1.0588297815564607,
+      "directionalAccuracy": 0.6883720930232559
+    },
+    "weeks5to8": {
+      "n": 1201,
+      "mae": 12.856996300992108,
+      "rmse": 16.269137878739865,
+      "correlation": 0.5255281167724579,
+      "calibrationSlope": 0.803266343619079,
+      "calibrationIntercept": 1.345809558428155,
+      "directionalAccuracy": 0.6802664446294754
+    },
+    "weeks9plus": {
+      "n": 1956,
+      "mae": 12.946438369206614,
+      "rmse": 16.28938600481223,
+      "correlation": 0.5936195219340523,
+      "calibrationSlope": 0.9329633683844705,
+      "calibrationIntercept": 0.22706642884052686,
+      "directionalAccuracy": 0.7050102249488752
+    },
+    "bySeason": {
+      "2020": {
+        "n": 503,
+        "mae": 13.88038353889388,
+        "rmse": 17.05688186800136,
+        "correlation": 0.5742218564310622,
+        "calibrationSlope": 0.9226001129166725,
+        "calibrationIntercept": 0.8892754392948576,
+        "directionalAccuracy": 0.7037773359840954
+      },
+      "2021": {
+        "n": 770,
+        "mae": 13.921685369527658,
+        "rmse": 17.33087825673474,
+        "correlation": 0.5642322726689555,
+        "calibrationSlope": 0.8682967078475439,
+        "calibrationIntercept": -0.1877413093990472,
+        "directionalAccuracy": 0.687012987012987
+      },
+      "2022": {
+        "n": 776,
+        "mae": 12.67866376390442,
+        "rmse": 16.24035834958221,
+        "correlation": 0.590274991929707,
+        "calibrationSlope": 0.8466326845955017,
+        "calibrationIntercept": 0.488486505277796,
+        "directionalAccuracy": 0.7010309278350515
+      },
+      "2023": {
+        "n": 792,
+        "mae": 12.76395854935952,
+        "rmse": 16.044343815856934,
+        "correlation": 0.6115042184420718,
+        "calibrationSlope": 0.9142352011890581,
+        "calibrationIntercept": 1.0471672760507098,
+        "directionalAccuracy": 0.7095959595959596
+      },
+      "2024": {
+        "n": 798,
+        "mae": 13.14166162378135,
+        "rmse": 16.73155709815779,
+        "correlation": 0.5601036721603292,
+        "calibrationSlope": 0.8724320464495499,
+        "calibrationIntercept": 1.4423497777200618,
+        "directionalAccuracy": 0.6666666666666666
+      },
+      "2025": {
+        "n": 808,
+        "mae": 12.890166615804615,
+        "rmse": 16.317343609223496,
+        "correlation": 0.593096434100461,
+        "calibrationSlope": 0.9002551089158622,
+        "calibrationIntercept": 1.069857267683032,
+        "directionalAccuracy": 0.6967821782178217
+      }
+    }
+  }
+}
