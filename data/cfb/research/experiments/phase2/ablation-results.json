@@ -1,0 +1,247 @@
+{
+  "results": {
+    "PPA_ONLY": {
+      "configLabel": "ablation-PPA_ONLY",
+      "metricSet": [
+        "ppaPerPlay"
+      ],
+      "method": "ITERATIVE",
+      "methodConfig": {
+        "strength": 1,
+        "iterations": 20,
+        "minimumGames": 1
+      },
+      "policy": "NONE",
+      "aggregationMode": "gameWeighted",
+      "n": 2398,
+      "overall": {
+        "n": 2390,
+        "mae": 14.21142828023512,
+        "rmse": 17.997882230956524,
+        "correlation": 0.47560147442608564,
+        "calibrationSlope": 0.7583883691268042,
+        "calibrationIntercept": 1.429245995367503,
+        "directionalAccuracy": 0.6535564853556486
+      },
+      "weeks1to4": {
+        "n": 731,
+        "mae": 14.649433416627556,
+        "rmse": 18.696332398598976,
+        "correlation": 0.5295653472054866,
+        "calibrationSlope": 0.7411916730461932,
+        "calibrationIntercept": 1.8817047831452873,
+        "directionalAccuracy": 0.6839945280437757
+      },
+      "weeks5to8": {
+        "n": 642,
+        "mae": 14.099493315895307,
+        "rmse": 17.974518957312185,
+        "correlation": 0.37784031350255837,
+        "calibrationSlope": 0.6322359370944304,
+        "calibrationIntercept": 1.2663444923406855,
+        "directionalAccuracy": 0.6152647975077882
+      },
+      "weeks9plus": {
+        "n": 1017,
+        "mae": 13.967259639530427,
+        "rmse": 17.493787886825235,
+        "correlation": 0.4712212248946823,
+        "calibrationSlope": 0.8607793082429693,
+        "calibrationIntercept": 1.1608417973950051,
+        "directionalAccuracy": 0.655850540806293
+      },
+      "bySeason": {
+        "2023": {
+          "n": 788,
+          "mae": 14.882330194328553,
+          "rmse": 18.948751498697003,
+          "correlation": 0.4319534051717958,
+          "calibrationSlope": 0.633321544213009,
+          "calibrationIntercept": 1.2962131358910005,
+          "directionalAccuracy": 0.6548223350253807
+        },
+        "2024": {
+          "n": 797,
+          "mae": 14.07250680114996,
+          "rmse": 17.684545531875873,
+          "correlation": 0.49071795808237645,
+          "calibrationSlope": 0.7965765967966578,
+          "calibrationIntercept": 1.4663930016822362,
+          "directionalAccuracy": 0.64366373902133
+        },
+        "2025": {
+          "n": 805,
+          "mae": 13.692235374055397,
+          "rmse": 17.337928204088275,
+          "correlation": 0.5140060191773137,
+          "calibrationSlope": 0.8862399156121895,
+          "calibrationIntercept": 1.3150267866160332,
+          "directionalAccuracy": 0.662111801242236
+        }
+      }
+    },
+    "PPA_PLUS_SUCCESS": {
+      "configLabel": "ablation-PPA_PLUS_SUCCESS",
+      "metricSet": [
+        "ppaPerPlay",
+        "ppaSuccessRate"
+      ],
+      "method": "ITERATIVE",
+      "methodConfig": {
+        "strength": 1,
+        "iterations": 20,
+        "minimumGames": 1
+      },
+      "policy": "NONE",
+      "aggregationMode": "gameWeighted",
+      "n": 2398,
+      "overall": {
+        "n": 2390,
+        "mae": 14.171554502863064,
+        "rmse": 17.92501087781766,
+        "correlation": 0.4791622874749058,
+        "calibrationSlope": 0.7726265902192188,
+        "calibrationIntercept": 1.3818454682315982,
+        "directionalAccuracy": 0.6493723849372385
+      },
+      "weeks1to4": {
+        "n": 731,
+        "mae": 14.535721666087792,
+        "rmse": 18.58208713027878,
+        "correlation": 0.5342739348582579,
+        "calibrationSlope": 0.7551162487098382,
+        "calibrationIntercept": 1.7816747221514229,
+        "directionalAccuracy": 0.6771545827633378
+      },
+      "weeks5to8": {
+        "n": 642,
+        "mae": 14.117349710498218,
+        "rmse": 17.87984140248457,
+        "correlation": 0.3846633802578246,
+        "calibrationSlope": 0.6471507450553041,
+        "calibrationIntercept": 1.2307946648012578,
+        "directionalAccuracy": 0.6012461059190031
+      },
+      "weeks9plus": {
+        "n": 1017,
+        "mae": 13.944015938832507,
+        "rmse": 17.466679212633007,
+        "correlation": 0.4722925636436081,
+        "calibrationSlope": 0.878731150508616,
+        "calibrationIntercept": 1.1364568556035186,
+        "directionalAccuracy": 0.6597836774827925
+      },
+      "bySeason": {
+        "2023": {
+          "n": 788,
+          "mae": 14.784912818834682,
+          "rmse": 18.807125023090077,
+          "correlation": 0.4382489025790665,
+          "calibrationSlope": 0.6513797227113082,
+          "calibrationIntercept": 1.2638484686419509,
+          "directionalAccuracy": 0.6573604060913706
+        },
+        "2024": {
+          "n": 797,
+          "mae": 14.119604734267359,
+          "rmse": 17.729771029687686,
+          "correlation": 0.4868331572701009,
+          "calibrationSlope": 0.7947118890688748,
+          "calibrationIntercept": 1.4904992141635311,
+          "directionalAccuracy": 0.6311166875784191
+        },
+        "2025": {
+          "n": 805,
+          "mae": 13.622582593030891,
+          "rmse": 17.218606129535733,
+          "correlation": 0.5218972294539603,
+          "calibrationSlope": 0.9125468386443641,
+          "calibrationIntercept": 1.170888944028654,
+          "directionalAccuracy": 0.6596273291925466
+        }
+      }
+    },
+    "PPA_PLUS_SUCCESS_PLUS_EXPLOSIVENESS": {
+      "configLabel": "ablation-PPA_PLUS_SUCCESS_PLUS_EXPLOSIVENESS",
+      "metricSet": [
+        "ppaPerPlay",
+        "ppaSuccessRate",
+        "explosivePlayRate"
+      ],
+      "method": "ITERATIVE",
+      "methodConfig": {
+        "strength": 1,
+        "iterations": 20,
+        "minimumGames": 1
+      },
+      "policy": "NONE",
+      "aggregationMode": "gameWeighted",
+      "n": 2398,
+      "overall": {
+        "n": 2390,
+        "mae": 14.177530838571762,
+        "rmse": 17.890587403039575,
+        "correlation": 0.4804810349138807,
+        "calibrationSlope": 0.7813751653510972,
+        "calibrationIntercept": 1.360573694705102,
+        "directionalAccuracy": 0.6552301255230125
+      },
+      "weeks1to4": {
+        "n": 731,
+        "mae": 14.373104305310479,
+        "rmse": 18.329362968377406,
+        "correlation": 0.5490790873671348,
+        "calibrationSlope": 0.7732595842935517,
+        "calibrationIntercept": 1.6892731893317832,
+        "directionalAccuracy": 0.6839945280437757
+      },
+      "weeks5to8": {
+        "n": 642,
+        "mae": 14.198891709478346,
+        "rmse": 17.98147117074579,
+        "correlation": 0.3710807555167926,
+        "calibrationSlope": 0.6386882566574263,
+        "calibrationIntercept": 1.2093704886987247,
+        "directionalAccuracy": 0.6121495327102804
+      },
+      "weeks9plus": {
+        "n": 1017,
+        "mae": 14.023471956262892,
+        "rmse": 17.509765621540648,
+        "correlation": 0.4678317971715592,
+        "calibrationSlope": 0.8849481843784446,
+        "calibrationIntercept": 1.165640547670046,
+        "directionalAccuracy": 0.6617502458210422
+      },
+      "bySeason": {
+        "2023": {
+          "n": 788,
+          "mae": 14.76215434710636,
+          "rmse": 18.73298235348045,
+          "correlation": 0.44090291881022703,
+          "calibrationSlope": 0.6622537048681121,
+          "calibrationIntercept": 1.2275296319089337,
+          "directionalAccuracy": 0.6611675126903553
+        },
+        "2024": {
+          "n": 797,
+          "mae": 14.094377947256985,
+          "rmse": 17.677916262039716,
+          "correlation": 0.4897715088638763,
+          "calibrationSlope": 0.8048636622637023,
+          "calibrationIntercept": 1.4560591719251814,
+          "directionalAccuracy": 0.6348808030112923
+        },
+        "2025": {
+          "n": 805,
+          "mae": 13.687579943730153,
+          "rmse": 17.24419757848288,
+          "correlation": 0.5197355119173108,
+          "calibrationSlope": 0.9159009813857918,
+          "calibrationIntercept": 1.1904506813016575,
+          "directionalAccuracy": 0.6695652173913044
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+
+/**
+ * Section 19 leakage/architecture test: Phase 2 must have zero dependency
+ * on market-line modules, marketAnchor, or MIC. Mirrors
+ * derived/noMarketImportGuard.test.ts's static-import scan.
+ */
+function listSourceFiles(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  return entries.flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) return listSourceFiles(full);
+    if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) return [full];
+    return [];
+  });
+}
+
+describe("Phase 2 modules have zero market-line / marketAnchor / MIC dependency", () => {
+  const files = listSourceFiles(__dirname);
+
+  it.each(files)("%s imports nothing market-related", (file) => {
+    const content = readFileSync(file, "utf8");
+    const importLines = content.match(/^import\s.+$/gm) ?? [];
+    for (const line of importLines) {
+      expect(line).not.toMatch(/CfbResearchMarketLine/);
+      expect(line).not.toMatch(/normalizeMarketLines|fetchLines|marketAnchor|CFB_V1_CONFIG|\bmic\b/i);
+    }
+  });
+});
