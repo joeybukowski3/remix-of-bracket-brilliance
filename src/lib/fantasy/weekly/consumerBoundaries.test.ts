@@ -6,9 +6,8 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 const consumerFiles = [
   "src/pages/FantasyWeeklyRankings.tsx",
-  "src/pages/NFL.tsx",
+  "src/hooks/useNflWeeklyDashboard.ts",
   "src/components/fantasy/WeeklyFantasyRankingsTable.tsx",
-  "src/components/fantasy/WeeklyFantasyCommandCenter.tsx",
 ].map(read);
 
 describe("weekly fantasy consumer boundaries", () => {

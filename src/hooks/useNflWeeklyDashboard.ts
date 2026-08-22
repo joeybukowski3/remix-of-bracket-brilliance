@@ -3,7 +3,8 @@ import { useNflCurrentRating2026, NFL_CURRENT_RATING_SEASON } from "@/hooks/useN
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
-import { useWeeklyFantasyRankings } from "@/hooks/useWeeklyFantasyRankings";
+import { useWeeklyFantasyRankingArtifact } from "@/hooks/useWeeklyFantasyRankingArtifact";
+import { fantasyRowsFromArtifact } from "@/lib/fantasy/weeklyDashboardFantasyAdapter";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
 
@@ -17,7 +18,11 @@ export function useNflWeeklyDashboard(search: string) {
     () => resolveNflWeekSelection(season.data?.games ?? [], { search }),
     [season.data, search],
   );
-  const fantasy = useWeeklyFantasyRankings(season.data?.games ?? [], weekSelection.week);
+  const fantasy = useWeeklyFantasyRankingArtifact(NFL_CURRENT_RATING_SEASON, weekSelection.week ?? 1);
+  const fantasyRows = useMemo(
+    () => fantasyRowsFromArtifact(fantasy.status === "ready" ? fantasy.rankings : null),
+    [fantasy],
+  );
   const dashboard = useMemo(
     () => {
       if (!season.data || weekSelection.week === null) return null;
@@ -29,10 +34,12 @@ export function useNflWeeklyDashboard(search: string) {
         marketArtifact: market.artifact,
         projectionsArtifact: projections.artifact,
         currentRatings: ratings.data?.teams ?? null,
-        fantasyRows: fantasy.rowsByPosition,
+        fantasyRows,
       });
-    }, [season.data, weekSelection.week, market.artifact, projections.artifact, ratings.data, fantasy.rowsByPosition],
+    }, [season.data, weekSelection.week, market.artifact, projections.artifact, ratings.data, fantasyRows],
   );
 
-  return { dashboard, weekSelection, season, market, projections, ratings, fantasy };
+  const fantasyContextErrors = fantasy.status === "error" || fantasy.status === "missing" ? [fantasy.error.message] : [];
+
+  return { dashboard, weekSelection, season, market, projections, ratings, fantasy: { ...fantasy, contextErrors: fantasyContextErrors } };
 }

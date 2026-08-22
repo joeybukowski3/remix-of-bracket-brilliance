@@ -438,7 +438,7 @@ function TopFantasyPicks({ leaders, week }: { leaders: WeeklyDashboard["fantasyL
   const [position, setPosition] = useState<WeeklyDashboardPosition>("QB");
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-      <ModuleHeader title={`Top Fantasy Picks — Week ${week}`} detail="Top 5 per position from the canonical weekly rankings" action={<Link to="/fantasy-football/weekly-rankings" className="text-[10px] font-bold text-violet-700 hover:underline">View full rankings</Link>} />
+      <ModuleHeader title={`Top Fantasy Picks — Week ${week}`} detail="Top 5 per position from the canonical weekly rankings" action={<Link to={`/fantasy-football/weekly-rankings?week=${week}`} className="text-[10px] font-bold text-violet-700 hover:underline">View full rankings</Link>} />
       <div className="border-b border-slate-200 p-2 md:hidden">
         <div role="group" aria-label="Fantasy position" className="grid grid-cols-4 gap-1">
           {WEEKLY_RANKING_POSITIONS.map((option) => (

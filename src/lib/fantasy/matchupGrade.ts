@@ -1,5 +1,5 @@
 /**
- * Week-1 matchup grade — informational only, V1.
+ * Selected-week matchup grade — informational only, V1.
  *
  * One input: the opponent defense's 2025 fantasy-points-allowed rank for the
  * player's OWN position, straight from `pointsAllowed2025.ts`. That file's

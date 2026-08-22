@@ -101,9 +101,9 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     noindex: true,
   },
   "fantasy-football": {
-    title: "Fantasy Football Rankings & Draft Research | Joe Knows Ball",
+    title: "2026 Rest-of-Season Fantasy Rankings | Joe Knows Ball",
     description:
-      "Customized Joe Knows Ball fantasy football rankings, position filters and draft research, built on the same NFL model that powers our power ratings and team guide.",
+      "Joe Knows Ball rest-of-season fantasy football rankings, season projections, position filters and PAR-based draft research.",
     path: "/fantasy-football",
   },
   "fantasy-points-allowed": {
@@ -113,9 +113,9 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     path: "/fantasy-football/points-allowed",
   },
   "fantasy-weekly-rankings": {
-    title: "Week 1 Fantasy Rankings | Joe Knows Ball",
+    title: "2026 Weekly Fantasy Rankings | Joe Knows Ball",
     description:
-      "Week 1 fantasy football rankings for QB, RB, WR and TE, ordered by projected points per game, with each player's Week 1 opponent and 2025 fantasy points allowed as matchup context.",
+      "Canonical full-PPR weekly fantasy rankings for QB, RB, WR and TE, with opponent, matchup and data-confidence context.",
     path: "/fantasy-football/weekly-rankings",
   },
   nba: {

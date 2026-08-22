@@ -1,14 +1,30 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
+import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
 import FantasyParBoard from "@/components/fantasy/FantasyParBoard";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
+import { getDefaultFantasyRankingMode } from "@/lib/fantasy/rankingModes";
 import { cn } from "@/lib/utils";
+import FantasyWeeklyRankings from "@/pages/FantasyWeeklyRankings";
 
-/** 2026 JKB fantasy research board with PAR-derived position tiers. */
+/** Fantasy landing page; ROS stays default until canonical weekly rankings exist. */
 export default function FantasyFootball() {
+  const [searchParams] = useSearchParams();
+  const requestedMode = searchParams.get("view");
+  const mode = requestedMode === "weekly" || requestedMode === "ros"
+    ? requestedMode
+    : getDefaultFantasyRankingMode();
+
+  if (mode === "weekly") return <FantasyWeeklyRankings />;
+  return <RestOfSeasonRankings />;
+}
+
+/** 2026 JKB rest-of-season research board with PAR-derived position tiers. */
+function RestOfSeasonRankings() {
   const seo = getSeoMeta("fantasy-football");
   usePageSeo({
     title: seo.title,
@@ -19,10 +35,13 @@ export default function FantasyFootball() {
 
   return (
     <SiteShell>
+      <div className="site-container pt-6">
+        <FantasyRankingModeNav mode="ros" />
+      </div>
       <NflPageHeader
         eyebrow="Fantasy Football"
-        title="2026 Fantasy PAR Rankings"
-        description="The full Joe Knows Ball research board, organized by position evidence, model ranks, team context and fantasy-playoff schedule. Approved PAR/G drives draft-pool tiers only."
+        title="2026 Rest-of-Season Rankings"
+        description="Season Projection and Projected PPG for the full Joe Knows Ball research board. Approved PAR/G drives the long-term position order and draft-pool tiers; this is not a weekly matchup ranking."
       />
 
       <div className="mt-4 space-y-4">
