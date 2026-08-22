@@ -30,6 +30,12 @@ artifacts/
 # Reproducible College Football API caches and review-only model artifacts
 data/cfb/cfbd/raw/
 
+# CFB Model V2 research namespace: reproducible raw/normalized CFBD caches
+# (multi-GB backfill; regenerate via `npm run cfb:research:fetch` /
+# `cfb:research:normalize`). Only the small coverage manifest is tracked.
+data/cfb/research/raw/
+data/cfb/research/normalized/
+
 # Reproducible NFL performance-model backtest caches (analysis-only, non-production)
 data/nfl/backtest-2026/
 data/generated/cfb/*
