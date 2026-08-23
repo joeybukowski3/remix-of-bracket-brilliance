@@ -61,3 +61,20 @@ describe("Production V2 modules never declare a betting-edge field (§27)", () =
     expect(content).not.toMatch(/\b(recommendedSide|confidenceBet)\s*[:?]/);
   });
 });
+
+describe("V1 production code never imports production/v2 (WU2 §29 — one-directional guard)", () => {
+  const PRODUCTION_ROOT = resolve(V2_ROOT, "..");
+  const CFB_ROOT = resolve(PRODUCTION_ROOT, "..");
+  const V1_DIRS = [PRODUCTION_ROOT, resolve(CFB_ROOT, "pipeline"), resolve(CFB_ROOT, "model"), resolve(CFB_ROOT, "calibration")];
+  const v1Files = [...new Set(V1_DIRS.flatMap((dir) => listTsFiles(dir)))].filter(
+    (f) => !f.startsWith(V2_ROOT) && !f.endsWith(".test.ts"),
+  );
+
+  it.each(v1Files)("%s does not import production/v2", (file) => {
+    const content = readFileSync(file, "utf8");
+    const importLines = content.match(/^import\s.+$/gm) ?? [];
+    for (const line of importLines) {
+      expect(line).not.toMatch(/production\/v2|production\\v2/);
+    }
+  });
+});
