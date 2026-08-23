@@ -3,7 +3,7 @@ import { useNflCurrentRating2026, NFL_CURRENT_RATING_SEASON } from "@/hooks/useN
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
-import { useWeeklyFantasyRankingArtifact } from "@/hooks/useWeeklyFantasyRankingArtifact";
+import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
 import { fantasyRowsFromArtifact } from "@/lib/fantasy/weeklyDashboardFantasyAdapter";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
@@ -18,9 +18,9 @@ export function useNflWeeklyDashboard(search: string) {
     () => resolveNflWeekSelection(season.data?.games ?? [], { search }),
     [season.data, search],
   );
-  const fantasy = useWeeklyFantasyRankingArtifact(NFL_CURRENT_RATING_SEASON, weekSelection.week ?? 1);
+  const fantasy = useWeeklyFantasyProjectionArtifact(NFL_CURRENT_RATING_SEASON, weekSelection.week ?? 1);
   const fantasyRows = useMemo(
-    () => fantasyRowsFromArtifact(fantasy.status === "ready" ? fantasy.rankings : null),
+    () => fantasyRowsFromArtifact(fantasy.status === "ready" ? fantasy.rows : null),
     [fantasy],
   );
   const dashboard = useMemo(

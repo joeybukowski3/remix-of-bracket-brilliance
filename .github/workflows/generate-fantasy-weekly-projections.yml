@@ -1,0 +1,177 @@
+name: Generate JKB Weekly Fantasy Projections
+run-name: Generate JKB Weekly Fantasy Projections • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # GitHub Actions resolves this cron expression against the given IANA
+    # timezone (including DST) before converting to UTC, so this always
+    # fires at exactly 4:00 AM America/New_York on Tuesdays -- no dual
+    # UTC-hour invocation or manual DST table is needed. See the same
+    # pattern in generate-mlb-power-rankings.yml.
+    - cron: "0 4 * * 2"
+      timezone: "America/New_York" # Tuesday 4:00 AM ET weekly rollover
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season to generate (defaults to 2026)"
+        required: false
+        default: "2026"
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/generate-fantasy-weekly-projections.yml
+
+# Share one lock with the other automated workflows that commit generated
+# data to main, so this can never race another writer that touches the same
+# branch.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate-weekly-projections:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Defense-in-depth America/New_York Tuesday-4-AM guard
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          # The cron trigger above already fires only at Tuesday 04:00 ET
+          # (GitHub converts the given timezone to UTC, including DST), so
+          # this is a belt-and-suspenders check, not the primary guard: if a
+          # GitHub Actions scheduling delay or a future edit to the cron ever
+          # causes a different local time to invoke this job, it no-ops
+          # cleanly instead of publishing.
+          now_et="$(TZ=America/New_York date '+%u %H:%M')"
+          echo "Current America/New_York day/time: ${now_et}"
+          day="$(echo "$now_et" | cut -d' ' -f1)"
+          hour="$(TZ=America/New_York date '+%H')"
+          if [ "$day" != "2" ] || [ "$hour" != "04" ]; then
+            echo "Not Tuesday 04:xx America/New_York (day=${day}, hour=${hour}); no-op."
+            echo "SKIP_ROLLOVER=true" >> "$GITHUB_ENV"
+          else
+            echo "SKIP_ROLLOVER=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Resolve season/week
+        if: env.SKIP_ROLLOVER != 'true'
+        id: target
+        shell: bash
+        run: |
+          SEASON="${{ github.event.inputs.season || '2026' }}"
+          set +e
+          OUTPUT="$(npx tsx scripts/resolve-fantasy-weekly-rollover-target.ts --season="$SEASON")"
+          STATUS=$?
+          set -e
+          if [ $STATUS -ne 0 ]; then
+            echo "Could not resolve a target week; no-op." >&2
+            echo "SKIP_ROLLOVER=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "$OUTPUT"
+          SEASON_OUT="$(node -e "console.log(JSON.parse(process.argv[1]).season)" "$OUTPUT")"
+          WEEK_OUT="$(node -e "console.log(JSON.parse(process.argv[1]).week)" "$OUTPUT")"
+          echo "season=${SEASON_OUT}" >> "$GITHUB_OUTPUT"
+          echo "week=${WEEK_OUT}" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh required fantasy/NFL source caches
+        if: env.SKIP_ROLLOVER != 'true'
+        shell: bash
+        run: |
+          node scripts/refresh-fantasy-player-week-source-cache.mjs || true
+
+      - name: Generate production weekly fantasy projections (staged, atomic)
+        if: env.SKIP_ROLLOVER != 'true'
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            echo "Projection generation attempt ${attempt}/3"
+            if npx tsx scripts/generate-fantasy-weekly-projections.ts --season="${{ steps.target.outputs.season }}" --week="${{ steps.target.outputs.week }}"; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "Projection generation failed after 3 attempts -- previous week's artifact left untouched." >&2
+          exit 1
+
+      - name: Validate generated artifact
+        if: env.SKIP_ROLLOVER != 'true'
+        run: npx tsx scripts/validate-fantasy-weekly-projections.ts --season="${{ steps.target.outputs.season }}" --week="${{ steps.target.outputs.week }}"
+
+      - name: Detect meaningful projection changes
+        if: env.SKIP_ROLLOVER != 'true'
+        id: changes
+        shell: bash
+        run: |
+          PATTERN="public/data/fantasy/projections/${{ steps.target.outputs.season }}/week-*.json"
+          if [ -z "$(git status --porcelain -- $PATTERN)" ]; then
+            echo "No meaningful projection changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful projection changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build site
+        if: env.SKIP_ROLLOVER != 'true' && steps.changes.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Commit and push updated weekly projections
+        if: env.SKIP_ROLLOVER != 'true' && steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "public/data/fantasy/projections/${{ steps.target.outputs.season }}"
+
+          if git diff --cached --quiet; then
+            echo "No staged projection changes."
+            exit 0
+          fi
+
+          git commit -m "chore: publish JKB weekly fantasy projections — season ${{ steps.target.outputs.season }} week ${{ steps.target.outputs.week }} $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — weekly projections were not published." >&2
+            exit 1
+          fi
+
+          echo "Weekly projections published successfully."

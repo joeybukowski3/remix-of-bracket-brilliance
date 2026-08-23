@@ -20,8 +20,8 @@ describe("weekly fantasy consumer boundaries", () => {
   });
 
   it("uses one canonical loader hook on both public consumers", () => {
-    expect(consumerFiles[0]).toContain("useWeeklyFantasyRankingArtifact");
-    expect(consumerFiles[1]).toContain("useWeeklyFantasyRankingArtifact");
+    expect(consumerFiles[0]).toContain("useWeeklyFantasyProjectionArtifact");
+    expect(consumerFiles[1]).toContain("useWeeklyFantasyProjectionArtifact");
   });
 
   it("does not leak weekly artifact ranks into the ROS board", () => {
@@ -30,6 +30,8 @@ describe("weekly fantasy consumer boundaries", () => {
       read("src/components/fantasy/FantasyParBoard.tsx"),
       read("src/components/fantasy/LegacyPositionBoard.tsx"),
     ];
-    for (const source of rosSources) expect(source).not.toMatch(/WeeklyFantasyRankingArtifact|useWeeklyFantasyRankingArtifact/);
+    for (const source of rosSources) {
+      expect(source).not.toMatch(/WeeklyFantasyProjectionProductionArtifact|useWeeklyFantasyProjectionArtifact|WeeklyFantasyRankingArtifact|useWeeklyFantasyRankingArtifact/);
+    }
   });
 });

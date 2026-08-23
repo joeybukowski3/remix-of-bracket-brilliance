@@ -37,6 +37,16 @@ data/nfl/backtest-2026/
 data/fantasy/weekly/
 data/fantasy/backtests/
 data/fantasy/projections/
+data/fantasy/projections-v2/
+
+# Rejected weekly-fantasy-projection-v2 research (implied team total /
+# opponent-adjusted defense + QB calibration): did not clear promotion
+# criteria, kept untracked for archival reference only, never wired into
+# the production authority under src/lib/fantasy/weekly/projections/.
+src/lib/fantasy/weekly/projections-v2/
+scripts/research-fantasy-weekly-v2*.ts
+scripts/research-fantasy-weekly-v2*.mjs
+
 data/generated/cfb/*
 !data/generated/cfb/2026-preseason-ratings-v1.csv
 !data/generated/cfb/2026-preseason-ratings-v1.json
