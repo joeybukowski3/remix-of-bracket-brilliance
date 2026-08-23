@@ -33,13 +33,44 @@ function usageState(row: WeeklyFantasyProjectionProductionRow): string {
   return row.residualActivated ? "Usage-adjusted" : "Baseline (no current-season usage yet)";
 }
 
+function formatAdjustment(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+}
+
+/** QB has no learned usage residual at all (frozen V1 is BASELINE_ONLY for QB). */
+function usageAdjustmentLabel(row: WeeklyFantasyProjectionProductionRow): string {
+  if (row.position === "QB") return "Not used";
+  if (!row.residualActivated) return "Not active yet";
+  return formatAdjustment(row.components.usageAdjustment);
+}
+
+/** Only RB carries a validated team-context residual under the frozen V1 spec. */
+function teamContextLabel(row: WeeklyFantasyProjectionProductionRow): string {
+  if (row.position !== "RB") return "Not used";
+  if (!row.residualActivated) return "Not active yet";
+  return formatAdjustment(row.components.teamContextAdjustment);
+}
+
+function scoringEnvironmentLabel(row: WeeklyFantasyProjectionProductionRow): string {
+  if (!row.context.scoringEnvironment.marketContextAvailable) return "No market data";
+  return formatAdjustment(row.components.scoringEnvironmentAdjustment);
+}
+
+function opponentMatchupLabel(row: WeeklyFantasyProjectionProductionRow): string {
+  if (row.context.opponentFpa.fallbackReason === "missing-both-neutral") return "No matchup data";
+  return formatAdjustment(row.components.opponentFpaAdjustment);
+}
+
 function Detail({ row }: { row: WeeklyFantasyProjectionProductionRow }) {
   return (
     <div className="grid gap-x-6 gap-y-2 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-3">
       <p><span className="text-slate-500">Model:</span> {usageState(row)}</p>
       <p><span className="text-slate-500">Baseline pts:</span> {row.baselineFantasyPoints.toFixed(1)}</p>
-      <p><span className="text-slate-500">Usage adjustment:</span> {row.components.usageAdjustment >= 0 ? "+" : ""}{row.components.usageAdjustment.toFixed(1)}</p>
-      <p><span className="text-slate-500">Team context adjustment:</span> {row.components.teamContextAdjustment >= 0 ? "+" : ""}{row.components.teamContextAdjustment.toFixed(1)}</p>
+      <p><span className="text-slate-500">Usage adjustment:</span> {usageAdjustmentLabel(row)}</p>
+      <p><span className="text-slate-500">Team context adjustment:</span> {teamContextLabel(row)}</p>
+      <p><span className="text-slate-500">Scoring environment:</span> {scoringEnvironmentLabel(row)}</p>
+      <p><span className="text-slate-500">Opponent matchup:</span> {opponentMatchupLabel(row)}</p>
+      <p><span className="text-slate-500">Final projected pts:</span> {row.projectedFantasyPoints.toFixed(1)}</p>
       <p><span className="text-slate-500">Prior games:</span> {row.priorGames}</p>
       <p><span className="text-slate-500">ROS projected PPG:</span> {row.rosProjectedPpg?.toFixed(1) ?? "—"}</p>
       <p><span className="text-slate-500">Prior-season PPG:</span> {row.priorSeasonPpg?.toFixed(1) ?? "—"}</p>

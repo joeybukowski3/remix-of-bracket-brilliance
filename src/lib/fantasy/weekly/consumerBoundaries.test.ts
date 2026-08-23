@@ -13,9 +13,14 @@ const consumerFiles = [
 describe("weekly fantasy consumer boundaries", () => {
   it("keeps ranking calculations and research candidates out of consumers", () => {
     for (const source of consumerFiles) {
+      // Reading a precomputed artifact field (e.g.
+      // `row.components.opponentFpaAdjustment`, `row.context.scoringEnvironment`)
+      // is display, not computation -- strip those known field-path reads
+      // before checking for hand-rolled matchup/FPA math below.
+      const withoutArtifactFieldReads = source.replace(/\.(?:components|context)\.[A-Za-z0-9_.]+/g, "");
       expect(source).not.toMatch(/\.sort\s*\(/);
       expect(source).not.toMatch(/baseline[-_]?usage|phase[-_]?c|usageCandidate/i);
-      expect(source).not.toMatch(/matchup.*(?:multiplier|adjustment)|fpa.*(?:multiplier|adjustment)/i);
+      expect(withoutArtifactFieldReads).not.toMatch(/matchup.*(?:multiplier|adjustment)|fpa.*(?:multiplier|adjustment)/i);
     }
   });
 

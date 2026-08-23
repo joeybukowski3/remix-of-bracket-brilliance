@@ -12,7 +12,14 @@ import {
   type WeeklyFantasyProjectionProductionArtifact,
   type WeeklyFantasyProjectionProductionRow,
 } from "./artifactContract";
+import {
+  WEEKLY_FANTASY_PRODUCTION_CONTEXT_POLICY_VERSION,
+  computeOpponentFpaContext,
+  computeScoringEnvironmentContext,
+  leagueAverageBlendedOpponentFpa,
+} from "./context";
 import type { HistoricalPlayerWeek } from "@/lib/fantasy/weekly/history";
+import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 
 const POSITIONS: readonly FantasyPosition[] = ["QB", "RB", "WR", "TE"];
 
@@ -53,6 +60,15 @@ export type BuildProductionProjectionArtifactInput = {
   snapShareFor?: SnapShareLookup;
   deploymentBundle: WeeklyFantasyProjectionDeploymentBundle;
   provenance: WeeklyFantasyProjectionProductionArtifact["provenance"];
+  /**
+   * Current market (spread/total) authority for the target week, e.g. the
+   * `currentMarket` map from `public/data/nfl/matchup-market.json`
+   * (`@/lib/nfl/marketData`'s `MarketArtifact`). Omit or pass `null` when no
+   * fresher market artifact is available -- `scoringEnvironmentAdjustment`
+   * then resolves to `0` with `marketContextAvailable: false` for every row
+   * rather than fabricating an implied total.
+   */
+  currentMarket?: Readonly<Record<string, MarketCurrentGame>> | null;
 };
 
 /** Throws if any history row is at or after the target week/season -- a defense-in-depth check on top of `buildTrainingRow`'s own filtering. */
@@ -73,6 +89,15 @@ export function buildProductionProjectionArtifact(
 
   const seenGsis = new Map<string, number>();
   const grouped: Record<FantasyPosition, WeeklyFantasyProjectionProductionRow[]> = { QB: [], RB: [], WR: [], TE: [] };
+
+  const currentMarket = input.currentMarket ?? null;
+  const leagueAverageFpaByPosition = new Map<FantasyPosition, number | null>();
+  const leagueAverageFpaFor = (position: FantasyPosition): number | null => {
+    if (!leagueAverageFpaByPosition.has(position)) {
+      leagueAverageFpaByPosition.set(position, leagueAverageBlendedOpponentFpa(input.history, input.season, input.week, position));
+    }
+    return leagueAverageFpaByPosition.get(position) ?? null;
+  };
 
   for (const candidate of input.candidates) {
     if (!POSITIONS.includes(candidate.position)) {
@@ -97,11 +122,27 @@ export function buildProductionProjectionArtifact(
       throw new Error(`Non-finite projectedFantasyPoints for player "${candidate.playerId}".`);
     }
 
+    const scoringEnvironment = computeScoringEnvironmentContext(
+      candidate.position, currentMarket, input.season, input.week, candidate.team,
+    );
+    const opponentFpa = computeOpponentFpaContext(candidate.position, projection.baselineFantasyPoints, {
+      priorSeasonFpa: row.opponentPositionFpaPriorSeason,
+      currentSeasonFpa: row.opponentPositionFpaPrior,
+      currentSeasonGames: row.opponentPositionFpaGamesPrior,
+      leagueAverageFpa: leagueAverageFpaFor(candidate.position),
+    });
+
+    const projectedFantasyPoints =
+      projection.projectedFantasyPoints + scoringEnvironment.scoringEnvironmentAdjustment + opponentFpa.opponentFpaAdjustment;
+    if (!Number.isFinite(projectedFantasyPoints)) {
+      throw new Error(`Non-finite context-adjusted projectedFantasyPoints for player "${candidate.playerId}".`);
+    }
+
     grouped[candidate.position].push({
       playerId: candidate.playerId, playerName: candidate.playerName, position: candidate.position,
       team: candidate.team, opponent: candidate.opponent, homeAway: candidate.homeAway, kickoff: row.kickoff,
       positionRank: 0, // assigned after sort, below
-      projectedFantasyPoints: projection.projectedFantasyPoints,
+      projectedFantasyPoints,
       baselineFantasyPoints: projection.baselineFantasyPoints,
       rosProjectedPpg: projection.rosProjectedPpg,
       priorSeasonPpg: projection.priorSeasonPpg,
@@ -109,7 +150,31 @@ export function buildProductionProjectionArtifact(
       priorGames: projection.priorGames,
       modelAuthority: projection.modelAuthority,
       inferenceAuthority: WEEKLY_FANTASY_PROJECTION_INFERENCE_POLICY_VERSION,
-      components: projection.components,
+      components: {
+        ...projection.components,
+        scoringEnvironmentAdjustment: scoringEnvironment.scoringEnvironmentAdjustment,
+        opponentFpaAdjustment: opponentFpa.opponentFpaAdjustment,
+      },
+      context: {
+        contextPolicyVersion: WEEKLY_FANTASY_PRODUCTION_CONTEXT_POLICY_VERSION,
+        scoringEnvironment: {
+          marketContextAvailable: scoringEnvironment.marketContextAvailable,
+          teamImpliedTotal: scoringEnvironment.teamImpliedTotal,
+          leagueAverageImpliedTeamTotal: scoringEnvironment.leagueAverageImpliedTeamTotal,
+          impliedTotalDelta: scoringEnvironment.impliedTotalDelta,
+        },
+        opponentFpa: {
+          opponentFpaPerGamePriorSeason: opponentFpa.opponentFpaPerGamePriorSeason,
+          opponentFpaPerGameCurrentSeason: opponentFpa.opponentFpaPerGameCurrentSeason,
+          opponentFpaLeagueAverage: opponentFpa.opponentFpaLeagueAverage,
+          opponentFpaCurrentSeasonGames: opponentFpa.opponentFpaCurrentSeasonGames,
+          opponentFpaCurrentSeasonWeight: opponentFpa.opponentFpaCurrentSeasonWeight,
+          opponentFpaPriorSeasonWeight: opponentFpa.opponentFpaPriorSeasonWeight,
+          opponentFpaBlended: opponentFpa.opponentFpaBlended,
+          opponentFpaRatio: opponentFpa.opponentFpaRatio,
+          fallbackReason: opponentFpa.fallbackReason,
+        },
+      },
       residualActivated: projection.residualActivated,
       residualActivationReason: projection.residualActivationReason,
       confidence: projection.confidence,

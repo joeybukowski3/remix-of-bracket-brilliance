@@ -40,6 +40,7 @@ import { weeklyFantasyProjectionProductionArtifactSchema, assertProductionArtifa
 import { buildWeek1ShadowUniverse } from "../src/lib/fantasy/weekly/projections/shadow/week1Universe.ts";
 import type { WeeklyFantasyProjectionTrainingRow } from "../src/lib/fantasy/weekly/projections/contract.ts";
 import type { HistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
+import type { MarketArtifact } from "../src/lib/nfl/marketData.ts";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
 
@@ -164,6 +165,28 @@ function main(): void {
   }
   const history = [...priorSeasonHistory, ...currentSeasonHistory];
 
+  // --- 3b. Current market (spread/total) authority -- best-effort, never fails the run ---
+  // The most current pregame spread/total source already approved by the NFL
+  // side of the repo (`scripts/generate-nfl-matchup-market.mjs` ->
+  // `@/lib/nfl/marketData`). Missing/unreadable market data degrades every
+  // row's scoring-environment adjustment to 0 (`marketContextAvailable:
+  // false`) rather than blocking generation or fabricating an implied total.
+  const marketPath = join(ROOT, "public", "data", "nfl", "matchup-market.json");
+  let currentMarket: MarketArtifact["currentMarket"] | null = null;
+  let marketProvenanceEntry: WeeklyFantasyProjectionProductionArtifact["provenance"][number] | null = null;
+  try {
+    const marketText = readFileSync(marketPath, "utf8");
+    const marketArtifact = JSON.parse(marketText) as MarketArtifact;
+    currentMarket = marketArtifact.currentMarket;
+    sourceFreshness.push({ source: marketPath, inputAsOf: marketArtifact._meta.generatedAt });
+    marketProvenanceEntry = {
+      source: marketPath, sourceVersion: marketArtifact.schemaVersion, sourceHash: sha(marketText),
+      inputAsOf: marketArtifact._meta.generatedAt,
+    };
+  } catch {
+    console.warn(`[fantasy:projections] No market data at ${marketPath}; scoring-environment context will be neutral for this run.`);
+  }
+
   const rowProvenance: WeeklyFantasyProjectionTrainingRow["provenance"] = {
     generatedAt,
     sourceManifests: [{ cache: historyPath, season: season - 1, filename: "player-week-history-2023-2025.json", retrievedDateUtc: historyArtifact._meta.generatedAt, sha256: sha(historyText) }],
@@ -183,6 +206,7 @@ function main(): void {
     { source: schedulePath, sourceVersion: "nfl-v0.1", sourceHash: sha(scheduleText), inputAsOf: schedule._meta.generatedAt },
     { source: historyPath, sourceVersion: "fantasy-player-week-history-v1", sourceHash: sha(historyText), inputAsOf: historyArtifact._meta.generatedAt },
     { source: trainingDatasetPath, sourceVersion: "weekly-fantasy-projection-training-dataset-v1", sourceHash: inputFingerprint, inputAsOf: trainingDataset._meta.generatedAt },
+    ...(marketProvenanceEntry ? [marketProvenanceEntry] : []),
   ];
   const inputAsOf = artifactProvenance.map((p) => p.inputAsOf).sort().at(-1)!;
 
@@ -190,6 +214,7 @@ function main(): void {
 
   const artifact = buildProductionProjectionArtifact({
     season, week, generatedAt, inputAsOf, candidates, history, deploymentBundle: deploymentBundle, provenance: artifactProvenance,
+    currentMarket,
   });
 
   // Fail-closed re-validation before any write (defense in depth on top of buildProductionProjectionArtifact's internal parse).
