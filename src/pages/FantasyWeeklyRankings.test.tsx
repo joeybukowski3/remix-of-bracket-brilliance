@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { weeklyFantasyRankingArtifactSchema } from "@/lib/fantasy/weekly/productionAuthority";
+import { weeklyFantasyProjectionProductionArtifactSchema } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 
 function fixture(relativePath: string) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -12,10 +12,27 @@ function fixture(relativePath: string) {
   return JSON.parse(readFileSync(join(process.cwd(), relativePath), "utf-8"));
 }
 
-const artifact = weeklyFantasyRankingArtifactSchema.parse(fixture("public/data/fantasy/weekly/2026/week-01.json"));
+const fullArtifact = weeklyFantasyProjectionProductionArtifactSchema.parse(fixture("public/data/fantasy/projections/2026/week-01.json"));
+
+/**
+ * Trimmed to the top 20 per position (ranks stay 1..N, so positionRank
+ * invariants hold). This is real production data, just fewer rows -- the
+ * component under test never depends on the full-size roster, and rendering
+ * up to 188 real WR rows twice per test made this file's slowest tests flirt
+ * with the default vitest timeout under full-suite parallel load.
+ */
+const artifact = {
+  ...fullArtifact,
+  rows: {
+    QB: fullArtifact.rows.QB.slice(0, 20),
+    RB: fullArtifact.rows.RB.slice(0, 20),
+    WR: fullArtifact.rows.WR.slice(0, 20),
+    TE: fullArtifact.rows.TE.slice(0, 20),
+  },
+};
 const mockWeekly = vi.hoisted(() => vi.fn());
 
-vi.mock("@/hooks/useWeeklyFantasyRankingArtifact", () => ({ useWeeklyFantasyRankingArtifact: mockWeekly }));
+vi.mock("@/hooks/useWeeklyFantasyProjectionArtifact", () => ({ useWeeklyFantasyProjectionArtifact: mockWeekly }));
 vi.mock("@/hooks/useNflSeasonData", () => ({
   useNflSeasonData: () => {
     const games = fixture("public/data/nfl/2026/games.json");
@@ -28,7 +45,7 @@ vi.mock("@/hooks/usePageSeo", () => ({ usePageSeo: vi.fn() }));
 import FantasyWeeklyRankings from "@/pages/FantasyWeeklyRankings";
 
 const ROUTE = "/fantasy-football/weekly-rankings";
-const ready = { status: "ready" as const, artifact, rankings: artifact.rankings, provenance: artifact.provenance, freshness: { inputAsOf: artifact.inputAsOf, generatedAt: artifact.generatedAt } };
+const ready = { status: "ready" as const, artifact, rows: artifact.rows, freshness: { inputAsOf: artifact.inputAsOf, generatedAt: artifact.generatedAt } };
 
 function LocationProbe() {
   const location = useLocation();
@@ -45,13 +62,13 @@ describe("Weekly Rankings consumer", () => {
     mockWeekly.mockReturnValue(ready);
   });
 
-  it("uses the canonical artifact hook and preserves artifact QB order", () => {
+  it("uses the canonical projection artifact hook and preserves artifact QB order", () => {
     renderPage();
     expect(mockWeekly).toHaveBeenCalledWith(2026, 1);
     const rows = screen.getAllByRole("row").slice(1, 4);
-    expect(rows[0]).toHaveTextContent(artifact.rankings.QB[0].playerName);
-    expect(rows[1]).toHaveTextContent(artifact.rankings.QB[1].playerName);
-    expect(rows[2]).toHaveTextContent(artifact.rankings.QB[2].playerName);
+    expect(rows[0]).toHaveTextContent(artifact.rows.QB[0].playerName);
+    expect(rows[1]).toHaveTextContent(artifact.rows.QB[1].playerName);
+    expect(rows[2]).toHaveTextContent(artifact.rows.QB[2].playerName);
   });
 
   it("keeps Weekly and Rest-of-Season as distinct modes", () => {
@@ -63,15 +80,25 @@ describe("Weekly Rankings consumer", () => {
   it("switches positions without changing artifact rank order", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: "WR" }));
-    expect(screen.getAllByRole("row")[1]).toHaveTextContent(artifact.rankings.WR[0].playerName);
+    expect(screen.getAllByRole("row")[1]).toHaveTextContent(artifact.rows.WR[0].playerName);
   });
 
-  it("uses correct labels and never presents a weekly points projection", () => {
+  it("labels the primary number as a projection, never a bare ROS PPG", () => {
     renderPage();
-    expect(screen.getByText("ROS Proj PPG")).toBeInTheDocument();
-    expect(screen.getByText("Matchup")).toBeInTheDocument();
+    expect(screen.getByText("Projected Pts")).toBeInTheDocument();
     expect(screen.getByText("Confidence")).toBeInTheDocument();
-    expect(screen.queryByText(/Weekly Projected Points/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("ROS Proj PPG")).not.toBeInTheDocument();
+  });
+
+  it("exposes the projected points value matching the artifact, ranked correctly", () => {
+    renderPage();
+    const top = artifact.rows.QB[0];
+    expect(screen.getAllByRole("row")[1]).toHaveTextContent(top.projectedFantasyPoints.toFixed(1));
+  });
+
+  it("shows the How JKB Projections Work methodology panel", () => {
+    renderPage();
+    expect(screen.getByRole("button", { name: "How JKB Projections Work" })).toBeInTheDocument();
   });
 
   it("honours and updates the shared query-addressable week selection", () => {
@@ -82,7 +109,7 @@ describe("Weekly Rankings consumer", () => {
     expect(mockWeekly).toHaveBeenLastCalledWith(2026, 3);
   });
 
-  it("fails safely when the selected weekly artifact is missing", () => {
+  it("fails safely when the selected weekly artifact is missing, and never substitutes another week", () => {
     mockWeekly.mockReturnValue({ status: "missing", season: 2026, week: 2, error: new Error("missing") });
     renderPage(`${ROUTE}?week=2`);
     expect(screen.getByRole("heading", { name: "Week 2 rankings are not available yet" })).toBeInTheDocument();
@@ -93,7 +120,7 @@ describe("Weekly Rankings consumer", () => {
     renderPage();
     const table = screen.getByRole("table");
     expect(table.className).toContain("table-fixed");
-    fireEvent.click(screen.getByRole("button", { name: `Show details for ${artifact.rankings.QB[0].playerName}` }));
-    expect(screen.getByText(/Matchup and game context do not alter this rank/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `Show details for ${artifact.rows.QB[0].playerName}` }));
+    expect(screen.getByText(/Pregame information only, no target-week results used/i)).toBeInTheDocument();
   });
 });

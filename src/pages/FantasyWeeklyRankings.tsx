@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
+import ProjectionMethodologyPanel from "@/components/fantasy/ProjectionMethodologyPanel";
 import WeeklyFantasyRankingsTable from "@/components/fantasy/WeeklyFantasyRankingsTable";
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { useWeeklyFantasyRankingArtifact } from "@/hooks/useWeeklyFantasyRankingArtifact";
+import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
 import { WEEKLY_RANKINGS_SEASON } from "@/lib/fantasy/weeklyRankings";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ export default function FantasyWeeklyRankings() {
   );
   const weeks = weekSelection.availableWeeks;
   const week = weekSelection.week;
-  const weekly = useWeeklyFantasyRankingArtifact(WEEKLY_RANKINGS_SEASON, week ?? weeks[0] ?? 1);
+  const weekly = useWeeklyFantasyProjectionArtifact(WEEKLY_RANKINGS_SEASON, week ?? weeks[0] ?? 1);
 
   if (week === null) {
     return (
@@ -55,7 +56,7 @@ export default function FantasyWeeklyRankings() {
         <NflPageHeader
           eyebrow="Fantasy Football · Full PPR"
           title="Weekly Fantasy Rankings"
-          description={`Week ${week} canonical player-strength rankings with matchup context shown separately.`}
+          description={`Week ${week} JKB fantasy projections, ranked by projected points.`}
         >
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
             <span>Week</span>
@@ -78,12 +79,11 @@ export default function FantasyWeeklyRankings() {
 
         {weekly.status === "ready" && (
           <>
-            <section aria-label="Ranking metadata" className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] text-slate-300">
+            <section aria-label="Projection metadata" className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] text-slate-300">
               <strong className="text-white">Week {weekly.artifact.week}</strong>
               <span>Full PPR</span>
-              <span>{weekly.artifact.diagnostics.authorityCounts.currentSeason > 0 ? "Mixed baseline authority" : "ROS baseline authority"}</span>
+              <span>JKB Projection</span>
               <span>As of {formatAsOf(weekly.freshness.inputAsOf)}</span>
-              {(weekly.artifact.diagnostics.missingSources.length > 0 || weekly.artifact.diagnostics.staleSources.length > 0) && <span className="text-amber-200">Some supporting availability data is incomplete or stale.</span>}
             </section>
 
             <div role="group" aria-label="Select position" className="grid grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1">
@@ -98,11 +98,8 @@ export default function FantasyWeeklyRankings() {
               ))}
             </div>
 
-            <WeeklyFantasyRankingsTable rows={weekly.rankings[position]} />
-            <aside className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs leading-5 text-slate-600">
-              <p>Weekly Rank uses JKB’s canonical player-strength baseline for the selected week. Matchup and game context are shown separately and do not currently alter the ranking.</p>
-              <p className="mt-1">Early-season rankings use the Rest-of-Season projection baseline until a player has two prior current-season games. Projections whose current roster identity cannot be verified are excluded.</p>
-            </aside>
+            <WeeklyFantasyRankingsTable rows={weekly.rows[position]} />
+            <ProjectionMethodologyPanel />
           </>
         )}
 

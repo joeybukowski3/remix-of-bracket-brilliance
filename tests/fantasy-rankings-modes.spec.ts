@@ -9,9 +9,9 @@ test("weekly mobile renders the canonical Week 1 artifact without core overflow"
   await expect(page.getByRole("heading", { level: 1, name: "Weekly Fantasy Rankings" })).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Rank" })).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "ROS PPG" })).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "Matchup" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Proj Pts" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Weekly Rankings" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: "How JKB Projections Work" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
   await page.screenshot({ path: testInfo.outputPath("weekly-mobile.png"), fullPage: true });

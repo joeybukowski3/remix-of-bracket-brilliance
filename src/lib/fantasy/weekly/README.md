@@ -72,3 +72,49 @@ Network-enabled generation order:
 2. `npm run nfl:injury-cache -- --seasons=2023,2024,2025`
 3. `npm run fantasy:player-week-history -- --generated-at=<ISO_TIMESTAMP>`
 4. `npm run fantasy:weekly-backtest -- --generated-at=<SAME_ISO_TIMESTAMP>`
+
+## Phase 1 modeling-dataset boundary (`weekly/projections`)
+
+`weekly/projections` is a dataset-foundation module for training/backtesting
+true weekly point projections (`WeeklyFantasyProjectionTrainingRow`,
+schema `weekly-fantasy-projection-training-row-v2`). It is intentionally
+separate from `weekly/backtest`'s reduced ridge-regression feature set and
+carries a much larger explicit feature inventory (prior-season, current-season
+N-1 usage, team/opponent EPA, leakage-safe FPA, schedule context). It never
+contains a model prediction. Generated output belongs under
+`data/fantasy/projections/`, never `public/data/fantasy/weekly`. 2022 nflverse
+`stats_player_week` data is cached under
+`data/nfl/nflverse/stats-player-week/` solely as a previous-season prior
+source for 2023 rows; no 2022 universe/eligibility is modeled.
+
+Generate: `npx tsx scripts/generate-fantasy-player-week-projection-dataset.ts --generated-at=<ISO_TIMESTAMP>`
+(requires the player-week-history artifact above to already exist).
+
+### Phase 1B eligibility audit
+
+The dataset universe is built via `backtest/universe.ts`'s week-effective ACT
+roster pool (RES/RET/non-ACT roster rows excluded; a player with no stat row
+still appears with `actualFantasyPoints = 0`). The nflverse weekly injury
+report's `date_modified` cannot be proven to precede kickoff -- sampled values
+reach into the target week's own game day -- so injury-report status alone is
+NOT a leakage-safe basis for excluding a row from the training universe. The
+projections generator therefore calls `buildHistoricalRankingUniverse` with
+`injuryExclusionMode: "context-only"`: an "Out" report status is still
+resolved and counted (`audit.injuryContextOnlyRetained`) but never removes a
+row. `weekly/backtest`'s own callers (`generate-fantasy-weekly-backtest.ts`)
+are unaffected -- `injuryExclusionMode` defaults to `"apply"`, preserving
+that already-approved system's existing behavior unchanged.
+
+Because a weekly roster snapshot cannot prove day-of-game active status
+either, every row carries two distinct eligibility fields:
+- `historicalUniverseEligible` -- the defensible roster-based research
+  universe (true for every row in this dataset by construction).
+- `projectionCandidate` -- a strictly N-1 signal (prior-season or
+  strictly-prior current-season rows exist) for whether a player has enough
+  leakage-safe prior signal to be a realistic projection target, as opposed
+  to a deep-roster player who is a roster-status zero with no usage history.
+
+`splitAuthority.ts` provides `assertNotModelSelectionSeason` /
+`MODEL_SELECTION_ALLOWED_SEASONS` as an importable guardrail for Phase 2:
+model-selection code must reject `season === 2025` (the frozen final holdout)
+before it can influence any modeling decision.

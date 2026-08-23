@@ -34,6 +34,12 @@ describe("weekly player identity", () => {
     expect(normalizeNflTeamAbbr("WAS")).toBe("wsh");
   });
 
+  it("normalizes both nflverse Cardinals team codes (AZ and ARI) to the same schedule-source abbreviation", () => {
+    expect(normalizeNflTeamAbbr("AZ")).toBe("ari");
+    expect(normalizeNflTeamAbbr("ARI")).toBe("ari");
+    expect(normalizeNflTeamAbbr("az")).toBe("ari");
+  });
+
   it("reports missing IDs instead of joining by name", () => {
     expect(resolveCanonicalPlayerIdentity({ playerName: "No Id", position: "RB" }))
       .toEqual({ resolved: false, reason: "missing-gsis-id" });
