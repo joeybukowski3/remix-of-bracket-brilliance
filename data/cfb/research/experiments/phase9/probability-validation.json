@@ -1,0 +1,290 @@
+{
+  "baseline": {
+    "summary": {
+      "n": 3920,
+      "brier": 0.19024950447767922,
+      "logLoss": 0.5590553477488267,
+      "ece": 0.005773415942769398,
+      "calibrationBuckets": [
+        {
+          "label": "50-55",
+          "n": 495,
+          "meanPredicted": 0.5244192929292929,
+          "empiricalWinRate": 0.5171717171717172
+        },
+        {
+          "label": "55-60",
+          "n": 515,
+          "meanPredicted": 0.5755727184466021,
+          "empiricalWinRate": 0.5766990291262136
+        },
+        {
+          "label": "60-70",
+          "n": 992,
+          "meanPredicted": 0.6488890120967743,
+          "empiricalWinRate": 0.6532258064516129
+        },
+        {
+          "label": "70-80",
+          "n": 887,
+          "meanPredicted": 0.7474521420518603,
+          "empiricalWinRate": 0.7350620067643743
+        },
+        {
+          "label": "80-90",
+          "n": 624,
+          "meanPredicted": 0.8441725160256414,
+          "empiricalWinRate": 0.8477564102564102
+        },
+        {
+          "label": "90+",
+          "n": 401,
+          "meanPredicted": 0.9453839152119707,
+          "empiricalWinRate": 0.9476309226932669
+        }
+      ]
+    },
+    "intervalCoverage": {
+      "marginCoverage": [
+        {
+          "level": 0.5,
+          "n": 3920,
+          "coverage": 0.5178571428571429,
+          "meanWidth": 22.764106127959977
+        },
+        {
+          "level": 0.8,
+          "n": 3920,
+          "coverage": 0.8061224489795918,
+          "meanWidth": 42.69568567619518
+        },
+        {
+          "level": 0.9,
+          "n": 3920,
+          "coverage": 0.9030612244897959,
+          "meanWidth": 54.4309088966713
+        },
+        {
+          "level": 0.95,
+          "n": 3920,
+          "coverage": 0.9551020408163265,
+          "meanWidth": 66.05706912276159
+        }
+      ],
+      "totalCoverage": [
+        {
+          "level": 0.5,
+          "n": 3920,
+          "coverage": 0.5170918367346938,
+          "meanWidth": 22.912405516044103
+        },
+        {
+          "level": 0.8,
+          "n": 3920,
+          "coverage": 0.8163265306122449,
+          "meanWidth": 43.89313650817548
+        },
+        {
+          "level": 0.9,
+          "n": 3920,
+          "coverage": 0.9125,
+          "meanWidth": 56.61281336220075
+        },
+        {
+          "level": 0.95,
+          "n": 3920,
+          "coverage": 0.9627551020408164,
+          "meanWidth": 67.21201470718461
+        }
+      ]
+    },
+    "extremeProbabilityQa": [
+      {
+        "label": "<10%",
+        "n": 93,
+        "meanPredicted": 0.05947634408602153,
+        "empiricalWinRate": 0.053763440860215055,
+        "calibrationError": 0.005712903225806476
+      },
+      {
+        "label": "10-20%",
+        "n": 202,
+        "meanPredicted": 0.1562542079207921,
+        "empiricalWinRate": 0.15346534653465346,
+        "calibrationError": 0.0027888613861386247
+      },
+      {
+        "label": "20-30%",
+        "n": 288,
+        "meanPredicted": 0.2531489583333333,
+        "empiricalWinRate": 0.2951388888888889,
+        "calibrationError": 0.04198993055555561
+      },
+      {
+        "label": "70-80%",
+        "n": 599,
+        "meanPredicted": 0.7477411519198659,
+        "empiricalWinRate": 0.7495826377295493,
+        "calibrationError": 0.001841485809683352
+      },
+      {
+        "label": "80-90%",
+        "n": 422,
+        "meanPredicted": 0.8443767772511853,
+        "empiricalWinRate": 0.8483412322274881,
+        "calibrationError": 0.0039644549763028225
+      },
+      {
+        "label": ">90%",
+        "n": 310,
+        "meanPredicted": 0.9471943548387102,
+        "empiricalWinRate": 0.9483870967741935,
+        "calibrationError": 0.0011927419354833546
+      }
+    ]
+  },
+  "finalist": {
+    "summary": {
+      "n": 3920,
+      "brier": 0.18799435102997444,
+      "logLoss": 0.5534008285553202,
+      "ece": 0.009818136503066996,
+      "calibrationBuckets": [
+        {
+          "label": "50-55",
+          "n": 464,
+          "meanPredicted": 0.524860344827587,
+          "empiricalWinRate": 0.5280172413793104
+        },
+        {
+          "label": "55-60",
+          "n": 466,
+          "meanPredicted": 0.5771054721030048,
+          "empiricalWinRate": 0.5708154506437768
+        },
+        {
+          "label": "60-70",
+          "n": 1018,
+          "meanPredicted": 0.6506015717092344,
+          "empiricalWinRate": 0.6640471512770137
+        },
+        {
+          "label": "70-80",
+          "n": 869,
+          "meanPredicted": 0.7472150747986188,
+          "empiricalWinRate": 0.7330264672036824
+        },
+        {
+          "label": "80-90",
+          "n": 655,
+          "meanPredicted": 0.8442343511450371,
+          "empiricalWinRate": 0.8351145038167939
+        },
+        {
+          "label": "90+",
+          "n": 440,
+          "meanPredicted": 0.9476781818181824,
+          "empiricalWinRate": 0.9522727272727273
+        }
+      ]
+    },
+    "intervalCoverage": {
+      "marginCoverage": [
+        {
+          "level": 0.5,
+          "n": 3920,
+          "coverage": 0.5181122448979592,
+          "meanWidth": 22.82262141707683
+        },
+        {
+          "level": 0.8,
+          "n": 3920,
+          "coverage": 0.8068877551020408,
+          "meanWidth": 42.05382141650535
+        },
+        {
+          "level": 0.9,
+          "n": 3920,
+          "coverage": 0.9068877551020408,
+          "meanWidth": 54.40783102291575
+        },
+        {
+          "level": 0.95,
+          "n": 3920,
+          "coverage": 0.9553571428571429,
+          "meanWidth": 65.39511325849965
+        }
+      ],
+      "totalCoverage": [
+        {
+          "level": 0.5,
+          "n": 3920,
+          "coverage": 0.514795918367347,
+          "meanWidth": 22.69302118054532
+        },
+        {
+          "level": 0.8,
+          "n": 3920,
+          "coverage": 0.8206632653061224,
+          "meanWidth": 44.11415632663738
+        },
+        {
+          "level": 0.9,
+          "n": 3920,
+          "coverage": 0.9122448979591836,
+          "meanWidth": 56.501574059137866
+        },
+        {
+          "level": 0.95,
+          "n": 3920,
+          "coverage": 0.9604591836734694,
+          "meanWidth": 67.01744099057879
+        }
+      ]
+    },
+    "extremeProbabilityQa": [
+      {
+        "label": "<10%",
+        "n": 113,
+        "meanPredicted": 0.05657787610619473,
+        "empiricalWinRate": 0.061946902654867256,
+        "calibrationError": 0.005369026548672523
+      },
+      {
+        "label": "10-20%",
+        "n": 215,
+        "meanPredicted": 0.1562032558139535,
+        "empiricalWinRate": 0.19534883720930232,
+        "calibrationError": 0.03914558139534882
+      },
+      {
+        "label": "20-30%",
+        "n": 313,
+        "meanPredicted": 0.2535471246006389,
+        "empiricalWinRate": 0.2779552715654952,
+        "calibrationError": 0.024408146964856325
+      },
+      {
+        "label": "70-80%",
+        "n": 556,
+        "meanPredicted": 0.7476441546762586,
+        "empiricalWinRate": 0.7392086330935251,
+        "calibrationError": 0.008435521582733418
+      },
+      {
+        "label": "80-90%",
+        "n": 440,
+        "meanPredicted": 0.844448181818182,
+        "empiricalWinRate": 0.85,
+        "calibrationError": 0.005551818181817936
+      },
+      {
+        "label": ">90%",
+        "n": 329,
+        "meanPredicted": 0.9494580547112461,
+        "empiricalWinRate": 0.9574468085106383,
+        "calibrationError": 0.007988753799392234
+      }
+    ]
+  }
+}
