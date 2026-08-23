@@ -103,6 +103,16 @@ jobs:
         run: |
           node scripts/refresh-fantasy-player-week-source-cache.mjs || true
 
+      - name: Refresh current NFL spread/total market data
+        if: env.SKIP_ROLLOVER != 'true'
+        shell: bash
+        run: |
+          # Best-effort: the generator degrades scoring-environment context to
+          # neutral (0) when market data is stale/missing rather than failing
+          # the whole run, so a market refresh failure here must never block
+          # projection generation.
+          node scripts/generate-nfl-matchup-market.mjs || echo "Market refresh failed; projections will use neutral scoring-environment context." >&2
+
       - name: Generate production weekly fantasy projections (staged, atomic)
         if: env.SKIP_ROLLOVER != 'true'
         shell: bash

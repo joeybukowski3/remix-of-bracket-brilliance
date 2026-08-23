@@ -6,6 +6,7 @@ import {
   PRODUCTION_METHODOLOGY_POSITION_MATRIX,
   PRODUCTION_METHODOLOGY_WEEK1_NOTE,
   PRODUCTION_METHODOLOGY_WEEK2_NOTE,
+  PRODUCTION_METHODOLOGY_YEAR_BLEND_NOTE,
 } from "@/lib/fantasy/weekly/projections/production/methodology";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,9 @@ export default function ProjectionMethodologyPanel() {
                   <th scope="col" className="py-1 pr-2 font-semibold">Position</th>
                   <th scope="col" className="py-1 pr-2 font-semibold">Baseline</th>
                   <th scope="col" className="py-1 pr-2 font-semibold">Usage</th>
-                  <th scope="col" className="py-1 font-semibold">Team Context</th>
+                  <th scope="col" className="py-1 pr-2 font-semibold">Team Context</th>
+                  <th scope="col" className="py-1 pr-2 font-semibold">Implied Total</th>
+                  <th scope="col" className="py-1 font-semibold">Opponent FPA</th>
                 </tr>
               </thead>
               <tbody>
@@ -53,7 +56,9 @@ export default function ProjectionMethodologyPanel() {
                     <th scope="row" className="py-1 pr-2 font-bold text-slate-900">{row.position}</th>
                     <td className="py-1 pr-2"><Check active={row.baseline} label="Baseline" /></td>
                     <td className="py-1 pr-2"><Check active={row.usage} label="Usage" /></td>
-                    <td className="py-1"><Check active={row.teamContext} label="Team Context" /></td>
+                    <td className="py-1 pr-2"><Check active={row.teamContext} label="Team Context" /></td>
+                    <td className="py-1 pr-2"><Check active={row.impliedTotal} label="Implied Total" /></td>
+                    <td className="py-1"><Check active={row.opponentFpa} label="Opponent FPA" /></td>
                   </tr>
                 ))}
               </tbody>
@@ -66,6 +71,7 @@ export default function ProjectionMethodologyPanel() {
             ))}
           </ul>
 
+          <p>{PRODUCTION_METHODOLOGY_YEAR_BLEND_NOTE}</p>
           <p>{PRODUCTION_METHODOLOGY_WEEK1_NOTE}</p>
           <p>{PRODUCTION_METHODOLOGY_WEEK2_NOTE}</p>
 

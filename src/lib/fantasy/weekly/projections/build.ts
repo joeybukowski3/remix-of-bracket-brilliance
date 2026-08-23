@@ -99,7 +99,7 @@ function priorSeasonAggregates(rows: readonly HistoricalPlayerWeek[]) {
  * "entire season" (used only for the previous-season variant); otherwise every
  * outcome must satisfy `week < beforeWeek`.
  */
-function fpaForOpponent(
+export function fpaForOpponent(
   history: readonly HistoricalPlayerWeek[],
   season: number,
   position: FantasyPosition,

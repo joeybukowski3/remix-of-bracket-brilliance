@@ -33,4 +33,11 @@ describe("production methodology matrix", () => {
     const allText = PRODUCTION_METHODOLOGY_POSITION_MATRIX.map((row) => row.summary).join(" ").toLowerCase();
     expect(allText).not.toMatch(/implied team total|opponent-adjusted defense|betting market|injury/);
   });
+
+  it("declares scoring-environment and opponent-FPA context active for every position, including QB", () => {
+    for (const row of PRODUCTION_METHODOLOGY_POSITION_MATRIX) {
+      expect(row.impliedTotal).toBe(true);
+      expect(row.opponentFpa).toBe(true);
+    }
+  });
 });
