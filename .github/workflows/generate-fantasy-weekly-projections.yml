@@ -101,7 +101,17 @@ jobs:
         if: env.SKIP_ROLLOVER != 'true'
         shell: bash
         run: |
-          node scripts/refresh-fantasy-player-week-source-cache.mjs || true
+          season="${{ steps.target.outputs.season }}"
+          week="${{ steps.target.outputs.week }}"
+          prior_season="$((season - 1))"
+          if [ "$week" -gt 1 ]; then
+            node scripts/refresh-fantasy-player-week-source-cache.mjs \
+              --seasons="${prior_season},${season}" \
+              --partial-season="${season}" \
+              --through-week="$((week - 1))"
+          else
+            node scripts/refresh-fantasy-player-week-source-cache.mjs --seasons="${prior_season}"
+          fi
 
       - name: Refresh current NFL spread/total market data
         if: env.SKIP_ROLLOVER != 'true'
@@ -127,18 +137,27 @@ jobs:
           echo "Projection generation failed after 3 attempts -- previous week's artifact left untouched." >&2
           exit 1
 
-      - name: Validate generated artifact
+      - name: Generate weekly fantasy research companion
+        if: env.SKIP_ROLLOVER != 'true'
+        run: npx tsx scripts/generate-fantasy-weekly-research.ts --season="${{ steps.target.outputs.season }}" --week="${{ steps.target.outputs.week }}"
+
+      - name: Validate generated projection artifact
         if: env.SKIP_ROLLOVER != 'true'
         run: npx tsx scripts/validate-fantasy-weekly-projections.ts --season="${{ steps.target.outputs.season }}" --week="${{ steps.target.outputs.week }}"
+
+      - name: Validate weekly fantasy research companion
+        if: env.SKIP_ROLLOVER != 'true'
+        run: npx tsx scripts/validate-fantasy-weekly-research.ts --season="${{ steps.target.outputs.season }}" --week="${{ steps.target.outputs.week }}"
 
       - name: Detect meaningful projection changes
         if: env.SKIP_ROLLOVER != 'true'
         id: changes
         shell: bash
         run: |
-          PATTERN="public/data/fantasy/projections/${{ steps.target.outputs.season }}/week-*.json"
-          if [ -z "$(git status --porcelain -- $PATTERN)" ]; then
-            echo "No meaningful projection changes."
+          PROJECTION_PATTERN="public/data/fantasy/projections/${{ steps.target.outputs.season }}/week-*.json"
+          RESEARCH_PATTERN="public/data/fantasy/weekly-research/${{ steps.target.outputs.season }}/week-*.json"
+          if [ -z "$(git status --porcelain -- $PROJECTION_PATTERN $RESEARCH_PATTERN)" ]; then
+            echo "No meaningful weekly fantasy changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "Meaningful projection changes detected."
@@ -157,6 +176,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "public/data/fantasy/projections/${{ steps.target.outputs.season }}"
+          git add "public/data/fantasy/weekly-research/${{ steps.target.outputs.season }}"
 
           if git diff --cached --quiet; then
             echo "No staged projection changes."

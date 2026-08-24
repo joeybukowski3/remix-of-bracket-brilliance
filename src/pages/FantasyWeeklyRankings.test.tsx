@@ -3,6 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { weeklyFantasyProjectionProductionArtifactSchema } from "@/lib/fantasy/weekly/projections/production/artifactContract";
+import { weeklyFantasyResearchArtifactSchema } from "@/lib/fantasy/weekly/researchArtifact";
+import { joinWeeklyFantasyResearchRows } from "@/lib/fantasy/weekly/researchJoin";
 
 function fixture(relativePath: string) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -13,6 +15,7 @@ function fixture(relativePath: string) {
 }
 
 const fullArtifact = weeklyFantasyProjectionProductionArtifactSchema.parse(fixture("public/data/fantasy/projections/2026/week-01.json"));
+const fullResearchArtifact = weeklyFantasyResearchArtifactSchema.parse(fixture("public/data/fantasy/weekly-research/2026/week-01.json"));
 
 /**
  * Trimmed to the top 20 per position (ranks stay 1..N, so positionRank
@@ -31,8 +34,10 @@ const artifact = {
   },
 };
 const mockWeekly = vi.hoisted(() => vi.fn());
+const mockResearch = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks/useWeeklyFantasyProjectionArtifact", () => ({ useWeeklyFantasyProjectionArtifact: mockWeekly }));
+vi.mock("@/hooks/useWeeklyFantasyResearchRows", () => ({ useWeeklyFantasyResearchRows: mockResearch }));
 vi.mock("@/hooks/useNflSeasonData", () => ({
   useNflSeasonData: () => {
     const games = fixture("public/data/nfl/2026/games.json");
@@ -60,6 +65,12 @@ describe("Weekly Rankings consumer", () => {
   beforeEach(() => {
     mockWeekly.mockReset();
     mockWeekly.mockReturnValue(ready);
+    mockResearch.mockReset();
+    mockResearch.mockImplementation((rows: typeof fullArtifact.rows.QB) => ({
+      rows: joinWeeklyFantasyResearchRows(rows, fullResearchArtifact).rows,
+      loading: false,
+      errors: [],
+    }));
   });
 
   it("uses the canonical projection artifact hook and preserves artifact QB order", () => {
@@ -85,8 +96,9 @@ describe("Weekly Rankings consumer", () => {
 
   it("labels the primary number as a projection, never a bare ROS PPG", () => {
     renderPage();
-    expect(screen.getByText("Projected Pts")).toBeInTheDocument();
-    expect(screen.getByText("Confidence")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "PROJ. PTS" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "SEASON PPG" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "MATCHUP GRADE" })).toBeInTheDocument();
     expect(screen.queryByText("ROS Proj PPG")).not.toBeInTheDocument();
   });
 
@@ -99,7 +111,7 @@ describe("Weekly Rankings consumer", () => {
   it("uses the shared light grid, team identity, and projected-points emphasis", () => {
     renderPage();
     const table = screen.getByRole("table");
-    const shell = table.parentElement;
+    const shell = table.closest("section");
     const headers = screen.getAllByRole("columnheader");
     const firstRow = screen.getAllByRole("row")[1];
     const cells = [...firstRow.querySelectorAll("td")];
@@ -111,8 +123,8 @@ describe("Weekly Rankings consumer", () => {
     expect(cells.every((cell) => cell.className.includes("border-b"))).toBe(true);
     expect(cells.slice(0, -1).every((cell) => cell.className.includes("border-r"))).toBe(true);
     expect(firstRow.querySelector(`[data-team-logo="${artifact.rows.QB[0].team.toUpperCase()}"]`)).toBeInTheDocument();
-    expect(headers[4].className).toContain("bg-sky-100");
-    expect(cells[4].className).toContain("bg-sky-50");
+    expect(headers[2].className).toContain("bg-sky-100");
+    expect(cells[2].className).toContain("bg-sky-50");
   });
 
   it("shows the How JKB Projections Work methodology panel", () => {
@@ -139,7 +151,24 @@ describe("Weekly Rankings consumer", () => {
     renderPage();
     const table = screen.getByRole("table");
     expect(table.className).toContain("table-fixed");
-    fireEvent.click(screen.getByRole("button", { name: `Show details for ${artifact.rows.QB[0].playerName}` }));
-    expect(screen.getByText(/Pregame information only, no target-week results used/i)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: `Show details for ${artifact.rows.QB[0].playerName}` })[0]);
+    expect(screen.getByText(/Pregame information only; research context does not alter/i)).toBeInTheDocument();
+  });
+
+  it("renders only the approved position-specific evidence columns", () => {
+    renderPage();
+    expect(screen.queryByRole("columnheader", { name: "TOUCHES RK" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "RB" }));
+    for (const header of ["TOUCHES RK", "RZ TOUCHES RK", "YPC RK", "REC TARGETS RK"]) {
+      expect(screen.getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+    expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "TE" }));
+    for (const header of ["TARGET % RK", "AIR YARDS RK", "TARGETS/G RK"]) {
+      expect(screen.getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("columnheader", { name: "TOUCHES RK" })).not.toBeInTheDocument();
   });
 });

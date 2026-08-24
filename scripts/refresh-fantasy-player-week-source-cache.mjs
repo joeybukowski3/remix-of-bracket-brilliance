@@ -37,17 +37,50 @@ const PLAYER_WEEK_UPSTREAM_ALIASES = Object.freeze({
 });
 
 function parseArgs(argv) {
-  const args = { seasons: DEFAULT_SEASONS, dryRun: false, localDir: null };
+  const args = { seasons: DEFAULT_SEASONS, dryRun: false, localDir: null, partialSeason: null, throughWeek: null };
   for (const raw of argv.slice(2)) {
     if (raw === "--dry-run") args.dryRun = true;
     else if (raw.startsWith("--seasons=")) {
       args.seasons = raw.slice(10).split(",").map(Number).filter(Number.isInteger);
     } else if (raw.startsWith("--local-dir=")) {
       args.localDir = resolve(ROOT, raw.slice(12));
+    } else if (raw.startsWith("--partial-season=")) {
+      args.partialSeason = Number(raw.slice(17));
+    } else if (raw.startsWith("--through-week=")) {
+      args.throughWeek = Number(raw.slice(15));
     } else throw new Error(`Unknown argument: ${raw}`);
   }
   if (!args.seasons.length) throw new Error("No valid seasons requested.");
+  if ((args.partialSeason == null) !== (args.throughWeek == null)) {
+    throw new Error("--partial-season and --through-week must be supplied together.");
+  }
+  if (args.partialSeason != null && (!Number.isInteger(args.partialSeason) || !args.seasons.includes(args.partialSeason))) {
+    throw new Error("--partial-season must be an integer included in --seasons.");
+  }
+  if (args.throughWeek != null && (!Number.isInteger(args.throughWeek) || args.throughWeek < 1 || args.throughWeek > 18)) {
+    throw new Error("--through-week must be an integer from 1 through 18.");
+  }
   return args;
+}
+
+function validatePartialPlayerWeekSeason(rows, season, throughWeek, filename) {
+  const expectedWeeks = Array.from({ length: throughWeek }, (_, index) => index + 1);
+  const coverage = {};
+  for (const position of FANTASY_PLAYER_POSITIONS) {
+    const positionRows = rows.filter((row) => String(row.position).toUpperCase() === position);
+    const weeks = [...new Set(positionRows.map((row) => Number(row.week)).filter((week) => week <= throughWeek))].sort((a, b) => a - b);
+    if (weeks.length !== expectedWeeks.length || weeks.some((week, index) => week !== expectedWeeks[index])) {
+      throw new Error(`${filename}: ${position} coverage through Week ${throughWeek} is incomplete (${weeks.join(",") || "none"})`);
+    }
+    coverage[position] = {
+      rows: positionRows.filter((row) => Number(row.week) <= throughWeek).length,
+      players: new Set(positionRows.filter((row) => Number(row.week) <= throughWeek).map((row) => String(row.player_id))).size,
+      weeks,
+    };
+  }
+  const wrongSeason = rows.find((row) => Number(row.season) !== season);
+  if (wrongSeason) throw new Error(`${filename}: contains a row outside season ${season}`);
+  return coverage;
 }
 
 function serializeCsv(rows, columns) {
@@ -85,7 +118,7 @@ function writeAtomic(path, text) {
 }
 
 async function main() {
-  const { seasons, dryRun, localDir } = parseArgs(process.argv);
+  const { seasons, dryRun, localDir, partialSeason, throughWeek } = parseArgs(process.argv);
   const existing = existsSync(MANIFEST_PATH)
     ? JSON.parse(readFileSync(MANIFEST_PATH, "utf8"))
     : { schemaVersion: SCHEMA_VERSION, source: "nflverse/nflverse-data releases", files: [] };
@@ -109,7 +142,9 @@ async function main() {
       (row) => String(row.season_type).toUpperCase() === "REG" && POSITIONS.has(String(row.position).toUpperCase()),
     );
     if (!rows.length) throw new Error(`${filename}: no supported regular-season rows`);
-    const coverage = validateCompletedPlayerWeekSeason(rows, season, filename);
+    const coverage = season === partialSeason
+      ? validatePartialPlayerWeekSeason(rows, season, throughWeek, filename)
+      : validateCompletedPlayerWeekSeason(rows, season, filename);
     const projectedRows = rows.map((row) => ({
       ...row,
       recent_team: row.recent_team || row.team,

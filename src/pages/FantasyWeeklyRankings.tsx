@@ -8,13 +8,16 @@ import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
+import { useWeeklyFantasyResearchRows } from "@/hooks/useWeeklyFantasyResearchRows";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
+import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 import { WEEKLY_RANKINGS_SEASON } from "@/lib/fantasy/weeklyRankings";
 import { cn } from "@/lib/utils";
 import { getSeoMeta } from "@/lib/seo";
 import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
 
 const POSITIONS: readonly FantasyPosition[] = ["QB", "RB", "WR", "TE"];
+const EMPTY_ROWS: readonly WeeklyFantasyProjectionProductionRow[] = [];
 
 function formatAsOf(value: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -35,7 +38,10 @@ export default function FantasyWeeklyRankings() {
   );
   const weeks = weekSelection.availableWeeks;
   const week = weekSelection.week;
-  const weekly = useWeeklyFantasyProjectionArtifact(WEEKLY_RANKINGS_SEASON, week ?? weeks[0] ?? 1);
+  const selectedWeek = week ?? weeks[0] ?? 1;
+  const weekly = useWeeklyFantasyProjectionArtifact(WEEKLY_RANKINGS_SEASON, selectedWeek);
+  const selectedRows = weekly.status === "ready" ? weekly.rows[position] : EMPTY_ROWS;
+  const research = useWeeklyFantasyResearchRows(selectedRows, WEEKLY_RANKINGS_SEASON, selectedWeek);
 
   if (week === null) {
     return (
@@ -98,7 +104,12 @@ export default function FantasyWeeklyRankings() {
               ))}
             </div>
 
-            <WeeklyFantasyRankingsTable rows={weekly.rows[position]} />
+            {research.errors.length > 0 && (
+              <p role="status" className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                Some weekly research context is unavailable; affected display fields show N/A. Projections and rankings remain available.
+              </p>
+            )}
+            <WeeklyFantasyRankingsTable rows={research.rows} />
             <ProjectionMethodologyPanel />
           </>
         )}

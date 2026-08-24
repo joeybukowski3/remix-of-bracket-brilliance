@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import {
   FANTASY_TABLE_BODY_CELL,
   FANTASY_TABLE_HEADER_CELL,
@@ -6,146 +6,239 @@ import {
   FantasyExpandControl,
   FantasyPlayerIdentity,
 } from "@/components/fantasy/FantasyTable";
-import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
+import type { WeeklyFantasyResearchRow } from "@/lib/fantasy/weekly/researchJoin";
+import useIsCompactLayout from "@/hooks/useIsCompactLayout";
+import type { WeeklyResearchMetric } from "@/lib/fantasy/weekly/researchContext";
+import type { NflMatchupEdge } from "@/lib/nfl/matchupEdges";
 import { cn } from "@/lib/utils";
 
-function displayTeam(team: string): string {
-  return team.toUpperCase();
+type EvidenceKey = "touches" | "redZoneTouches" | "yardsPerCarry" | "receivingTargets" | "targetShare" | "airYardsPerGame" | "targetsPerGame";
+type EvidenceColumn = { key: EvidenceKey; desktop: string; mobile: string };
+
+const COMMON_HEADERS = [
+  "RK", "PLAYER", "PROJ. PTS", "SEASON PPG", "L5 PPG", "MATCHUP GRADE",
+  "OPP FPA SEASON", "OPP FPA L5", "TRENCHES", "EPA ADV.", "SUCCESS ADV.",
+] as const;
+
+const EVIDENCE_COLUMNS: Record<WeeklyFantasyResearchRow["position"], readonly EvidenceColumn[]> = {
+  QB: [],
+  RB: [
+    { key: "touches", desktop: "TOUCHES RK", mobile: "Touches" },
+    { key: "redZoneTouches", desktop: "RZ TOUCHES RK", mobile: "RZ Touches" },
+    { key: "yardsPerCarry", desktop: "YPC RK", mobile: "YPC" },
+    { key: "receivingTargets", desktop: "REC TARGETS RK", mobile: "Rec Targets" },
+  ],
+  WR: [
+    { key: "targetShare", desktop: "TARGET % RK", mobile: "Target %" },
+    { key: "airYardsPerGame", desktop: "AIR YARDS RK", mobile: "Air Yards" },
+    { key: "targetsPerGame", desktop: "TARGETS/G RK", mobile: "Targets/G" },
+  ],
+  TE: [
+    { key: "targetShare", desktop: "TARGET % RK", mobile: "Target %" },
+    { key: "airYardsPerGame", desktop: "AIR YARDS RK", mobile: "Air Yards" },
+    { key: "targetsPerGame", desktop: "TARGETS/G RK", mobile: "Targets/G" },
+  ],
+};
+
+function displayOpponent(row: WeeklyFantasyResearchRow): string {
+  const prefix = row.homeAway === "away" ? "@" : row.homeAway === "neutral" ? "N" : "vs";
+  return `${prefix} ${row.opponent.toUpperCase()}`;
 }
 
-function displayOpponent(row: WeeklyFantasyProjectionProductionRow): string {
-  const prefix = row.homeAway === "away" ? "@" : "vs";
-  return `${prefix} ${displayTeam(row.opponent)}`;
+function formatMetric(metric: WeeklyResearchMetric, digits = 1): string {
+  return metric.value == null ? "N/A" : metric.value.toFixed(digits);
 }
 
-function capitalize(value: string): string {
-  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+function rankText(metric: WeeklyResearchMetric): string {
+  return metric.rank == null ? "N/A" : `#${metric.rank}`;
 }
 
-function displayPoints(row: WeeklyFantasyProjectionProductionRow): string {
-  return row.projectedFantasyPoints.toFixed(1);
+function rankTone(metric: WeeklyResearchMetric): string {
+  if (metric.rank == null || metric.poolSize <= 0) return "bg-slate-50 text-slate-500";
+  const percentile = metric.rank / metric.poolSize;
+  if (percentile <= 1 / 3) return "bg-emerald-50 text-emerald-800";
+  if (percentile <= 2 / 3) return "bg-slate-50 text-slate-700";
+  return "bg-rose-50 text-rose-800";
 }
 
-function confidenceClass(confidence: WeeklyFantasyProjectionProductionRow["confidence"]["level"]): string {
-  if (confidence === "high") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (confidence === "low") return "border-amber-200 bg-amber-50 text-amber-800";
-  return "border-slate-200 bg-slate-100 text-slate-700";
+function edgeTone(edge: NflMatchupEdge): string {
+  if (edge.score == null) return "bg-slate-50 text-slate-500";
+  if (edge.score > 8) return "bg-emerald-50 text-emerald-800";
+  if (edge.score < -8) return "bg-rose-50 text-rose-800";
+  return "bg-slate-50 text-slate-700";
 }
 
-function usageState(row: WeeklyFantasyProjectionProductionRow): string {
-  if (row.modelAuthority.state === "BASELINE_ONLY") return "Baseline only";
-  return row.residualActivated ? "Usage-adjusted" : "Baseline (no current-season usage yet)";
+function edgeText(edge: NflMatchupEdge): string {
+  if (edge.score == null) return "N/A";
+  const rounded = Math.round(edge.score);
+  return `${rounded > 0 ? "+" : ""}${rounded}`;
 }
 
-function formatAdjustment(value: number): string {
-  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+function sampleLabel(metric: WeeklyResearchMetric): string {
+  if (metric.sampleSize === 0) return "No eligible sample";
+  if (metric.sampleSeason != null) return `${metric.sampleSeason} · ${metric.sampleSize} game${metric.sampleSize === 1 ? "" : "s"}`;
+  return `${metric.sampleSize} games across seasons`;
 }
 
-/** QB has no learned usage residual at all (frozen V1 is BASELINE_ONLY for QB). */
-function usageAdjustmentLabel(row: WeeklyFantasyProjectionProductionRow): string {
-  if (row.position === "QB") return "Not used";
-  if (!row.residualActivated) return "Not active yet";
-  return formatAdjustment(row.components.usageAdjustment);
-}
-
-/** Only RB carries a validated team-context residual under the frozen V1 spec. */
-function teamContextLabel(row: WeeklyFantasyProjectionProductionRow): string {
-  if (row.position !== "RB") return "Not used";
-  if (!row.residualActivated) return "Not active yet";
-  return formatAdjustment(row.components.teamContextAdjustment);
-}
-
-function scoringEnvironmentLabel(row: WeeklyFantasyProjectionProductionRow): string {
-  if (!row.context.scoringEnvironment.marketContextAvailable) return "No market data";
-  return formatAdjustment(row.components.scoringEnvironmentAdjustment);
-}
-
-function opponentMatchupLabel(row: WeeklyFantasyProjectionProductionRow): string {
-  if (row.context.opponentFpa.fallbackReason === "missing-both-neutral") return "No matchup data";
-  return formatAdjustment(row.components.opponentFpaAdjustment);
-}
-
-function Detail({ row }: { row: WeeklyFantasyProjectionProductionRow }) {
+function MetricCell({ metric, children }: { metric: WeeklyResearchMetric; children?: ReactNode }) {
   return (
-    <div className="grid gap-x-6 gap-y-2 text-xs text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
-      <p><span className="text-slate-500">Model:</span> {usageState(row)}</p>
-      <p><span className="text-slate-500">Baseline pts:</span> {row.baselineFantasyPoints.toFixed(1)}</p>
-      <p><span className="text-slate-500">Usage adjustment:</span> {usageAdjustmentLabel(row)}</p>
-      <p><span className="text-slate-500">Team context adjustment:</span> {teamContextLabel(row)}</p>
-      <p><span className="text-slate-500">Scoring environment:</span> {scoringEnvironmentLabel(row)}</p>
-      <p><span className="text-slate-500">Opponent matchup:</span> {opponentMatchupLabel(row)}</p>
-      <p><span className="text-slate-500">Final projected pts:</span> {row.projectedFantasyPoints.toFixed(1)}</p>
-      <p><span className="text-slate-500">Prior games:</span> {row.priorGames}</p>
-      <p><span className="text-slate-500">ROS projected PPG:</span> {row.rosProjectedPpg?.toFixed(1) ?? "—"}</p>
-      <p><span className="text-slate-500">Prior-season PPG:</span> {row.priorSeasonPpg?.toFixed(1) ?? "—"}</p>
-      <p><span className="text-slate-500">Confidence:</span> {capitalize(row.confidence.level)}</p>
-      {row.missingInputs.length > 0 && <p><span className="text-slate-500">Missing inputs:</span> {row.missingInputs.join(", ")}</p>}
-      <p className="sm:col-span-2 lg:col-span-3">
-        <span className="text-slate-500">Scoring:</span> Full PPR · Pregame information only, no target-week results used.
-      </p>
+    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-2 text-center font-bold tabular-nums", rankTone(metric))}>
+      {children ?? formatMetric(metric)}
+    </td>
+  );
+}
+
+function EdgeCell({ edge }: { edge: NflMatchupEdge }) {
+  return <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-2 text-center font-black tabular-nums", edgeTone(edge))}>{edgeText(edge)}</td>;
+}
+
+function MobileMetric({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className={cn("min-w-0 rounded-md px-1.5 py-1.5", tone ?? "bg-slate-50 text-slate-800")}>
+      <div className="truncate text-[8px] font-bold uppercase tracking-[0.04em] opacity-70">{label}</div>
+      <div className="mt-0.5 text-xs font-black tabular-nums">{value}</div>
     </div>
   );
 }
 
-export default function WeeklyFantasyRankingsTable({ rows }: { rows: readonly WeeklyFantasyProjectionProductionRow[] }) {
+function EdgeDetail({ title, edge }: { title: string; edge: NflMatchupEdge }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-2">
+      <p className="font-bold text-slate-900">{title}: {edgeText(edge)}</p>
+      <p className="mt-1 text-slate-600">{edge.offense ? `${edge.offense.label}: ${edge.offense.formattedValue} (#${edge.offense.rank})` : "Offense: N/A"}</p>
+      <p className="text-slate-600">{edge.defense ? `${edge.defense.label}: ${edge.defense.formattedValue} (#${edge.defense.rank})` : "Defense: N/A"}</p>
+      <p className="mt-1 text-[10px] text-slate-500">{edge.sampleLabel} · {edge.source}</p>
+    </div>
+  );
+}
+
+function signed(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+}
+
+function Detail({ row }: { row: WeeklyFantasyResearchRow }) {
+  const evidence = EVIDENCE_COLUMNS[row.position];
+  return (
+    <div className="space-y-3 text-xs text-slate-700">
+      <div className="grid gap-x-5 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <p><span className="text-slate-500">Season PPG sample:</span> {sampleLabel(row.research.seasonPpg)}</p>
+        <p><span className="text-slate-500">L5 PPG sample:</span> {sampleLabel(row.research.last5Ppg)}</p>
+        <p><span className="text-slate-500">FPA season sample:</span> {sampleLabel(row.research.opponentFpaSeason)}</p>
+        <p><span className="text-slate-500">FPA L5 sample:</span> {sampleLabel(row.research.opponentFpaLast5)}</p>
+        {evidence.map((column) => (
+          <p key={column.key}><span className="text-slate-500">{column.mobile}:</span> {rankText(row.research.evidence[column.key])} · {formatMetric(row.research.evidence[column.key], column.key === "targetShare" ? 3 : 1)}</p>
+        ))}
+      </div>
+      <div>
+        <p className="mb-1.5 font-bold text-slate-900">Underlying matchup components</p>
+        <div className="grid gap-2 md:grid-cols-3">
+        <EdgeDetail title="Trenches" edge={row.matchupEdges.trenches} />
+        <EdgeDetail title="EPA advantage" edge={row.matchupEdges.epa} />
+        <EdgeDetail title="Success advantage" edge={row.matchupEdges.success} />
+        </div>
+      </div>
+      <div className="grid gap-x-5 gap-y-1.5 border-t border-slate-200 pt-2 sm:grid-cols-2 lg:grid-cols-4">
+        <p><span className="text-slate-500">Baseline pts:</span> {row.baselineFantasyPoints.toFixed(1)}</p>
+        <p><span className="text-slate-500">Usage adjustment:</span> {row.position === "QB" ? "Not used" : row.residualActivated ? signed(row.components.usageAdjustment) : "Not active yet"}</p>
+        <p><span className="text-slate-500">Scoring environment:</span> {row.context.scoringEnvironment.marketContextAvailable ? signed(row.components.scoringEnvironmentAdjustment) : "No market data"}</p>
+        <p><span className="text-slate-500">Projection FPA adjustment:</span> {row.context.opponentFpa.fallbackReason === "missing-both-neutral" ? "No matchup data" : signed(row.components.opponentFpaAdjustment)}</p>
+        <p><span className="text-slate-500">Final projected pts:</span> {row.projectedFantasyPoints.toFixed(1)}</p>
+        <p className="sm:col-span-2 lg:col-span-3"><span className="text-slate-500">Scoring:</span> JKB Full PPR · Pregame information only; research context does not alter the projection or rank.</p>
+      </div>
+    </div>
+  );
+}
+
+function MobileCard({ row, expanded, onToggle }: { row: WeeklyFantasyResearchRow; expanded: boolean; onToggle: () => void }) {
+  const evidence = EVIDENCE_COLUMNS[row.position];
+  return (
+    <article className="border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0">
+      <div className="grid grid-cols-[32px_minmax(0,1fr)_64px] items-center gap-2">
+        <div className="text-center text-base font-black tabular-nums text-slate-950">{row.positionRank}</div>
+        <div className="flex min-w-0 items-center gap-1">
+          <div className="min-w-0 flex-1"><FantasyPlayerIdentity player={row.playerName} team={row.team} /></div>
+          <FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.playerName}`} expanded={expanded} onClick={onToggle} />
+        </div>
+        <MobileMetric label="Proj Pts" value={row.projectedFantasyPoints.toFixed(1)} tone="bg-sky-100 text-sky-950" />
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        <MobileMetric label="Opponent" value={displayOpponent(row)} />
+        <MobileMetric label="Matchup Grade" value={row.matchupRating?.label ?? "N/A"} tone={row.matchupRating?.badgeClass} />
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5" aria-label="Production">
+        <MobileMetric label="Season PPG" value={formatMetric(row.research.seasonPpg)} tone={rankTone(row.research.seasonPpg)} />
+        <MobileMetric label="L5 PPG" value={formatMetric(row.research.last5Ppg)} tone={rankTone(row.research.last5Ppg)} />
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5" aria-label="Opponent fantasy points allowed">
+        <MobileMetric label="FPA Season" value={formatMetric(row.research.opponentFpaSeason)} tone={rankTone(row.research.opponentFpaSeason)} />
+        <MobileMetric label="FPA L5" value={formatMetric(row.research.opponentFpaLast5)} tone={rankTone(row.research.opponentFpaLast5)} />
+      </div>
+      <div className="mt-1.5 grid grid-cols-3 gap-1.5" aria-label="Matchup advantages">
+        <MobileMetric label="Trenches" value={edgeText(row.matchupEdges.trenches)} tone={edgeTone(row.matchupEdges.trenches)} />
+        <MobileMetric label="EPA Adv" value={edgeText(row.matchupEdges.epa)} tone={edgeTone(row.matchupEdges.epa)} />
+        <MobileMetric label="Success Adv" value={edgeText(row.matchupEdges.success)} tone={edgeTone(row.matchupEdges.success)} />
+      </div>
+      {evidence.length > 0 && (
+        <div className={cn("mt-1.5 grid gap-1.5", evidence.length === 4 ? "grid-cols-4" : "grid-cols-3")} aria-label="Position evidence">
+          {evidence.map((column) => <MobileMetric key={column.key} label={column.mobile} value={rankText(row.research.evidence[column.key])} tone={rankTone(row.research.evidence[column.key])} />)}
+        </div>
+      )}
+      {expanded && <div className="mt-3 border-t border-slate-200 pt-3"><Detail row={row} /></div>}
+    </article>
+  );
+}
+
+export default function WeeklyFantasyRankingsTable({ rows }: { rows: readonly WeeklyFantasyResearchRow[] }) {
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
+  const compact = useIsCompactLayout();
+  const position = rows[0]?.position ?? "QB";
+  const evidence = EVIDENCE_COLUMNS[position];
+  const columnCount = COMMON_HEADERS.length + evidence.length;
 
   return (
-    <div className={FANTASY_TABLE_SHELL}>
-      <table className="w-full table-fixed border-collapse text-left text-xs text-slate-700">
-        <caption className="sr-only">Canonical weekly fantasy projections</caption>
-        <thead className="bg-slate-100 text-[10px] uppercase tracking-wide text-slate-600">
-          <tr>
-            <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-11 px-2 py-2 text-center sm:w-14")}>Rank</th>
-            <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-1.5 py-2")}>Player</th>
-            <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "hidden w-16 px-2 py-2 sm:table-cell")}>Team</th>
-            <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "hidden w-20 px-2 py-2 sm:table-cell")}>Opponent</th>
-            <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-[76px] bg-sky-100 px-1 py-2 text-right text-sky-950 sm:w-24")}><span className="sm:hidden">Proj Pts</span><span className="hidden sm:inline">Projected Pts</span></th>
-            <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "hidden w-24 px-2 py-2 text-center md:table-cell")}>Confidence</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const expanded = expandedPlayerId === row.playerId;
-            return (
-              <Fragment key={row.playerId}>
-                <tr className="group bg-white hover:bg-slate-50">
-                  <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-2 text-center text-sm font-black tabular-nums text-slate-950")}>{row.positionRank}</td>
-                  <td className={cn(FANTASY_TABLE_BODY_CELL, "min-w-0 px-1.5 py-1")}>
-                    <div className="flex min-h-9 min-w-0 items-center gap-1">
-                      <div className="min-w-0 flex-1">
-                        <FantasyPlayerIdentity player={row.playerName} team={row.team} compact />
-                        <span className="block truncate pl-[22px] text-[10px] text-slate-500 sm:hidden">
-                          {displayOpponent(row)} · {capitalize(row.confidence.level)}
-                        </span>
-                      </div>
-                      <FantasyExpandControl
-                        label={`${expanded ? "Hide" : "Show"} details for ${row.playerName}`}
-                        expanded={expanded}
-                        onClick={() => setExpandedPlayerId(expanded ? null : row.playerId)}
-                        className="shrink-0"
-                      />
-                    </div>
-                  </td>
-                  <td className={cn(FANTASY_TABLE_BODY_CELL, "hidden px-2 py-2 font-semibold text-slate-600 sm:table-cell")}>{displayTeam(row.team)}</td>
-                  <td className={cn(FANTASY_TABLE_BODY_CELL, "hidden px-2 py-2 font-semibold text-slate-600 sm:table-cell")}>{displayOpponent(row)}</td>
-                  <td className={cn(FANTASY_TABLE_BODY_CELL, "bg-sky-50 px-1 py-2 text-right font-black tabular-nums text-sky-950")}>{displayPoints(row)}</td>
-                  <td className={cn(FANTASY_TABLE_BODY_CELL, "hidden px-2 py-2 text-center md:table-cell")}>
-                    <span className={cn("inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold", confidenceClass(row.confidence.level))}>
-                      {capitalize(row.confidence.level)}
-                    </span>
-                  </td>
-                </tr>
-                {expanded && (
-                  <tr className="bg-slate-50">
-                    <td colSpan={6} className="border-b border-slate-200 px-4 py-3"><Detail row={row} /></td>
+    <section aria-label={`${position} weekly fantasy research board`} className={FANTASY_TABLE_SHELL}>
+      {compact ? (
+        <div>
+          {rows.map((row) => <MobileCard key={row.playerId} row={row} expanded={expandedPlayerId === row.playerId} onToggle={() => setExpandedPlayerId(expandedPlayerId === row.playerId ? null : row.playerId)} />)}
+        </div>
+      ) : (
+        <div>
+          <table className="w-full table-fixed border-collapse text-left text-[10px] text-slate-700">
+          <caption className="sr-only">Canonical weekly fantasy projections with display-only research context</caption>
+          <colgroup><col className="w-10" /><col className="w-40" />{Array.from({ length: columnCount - 2 }, (_, index) => <col key={index} />)}</colgroup>
+          <thead className="bg-slate-100 text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">
+            <tr>
+              {COMMON_HEADERS.map((header) => <th key={header} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-1 py-2 text-center leading-tight", header === "PLAYER" && "text-left", header === "PROJ. PTS" && "bg-sky-100 text-sky-950")}>{header}</th>)}
+              {evidence.map((column) => <th key={column.key} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-1 py-2 text-center leading-tight")}>{column.desktop}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const expanded = expandedPlayerId === row.playerId;
+              return (
+                <Fragment key={row.playerId}>
+                  <tr className="group bg-white hover:bg-slate-50">
+                    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center text-xs font-black tabular-nums text-slate-950")}>{row.positionRank}</td>
+                    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1")}><div className="flex min-w-0 items-center gap-1"><div className="min-w-0 flex-1"><FantasyPlayerIdentity player={row.playerName} team={row.team} compact /></div><FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.playerName}`} expanded={expanded} onClick={() => setExpandedPlayerId(expanded ? null : row.playerId)} /></div></td>
+                    <td className={cn(FANTASY_TABLE_BODY_CELL, "bg-sky-50 px-1 py-2 text-center text-xs font-black tabular-nums text-sky-950")}>{row.projectedFantasyPoints.toFixed(1)}</td>
+                    <MetricCell metric={row.research.seasonPpg} />
+                    <MetricCell metric={row.research.last5Ppg} />
+                    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center")}><span className={cn("inline-flex rounded border px-1.5 py-0.5 font-bold", row.matchupRating?.badgeClass ?? "border-slate-200 bg-slate-50 text-slate-500")}>{row.matchupRating?.label ?? "N/A"}</span><span className="mt-0.5 block text-[9px] font-semibold text-slate-500">{displayOpponent(row)}</span></td>
+                    <MetricCell metric={row.research.opponentFpaSeason} />
+                    <MetricCell metric={row.research.opponentFpaLast5} />
+                    <EdgeCell edge={row.matchupEdges.trenches} />
+                    <EdgeCell edge={row.matchupEdges.epa} />
+                    <EdgeCell edge={row.matchupEdges.success} />
+                    {evidence.map((column) => <MetricCell key={column.key} metric={row.research.evidence[column.key]}>{rankText(row.research.evidence[column.key])}</MetricCell>)}
                   </tr>
-                )}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                  {expanded && <tr className="bg-slate-50"><td colSpan={columnCount} className="border-b border-slate-200 px-4 py-3"><Detail row={row} /></td></tr>}
+                </Fragment>
+              );
+            })}
+          </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }

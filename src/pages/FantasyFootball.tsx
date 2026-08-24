@@ -11,7 +11,7 @@ import { getDefaultFantasyRankingMode } from "@/lib/fantasy/rankingModes";
 import { cn } from "@/lib/utils";
 import FantasyWeeklyRankings from "@/pages/FantasyWeeklyRankings";
 
-/** Fantasy landing page; ROS stays default until canonical weekly rankings exist. */
+/** Fantasy landing page; Weekly is primary and ROS remains an explicit secondary mode. */
 export default function FantasyFootball() {
   const [searchParams] = useSearchParams();
   const requestedMode = searchParams.get("view");
