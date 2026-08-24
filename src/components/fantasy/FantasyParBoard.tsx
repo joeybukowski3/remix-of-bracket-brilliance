@@ -1,7 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Search } from "lucide-react";
-import TeamLogo from "@/components/TeamLogo";
+import { Search } from "lucide-react";
 import PositionParBoard from "@/components/fantasy/PositionParBoard";
 import LegacyPositionBoard from "@/components/fantasy/LegacyPositionBoard";
 import { MatchupOpponentCell, PositionRankBadge } from "@/components/fantasy/ParBoardCells";
@@ -10,8 +9,14 @@ import { getOverallRowContext } from "@/lib/fantasy/overallRowContext";
 import { formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { NflTableScroller } from "@/components/nfl/ui/NflTable";
-import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { cn } from "@/lib/utils";
+import {
+  FANTASY_TABLE_BODY_CELL,
+  FANTASY_TABLE_HEADER_CELL,
+  FANTASY_TABLE_SHELL,
+  FantasyExpandControl,
+  FantasyPlayerIdentity,
+} from "@/components/fantasy/FantasyTable";
 import {
   FANTASY_POSITION_RESEARCH_BOARDS,
   PAR_POSITIONS,
@@ -44,7 +49,7 @@ export default function FantasyParBoard() {
   ) as Record<FantasyPosition, number>;
 
   return (
-    <section aria-labelledby="fantasy-board-title" className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <section aria-labelledby="fantasy-board-title" className={FANTASY_TABLE_SHELL}>
       <div className="border-b border-slate-200 bg-slate-950 px-4 py-4 text-white sm:px-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -147,6 +152,7 @@ function OverallStatCell({ tone, value }: { tone: PositionTone; value: string })
   return (
     <td
       className={cn(
+        FANTASY_TABLE_BODY_CELL,
         "px-3 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800",
         tone.cell,
         value === "—" && "font-semibold text-slate-400",
@@ -193,19 +199,19 @@ function OverallBoard({ query }: { query: string }) {
       <table className="w-full min-w-[1240px] border-collapse text-left text-xs">
         <thead className="sticky top-0 z-20 bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
           <tr>
-            <th className="sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center">Rank</th>
-            <th className="sticky left-14 z-30 min-w-64 bg-slate-100 px-3 py-2">Player</th>
-            <th className="px-3 py-2 text-center">Pos Rk</th>
-            <th className="px-3 py-2 text-center">Rd / Pick</th>
-            <th title="Approved projected PAR per game" className="px-3 py-2 text-center">PAR/G</th>
-            <th title="FantasyPros projection rank within position" className="px-3 py-2 text-center">Projection Rk</th>
-            <th className="px-3 py-2 text-center">AVG Rk</th>
-            <th title="Positional strength of schedule; 1 is the easiest slate" className="px-3 py-2 text-center">SOS</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center")}>Rank</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-14 z-30 min-w-64 bg-slate-100 px-3 py-2")}>Player</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Pos Rk</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Rd / Pick</th>
+            <th title="Approved projected PAR per game" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>PAR/G</th>
+            <th title="FantasyPros projection rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Projection Rk</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>AVG Rk</th>
+            <th title="Positional strength of schedule; 1 is the easiest slate" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>SOS</th>
             {["Pts", "PPG"].map((basis) => (
               <th
                 key={basis}
                 title={`2025 positional finish by ${basis === "Pts" ? "total fantasy points" : "points per game"}`}
-                className="px-3 py-2 text-center leading-tight"
+                className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center leading-tight")}
               >
                 2025 Rk
                 <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
@@ -217,7 +223,7 @@ function OverallBoard({ query }: { query: string }) {
               <th
                 key={week}
                 title={`${week} opponent. Hover a cell for that defense's 2025 fantasy points allowed to the player's position.`}
-                className="px-3 py-2 text-center leading-tight"
+                className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center leading-tight")}
               >
                 {week}
                 <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
@@ -225,7 +231,7 @@ function OverallBoard({ query }: { query: string }) {
                 </span>
               </th>
             ))}
-            <th className="w-12 px-3 py-2"><span className="sr-only">Details</span></th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-12 px-3 py-2")}><span className="sr-only">Details</span></th>
           </tr>
         </thead>
         <tbody>
@@ -246,13 +252,13 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
   const context = getOverallRowContext(row.overallRank);
   return (
     <>
-      <tr className="border-t border-slate-100 hover:bg-slate-50">
-        <td className="sticky left-0 z-10 bg-white px-3 py-2 text-center font-bold tabular-nums text-slate-800">{row.overallRank}</td>
-        <td className="sticky left-14 z-10 bg-white px-3 py-2"><PlayerIdentity player={row.player} team={row.team} /></td>
-        <td className="px-3 py-2 text-center">
+      <tr className="group hover:bg-slate-50">
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "sticky left-0 z-10 bg-white px-3 py-2 text-center font-bold tabular-nums text-slate-800 group-hover:bg-slate-50")}>{row.overallRank}</td>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "sticky left-14 z-10 bg-white px-3 py-2 group-hover:bg-slate-50")}><FantasyPlayerIdentity player={row.player} team={row.team} /></td>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
           <PositionRankBadge position={row.position} positionRank={row.positionRank} />
         </td>
-        <td className="px-3 py-2 text-center tabular-nums">{row.draftRound && row.roundPick ? `${row.draftRound}.${row.roundPick}` : "—"}</td>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center tabular-nums")}>{row.draftRound && row.roundPick ? `${row.draftRound}.${row.roundPick}` : "—"}</td>
         <OverallStatCell tone={tone} value={formatSigned(context.parPerGame, 2)} />
         <OverallStatCell tone={tone} value={formatRank(row.projectionRank)} />
         <OverallStatCell tone={tone} value={formatRank(row.averageRank)} />
@@ -262,38 +268,16 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
         <MatchupOpponentCell opponent={row.playoffWeek15Opponent} position={row.position} tintClass={tone.cell} />
         <MatchupOpponentCell opponent={row.playoffWeek16Opponent} position={row.position} tintClass={tone.cell} />
         <MatchupOpponentCell opponent={row.playoffWeek17Opponent} position={row.position} tintClass={tone.cell} />
-        <td className="px-3 py-2 text-center"><ExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.player}`} expanded={expanded} onClick={() => setExpanded((value) => !value)} /></td>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}><FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.player}`} expanded={expanded} onClick={() => setExpanded((value) => !value)} /></td>
       </tr>
       {expanded && (
         <tr className="bg-slate-50">
-          <td colSpan={15} className="px-4 py-3 text-xs text-slate-600">
+          <td colSpan={15} className="border-b border-slate-200 px-4 py-3 text-xs text-slate-600">
             Late / Last 8: <strong>{formatRank(row.lateSeasonRank)}</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
           </td>
         </tr>
       )}
     </>
-  );
-}
-
-function PlayerIdentity({ player, team }: { player: string; team?: string }) {
-  const normalizedTeam = team?.toUpperCase();
-  const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <TeamLogo name={normalizedTeam ?? "FA"} logo={hasTeam ? nflLogoUrl(normalizedTeam!) : undefined} className="h-6 w-6" />
-      <div className="min-w-0">
-        <div className="truncate text-xs font-semibold text-slate-950 sm:text-[13px]">{player}</div>
-        <div className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{normalizedTeam ?? "FA"}</div>
-      </div>
-    </div>
-  );
-}
-
-function ExpandControl({ label, expanded, onClick }: { label: string; expanded: boolean; onClick: () => void }) {
-  return (
-    <button type="button" aria-label={label} aria-expanded={expanded} onClick={onClick} className="ml-auto inline-flex min-h-8 min-w-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
-      <ChevronDown aria-hidden className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} />
-    </button>
   );
 }
 

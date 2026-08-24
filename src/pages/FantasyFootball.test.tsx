@@ -63,6 +63,22 @@ describe("/fantasy-football research board", () => {
     expect(screen.queryByText("Tier 1")).toBeNull();
   });
 
+  it("uses the shared light shell and bordered Overall grid", () => {
+    renderPage();
+    const table = screen.getByRole("table");
+    const board = screen.getByRole("region", { name: "2026 rest-of-season research board" });
+    const headers = within(table).getAllByRole("columnheader");
+    const firstRow = within(table).getAllByRole("row")[1];
+    const cells = [...firstRow.querySelectorAll("td")];
+
+    expect(board?.className).toContain("border-slate-200");
+    expect(board?.className).toContain("bg-white");
+    expect(headers.every((header) => header.className.includes("border-b"))).toBe(true);
+    expect(headers.slice(0, -1).every((header) => header.className.includes("border-r"))).toBe(true);
+    expect(cells.every((cell) => cell.className.includes("border-b"))).toBe(true);
+    expect(cells.slice(0, -1).every((cell) => cell.className.includes("border-r"))).toBe(true);
+  });
+
   it("labels filters with full JKB position-board sizes", () => {
     renderPage();
     const group = screen.getByRole("group", { name: "Position" });
