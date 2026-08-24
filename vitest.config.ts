@@ -39,6 +39,11 @@ export default defineConfig({
       "scripts/cfb-v2-build-shadow.fail-closed.test.ts",
       // CFB Model V2 WU6 -- shadow audit CLI behavior.
       "scripts/cfb-v2-audit-shadow.test.ts",
+      // CFB Model V2 WU7A -- browser artifact publisher CLI behavior.
+      "scripts/cfb-v2-publish-browser-artifact.test.ts",
+      // CFB Model V2 WU7A checkpoint -- real git-add mechanics for the
+      // browser artifact vs. its .gitignore rule.
+      "scripts/cfb-v2-browser-artifact-gitignore.test.ts",
     ],
   },
   resolve: {

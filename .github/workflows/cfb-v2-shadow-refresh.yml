@@ -24,18 +24,23 @@ on:
       timezone: "America/New_York"
   workflow_dispatch:
 
-# This workflow never commits or pushes (see job step below for why —
-# the generated shadow output is gitignored shadow-mode-only data, unlike
-# the NFL workflows' committed generated data, which IS the live-consumed
-# source). No reason to share the NFL/PGA/MLB main-data-writers lock, and
-# no reason to let an older run keep going once a newer one starts — this
-# build is a pure read-then-validate pipeline with no partial-push risk.
+# WU7A: this workflow now commits exactly ONE narrow file —
+# public/data/cfb/v2/shadow-projections.json — mirroring the existing
+# NFL/PGA/MLB public/data/** commit-on-refresh pattern (e.g.
+# nfl-team-ratings.yml). It never commits the internal shadow artifacts
+# under data/generated/cfb/v2/** (still gitignored, still shadow-mode-only
+# per WU4 §11), and the published file is READ-ONLY consumption data —
+# nothing in the app renders it yet (Stage 2, not Stage 3; see
+# src/data/cfb/v2/shadowProjections.ts). No reason to let an older run
+# keep going once a newer one starts — this build is otherwise a pure
+# read-then-validate pipeline with no partial-push risk beyond the single
+# guarded commit step below.
 concurrency:
   group: cfb-v2-shadow-refresh-${{ github.repository }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   refresh-shadow-state:
@@ -45,6 +50,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -115,6 +124,65 @@ jobs:
             fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
           "
 
+      # WU7A §19 — publish the compact, read-only browser artifact from the
+      # SAME just-audited state (no second V2 build: this performs zero
+      # model computation, only a narrow re-shape). Only reached if the
+      # audit step above did not exit non-zero, i.e. never runs on an
+      # INVALID state — an INVALID promoted state can never reach the
+      # browser. The publish script itself also independently refuses to
+      # publish an INVALID state as a second, defense-in-depth check.
+      - name: Publish browser artifact
+        run: npm run cfb:v2:publish-browser-artifact
+
+      - name: Detect browser artifact changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'public/data/cfb/v2/shadow-projections.json')" ]; then
+            echo "No CFB V2 browser artifact changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "CFB V2 browser artifact changed."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push browser artifact
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/cfb/v2/shadow-projections.json
+
+          if git diff --cached --quiet; then
+            echo "No staged CFB V2 browser artifact changes."
+            exit 0
+          fi
+
+          git commit -m "data(cfb): refresh v2 shadow browser artifact (read-only, not user-facing)"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — CFB V2 browser artifact was not committed." >&2
+            exit 1
+          fi
+
+          echo "CFB V2 browser artifact pushed successfully."
+
       # WU6 §6/§7 — the ONLY retention mechanism this WU implements: upload
       # the manifest (provenance pointer) and the compact audit summary as
       # a build artifact, so a human (or a later WU's automated compare
@@ -136,12 +204,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 90
 
-      # Intentionally NO commit/push step: the generated shadow output
-      # directory is gitignored — shadow artifacts are not consumed by any
-      # UI/deployment and were never meant to be committed (WU4 §11:
-      # "SHADOW MODE ONLY — no UI wiring, no V1 mutation"). If the build,
-      # audit, or any validation step above fails, npm exits non-zero and
-      # this job fails without publishing anything or touching the
-      # repository. CFBD_API_KEY is read only from secrets and only used
-      # as an environment variable for the fetch step above — it is never
-      # echoed, logged, or written to any uploaded artifact.
+      # The internal shadow output directory (data/generated/cfb/v2/**) is
+      # still gitignored and still never committed — WU4 §11 "SHADOW MODE
+      # ONLY" still governs the internal artifacts. Only the one compact,
+      # non-rendered public/data/cfb/v2/shadow-projections.json file is
+      # ever committed, and only after both the build AND the audit
+      # succeeded (a failure at either stage stops the job before the
+      # publish/commit steps run at all, leaving main's last-published
+      # browser artifact untouched — the same last-known-good guarantee
+      # WU4/WU5 already established for the internal artifacts).
+      # CFBD_API_KEY is read only from secrets and only used as an
+      # environment variable for the fetch step above — it is never
+      # echoed, logged, or written to any committed or uploaded artifact.
