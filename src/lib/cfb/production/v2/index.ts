@@ -45,3 +45,6 @@ export * from "./probability";
 export * from "./projectionValidation";
 export * from "./buildGameProjections";
 export * from "./projectionArtifactWriter";
+export * from "./shadowManifest";
+export * from "./shadowValidation";
+export * from "./shadowPublish";
