@@ -105,3 +105,13 @@ describe("The offline support-export generator never imports market/MIC data (WU
     expect(content).not.toMatch(/spread|moneyline|openingTotal|currentTotal/i);
   });
 });
+
+describe("Production V2 modules never import market-line/Phase 6 market logic (WU3 §32)", () => {
+  it.each(runtimeFiles)("%s does not import market-line / Phase 6 market modules", (file) => {
+    const content = readFileSync(file, "utf8");
+    const importLines = content.match(/^import\s.+$/gm) ?? [];
+    for (const line of importLines) {
+      expect(line).not.toMatch(/market-lines?|marketJoin|phase6/i);
+    }
+  });
+});

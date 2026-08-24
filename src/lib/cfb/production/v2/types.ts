@@ -106,9 +106,15 @@ export type CfbV2GameProjection = {
   homeWinProbability: number | null;
   awayWinProbability: number | null;
 
-  // Intervals
+  // Intervals (WU3 §16 — 50/80/90/95, matching Phase 5/9's own interval levels)
+  marginInterval50: [number, number] | null;
   marginInterval80: [number, number] | null;
+  marginInterval90: [number, number] | null;
+  marginInterval95: [number, number] | null;
+  totalInterval50: [number, number] | null;
   totalInterval80: [number, number] | null;
+  totalInterval90: [number, number] | null;
+  totalInterval95: [number, number] | null;
 
   // Metadata
   matchupPopulation: CfbV2MatchupPopulation;

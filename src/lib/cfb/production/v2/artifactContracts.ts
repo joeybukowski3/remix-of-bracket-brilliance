@@ -44,6 +44,11 @@ export function cfbV2WeekProjectionsPath(week: number): string {
   return `${CFB_V2_ARTIFACT_DIR}/week-${twoDigitWeek(week)}-projections.json`;
 }
 
+/** WU3 §21 — the once-per-season preseason projection shadow artifact (parallel to cfbV2PreseasonRatingsPath). */
+export function cfbV2PreseasonProjectionsPath(): string {
+  return `${CFB_V2_ARTIFACT_DIR}/preseason-projections.json`;
+}
+
 export function cfbV2ManifestPath(): string {
   return `${CFB_V2_ARTIFACT_DIR}/manifest.json`;
 }
