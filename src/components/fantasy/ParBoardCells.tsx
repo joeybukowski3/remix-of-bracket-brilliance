@@ -1,8 +1,10 @@
-import { ChevronDown } from "lucide-react";
-import TeamLogo from "@/components/TeamLogo";
 import type { SeasonRank2025 } from "@/lib/fantasy/seasonRanks2025";
-import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { cn } from "@/lib/utils";
+import {
+  FANTASY_TABLE_BODY_CELL,
+  FantasyExpandControl,
+  FantasyPlayerIdentity,
+} from "@/components/fantasy/FantasyTable";
 import type { FantasyResearchBoardRow } from "@/lib/fantasy/parRankings";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
 import { getPositionTone } from "@/lib/fantasy/positionTone";
@@ -24,7 +26,7 @@ import {
  * tier break (`border-t-2 border-t-slate-300`), which must stay readable as a
  * structural divider rather than blending into these.
  */
-export const BODY_CELL_BORDER = "border-b border-r border-slate-100";
+export const BODY_CELL_BORDER = FANTASY_TABLE_BODY_CELL;
 
 const PAR_TONE_CLASS: Record<ParPerGameTone, string> = {
   elite: "bg-emerald-100 text-emerald-800 font-bold text-[13px]",
@@ -236,23 +238,7 @@ export function MatchupOpponentChip({
   );
 }
 
-export function PlayerIdentity({ player, team }: { player: string; team?: string }) {
-  const normalizedTeam = team?.toUpperCase();
-  const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <TeamLogo
-        name={normalizedTeam ?? "FA"}
-        logo={hasTeam ? nflLogoUrl(normalizedTeam!) : undefined}
-        className="h-5 w-5"
-      />
-      <span className="truncate text-[12px] font-bold text-slate-950">{player}</span>
-      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-        {normalizedTeam ?? "FA"}
-      </span>
-    </div>
-  );
-}
+export const PlayerIdentity = FantasyPlayerIdentity;
 
 /**
  * Expand affordance and the row's real keyboard-operable control.
@@ -260,35 +246,7 @@ export function PlayerIdentity({ player, team }: { player: string; team?: string
  * Clicks are stopped from bubbling: an enclosing row may also toggle on click,
  * and letting the event through would fire both handlers and cancel out.
  */
-export function ExpandControl({
-  label,
-  expanded,
-  onClick,
-  className,
-}: {
-  label: string;
-  expanded: boolean;
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-expanded={expanded}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-      className={cn(
-        "inline-flex min-h-8 min-w-8 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 group-hover:text-slate-700",
-        className,
-      )}
-    >
-      <ChevronDown aria-hidden className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} />
-    </button>
-  );
-}
+export const ExpandControl = FantasyExpandControl;
 
 /**
  * 2025 positional finish on both bases. Total points and PPG diverge whenever a

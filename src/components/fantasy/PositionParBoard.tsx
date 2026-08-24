@@ -1,8 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import TeamLogo from "@/components/TeamLogo";
 import { NflTableScroller } from "@/components/nfl/ui/NflTable";
-import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { PAR_POSITION_LIMITS } from "@/lib/fantasy/parRankings";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
@@ -33,6 +31,11 @@ import {
   TierBadge,
 } from "@/components/fantasy/ParBoardCells";
 import { formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
+import {
+  FANTASY_TABLE_BODY_CELL,
+  FANTASY_TABLE_HEADER_CELL,
+  FantasyPlayerIdentity,
+} from "@/components/fantasy/FantasyTable";
 
 const COLUMN_COUNT = 16;
 
@@ -135,19 +138,19 @@ export default function PositionParBoard({
           <table className="w-full min-w-[300px] border-collapse text-left text-[11px]">
             <thead>
               <tr className="bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
-                <th scope="col" className="w-7 px-1.5 py-1.5 text-center">
+                <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-7 px-1.5 py-1.5 text-center")}>
                   Tier
                 </th>
-                <th scope="col" className="w-9 px-1.5 py-1.5 text-center">
+                <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-9 px-1.5 py-1.5 text-center")}>
                   Rk
                 </th>
-                <th scope="col" className="px-1.5 py-1.5 text-left">
+                <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-1.5 py-1.5 text-left")}>
                   Player
                 </th>
-                <th scope="col" className="w-14 px-1.5 py-1.5 text-center">
+                <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-14 px-1.5 py-1.5 text-center")}>
                   PAR/G
                 </th>
-                <th scope="col" className="w-6 px-1 py-1.5">
+                <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-6 px-1 py-1.5")}>
                   <span className="sr-only">Details</span>
                 </th>
               </tr>
@@ -265,32 +268,32 @@ function TableHeader({ config }: { config: PositionBoardConfig }) {
         </th>
       </tr>
       <tr className="bg-slate-100">
-        <th className="w-10 border-b border-slate-300 px-2 py-1.5 text-center">Tier</th>
-        <th className="w-14 border-b border-slate-300 px-2 py-1.5 text-center">Rk</th>
-        <th className="min-w-56 border-b border-slate-300 px-2 py-1.5">Player</th>
-        <th className="w-20 border-b border-slate-300 px-2 py-1.5 text-center text-slate-800">PAR/G</th>
-        <th className="w-20 border-b border-r border-slate-300 px-2 py-1.5 text-center">Proj PPG</th>
-        <th className="w-20 border-b border-r border-slate-300 px-2 py-1.5 text-center">Season PAR</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-10 px-2 py-1.5 text-center")}>Tier</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-14 px-2 py-1.5 text-center")}>Rk</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "min-w-56 px-2 py-1.5")}>Player</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-20 px-2 py-1.5 text-center text-slate-800")}>PAR/G</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-20 border-r-slate-300 px-2 py-1.5 text-center")}>Proj PPG</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-20 border-r-slate-300 px-2 py-1.5 text-center")}>Season PAR</th>
         {config.metricLabels.map((label) => (
-          <th key={label} className="min-w-20 border-b border-slate-200 px-2 py-1.5 text-center leading-4">
+          <th key={label} className={cn(FANTASY_TABLE_HEADER_CELL, "min-w-20 px-2 py-1.5 text-center leading-4")}>
             {label}
           </th>
         ))}
         <th
           title="Rank over the closing stretch of the prior season (weeks 11-17)"
-          className="min-w-16 border-b border-r border-slate-300 px-2 py-1.5 text-center leading-4"
+          className={cn(FANTASY_TABLE_HEADER_CELL, "min-w-16 border-r-slate-300 px-2 py-1.5 text-center leading-4")}
         >
           Last 8 Rk
         </th>
-        <th className="min-w-20 border-b border-slate-200 px-2 py-1.5 text-center leading-4">
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "min-w-20 px-2 py-1.5 text-center leading-4")}>
           Strength of Schedule
         </th>
-        <th className="min-w-16 border-b border-slate-200 px-2 py-1.5 text-center leading-4">O-Line Rank</th>
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "min-w-16 px-2 py-1.5 text-center leading-4")}>O-Line Rank</th>
         {["W15", "W16", "W17"].map((week) => (
           <th
             key={week}
             title={`${week} opponent, shaded by that defense's 2025 fantasy points allowed to ${config.position}`}
-            className="min-w-14 border-b border-slate-200 px-2 py-1.5 text-center leading-tight"
+            className={cn(FANTASY_TABLE_HEADER_CELL, "min-w-14 px-2 py-1.5 text-center leading-tight")}
           >
             {week}
             <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
@@ -298,7 +301,7 @@ function TableHeader({ config }: { config: PositionBoardConfig }) {
             </span>
           </th>
         ))}
-        <th className="w-10 border-b border-slate-200 px-2 py-1.5">
+        <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-10 px-2 py-1.5")}>
           <span className="sr-only">Details</span>
         </th>
       </tr>
@@ -426,35 +429,23 @@ function CompactRow({
           toggle();
         }}
         className={cn(
-          "group cursor-pointer border-b border-slate-100 hover:bg-slate-50",
+          "group cursor-pointer hover:bg-slate-50",
           isTierStart && "[&>td]:border-t-2 [&>td]:border-t-slate-300",
         )}
       >
-        <td className="px-1.5 py-1 text-center">
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1 text-center")}>
           <TierBadge tier={row.tier} />
         </td>
-        <td className="px-1.5 py-1 text-center text-[10px] font-bold tabular-nums text-slate-800">
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1 text-center text-[10px] font-bold tabular-nums text-slate-800")}>
           {positionRankLabel ?? "—"}
         </td>
-        <td className="max-w-0 px-1.5 py-1">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <TeamLogo
-              name={row.team?.toUpperCase() ?? "FA"}
-              logo={row.team ? nflLogoUrl(row.team.toUpperCase()) : undefined}
-              className="h-4 w-4 shrink-0"
-            />
-            <span className="min-w-0 truncate text-[12px] font-bold leading-4 text-slate-950">
-              {row.player}
-            </span>
-            <span className="shrink-0 text-[10px] font-bold uppercase leading-4 text-slate-500">
-              {row.team?.toUpperCase() ?? "FA"}
-            </span>
-          </div>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "max-w-0 px-1.5 py-1")}>
+          <FantasyPlayerIdentity player={row.player} team={row.team} compact />
         </td>
-        <td className="px-1.5 py-1 text-center">
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1 text-center")}>
           <ParPerGameValue value={row.par?.parPerGame} thresholds={scales.par} />
         </td>
-        <td className="px-1 py-1 text-center">
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-1 text-center")}>
           <ExpandControl
             label={`${expanded ? "Hide" : "Show"} details for ${row.player}`}
             expanded={expanded}
@@ -464,7 +455,7 @@ function CompactRow({
       </tr>
       {expanded && (
         <tr className="bg-slate-50">
-          <td colSpan={5} className="px-3 py-2">
+          <td colSpan={5} className="border-b border-slate-200 px-3 py-2">
             <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-600">
               <div className="flex items-start justify-between gap-2">
                 <dt className="text-slate-500">Proj PPG</dt>

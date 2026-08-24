@@ -96,6 +96,25 @@ describe("Weekly Rankings consumer", () => {
     expect(screen.getAllByRole("row")[1]).toHaveTextContent(top.projectedFantasyPoints.toFixed(1));
   });
 
+  it("uses the shared light grid, team identity, and projected-points emphasis", () => {
+    renderPage();
+    const table = screen.getByRole("table");
+    const shell = table.parentElement;
+    const headers = screen.getAllByRole("columnheader");
+    const firstRow = screen.getAllByRole("row")[1];
+    const cells = [...firstRow.querySelectorAll("td")];
+
+    expect(shell?.className).toContain("border-slate-200");
+    expect(shell?.className).toContain("bg-white");
+    expect(headers.every((header) => header.className.includes("border-b"))).toBe(true);
+    expect(headers.slice(0, -1).every((header) => header.className.includes("border-r"))).toBe(true);
+    expect(cells.every((cell) => cell.className.includes("border-b"))).toBe(true);
+    expect(cells.slice(0, -1).every((cell) => cell.className.includes("border-r"))).toBe(true);
+    expect(firstRow.querySelector(`[data-team-logo="${artifact.rows.QB[0].team.toUpperCase()}"]`)).toBeInTheDocument();
+    expect(headers[4].className).toContain("bg-sky-100");
+    expect(cells[4].className).toContain("bg-sky-50");
+  });
+
   it("shows the How JKB Projections Work methodology panel", () => {
     renderPage();
     expect(screen.getByRole("button", { name: "How JKB Projections Work" })).toBeInTheDocument();
