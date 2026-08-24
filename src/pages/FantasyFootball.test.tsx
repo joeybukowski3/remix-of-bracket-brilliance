@@ -12,10 +12,13 @@ vi.mock("@/hooks/usePageSeo", async () => ({
   ...(await vi.importActual<typeof import("@/hooks/usePageSeo")>("@/hooks/usePageSeo")),
   usePageSeo: vi.fn(),
 }));
+vi.mock("@/pages/FantasyWeeklyRankings", () => ({
+  default: () => <h1>Weekly Fantasy Rankings</h1>,
+}));
 
-function renderPage() {
+function renderPage(entry = "/fantasy-football?view=ros") {
   return render(
-    <MemoryRouter initialEntries={["/fantasy-football"]}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes><Route path="/fantasy-football" element={<FantasyFootball />} /></Routes>
     </MemoryRouter>,
   );
@@ -29,6 +32,11 @@ vi.setConfig({ testTimeout: 60000 });
 afterEach(() => window.history.pushState({}, "", "/"));
 
 describe("/fantasy-football research board", () => {
+  it("defaults the main Fantasy route to Weekly and keeps ROS directly accessible", () => {
+    renderPage("/fantasy-football");
+    expect(screen.getByRole("heading", { level: 1, name: "Weekly Fantasy Rankings" })).toBeTruthy();
+  });
+
   it("uses the approved historical replacement labels", () => {
     renderPage();
     for (const [button, label] of [
@@ -315,6 +323,6 @@ describe("/fantasy-football research board", () => {
   it("is reachable through the existing app route", async () => {
     window.history.pushState({}, "", "/fantasy-football");
     render(<App />);
-    expect(await screen.findByRole("heading", { level: 1, name: "2026 Rest-of-Season Rankings" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 1, name: "Weekly Fantasy Rankings" })).toBeTruthy();
   });
 });

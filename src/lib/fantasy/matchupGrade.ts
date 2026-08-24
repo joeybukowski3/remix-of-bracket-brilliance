@@ -1,11 +1,12 @@
 /**
  * Selected-week matchup grade — informational only, V1.
  *
- * One input: the opponent defense's 2025 fantasy-points-allowed rank for the
- * player's OWN position, straight from `pointsAllowed2025.ts`. That file's
- * direction is preserved exactly — rank 1 allowed the MOST fantasy points to
- * the position, so rank 1 is the EASIEST matchup and the grade degrades as the
- * rank number climbs. No inversion happens anywhere in this module.
+ * One input: the selected pregame opponent fantasy-points-allowed rank for the
+ * player's OWN position. Direction is preserved exactly — rank 1 allowed the
+ * MOST fantasy points to the position, so rank 1 is the EASIEST matchup and the
+ * grade degrades as the rank number climbs. No inversion happens here. The
+ * legacy ROS consumer supplies its 2025 reference rank; Weekly supplies its
+ * JKB Full PPR season-context rank from the prepared production row.
  *
  * THIS GRADE NEVER CHANGES THE RANKING. Rows are ordered by projected PPG and
  * by nothing else (see `weeklyRankings.ts`); the grade is a reading aid shown

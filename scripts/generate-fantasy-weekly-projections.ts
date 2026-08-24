@@ -18,11 +18,9 @@
  * the rank invariants both pass -- a failed run never overwrites, and never
  * relabels, the previous canonical artifact for another week.
  *
- * Currently generic on `--week`, but Week 2+ current-season history
- * (`data/fantasy/weekly/player-week-history-2023-2025.json`-equivalent for
- * 2026) is not yet populated by any refresh job in this repo -- see
- * `--week=1` being the only week with real input data today. The Week 2+
- * code path itself is exercised by
+ * Current-season history is refreshed by the Tuesday workflow before this
+ * generator runs. The Week 2+
+ * code path is also exercised by
  * `src/lib/fantasy/weekly/projections/production/generator.test.ts`
  * (synthetic fixtures), proving the activation logic works generically
  * before any real Week 2+ history source exists.
@@ -38,8 +36,7 @@ import { buildWeeklyFantasyProjectionDeploymentBundle, type WeeklyFantasyProject
 import { buildProductionProjectionArtifact, type ProductionProjectionCandidate } from "../src/lib/fantasy/weekly/projections/production/generator.ts";
 import { weeklyFantasyProjectionProductionArtifactSchema, assertProductionArtifactRankInvariants, type WeeklyFantasyProjectionProductionArtifact } from "../src/lib/fantasy/weekly/projections/production/artifactContract.ts";
 import { buildWeek1ShadowUniverse } from "../src/lib/fantasy/weekly/projections/shadow/week1Universe.ts";
-import type { WeeklyFantasyProjectionTrainingRow } from "../src/lib/fantasy/weekly/projections/contract.ts";
-import type { HistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
+import { normalizeHistoricalPlayerWeek, type HistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
 import type { MarketArtifact } from "../src/lib/nfl/marketData.ts";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
@@ -72,10 +69,18 @@ function verifiedCsv(relativeDirectory: string, season: number | null) {
   const entry = manifest.files.find((candidate) => candidate.season === season);
   if (!entry) throw new Error(`Missing ${relativeDirectory} manifest entry for ${season ?? "league"}.`);
   const path = join(directory, entry.filename);
-  const text = readFileSync(path, "utf8");
+  const text = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
   const problems = verifyCacheEntry(entry, text);
   if (problems.length) throw new Error(problems.join("\n"));
   return { rows: parseCsv(text) as CsvRow[], entry, manifest, path, hash: sha(text), text };
+}
+
+function loadPlayerWeekHistory(season: number) {
+  const source = verifiedCsv("data/nfl/nflverse/stats-player-week", season);
+  const rows = source.rows
+    .map((row) => normalizeHistoricalPlayerWeek(row))
+    .filter((row): row is HistoricalPlayerWeek => row != null);
+  return { ...source, rows };
 }
 
 function parseArgs(argv: string[]) {
@@ -141,24 +146,27 @@ function main(): void {
     throw new Error(`Duplicate GSIS ids resolved in player universe: ${universe.duplicateGsisIds.join(", ")}`);
   }
 
-  // --- 3. Prior-season history (always needed) + current-season history through week N-1 (only when N > 1) ---
-  const historyPath = join(ROOT, "data", "fantasy", "weekly", "player-week-history-2023-2025.json");
-  const historyText = readFileSync(historyPath, "utf8");
-  const historyArtifact = JSON.parse(historyText) as { _meta: { generatedAt: string }; rows: HistoricalPlayerWeek[] };
-  sourceFreshness.push({ source: historyPath, inputAsOf: historyArtifact._meta.generatedAt });
-  const priorSeasonHistory = historyArtifact.rows.filter((row) => row.season === season - 1);
+  // --- 3. Pregame player history from the manifest-verified nflverse regular-season cache ---
+  const priorHistorySource = loadPlayerWeekHistory(season - 1);
+  sourceFreshness.push({
+    source: "data/nfl/nflverse/stats-player-week",
+    inputAsOf: isoDate(priorHistorySource.entry.retrievedDateUtc),
+  });
+  const priorSeasonHistory = priorHistorySource.rows;
 
   let currentSeasonHistory: HistoricalPlayerWeek[] = [];
+  let currentHistorySource: ReturnType<typeof loadPlayerWeekHistory> | null = null;
   if (week > 1) {
-    const currentSeasonHistoryPath = join(ROOT, "data", "fantasy", "weekly", `player-week-history-${season}.json`);
     try {
-      const currentText = readFileSync(currentSeasonHistoryPath, "utf8");
-      const currentArtifact = JSON.parse(currentText) as { _meta: { generatedAt: string }; rows: HistoricalPlayerWeek[] };
-      currentSeasonHistory = currentArtifact.rows.filter((row) => row.season === season && row.week < week);
-      sourceFreshness.push({ source: currentSeasonHistoryPath, inputAsOf: currentArtifact._meta.generatedAt });
+      currentHistorySource = loadPlayerWeekHistory(season);
+      currentSeasonHistory = currentHistorySource.rows.filter((row) => row.week < week);
+      sourceFreshness.push({
+        source: "data/nfl/nflverse/stats-player-week",
+        inputAsOf: isoDate(currentHistorySource.entry.retrievedDateUtc),
+      });
     } catch {
       throw new Error(
-        `Week ${week} requires current-season history through week ${week - 1} at ${currentSeasonHistoryPath}, which is not present. ` +
+        `Week ${week} requires manifest-verified ${season} player-week history through week ${week - 1}. ` +
         `Refusing to generate Week ${week} with no current-season features available -- run the current-season history refresh first.`,
       );
     }
@@ -187,13 +195,6 @@ function main(): void {
     console.warn(`[fantasy:projections] No market data at ${marketPath}; scoring-environment context will be neutral for this run.`);
   }
 
-  const rowProvenance: WeeklyFantasyProjectionTrainingRow["provenance"] = {
-    generatedAt,
-    sourceManifests: [{ cache: historyPath, season: season - 1, filename: "player-week-history-2023-2025.json", retrievedDateUtc: historyArtifact._meta.generatedAt, sha256: sha(historyText) }],
-    scheduleSource: { url: schedulePath, retrievedAtUtc: schedule._meta.generatedAt, sha256: sha(scheduleText) },
-  };
-  void rowProvenance; // per-row provenance is embedded via buildProductionProjectionArtifact's artifact-level provenance below
-
   const candidates: ProductionProjectionCandidate[] = universe.resolved.map((c) => ({
     playerId: c.playerId, playerName: c.playerName, position: c.position,
     team: c.team, opponent: c.opponent, homeAway: c.homeAway, rosProjectedPpg: c.rosProjectedPpg,
@@ -204,7 +205,18 @@ function main(): void {
     { source: "data/nfl/nflverse/players", sourceVersion: players.manifest.schemaVersion, sourceHash: players.hash, inputAsOf: isoDate(players.entry.retrievedDateUtc) },
     { source: "data/nfl/nflverse/weekly-rosters", sourceVersion: roster.manifest.schemaVersion, sourceHash: roster.hash, inputAsOf: isoDate(roster.entry.retrievedDateUtc) },
     { source: schedulePath, sourceVersion: "nfl-v0.1", sourceHash: sha(scheduleText), inputAsOf: schedule._meta.generatedAt },
-    { source: historyPath, sourceVersion: "fantasy-player-week-history-v1", sourceHash: sha(historyText), inputAsOf: historyArtifact._meta.generatedAt },
+    {
+      source: "data/nfl/nflverse/stats-player-week",
+      sourceVersion: priorHistorySource.manifest.schemaVersion,
+      sourceHash: priorHistorySource.hash,
+      inputAsOf: isoDate(priorHistorySource.entry.retrievedDateUtc),
+    },
+    ...(currentHistorySource ? [{
+      source: "data/nfl/nflverse/stats-player-week",
+      sourceVersion: currentHistorySource.manifest.schemaVersion,
+      sourceHash: currentHistorySource.hash,
+      inputAsOf: isoDate(currentHistorySource.entry.retrievedDateUtc),
+    }] : []),
     { source: trainingDatasetPath, sourceVersion: "weekly-fantasy-projection-training-dataset-v1", sourceHash: inputFingerprint, inputAsOf: trainingDataset._meta.generatedAt },
     ...(marketProvenanceEntry ? [marketProvenanceEntry] : []),
   ];

@@ -52,28 +52,28 @@ test("Weekly rankings desktop uses the light fantasy grid without changing rank 
   const firstPlayer = table.getByRole("button", { name: /^Show details for / }).first();
   await firstPlayer.click();
   await expect(table.getByText("Scoring environment:")).toBeVisible();
-  await expect(table.getByText("Opponent matchup:")).toBeVisible();
+  await expect(table.getByText("Projection FPA adjustment:")).toBeVisible();
+  await expect(table.getByText("Underlying matchup components", { exact: true })).toBeVisible();
   await expect(page.locator(".vite-error-overlay")).toHaveCount(0);
   await expectNoPageOverflow(page);
   await page.screenshot({ path: testInfo.outputPath("fantasy-weekly-desktop.png"), fullPage: true });
 });
 
-test("Weekly rankings mobile keeps the compact grid, logos and contained overflow", async ({
+test("Weekly rankings mobile uses stacked research cards, logos and contained overflow", async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/fantasy-football/weekly-rankings`);
 
-  const table = page.getByRole("table");
-  await expect(table).toBeVisible();
-  expect(await table.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(350);
-  expect(await table.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(350);
-  await expect(table.locator('[data-team-logo="BUF"]').first()).toBeVisible();
-  await expect(table.getByRole("columnheader", { name: "Proj Pts" })).toBeVisible();
-  await expectLightCellGrid(table);
-  await table.getByRole("button", { name: /^Show details for / }).first().click();
-  await expect(table.getByText("Final projected pts:")).toBeVisible();
-  await expect(table.getByText("Confidence:")).toBeVisible();
+  const board = page.getByRole("region", { name: "QB weekly fantasy research board" });
+  await expect(board).toBeVisible();
+  await expect(page.getByRole("table")).toHaveCount(0);
+  await expect(board.locator('[data-team-logo="BUF"]').first()).toBeVisible();
+  await expect(board.getByText("Proj Pts", { exact: true }).first()).toBeVisible();
+  await expect(board.getByText("FPA Season", { exact: true }).first()).toBeVisible();
+  await board.getByRole("button", { name: /^Show details for / }).first().click();
+  await expect(board.getByText("Final projected pts:")).toBeVisible();
+  await expect(board.getByText("Team pass block:").or(board.getByText("Offense: N/A")).first()).toBeVisible();
   await expectNoPageOverflow(page);
   await expect(page.locator(".vite-error-overlay")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("fantasy-weekly-mobile.png"), fullPage: true });
@@ -83,7 +83,7 @@ test("ROS desktop and mobile use the same light bordered table language", async 
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`${baseUrl}/fantasy-football`);
+  await page.goto(`${baseUrl}/fantasy-football?view=ros`);
 
   await expect(page.getByRole("heading", { name: "2026 Rest-of-Season Rankings" })).toBeVisible();
   const overall = page.getByRole("region", { name: "Overall fantasy rankings" }).getByRole("table");
