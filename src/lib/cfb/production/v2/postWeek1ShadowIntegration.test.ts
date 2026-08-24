@@ -21,6 +21,7 @@ import { buildCfbV2GameProjectionArtifact } from "./projectionArtifactWriter";
 import { validateCfbV2GameProjections } from "./projectionValidation";
 import { assertPublishableCfbV2Shadow } from "./shadowValidation";
 import { buildCfbV2ShadowManifest, computeCfbV2ShadowDegradedFlags } from "./shadowManifest";
+import { auditCfbV2Shadow } from "./shadowAudit";
 import { CFB_V2_CONFIG_VERSION } from "./config";
 import type { CfbdGame, CfbdGameTeamStats, CfbdTalent, CfbdTeam } from "./ratingInputs";
 import type { CfbV2CalibrationResidualSeedArtifact, CfbV2CalibrationResidualSeedRow, CfbV2ScoringNormalEquationSnapshot, CfbV2ScoringNormalEquationsArtifact } from "./scoringSupportTypes";
@@ -258,6 +259,24 @@ describe("WU5 §21 — post-Week-1 shadow integration: real completed games unbl
     });
     expect(manifest.pipelineStatus).toBe("published");
     expect(manifest.summary.projectionsAvailable).toBeGreaterThanOrEqual(1);
+
+    // ---- WU6 §10 — the shadow audit must call this state HEALTHY --------------------
+    const audit = auditCfbV2Shadow({
+      manifest,
+      ratingArtifact,
+      projectionArtifact,
+      scoringSupportArtifact,
+      calibrationSupportArtifact,
+      expectedConfigVersion: CFB_V2_CONFIG_VERSION,
+    });
+    expect(audit.healthState).toBe("HEALTHY");
+    expect(audit.issues).toEqual([]);
+    expect(audit.projections.projectionStatusCounts.computed).toBeGreaterThan(0);
+    expect(audit.manifest.degradedFlags).not.toContain("PRESEASON_ZERO_COMPLETED_GAMES");
+    expect(audit.manifest.degradedFlags).not.toContain("NO_CURRENT_SUCCESS_DATA");
+    expect(audit.manifest.dataAsOf).toBe(dataAsOf);
+    expect(audit.manifest.season).toBe(2026);
+    expect(audit.manifest.asOfWeek).toBe(asOfWeek);
 
     // ---- WU5 §28 determinism — identical inputs, run twice, byte-identical output ----
     const successObservations2 = deriveCfbV2SuccessObservations(rawPlays);

@@ -63,9 +63,85 @@ jobs:
       - name: Build + validate + atomically promote V2 shadow state
         run: npm run cfb:v2:build-shadow
 
+      # WU6 §2/§7 — read-only re-verification pass over the just-promoted
+      # state, producing a deterministic health state (HEALTHY/DEGRADED/
+      # INVALID). Exits non-zero on INVALID, failing this job — a degraded
+      # (e.g. honest preseason) state is NOT a failure and exits 0.
+      - name: Audit shadow state
+        run: npm run cfb:v2:audit-shadow
+
+      # WU6 §7 — surface the audit result directly in the run's own GitHub
+      # Actions summary page, so a human can see health state, degraded
+      # flags, and computed/unavailable counts without downloading
+      # anything. Runs even if the audit step above failed, since a failed
+      # audit's summary is the most useful thing to see.
+      - name: Write job summary
+        if: always()
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = 'data/generated/cfb/v2/audit-summary.json';
+            if (!fs.existsSync(path)) {
+              console.log('No audit summary was written (build or load failed before the audit could run).');
+              process.exit(0);
+            }
+            const { result, diff } = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const lines = [
+              '## CFB Model V2 Shadow Audit',
+              '',
+              \`**Health state:** \${result.healthState}\`,
+              '',
+              '| Field | Value |',
+              '|---|---|',
+              \`| season / asOfWeek | \${result.manifest.season} / \${result.manifest.asOfWeek} |\`,
+              \`| generatedAt | \${result.manifest.generatedAt} |\`,
+              \`| dataAsOf | \${result.manifest.dataAsOf} |\`,
+              \`| configVersion | \${result.manifest.configVersion} |\`,
+              \`| ratingsContentHash | \${result.manifest.ratingsContentHash} |\`,
+              \`| projectionsContentHash | \${result.manifest.projectionsContentHash} |\`,
+              \`| degraded flags | \${result.manifest.degradedFlags.join(', ') || 'none'} |\`,
+              \`| ratings | \${result.ratings.totalTeams} teams |\`,
+              \`| projections computed / unavailable | \${result.projections.projectionStatusCounts.computed ?? 0} / \${result.projections.projectionStatusCounts.unavailable ?? 0} |\`,
+            ];
+            if (result.issues.length > 0) {
+              lines.push('', '### Issues', '');
+              for (const issue of result.issues) lines.push(\`- **[\${issue.severity}]** \${issue.code}: \${issue.message}\`);
+            }
+            if (diff) {
+              lines.push('', '### Comparison to previous snapshot', '');
+              lines.push(\`- Largest rating movers: \${JSON.stringify(diff.ratings.largestMovers.slice(0, 5).map(m => ({ teamId: m.teamId, delta: Number(m.absoluteDelta.toFixed(4)) })))}\`);
+              lines.push(\`- Availability transitions: \${diff.projections.availabilityTransitions.length}\`);
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          "
+
+      # WU6 §6/§7 — the ONLY retention mechanism this WU implements: upload
+      # the manifest (provenance pointer) and the compact audit summary as
+      # a build artifact, so a human (or a later WU's automated compare
+      # step) can retrieve them without ever committing generated model
+      # output to git. Deliberately does NOT upload the much larger
+      # ratings/projections artifacts (~1MB combined) — the manifest's
+      # content hashes are sufficient to detect drift, and the audit
+      # summary already carries the full distributional report. Runs even
+      # on failure so a failed run's (or the still-intact previous
+      # last-known-good) state is inspectable.
+      - name: Upload shadow manifest + audit summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-v2-shadow-snapshot
+          path: |
+            data/generated/cfb/v2/manifest.json
+            data/generated/cfb/v2/audit-summary.json
+          if-no-files-found: warn
+          retention-days: 90
+
       # Intentionally NO commit/push step: the generated shadow output
       # directory is gitignored — shadow artifacts are not consumed by any
       # UI/deployment and were never meant to be committed (WU4 §11:
-      # "SHADOW MODE ONLY — no UI wiring, no V1 mutation"). If the build or
-      # any validation step above fails, npm exits non-zero and this job
-      # fails without publishing anything or touching the repository.
+      # "SHADOW MODE ONLY — no UI wiring, no V1 mutation"). If the build,
+      # audit, or any validation step above fails, npm exits non-zero and
+      # this job fails without publishing anything or touching the
+      # repository. CFBD_API_KEY is read only from secrets and only used
+      # as an environment variable for the fetch step above — it is never
+      # echoed, logged, or written to any uploaded artifact.

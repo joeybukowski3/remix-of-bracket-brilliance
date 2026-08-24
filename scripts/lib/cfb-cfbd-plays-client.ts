@@ -39,7 +39,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 /** Minimum gap between successive /plays calls — a full season is 15-17+ weekly batches, enough to trip CFBD's short-window rate limit if fired back-to-back with zero pacing. */
-const INTER_BATCH_DELAY_MS = 300;
+const INTER_BATCH_DELAY_MS = 600;
 
 /**
  * Fetches every play for the given (season, batches) — one CFBD call per

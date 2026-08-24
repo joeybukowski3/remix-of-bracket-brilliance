@@ -24,22 +24,50 @@ describe("CFB Model V2 shadow refresh workflow — WU5 §23/§25 static assertio
     expect(workflow).toContain("cancel-in-progress: true");
   });
 
-  it("runs fetch before build (fetch -> build order, WU5 §13)", () => {
+  it("runs fetch -> build -> audit -> summary -> upload, in that order (WU5 §13 / WU6 §7)", () => {
     const fetch = indexOfStep("Fetch current CFBD inputs");
     const build = indexOfStep("Build + validate + atomically promote V2 shadow state");
-    expect(fetch).toBeGreaterThan(-1);
-    expect(build).toBeGreaterThan(-1);
+    const audit = indexOfStep("Audit shadow state");
+    const summary = indexOfStep("Write job summary");
+    const upload = indexOfStep("Upload shadow manifest + audit summary");
+    for (const index of [fetch, build, audit, summary, upload]) expect(index).toBeGreaterThan(-1);
     expect(build).toBeGreaterThan(fetch);
+    expect(audit).toBeGreaterThan(build);
+    expect(summary).toBeGreaterThan(audit);
+    expect(upload).toBeGreaterThan(summary);
   });
 
   it("uses the package script entry points, never inlined model logic", () => {
     expect(workflow).toContain("run: npm run cfb:fetch-data");
     expect(workflow).toContain("run: npm run cfb:v2:build-shadow");
+    expect(workflow).toContain("run: npm run cfb:v2:audit-shadow");
   });
 
-  it("passes CFBD_API_KEY from secrets, never a literal value", () => {
+  it("runs the summary and upload steps even on failure (if: always()), so a failed run is still inspectable", () => {
+    const summaryIndex = indexOfStep("Write job summary");
+    const uploadIndex = indexOfStep("Upload shadow manifest + audit summary");
+    const summaryBlock = workflow.slice(summaryIndex, uploadIndex);
+    const uploadBlock = workflow.slice(uploadIndex, uploadIndex + 400);
+    expect(summaryBlock).toContain("if: always()");
+    expect(uploadBlock).toContain("if: always()");
+  });
+
+  it("uploads only the compact manifest + audit summary, never the full ratings/projections artifacts or raw CFBD cache", () => {
+    const uploadIndex = indexOfStep("Upload shadow manifest + audit summary");
+    const uploadBlock = workflow.slice(uploadIndex, uploadIndex + 400);
+    expect(uploadBlock).toContain("data/generated/cfb/v2/manifest.json");
+    expect(uploadBlock).toContain("data/generated/cfb/v2/audit-summary.json");
+    expect(uploadBlock).not.toMatch(/preseason-ratings\.json|preseason-projections\.json|week-\d+-ratings|week-\d+-projections/);
+    expect(uploadBlock).not.toContain("data/cfb/cfbd/raw");
+  });
+
+  it("passes CFBD_API_KEY from secrets, never a literal value, and never exposes it outside the fetch step", () => {
     expect(workflow).toContain("CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}");
     expect(workflow).not.toMatch(/CFBD_API_KEY:\s*["'][^$][^{]/);
+    // Exactly one env block should reference the secret — the fetch step.
+    const occurrences = (workflow.match(/secrets\.CFBD_API_KEY/g) ?? []).length;
+    expect(occurrences).toBe(1);
+    expect(workflow).not.toMatch(/echo.*CFBD_API_KEY|console\.log.*CFBD_API_KEY/i);
   });
 
   it("requests only read permissions — this workflow never commits or pushes generated output", () => {

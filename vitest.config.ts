@@ -37,6 +37,8 @@ export default defineConfig({
       "scripts/lib/cfb-cfbd-plays-client.test.ts",
       // CFB Model V2 WU5 checkpoint -- required-input fail-closed behavior.
       "scripts/cfb-v2-build-shadow.fail-closed.test.ts",
+      // CFB Model V2 WU6 -- shadow audit CLI behavior.
+      "scripts/cfb-v2-audit-shadow.test.ts",
     ],
   },
   resolve: {

@@ -50,3 +50,5 @@ export * from "./shadowValidation";
 export * from "./shadowPublish";
 export * from "./successDerivation";
 export * from "./currentSeasonCalibration";
+export * from "./shadowAudit";
+export * from "./shadowDiff";
