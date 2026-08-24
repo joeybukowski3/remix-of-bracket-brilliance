@@ -1,0 +1,87 @@
+{
+  "config": {
+    "ratingFoundation": {
+      "coreMetrics": [
+        "ypp",
+        "ppp"
+      ],
+      "aggregation": "gameWeighted",
+      "garbageTimeFilter": "NONE",
+      "opponentAdjustment": "RIDGE_PRIOR_CENTERED",
+      "connectivity": {
+        "policy": "COMPONENT_SIZE",
+        "baseLambda": 10,
+        "multiplierFormula": "baseLambda * clamp(COMPONENT_SIZE_K / max(componentSize, 1), 1, MAX_CONNECTIVITY_MULTIPLIER)",
+        "multiplierCap": 3
+      },
+      "staleness": {
+        "policy": "NONE",
+        "note": "Rejected in Phase 8 — not part of the frozen production candidate. reliabilityGamesK retained here only for provenance.",
+        "reliabilityGamesK": 4
+      },
+      "preseasonPrior": {
+        "featureSet": "PRIOR_D",
+        "offenseFeatures": [
+          "prevSeasonOffense",
+          "returningProductionOffense",
+          "talent"
+        ],
+        "defenseFeatures": [
+          "prevSeasonDefense",
+          "talent"
+        ],
+        "fallbackHierarchy": "downward-only from requested tier to LEAGUE_MEAN (Phase 3 Section 9)",
+        "priorRidgeLambda": 3
+      }
+    },
+    "scoringArchitecture": {
+      "hfa": "NATIONAL",
+      "scoringEnvironment": "BLENDED_CURRENT",
+      "pace": "NONE",
+      "secondaryBlock": [
+        "SUCCESS"
+      ],
+      "scoringRidgeLambda": 2,
+      "priorGamesWeight": 8
+    },
+    "totalCalibration": {
+      "scoreCalibrationMode": "TOTAL_ONLY",
+      "totalCalibrationMethod": "LINEAR",
+      "preservesRawMargin": true
+    },
+    "probability": {
+      "distributionFamily": "EMPIRICAL_BOOTSTRAP",
+      "heteroskedastic": false,
+      "simulationSeed": 20260101,
+      "simulationDraws": 20000
+    },
+    "evaluationPeriod": {
+      "testSeasons": [
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ]
+    },
+    "explicitlyRejectedFromPhase8": [
+      "GAMES_PLAYED",
+      "CROSS_CONFERENCE",
+      "COMBINED_INFORMATION",
+      "ADAPTIVE_STALENESS_DECAY",
+      "QB_CONTINUITY_RATING_INPUT",
+      "TRANSFER_NET_COUNT"
+    ]
+  },
+  "summary": {
+    "baselineMarginMae": 12.951737235755598,
+    "finalistMarginMae": 12.864560177335216,
+    "marginMaeImprovement": 0.08717705842038193,
+    "baselineTotalMae": 13.11549743791967,
+    "finalistTotalMae": 13.089103820565153,
+    "seasonsImproved": 4,
+    "seasonsTied": 2,
+    "seasonsWorse": 0
+  }
+}

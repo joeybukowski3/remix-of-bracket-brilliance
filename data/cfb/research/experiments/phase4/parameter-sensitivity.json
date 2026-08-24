@@ -1,0 +1,77 @@
+{
+  "grid": [
+    {
+      "ratingLambda": 10,
+      "priorK": 5,
+      "marginMae": 12.883863830198415,
+      "totalMae": 13.326186139118725
+    },
+    {
+      "ratingLambda": 10,
+      "priorK": 6,
+      "marginMae": 12.883865663633385,
+      "totalMae": 13.325957304238038
+    },
+    {
+      "ratingLambda": 10,
+      "priorK": 8,
+      "marginMae": 12.883869433045431,
+      "totalMae": 13.325502943822228
+    },
+    {
+      "ratingLambda": 15,
+      "priorK": 5,
+      "marginMae": 12.898447341271517,
+      "totalMae": 13.257461590321679
+    },
+    {
+      "ratingLambda": 15,
+      "priorK": 6,
+      "marginMae": 12.898447998074065,
+      "totalMae": 13.257244336273537
+    },
+    {
+      "ratingLambda": 15,
+      "priorK": 8,
+      "marginMae": 12.898449321668025,
+      "totalMae": 13.256813049086373
+    },
+    {
+      "ratingLambda": 20,
+      "priorK": 5,
+      "marginMae": 12.951737276839143,
+      "totalMae": 13.237600886097134
+    },
+    {
+      "ratingLambda": 20,
+      "priorK": 6,
+      "marginMae": 12.951737265400398,
+      "totalMae": 13.23732838837148
+    },
+    {
+      "ratingLambda": 20,
+      "priorK": 8,
+      "marginMae": 12.9517372357556,
+      "totalMae": 13.236794080549398
+    },
+    {
+      "ratingLambda": 30,
+      "priorK": 5,
+      "marginMae": 13.076829618173493,
+      "totalMae": 13.254636332803377
+    },
+    {
+      "ratingLambda": 30,
+      "priorK": 6,
+      "marginMae": 13.076828671958284,
+      "totalMae": 13.254310541464267
+    },
+    {
+      "ratingLambda": 30,
+      "priorK": 8,
+      "marginMae": 13.076826749940595,
+      "totalMae": 13.253680043376788
+    }
+  ],
+  "interpretation": "ratingLambda = Ridge+prior team-rating penalty (Phase 3's Ridge lambda); priorK = precision-weight (equivalent games) used for the scoring-environment BLENDED_CURRENT estimate — Ridge+prior itself has no native 'K' concept, so this is a deliberate, documented reinterpretation of Phase 3's K for the one remaining precision-weighted mechanism in Phase 4 (see final report Section 30)."
+}

@@ -1,0 +1,101 @@
+/**
+ * Section 26/29 — the Phase 7 recommendation is a qualitative synthesis of
+ * the numeric findings in the other 13 artifacts (miss-dataset-summary.json
+ * through candidate-feature-results.json), authored once after reviewing
+ * those results. It is not recomputed from raw data on every run (unlike
+ * every other Phase 7 artifact) — the numbers quoted below are cited from
+ * the artifacts produced by cfb-research-phase7-run.ts in this same phase
+ * and should be re-verified against those files if the underlying analyses
+ * ever change.
+ */
+export const PHASE7_RECOMMENDATION = {
+  decisionStandardAnswers: {
+    "1_gap_concentrated_in_identifiable_types": true,
+    "2_data_sparsity_major_cause":
+      "PARTIAL — real but small-n effect (see sparsity-analysis.json: 0-1 games-played bucket n=76, gap +2.97 MAE vs +0.6-0.7 elsewhere; fallback-tier-downgraded n=108, gap +2.73 vs +0.73)",
+    "3_errors_persistent_by_team":
+      "WEAK — lag-1 residual correlation 0.061 (near-zero); market-vs-model DISAGREEMENT persistence is much stronger (lag-1 correlation 0.36)",
+    "4_overreact_or_underreact":
+      "NEITHER — rating volatility has ~zero correlation with next-week model error (-0.02) or with model-market disagreement (0.09); no evidence of Ridge overreaction",
+    "5_preseason_prior_staleness_important":
+      "YES, moderately — stale-prior team-sides (top/bottom decile of prior-vs-current gap) show +1.03 to +1.25 MAE gap vs +0.68 for stable teams",
+    "6_qb_continuity_feasible_and_valuable":
+      "FEASIBLE (GO); VALUE small but real (largest in extreme-disagreement subset: +0.0013 R2 over IPR alone)",
+    "7_transfer_feasible_and_valuable": "FEASIBLE for 2021+ only (GO); VALUE negligible (~0.00004 R2 gain over IPR alone)",
+    "8_coaching_continuity_feasible": "FEASIBLE (GO); VALUE small (largest single-feature gain over IPR alone: +0.0045 R2)",
+    "9_context_variables_useful":
+      "MIXED — rematch and bye-week context show real gap reduction; short-rest sample too small (n=149) to be conclusive; travel distance NOT AVAILABLE",
+    "10_most_likely_to_close_gap":
+      "Schedule-network connectivity / cross-conference sparsity (component-count 10+ bucket: +1.92 MAE gap vs +0.63 fully connected) and nonconference-game context (+1.40 vs +0.62) show the LARGEST effect sizes of anything tested — larger than any single roster/coaching/QB feature",
+  },
+  rankedInformationGapRoadmap: [
+    {
+      rank: 1,
+      item: "Schedule-network / cross-conference connectivity (opponent-adjustment information sparsity)",
+      effectSizeSummary: "MAE gap +1.92 (high fragmentation, n=254) vs +0.63 (fully connected, n=3326); early season (wk1-3) +1.62 vs +0.66 (wk4+)",
+      recommendation:
+        "Highest-priority follow-up. Not implemented as a feature in Phase 7 (diagnostic only per Section 14/15) — a future phase could test faster cross-cluster propagation (e.g. a connectivity-aware regularization schedule) without adding new data.",
+    },
+    {
+      rank: 2,
+      item: "Preseason prior staleness",
+      effectSizeSummary: "MAE gap +1.03 to +1.25 (stale deciles) vs +0.68 (stable)",
+      recommendation:
+        "Worth a dedicated follow-up phase testing faster within-season decay for teams flagged as stale (no new data required — reuses existing prior/current rating fields).",
+    },
+    {
+      rank: 3,
+      item: "Data sparsity (games played, fallback prior tier)",
+      effectSizeSummary:
+        "MAE gap +2.97 (0-1 games, n=76) and +2.73 (fallback-tier-downgraded, n=108) vs ~+0.7 baseline — large effect but very small, early-season-only sample",
+      recommendation: "Confirms the known early-season weakness; not a new data project, just a reminder that Phase 3's fallback tiers ARE where the gap concentrates most.",
+    },
+    {
+      rank: 4,
+      item: "Coaching continuity",
+      effectSizeSummary: "R2 gain +0.0045 over IPR alone (largest of the three implemented candidate blocks), but only +0.00035 over market+model",
+      recommendation: "Cheap to keep (data already fetched); small IPR-only value. Worth carrying into a future ratings-blend experiment, not urgent on its own.",
+    },
+    {
+      rank: 5,
+      item: "QB continuity",
+      effectSizeSummary:
+        "R2 gain +0.0006 over IPR alone (all weeks), +0.0013 in the extreme-disagreement subset — largest where it matters most, but still small in absolute terms",
+      recommendation:
+        "Feasible and directionally useful, concentrated exactly where the spec hypothesized (extreme disagreements). Worth a deeper follow-up (e.g. weighting by pass-attempt-share magnitude, not just a binary flag) before concluding it's not valuable.",
+    },
+    {
+      rank: 6,
+      item: "Transfer portal net movement",
+      effectSizeSummary: "R2 gain ~+0.00004 over IPR alone (2021+ only) — effectively zero",
+      recommendation:
+        "Not worth pursuing further as a simple net-count feature. A usage-weighted or incoming-starter-only version might behave differently but was out of scope here (Section 9 prohibits a subjective transfer-rating model).",
+    },
+    {
+      rank: 7,
+      item: "Injuries (game-specific availability)",
+      effectSizeSummary: "Not testable — no historically reliable data source identified",
+      recommendation:
+        "Documented as a likely market information advantage that cannot yet be tested (Section 8). Would require a dedicated, carefully-sourced ingestion project; explicitly out of scope for this phase.",
+    },
+    {
+      rank: 8,
+      item: "Weather / travel distance / altitude",
+      effectSizeSummary: "Not testable — no data in current ingestion",
+      recommendation: "REQUIRES_NEW_DATA_PROJECT (see public-information-inventory.json); not prioritized given the small effect sizes seen from cheaper features tested here.",
+    },
+  ],
+  notWorthPursuing: [
+    "Transfer portal net-count as a simple feature (near-zero incremental value)",
+    "Depth-chart-change tracking (no clean historical source)",
+    "Suspensions (no clean historical source)",
+  ],
+  worthPursuing: [
+    "Schedule-network connectivity / faster cross-cluster opponent adjustment",
+    "Faster preseason-prior decay for stale-prior teams",
+    "QB continuity as a magnitude-weighted (not binary) feature",
+    "Coaching continuity retained as a small, cheap IPR input for a future ratings-blend experiment",
+  ],
+  overallInterpretation:
+    "None of the three implemented candidate blocks (QB continuity, transfer net movement, coaching continuity) meaningfully close the ~0.42 vs ~0.0003 incremental-R2 gap from Phase 6. The two largest effect sizes found in Phase 7 are STRUCTURAL, not roster-information gaps: schedule-network fragmentation/cross-conference sparsity and preseason-prior staleness. This suggests the market's advantage over IPR is currently driven less by information IPR is missing about players/coaches and more by how IPR resolves rating uncertainty across a sparsely-connected schedule graph and how slowly its preseason prior decays for fast-moving teams.",
+};

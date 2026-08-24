@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fetchCfbdJson, sha256, writeAtomic, type CfbdRequest } from "./lib/cfb-cfbd-client";
+import { fetchPlaysForSeason, playsWeekBatchesFromGames } from "./lib/cfb-cfbd-plays-client";
 import type { CfbdGame, CfbdGameTeamStats } from "../src/lib/cfb/pipeline/types";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -18,12 +19,23 @@ const requests: CfbdRequest[] = [
   { name: "games-2026", path: "/games", query: { year: 2026, classification: "fbs" } },
   { name: "returning-production-2026", path: "/player/returning", query: { year: 2026 }, optional: true },
   { name: "talent-2026", path: "/talent", query: { year: 2026 }, optional: true },
+  // WU5 — current-season (2026) game-team stats and plays. Batches are
+  // derived from games-2026's own week numbers (no fixed 1-17 assumption),
+  // so a future/incomplete week simply returns empty rows from CFBD rather
+  // than erroring — safe to fetch unconditionally every run, including the
+  // 2026 preseason (zero completed games today).
+  {
+    name: "game-team-stats-2026",
+    path: "/games/teams",
+    query: { year: 2026 },
+  },
+  { name: "plays-2026", path: "/plays", query: { year: 2026 } },
 ];
 
-function statsBatchRequests(games: readonly CfbdGame[]): CfbdRequest[] {
+function statsBatchRequests(season: number, games: readonly CfbdGame[]): CfbdRequest[] {
   const batches = new Map<string, { week: number; seasonType: CfbdGame["seasonType"] }>();
   for (const game of games) {
-    if (game.season !== 2025 || !Number.isInteger(game.week)) continue;
+    if (game.season !== season || !Number.isInteger(game.week)) continue;
     batches.set(`${game.seasonType}:${game.week}`, {
       week: game.week,
       seasonType: game.seasonType,
@@ -35,15 +47,15 @@ function statsBatchRequests(games: readonly CfbdGame[]): CfbdRequest[] {
         a.seasonType.localeCompare(b.seasonType) || a.week - b.week,
     )
     .map(({ week, seasonType }) => ({
-      name: `game-team-stats-2025-${seasonType}-week-${week}`,
+      name: `game-team-stats-${season}-${seasonType}-week-${week}`,
       path: "/games/teams",
-      query: { year: 2025, week, seasonType, classification: "fbs" },
+      query: { year: season, week, seasonType, classification: "fbs" },
     }));
 }
 
-async function fetchGameTeamStats(games: readonly CfbdGame[], apiKey: string) {
-  const batches = statsBatchRequests(games);
-  if (batches.length === 0) throw new Error("game-team-stats-2025: no 2025 game weeks found");
+async function fetchGameTeamStats(season: number, games: readonly CfbdGame[], apiKey: string) {
+  const batches = statsBatchRequests(season, games);
+  if (batches.length === 0) throw new Error(`game-team-stats-${season}: no ${season} game weeks found`);
   const byGameId = new Map<number, CfbdGameTeamStats>();
   const urls: string[] = [];
   let remainingCalls: string | null = null;
@@ -125,15 +137,18 @@ async function main() {
 
   for (const request of requests) {
     try {
-      const response = request.name === "game-team-stats-2025"
-        ? await fetchGameTeamStats(
-            (fetchedData.get("games-2025") ?? []) as CfbdGame[],
-            API_KEY,
-          )
-        : await fetchCfbdJson<unknown[]>(request, API_KEY).then((result) => ({
-            ...result,
-            urls: [result.url],
-          }));
+      let response: { data: unknown[]; urls: string[]; remainingCalls: string | null };
+      if (request.name === "game-team-stats-2025") {
+        response = await fetchGameTeamStats(2025, (fetchedData.get("games-2025") ?? []) as CfbdGame[], API_KEY);
+      } else if (request.name === "game-team-stats-2026") {
+        response = await fetchGameTeamStats(2026, (fetchedData.get("games-2026") ?? []) as CfbdGame[], API_KEY);
+      } else if (request.name === "plays-2026") {
+        const batches = playsWeekBatchesFromGames((fetchedData.get("games-2026") ?? []) as CfbdGame[]);
+        response = await fetchPlaysForSeason(2026, batches, API_KEY);
+      } else {
+        const result = await fetchCfbdJson<unknown[]>(request, API_KEY);
+        response = { ...result, urls: [result.url] };
+      }
       const text = `${JSON.stringify(response.data, null, 2)}\n`;
       fetchedData.set(request.name, response.data);
       pending.push({ name: request.name, text });

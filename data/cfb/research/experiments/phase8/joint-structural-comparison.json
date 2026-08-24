@@ -1,0 +1,147 @@
+{
+  "candidates": [
+    {
+      "key": "A_baseline",
+      "spec": {
+        "id": "BASELINE_RIDGE_PRIOR",
+        "label": "Baseline Ridge+prior (frozen Phase 3/4 architecture, lambda=20)",
+        "baseLambda": 20,
+        "connectivity": "GLOBAL_BASELINE",
+        "staleness": "NONE"
+      },
+      "overall": {
+        "n": 3939,
+        "mae": 12.9517372357556,
+        "rmse": 16.3380667601938,
+        "correlation": 0.5919110013453088,
+        "calibrationSlope": 0.9293918638061206,
+        "calibrationIntercept": 0.6844261673549363
+      },
+      "weeks1to4": {
+        "n": 813,
+        "mae": 13.39690665086902,
+        "rmse": 16.96700208316676,
+        "correlation": 0.6341358081873999,
+        "calibrationSlope": 0.9459621675350038,
+        "calibrationIntercept": 1.240880577545643
+      },
+      "holdoutOverall": {
+        "n": 2125,
+        "mae": 12.661070970717537,
+        "rmse": 16.06406911379977,
+        "correlation": 0.6015090287186433,
+        "calibrationSlope": 0.9706688316026159,
+        "calibrationIntercept": 0.7288204229268147
+      }
+    },
+    {
+      "key": "B_connectivity_only",
+      "spec": {
+        "id": "COMPONENT_SIZE_L10",
+        "label": "COMPONENT_SIZE, lambda=10",
+        "baseLambda": 10,
+        "connectivity": "COMPONENT_SIZE",
+        "staleness": "NONE"
+      },
+      "overall": {
+        "n": 3939,
+        "mae": 12.864560177335214,
+        "rmse": 16.225013577868054,
+        "correlation": 0.6003843630296472,
+        "calibrationSlope": 0.9129205872957066,
+        "calibrationIntercept": 0.6710469499894605
+      },
+      "weeks1to4": {
+        "n": 813,
+        "mae": 13.343012408299531,
+        "rmse": 16.854900820744245,
+        "correlation": 0.6395436143774367,
+        "calibrationSlope": 0.9764815968883116,
+        "calibrationIntercept": 1.072754234809583
+      },
+      "holdoutOverall": {
+        "n": 2125,
+        "mae": 12.592723473872327,
+        "rmse": 15.953773200962926,
+        "correlation": 0.6094647719456265,
+        "calibrationSlope": 0.9444116550208407,
+        "calibrationIntercept": 0.8021376946965604
+      }
+    },
+    {
+      "key": "C_staleness_only",
+      "spec": {
+        "id": "BOUNDED_LOGISTIC_F0.75_L0.35_H1.2",
+        "label": "BOUNDED_LOGISTIC floor=0.75 low=0.35 high=1.2",
+        "baseLambda": 15,
+        "connectivity": "GLOBAL_BASELINE",
+        "staleness": "BOUNDED_LOGISTIC",
+        "stalenessFloor": 0.75,
+        "stalenessThresholdLow": 0.35,
+        "stalenessThresholdHigh": 1.2
+      },
+      "overall": {
+        "n": 3939,
+        "mae": 12.887906948742943,
+        "rmse": 16.254561986109557,
+        "correlation": 0.5977707620583739,
+        "calibrationSlope": 0.9230710798380034,
+        "calibrationIntercept": 0.6434554510512118
+      },
+      "weeks1to4": {
+        "n": 813,
+        "mae": 13.392727417017243,
+        "rmse": 16.93610632537436,
+        "correlation": 0.6350638933009722,
+        "calibrationSlope": 0.9645892814016794,
+        "calibrationIntercept": 1.0685608922105105
+      },
+      "holdoutOverall": {
+        "n": 2125,
+        "mae": 12.621192727776783,
+        "rmse": 15.985589805075032,
+        "correlation": 0.6069356276059005,
+        "calibrationSlope": 0.954753707934426,
+        "calibrationIntercept": 0.7311762874851802
+      }
+    },
+    {
+      "key": "D_joint",
+      "spec": {
+        "id": "JOINT_COMPONENT_SIZE_BOUNDED_LOGISTIC",
+        "label": "Joint: COMPONENT_SIZE + BOUNDED_LOGISTIC",
+        "baseLambda": 10,
+        "connectivity": "COMPONENT_SIZE",
+        "staleness": "BOUNDED_LOGISTIC",
+        "stalenessFloor": 0.75,
+        "stalenessThresholdLow": 0.35,
+        "stalenessThresholdHigh": 1.2
+      },
+      "overall": {
+        "n": 3939,
+        "mae": 12.878792942949321,
+        "rmse": 16.241313573327407,
+        "correlation": 0.5994696639837948,
+        "calibrationSlope": 0.9098541476096051,
+        "calibrationIntercept": 0.6548455313968655
+      },
+      "weeks1to4": {
+        "n": 813,
+        "mae": 13.37839839949084,
+        "rmse": 16.8935152380893,
+        "correlation": 0.6373821574759807,
+        "calibrationSlope": 0.9876133040454883,
+        "calibrationIntercept": 1.0404326216276454
+      },
+      "holdoutOverall": {
+        "n": 2125,
+        "mae": 12.61982663368031,
+        "rmse": 15.977336842142236,
+        "correlation": 0.608233252667674,
+        "calibrationSlope": 0.9361423315800756,
+        "calibrationIntercept": 0.8101867267482143
+      }
+    }
+  ],
+  "jointTuningScore": 13.405548344132887
+}

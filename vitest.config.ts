@@ -33,6 +33,17 @@ export default defineConfig({
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
+      // CFB Model V2 WU5 -- production /plays fetch client batching.
+      "scripts/lib/cfb-cfbd-plays-client.test.ts",
+      // CFB Model V2 WU5 checkpoint -- required-input fail-closed behavior.
+      "scripts/cfb-v2-build-shadow.fail-closed.test.ts",
+      // CFB Model V2 WU6 -- shadow audit CLI behavior.
+      "scripts/cfb-v2-audit-shadow.test.ts",
+      // CFB Model V2 WU7A -- browser artifact publisher CLI behavior.
+      "scripts/cfb-v2-publish-browser-artifact.test.ts",
+      // CFB Model V2 WU7A checkpoint -- real git-add mechanics for the
+      // browser artifact vs. its .gitignore rule.
+      "scripts/cfb-v2-browser-artifact-gitignore.test.ts",
     ],
   },
   resolve: {

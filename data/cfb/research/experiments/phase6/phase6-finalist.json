@@ -1,0 +1,493 @@
+{
+  "generatedAt": "2026-08-22T17:07:04.083Z",
+  "coverage": {
+    "games": 3920,
+    "providers": 12
+  },
+  "modelVsMarket": {
+    "marginAccuracy": {
+      "n": 13983,
+      "modelMae": 13.045003770270185,
+      "marketMae": 12.237395408710578
+    },
+    "totalAccuracy": {
+      "n": 13838,
+      "modelMae": 13.194202689964056,
+      "marketMae": 12.68048128342246
+    },
+    "winnerAccuracy": {
+      "n": 6657,
+      "modelBrier": 0.19598689509046344,
+      "marketBrier": 0.18285164314550845,
+      "modelLogLoss": 0.5734450964357001,
+      "marketLogLoss": 0.5420613472923616
+    }
+  },
+  "incrementalInfo": {
+    "n": 13983,
+    "intercept": -0.07267702542435579,
+    "modelCoefficient": 0.06553688523548427,
+    "marketCoefficient": 0.9222404772432499,
+    "combinedR2": 0.42094039907084546,
+    "marketOnlyR2": 0.4205887447417179,
+    "modelOnlyR2": 0.346028761783983
+  },
+  "spreadThresholdResult": {
+    "tuningResults": [
+      {
+        "threshold": 1,
+        "n": 8116,
+        "hitRate": 0.5003696402168556
+      },
+      {
+        "threshold": 2,
+        "n": 6812,
+        "hitRate": 0.4963300058719906
+      },
+      {
+        "threshold": 3,
+        "n": 5639,
+        "hitRate": 0.4961872672459656
+      },
+      {
+        "threshold": 4,
+        "n": 4502,
+        "hitRate": 0.4926699244780098
+      },
+      {
+        "threshold": 5,
+        "n": 3648,
+        "hitRate": 0.484375
+      }
+    ],
+    "selectedThreshold": 1,
+    "holdout": {
+      "n": 3552,
+      "hitRate": 0.5115427927927928,
+      "wilsonLow": 0.49510025898392646,
+      "wilsonHigh": 0.5279603857872016
+    }
+  },
+  "totalThresholdResult": {
+    "tuningResults": [
+      {
+        "threshold": 1,
+        "n": 8097,
+        "hitRate": 0.49598616771643816
+      },
+      {
+        "threshold": 2,
+        "n": 6773,
+        "hitRate": 0.4932821497120921
+      },
+      {
+        "threshold": 3,
+        "n": 5573,
+        "hitRate": 0.48896465099587294
+      },
+      {
+        "threshold": 4,
+        "n": 4437,
+        "hitRate": 0.498535046202389
+      },
+      {
+        "threshold": 5,
+        "n": 3395,
+        "hitRate": 0.4963181148748159
+      }
+    ],
+    "selectedThreshold": 4,
+    "holdout": {
+      "n": 1526,
+      "hitRate": 0.5275229357798165,
+      "wilsonLow": 0.5024362290075461,
+      "wilsonHigh": 0.5524714163329909
+    }
+  },
+  "mlThresholdResult": {
+    "tuningResults": [
+      {
+        "threshold": 0,
+        "n": 2574,
+        "hitRate": 0.560994560994561
+      },
+      {
+        "threshold": 0.025,
+        "n": 2002,
+        "hitRate": 0.5589410589410589
+      },
+      {
+        "threshold": 0.05,
+        "n": 1536,
+        "hitRate": 0.5631510416666666
+      },
+      {
+        "threshold": 0.075,
+        "n": 1163,
+        "hitRate": 0.5649183147033534
+      },
+      {
+        "threshold": 0.1,
+        "n": 829,
+        "hitRate": 0.5669481302774427
+      }
+    ],
+    "selectedThreshold": 0.1,
+    "holdout": {
+      "n": 1469,
+      "hitRate": 0.5636487406398911,
+      "wilsonLow": 0.5381542089292006,
+      "wilsonHigh": 0.5888112434317323
+    }
+  },
+  "bySegment": {
+    "1-4": {
+      "marginAccuracy": {
+        "n": 2725,
+        "modelMae": 13.580087622903491,
+        "marketMae": 12.269541284403669
+      },
+      "totalAccuracy": {
+        "n": 2712,
+        "modelMae": 13.131300664687055,
+        "marketMae": 12.576143067846608
+      },
+      "winnerAccuracy": {
+        "n": 1321,
+        "modelBrier": 0.19600353302759954,
+        "marketBrier": 0.1754003835893786,
+        "modelLogLoss": 0.573757763014452,
+        "marketLogLoss": 0.5203224574507127
+      },
+      "spreadBuckets": [
+        {
+          "label": "<1",
+          "n": 327,
+          "hitRate": 0.4648318042813456,
+          "wilsonLow": 0.4114934864917756,
+          "wilsonHigh": 0.5189868400451535,
+          "meanEdgeMagnitude": 0.4864290744383918,
+          "sufficientSample": true
+        },
+        {
+          "label": "1-2",
+          "n": 276,
+          "hitRate": 0.5036231884057971,
+          "wilsonLow": 0.44499219236050047,
+          "wilsonHigh": 0.5621547078859246,
+          "meanEdgeMagnitude": 1.4651168872809948,
+          "sufficientSample": true
+        },
+        {
+          "label": "2-3",
+          "n": 285,
+          "hitRate": 0.5333333333333333,
+          "wilsonLow": 0.4753537101727899,
+          "wilsonHigh": 0.590426288276187,
+          "meanEdgeMagnitude": 2.4864428273994275,
+          "sufficientSample": true
+        },
+        {
+          "label": "3-5",
+          "n": 493,
+          "hitRate": 0.4766734279918864,
+          "wilsonLow": 0.43293527748957106,
+          "wilsonHigh": 0.5207723025520358,
+          "meanEdgeMagnitude": 3.8804918632899708,
+          "sufficientSample": true
+        },
+        {
+          "label": "5-7",
+          "n": 376,
+          "hitRate": 0.449468085106383,
+          "wilsonLow": 0.3999505722394636,
+          "wilsonHigh": 0.50000772616703,
+          "meanEdgeMagnitude": 5.907605637890657,
+          "sufficientSample": true
+        },
+        {
+          "label": "7+",
+          "n": 910,
+          "hitRate": 0.5307692307692308,
+          "wilsonLow": 0.4982827387129098,
+          "wilsonHigh": 0.5629970279337388,
+          "meanEdgeMagnitude": 11.505679263361928,
+          "sufficientSample": true
+        }
+      ]
+    },
+    "5-8": {
+      "marginAccuracy": {
+        "n": 4235,
+        "modelMae": 12.695426017632524,
+        "marketMae": 12.025147579693034
+      },
+      "totalAccuracy": {
+        "n": 4235,
+        "modelMae": 12.860208652618896,
+        "marketMae": 12.327272727272728
+      },
+      "winnerAccuracy": {
+        "n": 2084,
+        "modelBrier": 0.20372987004904627,
+        "marketBrier": 0.18859187066022562,
+        "modelLogLoss": 0.5929823824965286,
+        "marketLogLoss": 0.5581064283312284
+      },
+      "spreadBuckets": [
+        {
+          "label": "<1",
+          "n": 582,
+          "hitRate": 0.43470790378006874,
+          "wilsonLow": 0.3949915651819375,
+          "wilsonHigh": 0.475280535672628,
+          "meanEdgeMagnitude": 0.5006367476896566,
+          "sufficientSample": true
+        },
+        {
+          "label": "1-2",
+          "n": 566,
+          "hitRate": 0.5212014134275619,
+          "wilsonLow": 0.48004177051355884,
+          "wilsonHigh": 0.5620751967278641,
+          "meanEdgeMagnitude": 1.4867236802227564,
+          "sufficientSample": true
+        },
+        {
+          "label": "2-3",
+          "n": 515,
+          "hitRate": 0.46990291262135925,
+          "wilsonLow": 0.42717940297612006,
+          "wilsonHigh": 0.5130721111661539,
+          "meanEdgeMagnitude": 2.4900777819337003,
+          "sufficientSample": true
+        },
+        {
+          "label": "3-5",
+          "n": 911,
+          "hitRate": 0.5301866081229418,
+          "wilsonLow": 0.49771809772614956,
+          "wilsonHigh": 0.5624015994979383,
+          "meanEdgeMagnitude": 3.9326939154557596,
+          "sufficientSample": true
+        },
+        {
+          "label": "5-7",
+          "n": 593,
+          "hitRate": 0.5278246205733558,
+          "wilsonLow": 0.48759323519870157,
+          "wilsonHigh": 0.5676978168995435,
+          "meanEdgeMagnitude": 5.879222610036529,
+          "sufficientSample": true
+        },
+        {
+          "label": "7+",
+          "n": 990,
+          "hitRate": 0.4636363636363636,
+          "wilsonLow": 0.43277273610175976,
+          "wilsonHigh": 0.49478111151339327,
+          "meanEdgeMagnitude": 10.083309751558074,
+          "sufficientSample": true
+        }
+      ]
+    },
+    "9+": {
+      "marginAccuracy": {
+        "n": 7023,
+        "modelMae": 13.048187350505613,
+        "marketMae": 12.352911861028051
+      },
+      "totalAccuracy": {
+        "n": 6891,
+        "modelMae": 13.424220835473788,
+        "marketMae": 12.938615585546366
+      },
+      "winnerAccuracy": {
+        "n": 3252,
+        "modelBrier": 0.19101815630551858,
+        "marketBrier": 0.18219988414580865,
+        "modelLogLoss": 0.560797883427918,
+        "marketLogLoss": 0.540609663588734
+      },
+      "spreadBuckets": [
+        {
+          "label": "<1",
+          "n": 1175,
+          "hitRate": 0.49872340425531914,
+          "wilsonLow": 0.4701847405099175,
+          "wilsonHigh": 0.5272703883216404,
+          "meanEdgeMagnitude": 0.49359458053573274,
+          "sufficientSample": true
+        },
+        {
+          "label": "1-2",
+          "n": 1080,
+          "hitRate": 0.5268518518518519,
+          "wilsonLow": 0.49703192690742437,
+          "wilsonHigh": 0.556481427811568,
+          "meanEdgeMagnitude": 1.4784446013271713,
+          "sufficientSample": true
+        },
+        {
+          "label": "2-3",
+          "n": 890,
+          "hitRate": 0.49213483146067416,
+          "wilsonLow": 0.45939366601260584,
+          "wilsonHigh": 0.5249436035886299,
+          "meanEdgeMagnitude": 2.504248801204477,
+          "sufficientSample": true
+        },
+        {
+          "label": "3-5",
+          "n": 1525,
+          "hitRate": 0.5101639344262295,
+          "wilsonLow": 0.485079881342332,
+          "wilsonHigh": 0.5351969086141947,
+          "meanEdgeMagnitude": 3.9269187829602696,
+          "sufficientSample": true
+        },
+        {
+          "label": "5-7",
+          "n": 995,
+          "hitRate": 0.4964824120603015,
+          "wilsonLow": 0.4654884190401731,
+          "wilsonHigh": 0.5275034627556995,
+          "meanEdgeMagnitude": 5.918929026271306,
+          "sufficientSample": true
+        },
+        {
+          "label": "7+",
+          "n": 1263,
+          "hitRate": 0.49802058590657167,
+          "wilsonLow": 0.47049308178303306,
+          "wilsonHigh": 0.5255600948729908,
+          "meanEdgeMagnitude": 9.851894439785443,
+          "sufficientSample": true
+        }
+      ]
+    }
+  },
+  "favoriteUnderdog": {
+    "homeFavoriteCoverRate": {
+      "label": "all",
+      "n": 8302,
+      "hitRate": 0.4967477716212961,
+      "wilsonLow": 0.48599638911846155,
+      "wilsonHigh": 0.507502162551486,
+      "meanEdgeMagnitude": 0,
+      "sufficientSample": true
+    },
+    "homeUnderdogCoverRate": {
+      "label": "all",
+      "n": 5409,
+      "hitRate": 0.5030504714364947,
+      "wilsonLow": 0.489728272265564,
+      "wilsonHigh": 0.5163683406484368,
+      "meanEdgeMagnitude": 0,
+      "sufficientSample": true
+    },
+    "mlFavoritePerformance": {
+      "bets": 4130,
+      "wins": 1716,
+      "losses": 2414,
+      "units": -363.42033626787475,
+      "roi": -0.0879952388057808,
+      "averageExpectedEv": 0.2962074106920456
+    },
+    "mlUnderdogPerformance": {
+      "bets": 2527,
+      "wins": 1052,
+      "losses": 1475,
+      "units": -47.38501745742304,
+      "roi": -0.018751490881449562,
+      "averageExpectedEv": 0.29564086441557724
+    }
+  },
+  "bySeason": {
+    "2020": {
+      "marginAccuracy": {
+        "n": 2205,
+        "modelMae": 13.621290450571998,
+        "marketMae": 12.71111111111111
+      },
+      "winnerAccuracy": {
+        "n": 0,
+        "modelBrier": null,
+        "marketBrier": null,
+        "modelLogLoss": null,
+        "marketLogLoss": null
+      }
+    },
+    "2021": {
+      "marginAccuracy": {
+        "n": 2819,
+        "modelMae": 13.801401085230452,
+        "marketMae": 12.53405462930117
+      },
+      "winnerAccuracy": {
+        "n": 641,
+        "modelBrier": 0.20313176559507612,
+        "marketBrier": 0.1832090121107217,
+        "modelLogLoss": 0.5940909535754774,
+        "marketLogLoss": 0.5420188548615552
+      }
+    },
+    "2022": {
+      "marginAccuracy": {
+        "n": 2701,
+        "modelMae": 12.665740105901929,
+        "marketMae": 12.105886708626434
+      },
+      "winnerAccuracy": {
+        "n": 627,
+        "modelBrier": 0.20366318149392196,
+        "marketBrier": 0.198884675343105,
+        "modelLogLoss": 0.597494203240305,
+        "marketLogLoss": 0.5859012781153734
+      }
+    },
+    "2023": {
+      "marginAccuracy": {
+        "n": 2029,
+        "modelMae": 12.183821419129652,
+        "marketMae": 11.990389354361755
+      },
+      "winnerAccuracy": {
+        "n": 1306,
+        "modelBrier": 0.18051329372486694,
+        "marketBrier": 0.17280919505177408,
+        "modelLogLoss": 0.5364005345331881,
+        "marketLogLoss": 0.5178744888982553
+      }
+    },
+    "2024": {
+      "marginAccuracy": {
+        "n": 2125,
+        "modelMae": 12.78823268971872,
+        "marketMae": 12.158117647058823
+      },
+      "winnerAccuracy": {
+        "n": 2075,
+        "modelBrier": 0.19723475061031923,
+        "marketBrier": 0.18377901570864197,
+        "modelLogLoss": 0.5771066153203034,
+        "marketLogLoss": 0.5432461505181451
+      }
+    },
+    "2025": {
+      "marginAccuracy": {
+        "n": 2104,
+        "modelMae": 13.004306305039657,
+        "marketMae": 11.8305608365019
+      },
+      "winnerAccuracy": {
+        "n": 2008,
+        "modelBrier": 0.20008367278535677,
+        "marketBrier": 0.18330450890612618,
+        "modelLogLoss": 0.5796551371558426,
+        "marketLogLoss": 0.542892607945408
+      }
+    }
+  },
+  "elapsedMs": 10649
+}

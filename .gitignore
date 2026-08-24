@@ -30,6 +30,17 @@ artifacts/
 # Reproducible College Football API caches and review-only model artifacts
 data/cfb/cfbd/raw/
 
+# CFB Model V2 research namespace: reproducible raw/normalized CFBD caches
+# (multi-GB backfill; regenerate via `npm run cfb:research:fetch` /
+# `cfb:research:normalize`). Only the small coverage manifest is tracked.
+data/cfb/research/raw/
+data/cfb/research/normalized/
+
+# Phase 1 derived team-game metrics (regenerate via `npm run
+# cfb:research:derive`) — deterministic output of raw+normalized, ~56MB
+# across 2018-2025. Only the small Phase 1 QA manifests are tracked.
+data/cfb/research/derived/
+
 # Reproducible NFL performance-model backtest caches (analysis-only, non-production)
 data/nfl/backtest-2026/
 
@@ -56,4 +67,20 @@ data/generated/cfb/*
 
 # Local MLB Numerology email previews
 public/data/mlb/numerology/email-preview.html
+
+# CFB Model V2 browser artifact (WU7A). public/data/nfl, public/data/pga,
+# and public/data/mlb (see the MLB local-preview exception a few lines up)
+# establish the repo convention: tracked public/data output is NOT broadly
+# ignored — at most specific local-only files are excepted. Mirror that
+# exactly here rather than blanket-ignoring the directory (a blanket
+# ignore makes `git add public/data/cfb/v2/shadow-projections.json` FAIL
+# outright — plain `git add` on an ignored path is a no-op error, not a
+# silent success — forcing a workflow to either use `-f`, surprising and
+# easy to leave un-tested, or silently never publish anything). Ignore
+# everything else that might land in this directory (e.g. a stray local
+# dev/test run's output under a different filename), but the one real
+# deployment artifact stays a normal tracked path, committed only by the
+# scheduled cfb-v2-shadow-refresh.yml workflow.
+public/data/cfb/v2/*
+!public/data/cfb/v2/shadow-projections.json
 public/data/mlb/numerology/email-preview.txt
