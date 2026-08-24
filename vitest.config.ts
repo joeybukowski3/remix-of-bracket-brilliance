@@ -33,6 +33,10 @@ export default defineConfig({
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
+      // CFB Model V2 WU5 -- production /plays fetch client batching.
+      "scripts/lib/cfb-cfbd-plays-client.test.ts",
+      // CFB Model V2 WU5 checkpoint -- required-input fail-closed behavior.
+      "scripts/cfb-v2-build-shadow.fail-closed.test.ts",
     ],
   },
   resolve: {

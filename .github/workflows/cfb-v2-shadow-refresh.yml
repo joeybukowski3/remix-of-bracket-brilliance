@@ -1,0 +1,71 @@
+name: CFB Model V2 Shadow Refresh
+
+run-name: CFB Model V2 Shadow Refresh • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# WU5 checkpoint cadence (revised — see below): every cutoff in the model
+# (buildTeamRatings.ts's asOfWeek, scoringSupportTypes.ts's
+# isEligibleBeforeCutoff) operates on the INTEGER `week` number only, never
+# on date/day-of-week. A Tuesday/Wednesday/Thursday/Friday game and that
+# same week's Saturday games share one `week` value, so a same-week
+# midweek result can NEVER be folded into that same week's own Saturday
+# projections regardless of when a refresh runs — it only becomes eligible
+# once asOfWeek advances to the FOLLOWING week. Inspecting the real 2026
+# schedule confirms every week's games span from as early as Wednesday
+# through Sunday, with Sunday consistently the last day, not Saturday.
+# A single Monday-morning run (after that Sunday) is therefore both the
+# correct AND the only meaningful weekly refresh point: a second
+# mid-week run would use the exact same asOfWeek and the exact same set of
+# eligible completed games, producing byte-identical output — pure wasted
+# API load, not fresher projections. See scripts/cfb-v2-build-shadow.ts's
+# asOfWeek/isEligibleBeforeCutoff semantics for the underlying mechanics.
+on:
+  schedule:
+    - cron: "0 8 * 8,9,10,11,12,1 1"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# This workflow never commits or pushes (see job step below for why —
+# the generated shadow output is gitignored shadow-mode-only data, unlike
+# the NFL workflows' committed generated data, which IS the live-consumed
+# source). No reason to share the NFL/PGA/MLB main-data-writers lock, and
+# no reason to let an older run keep going once a newer one starts — this
+# build is a pure read-then-validate pipeline with no partial-push risk.
+concurrency:
+  group: cfb-v2-shadow-refresh-${{ github.repository }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  refresh-shadow-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch current CFBD inputs
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+        run: npm run cfb:fetch-data
+
+      - name: Build + validate + atomically promote V2 shadow state
+        run: npm run cfb:v2:build-shadow
+
+      # Intentionally NO commit/push step: the generated shadow output
+      # directory is gitignored — shadow artifacts are not consumed by any
+      # UI/deployment and were never meant to be committed (WU4 §11:
+      # "SHADOW MODE ONLY — no UI wiring, no V1 mutation"). If the build or
+      # any validation step above fails, npm exits non-zero and this job
+      # fails without publishing anything or touching the repository.
