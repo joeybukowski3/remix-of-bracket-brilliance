@@ -1,10 +1,10 @@
 {
   "date": "2026-08-24",
-  "generatedAt": "2026-08-24T08:07:40.077Z",
+  "generatedAt": "2026-08-24T13:28:18.936Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a handful of hitter-friendly venues with Chase Field (1.01) and Angel Stadium (1.02) leading the way, while Merrill Kelly and Ryan Feltner are the most exploitable right-handers on the board. Coors Field is off the slate, but Nationals Park still offers a slight elevation boost against Feltner, and the model is zeroing in on barrel-rate spikes and recent power surges in those spots.",
-    "modelNote": "The model is overweighting barrel rate, hard-hit rate, and park-adjusted opposing pitcher HR/9, while giving extra credit to recent 7-day HR volume and pull-side tendencies against right-handed pitching."
+    "slateOverview": "Chase Field and Nationals Park headline the slate with neutral-to-slightly favorable park factors, while Petco and T-Mobile suppress power. Merrill Kelly and Ryan Feltner both carry elevated HR/FB rates against right-handed power bats, setting up the top two model names in Crow-Armstrong and Chaparro.",
+    "modelNote": "The model is prioritizing barrel rate, recent home-run volume, and opposing pitcher HR vulnerability, which elevates Crow-Armstrong to the top despite a modest xBA."
   },
   "bestBets": [
     {
@@ -14,34 +14,15 @@
       "opposingPitcher": "Merrill Kelly",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=12.2%",
-        "HH=48.7%"
+        "barrel=12.4%",
+        "HH=48.9%"
       ],
       "bullets": [
-        "hrScore=83.8",
+        "hrScore=83",
         "park=1.01"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=14%",
-        "HH=46.5%"
-      ],
-      "bullets": [
-        "hrScore=68.9",
-        "park=0.98"
-      ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,13 +31,13 @@
       "team": "WSH",
       "opponent": "COL",
       "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 3,
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=14.4%",
-        "HH=47.8%"
+        "barrel=14.1%",
+        "HH=46.7%"
       ],
       "bullets": [
-        "hrScore=67.9",
+        "hrScore=66.9",
         "park=0.98"
       ],
       "hrOddsYes": "+500",
@@ -69,53 +50,13 @@
       "team": "CHC",
       "opponent": "AZ",
       "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=89.7",
-        "Hard Hit%=38.4"
+        "barrel=5.2%",
+        "HH=38.1%"
       ],
       "bullets": [
-        "HR score 65.9 (#4)",
-        "Pitcher HR VS 89.7 at park 1.01"
-      ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Rafael Flores Jr.",
-      "team": "PIT",
-      "opponent": "SD",
-      "opposingPitcher": "Robbie Ray",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=57.9",
-        "Hard Hit%=48.6"
-      ],
-      "bullets": [
-        "HR score 63.6 (#5)",
-        "Pitcher HR VS 57.9 at park 0.89"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Alex Bregman",
-      "team": "CHC",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=5.3%",
-        "HH=38.4%"
-      ],
-      "bullets": [
-        "hrScore=65.9",
+        "hrScore=64.3",
         "park=1.01"
       ],
       "hrOddsYes": "+650",
@@ -124,21 +65,80 @@
       "hrValueEdge": null
     },
     {
-      "player": "Rafael Flores Jr.",
-      "team": "PIT",
-      "opponent": "SD",
-      "opposingPitcher": "Robbie Ray",
-      "hrScoreRank": 5,
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=18.9%",
-        "HH=48.6%"
+        "Pitcher HR VS=68.9",
+        "Hard Hit%=42.6"
       ],
       "bullets": [
-        "hrScore=63.6",
+        "HR score 63.9 (#4)",
+        "Pitcher HR VS 68.9 at park 0.98"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "PIT",
+      "opposingPitcher": "Braxton Ashcraft",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=53.9",
+        "Pitcher HR VS=40.7"
+      ],
+      "bullets": [
+        "HR score 62.3 (#5)",
+        "Pitcher HR VS 40.7 at park 0.89"
+      ],
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Abimelec Ortiz",
+      "team": "WSH",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=12.8%",
+        "HH=42.6%"
+      ],
+      "bullets": [
+        "hrScore=63.9",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "PIT",
+      "opposingPitcher": "Braxton Ashcraft",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=12.6%",
+        "HH=53.9%"
+      ],
+      "bullets": [
+        "hrScore=62.3",
         "park=0.89"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,31 +149,31 @@
       "opposingPitcher": "Logan Gilbert",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=17.5%",
-        "HH=51.2%"
+        "barrel=17.6%",
+        "HH=51.6%"
       ],
       "bullets": [
-        "hrScore=61.4",
+        "hrScore=61.5",
         "park=0.93"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Ian Happ",
-      "team": "CHC",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
+      "player": "Rafael Flores Jr.",
+      "team": "PIT",
+      "opponent": "SD",
+      "opposingPitcher": "Robbie Ray",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=89.7",
-        "Hard Hit%=42.1"
+        "Pitcher HR VS=57.9",
+        "Hard Hit%=47.4"
       ],
       "bullets": [
-        "HR score 61.0 (#7)",
-        "Pitcher HR VS 89.7 at park 1.01"
+        "HR score 60.4 (#7)",
+        "Pitcher HR VS 57.9 at park 0.89"
       ],
       "hrOddsYes": "+500",
       "marketImpliedProbability": 0.16666666666666666,
@@ -181,38 +181,57 @@
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "PIT",
-      "opposingPitcher": "Braxton Ashcraft",
+      "player": "Ian Happ",
+      "team": "CHC",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
       "hrScoreRank": 8,
       "topStats": [
-        "Hard Hit%=53.6",
-        "Pitcher HR VS=40.7"
+        "Pitcher HR VS=89.7",
+        "Hard Hit%=42.0"
       ],
       "bullets": [
-        "HR score 60.9 (#8)",
-        "Pitcher HR VS 40.7 at park 0.89"
+        "HR score 60.2 (#8)",
+        "Pitcher HR VS 89.7 at park 1.01"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
+      "player": "Rafael Flores Jr.",
+      "team": "PIT",
+      "opponent": "SD",
+      "opposingPitcher": "Robbie Ray",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=18.4%",
+        "HH=47.4%"
+      ],
+      "bullets": [
+        "hrScore=60.4",
+        "park=0.89"
+      ],
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Ian Happ",
       "team": "CHC",
       "opponent": "AZ",
       "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=11.3%",
-        "HH=42.1%"
+        "barrel=11.5%",
+        "HH=42%"
       ],
       "bullets": [
-        "hrScore=61",
+        "hrScore=60.2",
         "park=1.01"
       ],
       "hrOddsYes": "+500",
@@ -221,40 +240,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "PIT",
-      "opposingPitcher": "Braxton Ashcraft",
-      "hrScoreRank": 8,
+      "player": "Brian Serven",
+      "team": "ATH",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
+      "hrScoreRank": 21,
       "topStats": [
-        "barrel=12%",
-        "HH=53.6%"
+        "Pitcher HR VS=68.2",
+        "Hard Hit%=33.3"
       ],
       "bullets": [
-        "hrScore=60.9",
-        "park=0.89"
+        "HR score 53.9 (#21)",
+        "Pitcher HR VS 68.2 at park 0.96"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Angel Genao",
-      "team": "CLE",
-      "opponent": "LAA",
-      "opposingPitcher": "George Klassen",
-      "hrScoreRank": 15,
-      "topStats": [
-        "Pitcher HR VS=61.5",
-        "Hard Hit%=51.0"
-      ],
-      "bullets": [
-        "HR score 55.6 (#15)",
-        "Pitcher HR VS 61.5 at park 1.02"
-      ],
-      "hrOddsYes": "+850",
-      "marketImpliedProbability": 0.10526315789473684,
+      "hrOddsYes": "+800",
+      "marketImpliedProbability": 0.1111111111111111,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +263,17 @@
       "team": "MIA",
       "opponent": "BOS",
       "opposingPitcher": "Ranger Suarez",
-      "hrScoreRank": 21,
+      "hrScoreRank": 22,
       "topStats": [
-        "Hard Hit%=55.2",
+        "Hard Hit%=55.6",
         "Pitcher HR VS=29.6"
       ],
       "bullets": [
-        "HR score 53.9 (#21)",
+        "HR score 53.3 (#22)",
         "Pitcher HR VS 29.6 at park 0.88"
       ],
-      "hrOddsYes": "+850",
-      "marketImpliedProbability": 0.10526315789473684,
+      "hrOddsYes": "+750",
+      "marketImpliedProbability": 0.11764705882352941,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
