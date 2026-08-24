@@ -78,3 +78,30 @@ describe("V1 production code never imports production/v2 (WU2 §29 — one-direc
     }
   });
 });
+
+describe("Production V2 runtime never imports the offline support-export generator (WU3A §2/§20)", () => {
+  it.each(runtimeFiles)("%s does not import scripts/cfb-v2-support-export", (file) => {
+    const content = readFileSync(file, "utf8");
+    const importLines = content.match(/^import\s.+$/gm) ?? [];
+    for (const line of importLines) {
+      expect(line).not.toMatch(/cfb-v2-support-export/);
+    }
+  });
+});
+
+describe("The offline support-export generator never imports market/MIC data (WU3A §9, even though it may import research)", () => {
+  it("scripts/cfb-v2-support-export.ts does not import marketAnchor / MIC / market-line modules", () => {
+    const scriptPath = resolve(V2_ROOT, "..", "..", "..", "..", "..", "scripts", "cfb-v2-support-export.ts");
+    const content = readFileSync(scriptPath, "utf8");
+    const importLines = content.match(/^import\s.+$/gm) ?? [];
+    for (const line of importLines) {
+      expect(line).not.toMatch(/marketAnchor|CFB_V1_CONFIG|CFB_MARKET_FADE_BANDS|\bmic\b|market-lines|MarketLine/i);
+    }
+  });
+
+  it("scripts/cfb-v2-support-export.ts declares no market-derived field on either export row shape", () => {
+    const scriptPath = resolve(V2_ROOT, "..", "..", "..", "..", "..", "scripts", "cfb-v2-support-export.ts");
+    const content = readFileSync(scriptPath, "utf8");
+    expect(content).not.toMatch(/spread|moneyline|openingTotal|currentTotal/i);
+  });
+});

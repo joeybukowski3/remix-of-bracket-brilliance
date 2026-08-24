@@ -34,3 +34,5 @@ export * from "./candidateRatings";
 export * from "./buildTeamRatings";
 export * from "./ratingValidation";
 export * from "./artifactWriter";
+export * from "./scoringSupportTypes";
+export * from "./scoringSupportValidation";
