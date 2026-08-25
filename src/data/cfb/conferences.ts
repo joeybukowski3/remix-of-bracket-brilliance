@@ -1,4 +1,5 @@
 import type { CfbConferenceId, CfbConferenceMeta } from "./types";
+import { getCfbConferenceLogoUrl } from "./logos";
 
 /** Display order for conference cards (roughly power-conference first, then alphabetical group). */
 export const CFB_CONFERENCE_ORDER: CfbConferenceId[] = [
@@ -15,7 +16,9 @@ export const CFB_CONFERENCE_ORDER: CfbConferenceId[] = [
   "independents",
 ];
 
-export const CFB_CONFERENCES: Record<CfbConferenceId, CfbConferenceMeta> = {
+type CfbConferenceMetaWithoutLogo = Omit<CfbConferenceMeta, "logo">;
+
+const CFB_CONFERENCES_BASE: Record<CfbConferenceId, CfbConferenceMetaWithoutLogo> = {
   acc: { id: "acc", slug: "acc", name: "ACC", shortName: "ACC", fullName: "Atlantic Coast Conference" },
   american: {
     id: "american",
@@ -76,6 +79,13 @@ export const CFB_CONFERENCES: Record<CfbConferenceId, CfbConferenceMeta> = {
     fullName: "FBS Independents",
   },
 };
+
+export const CFB_CONFERENCES: Record<CfbConferenceId, CfbConferenceMeta> = Object.fromEntries(
+  Object.entries(CFB_CONFERENCES_BASE).map(([id, meta]) => [
+    id,
+    { ...meta, logo: getCfbConferenceLogoUrl(id as CfbConferenceId) },
+  ]),
+) as Record<CfbConferenceId, CfbConferenceMeta>;
 
 export function getConferenceMeta(id: CfbConferenceId): CfbConferenceMeta {
   return CFB_CONFERENCES[id];

@@ -16,6 +16,8 @@ function game(overrides: Partial<CfbGame> & { id: string; awayTeamId: string; ho
     time: null,
     neutralSite: false,
     venue: null,
+    venueCity: null,
+    venueState: null,
     tvNetwork: null,
     gameStatus: "scheduled",
     awayScore: null,

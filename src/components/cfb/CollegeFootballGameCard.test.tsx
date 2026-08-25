@@ -105,6 +105,28 @@ describe("CollegeFootballGameCard", () => {
     }
   });
 
+  it("renders the venue name and, when verified, its city/state from the canonical data path", () => {
+    const { game, container } = renderCard();
+    if (game.venue) {
+      expect(container.textContent).toContain(game.venue);
+    }
+    if (game.venueCity) {
+      const location = game.venueState ? `${game.venueCity}, ${game.venueState}` : game.venueCity;
+      expect(container.textContent).toContain(location);
+    }
+  });
+
+  it("never fabricates a state for a verified international venue with no US state", () => {
+    // This fixture (TCU vs. North Carolina) is the real 2026 Aer Lingus Classic
+    // at Aviva Stadium, Dublin — a genuine neutral-site game with no US state.
+    const { game, container } = renderCard();
+    expect(game.venue).toBe("Aviva Stadium");
+    expect(game.venueCity).toBe("Dublin");
+    expect(game.venueState).toBeNull();
+    expect(container.textContent).toContain("Aviva Stadium");
+    expect(container.textContent).toContain("Dublin");
+  });
+
   it("never renders NaN or undefined", () => {
     const { container } = renderCard();
     const body = container.textContent ?? "";

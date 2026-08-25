@@ -153,6 +153,10 @@ export type CfbGame = {
   homeClassification?: string | null;
   neutralSite: boolean;
   venue: string | null;
+  /** Verified venue city, joined by CFBD venue ID. Never inferred from a team's home city. */
+  venueCity: string | null;
+  /** Verified venue state/region, joined by CFBD venue ID. Empty for non-US venues (e.g. Dublin, London). */
+  venueState: string | null;
   tvNetwork: string | null;
   gameStatus: CfbGameStatus;
   awayScore: number | null;
@@ -177,6 +181,8 @@ export type CfbConferenceMeta = {
   shortName: string;
   /** Full official conference name, e.g. "Southeastern Conference". */
   fullName: string;
+  /** Conference logo URL, or null when no verified asset exists (renders name-only). */
+  logo: string | null;
 };
 
 /**

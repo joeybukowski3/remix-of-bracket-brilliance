@@ -10,6 +10,7 @@ const API_KEY = process.env.CFBD_API_KEY?.trim();
 
 const requests: CfbdRequest[] = [
   { name: "teams-2026", path: "/teams/fbs", query: { year: 2026 } },
+  { name: "venues", path: "/venues", query: {} },
   { name: "games-2025", path: "/games", query: { year: 2025, classification: "fbs" } },
   {
     name: "game-team-stats-2025",

@@ -22,6 +22,8 @@ const GAME: CfbGame = {
   homeTeamId: "home",
   neutralSite: false,
   venue: "Test Stadium",
+  venueCity: null,
+  venueState: null,
   tvNetwork: null,
   gameStatus: "scheduled",
   awayScore: null,

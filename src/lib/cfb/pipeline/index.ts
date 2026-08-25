@@ -4,5 +4,6 @@ export * from "./normalizeCfbd";
 export * from "./normalizeOdds";
 export * from "./normalizeRankings";
 export * from "./mergeScheduleOdds";
+export * from "./mergeScheduleVenueLocations";
 export * from "./opponentAdjustment";
 export * from "./validateRatings";

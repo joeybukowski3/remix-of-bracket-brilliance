@@ -34,4 +34,27 @@ describe("CollegeFootballConferenceSelector", () => {
     fireEvent.click(screen.getByRole("option", { name: "Southeastern Conference" }));
     expect(onChange).toHaveBeenCalledWith("sec");
   });
+
+  it("shows the full conference name and its logo in the collapsed trigger when a conference is selected", () => {
+    render(<CollegeFootballConferenceSelector value="sec" onChange={vi.fn()} />);
+    const trigger = screen.getByRole("combobox", { name: "Select conference" });
+    expect(trigger).toHaveTextContent("Southeastern Conference");
+    const img = trigger.querySelector("img");
+    expect(img).toBeTruthy();
+    expect(img?.getAttribute("alt")).toBe("");
+    expect(img?.getAttribute("src")).toContain("sec.png");
+  });
+
+  it("shows no logo image for the 'All Conferences' collapsed state", () => {
+    render(<CollegeFootballConferenceSelector value="all" onChange={vi.fn()} />);
+    const trigger = screen.getByRole("combobox", { name: "Select conference" });
+    expect(trigger.querySelector("img")).toBeNull();
+  });
+
+  it("renders a logo image next to every conference option in the open dropdown", () => {
+    render(<CollegeFootballConferenceSelector value="all" onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole("combobox"));
+    const option = screen.getByRole("option", { name: "Southeastern Conference" });
+    expect(option.querySelector("img")).toBeTruthy();
+  });
 });
