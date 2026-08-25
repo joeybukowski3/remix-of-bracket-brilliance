@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { weeklyFantasyProjectionProductionArtifactSchema } from "@/lib/fantasy/weekly/projections/production/artifactContract";
@@ -110,6 +110,34 @@ describe("Weekly Rankings consumer", () => {
     renderPage();
     const top = artifact.rows.QB[0];
     expect(screen.getAllByRole("row")[1]).toHaveTextContent(top.projectedFantasyPoints.toFixed(1));
+  });
+
+  it("places a collapsed, reversible stat glossary between the Week status bar and position tabs", () => {
+    renderPage();
+    const metadata = screen.getByRole("region", { name: "Projection metadata" });
+    const glossary = screen.getByRole("region", { name: "Weekly Rankings stat glossary" });
+    const positionTabs = screen.getByRole("group", { name: "Select position" });
+    const toggle = within(glossary).getByRole("button", { name: "What do these stats mean?" });
+    const content = document.getElementById(toggle.getAttribute("aria-controls")!);
+
+    expect(metadata.compareDocumentPosition(glossary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(glossary.compareDocumentPosition(positionTabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(content).not.toBeVisible();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(content).toBeVisible();
+    for (const definition of ["Rank", "Projected Points", "Season PPG", "EPA Advantage", "Touches", "Target Share", "Targets/Game"]) {
+      expect(within(glossary).getByText(definition, { exact: true })).toBeVisible();
+    }
+    expect(within(glossary).getByText(/#1 is best or most favorable within the metric's comparison pool/)).toBeVisible();
+    expect(within(glossary).getByText(/underlying raw statistic while retaining the same heat color/)).toBeVisible();
+    expect(within(glossary).getByText(/Gold = elite · Green = favorable · Neutral = middle · Red = unfavorable/)).toBeVisible();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(content).not.toBeVisible();
   });
 
   it("derives mobile last names without treating common suffixes as surnames", () => {
@@ -418,7 +446,11 @@ describe("Weekly Rankings consumer", () => {
     expect(board).toHaveAttribute("data-display-mode", "rank");
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     const mobileHeader = container.querySelector<HTMLElement>("[data-mobile-weekly-header]")!;
-    expect(mobileHeader.textContent).toBe("RKTMPLAYERPROJSZNL5MUOAO5TREPASR");
+    expect(mobileHeader.textContent).toBe("RKPLRPROJSZNL5MUOAO5TREPASR");
+    expect(within(mobileHeader).getAllByRole("columnheader").map((header) => header.getAttribute("aria-label"))).toEqual([
+      "Rank", "Team logo", "Player", "Projected Points", "Season PPG", "Last 5 Trend", "Matchup",
+      "Opp Allowed SZN", "Opp Allowed L5", "Trenches", "EPA Advantage", "Success Rate Advantage",
+    ]);
     expect(container.querySelectorAll("[data-mobile-weekly-header]")).toHaveLength(1);
     expect(container.querySelector("[data-mobile-table-scroll]")?.className).toContain("overflow-x-auto");
     expect(container.querySelectorAll('[data-mobile-weekly-header] [data-mobile-sticky="rank"], [data-mobile-weekly-header] [data-mobile-sticky="logo"], [data-mobile-weekly-header] [data-mobile-sticky="last-name"]')).toHaveLength(3);
@@ -426,6 +458,7 @@ describe("Weekly Rankings consumer", () => {
     const first = container.querySelector<HTMLElement>("[data-mobile-weekly-row]")!;
     expect(mobileHeader.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(mobileHeader.style.gridTemplateColumns).toBe(first.querySelector<HTMLElement>("button")?.style.gridTemplateColumns);
+    expect(mobileHeader.style.gridTemplateColumns).toBe("30px 28px 88px 52px repeat(8, 54px)");
     expect(first.querySelector("[data-team-logo]")).toBeInTheDocument();
     expect(first.querySelectorAll('[data-mobile-sticky="rank"], [data-mobile-sticky="logo"], [data-mobile-sticky="last-name"]')).toHaveLength(3);
     expect(first.className).toContain("border-b-2");
@@ -442,10 +475,10 @@ describe("Weekly Rankings consumer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Stat View" }));
     expect(screen.getByRole("region", { name: "QB weekly fantasy research board" })).toHaveAttribute("data-display-mode", "stat");
     fireEvent.click(screen.getByRole("button", { name: "RB" }));
-    expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKTMPLAYERPROJSZNL5MUOAO5TRTCHYPCTGT");
+    expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKPLRPROJSZNL5MUOAO5TRTCHYPCTGT");
     fireEvent.click(screen.getByRole("button", { name: "WR" }));
-    expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKTMPLAYERPROJSZNL5MUOAO5TRT%AYT/G");
+    expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKPLRPROJSZNL5MUOAO5TRT%AYT/G");
     fireEvent.click(screen.getByRole("button", { name: "TE" }));
-    expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKTMPLAYERPROJSZNL5MUOAO5TRT%AYT/G");
+    expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKPLRPROJSZNL5MUOAO5TRT%AYT/G");
   });
 });

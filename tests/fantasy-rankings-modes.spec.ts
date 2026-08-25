@@ -9,6 +9,20 @@ test("Fantasy defaults to the mobile Rank View board without overflow or a metri
   await expect(page.getByRole("heading", { level: 1, name: "Weekly Fantasy Rankings" })).toBeVisible();
   await expect(page.getByRole("region", { name: "QB weekly fantasy research board" })).toBeVisible();
   await expect(page.locator("[data-mobile-weekly-header]")).toContainText("SZN");
+  const glossary = page.getByRole("region", { name: "Weekly Rankings stat glossary" });
+  const glossaryToggle = glossary.getByRole("button", { name: "What do these stats mean?" });
+  await expect(glossaryToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(glossary.getByText("Projected Points", { exact: true })).toBeHidden();
+  await glossaryToggle.click();
+  await expect(glossaryToggle).toHaveAttribute("aria-expanded", "true");
+  for (const definition of ["Rank", "Projected Points", "Season PPG", "EPA Advantage", "Touches", "Target Share", "Targets/Game"]) {
+    await expect(glossary.getByText(definition, { exact: true })).toBeVisible();
+  }
+  await expect(glossary.getByText(/#1 is best or most favorable/)).toBeVisible();
+  await expect(glossary.getByText(/Gold = elite · Green = favorable · Neutral = middle · Red = unfavorable/)).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await glossaryToggle.click();
+  await expect(glossaryToggle).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("button", { name: "Rank View" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("table")).toHaveCount(0);
   await expect(page.getByRole("combobox")).toHaveCount(1);
@@ -40,6 +54,11 @@ test("desktop weekly rankings and NFL command center consume the synchronized ar
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${BASE_URL}/fantasy-football/weekly-rankings?week=1`);
   await expect(page.getByRole("heading", { level: 1, name: "Weekly Fantasy Rankings" })).toBeVisible();
+  const glossaryToggle = page.getByRole("button", { name: "What do these stats mean?" });
+  await expect(glossaryToggle).toHaveAttribute("aria-expanded", "false");
+  await glossaryToggle.click();
+  await expect(page.getByText("WR / TE", { exact: true })).toBeVisible();
+  await glossaryToggle.click();
   await expect(page.getByRole("table")).toBeVisible();
   for (const header of ["RK", "PLAYER", "OPP", "PROJ. PTS", "SEASON PPG", "L5 TREND", "MATCHUP", "OPP ALLOWED SZN", "OPP ALLOWED L5"]) {
     await expect(page.getByRole("columnheader", { name: header, exact: true })).toBeVisible();
@@ -141,6 +160,9 @@ test("weekly research boards hold their position semantics across desktop and mo
     await expect(board.locator("[data-weekly-desktop-sticky-header]")).toHaveCount(0);
     const header = board.locator("[data-mobile-weekly-header]");
     for (const acronym of ["SZN", "L5", "MU", "OA", "O5", ...mobile]) await expect(header).toContainText(acronym);
+    for (const label of ["Rank", "Player", "Projected Points", "Season PPG", "Last 5 Trend", "Matchup", "Opp Allowed SZN", "Opp Allowed L5", "Trenches"]) {
+      await expect(header.getByRole("columnheader", { name: label, exact: true })).toBeVisible();
+    }
     await expect(board.locator("[data-mobile-weekly-row]").first().locator("[data-opponent-logo]")).toHaveCount(0);
     await expect(board.locator("[data-mobile-weekly-row]").first().locator("[data-player-team-abbreviation]")).toHaveCount(0);
     await expect(board.locator("[data-mobile-weekly-row]").first().locator("[data-team-logo]")).toBeVisible();
@@ -175,7 +197,30 @@ test("weekly research boards hold their position semantics across desktop and mo
     await page.goto(`${BASE_URL}/fantasy-football/weekly-rankings?week=1`);
     await page.getByRole("button", { name: position, exact: true }).click();
     const board = page.getByRole("region", { name: `${position} weekly fantasy research board` });
+    const scroll = board.locator("[data-mobile-table-scroll]");
+    const header = board.locator("[data-mobile-weekly-header]");
+    const firstRowButton = board.locator("[data-mobile-weekly-row]").first().locator("button");
     await expect(board.locator("[data-mobile-weekly-row]").nth(7)).toBeAttached();
+    await expect.poll(() => Promise.all([
+      header.evaluate((element) => (element as HTMLElement).style.gridTemplateColumns),
+      firstRowButton.evaluate((element) => (element as HTMLElement).style.gridTemplateColumns),
+    ]).then(([headerGrid, rowGrid]) => headerGrid === rowGrid)).toBe(true);
+    await expect.poll(() => header.locator(":scope > *").evaluateAll((headerCells, rowSelector) => {
+      const rowCells = document.querySelectorAll(`${rowSelector} > *`);
+      return headerCells.length === rowCells.length && headerCells.every((cell, index) => (
+        Math.abs(cell.getBoundingClientRect().width - rowCells[index].getBoundingClientRect().width) < 0.1
+      ));
+    }, `[data-mobile-weekly-row]:first-of-type button`)).toBe(true);
+    await expect.poll(() => scroll.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    await scroll.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+    await expect.poll(() => scroll.evaluate((element) => element.scrollLeft > 0)).toBe(true);
+    for (const stickyKey of ["rank", "logo", "last-name"]) {
+      await expect(header.locator(`[data-mobile-sticky="${stickyKey}"]`)).toHaveCSS("position", "sticky");
+      await expect(firstRowButton.locator(`[data-mobile-sticky="${stickyKey}"]`)).toHaveCSS("position", "sticky");
+    }
+    const widthGlossaryToggle = page.getByRole("button", { name: "What do these stats mean?" });
+    await widthGlossaryToggle.click();
+    await expect(widthGlossaryToggle).toHaveAttribute("aria-expanded", "true");
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-mobile-${width}.png`) });
   }

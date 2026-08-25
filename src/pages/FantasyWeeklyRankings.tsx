@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
 import ProjectionMethodologyPanel from "@/components/fantasy/ProjectionMethodologyPanel";
+import WeeklyStatsGlossary from "@/components/fantasy/WeeklyStatsGlossary";
 import WeeklyFantasyRankingsTable, { type WeeklyResearchDisplayMode } from "@/components/fantasy/WeeklyFantasyRankingsTable";
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
@@ -93,6 +94,8 @@ export default function FantasyWeeklyRankings() {
               <span>JKB Projection</span>
               <span>As of {formatAsOf(weekly.freshness.inputAsOf)}</span>
             </section>
+
+            <WeeklyStatsGlossary />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div role="group" aria-label="Select position" className="grid flex-1 grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1">

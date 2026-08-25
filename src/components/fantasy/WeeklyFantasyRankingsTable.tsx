@@ -27,6 +27,7 @@ import {
   type WeeklyResearchPresentationRow,
 } from "@/lib/fantasy/weekly/researchPresentation";
 import type { NflMatchupEdge } from "@/lib/nfl/matchupEdges";
+import { weeklyStatDefinition, type WeeklyStatDefinition } from "@/lib/fantasy/weeklyPresentationMetadata";
 import {
   CANONICAL_WEEKLY_SORT,
   defaultWeeklySortDirection,
@@ -40,11 +41,11 @@ import { cn } from "@/lib/utils";
 export type WeeklyResearchDisplayMode = "stat" | "rank";
 
 type EvidenceKey = WeeklyEvidenceSortKey;
-type EvidenceColumn = { key: EvidenceKey; desktop: string; mobile: string; detail: string };
+type EvidenceColumn = { key: EvidenceKey; desktop: string; detail: string };
 type TableColumn = { key: WeeklyResearchSortKey; label: string; align?: "left" };
 type EdgeKey = "trenches" | "epa" | "success";
 type MobileMetricKey = "seasonPpg" | "last5Ppg" | "matchup" | "opponentFpaSeason" | "opponentFpaLast5" | EdgeKey | EvidenceKey;
-type MobileColumn = { key: MobileMetricKey; label: string };
+type MobileColumn = { key: MobileMetricKey; definition: WeeklyStatDefinition };
 
 const MOBILE_COLUMNS = {
   rank: 30,
@@ -105,19 +106,19 @@ const WEEKLY_COMMON_COLUMNS: readonly TableColumn[] = [
 const EVIDENCE_COLUMNS: Record<WeeklyFantasyResearchRow["position"], readonly EvidenceColumn[]> = {
   QB: [],
   RB: [
-    { key: "touches", desktop: "TOUCHES RK", mobile: "TCH", detail: "Touches" },
-    { key: "yardsPerCarry", desktop: "YPC RK", mobile: "YPC", detail: "YPC" },
-    { key: "receivingTargets", desktop: "REC TARGETS RK", mobile: "TGT", detail: "Rec Targets" },
+    { key: "touches", desktop: "TOUCHES RK", detail: "Touches" },
+    { key: "yardsPerCarry", desktop: "YPC RK", detail: "YPC" },
+    { key: "receivingTargets", desktop: "REC TARGETS RK", detail: "Rec Targets" },
   ],
   WR: [
-    { key: "targetShare", desktop: "TARGET % RK", mobile: "T%", detail: "Target %" },
-    { key: "airYardsPerGame", desktop: "AIR YARDS RK", mobile: "AY", detail: "Air Yards" },
-    { key: "targetsPerGame", desktop: "TARGETS/G RK", mobile: "T/G", detail: "Targets/Game" },
+    { key: "targetShare", desktop: "TARGET % RK", detail: "Target %" },
+    { key: "airYardsPerGame", desktop: "AIR YARDS RK", detail: "Air Yards" },
+    { key: "targetsPerGame", desktop: "TARGETS/G RK", detail: "Targets/Game" },
   ],
   TE: [
-    { key: "targetShare", desktop: "TARGET % RK", mobile: "T%", detail: "Target %" },
-    { key: "airYardsPerGame", desktop: "AIR YARDS RK", mobile: "AY", detail: "Air Yards" },
-    { key: "targetsPerGame", desktop: "TARGETS/G RK", mobile: "T/G", detail: "Targets/Game" },
+    { key: "targetShare", desktop: "TARGET % RK", detail: "Target %" },
+    { key: "airYardsPerGame", desktop: "AIR YARDS RK", detail: "Air Yards" },
+    { key: "targetsPerGame", desktop: "TARGETS/G RK", detail: "Targets/Game" },
   ],
 };
 
@@ -132,17 +133,12 @@ const EDGE_COLUMNS: Record<WeeklyFantasyResearchRow["position"], readonly TableC
   TE: [{ key: "trenches", label: "TRENCHES" }],
 };
 
-const MOBILE_COMMON_COLUMNS: readonly MobileColumn[] = [
-  { key: "seasonPpg", label: "SZN" },
-  { key: "last5Ppg", label: "L5" },
-  { key: "matchup", label: "MU" },
-  { key: "opponentFpaSeason", label: "OA" },
-  { key: "opponentFpaLast5", label: "O5" },
-  { key: "trenches", label: "TR" },
-];
+const MOBILE_COMMON_COLUMNS: readonly MobileColumn[] = (
+  ["seasonPpg", "last5Ppg", "matchup", "opponentFpaSeason", "opponentFpaLast5", "trenches"] satisfies readonly MobileMetricKey[]
+).map((key) => ({ key, definition: weeklyStatDefinition(key) }));
 
 const MOBILE_EDGE_COLUMNS: Record<WeeklyFantasyResearchRow["position"], readonly MobileColumn[]> = {
-  QB: [{ key: "epa", label: "EPA" }, { key: "success", label: "SR" }],
+  QB: (["epa", "success"] satisfies readonly MobileMetricKey[]).map((key) => ({ key, definition: weeklyStatDefinition(key) })),
   RB: [], WR: [], TE: [],
 };
 
@@ -460,13 +456,16 @@ function mobileGridStyle(metricCount: number) {
 }
 
 function MobileHeader({ columns }: { columns: readonly MobileColumn[] }) {
+  const rank = weeklyStatDefinition("rank");
+  const player = weeklyStatDefinition("player");
+  const projection = weeklyStatDefinition("projection");
   return (
     <div data-mobile-weekly-header role="row" className="grid h-6 items-stretch border-b border-slate-300 bg-slate-100 text-[8px] font-black uppercase tracking-[-0.02em] text-slate-600" style={mobileGridStyle(columns.length)}>
-      <span role="columnheader" data-mobile-sticky="rank" className="sticky z-20 flex items-center justify-center bg-slate-100" style={{ left: MOBILE_STICKY_LEFT.rank }}>RK</span>
-      <span role="columnheader" aria-label="Team logo" data-mobile-sticky="logo" className="sticky z-20 flex items-center justify-center border-l border-slate-200 bg-slate-100" style={{ left: MOBILE_STICKY_LEFT.logo }}>TM</span>
-      <span role="columnheader" data-mobile-sticky="last-name" className="sticky z-20 flex items-center border-l border-r border-slate-300 bg-slate-100 px-1 shadow-[2px_0_3px_rgba(15,23,42,0.12)]" style={{ left: MOBILE_STICKY_LEFT.player }}>PLAYER</span>
-      <span role="columnheader" className="flex items-center justify-center border-r border-slate-200">PROJ</span>
-      {columns.map((column) => <span role="columnheader" key={column.key} className="flex items-center justify-center border-r border-slate-200 last:border-r-0">{column.label}</span>)}
+      <span role="columnheader" aria-label={rank.name} title={rank.name} data-mobile-sticky="rank" className="sticky z-20 flex items-center justify-center bg-slate-100" style={{ left: MOBILE_STICKY_LEFT.rank }}>{rank.abbreviation}</span>
+      <span role="columnheader" aria-label="Team logo" title="Team logo" data-mobile-sticky="logo" className="sticky z-20 flex items-center justify-center border-l border-slate-200 bg-slate-100" style={{ left: MOBILE_STICKY_LEFT.logo }}><CircleDot aria-hidden className="h-2.5 w-2.5" /></span>
+      <span role="columnheader" aria-label={player.name} title={player.name} data-mobile-sticky="last-name" className="sticky z-20 flex items-center border-l border-r border-slate-300 bg-slate-100 px-1 shadow-[2px_0_3px_rgba(15,23,42,0.12)]" style={{ left: MOBILE_STICKY_LEFT.player }}>{player.abbreviation}</span>
+      <span role="columnheader" aria-label={projection.name} title={projection.name} className="flex items-center justify-center border-r border-slate-200">{projection.abbreviation}</span>
+      {columns.map((column) => <span role="columnheader" aria-label={column.definition.name} title={column.definition.name} key={column.key} className="flex items-center justify-center border-r border-slate-200 last:border-r-0">{column.definition.abbreviation}</span>)}
     </div>
   );
 }
@@ -578,7 +577,7 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
   const mobileColumns: readonly MobileColumn[] = [
     ...MOBILE_COMMON_COLUMNS,
     ...MOBILE_EDGE_COLUMNS[position],
-    ...evidence.map((column) => ({ key: column.key, label: column.mobile })),
+    ...evidence.map((column) => ({ key: column.key, definition: weeklyStatDefinition(column.key) })),
   ];
   const compactNames = useMemo(() => mobilePlayerNames(presentationRows), [presentationRows]);
   const columnCount = columns.length;
