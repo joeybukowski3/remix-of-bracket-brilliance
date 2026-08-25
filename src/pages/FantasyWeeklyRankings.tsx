@@ -31,7 +31,7 @@ export default function FantasyWeeklyRankings() {
   usePageSeo({ title: seo.title, description: seo.description, path: seo.path, noindex: seo.noindex ?? false });
   const [searchParams, setSearchParams] = useSearchParams();
   const [position, setPosition] = useState<FantasyPosition>("QB");
-  const [displayMode, setDisplayMode] = useState<WeeklyResearchDisplayMode>("stat");
+  const [displayMode, setDisplayMode] = useState<WeeklyResearchDisplayMode>("rank");
   const season = useNflSeasonData(WEEKLY_RANKINGS_SEASON);
   const games = season.data?.games;
   const weekSelection = useMemo(
@@ -130,7 +130,7 @@ export default function FantasyWeeklyRankings() {
                 Some weekly research context is unavailable; affected display fields show N/A. Projections and rankings remain available.
               </p>
             )}
-            <WeeklyFantasyRankingsTable rows={research.rows} displayMode={displayMode} />
+            <WeeklyFantasyRankingsTable key={`${position}-${displayMode}`} rows={research.rows} displayMode={displayMode} />
             <ProjectionMethodologyPanel />
           </>
         )}

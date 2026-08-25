@@ -7,7 +7,10 @@ import { joinWeeklyFantasyResearchRows } from "@/lib/fantasy/weekly/researchJoin
 import {
   matchupGradeHeatTone,
   prepareWeeklyResearchPresentation,
+  weeklyHeatTextClass,
   weeklyHeatStyle,
+  weeklyMatchupComponentHeatTone,
+  weeklyMatchupDifferenceHeatTone,
   weeklyRankHeatTone,
 } from "@/lib/fantasy/weekly/researchPresentation";
 import { PERCENTILE_TIERS } from "@/lib/mlb/percentileColorScale";
@@ -48,6 +51,28 @@ describe("weekly fantasy research heat presentation", () => {
       weeklyRankHeatTone(27, 32),
       weeklyRankHeatTone(28, 32),
     ]).toEqual(["gold", "dark-green", "green", "light-green", "neutral", "light-red", "red", "strong-red"]);
+  });
+
+  it("normalizes offense and opponent-defense ranks to the fantasy player's perspective", () => {
+    expect(weeklyMatchupComponentHeatTone(3, "offense")).toBe("gold");
+    expect(weeklyMatchupComponentHeatTone(29, "offense")).toBe("strong-red");
+    expect(weeklyMatchupComponentHeatTone(29, "opponent-defense")).toBe("dark-green");
+    expect(weeklyMatchupComponentHeatTone(3, "opponent-defense")).toBe("strong-red");
+  });
+
+  it("maps signed matchup differences through the established 32-team quality bands", () => {
+    expect(weeklyMatchupDifferenceHeatTone(31)).toBe("gold");
+    expect(weeklyMatchupDifferenceHeatTone(12)).toBe("green");
+    expect(weeklyMatchupDifferenceHeatTone(0)).toBe("neutral");
+    expect(weeklyMatchupDifferenceHeatTone(-15)).toBe("red");
+    expect(weeklyMatchupDifferenceHeatTone(-31)).toBe("strong-red");
+    expect(weeklyHeatTextClass("gold")).toContain("amber");
+    expect(weeklyHeatTextClass("strong-red")).toContain("red");
+  });
+
+  it("keeps weekly matchup edge rank one gold and rank thirty strong red", () => {
+    expect(weeklyRankHeatTone(1, 32)).toBe("gold");
+    expect(weeklyRankHeatTone(30, 32)).toBe("strong-red");
   });
 
   it("keeps a 40th-ish WR metric visually below a 13th-ranked metric", () => {
@@ -98,6 +123,6 @@ describe("weekly fantasy research heat presentation", () => {
       (row.matchupEdges.epa.rawValue ?? Number.NEGATIVE_INFINITY) > (best.matchupEdges.epa.rawValue ?? Number.NEGATIVE_INFINITY) ? row : best,
     );
     expect(bestEpa.matchupEdges.epa.displayRank).toBe(1);
-    expect(bestEpa.matchupEdges.epa.tone).toBe("gold");
+    expect(bestEpa.matchupEdges.epa.tone).toBe(weeklyMatchupDifferenceHeatTone(bestEpa.matchupEdges.epa.rawValue));
   });
 });
