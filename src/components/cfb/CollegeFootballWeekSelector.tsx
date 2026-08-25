@@ -1,4 +1,10 @@
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Props = {
   weeks: number[];
@@ -14,26 +20,23 @@ export default function CollegeFootballWeekSelector({ weeks, value, onChange }: 
   }
 
   return (
-    <div role="group" aria-label="Select week" className="flex flex-wrap gap-1.5">
-      {weeks.map((week) => {
-        const selected = week === value;
-        return (
-          <button
-            key={week}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onChange(week)}
-            className={cn(
-              "rounded border px-2.5 py-1 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
-              selected
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900",
-            )}
-          >
+    <Select
+      value={String(value)}
+      onValueChange={(next) => onChange(Number(next))}
+    >
+      <SelectTrigger
+        aria-label="Select week"
+        className="h-8 w-[9.5rem] rounded border-slate-200 bg-white text-xs font-semibold text-slate-700"
+      >
+        <SelectValue placeholder="Select week" />
+      </SelectTrigger>
+      <SelectContent>
+        {weeks.map((week) => (
+          <SelectItem key={week} value={String(week)}>
             Week {week}
-          </button>
-        );
-      })}
-    </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -105,7 +105,12 @@ export default function CollegeFootballMatchup() {
           Market
         </h2>
         <div className="rounded-lg border border-slate-200 bg-white p-3">
-          <CollegeFootballOddsDisplay odds={game.odds} />
+          <CollegeFootballOddsDisplay
+            odds={game.odds}
+            game={game}
+            awayAbbreviation={away.abbreviation}
+            homeAbbreviation={home.abbreviation}
+          />
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 sm:grid-cols-4">
             <div>
               Open spread:{" "}

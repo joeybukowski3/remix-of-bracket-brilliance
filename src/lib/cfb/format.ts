@@ -1,4 +1,4 @@
-import type { CfbGame } from "@/data/cfb/types";
+import type { CfbGame, CfbGameStatus, CfbJkbRatings } from "@/data/cfb/types";
 
 /** Safe display helpers — never render NaN/undefined/null as fake zeros. */
 
@@ -86,6 +86,67 @@ export function rankHeatStyle(
     background: `rgba(220,38,38,${0.08 + k * 0.26})`,
     color: k > 0.4 ? "#7f1d1d" : "#991b1b",
   };
+}
+
+/**
+ * Ranking display hierarchy: official CFP rank (not yet available in this
+ * dataset) > official AP rank > JKB rank as a clearly-marked fallback.
+ * Never fabricates a ranking — returns "none" when nothing is available.
+ */
+export type CfbRankDisplay = {
+  text: string;
+  source: "ap" | "jkb" | "none";
+};
+
+export function getCfbRankDisplay(
+  ratings: Pick<CfbJkbRatings, "apRank" | "jkbRank">,
+): CfbRankDisplay {
+  if (ratings.apRank != null && !Number.isNaN(ratings.apRank)) {
+    return { text: `#${Math.trunc(ratings.apRank)}`, source: "ap" };
+  }
+  if (ratings.jkbRank != null && !Number.isNaN(ratings.jkbRank)) {
+    return { text: `JKB ${Math.trunc(ratings.jkbRank)}`, source: "jkb" };
+  }
+  return { text: "", source: "none" };
+}
+
+/**
+ * Market favorite is derived ONLY from the spread — never from JKB ratings.
+ * Canonical convention: negative spread (home perspective) = home favorite.
+ */
+export type CfbFavoriteSide = "home" | "away" | "none";
+
+export function getCfbMarketFavorite(
+  game: Pick<CfbGame, "homeTeamId" | "awayTeamId" | "odds">,
+): CfbFavoriteSide {
+  const spread = game.odds.currentSpread ?? game.odds.openingSpread;
+  if (spread == null || Number.isNaN(spread) || spread === 0) return "none";
+  return spread < 0 ? "home" : "away";
+}
+
+/** Spread formatted relative to the favored team, e.g. "TCU -7.5". */
+export function formatFavoriteSpread(
+  game: Pick<CfbGame, "homeTeamId" | "awayTeamId" | "odds">,
+  awayAbbreviation: string,
+  homeAbbreviation: string,
+): string {
+  const spread = game.odds.currentSpread ?? game.odds.openingSpread;
+  if (spread == null || Number.isNaN(spread)) return "—";
+  if (spread === 0) return "PICK";
+  const favorite = spread < 0 ? homeAbbreviation : awayAbbreviation;
+  return `${favorite} -${Math.abs(spread)}`;
+}
+
+const GAME_STATUS_LABELS: Record<CfbGameStatus, string> = {
+  scheduled: "Scheduled",
+  in_progress: "Live",
+  final: "Final",
+  postponed: "Postponed",
+  canceled: "Canceled",
+};
+
+export function formatCfbGameStatusLabel(status: CfbGameStatus): string {
+  return GAME_STATUS_LABELS[status] ?? "Scheduled";
 }
 
 export function formatRankChange(

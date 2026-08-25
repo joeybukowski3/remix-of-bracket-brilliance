@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CFB_RATING_TIERS,
+  getCfbPowerBarWidthPercent,
   getCfbRatingBand,
   getCfbRatingHeatClass,
   getCfbRatingPresentation,
@@ -51,5 +52,27 @@ describe("shared CFB rating presentation", () => {
       range: "—",
       className: "text-slate-500",
     });
+  });
+});
+
+describe("CFB power bar presentation scale", () => {
+  it("clamps a null/unavailable rating to zero width", () => {
+    expect(getCfbPowerBarWidthPercent(null)).toBe(0);
+    expect(getCfbPowerBarWidthPercent(undefined)).toBe(0);
+    expect(getCfbPowerBarWidthPercent(Number.NaN)).toBe(0);
+  });
+
+  it("clamps ratings below the presentation floor (40) to zero width", () => {
+    expect(getCfbPowerBarWidthPercent(20)).toBe(0);
+    expect(getCfbPowerBarWidthPercent(40)).toBe(0);
+  });
+
+  it("clamps ratings above the presentation ceiling (100) to full width", () => {
+    expect(getCfbPowerBarWidthPercent(100)).toBe(100);
+    expect(getCfbPowerBarWidthPercent(140)).toBe(100);
+  });
+
+  it("scales a mid-range rating linearly between the floor and ceiling", () => {
+    expect(getCfbPowerBarWidthPercent(70)).toBeCloseTo(50, 5);
   });
 });

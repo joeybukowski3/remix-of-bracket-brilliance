@@ -48,3 +48,18 @@ export function getCfbRatingBand(value: number | null | undefined): CfbRatingBan
 export function getCfbRatingHeatClass(value: number | null | undefined): string {
   return getCfbRatingPresentation(value).className;
 }
+
+/**
+ * Presentation-only anchors for the JKB power bar visualization.
+ * Not a statistical scale — purely a clamped display range so ratings
+ * render as a readable horizontal bar. Does not alter JKB rating math.
+ */
+export const CFB_POWER_BAR_MIN = 40;
+export const CFB_POWER_BAR_MAX = 100;
+
+/** Clamped 0–100 fill percentage for the JKB power bar. Null-safe. */
+export function getCfbPowerBarWidthPercent(value: number | null | undefined): number {
+  if (value == null || Number.isNaN(value)) return 0;
+  const clamped = Math.min(CFB_POWER_BAR_MAX, Math.max(CFB_POWER_BAR_MIN, value));
+  return ((clamped - CFB_POWER_BAR_MIN) / (CFB_POWER_BAR_MAX - CFB_POWER_BAR_MIN)) * 100;
+}
