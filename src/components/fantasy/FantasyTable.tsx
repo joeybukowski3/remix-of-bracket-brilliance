@@ -20,11 +20,15 @@ export function FantasyPlayerIdentity({
   team,
   compact = false,
   wrapName = false,
+  showTeamAbbreviation = true,
+  nameClassName,
 }: {
   player: string;
   team?: string;
   compact?: boolean;
   wrapName?: boolean;
+  showTeamAbbreviation?: boolean;
+  nameClassName?: string;
 }) {
   const normalizedTeam = team?.toUpperCase();
   const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
@@ -47,19 +51,23 @@ export function FantasyPlayerIdentity({
               "font-bold text-slate-950",
               "text-[12px] leading-4",
               wrapName ? "min-w-0 whitespace-normal break-words" : "truncate",
+              nameClassName,
             )}
           >
             {player}
           </div>
         )}
-        <div
-          className={cn(
-            "shrink-0 font-bold uppercase text-slate-500",
-            "text-[10px] leading-4",
-          )}
-        >
-          {normalizedTeam ?? "FA"}
-        </div>
+        {showTeamAbbreviation && (
+          <div
+            data-player-team-abbreviation
+            className={cn(
+              "shrink-0 font-bold uppercase text-slate-500",
+              "text-[10px] leading-4",
+            )}
+          >
+            {normalizedTeam ?? "FA"}
+          </div>
+        )}
       </div>
     </div>
   );
