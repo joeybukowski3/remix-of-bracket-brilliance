@@ -44,6 +44,11 @@ export default defineConfig({
       // CFB Model V2 WU7A checkpoint -- real git-add mechanics for the
       // browser artifact vs. its .gitignore rule.
       "scripts/cfb-v2-browser-artifact-gitignore.test.ts",
+      // NFL yardage-prop Phase 1 -- historical outcome artifact generator CLI.
+      "scripts/generate-nfl-yardage-outcomes.test.ts",
+      // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
+      "scripts/lib/nfl-play-volume-core.test.mjs",
+      "scripts/generate-nfl-team-pregame-features.test.ts",
     ],
   },
   resolve: {
