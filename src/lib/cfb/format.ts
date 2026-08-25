@@ -89,25 +89,43 @@ export function rankHeatStyle(
 }
 
 /**
- * Ranking display hierarchy: official CFP rank (not yet available in this
- * dataset) > official AP rank > JKB rank as a clearly-marked fallback.
- * Never fabricates a ranking — returns "none" when nothing is available.
+ * Ranking display hierarchy: official CFP rank > official AP rank > JKB rank as
+ * a clearly-marked fallback. Never fabricates a ranking — returns "none" when
+ * nothing is available.
+ *
+ * Official polls render as a bare "#N"; the internal JKB power rank NEVER does,
+ * so a reader can always tell an official ranking from a model output at a
+ * glance. `label` carries the same distinction for assistive technology.
  */
 export type CfbRankDisplay = {
   text: string;
-  source: "ap" | "jkb" | "none";
+  /** Accessible/title text, e.g. "AP rank 8", "CFP rank 6", "JKB power rank 14". */
+  label: string;
+  source: "cfp" | "ap" | "jkb" | "none";
+  /** True for CFP/AP — i.e. an actual published poll, not a JKB model rank. */
+  isOfficial: boolean;
 };
 
+function isUsableRank(value: number | null | undefined): value is number {
+  return value != null && !Number.isNaN(value);
+}
+
 export function getCfbRankDisplay(
-  ratings: Pick<CfbJkbRatings, "apRank" | "jkbRank">,
+  ratings: Pick<CfbJkbRatings, "apRank" | "jkbRank"> & { cfpRank?: number | null },
 ): CfbRankDisplay {
-  if (ratings.apRank != null && !Number.isNaN(ratings.apRank)) {
-    return { text: `#${Math.trunc(ratings.apRank)}`, source: "ap" };
+  if (isUsableRank(ratings.cfpRank)) {
+    const rank = Math.trunc(ratings.cfpRank);
+    return { text: `#${rank}`, label: `CFP rank ${rank}`, source: "cfp", isOfficial: true };
   }
-  if (ratings.jkbRank != null && !Number.isNaN(ratings.jkbRank)) {
-    return { text: `JKB ${Math.trunc(ratings.jkbRank)}`, source: "jkb" };
+  if (isUsableRank(ratings.apRank)) {
+    const rank = Math.trunc(ratings.apRank);
+    return { text: `#${rank}`, label: `AP rank ${rank}`, source: "ap", isOfficial: true };
   }
-  return { text: "", source: "none" };
+  if (isUsableRank(ratings.jkbRank)) {
+    const rank = Math.trunc(ratings.jkbRank);
+    return { text: `JKB ${rank}`, label: `JKB power rank ${rank}`, source: "jkb", isOfficial: false };
+  }
+  return { text: "", label: "", source: "none", isOfficial: false };
 }
 
 /**

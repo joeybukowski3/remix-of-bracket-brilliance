@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
+import { CFB_AP_RANKS_2026 } from "@/data/cfb";
 import CollegeFootballTeamPage from "./CollegeFootballTeamPage";
 
 vi.mock("@/hooks/usePageSeo", () => ({
@@ -18,10 +19,13 @@ function renderTeamPage() {
 }
 
 describe("CollegeFootballTeamPage ratings and schedule", () => {
-  it("shows the AP card as NR while the verified poll source is empty", () => {
+  it("shows the AP card from the official poll, or NR when the team is unranked", () => {
     renderTeamPage();
     const label = screen.getByText("AP Rank");
-    expect(label.parentElement).toHaveTextContent("NR");
+    // Derived from the live artifact rather than a hardcoded rank, so a weekly
+    // poll refresh (or Georgia dropping out of the poll) does not break this.
+    const apRank = CFB_AP_RANKS_2026["uga"] ?? null;
+    expect(label.parentElement).toHaveTextContent(apRank === null ? "NR" : `#${apRank}`);
   });
 
   it("styles rating cards responsively and leaves null SOS Played neutral", () => {

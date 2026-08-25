@@ -65,10 +65,12 @@ function TeamRow({
             <span
               className={cn(
                 "shrink-0 rounded px-1 py-0.5 text-[9px] font-bold leading-none",
-                rank.source === "ap" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
+                rank.isOfficial ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
               )}
+              title={rank.label}
             >
-              {rank.text}
+              <span aria-hidden="true">{rank.text}</span>
+              <span className="sr-only">{rank.label}</span>
             </span>
           )}
           <span className="shrink-0 text-[11px] font-normal text-slate-500">{record}</span>

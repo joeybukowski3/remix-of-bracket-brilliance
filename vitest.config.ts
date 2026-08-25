@@ -47,6 +47,9 @@ export default defineConfig({
       // CFB Week 1 market odds -- odds-only fetch/update CLI behavior.
       "scripts/cfb-fetch-market-odds.test.ts",
       "scripts/cfb-update-market-odds.test.ts",
+      // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
+      "scripts/cfb-fetch-rankings.test.ts",
+      "scripts/cfb-update-rankings.test.ts",
     ],
   },
   resolve: {

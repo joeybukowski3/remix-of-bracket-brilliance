@@ -48,8 +48,17 @@ export type CfbJkbRatings = {
   teamId: string;
   jkbRank: number | null;
   previousJkbRank: number | null;
-  /** Independent AP poll reference; never an input into JKB Power. */
+  /**
+   * Official AP Top 25 rank (1-25) or null when officially unranked.
+   * Independent poll reference; never an input into JKB Power.
+   */
   apRank: number | null;
+  /**
+   * Official CFP selection-committee rank (1-25) or null. Null for the whole
+   * field until the committee publishes its first poll of the season — that is
+   * a normal state, not missing data. Never an input into JKB Power.
+   */
+  cfpRank: number | null;
   jkbPowerRating: number | null;
   offensiveRating: number | null;
   defensiveRating: number | null;
@@ -192,6 +201,20 @@ export type CfbDataProvenance = {
   rosterSource: CfbDataSourceStatus;
   /** Market odds dataset status. */
   oddsSource: CfbDataSourceStatus;
+  /**
+   * Official poll (AP / CFP) dataset status. Describes ONLY the official polls
+   * ingested from the rankings endpoint — never the internal JKB power rank,
+   * which is always reported via ratingsSource.
+   */
+  officialRankingsSource: CfbDataSourceStatus;
+  /** Which official poll is currently driving rank display, if any. */
+  officialRankingsPoll: {
+    /** Poll name exactly as published, e.g. "AP Top 25". Null when none published. */
+    activePoll: string | null;
+    /** "cfp" once the committee poll exists, otherwise "ap", or null when neither. */
+    activeKind: "ap" | "cfp" | null;
+    week: number | null;
+  };
   generatedAt: string;
   notes: string[];
 };
