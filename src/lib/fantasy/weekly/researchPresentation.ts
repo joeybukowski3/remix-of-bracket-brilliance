@@ -27,6 +27,7 @@ export type WeeklyMatchupMetricKey = "trenches" | "epa" | "success";
 
 export type WeeklyResearchPresentationRow = {
   row: WeeklyFantasyResearchRow;
+  projectedFantasyPoints: WeeklyDisplayMetric;
   seasonPpg: WeeklyDisplayMetric;
   last5Ppg: WeeklyDisplayMetric;
   opponentFpaSeason: WeeklyDisplayMetric;
@@ -201,6 +202,7 @@ export function prepareWeeklyResearchPresentation(
       displayMetric(row.matchupEdges[key].rankDifference, null, edgeRanks[key].size);
     return {
       row,
+      projectedFantasyPoints: displayMetric(row.projectedFantasyPoints, row.positionRank, rows.length),
       seasonPpg: prepareWeeklyMetric(row.research.seasonPpg),
       last5Ppg: prepareWeeklyMetric(row.research.last5Ppg),
       opponentFpaSeason: prepareWeeklyMetric(row.research.opponentFpaSeason),

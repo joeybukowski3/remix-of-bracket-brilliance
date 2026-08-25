@@ -4,6 +4,7 @@ import {
   FANTASY_TABLE_HEADER_CELL,
   FANTASY_TABLE_SHELL,
   FantasyExpandControl,
+  FantasyOpponentIdentity,
   FantasyPlayerIdentity,
 } from "@/components/fantasy/FantasyTable";
 import useIsCompactLayout from "@/hooks/useIsCompactLayout";
@@ -27,7 +28,7 @@ type EvidenceKey = "touches" | "yardsPerCarry" | "receivingTargets" | "targetSha
 type EvidenceColumn = { key: EvidenceKey; desktop: string; mobile: string };
 
 const COMMON_HEADERS = [
-  "RK", "PLAYER", "PROJ. PTS", "SEASON PPG", "L5 PPG", "MATCHUP GRADE",
+  "RK", "OPPONENT", "PLAYER", "PROJ. PTS", "SEASON PPG", "L5 PPG", "MATCHUP GRADE",
   "OPP FPA SEASON", "OPP FPA L5", "TRENCHES", "EPA ADV.", "SUCCESS ADV.",
 ] as const;
 
@@ -49,11 +50,6 @@ const EVIDENCE_COLUMNS: Record<WeeklyFantasyResearchRow["position"], readonly Ev
     { key: "targetsPerGame", desktop: "TARGETS/G", mobile: "Targets/G" },
   ],
 };
-
-function displayOpponent(row: WeeklyFantasyResearchRow): string {
-  const prefix = row.homeAway === "away" ? "@" : row.homeAway === "neutral" ? "N" : "vs";
-  return `${prefix} ${row.opponent.toUpperCase()}`;
-}
 
 function formatMetric(metric: WeeklyResearchMetric, digits = 1): string {
   return metric.value == null ? "N/A" : metric.value.toFixed(digits);
@@ -114,6 +110,22 @@ function MetricCell({ metric, mode, statValue }: { metric: WeeklyDisplayMetric; 
   );
 }
 
+function MetricCellWithProjectionData({ metric, mode, value }: { metric: WeeklyDisplayMetric; mode: WeeklyResearchDisplayMode; value: number }) {
+  const heat = heatProps(metric);
+  return (
+    <td
+      data-projected-fantasy-points={value}
+      className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center text-sm font-black tabular-nums", heat.className)}
+      style={heat.style}
+      data-heat-tone={heat["data-heat-tone"]}
+      data-display-rank={heat["data-display-rank"]}
+      data-rank-pool-size={heat["data-rank-pool-size"]}
+    >
+      {metricText(metric, mode, value.toFixed(1))}
+    </td>
+  );
+}
+
 function EdgeCell({ edge, metric, mode }: { edge: NflMatchupEdge; metric: WeeklyDisplayMetric; mode: WeeklyResearchDisplayMode }) {
   return <MetricCell metric={metric} mode={mode} statValue={edgeStatText(edge)} />;
 }
@@ -135,14 +147,27 @@ function MobileMetric({ label, value, metric }: { label: string; value: string; 
 }
 
 function EdgeDetail({ title, edge, metric }: { title: string; edge: NflMatchupEdge; metric: WeeklyDisplayMetric }) {
+  const rows = [
+    ["Team rank", edge.offense ? `${edge.offense.label} · ${ordinal(edge.offense.rank)}` : "N/A"],
+    ["Opponent rank", edge.defense ? `${edge.defense.label} · ${ordinal(edge.defense.rank)}` : "N/A"],
+    ["Rank difference", edgeStatText(edge)],
+    ["Weekly matchup edge rank", metric.displayRank == null ? "N/A" : `${ordinal(metric.displayRank)} of ${metric.poolSize}`],
+  ] as const;
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-2">
-      <p className="text-sm font-black text-slate-950">{title}</p>
-      <p className="mt-1 text-slate-700">{edge.offense ? `${edge.offense.label} Rank: ${ordinal(edge.offense.rank)}` : "Team Rank: N/A"}</p>
-      <p className="text-slate-700">{edge.defense ? `${edge.defense.label} Rank: ${ordinal(edge.defense.rank)}` : "Opponent Rank: N/A"}</p>
-      <p className="text-slate-700">Rank Difference: <span className="font-black tabular-nums">{edgeStatText(edge)}</span></p>
-      <p className="text-slate-700">Weekly Matchup Edge Rank: <span className="font-black tabular-nums">{metric.displayRank == null ? "N/A" : ordinal(metric.displayRank)}</span></p>
-      <p className="mt-1 text-[10px] text-slate-500">{edge.sampleLabel} · {edge.source}</p>
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <h4 className="border-b border-slate-200 bg-slate-100 px-3 py-2 text-[11px] font-black uppercase tracking-[0.05em] text-slate-950">{title}</h4>
+      <dl className="divide-y divide-slate-100">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-2 px-3 py-1.5">
+            <dt className="font-semibold text-slate-500">{label}</dt>
+            <dd className="text-right font-black tabular-nums text-slate-900">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="border-t border-slate-200 bg-slate-50 px-3 py-2">
+        <p className="text-[9px] font-bold uppercase tracking-[0.04em] text-slate-500">Source note</p>
+        <p className="mt-0.5 text-[10px] leading-4 text-slate-600">{edge.sampleLabel} · {edge.source}</p>
+      </div>
     </div>
   );
 }
@@ -154,35 +179,57 @@ function signed(value: number): string {
 function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
   const { row } = presentation;
   const evidence = EVIDENCE_COLUMNS[row.position];
+  const samples = [
+    ["Season PPG sample", sampleLabel(row.research.seasonPpg)],
+    ["L5 PPG sample", sampleLabel(row.research.last5Ppg)],
+    ["FPA season sample", sampleLabel(row.research.opponentFpaSeason)],
+    ["FPA L5 sample", sampleLabel(row.research.opponentFpaLast5)],
+    ...evidence.map((column) => {
+      const raw = row.research.evidence[column.key];
+      const display = presentation.evidence[column.key];
+      return [`${column.mobile} evidence`, `${formatEvidenceValue(column.key, raw.value)} · ${display.displayRank == null ? "N/A" : `#${display.displayRank} of ${display.poolSize}`} · ${sampleLabel(raw)}`] as const;
+    }),
+  ] as const;
+  const projectionContext = [
+    ["Baseline pts", row.baselineFantasyPoints.toFixed(1)],
+    ["Usage adjustment", row.position === "QB" ? "Not used" : row.residualActivated ? signed(row.components.usageAdjustment) : "Not active yet"],
+    ["Scoring environment", row.context.scoringEnvironment.marketContextAvailable ? signed(row.components.scoringEnvironmentAdjustment) : "No market data"],
+    ["Projection FPA adjustment", row.context.opponentFpa.fallbackReason === "missing-both-neutral" ? "No matchup data" : signed(row.components.opponentFpaAdjustment)],
+    ["Final projected pts", row.projectedFantasyPoints.toFixed(1)],
+  ] as const;
   return (
-    <div className="space-y-3 text-xs text-slate-700">
-      <div className="grid gap-x-5 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-4">
-        <p><span className="text-slate-500">Season PPG sample:</span> {sampleLabel(row.research.seasonPpg)}</p>
-        <p><span className="text-slate-500">L5 PPG sample:</span> {sampleLabel(row.research.last5Ppg)}</p>
-        <p><span className="text-slate-500">FPA season sample:</span> {sampleLabel(row.research.opponentFpaSeason)}</p>
-        <p><span className="text-slate-500">FPA L5 sample:</span> {sampleLabel(row.research.opponentFpaLast5)}</p>
-        {evidence.map((column) => {
-          const raw = row.research.evidence[column.key];
-          const display = presentation.evidence[column.key];
-          return <p key={column.key}><span className="text-slate-500">{column.mobile}:</span> {formatEvidenceValue(column.key, raw.value)} · {display.displayRank == null ? "N/A" : `#${display.displayRank} of ${display.poolSize}`}</p>;
-        })}
-      </div>
-      <div>
-        <p className="mb-1.5 font-bold text-slate-900">Underlying matchup components</p>
+    <div data-weekly-expanded-detail className="space-y-3 rounded-xl border border-slate-200 bg-slate-100/70 p-2.5 text-xs text-slate-700 sm:p-3">
+      <section aria-labelledby={`samples-${row.playerId}`} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <h3 id={`samples-${row.playerId}`} className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-[0.05em] text-slate-950">Samples / evidence</h3>
+        <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
+          {samples.map(([label, value]) => (
+            <div key={label} className="border-b border-slate-100 px-3 py-2 sm:border-r last:border-r-0">
+              <dt className="text-[9px] font-bold uppercase tracking-[0.04em] text-slate-500">{label}</dt>
+              <dd className="mt-0.5 font-black text-slate-900">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <section aria-labelledby={`matchups-${row.playerId}`}>
+        <h3 id={`matchups-${row.playerId}`} className="mb-1.5 px-1 text-[11px] font-black uppercase tracking-[0.05em] text-slate-950">Underlying matchup components</h3>
         <div className="grid gap-2 md:grid-cols-3">
           <EdgeDetail title="Trenches" edge={row.matchupEdges.trenches} metric={presentation.matchupEdges.trenches} />
           <EdgeDetail title="EPA advantage" edge={row.matchupEdges.epa} metric={presentation.matchupEdges.epa} />
           <EdgeDetail title="Success advantage" edge={row.matchupEdges.success} metric={presentation.matchupEdges.success} />
         </div>
-      </div>
-      <div className="grid gap-x-5 gap-y-1.5 border-t border-slate-200 pt-2 sm:grid-cols-2 lg:grid-cols-4">
-        <p><span className="text-slate-500">Baseline pts:</span> {row.baselineFantasyPoints.toFixed(1)}</p>
-        <p><span className="text-slate-500">Usage adjustment:</span> {row.position === "QB" ? "Not used" : row.residualActivated ? signed(row.components.usageAdjustment) : "Not active yet"}</p>
-        <p><span className="text-slate-500">Scoring environment:</span> {row.context.scoringEnvironment.marketContextAvailable ? signed(row.components.scoringEnvironmentAdjustment) : "No market data"}</p>
-        <p><span className="text-slate-500">Projection FPA adjustment:</span> {row.context.opponentFpa.fallbackReason === "missing-both-neutral" ? "No matchup data" : signed(row.components.opponentFpaAdjustment)}</p>
-        <p><span className="text-slate-500">Final projected pts:</span> {row.projectedFantasyPoints.toFixed(1)}</p>
-        <p className="sm:col-span-2 lg:col-span-3"><span className="text-slate-500">Scoring:</span> JKB Full PPR · Pregame information only; research context does not alter the projection or rank.</p>
-      </div>
+      </section>
+      <section aria-labelledby={`projection-${row.playerId}`} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <h3 id={`projection-${row.playerId}`} className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-[0.05em] text-slate-950">Projection context summary</h3>
+        <dl className="grid sm:grid-cols-2 lg:grid-cols-5">
+          {projectionContext.map(([label, value]) => (
+            <div key={label} className="border-b border-slate-100 px-3 py-2 sm:border-r last:border-r-0">
+              <dt className="text-[9px] font-bold uppercase tracking-[0.04em] text-slate-500">{label}</dt>
+              <dd className="mt-0.5 text-sm font-black tabular-nums text-slate-950">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-500">JKB Full PPR · Pregame information only; research context does not alter the projection or rank.</p>
+      </section>
     </div>
   );
 }
@@ -198,10 +245,13 @@ function MobileCard({ presentation, mode, expanded, onToggle }: { presentation: 
           <div className="min-w-0 flex-1"><FantasyPlayerIdentity player={row.playerName} team={row.team} wrapName /></div>
           <FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.playerName}`} expanded={expanded} onClick={onToggle} />
         </div>
-        <MobileMetric label="Proj Pts" value={row.projectedFantasyPoints.toFixed(1)} />
+        <MobileMetric label="Proj Pts" value={metricText(presentation.projectedFantasyPoints, mode, row.projectedFantasyPoints.toFixed(1))} metric={presentation.projectedFantasyPoints} />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-1.5">
-        <MobileMetric label="Opponent" value={displayOpponent(row)} />
+        <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+          <div className="text-[8px] font-bold uppercase tracking-[0.04em] text-slate-500">Opponent</div>
+          <div className="mt-0.5 text-xs"><FantasyOpponentIdentity opponent={row.opponent} homeAway={row.homeAway} /></div>
+        </div>
         <div className={cn("min-w-0 rounded-md px-1.5 py-1.5", matchupGradeHeatClass(row.matchupRating?.id))} style={weeklyHeatStyle(matchupGradeHeatTone(row.matchupRating?.id))} data-heat-tone={matchupGradeHeatTone(row.matchupRating?.id)}>
           <div className="truncate text-[8px] font-bold uppercase tracking-[0.04em] opacity-70">Matchup Grade</div>
           <div className="mt-0.5 text-sm font-black leading-4">{row.matchupRating?.label ?? "N/A"}</div>
@@ -253,10 +303,10 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
       ) : (
         <table className="w-full table-fixed border-separate border-spacing-0 text-left text-[10px] text-slate-700">
           <caption className="sr-only">Canonical weekly fantasy projections with display-only research context</caption>
-          <colgroup><col className="w-9" /><col className="w-48" /><col className="w-16" />{Array.from({ length: columnCount - 3 }, (_, index) => <col key={index} />)}</colgroup>
+          <colgroup><col className="w-9" /><col className="w-[74px]" /><col className="w-44" /><col className="w-16" />{Array.from({ length: columnCount - 4 }, (_, index) => <col key={index} />)}</colgroup>
           <thead data-weekly-desktop-sticky-header className="text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">
             <tr>
-              {COMMON_HEADERS.map((header) => <th key={header} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "sticky top-[73px] z-30 bg-slate-100 px-1 py-2 text-center leading-tight", header === "PLAYER" && "text-left", header === "PROJ. PTS" && "bg-sky-100 text-sky-950")}>{header}</th>)}
+              {COMMON_HEADERS.map((header) => <th key={header} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "sticky top-[73px] z-30 bg-slate-100 px-1 py-2 text-center leading-tight", (header === "OPPONENT" || header === "PLAYER") && "text-left")}>{header}</th>)}
               {evidence.map((column) => <th key={column.key} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "sticky top-[73px] z-30 bg-slate-100 px-1 py-2 text-center leading-tight")}>{column.desktop}</th>)}
             </tr>
           </thead>
@@ -268,11 +318,12 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
                 <Fragment key={row.playerId}>
                   <tr data-player-id={row.playerId} className="group bg-white hover:bg-slate-50">
                     <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center text-xs font-black tabular-nums text-slate-950")}>{row.positionRank}</td>
+                    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1 text-xs")}><FantasyOpponentIdentity opponent={row.opponent} homeAway={row.homeAway} compact /></td>
                     <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1")}><div className="flex min-w-0 items-center gap-1"><div className="min-w-0 flex-1"><FantasyPlayerIdentity player={row.playerName} team={row.team} compact wrapName /></div><FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.playerName}`} expanded={expanded} onClick={() => setExpandedPlayerId(expanded ? null : row.playerId)} /></div></td>
-                    <td data-projected-fantasy-points={row.projectedFantasyPoints} className={cn(FANTASY_TABLE_BODY_CELL, "bg-sky-100 px-1 py-2 text-center text-sm font-black tabular-nums text-sky-950")}>{row.projectedFantasyPoints.toFixed(1)}</td>
+                    <MetricCellWithProjectionData metric={presentation.projectedFantasyPoints} mode={displayMode} value={row.projectedFantasyPoints} />
                     <MetricCell metric={presentation.seasonPpg} mode={displayMode} statValue={formatMetric(row.research.seasonPpg)} />
                     <MetricCell metric={presentation.last5Ppg} mode={displayMode} statValue={formatMetric(row.research.last5Ppg)} />
-                    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center", matchupGradeHeatClass(row.matchupRating?.id))} style={weeklyHeatStyle(matchupGradeHeatTone(row.matchupRating?.id))} data-heat-tone={matchupGradeHeatTone(row.matchupRating?.id)}><span className="inline-flex rounded border border-current/20 px-1.5 py-0.5 font-black">{row.matchupRating?.label ?? "N/A"}</span><span className="mt-0.5 block text-[9px] font-semibold opacity-70">{displayOpponent(row)}</span></td>
+                    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center", matchupGradeHeatClass(row.matchupRating?.id))} style={weeklyHeatStyle(matchupGradeHeatTone(row.matchupRating?.id))} data-heat-tone={matchupGradeHeatTone(row.matchupRating?.id)}><span className="inline-flex rounded border border-current/20 px-1.5 py-0.5 font-black">{row.matchupRating?.label ?? "N/A"}</span></td>
                     <MetricCell metric={presentation.opponentFpaSeason} mode={displayMode} statValue={formatMetric(row.research.opponentFpaSeason)} />
                     <MetricCell metric={presentation.opponentFpaLast5} mode={displayMode} statValue={formatMetric(row.research.opponentFpaLast5)} />
                     <EdgeCell edge={row.matchupEdges.trenches} metric={presentation.matchupEdges.trenches} mode={displayMode} />

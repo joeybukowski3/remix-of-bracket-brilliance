@@ -41,7 +41,7 @@ test("desktop weekly rankings and NFL command center consume the synchronized ar
   await page.goto(`${BASE_URL}/fantasy-football/weekly-rankings?week=1`);
   await expect(page.getByRole("heading", { level: 1, name: "Weekly Fantasy Rankings" })).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
-  for (const header of ["RK", "PLAYER", "PROJ. PTS", "SEASON PPG", "L5 PPG", "MATCHUP GRADE", "OPP FPA SEASON", "OPP FPA L5", "TRENCHES", "EPA ADV.", "SUCCESS ADV."]) {
+  for (const header of ["RK", "OPPONENT", "PLAYER", "PROJ. PTS", "SEASON PPG", "L5 PPG", "MATCHUP GRADE", "OPP FPA SEASON", "OPP FPA L5", "TRENCHES", "EPA ADV.", "SUCCESS ADV."]) {
     await expect(page.getByRole("columnheader", { name: header })).toBeVisible();
   }
   await expect(page.getByRole("link", { name: "Rest of Season" })).toHaveAttribute("href", "/fantasy-football?view=ros");
@@ -73,6 +73,7 @@ test("weekly research boards hold their position semantics across desktop and mo
     for (const header of evidence) await expect(page.getByRole("columnheader", { name: header, exact: true })).toBeVisible();
     await expect(page.getByText("RZ TOUCHES RK", { exact: true })).toHaveCount(0);
     await expect(page.locator("[data-player-name]").first()).toBeVisible();
+    await expect(board.locator("tbody tr[data-player-id]").first().locator("td").nth(1).locator("[data-opponent-logo]")).toBeVisible();
     await expect.poll(() => page.locator("[data-player-name]").first().evaluate((name) => {
       const style = getComputedStyle(name);
       return style.textOverflow !== "ellipsis" && name.scrollHeight <= name.clientHeight;
@@ -84,23 +85,27 @@ test("weekly research boards hold their position semantics across desktop and mo
       row.getAttribute("data-player-id"),
       row.querySelector("[data-projected-fantasy-points]")?.getAttribute("data-projected-fantasy-points"),
     ]));
-    if (position === "RB" || position === "WR") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-desktop-stat.png`) });
+    if (position === "QB" || position === "RB") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-desktop-stat.png`) });
 
     await page.getByRole("button", { name: "Rank View" }).click();
     await expect(board).toHaveAttribute("data-display-mode", "rank");
     await expect(board.locator("tbody tr[data-player-id]").first().locator("td").nth(3)).toHaveText(/^#\d+$/);
+    await expect(board.locator("tbody tr[data-player-id]").first().locator("td").nth(3)).toHaveAttribute("data-heat-tone", "gold");
     const tuplesAfter = await board.locator("tr[data-player-id]").evaluateAll((rows) => rows.map((row) => [
       row.getAttribute("data-player-id"),
       row.querySelector("[data-projected-fantasy-points]")?.getAttribute("data-projected-fantasy-points"),
     ]));
     expect(tuplesAfter).toEqual(tuplesBefore);
-    if (position === "RB" || position === "WR") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-desktop-rank.png`) });
+    if (position === "QB" || position === "RB") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-desktop-rank.png`) });
 
     await page.getByRole("button", { name: "Stat View" }).click();
     await page.getByRole("button", { name: /Show details for/ }).first().click();
     await expect(page.getByText("Underlying matchup components", { exact: true })).toBeVisible();
-    await expect(page.getByText(/Rank Difference: [+-]?\d+/).first()).toBeVisible();
-    await expect(page.getByText(/Weekly Matchup Edge Rank:/).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Samples / evidence" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Projection context summary" })).toBeVisible();
+    await expect(page.getByText("Rank difference", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Weekly matchup edge rank", { exact: true }).first()).toBeVisible();
+    if (position === "QB" || position === "RB") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-desktop-expanded.png`) });
   }
 
   const stickyHeader = page.locator("[data-weekly-desktop-sticky-header]");
@@ -127,17 +132,27 @@ test("weekly research boards hold their position semantics across desktop and mo
     await expect(page.getByText("Season PPG", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("FPA Season", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Success Adv", { exact: true }).first()).toBeVisible();
+    await expect(board.locator("[data-mobile-weekly-card]").first().locator("[data-opponent-logo]")).toBeVisible();
     await expect(page.getByText("RZ Touches", { exact: true })).toHaveCount(0);
     await expect(page.getByLabel("Matchup advantages").getByText(/^[+-]\d+$/).first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    if (position === "RB" || position === "WR") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-mobile-stat.png`) });
+    if (position === "QB" || position === "RB") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-mobile-stat.png`) });
 
     await page.getByRole("button", { name: "Rank View" }).click();
     await expect(board).toHaveAttribute("data-display-mode", "rank");
+    await expect(board.locator("[data-mobile-weekly-card]").first().locator('[data-display-rank="1"]').first().locator(":scope > div").nth(1)).toHaveText("#1");
     await expect(board.getByLabel("Matchup advantages").getByText(/^#\d+$/).first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    if (position === "RB" || position === "WR") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-mobile-rank.png`) });
+    if (position === "QB" || position === "RB") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-mobile-rank.png`) });
     await page.getByRole("button", { name: "Stat View" }).click();
+    if (position === "QB" || position === "RB") {
+      await board.getByRole("button", { name: /Show details for/ }).first().click();
+      const detail = board.locator("[data-weekly-expanded-detail]");
+      await expect(detail).toBeVisible();
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+      await detail.evaluate((element) => element.scrollIntoView({ block: "start" }));
+      await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-mobile-expanded.png`) });
+    }
   }
 });
 

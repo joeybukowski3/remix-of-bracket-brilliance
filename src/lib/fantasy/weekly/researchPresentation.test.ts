@@ -82,6 +82,13 @@ describe("weekly fantasy research heat presentation", () => {
 
     expect(after).toEqual(before);
     expect(prepared.every(({ row }, index) => row === joined[index])).toBe(true);
+    expect(prepared[0].projectedFantasyPoints).toMatchObject({
+      rawValue: joined[0].projectedFantasyPoints,
+      displayRank: joined[0].positionRank,
+      poolSize: joined.length,
+      tone: "gold",
+    });
+    expect(prepared.at(-1)?.projectedFantasyPoints.displayRank).toBe(joined.at(-1)?.positionRank);
     expect(prepared[0].seasonPpg.poolSize).toBe(joined[0].research.seasonPpg.poolSize);
     expect(prepared[0].seasonPpg.poolSize).not.toBe(32);
     expect(prepared.every((row) => row.opponentFpaSeason.poolSize === 32)).toBe(true);

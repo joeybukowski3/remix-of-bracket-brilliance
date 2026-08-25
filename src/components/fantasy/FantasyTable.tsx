@@ -65,6 +65,36 @@ export function FantasyPlayerIdentity({
   );
 }
 
+export function FantasyOpponentIdentity({
+  opponent,
+  homeAway,
+  compact = false,
+}: {
+  opponent: string;
+  homeAway: "home" | "away" | "neutral";
+  compact?: boolean;
+}) {
+  const normalizedOpponent = opponent.toUpperCase();
+  const prefix = homeAway === "away" ? "@" : "vs";
+
+  return (
+    <div
+      data-opponent-logo={normalizedOpponent}
+      className={cn("flex min-w-0 items-center", compact ? "gap-1" : "gap-1.5")}
+    >
+      <TeamLogo
+        name={normalizedOpponent}
+        logo={nflLogoUrl(normalizedOpponent.toLowerCase())}
+        className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
+      />
+      <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
+        <span className="font-bold lowercase text-slate-500">{prefix}</span>
+        <span className="font-black uppercase text-slate-950">{normalizedOpponent}</span>
+      </div>
+    </div>
+  );
+}
+
 export function FantasyExpandControl({
   label,
   expanded,

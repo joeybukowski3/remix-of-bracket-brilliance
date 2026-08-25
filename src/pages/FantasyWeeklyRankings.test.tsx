@@ -96,6 +96,7 @@ describe("Weekly Rankings consumer", () => {
 
   it("labels the primary number as a projection, never a bare ROS PPG", () => {
     renderPage();
+    expect(screen.getAllByRole("columnheader").slice(0, 3).map((header) => header.textContent)).toEqual(["RK", "OPPONENT", "PLAYER"]);
     expect(screen.getByRole("columnheader", { name: "PROJ. PTS" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "SEASON PPG" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "MATCHUP GRADE" })).toBeInTheDocument();
@@ -122,16 +123,20 @@ describe("Weekly Rankings consumer", () => {
     expect(statButton).toHaveAttribute("aria-pressed", "true");
     expect(rankButton).toHaveAttribute("aria-pressed", "false");
     expect(board).toHaveAttribute("data-display-mode", "stat");
-    expect(screen.getAllByRole("row")[1].querySelectorAll("td")[3]).toHaveTextContent(/\d+\.\d/);
+    const projectionCell = screen.getAllByRole("row")[1].querySelectorAll("td")[3];
+    const projectionTone = projectionCell.getAttribute("data-heat-tone");
+    expect(projectionCell).toHaveTextContent(artifact.rows.QB[0].projectedFantasyPoints.toFixed(1));
+    expect(projectionTone).toBe("gold");
 
     fireEvent.click(rankButton);
     expect(board).toHaveAttribute("data-display-mode", "rank");
     expect(rankButton).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("row")[1].querySelectorAll("td")[3]).toHaveTextContent(/^#\d+$/);
+    expect(screen.getAllByRole("row")[1].querySelectorAll("td")[3]).toHaveTextContent(`#${artifact.rows.QB[0].positionRank}`);
+    expect(screen.getAllByRole("row")[1].querySelectorAll("td")[3]).toHaveAttribute("data-heat-tone", projectionTone);
     expect(tuples()).toEqual(before);
   });
 
-  it("uses the shared light grid, team identity, and projected-points emphasis", () => {
+  it("uses the shared light grid, opponent-first identity, and projected-points heat", () => {
     renderPage();
     const table = screen.getByRole("table");
     const shell = table.closest("section");
@@ -146,8 +151,9 @@ describe("Weekly Rankings consumer", () => {
     expect(cells.every((cell) => cell.className.includes("border-b"))).toBe(true);
     expect(cells.slice(0, -1).every((cell) => cell.className.includes("border-r"))).toBe(true);
     expect(firstRow.querySelector(`[data-team-logo="${artifact.rows.QB[0].team.toUpperCase()}"]`)).toBeInTheDocument();
-    expect(headers[2].className).toContain("bg-sky-100");
-    expect(cells[2].className).toContain("bg-sky-100");
+    expect(firstRow.querySelector(`[data-opponent-logo="${artifact.rows.QB[0].opponent.toUpperCase()}"]`)).toBeInTheDocument();
+    expect(cells[1]).toHaveTextContent(artifact.rows.QB[0].homeAway === "away" ? `@${artifact.rows.QB[0].opponent.toUpperCase()}` : `vs${artifact.rows.QB[0].opponent.toUpperCase()}`);
+    expect(cells[3].className).toContain("weekly-heat-gold");
   });
 
   it("uses the shared four-color position language for active and inactive tabs", () => {
@@ -198,9 +204,11 @@ describe("Weekly Rankings consumer", () => {
     expect(table.className).toContain("table-fixed");
     fireEvent.click(screen.getAllByRole("button", { name: `Show details for ${artifact.rows.QB[0].playerName}` })[0]);
     expect(screen.getByText(/Pregame information only; research context does not alter/i)).toBeInTheDocument();
-    expect(screen.getByText(/Team pass block Rank: \d+(st|nd|rd|th)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Opponent pass rush Rank: \d+(st|nd|rd|th)/i)).toBeInTheDocument();
-    expect(screen.getAllByText((_, element) => Boolean(element?.textContent?.match(/^Weekly Matchup Edge Rank: \d+(st|nd|rd|th)$/i)))).toHaveLength(3);
+    expect(screen.getByRole("heading", { name: "Samples / evidence" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Projection context summary" })).toBeInTheDocument();
+    expect(screen.getByText(/Team pass block · \d+(st|nd|rd|th)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Opponent pass rush · \d+(st|nd|rd|th)/i)).toBeInTheDocument();
+    expect(screen.getAllByText((_, element) => Boolean(element?.textContent?.match(/^\d+(st|nd|rd|th) of \d+$/i)))).toHaveLength(3);
   });
 
   it("renders an opaque sticky desktop header below the site nav", () => {
