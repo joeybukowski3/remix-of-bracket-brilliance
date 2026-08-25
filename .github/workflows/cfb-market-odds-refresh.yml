@@ -1,0 +1,156 @@
+name: CFB Market Odds Refresh
+
+run-name: CFB Market Odds Refresh • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# Market odds move far more often than schedule/preseason ratings, so this
+# is deliberately a SEPARATE workflow from any ratings/model refresh (there
+# is currently no automated ratings-refresh workflow at all — that artifact
+# is still updated manually). We do not need sportsbook-level freshness, so
+# this runs on a light fixed daily cadence rather than polling intraday:
+# 4:00 AM ET every day Mon-Sat, plus one extra Saturday morning run at
+# 10:15 AM ET (the day lines are most likely to have moved ahead of
+# Saturday kickoffs), and no scheduled run on Sunday. That's 7 runs/week.
+# GitHub Actions cron schedules are UTC-only, so a fixed UTC offset would
+# silently drift by an hour across the EST/EDT boundary — this uses GitHub
+# Actions' native per-trigger `timezone:` field (already established in
+# this workflow) so each cron line is evaluated in America/New_York and
+# stays correct across DST without a runtime gate.
+on:
+  schedule:
+    - cron: "0 4 * * 1,2,3,4,5,6"
+      timezone: "America/New_York"
+    - cron: "15 10 * * 6"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# This job runs ONLY the odds-only fetch/update pair (npm run
+# cfb:refresh-market-odds = cfb:fetch-market-odds && cfb:update-market-odds)
+# — never the broad multi-endpoint schedule/ratings fetch-and-rebuild chain
+# used by the (manual, unrelated) ratings pipeline. cfb:fetch-market-odds
+# makes exactly one CFBD request (GET /lines?year=2026); cfb:update-market-odds
+# rewrites ONLY the `odds` field of each game already in the committed
+# schedule (data/generated/cfb/2026-schedule-v1.json), joined strictly by
+# CFBD game ID, and refuses to write if anything else about the schedule
+# would change. No ratings/calibration recompute happens in this workflow
+# at all, so there is nothing else that could be committed even by mistake.
+concurrency:
+  group: cfb-market-odds-refresh-${{ github.repository }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-market-odds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Exactly one CFBD request: GET /lines?year=2026. A failure here
+      # throws and fails the step (no `optional: true` swallow) — the
+      # workflow stops before the update/commit steps run, so main's
+      # last-published odds are left untouched. On success the raw cache
+      # is written atomically; on failure nothing is overwritten.
+      - name: Fetch current CFBD market odds (/lines only)
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+        run: npm run cfb:fetch-market-odds
+
+      # Rewrites ONLY the `odds` field of each already-committed game,
+      # joined by CFBD game ID; refuses to write (throws, failing this
+      # step) if anything else about the schedule would change. A missing
+      # raw cache or a per-game absence in the fetch both fall back to
+      # that game's last-known-good committed odds instead of nulling them
+      # out (src/lib/cfb/pipeline/mergeScheduleOdds.ts).
+      - name: Update schedule odds (merges by CFBD game ID, odds-only)
+        run: npm run cfb:update-market-odds
+
+      - name: Detect schedule/odds changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'data/generated/cfb/2026-schedule-v1.json')" ]; then
+            echo "No CFB schedule/odds changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "CFB schedule/odds changed."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push schedule/odds artifact
+        id: commit
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated/cfb/2026-schedule-v1.json
+
+          if git diff --cached --quiet; then
+            echo "No staged CFB schedule/odds changes."
+            exit 0
+          fi
+
+          git commit -m "data(cfb): refresh Week 1 market odds"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — CFB schedule/odds artifact was not committed." >&2
+            exit 1
+          fi
+
+          echo "CFB schedule/odds artifact pushed successfully."
+          echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # CFBD_API_KEY is read only from secrets and only used as an
+      # environment variable for the fetch step above — it is never echoed,
+      # logged, or written to any committed artifact. Internal caches
+      # (data/cfb/cfbd/raw/**) are gitignored or simply never staged, so a
+      # failed fetch, a failed odds-only merge validation, or a mid-pipeline
+      # error leaves main's last-published schedule/odds untouched. This
+      # workflow never touches ratings CSV/JSON, the calibration report, or
+      # any V2 artifact — it has no step capable of producing them.
+
+  deploy-pages:
+    name: Deploy changed CFB schedule/odds to GitHub Pages
+    needs: refresh-market-odds
+    if: needs.refresh-market-odds.outputs.deploy_ref != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.refresh-market-odds.outputs.deploy_ref }}

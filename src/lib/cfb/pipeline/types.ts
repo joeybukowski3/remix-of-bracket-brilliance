@@ -156,3 +156,19 @@ export type CfbOpponentAdjustmentResult = {
   iterations: number;
   eligibleGameCount: number;
 };
+
+/** Raw /lines response shape (CollegeFootballData.com API v2). One row per (game, provider). */
+export type CfbdLineEntryRaw = {
+  provider: string;
+  spread?: number | null;
+  spreadOpen?: number | null;
+  overUnder?: number | null;
+  overUnderOpen?: number | null;
+  homeMoneyline?: number | null;
+  awayMoneyline?: number | null;
+};
+
+export type CfbdLinesGameRaw = {
+  id: number;
+  lines: CfbdLineEntryRaw[];
+};

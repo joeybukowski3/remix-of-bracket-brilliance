@@ -44,6 +44,9 @@ export default defineConfig({
       // CFB Model V2 WU7A checkpoint -- real git-add mechanics for the
       // browser artifact vs. its .gitignore rule.
       "scripts/cfb-v2-browser-artifact-gitignore.test.ts",
+      // CFB Week 1 market odds -- odds-only fetch/update CLI behavior.
+      "scripts/cfb-fetch-market-odds.test.ts",
+      "scripts/cfb-update-market-odds.test.ts",
     ],
   },
   resolve: {
