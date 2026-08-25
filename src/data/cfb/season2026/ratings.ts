@@ -1,6 +1,6 @@
 import generated from "../../../../data/generated/cfb/2026-preseason-ratings-v1.1.json";
 import type { CfbJkbRatings } from "../types";
-import { CFB_AP_RANKS_2026 } from "./apRankings";
+import { CFB_AP_RANKS_2026, CFB_CFP_RANKS_2026 } from "./officialRankings";
 
 type GeneratedV11Row = {
   teamId: string;
@@ -22,6 +22,7 @@ export const CFB_V1_RATINGS_2026: CfbJkbRatings[] = rows.map((row) => ({
   jkbRank: row.rank,
   previousJkbRank: null,
   apRank: CFB_AP_RANKS_2026[row.teamId] ?? null,
+  cfpRank: CFB_CFP_RANKS_2026[row.teamId] ?? null,
   jkbPowerRating: row.jkbPower,
   offensiveRating: row.jkbOffense,
   defensiveRating: row.jkbDefense,

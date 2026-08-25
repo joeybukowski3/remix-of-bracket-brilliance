@@ -134,6 +134,11 @@ describe("Weekly Rankings consumer", () => {
     expect(within(glossary).getByText(/#1 is best or most favorable within the metric's comparison pool/)).toBeVisible();
     expect(within(glossary).getByText(/underlying raw statistic while retaining the same heat color/)).toBeVisible();
     expect(within(glossary).getByText(/Gold = elite · Green = favorable · Neutral = middle · Red = unfavorable/)).toBeVisible();
+    expect(within(glossary).getByText(/Weighted matchup score combining opponent fantasy points allowed, recent fantasy points allowed, trench advantage, EPA advantage, and success-rate advantage/)).toBeVisible();
+    expect(within(glossary).getByText(/Great 85–100 · Good 70–84\.99/)).toBeVisible();
+    expect(within(glossary).getByText(/30% FPA Season · 15% FPA L5 · 20% Trenches · 20% EPA · 15% Success/)).toBeVisible();
+    expect(within(glossary).getByText(/30% FPA Season · 15% FPA L5 · 25% Trenches · 15% EPA · 15% Success/)).toBeVisible();
+    expect(within(glossary).getByText(/Matchup is research context and does not independently change the displayed JKB projection/)).toBeVisible();
 
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -250,6 +255,11 @@ describe("Weekly Rankings consumer", () => {
     expect(screen.getByRole("heading", { name: "Samples / evidence" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Projection context" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Matchup details" })).toBeInTheDocument();
+    expect(document.querySelector("[data-composite-matchup]")).toHaveTextContent("Composite matchup");
+    expect(document.querySelector("[data-composite-matchup-score]")).toHaveTextContent(/^\d+ \/ 100$/);
+    expect(document.querySelectorAll("[data-composite-component]")).toHaveLength(5);
+    expect(document.querySelector("[data-composite-matchup]")).toHaveTextContent(/QB \/ WR \/ TE weights: 30% FPA Season/);
+    expect(document.querySelector("[data-composite-matchup]")).toHaveTextContent(/does not independently change the displayed JKB projection/);
     expect(screen.getByRole("heading", { name: "Projection context" })).toBeInTheDocument();
     expect(screen.getByText(/Team pass block · \d+(st|nd|rd|th)/i)).toBeInTheDocument();
     expect(screen.getByText(/Opponent pass rush · \d+(st|nd|rd|th)/i)).toBeInTheDocument();
@@ -330,15 +340,19 @@ describe("Weekly Rankings consumer", () => {
     expect(details).toHaveTextContent("Trenches");
     expect(details).toHaveTextContent("EPA advantage");
     expect(details).toHaveTextContent("Success advantage");
+    expect(details).toHaveTextContent("FPA Season");
+    expect(details).toHaveTextContent("FPA L5");
   });
 
-  it("uses the matchup cell tone without rendering a nested badge", () => {
+  it("renders the composite grade as primary matchup text with a compact score and semantic tone", () => {
     const { container } = renderPage();
     const cell = container.querySelector("[data-matchup-grade-cell]");
     expect(cell).toBeInTheDocument();
     expect(cell).toHaveTextContent(/Great|Good|Neutral|Tough|Very Tough/);
+    expect(cell).toHaveAttribute("data-matchup-grade");
+    expect(cell).toHaveAttribute("data-matchup-score");
     expect(cell).toHaveAttribute("data-heat-tone");
-    expect(cell?.querySelector("span, [class*='rounded'], [class*='border-current']")).not.toBeInTheDocument();
+    expect(cell?.querySelector("[class*='rounded'], [class*='border-current']")).not.toBeInTheDocument();
   });
 
   it("sorts every common desktop column with useful first-click and reversible directions", () => {
@@ -370,11 +384,11 @@ describe("Weekly Rankings consumer", () => {
     fireEvent.click(screen.getByRole("button", { name: "PROJ. PTS" }));
     expectAscending(numbers(3));
 
-    const strength = new Map([["GREAT", 1], ["GOOD", 2], ["NEUTRAL", 3], ["TOUGH", 4], ["VERY TOUGH", 5]]);
     fireEvent.click(screen.getByRole("button", { name: "MATCHUP" }));
-    expectAscending(text(6).map((grade) => strength.get(grade) ?? 99));
+    const matchupScoresDescending = rows().map((row) => Number(row.cells[6].getAttribute("data-matchup-score")));
+    expectAscending([...matchupScoresDescending].reverse());
     fireEvent.click(screen.getByRole("button", { name: "MATCHUP" }));
-    expectAscending([...text(6).map((grade) => strength.get(grade) ?? -1)].reverse());
+    expectAscending(rows().map((row) => Number(row.cells[6].getAttribute("data-matchup-score"))));
 
     for (const name of ["SEASON PPG", "L5 TREND", "OPP ALLOWED SZN", "OPP ALLOWED L5"]) {
       fireEvent.click(screen.getByRole("button", { name }));

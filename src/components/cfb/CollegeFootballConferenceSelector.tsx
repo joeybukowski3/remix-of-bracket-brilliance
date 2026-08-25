@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import CollegeFootballConferenceLogo from "./CollegeFootballConferenceLogo";
 
 export type CfbConferenceFilter = CfbConferenceId | "all";
 
@@ -16,10 +17,13 @@ type Props = {
 };
 
 /**
- * Conference full names come from CFB_CONFERENCES (no conference logo assets
- * exist in the repo yet — falls back to name-only; see redesign follow-up).
+ * Conference full names + logos come from CFB_CONFERENCES. A conference with
+ * no verified logo asset renders name-only (CollegeFootballConferenceLogo
+ * never shows a broken image icon).
  */
 export default function CollegeFootballConferenceSelector({ value, onChange }: Props) {
+  const selected = value !== "all" ? CFB_CONFERENCES[value] : null;
+
   return (
     <Select
       value={value}
@@ -29,13 +33,23 @@ export default function CollegeFootballConferenceSelector({ value, onChange }: P
         aria-label="Select conference"
         className="h-8 w-[14rem] rounded border-slate-200 bg-white text-xs font-semibold text-slate-700"
       >
-        <SelectValue placeholder="All Conferences" />
+        {selected ? (
+          <span className="flex min-w-0 items-center gap-1.5">
+            <CollegeFootballConferenceLogo logo={selected.logo} />
+            <span className="truncate">{selected.fullName}</span>
+          </span>
+        ) : (
+          <SelectValue placeholder="All Conferences" />
+        )}
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">All Conferences</SelectItem>
         {CFB_CONFERENCE_ORDER.map((id) => (
           <SelectItem key={id} value={id}>
-            {CFB_CONFERENCES[id].fullName}
+            <span className="flex min-w-0 items-center gap-1.5">
+              <CollegeFootballConferenceLogo logo={CFB_CONFERENCES[id].logo} />
+              <span className="truncate">{CFB_CONFERENCES[id].fullName}</span>
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

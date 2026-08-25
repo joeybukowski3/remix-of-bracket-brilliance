@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, CircleDot } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import {
@@ -217,7 +217,7 @@ function MetricCellWithProjectionData({ metric, value }: { metric: WeeklyDisplay
   );
 }
 
-function MobileMetricCell({ value, metric, matchupTone }: { value: string; metric?: WeeklyDisplayMetric; matchupTone?: ReturnType<typeof matchupGradeHeatTone> }) {
+function MobileMetricCell({ value, metric, matchupTone }: { value: ReactNode; metric?: WeeklyDisplayMetric; matchupTone?: ReturnType<typeof matchupGradeHeatTone> }) {
   const heat = metric ? heatProps(metric) : null;
   const tone = matchupTone ?? heat?.["data-heat-tone"];
   return (
@@ -228,7 +228,7 @@ function MobileMetricCell({ value, metric, matchupTone }: { value: string; metri
       data-display-rank={heat?.["data-display-rank"]}
       data-rank-pool-size={heat?.["data-rank-pool-size"]}
     >
-      <span className="truncate">{value}</span>
+      {value}
     </div>
   );
 }
@@ -326,7 +326,7 @@ function MobileExpandedSummary({ presentation }: { presentation: WeeklyResearchP
   const metrics = [
     ["Season PPG", rankAndValue(formatMetric(row.research.seasonPpg), presentation.seasonPpg)],
     ["Last 5 Trend", rankAndValue(formatMetric(row.research.last5Ppg), presentation.last5Ppg)],
-    ["Matchup", row.matchupRating?.label ?? "N/A"],
+    ["Matchup", presentation.matchup.score == null ? "N/A" : `${presentation.matchup.grade} · ${presentation.matchup.score}`],
     ["Opponent Allowed Season", rankAndValue(formatMetric(row.research.opponentFpaSeason), presentation.opponentFpaSeason)],
     ["Opponent Allowed Last 5", rankAndValue(formatMetric(row.research.opponentFpaLast5), presentation.opponentFpaLast5)],
     ["Trenches", rankAndValue(edgeStatText(row.matchupEdges.trenches), presentation.matchupEdges.trenches)],
@@ -400,6 +400,7 @@ function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow 
       </section>
       <section aria-labelledby={`matchups-${row.playerId}`}>
         <h3 id={`matchups-${row.playerId}`} className="mb-1 px-1 text-[9px] font-black uppercase tracking-[0.04em] text-slate-950 sm:mb-1.5 sm:text-[11px]">Matchup details</h3>
+        <CompositeMatchupSummary presentation={presentation} />
         <div className="grid gap-1.5 md:grid-cols-3 md:gap-2">
           <EdgeDetail title="Trenches" category="trenches" edge={row.matchupEdges.trenches} metric={presentation.matchupEdges.trenches} />
           <EdgeDetail title="EPA advantage" category="epa" edge={row.matchupEdges.epa} metric={presentation.matchupEdges.epa} />
@@ -422,14 +423,62 @@ function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow 
   );
 }
 
+function CompositeMatchupSummary({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+  const { matchup, row } = presentation;
+  const components = [
+    ["FPA Season", matchup.components.fpaSeason.rank],
+    ["FPA L5", matchup.components.fpaLast5.rank],
+    ["Trenches", matchup.components.trenches.rank],
+    ["EPA", matchup.components.epa.rank],
+    ["Success", matchup.components.success.rank],
+  ] as const;
+  const weights = row.position === "RB"
+    ? "RB weights: 30% FPA Season · 15% FPA L5 · 25% Trenches · 15% EPA · 15% Success."
+    : "QB / WR / TE weights: 30% FPA Season · 15% FPA L5 · 20% Trenches · 20% EPA · 15% Success.";
+  const tone = matchupGradeHeatTone(matchup.gradeId);
+
+  return (
+    <section data-composite-matchup className="mb-1.5 overflow-hidden border border-slate-200 bg-white sm:rounded-lg">
+      <div className="grid gap-2 border-b border-slate-200 bg-slate-50 px-2 py-2 sm:grid-cols-[auto_1fr] sm:items-center sm:px-3">
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-[0.05em] text-slate-500">Composite matchup</p>
+          <p className="mt-0.5 flex items-baseline gap-2">
+            <span data-composite-matchup-grade className={cn("text-sm font-black", weeklyHeatTextClass(tone))}>{matchup.grade}</span>
+            <span data-composite-matchup-score className="font-black tabular-nums text-slate-950">{matchup.score == null ? "N/A" : `${matchup.score} / 100`}</span>
+          </p>
+        </div>
+        <dl className="grid grid-cols-5 gap-px overflow-hidden rounded border border-slate-200 bg-slate-200">
+          {components.map(([label, rank]) => (
+            <div key={label} className="min-w-0 bg-white px-1 py-1 text-center">
+              <dt className="truncate text-[8px] font-bold uppercase tracking-[0.02em] text-slate-500 sm:text-[9px]">{label}</dt>
+              <dd data-composite-component={label} className="mt-0.5 text-[11px] font-black tabular-nums text-slate-950">{rank == null ? "N/A" : `#${rank}`}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <p className="px-2 py-1.5 text-[9px] leading-4 text-slate-600 sm:px-3 sm:text-[10px]">
+        {weights} Matchup is research context and does not independently change the displayed JKB projection.
+      </p>
+    </section>
+  );
+}
+
 function mobileMetric(
   presentation: WeeklyResearchPresentationRow,
   key: MobileMetricKey,
   mode: WeeklyResearchDisplayMode,
-): { value: string; metric?: WeeklyDisplayMetric; matchupTone?: ReturnType<typeof matchupGradeHeatTone> } {
+): { value: ReactNode; metric?: WeeklyDisplayMetric; matchupTone?: ReturnType<typeof matchupGradeHeatTone> } {
   const { row } = presentation;
   if (key === "matchup") {
-    return { value: compactMatchupLabel(row.matchupRating?.label), matchupTone: matchupGradeHeatTone(row.matchupRating?.id) };
+    return {
+      value: (
+        <span className="flex min-w-0 flex-col items-center leading-[0.95]">
+          <span className="max-w-full truncate">{compactMatchupLabel(presentation.matchup.grade)}</span>
+          <span className="mt-0.5 text-[8px] tabular-nums opacity-80">{presentation.matchup.score ?? "—"}</span>
+        </span>
+      ),
+      matchupTone: matchupGradeHeatTone(presentation.matchup.gradeId),
+    };
   }
   if (key === "trenches" || key === "epa" || key === "success") {
     return { value: metricText(presentation.matchupEdges[key], mode, edgeStatText(row.matchupEdges[key])), metric: presentation.matchupEdges[key] };
@@ -620,7 +669,17 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
                     <MetricCellWithProjectionData metric={presentation.projectedFantasyPoints} value={row.projectedFantasyPoints} />
                     <MetricCell metric={presentation.seasonPpg} mode={displayMode} statValue={formatMetric(row.research.seasonPpg)} />
                     <MetricCell metric={presentation.last5Ppg} mode={displayMode} statValue={formatMetric(row.research.last5Ppg)} />
-                    <td data-matchup-grade-cell className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center font-black", matchupGradeHeatClass(row.matchupRating?.id))} style={weeklyHeatStyle(matchupGradeHeatTone(row.matchupRating?.id))} data-heat-tone={matchupGradeHeatTone(row.matchupRating?.id)}>{row.matchupRating?.label ?? "N/A"}</td>
+                    <td
+                      data-matchup-grade-cell
+                      data-matchup-grade={presentation.matchup.grade}
+                      data-matchup-score={presentation.matchup.score ?? undefined}
+                      className={cn(FANTASY_TABLE_BODY_CELL, "px-0.5 py-1 text-center font-black", matchupGradeHeatClass(presentation.matchup.gradeId))}
+                      style={weeklyHeatStyle(matchupGradeHeatTone(presentation.matchup.gradeId))}
+                      data-heat-tone={matchupGradeHeatTone(presentation.matchup.gradeId)}
+                    >
+                      <span className="block leading-tight">{presentation.matchup.grade}</span>
+                      <span className="block text-[9px] leading-tight tabular-nums opacity-80">{presentation.matchup.score ?? "—"}</span>
+                    </td>
                     <MetricCell metric={presentation.opponentFpaSeason} mode={displayMode} statValue={formatMetric(row.research.opponentFpaSeason)} />
                     <MetricCell metric={presentation.opponentFpaLast5} mode={displayMode} statValue={formatMetric(row.research.opponentFpaLast5)} />
                     {EDGE_COLUMNS[position].map((column) => {

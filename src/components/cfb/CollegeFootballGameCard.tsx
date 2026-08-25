@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { CfbGame, CfbJkbRatings, CfbSeasonRecord, CfbTeam } from "@/data/cfb/types";
 import {
   formatCfbGameStatusLabel,
+  formatCfbVenueLocation,
   formatNullableNumber,
   formatRecord,
   getCfbMarketFavorite,
@@ -65,10 +66,12 @@ function TeamRow({
             <span
               className={cn(
                 "shrink-0 rounded px-1 py-0.5 text-[9px] font-bold leading-none",
-                rank.source === "ap" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
+                rank.isOfficial ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
               )}
+              title={rank.label}
             >
-              {rank.text}
+              <span aria-hidden="true">{rank.text}</span>
+              <span className="sr-only">{rank.label}</span>
             </span>
           )}
           <span className="shrink-0 text-[11px] font-normal text-slate-500">{record}</span>
@@ -89,6 +92,7 @@ function TeamRow({
 
 export default function CollegeFootballGameCard({ game, away, home, matchupAvailable }: Props) {
   const kickoffLabel = formatCfbKickoffLabel(game.date, game.time);
+  const venueLocation = formatCfbVenueLocation(game.venueCity, game.venueState);
   const favorite = getCfbMarketFavorite(game);
   const isFinal = game.gameStatus === "final" && game.awayScore != null && game.homeScore != null;
   const statusLabel = isFinal
@@ -117,7 +121,12 @@ export default function CollegeFootballGameCard({ game, away, home, matchupAvail
 
       <div className="flex flex-wrap items-center justify-between gap-1 border-b border-slate-100 px-2.5 py-0.5 text-[10px] text-slate-500">
         <span className="flex min-w-0 items-center gap-1.5">
-          {game.venue && <span className="truncate">{game.venue}</span>}
+          {game.venue && (
+            <span className="min-w-0 truncate">
+              <span className="font-semibold text-slate-600">{game.venue}</span>
+              {venueLocation && <span className="text-slate-400"> {venueLocation}</span>}
+            </span>
+          )}
           {game.neutralSite && (
             <span className="shrink-0 rounded bg-violet-100 px-1 py-0.5 font-semibold text-violet-900">
               Neutral

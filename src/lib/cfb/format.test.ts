@@ -96,9 +96,61 @@ describe("CFB format helpers", () => {
   });
 
   it("prefers official AP rank over JKB rank, marking the JKB fallback clearly", () => {
-    expect(getCfbRankDisplay({ apRank: 8, jkbRank: 14 })).toEqual({ text: "#8", source: "ap" });
-    expect(getCfbRankDisplay({ apRank: null, jkbRank: 14 })).toEqual({ text: "JKB 14", source: "jkb" });
-    expect(getCfbRankDisplay({ apRank: null, jkbRank: null })).toEqual({ text: "", source: "none" });
+    expect(getCfbRankDisplay({ apRank: 8, jkbRank: 14 })).toEqual({
+      text: "#8",
+      label: "AP rank 8",
+      source: "ap",
+      isOfficial: true,
+    });
+    expect(getCfbRankDisplay({ apRank: null, jkbRank: 14 })).toEqual({
+      text: "JKB 14",
+      label: "JKB power rank 14",
+      source: "jkb",
+      isOfficial: false,
+    });
+    expect(getCfbRankDisplay({ apRank: null, jkbRank: null })).toEqual({
+      text: "",
+      label: "",
+      source: "none",
+      isOfficial: false,
+    });
+  });
+
+  it("prefers CFP over AP once a committee poll exists", () => {
+    expect(getCfbRankDisplay({ cfpRank: 6, apRank: 8, jkbRank: 14 })).toEqual({
+      text: "#6",
+      label: "CFP rank 6",
+      source: "cfp",
+      isOfficial: true,
+    });
+    expect(getCfbRankDisplay({ cfpRank: 6, apRank: null, jkbRank: 14 }).source).toBe("cfp");
+  });
+
+  it("falls back to AP when no CFP poll is available (the current in-season state)", () => {
+    expect(getCfbRankDisplay({ cfpRank: null, apRank: 8, jkbRank: 14 }).source).toBe("ap");
+    expect(getCfbRankDisplay({ apRank: 8, jkbRank: 14 }).source).toBe("ap");
+  });
+
+  it("falls back to a clearly labeled JKB rank only when a team is officially unranked", () => {
+    const fallback = getCfbRankDisplay({ cfpRank: null, apRank: null, jkbRank: 14 });
+    expect(fallback.source).toBe("jkb");
+    expect(fallback.isOfficial).toBe(false);
+    // A JKB rank must never render as a bare official-looking "#N".
+    expect(fallback.text.startsWith("#")).toBe(false);
+    expect(fallback.text).toBe("JKB 14");
+    expect(fallback.label).not.toMatch(/\bAP\b|\bCFP\b/);
+  });
+
+  it("labels each rank source distinctly for assistive technology", () => {
+    expect(getCfbRankDisplay({ cfpRank: 1, apRank: 2, jkbRank: 3 }).label).toBe("CFP rank 1");
+    expect(getCfbRankDisplay({ apRank: 25, jkbRank: 3 }).label).toBe("AP rank 25");
+    expect(getCfbRankDisplay({ apRank: null, jkbRank: 3 }).label).toBe("JKB power rank 3");
+  });
+
+  it("treats NaN ranks as unavailable at every tier rather than rendering NaN", () => {
+    expect(getCfbRankDisplay({ cfpRank: Number.NaN, apRank: 8, jkbRank: 14 }).source).toBe("ap");
+    expect(getCfbRankDisplay({ cfpRank: Number.NaN, apRank: Number.NaN, jkbRank: 14 }).source).toBe("jkb");
+    expect(getCfbRankDisplay({ apRank: Number.NaN, jkbRank: Number.NaN }).source).toBe("none");
   });
 
   it("maps every game status to a stable label", () => {

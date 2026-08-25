@@ -1,12 +1,10 @@
 import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
-import { MATCHUP_GRADES, type MatchupGrade } from "@/lib/fantasy/matchupGrade";
 import { createEmptyWeeklyFantasyResearchContext, type WeeklyFantasyResearchContext } from "@/lib/fantasy/weekly/researchContext";
 import type { WeeklyFantasyResearchArtifact } from "@/lib/fantasy/weekly/researchArtifact";
 import type { FantasyMatchupEdges, NflMatchupEdge } from "@/lib/nfl/matchupEdges";
 
 export type WeeklyFantasyResearchRow = WeeklyFantasyProjectionProductionRow & {
   research: WeeklyFantasyResearchContext;
-  matchupRating: MatchupGrade | null;
   matchupEdges: FantasyMatchupEdges;
 };
 
@@ -48,9 +46,6 @@ export function joinWeeklyFantasyResearchRows(
     return {
       ...projection,
       research: accepted?.context ?? createEmptyWeeklyFantasyResearchContext(),
-      matchupRating: accepted?.matchupGrade
-        ? MATCHUP_GRADES.find((grade) => grade.id === accepted.matchupGrade) ?? null
-        : null,
       matchupEdges: accepted?.matchupEdges ?? emptyEdges(projection.position),
     };
   });

@@ -1,7 +1,9 @@
 /**
- * Official 2026 preseason AP Top 25 ranks by JKB team id.
+ * Back-compatible re-export of the official AP rank map.
  *
- * The poll has not been published, so this remains empty. Populate only from a
- * verified official source; AP rank is a comparison field, not a JKB input.
+ * The authoritative source is now the generated official-rankings artifact
+ * (data/generated/cfb/2026-rankings.json) loaded by ./officialRankings — this
+ * module is kept so existing importers (the market-anchor build script) keep
+ * working unchanged. AP rank remains a comparison field, never a JKB input.
  */
-export const CFB_AP_RANKS_2026: Readonly<Partial<Record<string, number>>> = Object.freeze({});
+export { CFB_AP_RANKS_2026 } from "./officialRankings";

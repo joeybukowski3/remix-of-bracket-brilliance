@@ -1,4 +1,14 @@
 export { CFB_V1_MODEL_VERSION, CFB_V1_RATINGS_2026, CFB_V1_RATINGS_BY_TEAM } from "./ratings";
+export {
+  CFB_AP_POLL_2026,
+  CFB_AP_RANKS_2026,
+  CFB_CFP_POLL_2026,
+  CFB_CFP_RANKS_2026,
+  CFB_IS_CFP_POLL_ACTIVE,
+  CFB_OFFICIAL_RANKINGS_2026,
+  type CfbOfficialPollArtifact,
+  type CfbOfficialRankingsArtifact,
+} from "./officialRankings";
 export { CFB_RECORDS_2026, CFB_RECORDS_BY_TEAM } from "./records";
 export { CFB_STATS_2026, CFB_STATS_BY_TEAM } from "./stats";
 export { CFB_CONTEXT_2026, CFB_CONTEXT_BY_TEAM } from "./context";

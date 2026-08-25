@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  CFB_AP_RANKS_2026,
   CFB_PROVENANCE,
   getAllTeams,
   getTeamBySlug,
@@ -14,7 +15,10 @@ describe("CFB data architecture", () => {
     expect(uga).toBeDefined();
     expect(uga!.logo).toContain("espncdn.com");
     expect(uga!.ratings.jkbRank).toBeGreaterThanOrEqual(1);
-    expect(uga!.ratings.apRank).toBeNull();
+    // AP rank is whatever the official artifact currently publishes for this
+    // team (null when unranked) — never a hardcoded value, which would go
+    // stale every time a new weekly poll lands.
+    expect(uga!.ratings.apRank).toBe(CFB_AP_RANKS_2026["uga"] ?? null);
     expect(uga!.ratings.sosPlayedRank).toBeNull();
     expect(uga!.ratings.sosRemainingRank).not.toBeNull();
     expect(uga!.record.wins).toBe(0);
@@ -27,11 +31,18 @@ describe("CFB data architecture", () => {
     expect(isPreseasonPhase()).toBe(true);
   });
 
-  it("loads AP only from the independent typed source", () => {
+  it("loads AP only from the independent official-rankings source, never the generated ratings row", () => {
     const loader = readFileSync(resolve("src/data/cfb/season2026/ratings.ts"), "utf8");
     expect(loader).toContain("CFB_AP_RANKS_2026[row.teamId] ?? null");
     expect(loader).not.toContain("apRank: row.apRank");
-    expect(getAllTeams().every((team) => team.ratings.apRank === null)).toBe(true);
+    // Every composed team's apRank mirrors the official artifact exactly:
+    // ranked teams take their published rank, everyone else stays null. This
+    // holds whether or not a poll has been published, so it never goes stale.
+    for (const team of getAllTeams()) {
+      expect(team.ratings.apRank).toBe(CFB_AP_RANKS_2026[team.id] ?? null);
+    }
+    const ranked = getAllTeams().filter((team) => team.ratings.apRank !== null);
+    expect(ranked).toHaveLength(Object.keys(CFB_AP_RANKS_2026).length);
   });
 
   it("includes exactly 138 FBS teams across required conferences", () => {

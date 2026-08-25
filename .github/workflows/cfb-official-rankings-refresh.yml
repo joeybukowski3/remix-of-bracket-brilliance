@@ -1,0 +1,164 @@
+name: CFB Official Rankings Refresh
+
+run-name: CFB Official Rankings Refresh • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# Official polls change on a weekly publication schedule, not a market schedule,
+# so this is deliberately much lighter than cfb-market-odds-refresh.yml (7
+# runs/week) and never shares a job with it.
+#
+# Publication timing this cadence is built around:
+#   * AP Top 25 preseason poll — released once in mid-August, before Week 1.
+#   * AP Top 25 weekly polls — released Sunday afternoons (~2:00 PM ET) once
+#     the season is under way.
+#   * CFP selection-committee rankings — released Tuesday evenings (~7:00 PM
+#     ET) beginning in early November, through Selection Day.
+#
+# Three scheduled runs per week cover all three windows with one CFBD request
+# each (3 calls/week total), and nothing polls intraday:
+#   * Sunday 3:30 PM ET  — after the weekly AP release.
+#   * Monday 9:00 AM ET  — safety net: catches a late/delayed AP publication and
+#     is the run that picks up the mid-August preseason poll in the offseason.
+#   * Wednesday 7:00 AM ET — after the Tuesday-night CFP committee release.
+#
+# GitHub Actions cron is UTC-only, so a fixed UTC offset would silently drift an
+# hour across the EST/EDT boundary. This uses the native per-trigger `timezone:`
+# field (the pattern already established by cfb-market-odds-refresh.yml) so each
+# line is evaluated in America/New_York and stays correct across DST.
+on:
+  schedule:
+    - cron: "30 15 * * 0"
+      timezone: "America/New_York"
+    - cron: "0 9 * * 1"
+      timezone: "America/New_York"
+    - cron: "0 7 * * 3"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# This job runs ONLY the rankings-only fetch/update pair (npm run
+# cfb:refresh-rankings = cfb:fetch-rankings && cfb:update-rankings) — never the
+# broad multi-endpoint schedule/ratings chain and never anything V2. There is no
+# step in this workflow capable of producing a ratings, calibration, schedule,
+# odds, or V2 artifact, so none can be committed even by mistake.
+concurrency:
+  group: cfb-official-rankings-refresh-${{ github.repository }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-rankings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Exactly one CFBD request: GET /rankings?year=2026. A failure throws and
+      # fails this step, so the workflow stops before the update/commit steps
+      # and main's last-published rankings are left untouched. On success the
+      # raw cache (gitignored) is written atomically.
+      - name: Fetch official CFBD rankings (/rankings only)
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+        run: npm run cfb:refresh-rankings
+
+      # cfb:update-rankings exits non-zero only for a genuine data problem —
+      # an unreadable raw cache, or a poll that was published but failed strict
+      # validation (not exactly 25 teams, duplicate ranks/teams, ranks outside
+      # 1-25, or a school that does not map to FBS production metadata). In
+      # both cases it leaves the committed artifact's affected poll at its
+      # last-known-good value rather than blanking it.
+      #
+      # A legitimately absent poll is NOT a failure: before the committee's
+      # first November release there is simply no CFP poll, the artifact
+      # publishes `polls.cfp: null`, the step exits zero, and the UI keeps
+      # showing official AP ranks with JKB fallbacks for unranked teams.
+
+      - name: Detect official ranking changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'data/generated/cfb/2026-rankings.json')" ]; then
+            echo "No official CFB ranking changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Official CFB rankings changed."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only the ranking artifact is ever staged by path. cfb:update-rankings
+      # skips the write entirely when the poll content is unchanged, so an
+      # unchanged run produces no commit and no deploy (a differing generatedAt
+      # alone can never trigger one).
+      - name: Commit and push official rankings artifact
+        id: commit
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/generated/cfb/2026-rankings.json
+
+          if git diff --cached --quiet; then
+            echo "No staged official ranking changes."
+            exit 0
+          fi
+
+          git commit -m "data(cfb): refresh official AP/CFP rankings"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — official ranking artifact was not committed." >&2
+            exit 1
+          fi
+
+          echo "Official ranking artifact pushed successfully."
+          echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # CFBD_API_KEY is read only from secrets and used only as an environment
+      # variable for the fetch step — never echoed, logged, or written into any
+      # committed artifact. No PAT is used: checkout and push both run on the
+      # default GITHUB_TOKEN.
+
+  deploy-pages:
+    name: Deploy changed CFB rankings to GitHub Pages
+    needs: refresh-rankings
+    if: needs.refresh-rankings.outputs.deploy_ref != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.refresh-rankings.outputs.deploy_ref }}

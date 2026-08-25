@@ -52,6 +52,9 @@ export default defineConfig({
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
       "scripts/generate-nfl-team-pregame-features.test.ts",
+      // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
+      "scripts/cfb-fetch-rankings.test.ts",
+      "scripts/cfb-update-rankings.test.ts",
     ],
   },
   resolve: {

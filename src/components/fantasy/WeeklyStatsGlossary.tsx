@@ -53,6 +53,10 @@ export default function WeeklyStatsGlossary() {
           <p><strong className="text-slate-950">Rank View:</strong> #1 is best or most favorable within the metric's comparison pool.</p>
           <p><strong className="text-slate-950">Stat View:</strong> Shows the underlying raw statistic while retaining the same heat color.</p>
           <p className="sm:col-span-2"><strong className="text-slate-950">Heat colors:</strong> Gold = elite · Green = favorable · Neutral = middle · Red = unfavorable.</p>
+          <p className="sm:col-span-2"><strong className="text-slate-950">Matchup grade bands:</strong> Great 85–100 · Good 70–84.99 · Neutral 45–69.99 · Tough 30–44.99 · Very Tough 0–29.99.</p>
+          <p><strong className="text-slate-950">QB / WR / TE weights:</strong> 30% FPA Season · 15% FPA L5 · 20% Trenches · 20% EPA · 15% Success.</p>
+          <p><strong className="text-slate-950">RB weights:</strong> 30% FPA Season · 15% FPA L5 · 25% Trenches · 15% EPA · 15% Success.</p>
+          <p className="sm:col-span-2"><strong className="text-slate-950">Projection safety:</strong> Matchup is research context and does not independently change the displayed JKB projection.</p>
         </div>
       </div>
     </section>

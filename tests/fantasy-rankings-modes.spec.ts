@@ -58,6 +58,8 @@ test("desktop weekly rankings and NFL command center consume the synchronized ar
   await expect(glossaryToggle).toHaveAttribute("aria-expanded", "false");
   await glossaryToggle.click();
   await expect(page.getByText("WR / TE", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Weighted matchup score combining opponent fantasy points allowed/)).toBeVisible();
+  await expect(page.getByText(/Great 85–100 · Good 70–84\.99/)).toBeVisible();
   await glossaryToggle.click();
   await expect(page.getByRole("table")).toBeVisible();
   for (const header of ["RK", "PLAYER", "OPP", "PROJ. PTS", "SEASON PPG", "L5 TREND", "MATCHUP", "OPP ALLOWED SZN", "OPP ALLOWED L5"]) {
@@ -127,8 +129,14 @@ test("weekly research boards hold their position semantics across desktop and mo
     expect(tuplesAfter).toEqual(tuplesBefore);
     if (position === "QB" || position === "RB") await page.screenshot({ path: testInfo.outputPath(`weekly-${position.toLowerCase()}-desktop-stat.png`) });
 
+    await expect(board.locator("[data-matchup-grade-cell]").first()).toHaveAttribute("data-matchup-score");
+    await expect(board.locator("[data-matchup-grade-cell]").first()).toHaveText(/Great|Good|Neutral|Tough|Very Tough/);
+    await expect(board.locator("[data-matchup-grade-cell]").first()).toHaveText(/\d+/);
     await page.getByRole("button", { name: /Show details for/ }).first().click();
     await expect(page.getByText("Matchup details", { exact: true })).toBeVisible();
+    await expect(board.locator("[data-composite-matchup]")).toContainText("Composite matchup");
+    await expect(board.locator("[data-composite-matchup-score]")).toHaveText(/^\d+ \/ 100$/);
+    await expect(board.locator("[data-composite-component]")).toHaveCount(5);
     await expect(page.getByRole("heading", { name: "Samples / evidence" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Projection context" })).toBeVisible();
     await expect(page.getByText("Rank difference", { exact: true }).first()).toBeVisible();
