@@ -23,8 +23,13 @@ export type NflMatchupEdgeComponent = {
 };
 
 export type NflMatchupEdge = {
-  /** -100..100; positive is always favorable for the offense. */
+  /** Legacy normalized value retained for backward-compatible consumers. */
   score: number | null;
+  /** Explicit 1-32 component ranks; rank 1 is best for both units. */
+  offenseRank: number | null;
+  defenseRank: number | null;
+  /** defenseRank - offenseRank; positive is favorable for the offense. */
+  rankDifference: number | null;
   offense: NflMatchupEdgeComponent | null;
   defense: NflMatchupEdgeComponent | null;
   source: string;
@@ -53,10 +58,19 @@ function validRank(rank: number | null | undefined): rank is number {
   return Number.isInteger(rank) && (rank as number) >= 1 && (rank as number) <= TEAM_COUNT;
 }
 
+/** Plain rank comparison shared by every NFL matchup presentation. */
+export function matchupRankDifference(
+  offenseRank: number | null | undefined,
+  defenseRank: number | null | undefined,
+): number | null {
+  if (!validRank(offenseRank) || !validRank(defenseRank)) return null;
+  return defenseRank - offenseRank;
+}
+
 /** Rank-normalized unit comparison. Rank 1 is strong on both sides. */
 export function matchupEdgeScore(offenseRank: number | null, defenseRank: number | null): number | null {
-  if (!validRank(offenseRank) || !validRank(defenseRank)) return null;
-  return ((defenseRank - offenseRank) / (TEAM_COUNT - 1)) * 100;
+  const rankDifference = matchupRankDifference(offenseRank, defenseRank);
+  return rankDifference == null ? null : (rankDifference / (TEAM_COUNT - 1)) * 100;
 }
 
 function edge(
@@ -65,8 +79,13 @@ function edge(
   source: string,
   sampleLabel: string,
 ): NflMatchupEdge {
+  const offenseRank = offense?.rank ?? null;
+  const defenseRank = defense?.rank ?? null;
   return {
-    score: matchupEdgeScore(offense?.rank ?? null, defense?.rank ?? null),
+    score: matchupEdgeScore(offenseRank, defenseRank),
+    offenseRank,
+    defenseRank,
+    rankDifference: matchupRankDifference(offenseRank, defenseRank),
     offense,
     defense,
     source,
@@ -137,12 +156,12 @@ export function buildNflOffenseMatchupEdges(input: {
   };
 
   return {
-    passProtectionEdge: trenchPair("off.passBlockWinRate", "Team pass block", "def.passRushWinRate", "Opponent pass rush"),
-    runBlockingEdge: trenchPair("off.runBlockWinRate", "Team run block", "def.runStopWinRate", "Opponent run stop"),
-    passEpaEdge: epaPair("off.epaPerPass", "Team offensive pass EPA", "def.epaPerPassAllowed", "Opponent defensive pass EPA allowed"),
-    rushEpaEdge: epaPair("off.epaPerRush", "Team offensive rush EPA", "def.epaPerRushAllowed", "Opponent defensive rush EPA allowed"),
-    passSuccessEdge: successPair("off.passSuccessRate", "Team pass success", "def.passSuccessRateAllowed", "Opponent pass success allowed"),
-    rushSuccessEdge: successPair("off.rushSuccessRate", "Team rush success", "def.rushSuccessRateAllowed", "Opponent rush success allowed"),
+    passProtectionEdge: trenchPair("off.passBlockWinRate", "Team Pass Block", "def.passRushWinRate", "Opponent Pass Rush"),
+    runBlockingEdge: trenchPair("off.runBlockWinRate", "Team Run Block", "def.runStopWinRate", "Opponent Run Stop"),
+    passEpaEdge: epaPair("off.epaPerPass", "Team Pass EPA", "def.epaPerPassAllowed", "Opponent Pass Defense EPA"),
+    rushEpaEdge: epaPair("off.epaPerRush", "Team Rush EPA", "def.epaPerRushAllowed", "Opponent Rush Defense EPA"),
+    passSuccessEdge: successPair("off.passSuccessRate", "Team Pass Success Rate", "def.passSuccessRateAllowed", "Opponent Pass Defense Success Rate"),
+    rushSuccessEdge: successPair("off.rushSuccessRate", "Team Rush Success Rate", "def.rushSuccessRateAllowed", "Opponent Rush Defense Success Rate"),
   };
 }
 

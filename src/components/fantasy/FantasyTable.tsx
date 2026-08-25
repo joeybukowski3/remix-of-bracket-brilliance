@@ -19,10 +19,12 @@ export function FantasyPlayerIdentity({
   player,
   team,
   compact = false,
+  wrapName = false,
 }: {
   player: string;
   team?: string;
   compact?: boolean;
+  wrapName?: boolean;
 }) {
   const normalizedTeam = team?.toUpperCase();
   const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
@@ -37,12 +39,14 @@ export function FantasyPlayerIdentity({
         logo={hasTeam ? nflLogoUrl(normalizedTeam!) : undefined}
         className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
       />
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className={cn("flex min-w-0 gap-1.5", wrapName ? "items-start" : "items-center")}>
         {player && (
           <div
+            data-player-name
             className={cn(
-              "truncate font-bold text-slate-950",
+              "font-bold text-slate-950",
               "text-[12px] leading-4",
+              wrapName ? "min-w-0 whitespace-normal break-words" : "truncate",
             )}
           >
             {player}
@@ -56,6 +60,36 @@ export function FantasyPlayerIdentity({
         >
           {normalizedTeam ?? "FA"}
         </div>
+      </div>
+    </div>
+  );
+}
+
+export function FantasyOpponentIdentity({
+  opponent,
+  homeAway,
+  compact = false,
+}: {
+  opponent: string;
+  homeAway: "home" | "away" | "neutral";
+  compact?: boolean;
+}) {
+  const normalizedOpponent = opponent.toUpperCase();
+  const prefix = homeAway === "away" ? "@" : "vs";
+
+  return (
+    <div
+      data-opponent-logo={normalizedOpponent}
+      className={cn("flex min-w-0 items-center", compact ? "gap-1" : "gap-1.5")}
+    >
+      <TeamLogo
+        name={normalizedOpponent}
+        logo={nflLogoUrl(normalizedOpponent.toLowerCase())}
+        className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
+      />
+      <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
+        <span className="font-bold lowercase text-slate-500">{prefix}</span>
+        <span className="font-black uppercase text-slate-950">{normalizedOpponent}</span>
       </div>
     </div>
   );

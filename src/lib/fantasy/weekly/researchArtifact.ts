@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { FANTASY_SCORING_VERSION } from "@/lib/fantasy/weekly/scoring";
 import { WEEKLY_RESEARCH_CONTEXT_VERSION } from "@/lib/fantasy/weekly/researchContext";
+import { matchupRankDifference } from "@/lib/nfl/matchupEdges";
 
 export const WEEKLY_FANTASY_RESEARCH_ARTIFACT_SCHEMA_VERSION =
   "weekly-fantasy-research-artifact-v1" as const;
@@ -48,11 +49,36 @@ const matchupEdgeComponentSchema = z.object({
 
 export const nflMatchupEdgeSchema = z.object({
   score: z.number().finite().min(-100).max(100).nullable(),
+  offenseRank: z.number().int().min(1).max(32).nullable().optional(),
+  defenseRank: z.number().int().min(1).max(32).nullable().optional(),
+  rankDifference: z.number().int().min(-31).max(31).nullable().optional(),
   offense: matchupEdgeComponentSchema.nullable(),
   defense: matchupEdgeComponentSchema.nullable(),
   source: z.string().min(1),
   sampleLabel: z.string().min(1),
-}).strict();
+}).strict().superRefine((edge, context) => {
+  const offenseRank = edge.offenseRank ?? edge.offense?.rank ?? null;
+  const defenseRank = edge.defenseRank ?? edge.defense?.rank ?? null;
+  const expectedDifference = matchupRankDifference(offenseRank, defenseRank);
+  if (edge.offenseRank != null && edge.offense?.rank != null && edge.offenseRank !== edge.offense.rank) {
+    context.addIssue({ code: "custom", path: ["offenseRank"], message: "offenseRank must match the offense component rank" });
+  }
+  if (edge.defenseRank != null && edge.defense?.rank != null && edge.defenseRank !== edge.defense.rank) {
+    context.addIssue({ code: "custom", path: ["defenseRank"], message: "defenseRank must match the defense component rank" });
+  }
+  if (edge.rankDifference !== undefined && edge.rankDifference !== expectedDifference) {
+    context.addIssue({ code: "custom", path: ["rankDifference"], message: "rankDifference must equal defenseRank - offenseRank" });
+  }
+}).transform((edge) => {
+  const offenseRank = edge.offenseRank ?? edge.offense?.rank ?? null;
+  const defenseRank = edge.defenseRank ?? edge.defense?.rank ?? null;
+  return {
+    ...edge,
+    offenseRank,
+    defenseRank,
+    rankDifference: matchupRankDifference(offenseRank, defenseRank),
+  };
+});
 
 const matchupEdgesSchema = z.object({
   trenches: nflMatchupEdgeSchema,

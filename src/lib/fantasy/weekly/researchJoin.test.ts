@@ -18,11 +18,11 @@ describe("weekly fantasy research presentation join", () => {
   );
 
   it("joins by exact playerId without changing order, rank, or projected points", () => {
-    const source = projection.rows.RB.slice(0, 5);
+    const source = (["QB", "RB", "WR", "TE"] as const).flatMap((position) => projection.rows[position]);
     const joined = joinWeeklyFantasyResearchRows(source, research);
     expect(joined.missingPlayerIds).toEqual([]);
-    expect(joined.rows.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints]))
-      .toEqual(source.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints]));
+    expect(joined.rows.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints, row.baselineFantasyPoints]))
+      .toEqual(source.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints, row.baselineFantasyPoints]));
   });
 
   it("degrades a missing research row to N/A-shaped nulls without failing projection rows", () => {

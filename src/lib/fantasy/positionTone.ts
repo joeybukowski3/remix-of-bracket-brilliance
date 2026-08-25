@@ -39,6 +39,26 @@ export const POSITION_TONES: Record<FantasyPosition, PositionTone> = {
   },
 };
 
+/** Weekly/ROS position-tab states using the same categorical position language. */
+export const POSITION_TAB_TONES: Record<FantasyPosition, { active: string; inactive: string }> = {
+  QB: {
+    active: "border-sky-600 bg-sky-600 text-white shadow-sm",
+    inactive: "border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100",
+  },
+  RB: {
+    active: "border-emerald-600 bg-emerald-600 text-white shadow-sm",
+    inactive: "border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100",
+  },
+  WR: {
+    active: "border-violet-600 bg-violet-600 text-white shadow-sm",
+    inactive: "border-violet-200 bg-violet-50 text-violet-900 hover:bg-violet-100",
+  },
+  TE: {
+    active: "border-orange-600 bg-orange-600 text-white shadow-sm",
+    inactive: "border-orange-200 bg-orange-50 text-orange-900 hover:bg-orange-100",
+  },
+};
+
 export function getPositionTone(position: FantasyPosition): PositionTone {
   return POSITION_TONES[position];
 }

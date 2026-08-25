@@ -11,7 +11,16 @@ export type WeeklyFantasyResearchRow = WeeklyFantasyProjectionProductionRow & {
 };
 
 function emptyEdge(): NflMatchupEdge {
-  return { score: null, offense: null, defense: null, source: "Unavailable", sampleLabel: "No research sample" };
+  return {
+    score: null,
+    offenseRank: null,
+    defenseRank: null,
+    rankDifference: null,
+    offense: null,
+    defense: null,
+    source: "Unavailable",
+    sampleLabel: "No research sample",
+  };
 }
 
 function emptyEdges(position: WeeklyFantasyProjectionProductionRow["position"]): FantasyMatchupEdges {

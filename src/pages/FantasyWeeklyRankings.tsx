@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
 import ProjectionMethodologyPanel from "@/components/fantasy/ProjectionMethodologyPanel";
-import WeeklyFantasyRankingsTable from "@/components/fantasy/WeeklyFantasyRankingsTable";
+import WeeklyFantasyRankingsTable, { type WeeklyResearchDisplayMode } from "@/components/fantasy/WeeklyFantasyRankingsTable";
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
@@ -10,6 +10,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
 import { useWeeklyFantasyResearchRows } from "@/hooks/useWeeklyFantasyResearchRows";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
+import { POSITION_TAB_TONES } from "@/lib/fantasy/positionTone";
 import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 import { WEEKLY_RANKINGS_SEASON } from "@/lib/fantasy/weeklyRankings";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ export default function FantasyWeeklyRankings() {
   usePageSeo({ title: seo.title, description: seo.description, path: seo.path, noindex: seo.noindex ?? false });
   const [searchParams, setSearchParams] = useSearchParams();
   const [position, setPosition] = useState<FantasyPosition>("QB");
+  const [displayMode, setDisplayMode] = useState<WeeklyResearchDisplayMode>("stat");
   const season = useNflSeasonData(WEEKLY_RANKINGS_SEASON);
   const games = season.data?.games;
   const weekSelection = useMemo(
@@ -92,16 +94,35 @@ export default function FantasyWeeklyRankings() {
               <span>As of {formatAsOf(weekly.freshness.inputAsOf)}</span>
             </section>
 
-            <div role="group" aria-label="Select position" className="grid grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1">
-              {POSITIONS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={position === option}
-                  onClick={() => setPosition(option)}
-                  className={cn("min-h-10 rounded-md px-2 text-xs font-black transition-colors", position === option ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:bg-white hover:text-slate-950")}
-                >{option}</button>
-              ))}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div role="group" aria-label="Select position" className="grid flex-1 grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1">
+                {POSITIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={position === option}
+                    onClick={() => setPosition(option)}
+                    className={cn(
+                      "min-h-10 rounded-md border px-2 text-xs font-black transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1",
+                      position === option ? POSITION_TAB_TONES[option].active : POSITION_TAB_TONES[option].inactive,
+                    )}
+                  >{option}</button>
+                ))}
+              </div>
+              <div role="group" aria-label="Research value view" className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-white p-1 sm:w-auto">
+                {(["stat", "rank"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={displayMode === mode}
+                    onClick={() => setDisplayMode(mode)}
+                    className={cn(
+                      "min-h-9 rounded-md px-3 text-[10px] font-black uppercase tracking-[0.06em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
+                      displayMode === mode ? "bg-slate-950 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+                    )}
+                  >{mode === "stat" ? "Stat View" : "Rank View"}</button>
+                ))}
+              </div>
             </div>
 
             {research.errors.length > 0 && (
@@ -109,7 +130,7 @@ export default function FantasyWeeklyRankings() {
                 Some weekly research context is unavailable; affected display fields show N/A. Projections and rankings remain available.
               </p>
             )}
-            <WeeklyFantasyRankingsTable rows={research.rows} />
+            <WeeklyFantasyRankingsTable rows={research.rows} displayMode={displayMode} />
             <ProjectionMethodologyPanel />
           </>
         )}
