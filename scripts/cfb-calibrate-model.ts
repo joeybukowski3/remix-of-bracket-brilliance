@@ -304,16 +304,24 @@ function main() {
   const v1CsvHeaders = ["rank", "team", "conference", "jkbPower", "jkbOffense", "jkbDefense", "sosPlayedRating", "sosPlayedRank", "sosRemainingRating", "sosRemainingRank", "rawPower", "rawOffense", "rawDefense", "games", "priorPerformanceSource", "sourceClassification", "transitionShrinkageApplied", "transitionPriorPerformanceWeight", "rawYppOffense", "rawYppDefenseAllowed", "adjustedYppOffense", "adjustedYppDefenseAllowed", "rawPointsPerPlayOffense", "rawPointsPerPlayDefenseAllowed", "adjustedPointsPerPlayOffense", "adjustedPointsPerPlayDefenseAllowed", "standardizedYppOffense", "standardizedYppDefense", "standardizedPointsPerPlayOffense", "standardizedPointsPerPlayDefense", "returningProduction", "standardizedReturningProduction", "sosProvenance"];
   const v1Csv = `${v1CsvHeaders.join(",")}\n${v1Rows.map((row) => v1CsvHeaders.map((header) => csvCell(row[header as keyof typeof row])).join(",")).join("\n")}\n`;
   const rawScheduleById = new Map(rawScheduleGames.map((game) => [String(game.id), game]));
-  const v1Schedule = schedule.map((game) => {
-    const source = rawScheduleById.get(game.id);
-    return {
-      ...game,
-      awayTeamName: source?.awayTeam ?? game.awayTeamId,
-      homeTeamName: source?.homeTeam ?? game.homeTeamId,
-      awayClassification: source?.awayClassification ?? null,
-      homeClassification: source?.homeClassification ?? null,
-    };
-  });
+  const v1Schedule = schedule
+    .map((game) => {
+      const source = rawScheduleById.get(game.id);
+      return {
+        ...game,
+        awayTeamName: source?.awayTeam ?? game.awayTeamId,
+        homeTeamName: source?.homeTeam ?? game.homeTeamId,
+        awayClassification: source?.awayClassification ?? null,
+        homeClassification: source?.homeClassification ?? null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        a.week - b.week ||
+        a.date.localeCompare(b.date) ||
+        (a.time ?? "99:99").localeCompare(b.time ?? "99:99") ||
+        a.id.localeCompare(b.id),
+    );
   const report = roundDeep({
     schemaVersion: "jkb-cfb-model-calibration-v1",
     baseline: { version: "cfb-preseason-v0.1", csvPath: "data/generated/cfb/2026-preseason-ratings.csv", sha256: sha256(baselineCsv), config: { priorOffense: 0.6, returningOffense: 0.25, qb: 0.15, priorDefense: 0.7, returningDefense: 0.3, offensePower: 0.5, defensePower: 0.5, opponentStrength: 0.55, opponentIterations: 12 }, rankings: baselineJson.rows.map((row) => ({ rank: row.rank, team: row.team, teamId: row.teamId })), top25: baselineJson.rows.filter((row) => (row.rank as number) <= 25).map((row) => ({ rank: row.rank, team: row.team })) },
