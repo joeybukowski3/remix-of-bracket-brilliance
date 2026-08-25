@@ -1,10 +1,10 @@
 {
   "date": "2026-08-25",
-  "generatedAt": "2026-08-25T08:03:44.547Z",
+  "generatedAt": "2026-08-25T13:25:39.059Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) are the strongest HR parks on the slate, while Comerica (0.95) and Oracle (0.85) suppress power. Warren vs. Alvarez and deGrom vs. Vargas/Murakami create the clearest power edges, with Scherzer and Jobe also vulnerable to barrels.",
-    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability, pushing Alvarez and Caminero to the top despite recent HR droughts."
+    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) stand out as the strongest HR environments, while Comerica (0.95) and Oracle (0.85) suppress power. Warren and Pecko are both right-handers allowing elevated HR/FB rates, creating favorable matchups for Alvarez and García Jr. in the Bronx.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR vulnerability over recent HR output, elevating Alvarez to the top spot despite a zero in his last seven games."
   },
   "bestBets": [
     {
@@ -15,11 +15,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrel=17.3%",
-        "park=1.18"
+        "HH=53.4%"
       ],
       "bullets": [
-        "barrel=17.3%",
-        "park=1.18"
+        "park=1.18",
+        "barrel=17.3%"
       ],
       "hrOddsYes": "+215",
       "marketImpliedProbability": 0.31746031746031744,
@@ -33,34 +33,15 @@
       "opposingPitcher": "Jackson Jobe",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=13.2%",
-        "HH=50.4%"
+        "barrel=13.1%",
+        "HH=50.6%"
       ],
       "bullets": [
-        "barrel=13.2%",
-        "HH=50.4%"
+        "park=0.95",
+        "HH=50.6%"
       ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "NYM",
-      "opposingPitcher": "Zac Thornton",
-      "hrScoreRank": 3,
-      "topStats": [
-        "Pitcher HR VS=63.3",
-        "Hard Hit%=52.9"
-      ],
-      "bullets": [
-        "HR score 65.5 (#3)",
-        "Pitcher HR VS 63.3 at park 1.06"
-      ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+322",
+      "marketImpliedProbability": 0.23696682464454977,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -69,17 +50,36 @@
       "team": "LAD",
       "opponent": "ATL",
       "opposingPitcher": "Bryce Elder",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
-        "Hard Hit%=52.6",
-        "Pitcher HR VS=44.9"
+        "barrel=16.5%",
+        "HH=52.6%"
       ],
       "bullets": [
-        "HR score 64.7 (#4)",
-        "Pitcher HR VS 44.9 at park 1.03"
+        "park=1.03",
+        "barrel=16.5%"
       ],
       "hrOddsYes": "+230",
       "marketImpliedProbability": 0.30303030303030304,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "NYM",
+      "opposingPitcher": "Zac Thornton",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=63.3",
+        "Hard Hit%=52.9"
+      ],
+      "bullets": [
+        "HR score 64.3 (#4)",
+        "Pitcher HR VS 63.3 at park 1.06"
+      ],
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -94,7 +94,7 @@
         "Hard Hit%=47.4"
       ],
       "bullets": [
-        "HR score 64.3 (#5)",
+        "HR score 63.5 (#5)",
         "Pitcher HR VS 66.2 at park 0.95"
       ],
       "hrOddsYes": "+750",
@@ -109,36 +109,17 @@
       "team": "MIL",
       "opponent": "NYM",
       "opposingPitcher": "Zac Thornton",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=14%",
         "HH=52.9%"
       ],
       "bullets": [
-        "barrel=14%",
+        "park=1.06",
         "HH=52.9%"
       ],
       "hrOddsYes": "+450",
       "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "ATL",
-      "opposingPitcher": "Bryce Elder",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=16.5%",
-        "HH=52.6%"
-      ],
-      "bullets": [
-        "barrel=16.5%",
-        "HH=52.6%"
-      ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -153,30 +134,11 @@
         "HH=47.4%"
       ],
       "bullets": [
-        "barrel=6.9%",
-        "HH=47.4%"
+        "park=0.95",
+        "barrel=6.9%"
       ],
       "hrOddsYes": "+750",
       "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "TEX",
-      "opposingPitcher": "Jacob deGrom",
-      "hrScoreRank": 6,
-      "topStats": [
-        "Pitcher HR VS=59.9",
-        "Hard Hit%=46.6"
-      ],
-      "bullets": [
-        "HR score 62.6 (#6)",
-        "Pitcher HR VS 59.9 at park 1.07"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,17 +147,36 @@
       "team": "KC",
       "opponent": "TOR",
       "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 7,
+      "hrScoreRank": 6,
       "topStats": [
-        "Pitcher HR VS=54.7",
-        "Hard Hit%=51.5"
+        "barrel=11.6%",
+        "HH=51.5%"
       ],
       "bullets": [
-        "HR score 61.5 (#7)",
-        "Pitcher HR VS 54.7 at park 1.08"
+        "park=1.08",
+        "HH=51.5%"
       ],
       "hrOddsYes": "+450",
       "marketImpliedProbability": 0.18181818181818182,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "TEX",
+      "opposingPitcher": "Jacob deGrom",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=60.0",
+        "Hard Hit%=46.2"
+      ],
+      "bullets": [
+        "HR score 62.4 (#7)",
+        "Pitcher HR VS 60.0 at park 1.07"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -210,7 +191,7 @@
         "Hard Hit%=50.4"
       ],
       "bullets": [
-        "HR score 60.9 (#8)",
+        "HR score 61.5 (#8)",
         "Pitcher HR VS 64.9 at park 0.85"
       ],
       "hrOddsYes": "+350",
@@ -221,21 +202,40 @@
   ],
   "longshots": [
     {
-      "player": "Sal Stewart",
-      "team": "CIN",
-      "opponent": "SF",
-      "opposingPitcher": "Adrian Houser",
-      "hrScoreRank": 25,
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "TEX",
+      "opposingPitcher": "Jacob deGrom",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=12.9%",
-        "HH=39.1%"
+        "barrel=14.7%",
+        "HH=46.2%"
       ],
       "bullets": [
-        "barrel=12.9%",
-        "HH=39.1%"
+        "park=1.07",
+        "barrel=14.7%"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Rafael Devers",
+      "team": "SF",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=10.8%",
+        "HH=50.4%"
+      ],
+      "bullets": [
+        "park=0.85",
+        "HH=50.4%"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -246,15 +246,34 @@
       "opposingPitcher": "Adrian Houser",
       "hrScoreRank": 14,
       "topStats": [
-        "barrel=13.9%",
-        "HH=51.1%"
+        "Pitcher HR VS=59.7",
+        "Hard Hit%=51.0"
       ],
       "bullets": [
-        "barrel=13.9%",
-        "HH=51.1%"
+        "HR score 58.6 (#14)",
+        "Pitcher HR VS 59.7 at park 0.85"
       ],
       "hrOddsYes": "+600",
       "marketImpliedProbability": 0.14285714285714285,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "ATL",
+      "opposingPitcher": "Bryce Elder",
+      "hrScoreRank": 21,
+      "topStats": [
+        "Hard Hit%=46.3",
+        "Pitcher HR VS=44.9"
+      ],
+      "bullets": [
+        "HR score 56.2 (#21)",
+        "Pitcher HR VS 44.9 at park 1.03"
+      ],
+      "hrOddsYes": "+575",
+      "marketImpliedProbability": 0.14814814814814814,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
