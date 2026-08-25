@@ -125,6 +125,55 @@ function opponentPassEpaAllowedRate(epaGameLog: readonly NflTeamEpaGameLogEntry[
   };
 }
 
+/** Live variant of `buildReceivingFeatureRow` for an unplayed target game -- see `qbPassingFeatures.ts`'s `buildQbPassingFeatureRowForTarget` header for why this exists. */
+export function buildReceivingFeatureRowForTarget(
+  target: { season: number; week: number; gameId: string; team: string; opponent: string; playerId: string; playerName: string; position: NflReceivingFeatureRow["diagnostics"]["position"]; gameDateUtc: string; homeAway: "home" | "away" },
+  args: {
+    teamPregameFeaturesByKey: ReadonlyMap<string, NflTeamPregameFeatures>;
+    fullTeamGameLog: readonly NflTeamGameLogEntry[];
+    passEpaGameLog: readonly NflTeamEpaGameLogEntry[];
+    marketByKey: ReadonlyMap<string, NflHistoricalMarketRow>;
+    domeByGameId: ReadonlyMap<string, boolean>;
+    playerReceivingStatLog: readonly NflPlayerReceivingStatLogEntry[];
+    teamTopTargetShareByGameTeam: ReadonlyMap<string, number>;
+  },
+): Omit<NflReceivingFeatureRow, "target" | "diagnostics"> & { diagnostics: Omit<NflReceivingFeatureRow["diagnostics"], "zeroTargetFlag" | "membershipSource"> } {
+  const teamEnv = teamPassRates(args.teamPregameFeaturesByKey.get(`${target.season}|${target.week}|${target.team}`));
+  const targetsAllowed = opponentTargetsAllowedRate(args.fullTeamGameLog, target.opponent, target.season, target.gameDateUtc);
+  const passEpaAllowed = opponentPassEpaAllowedRate(args.passEpaGameLog, target.opponent, target.season, target.gameDateUtc);
+  const market = args.marketByKey.get(marketKey(target.season, target.week, target.team));
+  const isDome = args.domeByGameId.get(target.gameId) ?? null;
+  const playerRolling = playerRollingWindows(args.playerReceivingStatLog, target.playerId, target.season, target.gameDateUtc);
+
+  const teamPriorGames = selectLastNGames(selectPriorGamesInSeason(args.fullTeamGameLog, target.team, target.season, target.gameDateUtc), 3);
+  const concentrationValues = teamPriorGames
+    .map((g) => args.teamTopTargetShareByGameTeam.get(`${g.gameId}|${g.team}`))
+    .filter((v): v is number => v != null);
+  const recentConcentration = concentrationValues.length > 0 ? concentrationValues.reduce((s, v) => s + v, 0) / concentrationValues.length : null;
+
+  return {
+    schemaVersion: NFL_RECEIVING_FEATURE_ROW_SCHEMA_VERSION,
+    season: target.season, week: target.week, gameId: target.gameId, team: target.team, opponent: target.opponent,
+    playerId: target.playerId, playerName: target.playerName,
+    features: {
+      playerUsage: { targetsPerGame: playerRolling.targetsPerGame, targetShare: playerRolling.targetShare },
+      playerEfficiency: { yardsPerTarget: playerRolling.yardsPerTarget, receptionsPerTarget: playerRolling.receptionsPerTarget, yardsPerReception: playerRolling.yardsPerReception },
+      airYards: { adot: playerRolling.adot, airYardsShare: { seasonPrior: null, last3: null, priorSeason: null } },
+      teamEnvironment: teamEnv,
+      targetConcentration: { recentTeamTopTargetShareConcentration: { seasonPrior: recentConcentration, last3: recentConcentration, priorSeason: null } },
+      opponentPassDefense: { targetsPerGameAllowed: targetsAllowed, passEpaPerPlayAllowed: passEpaAllowed },
+      market: {
+        spread: market?.spread ?? null, total: market?.total ?? null, impliedTeamTotal: market?.impliedTeamTotal ?? null,
+        homeAway: market?.homeAway ?? target.homeAway, isDome,
+      },
+    },
+    diagnostics: {
+      position: target.position, gamesWithTargetsPriorThisSeason: playerRolling.gamesWithTargetsPriorThisSeason,
+      hasPriorSeasonTargets: playerRolling.hasPriorSeasonTargets,
+    },
+  };
+}
+
 export function buildReceivingFeatureRow(
   outcome: NflReceivingOutcome,
   args: {

@@ -480,3 +480,151 @@ Phase 2 additions, also intentionally deferred:
   is team-level only.
 - Weather (`temp`/`wind`) was not audited beyond confirming the columns
   exist.
+
+## Phase 9 (current-week production-candidate pipeline)
+
+Takes the approved historical research stack (Phases 1-8) and generates a
+deterministic, leakage-safe current-week projection artifact for a live
+`(season, week)` -- e.g. 2026 Week 1, which has a full schedule but zero
+played games. Full input-readiness audit, decisions, and results are in the
+Phase 9 handoff report (chat history); this section documents the durable
+architecture.
+
+- `currentWeekRosterUniverse.ts` -- live candidate pool. Unlike
+  `playerGameUniverse.ts` (built FROM already-played `stats_player_week`
+  rows), a future week has no outcome rows yet, so membership comes
+  entirely from the `weekly_rosters` "ACT" snapshot for the target week,
+  joined to that week's schedule. Eligibility reuses
+  `isMarketPregameEligible` verbatim against an activity log built from the
+  existing 2022-2025 canonical universe -- no new eligibility rule.
+- `qbStarterResolution.ts` -- resolves one passing-projection candidate per
+  team from the roster pool. No depth-chart-order, beat-writer, or
+  injury-report starter designation exists anywhere in this repository's
+  committed data (`weekly_rosters`' `depth_chart_position` was confirmed,
+  by direct inspection, to equal the player's position group, not an
+  ordinal depth -- e.g. three ACT QBs on one roster can all read
+  `depth_chart_position: "QB"`). The heuristic: the ACT QB with the highest
+  rolling attempts (seasonPrior -> priorSeason coalesce) is the candidate;
+  ties/no-history rosters and multi-QB competition are flagged
+  (`starterUncertain`/`multiQbRoleUncertain`), never silently resolved.
+- `buildQbPassingFeatureRowForTarget` / `buildRushingFeatureRowForTarget` /
+  `buildReceivingFeatureRowForTarget` (added to the existing Phase 4/5/6
+  feature-builder files) -- live variants of the historical builders, driven
+  by an explicit identity descriptor instead of an outcome row. Every
+  private rolling-window helper is reused verbatim; only the outcome-derived
+  fields (target yards, `instabilityCategory`, `primaryQbAttemptShare`,
+  zero-target flag) are omitted, since they describe what already happened
+  in a game that has not been played.
+- `matchupScoreDimensions.ts` -- the Phase 8 research script's dimension/
+  indicator definitions, extracted verbatim into a shared module so the
+  frozen research design and this production scorer can never drift apart.
+- `currentWeekMatchupScore.ts` -- builds the Matchup Score reference from
+  the same frozen `FINAL_TRAIN_SEASONS` (2022-2024) rows every Phase 8
+  consumer uses (2025 and the live week never enter a reference), and
+  scores a live row using the already-selected weights read from the
+  committed `matchup-score-research.json` (`selectedDefinition`) -- no
+  weight, dimension, or normalization decision is re-derived.
+- `currentWeekYardageModel.ts` -- model-fit strategy: this repository has no
+  serialized coefficient artifact for any market (every prior phase refits
+  its closed-form ridge/shrinkage model from raw rows at run time; Phase 9
+  keeps that pattern). `PRODUCTION_TRAIN_SEASONS = [2022, 2023, 2024, 2025]`
+  -- architecture/hyperparameter selection stays frozen from Phase 4/5.5/6
+  (never re-derived from 2025), but the final coefficient fit for a 2026
+  production candidate legitimately includes 2025, since 2025 was already a
+  fixed, inspected retrospective benchmark, not a newly-mined holdout.
+  Prediction intervals reuse the exact Phase 7 fold2 methodology (train
+  2022-2023, validate 2024) so the already-reported 87-89% realized 2025
+  coverage stays the number this interval traces back to.
+- `currentWeekGenerator.ts` -- orchestrator. Takes a fully-parsed
+  `NflCurrentWeekSources` bundle (no disk I/O in this module, so it stays
+  unit-testable) and returns `NflCurrentWeekYardageProjectionArtifact`
+  (`types/currentWeekProjection.ts`). Contains a hard leakage guard: every
+  historical training/reference/interval row matching the exact target
+  `(season, week)` is stripped before any model fit or reference build,
+  regardless of `generationMode` -- a no-op for a genuine future week (that
+  data cannot exist yet) and the load-bearing guard for
+  `generationMode: "historicalReplay"`, where the replay season is
+  otherwise a legitimate member of `PRODUCTION_TRAIN_SEASONS`.
+- `scripts/generate-nfl-current-week-yardage-projections.ts` -- CLI
+  (`npx tsx scripts/generate-nfl-current-week-yardage-projections.ts
+  --season=2026 --week=1 [--dry-run]`). Reuses every committed Phase 1-8
+  historical artifact for training/reference (never regenerates them), and
+  reads the live `weekly_rosters` snapshot plus the live
+  `public/data/nfl/matchup-market.json` `currentMarket` feed (confirmed to
+  already publish real 2026 spread/total/moneyline per game) for the target
+  week's own candidate pool and market context. Fails closed (throws) if the
+  target season's schedule or `weekly_rosters` cache is missing. Writes to
+  `public/data/nfl/<season>/yardage-projections.json`.
+
+### Temporal contract
+
+Weekly-snapshot contract: every input (schedule, rosters, market context,
+historical usage) is treated as frozen strictly before the target week's
+first kickoff; no target-week outcome, snap, or later injury information
+enters any row for that week. Chosen over a game-by-game kickoff contract
+for simplicity and reproducibility -- the phase brief explicitly allows
+this. Enforced structurally (the roster/eligibility/feature pipeline never
+reads a target-week outcome at all -- there is nothing to leak) plus the
+explicit target-week strip in `currentWeekGenerator.ts` described above,
+which is the only thing that makes `generationMode: "historicalReplay"`
+leakage-safe.
+
+### Known 2026 data gaps (as of this phase)
+
+- **Injury/availability**: `public/data/nfl/matchup-injuries.json` is a
+  single live snapshot with no per-week archive (its own `_meta` showed a
+  stale 2025 Week 12 snapshot as of this phase, not yet refreshed for
+  2026), so `availabilityStatus` stays `null` in this artifact too, exactly
+  as it has since Phase 1 -- not a new gap, just not yet closed.
+- No depth-chart-order/starter source exists (see `qbStarterResolution.ts`
+  above) -- passing-starter resolution is a documented heuristic, not a
+  certainty.
+
+## Phase 9.1 (eligibility closure -- separating role evidence from historical volume)
+
+Phase 9's first cut gated every market's live candidacy on the Phase 5.5
+historical-volume threshold alone, which silently omitted legitimate
+rookies/new starters (31/32 passing teams, a real starter missing entirely
+in the 2026 Week 1 dry run). Phase 9.1 separates **pregame eligibility /
+roster-role evidence** from **availability of historical performance data**:
+
+- **Passing**: candidacy no longer depends on `passingEligiblePregame`.
+  Every team with at least one ACT QB gets exactly one row (the
+  `qbStarterResolution.ts` heuristic's pick), regardless of that QB's own
+  history. A true no-history starter still gets a real projection (via the
+  ridge model's own train-mean feature imputation), flagged
+  `historyStatus: "noHistory"` / `status: "eligibleInsufficientHistory"` /
+  `hardCaseFlags.roleUncertain: true` -- never silently omitted, never
+  fabricated. Result on the real 2026 Week 1 artifact: 32/32 teams covered
+  (was 31/32).
+- **Rushing/receiving**: `currentWeekRosterUniverse.ts`'s
+  `applyRoleScarcityFallback` adds a strictly ADDITIVE, per-team,
+  per-position floor (`RB_ELIGIBLE_FLOOR = 2`, `RECEIVER_ELIGIBLE_FLOOR = 3`
+  combined WR+TE) on top of the untouched Phase 5.5 historical rule: if a
+  team has fewer than the floor's worth of historically-eligible players at
+  a position, additional ACT candidates are admitted up to the floor,
+  flagged `hardCaseFlags.roleUncertain: true` /
+  `fallbackProvenance: "rosterScarcityFloor"`. This deliberately does NOT
+  admit every ACT player -- the live `weekly_rosters` snapshot observed
+  this phase carries ~90 ACT players per team (a pre-cutdown camp roster,
+  not a final 53; verified via total ACT-player counts per team), so
+  unconditional inclusion would flood the artifact with players who will
+  never make the eventual roster. Because no depth-chart-order or
+  snap-share source exists anywhere in this repository, WHICH specific
+  no-history player fills the floor is a deterministic (`playerId`-sorted)
+  tie-break, not a depth-chart-informed pick -- disclosed via
+  `roleUncertain`, never presented as a confident individual selection.
+  **Known limitation**: on the real 2026 Week 1 data, this floor rarely
+  triggers (every team already retains at least 2 historically-productive
+  RBs and 3 historically-productive WR/TE), so it does not yet solve the
+  harder case of "a true rookie who has clearly won a starting job the
+  roster snapshot cannot reveal" (e.g. a rookie RB1 on a team that also
+  retains veteran committee backs) -- that requires a depth-chart/snap-share
+  data source this repository does not have, and remains open for a future
+  phase.
+- Every row now carries `fallbackProvenance`
+  (`"historicalVolume" | "rosterScarcityFloor" | "starterHeuristic"`) so a
+  consumer can always see why a row exists.
+- The browser-facing artifact (`public/data/nfl/<season>/yardage-projections.json`)
+  is now written as compact (non-pretty-printed) JSON -- schema content is
+  unchanged, only whitespace was removed.

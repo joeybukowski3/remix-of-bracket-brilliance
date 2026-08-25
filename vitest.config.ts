@@ -50,10 +50,6 @@ export default defineConfig({
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
       "scripts/generate-nfl-team-pregame-features.test.ts",
-      // CFB Week 1 market odds -- odds-only fetch/update CLI behavior.
-      "scripts/cfb-fetch-market-odds.test.ts",
-      "scripts/cfb-update-market-odds.test.ts",
->>>>>>> origin/main
     ],
   },
   resolve: {

@@ -137,6 +137,79 @@ function epaAllowedRates(
   };
 }
 
+/**
+ * Live variant of `buildQbPassingFeatureRow`: builds the same feature set
+ * for a target (season, week, team, opponent, QB) that has NOT been played
+ * yet, so there is no `NflQbPassingOutcome` to read a target/attempt-share
+ * from. Used by the Phase 9 current-week generator. Reuses every private
+ * rolling-window helper in this module verbatim -- the predictors are
+ * identical in shape to the historical builder; only the outcome-derived
+ * `target`/`diagnostics.instabilityCategory`/`primaryQbAttemptShare` fields
+ * (which describe what already happened in the target game, not what is
+ * knowable pregame) are omitted.
+ */
+export function buildQbPassingFeatureRowForTarget(
+  target: {
+    season: number; week: number; gameId: string; team: string; opponent: string;
+    primaryQbPlayerId: string; primaryQbPlayerName: string; gameDateUtc: string; homeAway: "home" | "away";
+  },
+  args: {
+    teamPregameFeaturesByKey: ReadonlyMap<string, NflTeamPregameFeatures>;
+    fullTeamGameLog: readonly NflTeamGameLogEntry[];
+    epaGameLog: readonly NflTeamEpaGameLogEntry[];
+    marketByKey: ReadonlyMap<string, NflHistoricalMarketRow>;
+    domeByGameId: ReadonlyMap<string, boolean>;
+    qbStatGameLog: readonly NflQbStatGameLogEntry[];
+  },
+): Omit<NflQbPassingFeatureRow, "target" | "diagnostics"> & { diagnostics: Omit<NflQbPassingFeatureRow["diagnostics"], "instabilityCategory" | "primaryQbAttemptShare"> } {
+  const ownPf = args.teamPregameFeaturesByKey.get(`${target.season}|${target.week}|${target.team}`);
+  const own = teamRates(ownPf);
+  const opponentAllowed = opponentAllowedRates(args.fullTeamGameLog, target.opponent, target.season, target.gameDateUtc);
+  const passEpaPerPlayAllowed = epaAllowedRates(args.epaGameLog, target.opponent, target.season, target.gameDateUtc);
+  const market = args.marketByKey.get(marketKey(target.season, target.week, target.team));
+  const qbRolling = qbRollingWindows(args.qbStatGameLog, target.primaryQbPlayerId, target.season, target.gameDateUtc);
+  const isDome = args.domeByGameId.get(target.gameId) ?? null;
+
+  return {
+    schemaVersion: NFL_QB_PASSING_FEATURE_ROW_SCHEMA_VERSION,
+    season: target.season, week: target.week, gameId: target.gameId, team: target.team, opponent: target.opponent,
+    primaryQbPlayerId: target.primaryQbPlayerId, primaryQbPlayerName: target.primaryQbPlayerName,
+    features: {
+      opportunity: {
+        offensivePlaysPerGame: own.offensivePlaysPerGame,
+        passAttemptsPerGame: own.passAttemptsPerGame,
+        qbAttemptsPerGame: qbRolling.qbAttemptsPerGame,
+      },
+      qbEfficiency: {
+        yardsPerAttempt: qbRolling.yardsPerAttempt,
+        completionPct: qbRolling.completionPct,
+      },
+      qbRollingPassingYardsPerGame: qbRolling.passingYardsPerGame,
+      opponentPassDefense: {
+        passAttemptsPerGameAllowed: opponentAllowed.passAttemptsPerGameAllowed,
+        overallDropbackRateAllowed: opponentAllowed.overallDropbackRateAllowed,
+        passEpaPerPlayAllowed,
+      },
+      proePassTendency: {
+        overallDropbackRate: own.overallDropbackRate,
+        earlyDownNeutralPassRate: own.earlyDownNeutralPassRate,
+        passRateOverExpected: own.passRateOverExpected,
+      },
+      market: {
+        spread: market?.spread ?? null,
+        total: market?.total ?? null,
+        impliedTeamTotal: market?.impliedTeamTotal ?? null,
+        homeAway: market?.homeAway ?? target.homeAway,
+        isDome,
+      },
+    },
+    diagnostics: {
+      hasPriorSeasonStarts: qbRolling.hasPriorSeasonStarts,
+      gamesStartedPriorThisSeason: qbRolling.gamesStartedPriorThisSeason,
+    },
+  };
+}
+
 export function buildQbPassingFeatureRow(
   outcome: NflQbPassingOutcome,
   args: {

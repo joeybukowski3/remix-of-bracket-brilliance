@@ -1,0 +1,241 @@
+/**
+ * Phase 9: generates the current-week (production-candidate) NFL yardage
+ * projection artifact for one (season, week). Reuses every already-
+ * committed Phase 1-8 historical artifact for model training / Matchup
+ * Score reference construction (never regenerates them), and reads the
+ * live weekly-rosters snapshot + `matchup-market.json` current-week feed
+ * for the target week's own candidate pool and market context.
+ *
+ * Usage:
+ *   npx tsx scripts/generate-nfl-current-week-yardage-projections.ts --season=2026 --week=1
+ *   npx tsx scripts/generate-nfl-current-week-yardage-projections.ts --season=2026 --week=1 --dry-run
+ */
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildGameJoinIndex, gameJoinKey, type NflPropRawGameRecord } from "../src/lib/nfl/props/historicalOutcomes";
+import { buildTeamGameLog, buildTeamPregameFeatures, type NflTeamGameLogEntry } from "../src/lib/nfl/props/teamPlayVolume";
+import type { NflTeamGamePlayVolumeRecord, NflTeamPregameFeatures } from "../src/lib/nfl/props/types/teamPregameFeatures";
+import { buildTeamEpaGameLog, type NflTeamEpaGameLogEntry, type NflTeamEpaGameRecord } from "../src/lib/nfl/props/qbPassingEpaContext";
+import { marketKey, type NflHistoricalMarketRow } from "../src/lib/nfl/props/qbOpportunityFeatures";
+import { buildQbPassingFeatureRow, buildQbStatGameLog } from "../src/lib/nfl/props/qbPassingFeatures";
+import type { NflQbPassingOutcome } from "../src/lib/nfl/props/types/qbPassing";
+import { buildPlayerRushingStatLog, buildRushingFeatureRow, buildTeamTopRbCarryShareByGameTeam } from "../src/lib/nfl/props/rushingFeatures";
+import type { NflRushingOutcome } from "../src/lib/nfl/props/types/rushingOutcome";
+import { buildPlayerReceivingStatLog, buildReceivingFeatureRow, buildTeamTopTargetShareByGameTeam, type NflAirYardsSupplement } from "../src/lib/nfl/props/receivingFeatures";
+import type { NflReceivingOutcome } from "../src/lib/nfl/props/types/receivingOutcome";
+import { buildActivityLogFromUniverse, type NflCurrentWeekRosterSourceRow } from "../src/lib/nfl/props/currentWeekRosterUniverse";
+import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/playerGameUniverse";
+import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
+import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
+import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
+import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const DATA_DIR = join(ROOT, "data", "nfl", "props");
+const PLAY_VOLUME_CACHE_DIR = "data/nfl/nflverse/play-volume-team-game";
+const EPA_CACHE_DIR = "data/nfl/nflverse/epa-team-game";
+const STATS_CACHE_DIR = "data/nfl/nflverse/stats-player-week";
+const ROSTER_CACHE_DIR = "data/nfl/nflverse/weekly-rosters";
+const HISTORICAL_SEASONS = [2022, 2023, 2024, 2025] as const;
+
+type CsvRow = Record<string, string>;
+type CacheEntry = { season: number | null; filename: string; [key: string]: unknown };
+type CacheManifest = { files?: CacheEntry[] };
+
+function parseArgs(argv: string[]) {
+  const args = { season: 0, week: 0, dryRun: false, output: null as string | null, generatedAt: new Date().toISOString() };
+  for (const raw of argv.slice(2)) {
+    if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
+    else if (raw.startsWith("--week=")) args.week = Number(raw.slice(7));
+    else if (raw === "--dry-run") args.dryRun = true;
+    else if (raw.startsWith("--output=")) args.output = resolve(ROOT, raw.slice(9));
+    else if (raw.startsWith("--generated-at=")) args.generatedAt = raw.slice(15);
+    else throw new Error(`Unknown argument: ${raw}`);
+  }
+  if (!Number.isInteger(args.season) || !Number.isInteger(args.week) || args.week < 1) {
+    throw new Error("Usage: --season=YYYY --week=N [--dry-run] [--output=path] [--generated-at=iso]");
+  }
+  return args;
+}
+
+function readManifest(dir: string): CacheManifest {
+  return JSON.parse(readFileSync(join(ROOT, dir, "manifest.json"), "utf8"));
+}
+function verifiedCsvRows(dir: string, manifest: CacheManifest, season: number): CsvRow[] {
+  const entry = manifest.files?.find((c) => c.season === season);
+  if (!entry) throw new Error(`No cached ${dir} source for ${season}.`);
+  const text = readFileSync(join(ROOT, dir, entry.filename), "utf8");
+  const problems = verifyCacheEntry(entry as never, text);
+  if (problems.length > 0) throw new Error(problems.join("\n"));
+  return parseCsv(text) as CsvRow[];
+}
+function finiteField(row: CsvRow, field: string, integer = false): number {
+  const value = Number(String(row[field] ?? "").trim());
+  if (!Number.isFinite(value) || (integer && !Number.isInteger(value))) throw new Error(`Invalid ${field}.`);
+  return value;
+}
+function toPlayVolumeRecord(row: CsvRow): NflTeamGamePlayVolumeRecord {
+  return {
+    gameId: String(row.game_id ?? "").trim(), season: finiteField(row, "season", true), week: finiteField(row, "week", true),
+    team: String(row.team ?? "").trim(), opponent: String(row.opponent ?? "").trim(),
+    eligiblePlays: finiteField(row, "eligible_plays", true), passPlays: finiteField(row, "pass_plays", true), rushPlays: finiteField(row, "rush_plays", true),
+    neutralEligiblePlays: finiteField(row, "neutral_eligible_plays", true), neutralPassPlays: finiteField(row, "neutral_pass_plays", true),
+    passOeSum: finiteField(row, "pass_oe_sum"), passOeCount: finiteField(row, "pass_oe_count", true),
+  };
+}
+function toEpaRecord(row: CsvRow, playType: "pass" | "rush"): NflTeamEpaGameRecord {
+  return {
+    gameId: String(row.game_id ?? "").trim(), season: finiteField(row, "season", true), week: finiteField(row, "week", true),
+    team: String(row.team ?? "").trim(), opponent: String(row.opponent ?? "").trim(),
+    passEpa: finiteField(row, `${playType}_epa`), passPlays: finiteField(row, `${playType}_plays`, true),
+  };
+}
+function readSeasonGames(season: number): (NflPropRawGameRecord & { isDome?: boolean })[] {
+  const path = join(ROOT, "public", "data", "nfl", String(season), "games.json");
+  if (!existsSync(path)) return [];
+  const artifact = JSON.parse(readFileSync(path, "utf8")) as { games?: (NflPropRawGameRecord & { isDome?: boolean })[] };
+  return artifact.games ?? [];
+}
+function writeAtomic(path: string, text: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const temporary = `${path}.tmp`;
+  try { writeFileSync(temporary, text, "utf8"); renameSync(temporary, path); }
+  catch (error) { if (existsSync(temporary)) unlinkSync(temporary); throw error; }
+}
+
+function main(): void {
+  const args = parseArgs(process.argv);
+  const trainingSeasons = [...HISTORICAL_SEASONS];
+  const allSeasons = [...new Set([...trainingSeasons, args.season])];
+
+  const playVolumeManifest = readManifest(PLAY_VOLUME_CACHE_DIR);
+  const epaManifest = readManifest(EPA_CACHE_DIR);
+  const playVolumeRecords: NflTeamGamePlayVolumeRecord[] = [];
+  const passEpaRecords: NflTeamEpaGameRecord[] = [];
+  const rushEpaRecords: NflTeamEpaGameRecord[] = [];
+  const games: (NflPropRawGameRecord & { isDome?: boolean })[] = [];
+  for (const season of trainingSeasons) {
+    for (const row of verifiedCsvRows(PLAY_VOLUME_CACHE_DIR, playVolumeManifest, season)) playVolumeRecords.push(toPlayVolumeRecord(row));
+    for (const row of verifiedCsvRows(EPA_CACHE_DIR, epaManifest, season)) {
+      passEpaRecords.push(toEpaRecord(row, "pass"));
+      rushEpaRecords.push(toEpaRecord(row, "rush"));
+    }
+  }
+  for (const season of allSeasons) games.push(...readSeasonGames(season));
+  if (games.filter((g) => g.season === args.season).length === 0) {
+    throw new Error(`No schedule found for season ${args.season} (public/data/nfl/${args.season}/games.json missing or empty). Fail-closed: cannot generate without a schedule.`);
+  }
+
+  const gameJoinIndex = buildGameJoinIndex(games);
+  const fullTeamGameLog: NflTeamGameLogEntry[] = buildTeamGameLog(playVolumeRecords, gameJoinIndex);
+  const passEpaGameLog: NflTeamEpaGameLogEntry[] = buildTeamEpaGameLog(passEpaRecords, gameJoinIndex);
+  const rushEpaGameLog: NflTeamEpaGameLogEntry[] = buildTeamEpaGameLog(rushEpaRecords, gameJoinIndex);
+  const domeByGameId = new Map(games.filter((g) => g.gameId).map((g) => [g.gameId, Boolean(g.isDome)]));
+  const teamPregameFeaturesByKey = new Map<string, NflTeamPregameFeatures>();
+  for (const record of playVolumeRecords) {
+    teamPregameFeaturesByKey.set(`${record.season}|${record.week}|${record.team}`, buildTeamPregameFeatures(record, gameJoinIndex, fullTeamGameLog));
+  }
+
+  // Historical market context (2022-2025, for training/reference rows) + live current-week market (target season only).
+  const historicalMarketArtifact = JSON.parse(readFileSync(join(DATA_DIR, "historical-market-context-2022-2025.json"), "utf8")) as { rows: NflHistoricalMarketRow[] };
+  const marketByKey = new Map(historicalMarketArtifact.rows.map((row) => [marketKey(row.season, row.week, row.team), row]));
+  let marketAvailable = false;
+  const liveMarketPath = join(ROOT, "public", "data", "nfl", "matchup-market.json");
+  if (existsSync(liveMarketPath)) {
+    const liveMarket = JSON.parse(readFileSync(liveMarketPath, "utf8")) as {
+      currentSeason: number;
+      currentMarket: Record<string, { gameId: string; season: number; week: number; homeAbbr: string; awayAbbr: string; spread: { home: number; away: number } | null; total: number | null }>;
+    };
+    if (liveMarket.currentSeason === args.season) {
+      for (const g of Object.values(liveMarket.currentMarket ?? {})) {
+        if (g.season !== args.season || g.spread == null || g.total == null) continue;
+        const impliedHome = g.total / 2 - g.spread.home / 2;
+        const impliedAway = g.total / 2 - g.spread.away / 2;
+        marketByKey.set(marketKey(g.season, g.week, g.homeAbbr), { season: g.season, week: g.week, gameId: g.gameId, team: g.homeAbbr, opponent: g.awayAbbr, homeAway: "home", spread: g.spread.home, total: g.total, impliedTeamTotal: impliedHome, neutralSite: false });
+        marketByKey.set(marketKey(g.season, g.week, g.awayAbbr), { season: g.season, week: g.week, gameId: g.gameId, team: g.awayAbbr, opponent: g.homeAbbr, homeAway: "away", spread: g.spread.away, total: g.total, impliedTeamTotal: impliedAway, neutralSite: false });
+        marketAvailable = true;
+      }
+    }
+  }
+
+  // Historical outcome-derived feature rows (2022-2025) -- reused verbatim for model fit, score reference, and interval construction.
+  const passingOutcomes = (JSON.parse(readFileSync(join(DATA_DIR, "qb-passing-outcomes-2022-2025.json"), "utf8")) as { rows: NflQbPassingOutcome[] }).rows;
+  const qbStatGameLog = buildQbStatGameLog(passingOutcomes, gameJoinIndex);
+  const historicalPassingRows = passingOutcomes.map((outcome) => buildQbPassingFeatureRow(outcome, { gameJoinIndex, teamPregameFeaturesByKey, fullTeamGameLog, epaGameLog: passEpaGameLog, marketByKey, domeByGameId, qbStatGameLog }));
+
+  const rushingOutcomes = (JSON.parse(readFileSync(join(DATA_DIR, "rushing-outcomes-v2-2022-2025.json"), "utf8")) as { rows: NflRushingOutcome[] }).rows;
+  const playerRushingStatLog = buildPlayerRushingStatLog(rushingOutcomes, gameJoinIndex);
+  const teamTopRbCarryShareByGameTeam = buildTeamTopRbCarryShareByGameTeam(rushingOutcomes);
+  const historicalRushingRows = rushingOutcomes.map((outcome) => buildRushingFeatureRow(outcome, { gameJoinIndex, teamPregameFeaturesByKey, fullTeamGameLog, rushEpaGameLog, marketByKey, domeByGameId, playerRushingStatLog, teamTopRbCarryShareByGameTeam }));
+
+  const receivingOutcomes = (JSON.parse(readFileSync(join(DATA_DIR, "receiving-outcomes-2022-2025.json"), "utf8")) as { rows: NflReceivingOutcome[] }).rows;
+  const airYardsByPlayerWeek = new Map<string, NflAirYardsSupplement>();
+  const statsManifest = readManifest(STATS_CACHE_DIR);
+  for (const season of trainingSeasons) {
+    for (const row of verifiedCsvRows(STATS_CACHE_DIR, statsManifest, season)) {
+      if (String(row.season_type ?? "").toUpperCase() !== "REG" || !row.player_id) continue;
+      const airYards = Number(row.receiving_air_yards);
+      if (Number.isFinite(airYards)) airYardsByPlayerWeek.set(`gsis:${String(row.player_id).trim()}|${season}|${Number(row.week)}`, { airYards });
+    }
+  }
+  const playerReceivingStatLog = buildPlayerReceivingStatLog(receivingOutcomes, gameJoinIndex, airYardsByPlayerWeek);
+  const teamTopTargetShareByGameTeam = buildTeamTopTargetShareByGameTeam(receivingOutcomes);
+  const historicalReceivingRows = receivingOutcomes.map((outcome) => buildReceivingFeatureRow(outcome, { gameJoinIndex, teamPregameFeaturesByKey, fullTeamGameLog, passEpaGameLog, marketByKey, domeByGameId, playerReceivingStatLog, teamTopTargetShareByGameTeam }));
+
+  // Eligibility activity logs (2022-2025 canonical universe -- the ONLY source, never the target week itself).
+  const universe = (JSON.parse(readFileSync(join(DATA_DIR, "player-game-universe-2022-2025.json"), "utf8")) as { rows: NflPlayerGameUniverseRow[] }).rows;
+  const rushActivityLog = buildActivityLogFromUniverse(universe, "carries");
+  const targetActivityLog = buildActivityLogFromUniverse(universe, "targets");
+  const attemptActivityLog = buildActivityLogFromUniverse(universe, "passAttempts");
+
+  // Live target-week roster snapshot.
+  const rosterManifest = readManifest(ROSTER_CACHE_DIR);
+  const rosterEntry = rosterManifest.files?.find((c) => c.season === args.season);
+  if (!rosterEntry) throw new Error(`No cached weekly-rosters source for ${args.season}. Fail-closed: cannot resolve current-week roster membership.`);
+  const rosterCsvRows = verifiedCsvRows(ROSTER_CACHE_DIR, rosterManifest, args.season);
+  const rosterRows: NflCurrentWeekRosterSourceRow[] = rosterCsvRows
+    .filter((row) => finiteField(row, "week", true) === args.week)
+    .map((row) => ({
+      season: finiteField(row, "season", true), week: finiteField(row, "week", true), team: String(row.team ?? "").trim(),
+      gsisId: String(row.gsis_id ?? "").trim(), playerName: String(row.full_name ?? "").trim(), position: String(row.position ?? "").trim(), status: String(row.status ?? "").trim(),
+    }));
+  if (rosterRows.length === 0) throw new Error(`No weekly-rosters rows found for season ${args.season} week ${args.week}. Fail-closed.`);
+
+  // Frozen Matchup Score weight definitions (Phase 8 research artifact).
+  const scoreResearch = JSON.parse(readFileSync(join(DATA_DIR, "matchup-score-research.json"), "utf8")) as {
+    passing: { selectedDefinition: NflFrozenScoreDefinition }; rushing: { selectedDefinition: NflFrozenScoreDefinition }; receiving: { selectedDefinition: NflFrozenScoreDefinition };
+  };
+
+  const sources: NflCurrentWeekSources = {
+    season: args.season, week: args.week, generatedAt: args.generatedAt,
+    rosterRows, games, gameJoinIndex, fullTeamGameLog, passEpaGameLog, rushEpaGameLog, marketByKey, marketAvailable, domeByGameId,
+    qbStatGameLog, playerRushingStatLog, playerReceivingStatLog, teamTopRbCarryShareByGameTeam, teamTopTargetShareByGameTeam,
+    rushActivityLog, targetActivityLog, attemptActivityLog,
+    historicalPassingRows, historicalRushingRows, historicalReceivingRows,
+    scoreDefinitions: { passing: scoreResearch.passing.selectedDefinition, rushing: scoreResearch.rushing.selectedDefinition, receiving: scoreResearch.receiving.selectedDefinition },
+  };
+
+  const artifact = generateCurrentWeekYardageProjections(sources);
+
+  console.log(`[nfl:current-week-projections] season=${args.season} week=${args.week} games=${artifact.qa.gamesExpected} playersEvaluated=${artifact.qa.playersEvaluated}`);
+  console.log(`[nfl:current-week-projections] emitted passing=${artifact.qa.projectionsEmittedByMarket.passing} rushing=${artifact.qa.projectionsEmittedByMarket.rushing} receiving=${artifact.qa.projectionsEmittedByMarket.receiving}`);
+  console.log(`[nfl:current-week-projections] limited/no-history passing=${artifact.qa.limitedOrNoHistoryRows.passing} rushing=${artifact.qa.limitedOrNoHistoryRows.rushing} receiving=${artifact.qa.limitedOrNoHistoryRows.receiving}`);
+  console.log(`[nfl:current-week-projections] unresolved identity rows=${artifact.qa.unresolvedIdentityRows}`);
+
+  if (args.dryRun) {
+    console.log("[nfl:current-week-projections] --dry-run: not writing artifact.");
+    return;
+  }
+
+  const outPath = args.output ?? join(ROOT, "public", "data", "nfl", String(args.season), "yardage-projections.json");
+  // Compact (no pretty-print indentation) -- this is the browser-facing
+  // production artifact; schema/field content is unchanged, only
+  // whitespace is removed. Use `node -e "console.log(JSON.stringify(require(path),null,2))"`
+  // or a formatter locally to inspect it readably.
+  const compact = JSON.stringify(artifact);
+  writeAtomic(outPath, compact);
+  console.log(`[nfl:current-week-projections] wrote ${outPath} (${compact.length} bytes)`);
+}
+
+main();

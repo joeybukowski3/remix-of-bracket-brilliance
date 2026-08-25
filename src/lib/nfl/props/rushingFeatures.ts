@@ -105,6 +105,57 @@ function opponentRushEpaAllowedRate(epaGameLog: readonly NflTeamEpaGameLogEntry[
   };
 }
 
+/** Live variant of `buildRushingFeatureRow` for an unplayed target game -- see `qbPassingFeatures.ts`'s `buildQbPassingFeatureRowForTarget` header for why this exists. */
+export function buildRushingFeatureRowForTarget(
+  target: { season: number; week: number; gameId: string; team: string; opponent: string; playerId: string; playerName: string; position: NflRushingFeatureRow["diagnostics"]["position"]; gameDateUtc: string; homeAway: "home" | "away" },
+  args: {
+    teamPregameFeaturesByKey: ReadonlyMap<string, NflTeamPregameFeatures>;
+    fullTeamGameLog: readonly NflTeamGameLogEntry[];
+    rushEpaGameLog: readonly NflTeamEpaGameLogEntry[];
+    marketByKey: ReadonlyMap<string, NflHistoricalMarketRow>;
+    domeByGameId: ReadonlyMap<string, boolean>;
+    playerRushingStatLog: readonly NflPlayerRushingStatLogEntry[];
+    teamTopRbCarryShareByGameTeam: ReadonlyMap<string, number>;
+  },
+): Omit<NflRushingFeatureRow, "target"> {
+  const teamEnv = teamRushRates(args.teamPregameFeaturesByKey.get(`${target.season}|${target.week}|${target.team}`));
+  const rushAttemptsAllowed = opponentRushAllowedRate(args.fullTeamGameLog, target.opponent, target.season, target.gameDateUtc);
+  const rushEpaAllowed = opponentRushEpaAllowedRate(args.rushEpaGameLog, target.opponent, target.season, target.gameDateUtc);
+  const market = args.marketByKey.get(marketKey(target.season, target.week, target.team));
+  const isDome = args.domeByGameId.get(target.gameId) ?? null;
+  const playerRolling = playerRollingWindows(args.playerRushingStatLog, target.playerId, target.season, target.gameDateUtc);
+
+  const teamPriorGames = selectLastNGames(selectPriorGamesInSeason(args.fullTeamGameLog, target.team, target.season, target.gameDateUtc), 3);
+  const concentrationValues = teamPriorGames
+    .map((g) => args.teamTopRbCarryShareByGameTeam.get(`${g.gameId}|${g.team}`))
+    .filter((v): v is number => v != null);
+  const recentTeamTopCarryShareConcentration = concentrationValues.length > 0
+    ? concentrationValues.reduce((s, v) => s + v, 0) / concentrationValues.length
+    : null;
+
+  return {
+    schemaVersion: NFL_RUSHING_FEATURE_ROW_SCHEMA_VERSION,
+    season: target.season, week: target.week, gameId: target.gameId, team: target.team, opponent: target.opponent,
+    playerId: target.playerId, playerName: target.playerName,
+    features: {
+      playerUsage: { carriesPerGame: playerRolling.carriesPerGame, carryShare: playerRolling.carryShare },
+      playerEfficiency: { yardsPerCarry: playerRolling.yardsPerCarry },
+      teamEnvironment: teamEnv,
+      opponentRushDefense: { rushAttemptsPerGameAllowed: rushAttemptsAllowed, rushEpaPerPlayAllowed: rushEpaAllowed },
+      market: {
+        spread: market?.spread ?? null, total: market?.total ?? null, impliedTeamTotal: market?.impliedTeamTotal ?? null,
+        homeAway: market?.homeAway ?? target.homeAway, isDome,
+      },
+    },
+    diagnostics: {
+      position: target.position, isQb: target.position === "QB",
+      gamesWithCarriesPriorThisSeason: playerRolling.gamesWithCarriesPriorThisSeason,
+      hasPriorSeasonCarries: playerRolling.hasPriorSeasonCarries,
+      recentTeamTopCarryShareConcentration,
+    },
+  };
+}
+
 export function buildRushingFeatureRow(
   outcome: NflRushingOutcome,
   args: {
