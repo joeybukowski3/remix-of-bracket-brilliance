@@ -91,6 +91,40 @@ describe("weekly fantasy research heat presentation", () => {
     expect(weeklyHeatStyle("neutral").backgroundColor).toBe(tier("average").backgroundColor);
   });
 
+  it("keeps representative heat foregrounds readable without changing their fills", () => {
+    const parseColor = (color: string) => {
+      const hex = color.match(/^#([0-9a-f]{6})$/i);
+      if (hex) {
+        const value = Number.parseInt(hex[1], 16);
+        return { rgb: [(value >> 16) & 255, (value >> 8) & 255, value & 255], alpha: 1 };
+      }
+      const rgba = color.match(/[\d.]+/g)!.map(Number);
+      return { rgb: rgba.slice(0, 3), alpha: rgba[3] ?? 1 };
+    };
+    const luminance = (rgb: number[]) => {
+      const [red, green, blue] = rgb
+        .map((channel) => channel / 255)
+        .map((channel) => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const contrast = (tone: "gold" | "green" | "neutral" | "red" | "strong-red") => {
+      const style = weeklyHeatStyle(tone);
+      const background = parseColor(style.backgroundColor);
+      const foreground = parseColor(style.color);
+      const compositedBackground = background.rgb.map(
+        (channel) => channel * background.alpha + 255 * (1 - background.alpha),
+      );
+      const left = luminance(compositedBackground);
+      const right = luminance(foreground.rgb);
+      return (Math.max(left, right) + 0.05) / (Math.min(left, right) + 0.05);
+    };
+
+    for (const tone of ["gold", "green", "neutral", "red", "strong-red"] as const) {
+      expect(contrast(tone), tone).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(weeklyHeatStyle("green").backgroundColor).toBe("#10b981");
+  });
+
   it("aligns categorical matchup grades with gold/green/neutral/red semantics", () => {
     expect(matchupGradeHeatTone("great")).toBe("gold");
     expect(matchupGradeHeatTone("good")).toBe("dark-green");

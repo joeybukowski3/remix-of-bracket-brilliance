@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import PositionParBoard from "@/components/fantasy/PositionParBoard";
 import LegacyPositionBoard from "@/components/fantasy/LegacyPositionBoard";
+import RosStatsGlossary from "@/components/fantasy/RosStatsGlossary";
 import { MatchupOpponentCell, PositionRankBadge } from "@/components/fantasy/ParBoardCells";
 import { getPositionTone, POSITION_TONES, POSITION_TONE_NAMES, type PositionTone } from "@/lib/fantasy/positionTone";
 import { getOverallRowContext } from "@/lib/fantasy/overallRowContext";
-import { formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
+import { formatAdp, formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import { NflTableScroller } from "@/components/nfl/ui/NflTable";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,8 @@ export default function FantasyParBoard() {
           </div>
         </div>
       </div>
+
+      <RosStatsGlossary />
 
       <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -196,39 +199,27 @@ function OverallBoard({ query }: { query: string }) {
 
   return (
     <NflTableScroller label="Overall fantasy rankings" className="max-h-[72vh]">
-      <table className="w-full min-w-[1240px] border-collapse text-left text-xs">
+      <table className="w-full min-w-[1340px] border-collapse text-left text-xs">
         <thead className="sticky top-0 z-20 bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
           <tr>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center")}>Rank</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-14 z-30 min-w-64 bg-slate-100 px-3 py-2")}>Player</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Pos Rk</th>
-            <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Rd / Pick</th>
+            <th title="2026 consensus Average Draft Position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>ADP</th>
             <th title="Approved projected PAR per game" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>PAR/G</th>
             <th title="FantasyPros projection rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Projection Rk</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>AVG Rk</th>
             <th title="Positional strength of schedule; 1 is the easiest slate" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>SOS</th>
-            {["Pts", "PPG"].map((basis) => (
-              <th
-                key={basis}
-                title={`2025 positional finish by ${basis === "Pts" ? "total fantasy points" : "points per game"}`}
-                className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center leading-tight")}
-              >
-                2025 Rk
-                <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
-                  {basis}
-                </span>
-              </th>
-            ))}
+            <th title="2025 positional finish by total fantasy points" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>2025 Pts Rk</th>
+            <th title="2025 positional finish by fantasy points per game" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>2025 PPG Rk</th>
+            <th title="Total points over the last eight eligible regular-season games, ranked within position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>L8 Pts Rk</th>
             {["W15", "W16", "W17"].map((week) => (
               <th
                 key={week}
-                title={`${week} opponent. Hover a cell for that defense's 2025 fantasy points allowed to the player's position.`}
+                title={`${week} opponent. Cell heat is that defense's 2025 fantasy points allowed to the player's position.`}
                 className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center leading-tight")}
               >
                 {week}
-                <span className="block text-[8px] font-medium normal-case tracking-normal text-slate-400">
-                  2025 PA
-                </span>
               </th>
             ))}
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "w-12 px-3 py-2")}><span className="sr-only">Details</span></th>
@@ -242,13 +233,32 @@ function OverallBoard({ query }: { query: string }) {
   );
 }
 
+function PositionalHistoryCell({
+  tone,
+  position,
+  rank,
+}: {
+  tone: PositionTone;
+  position: FantasyPosition;
+  rank: number | undefined;
+}) {
+  return (
+    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-2 text-center", tone.cell)}>
+      {Number.isFinite(rank) ? (
+        <PositionRankBadge position={position} positionRank={rank} />
+      ) : (
+        <span className="text-[10px] font-semibold text-slate-400">N/A</span>
+      )}
+    </td>
+  );
+}
+
 function OverallRow({ row }: { row: FantasyRankingRow }) {
   const [expanded, setExpanded] = useState(false);
   // Overall mixes positions, so cells are tinted by *which* position the row is
   // rather than by rank quality — see `positionTone`.
   const tone = getPositionTone(row.position);
-  // PAR/G and the 2025 finish come from the approved PAR rows; players outside
-  // that universe resolve to undefined and render a dash.
+  // Context values are prepared outside React; filtering never recomputes ranks.
   const context = getOverallRowContext(row.overallRank);
   return (
     <>
@@ -258,22 +268,23 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
         <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
           <PositionRankBadge position={row.position} positionRank={row.positionRank} />
         </td>
-        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center tabular-nums")}>{row.draftRound && row.roundPick ? `${row.draftRound}.${row.roundPick}` : "—"}</td>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center font-semibold tabular-nums text-slate-500")}>{formatAdp(row.adp)}</td>
         <OverallStatCell tone={tone} value={formatSigned(context.parPerGame, 2)} />
         <OverallStatCell tone={tone} value={formatRank(row.projectionRank)} />
         <OverallStatCell tone={tone} value={formatRank(row.averageRank)} />
         <OverallStatCell tone={tone} value={formatRank(row.strengthOfSchedule)} />
-        <OverallStatCell tone={tone} value={formatRank(context.seasonRank2025?.byPoints)} />
-        <OverallStatCell tone={tone} value={formatRank(context.seasonRank2025?.byPpg)} />
-        <MatchupOpponentCell opponent={row.playoffWeek15Opponent} position={row.position} tintClass={tone.cell} />
-        <MatchupOpponentCell opponent={row.playoffWeek16Opponent} position={row.position} tintClass={tone.cell} />
-        <MatchupOpponentCell opponent={row.playoffWeek17Opponent} position={row.position} tintClass={tone.cell} />
+        <PositionalHistoryCell tone={tone} position={row.position} rank={context.seasonRank2025?.byPoints} />
+        <PositionalHistoryCell tone={tone} position={row.position} rank={context.seasonRank2025?.byPpg} />
+        <PositionalHistoryCell tone={tone} position={row.position} rank={context.lastEightRank?.rank} />
+        <MatchupOpponentCell opponent={row.playoffWeek15Opponent} position={row.position} />
+        <MatchupOpponentCell opponent={row.playoffWeek16Opponent} position={row.position} />
+        <MatchupOpponentCell opponent={row.playoffWeek17Opponent} position={row.position} />
         <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}><FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.player}`} expanded={expanded} onClick={() => setExpanded((value) => !value)} /></td>
       </tr>
       {expanded && (
         <tr className="bg-slate-50">
           <td colSpan={15} className="border-b border-slate-200 px-4 py-3 text-xs text-slate-600">
-            Late / Last 8: <strong>{formatRank(row.lateSeasonRank)}</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
+            2025 sample: <strong>{context.seasonActual2025 ? `${context.seasonActual2025.gamesPlayed} games` : "N/A"}</strong> · L8 sample: <strong>{context.lastEightRank ? `${context.lastEightRank.sampleSize} game${context.lastEightRank.sampleSize === 1 ? "" : "s"}` : "N/A"}</strong> · L8 total: <strong>{context.lastEightRank ? context.lastEightRank.totalPoints.toFixed(1) : "N/A"}</strong> · ADP source: <strong>not available in repository</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
           </td>
         </tr>
       )}
