@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(path.join(process.cwd(), ".github", "workflows", "cfb-v2-shadow-refresh.yml"), "utf8");
+const deployWorkflow = readFileSync(path.join(process.cwd(), ".github", "workflows", "deploy.yml"), "utf8");
 
 function indexOfStep(name: string): number {
   return workflow.indexOf(`- name: ${name}`);
@@ -96,6 +97,27 @@ describe("CFB Model V2 shadow refresh workflow — WU5 §23/§25 static assertio
     // Defense-in-depth: even if reached, an empty diff still exits 0 cleanly.
     const fullCommitBlock = workflow.slice(commitIndex, commitIndex + 1200);
     expect(fullCommitBlock).toContain("git diff --cached --quiet");
+  });
+
+  it("deploys Pages only after a changed browser artifact was committed and pushed successfully", () => {
+    const commitIndex = indexOfStep("Commit and push browser artifact");
+    const uploadIndex = indexOfStep("Upload shadow manifest + audit summary");
+    const commitBlock = workflow.slice(commitIndex, uploadIndex);
+    const deployJob = workflow.slice(workflow.indexOf("  deploy-pages:"));
+
+    expect(workflow).toContain("deploy_ref: ${{ steps.commit.outputs.pushed_commit }}");
+    expect(commitBlock).toContain('echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"');
+    expect(commitBlock.indexOf("git push origin HEAD:main")).toBeLessThan(commitBlock.indexOf("pushed_commit="));
+    expect(deployJob).toContain("needs: refresh-shadow-state");
+    expect(deployJob).toContain("if: needs.refresh-shadow-state.outputs.deploy_ref != ''");
+    expect(deployJob).toContain("uses: ./.github/workflows/deploy.yml");
+    expect(deployJob).toContain("ref: ${{ needs.refresh-shadow-state.outputs.deploy_ref }}");
+  });
+
+  it("exposes the Pages workflow as a native reusable workflow and checks out the exact pushed commit", () => {
+    expect(deployWorkflow).toContain("workflow_call:");
+    expect(deployWorkflow).toMatch(/workflow_call:\s*\n\s*inputs:\s*\n\s*ref:/);
+    expect(deployWorkflow).toContain("ref: ${{ inputs.ref || github.sha }}");
   });
 
   it("runs the summary and upload steps even on failure (if: always()), so a failed run is still inspectable", () => {
