@@ -165,6 +165,8 @@ test("Weekly rankings mobile uses one scrollable row with frozen identity column
   expect(expandedGeometry.widthGap).toBeLessThanOrEqual(2);
   await expect(board.getByText("Final projected pts", { exact: true })).toBeVisible();
   await expect(board.getByRole("heading", { name: "Matchup details" })).toBeVisible();
+  await expect(board.locator("[data-composite-matchup]")).toContainText("Composite matchup");
+  await expect(board.locator("[data-composite-matchup-score]")).toHaveText(/^\d+ \/ 100$/);
   await expect(board.locator("[data-evidence-card]").first()).toBeVisible();
   await expect(board.locator("[data-matchup-category='trenches']")).toBeVisible();
   await expect(board.locator("[data-matchup-detail-value='team-rank']").first()).toHaveAttribute("data-quality-tone");

@@ -23,6 +23,7 @@ describe("weekly fantasy research presentation join", () => {
     expect(joined.missingPlayerIds).toEqual([]);
     expect(joined.rows.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints, row.baselineFantasyPoints]))
       .toEqual(source.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints, row.baselineFantasyPoints]));
+    expect(joined.rows.every((row) => !("matchupRating" in row))).toBe(true);
   });
 
   it("degrades a missing research row to N/A-shaped nulls without failing projection rows", () => {
@@ -33,7 +34,6 @@ describe("weekly fantasy research presentation join", () => {
     expect(joined.missingPlayerIds).toEqual([source[0].playerId]);
     expect(joined.rows[0].projectedFantasyPoints).toBe(source[0].projectedFantasyPoints);
     expect(joined.rows[0].research.seasonPpg.value).toBeNull();
-    expect(joined.rows[0].matchupRating).toBeNull();
     expect(joined.rows[0].matchupEdges.trenches.score).toBeNull();
   });
 

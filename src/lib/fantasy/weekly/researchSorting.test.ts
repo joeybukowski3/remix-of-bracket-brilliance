@@ -37,7 +37,7 @@ describe("weekly research presentation sorting", () => {
     expect(defaultWeeklySortDirection("rank", "rank")).toBe("asc");
     expect(defaultWeeklySortDirection("player", "rank")).toBe("asc");
     expect(defaultWeeklySortDirection("opponent", "rank")).toBe("asc");
-    expect(defaultWeeklySortDirection("matchup", "rank")).toBe("asc");
+    expect(defaultWeeklySortDirection("matchup", "rank")).toBe("desc");
     expect(defaultWeeklySortDirection("projectedFantasyPoints", "rank")).toBe("desc");
     expect(defaultWeeklySortDirection("seasonPpg", "rank")).toBe("asc");
     expect(defaultWeeklySortDirection("seasonPpg", "stat")).toBe("desc");
@@ -79,11 +79,10 @@ describe("weekly research presentation sorting", () => {
   });
 
   it("sorts matchup semantically and position evidence by raw value or display rank", () => {
-    const matchupOrder = { great: 1, good: 2, neutral: 3, tough: 4, "very-tough": 5 } as const;
-    const matchup = sortWeeklyResearchPresentation(presentation, { key: "matchup", direction: "asc" }, "rank")
-      .map(({ row }) => row.matchupRating?.id ? matchupOrder[row.matchupRating.id] : null)
+    const matchup = sortWeeklyResearchPresentation(presentation, { key: "matchup", direction: "desc" }, "rank")
+      .map((row) => row.matchup.rawScore)
       .filter((value): value is number => value != null);
-    expectAscending(matchup);
+    expectAscending([...matchup].reverse());
 
     const rawTouches = sortWeeklyResearchPresentation(presentation, { key: "touches", direction: "desc" }, "stat")
       .map((row) => row.evidence.touches.rawValue).filter((value): value is number => value != null);

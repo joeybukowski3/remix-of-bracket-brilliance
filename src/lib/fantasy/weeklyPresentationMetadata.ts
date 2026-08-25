@@ -35,7 +35,12 @@ const COMMON_DEFINITIONS: readonly WeeklyStatDefinition[] = [
   { key: "projection", abbreviation: "PROJ", name: "Projected Points", meaning: "JKB projected Full-PPR fantasy points for this week." },
   { key: "seasonPpg", abbreviation: "SZN", name: "Season PPG", meaning: "Fantasy points per game for the current season sample; Week 1 uses the approved prior-season sample." },
   { key: "last5Ppg", abbreviation: "L5", name: "Last 5 Trend", meaning: "Fantasy points per game across the player's last five eligible games." },
-  { key: "matchup", abbreviation: "MU", name: "Matchup", meaning: "Overall opponent fantasy matchup grade." },
+  {
+    key: "matchup",
+    abbreviation: "MU",
+    name: "Matchup",
+    meaning: "Weighted matchup score combining opponent fantasy points allowed, recent fantasy points allowed, trench advantage, EPA advantage, and success-rate advantage. 100 is strongest; 0 is weakest.",
+  },
   { key: "opponentFpaSeason", abbreviation: "OA", name: "Opp Allowed SZN", meaning: "Opponent fantasy points allowed to this position over the season sample." },
   { key: "opponentFpaLast5", abbreviation: "O5", name: "Opp Allowed L5", meaning: "Opponent fantasy points allowed to this position over its last five eligible games." },
   { key: "trenches", abbreviation: "TR", name: "Trenches", meaning: "Offensive-line vs defensive-front edge: pass protection for QB/WR/TE and run blocking for RB." },
