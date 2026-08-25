@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { weeklyFantasyProjectionProductionArtifactSchema } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 import { weeklyFantasyResearchArtifactSchema } from "@/lib/fantasy/weekly/researchArtifact";
 import { joinWeeklyFantasyResearchRows } from "@/lib/fantasy/weekly/researchJoin";
+import { calculateWeeklyMatchupComposite } from "@/lib/fantasy/weekly/matchupComposite";
 import {
   matchupGradeHeatTone,
   prepareWeeklyResearchPresentation,
@@ -136,10 +137,12 @@ describe("weekly fantasy research heat presentation", () => {
   it("prepares favorable ranks with correct player and 32-team pools without mutating projection tuples", () => {
     const joined = joinWeeklyFantasyResearchRows(projections.rows.WR, research).rows;
     const before = joined.map((row) => [row.playerId, row.positionRank, row.projectedFantasyPoints] as const);
+    const sourceResearchBefore = JSON.stringify(research.rows);
     const prepared = prepareWeeklyResearchPresentation(joined);
     const after = prepared.map(({ row }) => [row.playerId, row.positionRank, row.projectedFantasyPoints] as const);
 
     expect(after).toEqual(before);
+    expect(JSON.stringify(research.rows)).toBe(sourceResearchBefore);
     expect(prepared.every(({ row }, index) => row === joined[index])).toBe(true);
     expect(prepared[0].projectedFantasyPoints).toMatchObject({
       rawValue: joined[0].projectedFantasyPoints,
@@ -152,11 +155,52 @@ describe("weekly fantasy research heat presentation", () => {
     expect(prepared[0].seasonPpg.poolSize).not.toBe(32);
     expect(prepared.every((row) => row.opponentFpaSeason.poolSize === 32)).toBe(true);
     expect(prepared.every((row) => row.matchupEdges.epa.poolSize === 32)).toBe(true);
+    expect(prepared.every((row) => row.matchup.availableComponentCount === 5)).toBe(true);
+    expect(prepared.every((row) => row.matchup.score != null && row.matchup.score >= 0 && row.matchup.score <= 100)).toBe(true);
 
     const bestEpa = prepared.reduce((best, row) =>
       (row.matchupEdges.epa.rawValue ?? Number.NEGATIVE_INFINITY) > (best.matchupEdges.epa.rawValue ?? Number.NEGATIVE_INFINITY) ? row : best,
     );
     expect(bestEpa.matchupEdges.epa.displayRank).toBe(1);
     expect(bestEpa.matchupEdges.epa.tone).toBe(weeklyMatchupDifferenceHeatTone(bestEpa.matchupEdges.epa.rawValue));
+  });
+
+  it("scores MATCHUP from FPA ranks and weekly edge ranks without using raw unit ranks or the FPA-only artifact grade", () => {
+    const joined = joinWeeklyFantasyResearchRows(projections.rows.RB, research).rows;
+    const prepared = prepareWeeklyResearchPresentation(joined);
+    const sample = prepared[0];
+
+    expect(sample.matchup.components.fpaSeason.rank).toBe(sample.row.research.opponentFpaSeason.rank);
+    expect(sample.matchup.components.fpaLast5.rank).toBe(sample.row.research.opponentFpaLast5.rank);
+    expect(sample.matchup.components.trenches.rank).toBe(sample.matchupEdges.trenches.displayRank);
+    expect(sample.matchup.components.epa.rank).toBe(sample.matchupEdges.epa.displayRank);
+    expect(sample.matchup.components.success.rank).toBe(sample.matchupEdges.success.displayRank);
+    expect(prepared.some((row) => row.matchup.components.epa.rank !== row.row.matchupEdges.epa.offenseRank)).toBe(true);
+    expect(prepared.some((row) => row.matchup.components.epa.rank !== row.row.matchupEdges.epa.defenseRank)).toBe(true);
+
+    const recomputed = calculateWeeklyMatchupComposite(sample.row.position, {
+      fpaSeason: sample.row.research.opponentFpaSeason.rank,
+      fpaLast5: sample.row.research.opponentFpaLast5.rank,
+      trenches: sample.matchupEdges.trenches.displayRank,
+      epa: sample.matchupEdges.epa.displayRank,
+      success: sample.matchupEdges.success.displayRank,
+    });
+    expect(sample.matchup).toEqual(recomputed);
+    expect(sample.row.projectedFantasyPoints).toBe(joined[0].projectedFantasyPoints);
+    expect(sample.row.positionRank).toBe(joined[0].positionRank);
+  });
+
+  it("withholds MATCHUP when fewer than three research components are available", () => {
+    const source = projections.rows.QB.slice(0, 1);
+    const joined = joinWeeklyFantasyResearchRows(source, { ...research, rows: [] }).rows;
+    const prepared = prepareWeeklyResearchPresentation(joined);
+    expect(prepared[0].row.projectedFantasyPoints).toBe(source[0].projectedFantasyPoints);
+    expect(prepared[0].row.positionRank).toBe(source[0].positionRank);
+    expect(prepared[0].matchup).toMatchObject({
+      availableComponentCount: 0,
+      score: null,
+      grade: "N/A",
+      gradeId: null,
+    });
   });
 });

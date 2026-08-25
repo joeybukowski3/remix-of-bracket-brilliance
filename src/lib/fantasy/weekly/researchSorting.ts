@@ -30,14 +30,6 @@ export type WeeklyResearchSort = {
 
 export const CANONICAL_WEEKLY_SORT: WeeklyResearchSort = { key: "rank", direction: "asc" };
 
-const MATCHUP_STRENGTH = {
-  great: 1,
-  good: 2,
-  neutral: 3,
-  tough: 4,
-  "very-tough": 5,
-} as const;
-
 const EVIDENCE_KEYS = new Set<WeeklyResearchSortKey>([
   "touches",
   "yardsPerCarry",
@@ -51,7 +43,8 @@ export function defaultWeeklySortDirection(
   key: WeeklyResearchSortKey,
   mode: WeeklyResearchSortMode,
 ): WeeklyResearchSortDirection {
-  if (key === "rank" || key === "player" || key === "opponent" || key === "matchup") return "asc";
+  if (key === "rank" || key === "player" || key === "opponent") return "asc";
+  if (key === "matchup") return "desc";
   if (key === "projectedFantasyPoints") return "desc";
   return mode === "rank" ? "asc" : "desc";
 }
@@ -77,7 +70,7 @@ function sortValue(
   if (key === "last5Ppg") return metricValue(presentation.last5Ppg, mode);
   if (key === "opponentFpaSeason") return metricValue(presentation.opponentFpaSeason, mode);
   if (key === "opponentFpaLast5") return metricValue(presentation.opponentFpaLast5, mode);
-  if (key === "matchup") return row.matchupRating?.id ? MATCHUP_STRENGTH[row.matchupRating.id] : null;
+  if (key === "matchup") return presentation.matchup.rawScore;
   if (key === "trenches" || key === "epa" || key === "success") {
     return metricValue(presentation.matchupEdges[key], mode);
   }

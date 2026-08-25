@@ -1,4 +1,8 @@
-import type { MatchupGradeId } from "@/lib/fantasy/matchupGrade";
+import {
+  calculateWeeklyMatchupComposite,
+  type WeeklyMatchupCompositeResult,
+  type WeeklyMatchupGradeId,
+} from "@/lib/fantasy/weekly/matchupComposite";
 import type { WeeklyResearchMetric } from "@/lib/fantasy/weekly/researchContext";
 import type { WeeklyFantasyResearchRow } from "@/lib/fantasy/weekly/researchJoin";
 import { PERCENTILE_TIERS } from "@/lib/mlb/percentileColorScale";
@@ -27,6 +31,7 @@ export type WeeklyMatchupMetricKey = "trenches" | "epa" | "success";
 
 export type WeeklyResearchPresentationRow = {
   row: WeeklyFantasyResearchRow;
+  matchup: WeeklyMatchupCompositeResult;
   projectedFantasyPoints: WeeklyDisplayMetric;
   seasonPpg: WeeklyDisplayMetric;
   last5Ppg: WeeklyDisplayMetric;
@@ -176,7 +181,7 @@ export function weeklyMatchupDifferenceHeatTone(
   return weeklyRankHeatTone(favorableRank, 32);
 }
 
-export function matchupGradeHeatTone(grade: MatchupGradeId | null | undefined): WeeklyHeatTone {
+export function matchupGradeHeatTone(grade: WeeklyMatchupGradeId | null | undefined): WeeklyHeatTone {
   if (grade === "great") return "gold";
   if (grade === "good") return "dark-green";
   if (grade === "neutral") return "neutral";
@@ -185,7 +190,7 @@ export function matchupGradeHeatTone(grade: MatchupGradeId | null | undefined): 
   return "missing";
 }
 
-export function matchupGradeHeatClass(grade: MatchupGradeId | null | undefined): string {
+export function matchupGradeHeatClass(grade: WeeklyMatchupGradeId | null | undefined): string {
   return weeklyHeatClass(matchupGradeHeatTone(grade));
 }
 
@@ -250,6 +255,13 @@ export function prepareWeeklyResearchPresentation(
       displayMetric(row.matchupEdges[key].rankDifference, null, edgeRanks[key].size);
     return {
       row,
+      matchup: calculateWeeklyMatchupComposite(row.position, {
+        fpaSeason: row.research.opponentFpaSeason.rank,
+        fpaLast5: row.research.opponentFpaLast5.rank,
+        trenches: edgeRanks.trenches.get(team)?.displayRank,
+        epa: edgeRanks.epa.get(team)?.displayRank,
+        success: edgeRanks.success.get(team)?.displayRank,
+      }),
       projectedFantasyPoints: displayMetric(row.projectedFantasyPoints, row.positionRank, rows.length),
       seasonPpg: prepareWeeklyMetric(row.research.seasonPpg),
       last5Ppg: prepareWeeklyMetric(row.research.last5Ppg),
