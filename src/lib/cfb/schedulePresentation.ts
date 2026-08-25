@@ -47,6 +47,35 @@ export function formatCfbScheduleDateTime(date: string, utcTime: string | null):
   return `${getPart(parts, "month")} ${getPart(parts, "day")} · ${getPart(parts, "hour")}:${getPart(parts, "minute")} ${getPart(parts, "dayPeriod")} ET`;
 }
 
+const easternDateTimeShortFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: EASTERN_TIME_ZONE,
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const dateOnlyShortFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "UTC",
+  month: "short",
+  day: "numeric",
+});
+
+/** Compact kickoff label for tight card layouts, e.g. "Aug 30 · 7:30 PM ET". */
+export function formatCfbKickoffLabel(date: string, utcTime: string | null): string {
+  if (!utcTime) {
+    const dateOnly = new Date(`${date}T12:00:00Z`);
+    return Number.isNaN(dateOnly.getTime()) ? date : dateOnlyShortFormatter.format(dateOnly);
+  }
+
+  const scheduledAt = new Date(`${date}T${utcTime}:00Z`);
+  if (Number.isNaN(scheduledAt.getTime())) return date;
+
+  const parts = easternDateTimeShortFormatter.formatToParts(scheduledAt);
+  return `${getPart(parts, "month")} ${getPart(parts, "day")} · ${getPart(parts, "hour")}:${getPart(parts, "minute")} ${getPart(parts, "dayPeriod")} ET`;
+}
+
 export function formatCfbOpponentRecord(record: CfbSeasonRecord | null | undefined): string {
   return record ? formatRecord(record.wins, record.losses, record.ties) : "—";
 }

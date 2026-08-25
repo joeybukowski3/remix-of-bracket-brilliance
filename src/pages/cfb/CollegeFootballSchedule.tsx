@@ -1,22 +1,23 @@
 import { useMemo, useState } from "react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
-  CFB_CONFERENCE_ORDER,
   CFB_CONFERENCES,
   CFB_GAMES_2026,
   CFB_PROVENANCE,
   getAvailableWeeks,
   getTeamById,
 } from "@/data/cfb";
-import type { CfbConferenceId, CfbGame } from "@/data/cfb/types";
+import type { CfbGame } from "@/data/cfb/types";
 import CollegeFootballPageHeader from "@/components/cfb/CollegeFootballPageHeader";
 import CollegeFootballWeekSelector from "@/components/cfb/CollegeFootballWeekSelector";
+import CollegeFootballConferenceSelector, {
+  type CfbConferenceFilter,
+} from "@/components/cfb/CollegeFootballConferenceSelector";
 import CollegeFootballGameCard from "@/components/cfb/CollegeFootballGameCard";
 import type { CfbScheduleParticipant } from "@/components/cfb/CollegeFootballGameCard";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
-import { cn } from "@/lib/utils";
 
-type ConfFilter = CfbConferenceId | "all";
+type ConfFilter = CfbConferenceFilter;
 
 function gameInvolvesConference(game: CfbGame, conf: ConfFilter): boolean {
   if (conf === "all") return true;
@@ -58,14 +59,6 @@ export default function CollegeFootballSchedule() {
     path: "/college-football/schedule",
   });
 
-  const filters: { id: ConfFilter; label: string }[] = [
-    { id: "all", label: "All" },
-    ...CFB_CONFERENCE_ORDER.map((id) => ({
-      id,
-      label: CFB_CONFERENCES[id].shortName,
-    })),
-  ];
-
   return (
     <>
       <CollegeFootballPageHeader
@@ -78,26 +71,11 @@ export default function CollegeFootballSchedule() {
 
       <CollegeFootballDataNotice kind="both" />
 
-      <div role="group" aria-label="Filter by conference" className="flex flex-wrap gap-1.5">
-        {filters.map((f) => {
-          const selected = conference === f.id;
-          return (
-            <button
-              key={f.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => setConference(f.id)}
-              className={cn(
-                "rounded border px-2 py-1 text-[11px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
-                selected
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-400",
-              )}
-            >
-              {f.label}
-            </button>
-          );
-        })}
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          Filter by conference
+        </span>
+        <CollegeFootballConferenceSelector value={conference} onChange={setConference} />
       </div>
 
       {games.length === 0 ? (

@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatCfbGameStatusLabel,
+  formatFavoriteSpread,
   formatMoneyline,
   formatNullableNumber,
   formatRank,
   formatRankChange,
   formatSpread,
   formatTotal,
+  getCfbMarketFavorite,
+  getCfbRankDisplay,
   getTeamPerspectiveSpread,
 } from "./format";
 
@@ -71,5 +75,37 @@ describe("CFB format helpers", () => {
     };
     expect(getTeamPerspectiveSpread(game, "home")).toBeNull();
     expect(formatSpread(getTeamPerspectiveSpread(game, "home"))).toBe("—");
+  });
+
+  it("derives the market favorite from the spread only, never JKB rating", () => {
+    const homeFavored = { homeTeamId: "home", awayTeamId: "away", odds: { openingSpread: -7.5, currentSpread: -7.5, awayMoneyline: null, homeMoneyline: null, openingTotal: null, currentTotal: null } };
+    const awayFavored = { homeTeamId: "home", awayTeamId: "away", odds: { openingSpread: 5.5, currentSpread: 5.5, awayMoneyline: null, homeMoneyline: null, openingTotal: null, currentTotal: null } };
+    const pickEm = { homeTeamId: "home", awayTeamId: "away", odds: { openingSpread: 0, currentSpread: 0, awayMoneyline: null, homeMoneyline: null, openingTotal: null, currentTotal: null } };
+    const noOdds = { homeTeamId: "home", awayTeamId: "away", odds: { openingSpread: null, currentSpread: null, awayMoneyline: null, homeMoneyline: null, openingTotal: null, currentTotal: null } };
+    expect(getCfbMarketFavorite(homeFavored)).toBe("home");
+    expect(getCfbMarketFavorite(awayFavored)).toBe("away");
+    expect(getCfbMarketFavorite(pickEm)).toBe("none");
+    expect(getCfbMarketFavorite(noOdds)).toBe("none");
+  });
+
+  it("formats the spread relative to the favored team's abbreviation", () => {
+    const homeFavored = { homeTeamId: "home", awayTeamId: "away", odds: { openingSpread: -7.5, currentSpread: -7.5, awayMoneyline: null, homeMoneyline: null, openingTotal: null, currentTotal: null } };
+    const awayFavored = { homeTeamId: "home", awayTeamId: "away", odds: { openingSpread: 5.5, currentSpread: 5.5, awayMoneyline: null, homeMoneyline: null, openingTotal: null, currentTotal: null } };
+    expect(formatFavoriteSpread(homeFavored, "UVA", "TCU")).toBe("TCU -7.5");
+    expect(formatFavoriteSpread(awayFavored, "UVA", "TCU")).toBe("UVA -5.5");
+  });
+
+  it("prefers official AP rank over JKB rank, marking the JKB fallback clearly", () => {
+    expect(getCfbRankDisplay({ apRank: 8, jkbRank: 14 })).toEqual({ text: "#8", source: "ap" });
+    expect(getCfbRankDisplay({ apRank: null, jkbRank: 14 })).toEqual({ text: "JKB 14", source: "jkb" });
+    expect(getCfbRankDisplay({ apRank: null, jkbRank: null })).toEqual({ text: "", source: "none" });
+  });
+
+  it("maps every game status to a stable label", () => {
+    expect(formatCfbGameStatusLabel("scheduled")).toBe("Scheduled");
+    expect(formatCfbGameStatusLabel("in_progress")).toBe("Live");
+    expect(formatCfbGameStatusLabel("final")).toBe("Final");
+    expect(formatCfbGameStatusLabel("postponed")).toBe("Postponed");
+    expect(formatCfbGameStatusLabel("canceled")).toBe("Canceled");
   });
 });

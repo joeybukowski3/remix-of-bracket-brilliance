@@ -166,6 +166,8 @@ export type CfbConferenceMeta = {
   slug: string;
   name: string;
   shortName: string;
+  /** Full official conference name, e.g. "Southeastern Conference". */
+  fullName: string;
 };
 
 /**
