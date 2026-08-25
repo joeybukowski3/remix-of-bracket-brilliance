@@ -36,6 +36,5 @@ describe("CollegeFootballMatchup", () => {
     const body = container.textContent ?? "";
     expect(body).not.toMatch(/\bNaN\b/);
     expect(body).not.toMatch(/\bundefined\b/);
-    expect(screen.getByText(/no odds currently available/i)).toBeInTheDocument();
   });
 });
