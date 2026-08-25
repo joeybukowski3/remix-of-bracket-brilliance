@@ -207,24 +207,25 @@ describe("/fantasy-football research board", () => {
     expect(badge.className).toContain("bg-emerald-100");
 
     const nacua = within(table).getAllByRole("row").find((r) => within(r).queryByText("Puka Nacua"))!;
-    expect(within(nacua).getByText("WR1").className).toContain("bg-violet-100");
+    expect(within(nacua).getAllByText("WR1").every((badge) => badge.className.includes("bg-violet-100"))).toBe(true);
   });
 
-  it("tints every Overall stat cell flat by position instead of by rank gradient", () => {
+  it("keeps position tinting separate from playoff matchup heat", () => {
     renderPage();
     const table = screen.getByRole("table");
     const gibbs = within(table).getAllByRole("row").find((r) => within(r).queryByText("Jahmyr Gibbs"))!;
     const cells = [...gibbs.querySelectorAll("td")];
 
-    // PAR/G, Projection Rk, AVG Rk, SOS, both 2025 ranks, and the three weeks.
-    for (const index of [4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+    // PAR/G, Projection Rk, AVG Rk, SOS, both 2025 ranks, and L8 use position tint.
+    for (const index of [4, 5, 6, 7, 8, 9, 10]) {
       expect(cells[index].className).toContain("bg-emerald-50");
       expect(cells[index].style.backgroundColor).toBe("");
     }
-    // The 2025 points-allowed detail is still available on hover.
-    expect(cells[10].getAttribute("title")).toContain("RB pts/gm");
-    // Bold values keep their dark slate colour against the tint.
-    expect(cells[10].className).toContain("text-slate-800");
+    for (const index of [11, 12, 13]) {
+      expect(cells[index]).toHaveAttribute("data-heat-tone");
+      expect(cells[index].style.backgroundColor).not.toBe("");
+      expect(cells[index].getAttribute("title")).toContain("RB pts/gm");
+    }
   });
 
   it("gives a different position a different flat tint on the same table", () => {
@@ -234,15 +235,14 @@ describe("/fantasy-football research board", () => {
     expect([...nacua.querySelectorAll("td")][10].className).toContain("bg-violet-50");
   });
 
-  it("adds PAR/G, Projection Rk, SOS and both 2025 rank columns to Overall", () => {
+  it("renders the requested Overall column set in order", () => {
     renderPage();
     const table = screen.getByRole("table");
-    for (const header of ["PAR/G", "Projection Rk", "AVG Rk", "SOS"]) {
-      expect(within(table).getByText(header)).toBeTruthy();
-    }
-    expect(within(table).getAllByText("2025 Rk")).toHaveLength(2);
-    expect(within(table).getByText("Pts")).toBeTruthy();
-    expect(within(table).getByText("PPG")).toBeTruthy();
+    expect(within(table).getAllByRole("columnheader").map((header) => header.textContent?.trim())).toEqual([
+      "Rank", "Player", "Pos Rk", "ADP", "PAR/G", "Projection Rk", "AVG Rk", "SOS",
+      "2025 Pts Rk", "2025 PPG Rk", "L8 Pts Rk", "W15", "W16", "W17", "Details",
+    ]);
+    expect(within(table).queryByText("Rd / Pick")).toBeNull();
   });
 
   it("reads the new values from the existing sources", () => {
@@ -252,8 +252,10 @@ describe("/fantasy-football research board", () => {
     const cells = [...gibbs.querySelectorAll("td")].map((c) => c.textContent!.trim());
     expect(cells[4]).toBe("+10.72"); // approved PAR/G, signed to 2dp
     expect(cells[7]).toBe("1"); // strengthOfSchedule
-    expect(cells[8]).toBe("3"); // 2025 rank by total points
-    expect(cells[9]).toBe("3"); // 2025 rank by PPG
+    expect(cells[3]).toBe("N/A"); // no trustworthy 2026 consensus ADP source
+    expect(cells[8]).toBe("RB3"); // 2025 positional rank by total points
+    expect(cells[9]).toBe("RB3"); // 2025 positional rank by PPG
+    expect(cells[10]).toMatch(/^RB\d+$/); // L8 total-points positional rank
   });
 
   it("separates the two 2025 bases for a player who missed games", () => {
@@ -261,21 +263,67 @@ describe("/fantasy-football research board", () => {
     const table = screen.getByRole("table");
     const bowers = within(table).getAllByRole("row").find((r) => within(r).queryByText("Brock Bowers"))!;
     const cells = [...bowers.querySelectorAll("td")].map((c) => c.textContent!.trim());
-    expect(cells[8]).toBe("11"); // 11th by total points
-    expect(cells[9]).toBe("2"); // 2nd by PPG
+    expect(cells[8]).toBe("TE11"); // 11th TE by total points
+    expect(cells[9]).toBe("TE2"); // 2nd TE by PPG
   });
 
-  it("dashes the new columns for players outside the approved PAR universe", () => {
+  it("keeps missing ADP and PAR explicit without suppressing available history", () => {
     renderPage();
     const table = screen.getByRole("table");
     const outside = within(table)
       .getAllByRole("row")
       .find((r) => within(r).queryByText("Devin Singletary"))!;
     const cells = [...outside.querySelectorAll("td")].map((c) => c.textContent!.trim());
-    // No PAR row, so no PAR/G and no 2025 finish — dashes, never zeros.
+    expect(cells[3]).toBe("N/A");
+    // No PAR row, so PAR/G stays unavailable, while source-backed history may render.
     expect(cells[4]).toBe("—");
-    expect(cells[8]).toBe("—");
-    expect(cells[9]).toBe("—");
+    expect(cells[8]).toMatch(/^RB\d+$/);
+    expect(cells[9]).toMatch(/^RB\d+$/);
+    expect(cells[10]).toMatch(/^RB\d+$/);
+  });
+
+  it("renders L8 N/A when no eligible regular-season sample exists", () => {
+    renderPage();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search fantasy rankings" }), { target: { value: "Jeremiyah Love" } });
+    const table = screen.getByRole("table");
+    const row = within(table).getAllByRole("row").find((candidate) => within(candidate).queryByText("Jeremiyah Love"))!;
+    expect([...row.querySelectorAll("td")][10]).toHaveTextContent("N/A");
+  });
+
+  it("does not backfill a missing 2025 L8 sample from a prior season", () => {
+    renderPage();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search fantasy rankings" }), { target: { value: "Jonathon Brooks" } });
+    const row = within(screen.getByRole("table")).getAllByRole("row")
+      .find((candidate) => within(candidate).queryByText("Jonathon Brooks"))!;
+    expect([...row.querySelectorAll("td")][10]).toHaveTextContent("N/A");
+  });
+
+  it("provides a collapsed accessible glossary with definitions and separate legends", () => {
+    renderPage();
+    const glossary = screen.getByRole("region", { name: "Rest-of-season stats and rankings key" });
+    const trigger = within(glossary).getByRole("button", { name: "Stats & Rankings Key" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(within(glossary).getByText(/Total full-PPR points across/i)).not.toBeVisible();
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    for (const term of ["RANK", "POS RK", "ADP", "PAR/G", "PROJECTION RK", "AVG RK", "SOS", "2025 PTS RK", "2025 PPG RK", "L8 PTS RK", "W15 / W16 / W17"]) {
+      expect(within(glossary).getByText(term)).toBeTruthy();
+    }
+    expect(within(glossary).getByText("POSITIONAL NOTATION")).toBeTruthy();
+    expect(within(glossary).getByText(/WR2 means 2nd among wide receivers.*RB4 means 4th among running backs/i)).toBeTruthy();
+    expect(within(glossary).getByText(/no prior-season games are added/i)).toBeTruthy();
+    for (const label of ["Gold = elite/easiest", "Dark Green = very favorable", "Green = favorable", "Light Green = above average", "Neutral = average", "Light Red = difficult", "Red = very difficult", "Strong Red = worst"]) {
+      expect(within(glossary).getByText(label)).toBeTruthy();
+    }
+    expect(within(glossary).getByText(/Position color identifies/i)).toBeTruthy();
+  });
+
+  it("surfaces historical samples and ADP provenance only in expanded details", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Show details for Jahmyr Gibbs" }));
+    expect(screen.getByText(/2025 sample:/i)).toHaveTextContent(/17 games/i);
+    expect(screen.getByText(/2025 sample:/i)).toHaveTextContent(/L8 sample: 8 games/i);
+    expect(screen.getByText(/2025 sample:/i)).toHaveTextContent(/ADP source: not available in repository/i);
   });
 
   it("shows a position colour legend on Overall only", () => {

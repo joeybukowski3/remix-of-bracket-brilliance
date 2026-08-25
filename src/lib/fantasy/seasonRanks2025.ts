@@ -34,7 +34,9 @@ type Ranked = { sourceId: string | null; value: number };
 
 /** Competition ranking: ties share a rank, the next rank skips the tied count. */
 function rankDescending(entries: readonly Ranked[]): Map<string, number> {
-  const sorted = [...entries].sort((a, b) => b.value - a.value);
+  const sorted = [...entries].sort(
+    (a, b) => b.value - a.value || (a.sourceId ?? "").localeCompare(b.sourceId ?? ""),
+  );
   const ranks = new Map<string, number>();
   let previousValue: number | null = null;
   let previousRank = 0;

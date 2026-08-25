@@ -56,6 +56,11 @@ const HEAT_STYLES: Record<WeeklyHeatTone, { backgroundColor: string; color: stri
   "strong-red": { backgroundColor: "#dc2626", color: "#ffffff", border: "1px solid rgba(153, 27, 27, 0.45)" },
 };
 
+/** Preserve shared heat fills while ensuring small bold labels remain readable. */
+const ACCESSIBLE_HEAT_FOREGROUNDS: Partial<Record<WeeklyHeatTone, string>> = {
+  green: "#052e16",
+};
+
 const HEAT_CLASSES: Record<WeeklyHeatTone, string> = {
   missing: "weekly-heat-missing",
   gold: "weekly-heat-gold",
@@ -92,7 +97,7 @@ export function weeklyHeatStyle(tone: WeeklyHeatTone): { backgroundColor: string
   const style = HEAT_STYLES[tone];
   return {
     backgroundColor: style.backgroundColor,
-    color: style.color,
+    color: ACCESSIBLE_HEAT_FOREGROUNDS[tone] ?? style.color,
     boxShadow: style.border.replace("1px solid ", "inset 0 0 0 1px "),
   };
 }

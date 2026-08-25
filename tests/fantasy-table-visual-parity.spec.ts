@@ -236,11 +236,42 @@ test("ROS desktop and mobile use the same light bordered table language", async 
   const overall = page.getByRole("region", { name: "Overall fantasy rankings" }).getByRole("table");
   await expect(overall.locator("[data-team-logo]").first()).toBeVisible();
   await expectLightCellGrid(overall);
+  const glossaryTrigger = page.getByRole("button", { name: "Stats & Rankings Key" });
+  await expect(glossaryTrigger).toHaveAttribute("aria-expanded", "false");
+  await glossaryTrigger.click();
+  await expect(page.getByText(/WR2 means 2nd among wide receivers.*RB4 means 4th among running backs/i)).toBeVisible();
+  await expect(page.getByText(/no prior-season games are added/i)).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("fantasy-ros-desktop-glossary.png"), fullPage: true });
+  await glossaryTrigger.click();
+
+  for (const [playerName, sample] of [["Jahmyr Gibbs", "8 games"], ["Garrett Wilson", "7 games"], ["Jaydon Blue", "5 games"]] as const) {
+    const playerRow = overall.locator("tbody > tr").filter({ hasText: playerName }).first();
+    await playerRow.getByRole("button", { name: `Show details for ${playerName}` }).click();
+    await expect(playerRow.locator("xpath=following-sibling::tr[1]")).toContainText(`L8 sample: ${sample}`);
+    await playerRow.getByRole("button", { name: `Hide details for ${playerName}` }).click();
+  }
+  const brooksRow = overall.locator("tbody > tr").filter({ hasText: "Jonathon Brooks" }).first();
+  await expect(brooksRow.locator("td").nth(10)).toHaveText("N/A");
+  await page.getByRole("region", { name: "Overall fantasy rankings" }).evaluate((element) => {
+    element.scrollTop = 0;
+    element.scrollLeft = 0;
+  });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await expectNoPageOverflow(page);
   await page.screenshot({ path: testInfo.outputPath("fantasy-ros-desktop.png"), fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
+  const mobileOverall = page.getByRole("region", { name: "Overall fantasy rankings" });
+  await expect(mobileOverall.getByRole("columnheader", { name: "L8 Pts Rk" })).toBeVisible();
+  await expect(mobileOverall.getByRole("columnheader", { name: "ADP" })).toBeVisible();
+  await expectNoPageOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath("fantasy-ros-mobile-overall.png"), fullPage: true });
+  await page.getByRole("button", { name: "Stats & Rankings Key" }).click();
+  await expect(page.getByText(/QB#, RB#, WR# and TE# are position-relative ranks/i)).toBeVisible();
+  await expectNoPageOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath("fantasy-ros-mobile-glossary.png"), fullPage: true });
+  await page.getByRole("button", { name: "Stats & Rankings Key" }).click();
   await page.getByRole("button", { name: "QB 31" }).click();
   const compact = page.getByRole("table");
   await expect(compact.locator('[data-team-logo="BUF"]').first()).toBeVisible();
