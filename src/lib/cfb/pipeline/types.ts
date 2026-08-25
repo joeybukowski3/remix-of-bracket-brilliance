@@ -21,6 +21,8 @@ export type CfbdGame = {
   completed: boolean;
   neutralSite: boolean;
   venue?: string | null;
+  /** CFBD venue ID — the only reliable join key to /venues city/state. */
+  venueId?: number | null;
   homeId: number;
   homeTeam: string;
   homeClassification?: string | null;
@@ -42,6 +44,15 @@ export type CfbdGameTeamStats = {
     points?: number | null;
     stats: Array<{ category: string; stat: string }>;
   }>;
+};
+
+/** CFBD /venues record — canonical venue city/state, joined by venue ID. */
+export type CfbdVenue = {
+  id: number;
+  name: string;
+  city?: string | null;
+  state?: string | null;
+  countryCode?: string | null;
 };
 
 export type CfbdReturningProduction = {

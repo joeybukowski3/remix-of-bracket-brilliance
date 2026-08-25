@@ -163,6 +163,15 @@ const GAME_STATUS_LABELS: Record<CfbGameStatus, string> = {
   canceled: "Canceled",
 };
 
+/** "City, ST" — falls back to just the city, or "" when no verified location exists. */
+export function formatCfbVenueLocation(
+  city: string | null | undefined,
+  state: string | null | undefined,
+): string {
+  if (!city) return "";
+  return state ? `${city}, ${state}` : city;
+}
+
 export function formatCfbGameStatusLabel(status: CfbGameStatus): string {
   return GAME_STATUS_LABELS[status] ?? "Scheduled";
 }

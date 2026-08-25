@@ -395,6 +395,10 @@ export function normalizeCfbdSchedule(
       homeTeamId: byCfbdId.get(game.homeId) ?? `cfbd:${game.homeId}`,
       neutralSite: game.neutralSite,
       venue: game.venue ?? null,
+      // Populated separately by mergeScheduleVenueLocations (needs a /venues
+      // join by venueId) — never fabricated here.
+      venueCity: null,
+      venueState: null,
       tvNetwork: null,
       gameStatus: status,
       awayScore: game.awayPoints ?? null,

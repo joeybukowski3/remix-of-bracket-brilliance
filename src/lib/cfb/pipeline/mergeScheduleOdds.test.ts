@@ -31,6 +31,8 @@ function minimalGame(id: string): CfbGame {
     homeTeamId: "home",
     neutralSite: false,
     venue: null,
+    venueCity: null,
+    venueState: null,
     tvNetwork: null,
     gameStatus: "scheduled",
     awayScore: null,
