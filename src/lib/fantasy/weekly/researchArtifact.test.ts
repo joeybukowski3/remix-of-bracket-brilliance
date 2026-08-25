@@ -5,6 +5,7 @@ import { getMatchupGrade } from "@/lib/fantasy/matchupGrade";
 import { weeklyFantasyProjectionProductionArtifactSchema } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 import {
   assertWeeklyFantasyResearchArtifactIdentity,
+  nflMatchupEdgeSchema,
   weeklyFantasyResearchArtifactPath,
   weeklyFantasyResearchArtifactSchema,
 } from "@/lib/fantasy/weekly/researchArtifact";
@@ -28,6 +29,28 @@ describe("weekly fantasy research artifact", () => {
       expect(row).not.toHaveProperty("positionRank");
       expect(row).not.toHaveProperty("projectedFantasyPoints");
     }
+  });
+
+  it("upgrades legacy v1 normalized edges with explicit rank differences", () => {
+    const edge = research.rows.find((row) => row.matchupEdges.epa.offense && row.matchupEdges.epa.defense)?.matchupEdges.epa;
+    expect(edge).toBeDefined();
+    expect(edge?.offenseRank).toBe(edge?.offense?.rank);
+    expect(edge?.defenseRank).toBe(edge?.defense?.rank);
+    expect(edge?.rankDifference).toBe((edge?.defense?.rank ?? 0) - (edge?.offense?.rank ?? 0));
+    expect(edge).toHaveProperty("score");
+  });
+
+  it("rejects an explicit rank difference that disagrees with its component ranks", () => {
+    expect(() => nflMatchupEdgeSchema.parse({
+      score: 0,
+      offenseRank: 4,
+      defenseRank: 22,
+      rankDifference: -18,
+      offense: null,
+      defense: null,
+      source: "test",
+      sampleLabel: "test",
+    })).toThrow(/defenseRank - offenseRank/);
   });
 
   it("has an exact one-to-one canonical playerId set for all 498 projection rows", () => {

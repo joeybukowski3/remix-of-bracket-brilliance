@@ -19,10 +19,12 @@ export function FantasyPlayerIdentity({
   player,
   team,
   compact = false,
+  wrapName = false,
 }: {
   player: string;
   team?: string;
   compact?: boolean;
+  wrapName?: boolean;
 }) {
   const normalizedTeam = team?.toUpperCase();
   const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
@@ -37,12 +39,14 @@ export function FantasyPlayerIdentity({
         logo={hasTeam ? nflLogoUrl(normalizedTeam!) : undefined}
         className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
       />
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className={cn("flex min-w-0 gap-1.5", wrapName ? "items-start" : "items-center")}>
         {player && (
           <div
+            data-player-name
             className={cn(
-              "truncate font-bold text-slate-950",
+              "font-bold text-slate-950",
               "text-[12px] leading-4",
+              wrapName ? "min-w-0 whitespace-normal break-words" : "truncate",
             )}
           >
             {player}
