@@ -7,7 +7,7 @@
  *
  * Rank 1 is the defense that allowed the MOST points to a position, i.e. the
  * most favourable matchup for that position. Rank therefore feeds the shared
- * emerald → slate → rose gradient directly, with no inversion.
+ * gold/green → neutral → red scale directly, with no inversion.
  *
  * This is a different signal from the JKB `strengthOfSchedule` column, which is
  * a composite schedule metric. Both are shown; neither replaces the other.

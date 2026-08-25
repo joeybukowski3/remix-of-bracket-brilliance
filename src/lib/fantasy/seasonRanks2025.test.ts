@@ -50,6 +50,20 @@ describe("buildSeasonRanks2025", () => {
     expect(index.get("D")!.byPoints).toBe(4);
   });
 
+  it("is deterministic when tied source rows arrive in a different order", () => {
+    const rows = [
+      base({ "Source ID": "Z", "2025 Fantasy Points": 200, "2025 PPG": 10 }),
+      base({ "Source ID": "A", "2025 Fantasy Points": 200, "2025 PPG": 10 }),
+    ];
+    const forward = buildSeasonRanks2025(rows);
+    const reversed = buildSeasonRanks2025([...rows].reverse());
+
+    for (const sourceId of ["A", "Z"]) {
+      expect(forward.get(sourceId)).toEqual(reversed.get(sourceId));
+      expect(forward.get(sourceId)).toMatchObject({ byPoints: 1, byPpg: 1 });
+    }
+  });
+
   it("ranks each position in its own pool", () => {
     const index = buildSeasonRanks2025([
       base({ "Source ID": "wr", Position: "WR", "2025 Fantasy Points": 100 }),

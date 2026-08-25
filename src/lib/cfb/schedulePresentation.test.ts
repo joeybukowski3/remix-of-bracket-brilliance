@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { CfbSeasonRecord } from "@/data/cfb/types";
-import { formatCfbOpponentRecord, formatCfbScheduleDateTime } from "./schedulePresentation";
+import {
+  formatCfbKickoffLabel,
+  formatCfbOpponentRecord,
+  formatCfbScheduleDateTime,
+} from "./schedulePresentation";
 
 function record(wins: number, losses: number, ties = 0): CfbSeasonRecord {
   return {
@@ -30,6 +34,23 @@ describe("formatCfbScheduleDateTime", () => {
   it("renders a date-only event without inventing a kickoff time or year", () => {
     const result = formatCfbScheduleDateTime("2026-09-26", null);
     expect(result).toBe("September 26");
+    expect(result).not.toContain("2026-09-26");
+    expect(result).not.toContain("ET");
+  });
+});
+
+describe("formatCfbKickoffLabel", () => {
+  it("renders a compact Eastern-time kickoff label for tight card layouts", () => {
+    expect(formatCfbKickoffLabel("2026-09-05", "20:30")).toBe("Sep 5 · 4:30 PM ET");
+  });
+
+  it("uses America/New_York daylight-saving rules after the fall transition", () => {
+    expect(formatCfbKickoffLabel("2026-11-28", "20:30")).toBe("Nov 28 · 3:30 PM ET");
+  });
+
+  it("renders a date-only event without inventing a kickoff time or year", () => {
+    const result = formatCfbKickoffLabel("2026-09-26", null);
+    expect(result).toBe("Sep 26");
     expect(result).not.toContain("2026-09-26");
     expect(result).not.toContain("ET");
   });

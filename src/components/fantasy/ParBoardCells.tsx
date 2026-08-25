@@ -15,6 +15,10 @@ import {
   type PointsAllowedPosition,
 } from "@/lib/fantasy/pointsAllowed2025";
 import {
+  weeklyHeatStyle,
+  weeklyRankHeatTone,
+} from "@/lib/fantasy/weekly/researchPresentation";
+import {
   getParPerGameTone,
   getRankGradientColor,
   type ParPerGameThresholds,
@@ -165,33 +169,28 @@ export function GradientRankCell({
 
 /**
  * Playoff-week opponent, shaded by that defense's 2025 fantasy points allowed
- * to the row's own position. Rank 1 allowed the most points, so it anchors to
- * emerald — the same gradient the evidence-rank columns use.
+ * to the row's own position. Rank 1 allowed the most points, so it receives the
+ * established gold/easiest fantasy-player tone without inverting direction.
  *
  * Deliberately separate from the Strength of Schedule column: that is JKB's
- * composite metric, this is a direct 2025 matchup read.
+ * composite metric, this is a direct position-specific 2025 matchup read.
  */
 export function MatchupOpponentCell({
   opponent,
   position,
   className,
-  tintClass,
 }: {
   opponent: string | undefined;
   position: PointsAllowedPosition;
   className?: string;
-  /**
-   * Overall-board opt-in: renders a flat categorical tint instead of the rank
-   * gradient. Position boards omit this and keep the gradient unchanged.
-   */
-  tintClass?: string;
 }) {
   const allowed = getOpponentPointsAllowed(opponent, position);
-  const gradient = getRankGradientColor(allowed?.rank, POINTS_ALLOWED_TEAM_COUNT);
-  const background = tintClass ? undefined : gradient;
+  const tone = weeklyRankHeatTone(allowed?.rank, POINTS_ALLOWED_TEAM_COUNT);
+  const heatStyle = tone === "missing" ? undefined : weeklyHeatStyle(tone);
   return (
     <td
-      style={background ? { backgroundColor: background } : undefined}
+      style={heatStyle}
+      data-heat-tone={tone}
       title={
         allowed
           ? `${allowed.team.name} allowed ${allowed.pointsAllowed.toFixed(1)} ${position} pts/gm in 2025 (${allowed.rank} of ${POINTS_ALLOWED_TEAM_COUNT})`
@@ -200,8 +199,7 @@ export function MatchupOpponentCell({
       className={cn(
         BODY_CELL_BORDER,
         "px-2 py-1.5 text-center text-[11px] font-bold",
-        tintClass ?? (background ? "text-slate-800" : "font-semibold text-slate-500"),
-        tintClass && (opponent ? "text-slate-800" : "font-semibold text-slate-500"),
+        tone === "missing" && "font-semibold",
         className,
       )}
     >
@@ -219,10 +217,11 @@ export function MatchupOpponentChip({
   position: PointsAllowedPosition;
 }) {
   const allowed = getOpponentPointsAllowed(opponent, position);
-  const background = getRankGradientColor(allowed?.rank, POINTS_ALLOWED_TEAM_COUNT);
+  const tone = weeklyRankHeatTone(allowed?.rank, POINTS_ALLOWED_TEAM_COUNT);
   return (
     <span
-      style={background ? { backgroundColor: background } : undefined}
+      style={tone === "missing" ? undefined : weeklyHeatStyle(tone)}
+      data-heat-tone={tone}
       title={
         allowed
           ? `${allowed.team.name} allowed ${allowed.pointsAllowed.toFixed(1)} ${position} pts/gm in 2025 (${allowed.rank} of ${POINTS_ALLOWED_TEAM_COUNT})`
@@ -230,7 +229,7 @@ export function MatchupOpponentChip({
       }
       className={cn(
         "inline-flex rounded px-1.5 py-0.5 font-semibold tabular-nums",
-        background ? "text-slate-800" : "text-slate-500",
+        tone === "missing" && "text-slate-500",
       )}
     >
       {opponent || "—"}

@@ -7,7 +7,10 @@ import { joinWeeklyFantasyResearchRows } from "@/lib/fantasy/weekly/researchJoin
 import {
   matchupGradeHeatTone,
   prepareWeeklyResearchPresentation,
+  weeklyHeatTextClass,
   weeklyHeatStyle,
+  weeklyMatchupComponentHeatTone,
+  weeklyMatchupDifferenceHeatTone,
   weeklyRankHeatTone,
 } from "@/lib/fantasy/weekly/researchPresentation";
 import { PERCENTILE_TIERS } from "@/lib/mlb/percentileColorScale";
@@ -50,6 +53,28 @@ describe("weekly fantasy research heat presentation", () => {
     ]).toEqual(["gold", "dark-green", "green", "light-green", "neutral", "light-red", "red", "strong-red"]);
   });
 
+  it("normalizes offense and opponent-defense ranks to the fantasy player's perspective", () => {
+    expect(weeklyMatchupComponentHeatTone(3, "offense")).toBe("gold");
+    expect(weeklyMatchupComponentHeatTone(29, "offense")).toBe("strong-red");
+    expect(weeklyMatchupComponentHeatTone(29, "opponent-defense")).toBe("dark-green");
+    expect(weeklyMatchupComponentHeatTone(3, "opponent-defense")).toBe("strong-red");
+  });
+
+  it("maps signed matchup differences through the established 32-team quality bands", () => {
+    expect(weeklyMatchupDifferenceHeatTone(31)).toBe("gold");
+    expect(weeklyMatchupDifferenceHeatTone(12)).toBe("green");
+    expect(weeklyMatchupDifferenceHeatTone(0)).toBe("neutral");
+    expect(weeklyMatchupDifferenceHeatTone(-15)).toBe("red");
+    expect(weeklyMatchupDifferenceHeatTone(-31)).toBe("strong-red");
+    expect(weeklyHeatTextClass("gold")).toContain("amber");
+    expect(weeklyHeatTextClass("strong-red")).toContain("red");
+  });
+
+  it("keeps weekly matchup edge rank one gold and rank thirty strong red", () => {
+    expect(weeklyRankHeatTone(1, 32)).toBe("gold");
+    expect(weeklyRankHeatTone(30, 32)).toBe("strong-red");
+  });
+
   it("keeps a 40th-ish WR metric visually below a 13th-ranked metric", () => {
     expect(weeklyRankHeatTone(13, 188)).toBe("dark-green");
     expect(weeklyRankHeatTone(40, 188)).toBe("green");
@@ -64,6 +89,40 @@ describe("weekly fantasy research heat presentation", () => {
     expect(weeklyHeatStyle("green").backgroundColor).toBe(tier("great").backgroundColor);
     expect(weeklyHeatStyle("light-green").backgroundColor).toBe(tier("aboveAverage").backgroundColor);
     expect(weeklyHeatStyle("neutral").backgroundColor).toBe(tier("average").backgroundColor);
+  });
+
+  it("keeps representative heat foregrounds readable without changing their fills", () => {
+    const parseColor = (color: string) => {
+      const hex = color.match(/^#([0-9a-f]{6})$/i);
+      if (hex) {
+        const value = Number.parseInt(hex[1], 16);
+        return { rgb: [(value >> 16) & 255, (value >> 8) & 255, value & 255], alpha: 1 };
+      }
+      const rgba = color.match(/[\d.]+/g)!.map(Number);
+      return { rgb: rgba.slice(0, 3), alpha: rgba[3] ?? 1 };
+    };
+    const luminance = (rgb: number[]) => {
+      const [red, green, blue] = rgb
+        .map((channel) => channel / 255)
+        .map((channel) => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const contrast = (tone: "gold" | "green" | "neutral" | "red" | "strong-red") => {
+      const style = weeklyHeatStyle(tone);
+      const background = parseColor(style.backgroundColor);
+      const foreground = parseColor(style.color);
+      const compositedBackground = background.rgb.map(
+        (channel) => channel * background.alpha + 255 * (1 - background.alpha),
+      );
+      const left = luminance(compositedBackground);
+      const right = luminance(foreground.rgb);
+      return (Math.max(left, right) + 0.05) / (Math.min(left, right) + 0.05);
+    };
+
+    for (const tone of ["gold", "green", "neutral", "red", "strong-red"] as const) {
+      expect(contrast(tone), tone).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(weeklyHeatStyle("green").backgroundColor).toBe("#10b981");
   });
 
   it("aligns categorical matchup grades with gold/green/neutral/red semantics", () => {
@@ -98,6 +157,6 @@ describe("weekly fantasy research heat presentation", () => {
       (row.matchupEdges.epa.rawValue ?? Number.NEGATIVE_INFINITY) > (best.matchupEdges.epa.rawValue ?? Number.NEGATIVE_INFINITY) ? row : best,
     );
     expect(bestEpa.matchupEdges.epa.displayRank).toBe(1);
-    expect(bestEpa.matchupEdges.epa.tone).toBe("gold");
+    expect(bestEpa.matchupEdges.epa.tone).toBe(weeklyMatchupDifferenceHeatTone(bestEpa.matchupEdges.epa.rawValue));
   });
 });

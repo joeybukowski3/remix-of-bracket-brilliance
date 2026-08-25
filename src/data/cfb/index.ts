@@ -56,7 +56,7 @@ export const CFB_PROVENANCE: CfbDataProvenance = {
   scheduleSource: "live",
   statsSource: "unavailable",
   rosterSource: "unavailable",
-  oddsSource: "unavailable",
+  oddsSource: "api",
   generatedAt: "2026-08-10T00:00:00.000Z",
   notes: [
     `JKB Preseason Power Ratings use ${CFB_V1_MODEL_VERSION}.`,
@@ -66,6 +66,7 @@ export const CFB_PROVENANCE: CfbDataProvenance = {
     "Season statistics are unavailable in preseason.",
     "Model projections (power line, win probability) are intentionally null.",
     "Ratings are descriptive team-strength summaries, not betting predictions or picks.",
+    "Market odds are sourced from the authenticated CFBD /lines endpoint (DraftKings/Bovada per game); not every game has posted odds, and coverage/provider mix changes as sportsbooks update lines.",
   ],
 };
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
 import ProjectionMethodologyPanel from "@/components/fantasy/ProjectionMethodologyPanel";
+import WeeklyStatsGlossary from "@/components/fantasy/WeeklyStatsGlossary";
 import WeeklyFantasyRankingsTable, { type WeeklyResearchDisplayMode } from "@/components/fantasy/WeeklyFantasyRankingsTable";
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
@@ -31,7 +32,7 @@ export default function FantasyWeeklyRankings() {
   usePageSeo({ title: seo.title, description: seo.description, path: seo.path, noindex: seo.noindex ?? false });
   const [searchParams, setSearchParams] = useSearchParams();
   const [position, setPosition] = useState<FantasyPosition>("QB");
-  const [displayMode, setDisplayMode] = useState<WeeklyResearchDisplayMode>("stat");
+  const [displayMode, setDisplayMode] = useState<WeeklyResearchDisplayMode>("rank");
   const season = useNflSeasonData(WEEKLY_RANKINGS_SEASON);
   const games = season.data?.games;
   const weekSelection = useMemo(
@@ -94,6 +95,8 @@ export default function FantasyWeeklyRankings() {
               <span>As of {formatAsOf(weekly.freshness.inputAsOf)}</span>
             </section>
 
+            <WeeklyStatsGlossary />
+
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div role="group" aria-label="Select position" className="grid flex-1 grid-cols-4 gap-1 rounded-lg bg-slate-200 p-1">
                 {POSITIONS.map((option) => (
@@ -130,7 +133,7 @@ export default function FantasyWeeklyRankings() {
                 Some weekly research context is unavailable; affected display fields show N/A. Projections and rankings remain available.
               </p>
             )}
-            <WeeklyFantasyRankingsTable rows={research.rows} displayMode={displayMode} />
+            <WeeklyFantasyRankingsTable key={`${position}-${displayMode}`} rows={research.rows} displayMode={displayMode} />
             <ProjectionMethodologyPanel />
           </>
         )}

@@ -56,6 +56,11 @@ const HEAT_STYLES: Record<WeeklyHeatTone, { backgroundColor: string; color: stri
   "strong-red": { backgroundColor: "#dc2626", color: "#ffffff", border: "1px solid rgba(153, 27, 27, 0.45)" },
 };
 
+/** Preserve shared heat fills while ensuring small bold labels remain readable. */
+const ACCESSIBLE_HEAT_FOREGROUNDS: Partial<Record<WeeklyHeatTone, string>> = {
+  green: "#052e16",
+};
+
 const HEAT_CLASSES: Record<WeeklyHeatTone, string> = {
   missing: "weekly-heat-missing",
   gold: "weekly-heat-gold",
@@ -68,15 +73,31 @@ const HEAT_CLASSES: Record<WeeklyHeatTone, string> = {
   "strong-red": "weekly-heat-strong-red",
 };
 
+const HEAT_TEXT_CLASSES: Record<WeeklyHeatTone, string> = {
+  missing: "text-slate-500",
+  gold: "text-amber-800",
+  "dark-green": "text-emerald-800",
+  green: "text-emerald-700",
+  "light-green": "text-green-700",
+  neutral: "text-slate-600",
+  "light-red": "text-rose-600",
+  red: "text-red-700",
+  "strong-red": "text-red-900",
+};
+
 export function weeklyHeatClass(tone: WeeklyHeatTone): string {
   return HEAT_CLASSES[tone];
+}
+
+export function weeklyHeatTextClass(tone: WeeklyHeatTone): string {
+  return HEAT_TEXT_CLASSES[tone];
 }
 
 export function weeklyHeatStyle(tone: WeeklyHeatTone): { backgroundColor: string; color: string; boxShadow: string } {
   const style = HEAT_STYLES[tone];
   return {
     backgroundColor: style.backgroundColor,
-    color: style.color,
+    color: ACCESSIBLE_HEAT_FOREGROUNDS[tone] ?? style.color,
     boxShadow: style.border.replace("1px solid ", "inset 0 0 0 1px "),
   };
 }
@@ -131,6 +152,30 @@ export function weeklyRankHeatClass(
   return weeklyHeatClass(weeklyRankHeatTone(rank, poolSize));
 }
 
+export function weeklyMatchupComponentHeatTone(
+  rank: number | null | undefined,
+  perspective: "offense" | "opponent-defense",
+): WeeklyHeatTone {
+  if (!validRank(rank, 32)) return "missing";
+  const fantasyFacingRank = perspective === "offense" ? rank : 33 - rank;
+  return weeklyRankHeatTone(fantasyFacingRank, 32);
+}
+
+/**
+ * Maps the signed -31..31 matchup rank gap onto the established 32-team heat
+ * bands. Positive is favorable to the offense, zero remains neutral, and the
+ * extreme ends retain the same gold/strong-red semantics as team ranks.
+ */
+export function weeklyMatchupDifferenceHeatTone(
+  rankDifference: number | null | undefined,
+): WeeklyHeatTone {
+  if (rankDifference == null || !Number.isInteger(rankDifference) || rankDifference < -31 || rankDifference > 31) {
+    return "missing";
+  }
+  const favorableRank = 32 - Math.round(((rankDifference + 31) / 62) * 31);
+  return weeklyRankHeatTone(favorableRank, 32);
+}
+
 export function matchupGradeHeatTone(grade: MatchupGradeId | null | undefined): WeeklyHeatTone {
   if (grade === "great") return "gold";
   if (grade === "good") return "dark-green";
@@ -175,7 +220,10 @@ function rankMatchupEdges(
   let priorRank = 0;
   ranked.forEach(([team, value], index) => {
     const rank = priorValue !== null && value === priorValue ? priorRank : index + 1;
-    result.set(team, displayMetric(value, rank, poolSize));
+    result.set(team, {
+      ...displayMetric(value, rank, poolSize),
+      tone: weeklyMatchupDifferenceHeatTone(value),
+    });
     priorValue = value;
     priorRank = rank;
   });
