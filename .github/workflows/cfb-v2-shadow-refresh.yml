@@ -46,6 +46,8 @@ jobs:
   refresh-shadow-state:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
 
     steps:
       - name: Check out repository
@@ -147,6 +149,7 @@ jobs:
           fi
 
       - name: Commit and push browser artifact
+        id: commit
         if: steps.changes.outputs.changed == 'true'
         shell: bash
         run: |
@@ -182,6 +185,7 @@ jobs:
           fi
 
           echo "CFB V2 browser artifact pushed successfully."
+          echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # WU6 §6/§7 — the ONLY retention mechanism this WU implements: upload
       # the manifest (provenance pointer) and the compact audit summary as
@@ -216,3 +220,15 @@ jobs:
       # CFBD_API_KEY is read only from secrets and only used as an
       # environment variable for the fetch step above — it is never
       # echoed, logged, or written to any committed or uploaded artifact.
+
+  deploy-pages:
+    name: Deploy changed CFB browser artifact to GitHub Pages
+    needs: refresh-shadow-state
+    if: needs.refresh-shadow-state.outputs.deploy_ref != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.refresh-shadow-state.outputs.deploy_ref }}
