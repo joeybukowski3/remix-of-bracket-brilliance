@@ -1,10 +1,10 @@
 {
   "date": "2026-08-26",
-  "generatedAt": "2026-08-26T13:32:28.002Z",
+  "generatedAt": "2026-08-26T16:37:39.114Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a mix of hitter-friendly parks like Truist Field (1.03) and Rate Field (1.07) alongside pitcher-friendly venues such as Petco Park (0.89) and Oracle Park (0.85). Key matchups include McGreevy vs. Alonso at Busch Stadium and Smith-Shawver vs. Ohtani/Olson at Truist, with several lefty-righty advantages in play. Weather data isn't provided, but park factors and opposing pitcher HR rates (66.9 for McGreevy, 80 for Vásquez) suggest elevated HR odds in select spots.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent HR trends, with Alonso's 78.1 hrScore driven by elite barrel rate (14) and high opposing pitcher HR vulnerability (66.9)."
+    "slateOverview": "Busch Stadium and Petco Park suppress power, but the model still likes Alonso and Cruz due to elite barrel rates and favorable opposing pitcher HR rates. Yankee Stadium's 1.18 park factor boosts Alvarez, while Truist Park's neutral 1.03 factor and Smith-Shawver's 57 HR/9 rate create a strong environment for Ohtani and Muncy. Weather is stable across the slate with no wind or temperature edges to exploit.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over park factors, which explains why Alonso ranks first despite the pitcher-friendly Busch Stadium."
   },
   "bestBets": [
     {
@@ -18,11 +18,30 @@
         "HH=56.7%"
       ],
       "bullets": [
-        "hrScore=78.1",
+        "hrScore=77.7",
         "park=0.92"
       ],
-      "hrOddsYes": "+429",
-      "marketImpliedProbability": 0.1890359168241966,
+      "hrOddsYes": "+419",
+      "marketImpliedProbability": 0.1926782273603083,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "NYY",
+      "opposingPitcher": "Elmer Rodríguez",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=17.2%",
+        "HH=53.6%"
+      ],
+      "bullets": [
+        "hrScore=77.6",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+268",
+      "marketImpliedProbability": 0.2717391304347826,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -31,17 +50,17 @@
       "team": "LAD",
       "opponent": "ATL",
       "opposingPitcher": "AJ Smith-Shawver",
-      "hrScoreRank": 2,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=16.6%",
         "HH=52.3%"
       ],
       "bullets": [
-        "hrScore=75.9",
+        "hrScore=75",
         "park=1.03"
       ],
-      "hrOddsYes": "+261",
-      "marketImpliedProbability": 0.2770083102493075,
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,17 +69,17 @@
       "team": "PIT",
       "opponent": "SD",
       "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=80.0",
+        "Pitcher HR VS=79.9",
         "Hard Hit%=57.9"
       ],
       "bullets": [
-        "HR score 73.4 (#3)",
-        "Pitcher HR VS 80.0 at park 0.89"
+        "HR score 73.2 (#4)",
+        "Pitcher HR VS 79.9 at park 0.89"
       ],
-      "hrOddsYes": "+318",
-      "marketImpliedProbability": 0.23923444976076555,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -69,36 +88,17 @@
       "team": "ATL",
       "opponent": "LAD",
       "opposingPitcher": "Roki Sasaki",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=60.6",
+        "Pitcher HR VS=60.9",
         "Hard Hit%=49.9"
       ],
       "bullets": [
-        "HR score 65.9 (#4)",
-        "Pitcher HR VS 60.6 at park 1.03"
+        "HR score 65.0 (#5)",
+        "Pitcher HR VS 60.9 at park 1.03"
       ],
-      "hrOddsYes": "+367",
-      "marketImpliedProbability": 0.21413276231263384,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "ATL",
-      "opposingPitcher": "AJ Smith-Shawver",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=56.5",
-        "Hard Hit%=46.5"
-      ],
-      "bullets": [
-        "HR score 65.8 (#5)",
-        "Pitcher HR VS 56.5 at park 1.03"
-      ],
-      "hrOddsYes": "+470",
-      "marketImpliedProbability": 0.17543859649122806,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -109,17 +109,17 @@
       "team": "PIT",
       "opponent": "SD",
       "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=17.9%",
         "HH=57.9%"
       ],
       "bullets": [
-        "hrScore=73.4",
+        "hrScore=73.2",
         "park=0.89"
       ],
-      "hrOddsYes": "+318",
-      "marketImpliedProbability": 0.23923444976076555,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,17 +128,17 @@
       "team": "ATL",
       "opponent": "LAD",
       "opposingPitcher": "Roki Sasaki",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=15.5%",
         "HH=49.9%"
       ],
       "bullets": [
-        "hrScore=65.9",
+        "hrScore=65",
         "park=1.03"
       ],
-      "hrOddsYes": "+367",
-      "marketImpliedProbability": 0.21413276231263384,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,13 +147,13 @@
       "team": "LAD",
       "opponent": "ATL",
       "opposingPitcher": "AJ Smith-Shawver",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=13.4%",
         "HH=46.5%"
       ],
       "bullets": [
-        "hrScore=65.8",
+        "hrScore=65",
         "park=1.03"
       ],
       "hrOddsYes": "+470",
@@ -166,17 +166,17 @@
       "team": "MIL",
       "opponent": "NYM",
       "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
         "Pitcher HR VS=55.7",
         "Hard Hit%=53.0"
       ],
       "bullets": [
-        "HR score 65.0 (#6)",
+        "HR score 64.2 (#7)",
         "Pitcher HR VS 55.7 at park 1.06"
       ],
-      "hrOddsYes": "+442",
-      "marketImpliedProbability": 0.18450184501845018,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,36 +185,17 @@
       "team": "CWS",
       "opponent": "TEX",
       "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=57.9",
+        "Pitcher HR VS=58.1",
         "Hard Hit%=45.8"
       ],
       "bullets": [
-        "HR score 64.5 (#7)",
-        "Pitcher HR VS 57.9 at park 1.07"
+        "HR score 63.6 (#8)",
+        "Pitcher HR VS 58.1 at park 1.07"
       ],
-      "hrOddsYes": "+333",
-      "marketImpliedProbability": 0.23094688221709006,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "AZ",
-      "opposingPitcher": "Eduardo Rodriguez",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=50.1",
-        "Hard Hit%=48.3"
-      ],
-      "bullets": [
-        "HR score 63.9 (#8)",
-        "Pitcher HR VS 50.1 at park 1.01"
-      ],
-      "hrOddsYes": "+485",
-      "marketImpliedProbability": 0.17094017094017094,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -225,17 +206,17 @@
       "team": "MIL",
       "opponent": "NYM",
       "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
         "barrel=14%",
         "HH=53%"
       ],
       "bullets": [
-        "hrScore=65",
+        "hrScore=64.2",
         "park=1.06"
       ],
-      "hrOddsYes": "+442",
-      "marketImpliedProbability": 0.18450184501845018,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,55 +225,55 @@
       "team": "CWS",
       "opponent": "TEX",
       "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
         "barrel=14.6%",
         "HH=45.8%"
       ],
       "bullets": [
-        "hrScore=64.5",
+        "hrScore=63.6",
         "park=1.07"
       ],
-      "hrOddsYes": "+333",
-      "marketImpliedProbability": 0.23094688221709006,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "PIT",
-      "opposingPitcher": "Bubba Chandler",
-      "hrScoreRank": 9,
+      "player": "Rafael Devers",
+      "team": "SF",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 11,
       "topStats": [
-        "Hard Hit%=54.0",
-        "Pitcher HR VS=44.5"
+        "Pitcher HR VS=71.7",
+        "Hard Hit%=50.7"
       ],
       "bullets": [
-        "HR score 63.2 (#9)",
-        "Pitcher HR VS 44.5 at park 0.89"
+        "HR score 61.9 (#11)",
+        "Pitcher HR VS 71.7 at park 0.85"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+630",
+      "marketImpliedProbability": 0.136986301369863,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Eduardo Valencia",
-      "team": "DET",
-      "opponent": "TB",
-      "opposingPitcher": "Freddy Peralta",
-      "hrScoreRank": 22,
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "BAL",
+      "opposingPitcher": "Kyle Bradish",
+      "hrScoreRank": 16,
       "topStats": [
-        "Hard Hit%=49.0",
-        "Pitcher HR VS=46.6"
+        "Hard Hit%=49.9",
+        "Pitcher HR VS=46.5"
       ],
       "bullets": [
-        "HR score 57.9 (#22)",
-        "Pitcher HR VS 46.6 at park 0.95"
+        "HR score 58.9 (#16)",
+        "Pitcher HR VS 46.5 at park 0.92"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+610",
+      "marketImpliedProbability": 0.14084507042253522,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }

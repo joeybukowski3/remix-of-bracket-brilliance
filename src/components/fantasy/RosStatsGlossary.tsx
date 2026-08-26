@@ -9,13 +9,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const DEFINITIONS = [
-  ["RANK", "Overall JKB rest-of-season ranking."],
+  ["RANK", "JKB RANK — manual/expert JKB draft-board authority. Overall JKB rest-of-season ranking."],
   ["POS RK", "JKB rank within the player's position."],
   ["POSITIONAL NOTATION", "QB#, RB#, WR# and TE# are position-relative ranks. WR2 means 2nd among wide receivers for that metric; RB4 means 4th among running backs."],
   ["ADP", "2026 consensus Average Draft Position. N/A when no repository-backed consensus source is available."],
   ["PAR/G", "Projected Points Above Replacement per game from the approved season projection authority."],
   ["PROJECTION RK", "Positional rank from the approved FantasyPros season projection field."],
   ["AVG RK", "Workbook average of the available WAR, late-season, projection and Vegas positional component ranks."],
+  ["MODEL RK", "Independent quantitative ROS rank based on the validated historical baseline, rookie/no-history fallback, and roster eligibility rules. N/A for players withheld from the model's rank (e.g. released or free agent). It does NOT include a validated opportunity/usage adjustment, matchup/FPA adjustment, or market adjustment."],
   ["SOS", "Workbook-supplied JKB positional strength-of-schedule composite; 1 is easiest. Its underlying formula is not documented in the repository."],
   ["2025 PTS RK", "2025 total full-PPR fantasy points rank relative to players at the same position."],
   ["2025 PPG RK", "2025 full-PPR points-per-game rank relative to players at the same position."],
@@ -57,6 +58,13 @@ export default function RosStatsGlossary() {
             </div>
           ))}
         </dl>
+        <div className="mt-3 border-t border-slate-200 pt-3">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">JKB RANK vs. Model Rk</p>
+          <p className="mt-1 text-[10px] text-slate-500">
+            JKB Overall Rank and Model Rank are independent authorities. Disagreement between them is expected and can be informative.
+            Model Rank does not include a validated opportunity/usage adjustment, matchup/FPA adjustment, or market adjustment.
+          </p>
+        </div>
         <div className="mt-3 border-t border-slate-200 pt-3">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">Playoff matchup colors</p>
           <p className="mt-1 text-[10px] text-slate-500">Fantasy-player perspective: easier position matchups are gold/green; harder matchups are red.</p>

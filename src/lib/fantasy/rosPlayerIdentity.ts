@@ -12,7 +12,7 @@ export function normalizedFantasyPlayerKey(position: FantasyPosition, player: st
 }
 
 /** Exact reviewed JKB workbook name -> PAR consensus name differences. */
-const CONSENSUS_NAME_ALIASES: Readonly<Record<string, string>> = {
+export const CONSENSUS_NAME_ALIASES: Readonly<Record<string, string>> = {
   "QB:patrickmahomes": "Patrick Mahomes II",
   "RB:jamescook": "James Cook III",
   "RB:kennethwalker": "Ken Walker III",

@@ -27,6 +27,10 @@ import {
   type FantasyPosition,
   type FantasyRankingRow,
 } from "@/lib/fantasy/rankings";
+import {
+  getShadowModelRankRow,
+  type ShadowModelRankRow,
+} from "@/lib/fantasy/rosResearch/shadowModelRankJoin";
 
 type PositionFilter = "ALL" | FantasyPosition;
 /** Temporary review switch between the PAR-first board and the pre-redesign one. */
@@ -193,13 +197,33 @@ function PositionLegend() {
   );
 }
 
+/**
+ * Presentation-only sort toggle for the Model Rk column. Never mutates
+ * `FANTASY_RANKINGS`; default (`false`) keeps the board in JKB RANK order.
+ */
 function OverallBoard({ query }: { query: string }) {
-  const rows = FANTASY_RANKINGS.rows.filter((row) => matchesQuery(row.player, row.team, query));
+  const [modelRankSortActive, setModelRankSortActive] = useState(false);
+  const baseRows = useMemo(
+    () => FANTASY_RANKINGS.rows.filter((row) => matchesQuery(row.player, row.team, query)),
+    [query],
+  );
+  const rows = useMemo(() => {
+    if (!modelRankSortActive) return baseRows;
+    // N/A (no Model Rank) always sorts to the bottom, ascending Model Rank above it.
+    return [...baseRows].sort((a, b) => {
+      const aRank = getShadowModelRankRow(a.overallRank)?.modelRank ?? null;
+      const bRank = getShadowModelRankRow(b.overallRank)?.modelRank ?? null;
+      if (aRank == null && bRank == null) return a.overallRank - b.overallRank;
+      if (aRank == null) return 1;
+      if (bRank == null) return -1;
+      return aRank - bRank;
+    });
+  }, [modelRankSortActive, baseRows]);
   if (rows.length === 0) return <EmptyState query={query} />;
 
   return (
     <NflTableScroller label="Overall fantasy rankings" className="max-h-[72vh]">
-      <table className="w-full min-w-[1340px] border-collapse text-left text-xs">
+      <table className="w-full min-w-[1420px] border-collapse text-left text-xs">
         <thead className="sticky top-0 z-20 bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
           <tr>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center")}>Rank</th>
@@ -209,6 +233,20 @@ function OverallBoard({ query }: { query: string }) {
             <th title="Approved projected PAR per game" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>PAR/G</th>
             <th title="FantasyPros projection rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Projection Rk</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>AVG Rk</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>
+              <button
+                type="button"
+                title="Independent quantitative Model Rank (research authority). Click to sort by Model Rank; click again to return to JKB RANK order."
+                aria-pressed={modelRankSortActive}
+                onClick={() => setModelRankSortActive((value) => !value)}
+                className={cn(
+                  "inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
+                  modelRankSortActive && "bg-slate-200 text-slate-700",
+                )}
+              >
+                Model Rk{modelRankSortActive ? " ▲" : ""}
+              </button>
+            </th>
             <th title="Positional strength of schedule; 1 is the easiest slate" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>SOS</th>
             <th title="2025 positional finish by total fantasy points" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>2025 Pts Rk</th>
             <th title="2025 positional finish by fantasy points per game" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>2025 PPG Rk</th>
@@ -230,6 +268,30 @@ function OverallBoard({ query }: { query: string }) {
         </tbody>
       </table>
     </NflTableScroller>
+  );
+}
+
+/**
+ * Secondary/independent-authority cell for the SHADOW Model Rk column.
+ * Deliberately lighter (outlined pill, muted slate) than the primary Rank
+ * column's bold plain text, so it never reads as equal or dominant to the
+ * JKB RANK authority it sits beside.
+ */
+function ModelRankCell({ model }: { model: ShadowModelRankRow | undefined }) {
+  const rank = model?.modelRank ?? null;
+  if (rank == null) {
+    return (
+      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
+        <span className="text-[10px] font-semibold text-slate-400">N/A</span>
+      </td>
+    );
+  }
+  return (
+    <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
+      <span className="inline-flex min-w-9 justify-center rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-slate-600">
+        {rank}
+      </span>
+    </td>
   );
 }
 
@@ -260,6 +322,7 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
   const tone = getPositionTone(row.position);
   // Context values are prepared outside React; filtering never recomputes ranks.
   const context = getOverallRowContext(row.overallRank);
+  const model = getShadowModelRankRow(row.overallRank);
   return (
     <>
       <tr className="group hover:bg-slate-50">
@@ -272,6 +335,7 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
         <OverallStatCell tone={tone} value={formatSigned(context.parPerGame, 2)} />
         <OverallStatCell tone={tone} value={formatRank(row.projectionRank)} />
         <OverallStatCell tone={tone} value={formatRank(row.averageRank)} />
+        <ModelRankCell model={model} />
         <OverallStatCell tone={tone} value={formatRank(row.strengthOfSchedule)} />
         <PositionalHistoryCell tone={tone} position={row.position} rank={context.seasonRank2025?.byPoints} />
         <PositionalHistoryCell tone={tone} position={row.position} rank={context.seasonRank2025?.byPpg} />
@@ -283,12 +347,46 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
       </tr>
       {expanded && (
         <tr className="bg-slate-50">
-          <td colSpan={15} className="border-b border-slate-200 px-4 py-3 text-xs text-slate-600">
-            2025 sample: <strong>{context.seasonActual2025 ? `${context.seasonActual2025.gamesPlayed} games` : "N/A"}</strong> · L8 sample: <strong>{context.lastEightRank ? `${context.lastEightRank.sampleSize} game${context.lastEightRank.sampleSize === 1 ? "" : "s"}` : "N/A"}</strong> · L8 total: <strong>{context.lastEightRank ? context.lastEightRank.totalPoints.toFixed(1) : "N/A"}</strong> · ADP source: <strong>not available in repository</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
+          <td colSpan={16} className="border-b border-slate-200 px-4 py-3 text-xs text-slate-600">
+            <p>
+              2025 sample: <strong>{context.seasonActual2025 ? `${context.seasonActual2025.gamesPlayed} games` : "N/A"}</strong> · L8 sample: <strong>{context.lastEightRank ? `${context.lastEightRank.sampleSize} game${context.lastEightRank.sampleSize === 1 ? "" : "s"}` : "N/A"}</strong> · L8 total: <strong>{context.lastEightRank ? context.lastEightRank.totalPoints.toFixed(1) : "N/A"}</strong> · ADP source: <strong>not available in repository</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
+            </p>
+            <ModelProvenance model={model} />
           </td>
         </tr>
       )}
     </>
+  );
+}
+
+/**
+ * Model/Research provenance for the expanded row. Every value here is a
+ * SHADOW research value, never presented as a live canonical field — see
+ * the "Model Rk" glossary note. Disputed statuses (e.g. a released-vs-rostered
+ * conflict) are surfaced verbatim, never silently resolved.
+ */
+function ModelProvenance({ model }: { model: ShadowModelRankRow | undefined }) {
+  if (!model) {
+    return (
+      <p className="mt-2 border-t border-slate-200 pt-2 text-slate-500">
+        Model (research): <strong>N/A</strong> — no shadow research row for this player.
+      </p>
+    );
+  }
+  return (
+    <p className="mt-2 border-t border-slate-200 pt-2 text-slate-500">
+      Model Rank (research): <strong>{model.modelRank ?? "N/A"}</strong>
+      {model.modelPositionRank != null && <> (pos <strong>{model.modelPositionRank}</strong>)</>}
+      {" "}· Model PPG (research, not live PPG): <strong>{model.modelProjectedPpg != null ? model.modelProjectedPpg.toFixed(2) : "N/A"}</strong>
+      {" "}· Model PAR/G (research, not live PAR/G): <strong>{model.modelParPerGame != null ? model.modelParPerGame.toFixed(2) : "N/A"}</strong>
+      {" "}· Source: <strong>{model.projectionSource === "historical-model" ? "historical baseline" : "rookie/no-history fallback"}</strong>
+      {" "}· Confidence: <strong>{model.confidence}</strong>
+      {" "}· Availability: <strong>{model.availabilityStatus}</strong> ({model.availabilitySource}, as of {model.availabilityAsOf})
+      {" "}· Rank eligibility: <strong>{model.rankEligible ? "eligible" : `withheld — ${model.rankEligibilityReason ?? "not eligible"}`}</strong>
+      {model.statusConflict && (
+        <> · <strong className="text-amber-700">Status conflict:</strong> {model.statusConflictReason}</>
+      )}
+    </p>
   );
 }
 
