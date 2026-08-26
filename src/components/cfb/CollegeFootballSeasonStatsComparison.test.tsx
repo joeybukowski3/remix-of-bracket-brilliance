@@ -446,3 +446,108 @@ describe("CollegeFootballSeasonStatsComparison", () => {
     expect(container.textContent ?? "").not.toMatch(/\bundefined\b/);
   });
 });
+
+describe("CollegeFootballSeasonStatsComparison — mobile presentation", () => {
+  it("renders a full-width segmented Offense/Defense/Matchup control, defaulting to Offense", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    const offenseButton = within(mobileScope).getByRole("button", { name: "Offense" });
+    const defenseButton = within(mobileScope).getByRole("button", { name: "Defense" });
+    const matchupButton = within(mobileScope).getByRole("button", { name: "Matchup" });
+    expect(offenseButton).toHaveAttribute("aria-pressed", "true");
+    expect(defenseButton).toHaveAttribute("aria-pressed", "false");
+    expect(matchupButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("mobile Offense/Defense cards use the dark team-band header, not the light-gray desktop header", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    // The mobile card's own header grid is 3 equal columns (away/center/home band), not the
+    // desktop [1fr_auto_1fr] light-gray header with a category pill.
+    const mobileCard = within(mobileScope).getByText("Points/Game").closest(".rounded-2xl") as HTMLElement;
+    expect(mobileCard.querySelector(".bg-slate-50")).toBeNull();
+    expect(mobileCard.querySelector(".grid-cols-3")).not.toBeNull();
+    expect(within(mobileCard).getByText("Offense")).toBeInTheDocument();
+  });
+
+  it("Matchup mode: mobile 3-panel headers show Away/Defense on the left, Home/Offense on the right, with a DEFENSE VS OFFENSE center sub-label — away always left", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    clickTab(mobileScope, "Matchup");
+
+    const card1 = within(mobileScope).getAllByText("Points/Game")[0].closest(".rounded-2xl") as HTMLElement;
+    const header = card1.querySelector(".grid-cols-3") as HTMLElement;
+    expect(within(header).getByText("Away")).toBeInTheDocument();
+    expect(within(header).getByText("Defense")).toBeInTheDocument();
+    expect(within(header).getByText("Home")).toBeInTheDocument();
+    expect(within(header).getByText("Offense")).toBeInTheDocument();
+    expect(within(header).getByText("Matchup")).toBeInTheDocument();
+    expect(within(header).getByText("DEFENSE VS OFFENSE")).toBeInTheDocument();
+
+    const headerText = header.textContent ?? "";
+    expect(headerText.indexOf("Away")).toBeGreaterThanOrEqual(0);
+    expect(headerText.indexOf("Away")).toBeLessThan(headerText.indexOf("Home"));
+  });
+
+  it("Matchup mode: card 2's mobile header shows Away/Offense on the left, Home/Defense on the right, with an OFFENSE VS DEFENSE center sub-label", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    clickTab(mobileScope, "Matchup");
+
+    const card2 = within(mobileScope).getAllByText("Points/Game")[1].closest(".rounded-2xl") as HTMLElement;
+    const header = card2.querySelector(".grid-cols-3") as HTMLElement;
+    expect(within(header).getByText("Away")).toBeInTheDocument();
+    expect(within(header).getByText("Offense")).toBeInTheDocument();
+    expect(within(header).getByText("Home")).toBeInTheDocument();
+    expect(within(header).getByText("Defense")).toBeInTheDocument();
+    expect(within(header).getByText("OFFENSE VS DEFENSE")).toBeInTheDocument();
+  });
+
+  it("mobile rows reuse the Phase 1 shared-bar-row/split-bar system — no team logo at the seam", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    const row = within(mobileScope).getByText("Points/Game").closest('[data-testid="cfb-mobile-shared-bar-row"]') as HTMLElement;
+    expect(row).not.toBeNull();
+    expect(within(row).getByTestId("split-bar-marker")).toBeInTheDocument();
+    expect(row.querySelector("img")).toBeNull();
+  });
+
+  it("mobile rows show the same values and generated ranks as desktop", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    const row = within(mobileScope).getByText("Points/Game").closest('[data-testid="cfb-mobile-shared-bar-row"]') as HTMLElement;
+    expect(within(row).getByText("31.2")).toBeInTheDocument();
+    expect(within(row).getByText("24.1")).toBeInTheDocument();
+    expect(within(row).getByText("#22")).toBeInTheDocument();
+  });
+
+  it("Matchup edge from rank is preserved on mobile: away defense #12 beats home offense #40 despite the raw numbers pointing the other way", () => {
+    const context: CfbMatchupSeasonStatsContext = {
+      ...FULL_CONTEXT,
+      away: stats("away", { yardsPerPlayAllowed: 6.0 }),
+      home: stats("home", { yardsPerPlay: 3.0 }),
+      awayRanks: { yardsPerPlayAllowed: 12 },
+      homeRanks: { yardsPerPlay: 40 },
+    };
+    const { mobileScope } = renderAndGetScopes(context);
+    clickTab(mobileScope, "Matchup");
+
+    const row = within(mobileScope).getAllByText("Yards/Play")[0].closest('[data-testid="cfb-mobile-shared-bar-row"]') as HTMLElement;
+    expect(row.textContent).toContain("6.0");
+    expect(row.textContent).toContain("#12");
+    const marker = row.querySelector('[data-testid="stronger-badge"]') as HTMLElement;
+    expect(marker).not.toBeNull();
+    const awaySwatch = document.createElement("div");
+    awaySwatch.style.background = AWAY_COLOR;
+    expect(marker.style.background).toBe(awaySwatch.style.background);
+  });
+
+  it("desktop tree is unaffected by the mobile redesign — still uses the light-gray header and CollegeFootballSharedBarRow's h-3 track", () => {
+    const { desktopScope } = renderAndGetScopes(FULL_CONTEXT);
+    const desktopCard = within(desktopScope).getByText("Points/Game").closest(".rounded-md") as HTMLElement;
+    expect(desktopCard.querySelector(".bg-slate-50")).not.toBeNull();
+    expect(desktopCard.querySelectorAll(".h-3.overflow-hidden.rounded-full.bg-slate-100").length).toBeGreaterThan(0);
+  });
+
+  it("never renders NaN or undefined in the mobile block", () => {
+    const { mobileScope } = renderAndGetScopes(FULL_CONTEXT);
+    clickTab(mobileScope, "Matchup");
+    const body = mobileScope.textContent ?? "";
+    expect(body).not.toMatch(/\bNaN\b/);
+    expect(body).not.toMatch(/\bundefined\b/);
+  });
+});

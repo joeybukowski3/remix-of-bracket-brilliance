@@ -8,6 +8,7 @@ import { CFB_SEASON_STAT_RANK_DIRECTIONS, type CfbRankedStatMetric } from "@/lib
 import type { CfbMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
 import { cn } from "@/lib/utils";
 import CollegeFootballSharedBarRow from "./CollegeFootballSharedBarRow";
+import CollegeFootballMobileSharedBarRow from "./CollegeFootballMobileSharedBarRow";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 
 type Props = {
@@ -301,18 +302,175 @@ export default function CollegeFootballSeasonStatsComparison({
     (row) => row.defenseKey,
   );
 
+  /**
+   * Mobile-only 3-panel team-band header (away/center/home) — same darkened
+   * team-color-band visual language as Phase 1's Power Comparison mobile
+   * header, not the light-gray desktop card header. Matchup mode adds an
+   * AWAY/HOME + unit descriptor under each team's identity and a
+   * "UNIT VS UNIT" sub-label in the center; Offense/Defense mode just shows
+   * team identity plus the section name centered.
+   */
+  function renderMobileHeader(
+    category: SectionTab,
+    left: TeamHeaderInfo,
+    right: TeamHeaderInfo,
+    descriptors?: { left: string; right: string },
+  ) {
+    const darkenOverlay = { backgroundImage: "linear-gradient(rgba(0,0,0,0.32), rgba(0,0,0,0.32))" };
+    const centerSubLabel = descriptors
+      ? `${descriptors.left.replace(/^Away\s+/i, "").toUpperCase()} VS ${descriptors.right.replace(/^Home\s+/i, "").toUpperCase()}`
+      : undefined;
+    return (
+      <div className="grid grid-cols-3">
+        <div
+          className="flex min-w-0 items-center gap-2 px-2.5 py-3"
+          style={{ ...darkenOverlay, backgroundColor: left.color }}
+        >
+          <CollegeFootballTeamLogo
+            name={left.name}
+            logo={left.logo}
+            abbreviation={left.shortName}
+            primaryColor="transparent"
+            size="md"
+          />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-xs font-black uppercase tracking-wide text-white">{left.shortName}</span>
+            {descriptors && (
+              <>
+                <span className="text-[7px] font-bold uppercase tracking-wide text-white/60">Away</span>
+                <span className="truncate text-[8px] font-black uppercase tracking-wide text-white/90">
+                  {descriptors.left.replace(/^Away\s+/i, "")}
+                </span>
+              </>
+            )}
+          </span>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-0.5 bg-slate-900 px-1 py-3">
+          <span className="text-[9px] font-bold uppercase tracking-wide text-white">{TABS.find((t) => t.key === category)?.label}</span>
+          {centerSubLabel && (
+            <span className="text-[7px] font-semibold uppercase tracking-wide text-white/50">{centerSubLabel}</span>
+          )}
+        </div>
+        <div
+          className="flex min-w-0 items-center justify-end gap-2 px-2.5 py-3 text-right"
+          style={{ ...darkenOverlay, backgroundColor: right.color }}
+        >
+          <span className="flex min-w-0 flex-col items-end leading-tight">
+            <span className="truncate text-xs font-black uppercase tracking-wide text-white">{right.shortName}</span>
+            {descriptors && (
+              <>
+                <span className="text-[7px] font-bold uppercase tracking-wide text-white/60">Home</span>
+                <span className="truncate text-[8px] font-black uppercase tracking-wide text-white/90">
+                  {descriptors.right.replace(/^Home\s+/i, "")}
+                </span>
+              </>
+            )}
+          </span>
+          <CollegeFootballTeamLogo
+            name={right.name}
+            logo={right.logo}
+            abbreviation={right.shortName}
+            primaryColor="transparent"
+            size="md"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  function renderMobileSection(category: "offense" | "defense", rows: SeasonStatRow[]) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
+        {renderMobileHeader(category, awayTeam, homeTeam)}
+        {rows.map((row) => {
+          const direction = CFB_SEASON_STAT_RANK_DIRECTIONS[row.key];
+          const awayRaw = away[row.key];
+          const homeRaw = home[row.key];
+          const edge =
+            direction === "higher-is-better"
+              ? higherIsBetterEdge(awayRaw, homeRaw)
+              : lowerIsBetterEdge(awayRaw, homeRaw);
+          return (
+            <CollegeFootballMobileSharedBarRow
+              key={row.key}
+              label={row.label}
+              icon={row.icon}
+              iconClassName={ICON_TILE_CLASSES[category]}
+              awayValue={row.format(awayRaw)}
+              homeValue={row.format(homeRaw)}
+              awayRank={awayRaw != null ? rankBadge(awayRanks[row.key]) : null}
+              homeRank={homeRaw != null ? rankBadge(homeRanks[row.key]) : null}
+              {...getCfbSharedBarSplit(awayRaw, homeRaw)}
+              awayColor={awayColor}
+              homeColor={homeColor}
+              edge={edge}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderMobileMatchupSection(
+    descriptors: { left: string; right: string },
+    awayKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
+    homeKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
+  ) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
+        {renderMobileHeader("matchup", awayTeam, homeTeam, descriptors)}
+        {MATCHUP_ROWS.map((row) => {
+          const awayKey = awayKeyOf(row);
+          const homeKey = homeKeyOf(row);
+          const awayRaw = away[awayKey];
+          const homeRaw = home[homeKey];
+          const edge = rankAdvantageEdge(awayRanks[awayKey], homeRanks[homeKey]);
+          return (
+            <CollegeFootballMobileSharedBarRow
+              key={row.label}
+              label={row.label}
+              icon={row.icon}
+              iconClassName={ICON_TILE_CLASSES.matchup}
+              awayValue={row.format(awayRaw)}
+              homeValue={row.format(homeRaw)}
+              awayRank={awayRaw != null ? rankBadge(awayRanks[awayKey]) : null}
+              homeRank={homeRaw != null ? rankBadge(homeRanks[homeKey]) : null}
+              {...getCfbSharedBarSplit(awayRaw, homeRaw)}
+              awayColor={awayColor}
+              homeColor={homeColor}
+              edge={edge}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
+  const mobileOffenseCard = renderMobileSection("offense", OFFENSE_ROWS);
+  const mobileDefenseCard = renderMobileSection("defense", DEFENSE_ROWS);
+  const mobileAwayDefenseVsHomeOffenseCard = renderMobileMatchupSection(
+    { left: "Away Defense", right: "Home Offense" },
+    (row) => row.defenseKey,
+    (row) => row.offenseKey,
+  );
+  const mobileAwayOffenseVsHomeDefenseCard = renderMobileMatchupSection(
+    { left: "Away Offense", right: "Home Defense" },
+    (row) => row.offenseKey,
+    (row) => row.defenseKey,
+  );
+
   return (
     <div>
       {/* Mobile: tabbed single-card view to avoid stacking two full cards. */}
       <div className="lg:hidden">
-        <div className="mb-2 grid grid-cols-3 gap-1 rounded-md bg-slate-100 p-1">
+        <div className="mb-3 flex h-11 items-center rounded-full border border-slate-300 bg-white p-1 shadow-sm">
           {TABS.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setTab(t.key)}
               className={cn(
-                "rounded-sm px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors",
+                "flex h-full flex-1 items-center justify-center rounded-full text-[11px] font-bold uppercase tracking-wide transition-colors",
                 tab === t.key ? "bg-slate-900 text-white shadow-sm" : "text-slate-500",
               )}
               aria-pressed={tab === t.key}
@@ -322,12 +480,12 @@ export default function CollegeFootballSeasonStatsComparison({
           ))}
         </div>
         <div className="space-y-3">
-          {tab === "offense" && offenseCard}
-          {tab === "defense" && defenseCard}
+          {tab === "offense" && mobileOffenseCard}
+          {tab === "defense" && mobileDefenseCard}
           {tab === "matchup" && (
             <>
-              {awayDefenseVsHomeOffenseCard}
-              {awayOffenseVsHomeDefenseCard}
+              {mobileAwayDefenseVsHomeOffenseCard}
+              {mobileAwayOffenseVsHomeDefenseCard}
             </>
           )}
         </div>
