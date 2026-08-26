@@ -1,47 +1,47 @@
 {
   "date": "2026-08-26",
-  "generatedAt": "2026-08-26T15:58:05.674Z",
+  "generatedAt": "2026-08-26T16:37:39.114Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium's 1.18 park factor and Busch Stadium's pitcher-friendly 0.92 create a split slate where power bats in hitter-friendly venues hold the edge. Elmer Rodríguez's 42.7 HR/9 allowed to righties and Michael McGreevy's 67.4 mark set up favorable matchups for Alvarez and Alonso, while Truist Park's 1.03 factor and AJ Smith-Shawver's 57 HR/9 vs lefties boost Ohtani and Muncy. Weather angles appear neutral across the board.",
-    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR vulnerability over recent HR trends, elevating Alvarez to the top spot despite zero homers in his last seven games."
+    "slateOverview": "Busch Stadium and Petco Park suppress power, but the model still likes Alonso and Cruz due to elite barrel rates and favorable opposing pitcher HR rates. Yankee Stadium's 1.18 park factor boosts Alvarez, while Truist Park's neutral 1.03 factor and Smith-Shawver's 57 HR/9 rate create a strong environment for Ohtani and Muncy. Weather is stable across the slate with no wind or temperature edges to exploit.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over park factors, which explains why Alonso ranks first despite the pitcher-friendly Busch Stadium."
   },
   "bestBets": [
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "NYY",
-      "opposingPitcher": "Elmer Rodríguez",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=17.2%",
-        "park=1.18"
-      ],
-      "bullets": [
-        "barrel=17.2%",
-        "park=1.18"
-      ],
-      "hrOddsYes": "+268",
-      "marketImpliedProbability": 0.2717391304347826,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Pete Alonso",
       "team": "BAL",
       "opponent": "STL",
       "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 2,
+      "hrScoreRank": 1,
       "topStats": [
-        "HH=56.7%",
-        "barrel=14%"
+        "barrel=14%",
+        "HH=56.7%"
       ],
       "bullets": [
-        "HH=56.7%",
-        "barrel=14%"
+        "hrScore=77.7",
+        "park=0.92"
       ],
-      "hrOddsYes": "+429",
-      "marketImpliedProbability": 0.1890359168241966,
+      "hrOddsYes": "+419",
+      "marketImpliedProbability": 0.1926782273603083,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "NYY",
+      "opposingPitcher": "Elmer Rodríguez",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=17.2%",
+        "HH=53.6%"
+      ],
+      "bullets": [
+        "hrScore=77.6",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+268",
+      "marketImpliedProbability": 0.2717391304347826,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -53,14 +53,14 @@
       "hrScoreRank": 3,
       "topStats": [
         "barrel=16.6%",
-        "park=1.03"
+        "HH=52.3%"
       ],
       "bullets": [
-        "barrel=16.6%",
+        "hrScore=75",
         "park=1.03"
       ],
-      "hrOddsYes": "+265",
-      "marketImpliedProbability": 0.273972602739726,
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -78,8 +78,8 @@
         "HR score 73.2 (#4)",
         "Pitcher HR VS 79.9 at park 0.89"
       ],
-      "hrOddsYes": "+385",
-      "marketImpliedProbability": 0.20618556701030927,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -97,8 +97,8 @@
         "HR score 65.0 (#5)",
         "Pitcher HR VS 60.9 at park 1.03"
       ],
-      "hrOddsYes": "+359",
-      "marketImpliedProbability": 0.2178649237472767,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -111,15 +111,15 @@
       "opposingPitcher": "Randy Vásquez",
       "hrScoreRank": 4,
       "topStats": [
-        "HH=57.9%",
-        "barrel=17.9%"
+        "barrel=17.9%",
+        "HH=57.9%"
       ],
       "bullets": [
-        "HH=57.9%",
-        "barrel=17.9%"
+        "hrScore=73.2",
+        "park=0.89"
       ],
-      "hrOddsYes": "+385",
-      "marketImpliedProbability": 0.20618556701030927,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -131,14 +131,14 @@
       "hrScoreRank": 5,
       "topStats": [
         "barrel=15.5%",
-        "park=1.03"
+        "HH=49.9%"
       ],
       "bullets": [
-        "barrel=15.5%",
+        "hrScore=65",
         "park=1.03"
       ],
-      "hrOddsYes": "+359",
-      "marketImpliedProbability": 0.2178649237472767,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,12 +149,12 @@
       "opposingPitcher": "AJ Smith-Shawver",
       "hrScoreRank": 6,
       "topStats": [
-        "HH=46.5%",
-        "barrel=13.4%"
+        "barrel=13.4%",
+        "HH=46.5%"
       ],
       "bullets": [
-        "HH=46.5%",
-        "barrel=13.4%"
+        "hrScore=65",
+        "park=1.03"
       ],
       "hrOddsYes": "+470",
       "marketImpliedProbability": 0.17543859649122806,
@@ -175,8 +175,8 @@
         "HR score 64.2 (#7)",
         "Pitcher HR VS 55.7 at park 1.06"
       ],
-      "hrOddsYes": "+442",
-      "marketImpliedProbability": 0.18450184501845018,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -194,8 +194,8 @@
         "HR score 63.6 (#8)",
         "Pitcher HR VS 58.1 at park 1.07"
       ],
-      "hrOddsYes": "+333",
-      "marketImpliedProbability": 0.23094688221709006,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -208,15 +208,15 @@
       "opposingPitcher": "Robert Stock",
       "hrScoreRank": 7,
       "topStats": [
-        "HH=53%",
-        "barrel=14%"
+        "barrel=14%",
+        "HH=53%"
       ],
       "bullets": [
-        "HH=53%",
-        "barrel=14%"
+        "hrScore=64.2",
+        "park=1.06"
       ],
-      "hrOddsYes": "+442",
-      "marketImpliedProbability": 0.18450184501845018,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -228,14 +228,14 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrel=14.6%",
-        "park=1.07"
+        "HH=45.8%"
       ],
       "bullets": [
-        "barrel=14.6%",
+        "hrScore=63.6",
         "park=1.07"
       ],
-      "hrOddsYes": "+333",
-      "marketImpliedProbability": 0.23094688221709006,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
