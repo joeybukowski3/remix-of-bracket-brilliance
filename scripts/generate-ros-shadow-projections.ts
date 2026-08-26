@@ -43,6 +43,14 @@ import {
 import { buildStatusAvailability, type StatusSourceRow } from "../src/lib/fantasy/rosResearch/statusAvailability.ts";
 import { buildRookieFallback, type RookieFallbackSourceRow } from "../src/lib/fantasy/rosResearch/rookieFallback.ts";
 import {
+  buildNormalizedAvailability,
+  ELIGIBILITY_POLICY_IDS,
+  ELIGIBILITY_POLICY_LABELS,
+  evaluateRankEligibility,
+  isProjectionEligible,
+  type EligibilityPolicyId,
+} from "../src/lib/fantasy/rosResearch/rankEligibility.ts";
+import {
   SHADOW_PROJECTION_SCHEMA_VERSION,
   ADJUSTMENT_CAPS,
   COMBINED_ADJUSTMENT_CAP,
@@ -66,6 +74,18 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const RESEARCH_DIR = join(ROOT, "data", "fantasy", "ros-research", "2026");
 const POSITIONS: readonly FantasyPosition[] = ["QB", "RB", "WR", "TE"];
 const USAGE_CAPS_TO_TEST = [0, 0.05, 0.1, 0.15] as const;
+/**
+ * Phase 3C: `data/fantasy/2026-par-consensus.json` carries no embedded
+ * generation timestamp of its own; its last committed change is used as
+ * `asOf` for the PAR-consensus-team availability signal (verified via
+ * `git log -1 --format="%ai" -- data/fantasy/2026-par-consensus.json`,
+ * 2026-08-13 -- older than either nflverse source below, so it is only ever
+ * used to escalate an already-ambiguous nflverse category, never to override
+ * a decisive one; see `rankEligibility.ts`).
+ */
+const PAR_CONSENSUS_AS_OF = "2026-08-13";
+/** Applied by default to the artifact's flat rankEligible/rankEligibilityReason fields. R1/R2/R3 are all computed and compared in diagnostics.eligibilityPolicyComparison. */
+const APPLIED_ELIGIBILITY_POLICY: EligibilityPolicyId = "R2";
 
 function sha(value: string | Buffer) { return createHash("sha256").update(value).digest("hex"); }
 function readJson<T>(path: string): T { return JSON.parse(readFileSync(path, "utf8")) as T; }
@@ -252,6 +272,18 @@ function main() {
     fallback: { applied: boolean; source: string; ppg: number | null; reason: string | null } | null;
     status: { category: string; rawCode: string | null; source: string; sourceTeam: string | null; asOf: string | null };
     statusTreatmentComparison: unknown; // Treatments A-D applied to Candidate E, for audit/comparison (see methodology.statusTreatments)
+    // ---- Phase 3C: normalized availability + rank-eligibility (no PPG penalty) ----
+    availabilityStatus: string;
+    availabilitySource: string;
+    availabilityAsOf: string | null;
+    availabilityConfidence: string;
+    currentRosterVerified: boolean;
+    statusConflict: boolean;
+    statusConflictReason: string | null;
+    projectionEligible: boolean;
+    rankEligible: boolean;
+    rankEligibilityReason: string | null;
+    eligibilityByPolicy: Record<EligibilityPolicyId, { rankEligible: boolean; rankEligibilityReason: string | null }>;
     candidates: Array<{
       candidate: string;
       label: string;
@@ -286,6 +318,15 @@ function main() {
     const team = row.team;
     const liveRanking = rankingsByOverallRank.get(row.overallRank);
     const livePar = row.parMatch.found && row.parMatch.sourceId ? parBySourceId.get(row.parMatch.sourceId) : undefined;
+    // Phase 3C: the FREE_AGENT-escalation signal must use the raw, uncapped PAR
+    // consensus source (same rawParBySourceId used by the rookie fallback above),
+    // not the display-capped FANTASY_PAR_ROWS `livePar`. PAR_POSITION_LIMITS caps
+    // WR at 78/TE at 18 for board-display purposes only; both Tyreek Hill (WR
+    // consensus rank 124) and Brandon Aiyuk (WR consensus rank 119) fall outside
+    // that cap, so `livePar` is undefined for them and the "Team": "FA" signal
+    // that is supposed to catch Hill's free-agent status would silently never
+    // fire if this read the capped array instead.
+    const rawParForAvailability = row.parMatch.found && row.parMatch.sourceId ? rawParBySourceId.get(row.parMatch.sourceId) : undefined;
 
     const baselineSeasons = baselineByPlayerId.get(playerId) ?? [];
     const historicalBaselineOptions = computeHistoricalBaselineOptions(baselineSeasons);
@@ -328,6 +369,22 @@ function main() {
     const candidateEBaseConfidence = capConfidenceForBaselineSource(shadowConfidence(candidateE), effectiveBaseline.source);
     const statusTreatmentComparison = applyStatusTreatments(status.category as never, candidateEBaseConfidence, candidateE.projectedPpg);
 
+    // ---- Phase 3C: normalized availability (nflverse status + PAR-consensus team) and rank-eligibility policies ----
+    const normalizedAvailability = buildNormalizedAvailability({
+      status,
+      parTeam: rawParForAvailability?.Team ?? null,
+      parTeamAsOf: PAR_CONSENSUS_AS_OF,
+      workbookTeam: team,
+    });
+    const eligibilityByPolicy = Object.fromEntries(
+      ELIGIBILITY_POLICY_IDS.map((policy) => [
+        policy,
+        evaluateRankEligibility(policy, normalizedAvailability.availabilityStatus, normalizedAvailability.currentRosterVerified),
+      ]),
+    ) as Record<EligibilityPolicyId, ReturnType<typeof evaluateRankEligibility>>;
+    const appliedEligibility = eligibilityByPolicy[APPLIED_ELIGIBILITY_POLICY];
+    const projectionEligible = isProjectionEligible(candidateE.projectedPpg);
+
     const rawRefinedCandidates = buildRefinedCandidates(selectedBaselinePpg, fpaFactor);
     const refinedCandidates = rawRefinedCandidates.map((candidate) => {
       const treatment = applyStatusTreatments(status.category as never, "high", candidate.projectedPpg)[appliedTreatment];
@@ -363,27 +420,38 @@ function main() {
       fallback,
       status,
       statusTreatmentComparison,
+      availabilityStatus: normalizedAvailability.availabilityStatus,
+      availabilitySource: normalizedAvailability.availabilitySource,
+      availabilityAsOf: normalizedAvailability.availabilityAsOf,
+      availabilityConfidence: normalizedAvailability.availabilityConfidence,
+      currentRosterVerified: normalizedAvailability.currentRosterVerified,
+      statusConflict: normalizedAvailability.statusConflict,
+      statusConflictReason: normalizedAvailability.statusConflictReason,
+      projectionEligible,
+      rankEligible: appliedEligibility.rankEligible,
+      rankEligibilityReason: appliedEligibility.rankEligibilityReason,
+      eligibilityByPolicy,
       candidates,
       refinedCandidates,
       shadowPositionRank: null, // filled in below
     };
   });
 
-  // ---- SHADOW-ONLY position rank, based on Candidate E's shadowParPerGame (descending), same convention the live PAR rank uses. Players Treatment D excludes (released/suspended) are left out of the ranked list but keep their shadowParPerGame in the artifact. ----
+  // ---- SHADOW-ONLY position rank, based on Candidate E's shadowParPerGame (descending), same convention the live PAR rank uses. Phase 3C: filtered by rankEligible under the applied policy (R2 by default) rather than Treatment D's excludedFromShadowRank -- see rankEligibilityReason on excluded players. Excluded players keep their shadowParPerGame (projectionEligible) in the artifact. ----
   for (const position of POSITIONS) {
     const ranked = playersOut
       .filter((p) => p.position === position)
       .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
-      .filter((row) => row.candidateE.shadowParPerGame != null && !row.candidateE.excludedFromShadowRank)
+      .filter((row) => row.candidateE.shadowParPerGame != null && row.p.rankEligible)
       .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame }))
       .sort((a, b) => (b.parPerGame as number) - (a.parPerGame as number));
     ranked.forEach((row, index) => { row.p.shadowPositionRank = index + 1; });
   }
 
-  // ---- SHADOW-ONLY cross-position Model Rank, based on Candidate E's shadowParPerGame (descending), across all positions. Same Treatment D exclusion as shadowPositionRank above. ----
+  // ---- SHADOW-ONLY cross-position Model Rank, based on Candidate E's shadowParPerGame (descending), across all positions. Same rankEligible filter as shadowPositionRank above. ----
   const modelRanked = playersOut
     .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
-    .filter((row) => row.candidateE.shadowParPerGame != null && !row.candidateE.excludedFromShadowRank)
+    .filter((row) => row.candidateE.shadowParPerGame != null && row.p.rankEligible)
     .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame }))
     .sort((a, b) => (b.parPerGame as number) - (a.parPerGame as number));
   const shadowModelRankByPlayerId = new Map(modelRanked.map((row, index) => [row.p.canonicalPlayerId, index + 1]));
@@ -423,6 +491,88 @@ function main() {
   const missingMajorInputsPlayers = playersWithModelRank
     .filter((p) => p.baselineSource === "none")
     .map((p) => ({ player: p.player, position: p.position, reason: "no historical baseline in any of the three tested weightings AND no live PAR-consensus fallback projection resolved for this canonical identity" }));
+
+  // ---- Phase 3C: board-wide availability status counts ----
+  const availabilityStatusCounts: Record<string, number> = {};
+  for (const p of playersWithModelRank) availabilityStatusCounts[p.availabilityStatus] = (availabilityStatusCounts[p.availabilityStatus] ?? 0) + 1;
+  const currentRosterVerifiedCounts = {
+    verified: playersWithModelRank.filter((p) => p.currentRosterVerified).length,
+    notVerified: playersWithModelRank.filter((p) => !p.currentRosterVerified).length,
+  };
+  const statusConflicts = playersWithModelRank
+    .filter((p) => p.statusConflict)
+    .map((p) => ({ player: p.player, position: p.position, availabilityStatus: p.availabilityStatus, reason: p.statusConflictReason }));
+
+  // ---- Phase 3C: rank a player list under an arbitrary eligibility predicate, same convention as the artifact's own shadowModelRank (Candidate E shadowParPerGame, descending). Used to compare R1/R2/R3 and the pre-Phase-3C legacy Treatment-D ranking without mutating the artifact's own field. ----
+  function rankUnder(predicate: (p: (typeof playersWithModelRank)[number]) => boolean) {
+    return playersWithModelRank
+      .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
+      .filter((row) => row.candidateE.shadowParPerGame != null && predicate(row.p))
+      .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame as number }))
+      .sort((a, b) => b.parPerGame - a.parPerGame)
+      .map((row, index) => ({ playerId: row.p.canonicalPlayerId, player: row.p.player, position: row.p.position, rank: index + 1 }));
+  }
+
+  const legacyRanked = rankUnder((p) => !p.candidates.find((c) => c.candidate === "E")!.excludedFromShadowRank);
+  const rankedByPolicy: Record<EligibilityPolicyId, ReturnType<typeof rankUnder>> = {
+    R1: rankUnder((p) => p.eligibilityByPolicy.R1.rankEligible),
+    R2: rankUnder((p) => p.eligibilityByPolicy.R2.rankEligible),
+    R3: rankUnder((p) => p.eligibilityByPolicy.R3.rankEligible),
+  };
+
+  function topN(list: ReturnType<typeof rankUnder>, n: number) {
+    return new Set(list.filter((row) => row.rank <= n).map((row) => row.playerId));
+  }
+  function setDiff(a: Set<string>, b: Set<string>, byId: Map<string, string>) {
+    return [...a].filter((id) => !b.has(id)).map((id) => byId.get(id) ?? id);
+  }
+  const playerNameById = new Map(playersWithModelRank.map((p) => [p.canonicalPlayerId, p.player]));
+
+  const eligibilityPolicyComparison = {
+    policies: ELIGIBILITY_POLICY_LABELS,
+    note: "Each policy's top25/50/100 is an independently recomputed SHADOW ranking (Candidate E shadowParPerGame, descending) filtered by that policy's rankEligible -- not a re-slice of the artifact's own R2-based shadowModelRank. 'legacy' is the pre-Phase-3C Treatment D (released/suspended only) ranking, for comparison.",
+    counts: { legacy: legacyRanked.length, R1: rankedByPolicy.R1.length, R2: rankedByPolicy.R2.length, R3: rankedByPolicy.R3.length },
+    top25: { legacy: topN(legacyRanked, 25).size, R1: topN(rankedByPolicy.R1, 25).size, R2: topN(rankedByPolicy.R2, 25).size, R3: topN(rankedByPolicy.R3, 25).size },
+    top50: { legacy: topN(legacyRanked, 50).size, R1: topN(rankedByPolicy.R1, 50).size, R2: topN(rankedByPolicy.R2, 50).size, R3: topN(rankedByPolicy.R3, 50).size },
+    top100: { legacy: topN(legacyRanked, 100).size, R1: topN(rankedByPolicy.R1, 100).size, R2: topN(rankedByPolicy.R2, 100).size, R3: topN(rankedByPolicy.R3, 100).size },
+    removedFromTop100VsLegacy: {
+      R1: setDiff(topN(legacyRanked, 100), topN(rankedByPolicy.R1, 100), playerNameById),
+      R2: setDiff(topN(legacyRanked, 100), topN(rankedByPolicy.R2, 100), playerNameById),
+      R3: setDiff(topN(legacyRanked, 100), topN(rankedByPolicy.R3, 100), playerNameById),
+    },
+    removedFromTop25VsR2: {
+      R3vsR2: setDiff(topN(rankedByPolicy.R2, 25), topN(rankedByPolicy.R3, 25), playerNameById),
+    },
+  };
+
+  const tracedPlayerNames = ["Tyreek Hill", "Stefon Diggs", "Deebo Samuel", "Brandon Aiyuk"];
+  const rankById = (list: ReturnType<typeof rankUnder>, playerId: string) => list.find((row) => row.playerId === playerId)?.rank ?? null;
+  const tracedPlayers = playersWithModelRank
+    .filter((p) => tracedPlayerNames.includes(p.player))
+    .map((p) => ({
+      player: p.player,
+      canonicalPlayerId: p.canonicalPlayerId,
+      availabilityStatus: p.availabilityStatus,
+      availabilitySource: p.availabilitySource,
+      availabilityAsOf: p.availabilityAsOf,
+      availabilityConfidence: p.availabilityConfidence,
+      currentRosterVerified: p.currentRosterVerified,
+      statusConflict: p.statusConflict,
+      statusConflictReason: p.statusConflictReason,
+      currentOverallRank: p.currentOverallRank,
+      legacyShadowRank: rankById(legacyRanked, p.canonicalPlayerId),
+      rankUnderPolicy: {
+        R1: { rank: rankById(rankedByPolicy.R1, p.canonicalPlayerId), ...p.eligibilityByPolicy.R1 },
+        R2: { rank: rankById(rankedByPolicy.R2, p.canonicalPlayerId), ...p.eligibilityByPolicy.R2 },
+        R3: { rank: rankById(rankedByPolicy.R3, p.canonicalPlayerId), ...p.eligibilityByPolicy.R3 },
+      },
+    }));
+
+  // ---- Phase 3C: every player in the CURRENT shadow top 100 (this artifact's own R2-based shadowModelRank) who is not clearly ACTIVE on a verified 2026 roster ----
+  const top100NonActiveOrUnverified = playersWithModelRank
+    .filter((p) => p.shadowModelRank != null && p.shadowModelRank <= 100 && (p.availabilityStatus !== "ACTIVE" || !p.currentRosterVerified))
+    .map((p) => ({ player: p.player, position: p.position, shadowModelRank: p.shadowModelRank, availabilityStatus: p.availabilityStatus, currentRosterVerified: p.currentRosterVerified }))
+    .sort((a, b) => (a.shadowModelRank as number) - (b.shadowModelRank as number));
 
   // ---- Leakage-safe backtest, fold 2: train on 2023-2024, label = actual 2025 PPG ----
   function buildBacktestCases(trainSeasons: readonly number[], labelSeason: number, seasonsByPlayerId: Map<string, Array<{ season: number; gamesPlayed: number; totalFantasyPoints: number; ppg: number }>>): BacktestCase[] {
@@ -520,7 +670,7 @@ function main() {
       minMarketGamesForTeamFactor: MIN_MARKET_GAMES_FOR_TEAM_FACTOR,
       fpaDirection: "Higher average points-allowed across the remaining slate = more favourable remaining schedule for that position (source rank 1 = allowed the most); a team-position average above the league-position average yields a factor > 1.",
       leagueAverages: { impliedTeamTotal: leagueAvgImpliedTotal, remainingImpliedTeamTotal: leagueAvgRemainingImpliedTotal, pointsAllowedByPosition: leagueAvgPointsAllowedByPosition },
-      shadowRanking: "shadowPositionRank: rank within position by Candidate E shadowParPerGame, descending (same convention as the live PAR rank sort), excluding players Treatment D marks excludedFromShadowRank. shadowModelRank: same, across all positions.",
+      shadowRanking: `shadowPositionRank: rank within position by Candidate E shadowParPerGame, descending (same convention as the live PAR rank sort), excluding players not rankEligible under the applied Phase 3C policy (${APPLIED_ELIGIBILITY_POLICY} -- see diagnostics.eligibilityPolicyComparison for R1/R2/R3 and legacy Treatment-D side-by-side). shadowModelRank: same, across all positions. Excluded players retain shadowParPerGame/projectionEligible in the artifact -- only rank inclusion is withheld, never the projection itself.`,
       statusAvailability: {
         primarySource: { name: "roster_weekly_2026", path: "data/nfl/nflverse/weekly-rosters/roster_weekly_2026.csv", week: latestRosterWeek, asOf: roster2026Entry.retrievedDateUtc, note: "Current-season, week-specific roster snapshot. Used first for every player." },
         fallbackSource: { name: "players", path: "data/nfl/nflverse/players/players.csv", asOf: playersEntry.retrievedDateUtc, note: "Master player table's status field (not season-specific; may be stale). Used ONLY when a player is absent from the current-season snapshot above." },
@@ -567,6 +717,11 @@ function main() {
       adpCoverage,
       lowConfidencePlayers,
       playersMissingHistoricalBaseline: missingMajorInputsPlayers,
+      appliedEligibilityPolicy: APPLIED_ELIGIBILITY_POLICY,
+      eligibilityPolicyComparison,
+      tracedPlayers,
+      top100NonActiveOrUnverified,
+      statusConflicts,
     },
     counts: {
       totalResolvedPlayers: resolved.length,
@@ -577,6 +732,9 @@ function main() {
       rookieFallback: rookieFallback.counts,
       playersUsingFallbackBaseline: playersWithModelRank.filter((p) => p.baselineSource === "fallback-par-consensus").length,
       playersExcludedFromShadowRankByStatus: playersWithModelRank.filter((p) => p.candidates.find((c) => c.candidate === "E")!.excludedFromShadowRank).length,
+      availabilityStatus: availabilityStatusCounts,
+      currentRosterVerified: currentRosterVerifiedCounts,
+      playersExcludedFromRankByAppliedPolicy: playersWithModelRank.filter((p) => !p.rankEligible).length,
     },
     players: playersWithModelRank,
   };

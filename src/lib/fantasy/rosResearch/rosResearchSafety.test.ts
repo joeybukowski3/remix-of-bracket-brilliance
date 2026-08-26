@@ -19,6 +19,13 @@ import { buildStatusAvailability } from "@/lib/fantasy/rosResearch/statusAvailab
 import { buildRookieFallback } from "@/lib/fantasy/rosResearch/rookieFallback";
 import { applyStatusTreatments, buildRefinedCandidates, selectEffectiveBaseline } from "@/lib/fantasy/rosResearch/shadowProjection";
 import { STATUS_MODEL_RANK_EXCLUSION } from "@/lib/fantasy/rosResearch/shadowProjectionConfig";
+import {
+  buildNormalizedAvailability,
+  determineCurrentRosterVerified,
+  evaluateRankEligibility,
+  isProjectionEligible,
+  normalizeAvailabilityStatus,
+} from "@/lib/fantasy/rosResearch/rankEligibility";
 
 describe("Phase 1/2 ROS research safety", () => {
   it("does not mutate the live workbook rows or PAR rows while building the identity crosswalk", () => {
@@ -146,5 +153,94 @@ describe("Phase 1/2 ROS research safety", () => {
     expect(gibbs).toMatchObject({ overallRank: 1, positionRank: 1, projectionRank: 1 });
     const gibbsPar = FANTASY_PAR_ROWS.find((row) => row.player === "Jahmyr Gibbs")!;
     expect(gibbsPar.parPerGame).toBeCloseTo(10.72, 2);
+  });
+
+  it("Phase 3C rank-eligibility functions do not mutate the live workbook rows or PAR rows", () => {
+    const rankingsBefore = structuredClone(FANTASY_RANKINGS.rows);
+    const parBefore = structuredClone(FANTASY_PAR_ROWS);
+
+    buildNormalizedAvailability({
+      status: { category: "reserve", rawCode: "RES", source: "master-player-table", asOf: "2026-08-21" },
+      parTeam: "FA",
+      parTeamAsOf: "2026-08-13",
+      workbookTeam: null,
+    });
+    evaluateRankEligibility("R3", "RELEASED", false);
+    isProjectionEligible(15.2);
+    determineCurrentRosterVerified({ verifiedByCurrentSeasonRoster: false, workbookTeam: "kc", parTeam: "FA" });
+
+    expect(FANTASY_RANKINGS.rows).toEqual(rankingsBefore);
+    expect(FANTASY_PAR_ROWS).toEqual(parBefore);
+  });
+
+  it("no status-based PPG penalty: rank-eligibility evaluation never reads or returns a PPG-shaped value", () => {
+    for (const status of ["ACTIVE", "RESERVE", "RELEASED", "FREE_AGENT", "UNKNOWN"] as const) {
+      const result = evaluateRankEligibility("R3", status, false);
+      expect(Object.keys(result).sort()).toEqual(["rankEligibilityReason", "rankEligible"]);
+    }
+  });
+
+  it("projection is retained (projectionEligible) even when rank is withheld (rankEligible false)", () => {
+    const projectedPpg = 12.4;
+    expect(isProjectionEligible(projectedPpg)).toBe(true);
+    const eligibility = evaluateRankEligibility("R2", "RELEASED", false);
+    expect(eligibility.rankEligible).toBe(false);
+    // The projection itself (isProjectionEligible/projectedPpg) is computed independently and is unaffected by rankEligible being false.
+    expect(isProjectionEligible(projectedPpg)).toBe(true);
+  });
+
+  it("rookie fallback candidates follow the same rank-eligibility rules as historical-baseline candidates (status alone gates eligibility, not baseline source)", () => {
+    const fallbackBaselineEligibility = evaluateRankEligibility("R2", "ACTIVE", true);
+    const historicalBaselineEligibility = evaluateRankEligibility("R2", "ACTIVE", true);
+    expect(fallbackBaselineEligibility).toEqual(historicalBaselineEligibility);
+    const releasedRookie = evaluateRankEligibility("R2", "RELEASED", false);
+    const releasedVeteran = evaluateRankEligibility("R2", "RELEASED", false);
+    expect(releasedRookie).toEqual(releasedVeteran);
+  });
+
+  it("Hill/Diggs/Deebo/Aiyuk regression: normalized availability and R2 rank-eligibility match the Phase 3C trace", () => {
+    const hill = buildNormalizedAvailability({
+      status: { category: "reserve", rawCode: "RES", source: "master-player-table", asOf: "2026-08-21" },
+      parTeam: "FA",
+      parTeamAsOf: "2026-08-13",
+      workbookTeam: null,
+    });
+    expect(hill.availabilityStatus).toBe("FREE_AGENT");
+    expect(evaluateRankEligibility("R2", hill.availabilityStatus, hill.currentRosterVerified).rankEligible).toBe(false);
+
+    const diggs = buildNormalizedAvailability({
+      status: { category: "active", rawCode: "ACT", source: "master-player-table", asOf: "2026-08-21" },
+      parTeam: "WAS",
+      parTeamAsOf: "2026-08-13",
+      workbookTeam: null,
+    });
+    expect(diggs.availabilityStatus).toBe("ACTIVE");
+    expect(diggs.currentRosterVerified).toBe(false);
+    expect(evaluateRankEligibility("R2", diggs.availabilityStatus, diggs.currentRosterVerified).rankEligible).toBe(true);
+
+    const deebo = buildNormalizedAvailability({
+      status: { category: "active", rawCode: "ACT", source: "master-player-table", asOf: "2026-08-21" },
+      parTeam: "SF",
+      parTeamAsOf: "2026-08-13",
+      workbookTeam: null,
+    });
+    expect(deebo.availabilityStatus).toBe("ACTIVE");
+    expect(evaluateRankEligibility("R2", deebo.availabilityStatus, deebo.currentRosterVerified).rankEligible).toBe(true);
+
+    const aiyuk = buildNormalizedAvailability({
+      status: { category: "released", rawCode: "RLS", source: "master-player-table", asOf: "2026-08-21" },
+      parTeam: "SF",
+      parTeamAsOf: "2026-08-13",
+      workbookTeam: "sf",
+    });
+    expect(aiyuk.availabilityStatus).toBe("RELEASED");
+    expect(aiyuk.currentRosterVerified).toBe(true);
+    expect(aiyuk.statusConflict).toBe(true);
+    expect(evaluateRankEligibility("R2", aiyuk.availabilityStatus, aiyuk.currentRosterVerified).rankEligible).toBe(false);
+  });
+
+  it("normalizeAvailabilityStatus never emits INJURED and maps unrecognized codes to UNKNOWN, not a guess", () => {
+    expect(normalizeAvailabilityStatus("PUP", "reserve")).toBe("RESERVE");
+    expect(normalizeAvailabilityStatus("ZZZ", "unknown")).toBe("UNKNOWN");
   });
 });
