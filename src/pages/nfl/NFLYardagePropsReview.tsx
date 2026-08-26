@@ -9,8 +9,16 @@ import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import NflYardageReviewTable from "@/components/nfl/yardage-review/NflYardageReviewTable";
 import NflYardageReviewCardList from "@/components/nfl/yardage-review/NflYardageReviewCardList";
+import { NflYardageMatchupFilterChips } from "@/components/nfl/yardage-review/NflYardageMatchupFilterChips";
+import { NflYardageBandFilterChips } from "@/components/nfl/yardage-review/NflYardageBandFilterChips";
 import { buildYardageReviewRows, type NflMatchupScoreBand } from "@/lib/nfl/props/review/yardageMarketJoin";
-import { buildYardageOpponentContext, type NflYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
+import { buildYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
+import { buildYardageWeekMatchups } from "@/lib/nfl/props/review/yardageWeekMatchups";
+import {
+  buildProjectedYardsHeatByKey,
+  withYardsAllowedHeat,
+  type NflYardageOpponentContextWithHeat,
+} from "@/lib/nfl/props/review/yardageHeat";
 import {
   DEFAULT_YARDAGE_REVIEW_FILTERS,
   applyYardageReviewFilters,
@@ -27,16 +35,12 @@ const WEEK_OPTIONS = [1] as const;
 const MARKET_TABS: readonly NflProjectionMarket[] = ["passing", "rushing", "receiving"];
 const MARKET_LABEL: Record<NflProjectionMarket, string> = { passing: "Passing", rushing: "Rushing", receiving: "Receiving" };
 
-const BAND_OPTIONS: readonly ("all" | NflMatchupScoreBand)[] = ["all", "elite", "strong", "average", "weak", "poor"];
 const BAND_FILTER_LABEL: Record<"all" | NflMatchupScoreBand, string> = {
   all: "All Bands", elite: "Elite", strong: "Strong", average: "Average", weak: "Weak", poor: "Poor",
 };
 
 const LINE_OPTIONS = ["all", "available", "unavailable"] as const;
-const LINE_LABEL: Record<(typeof LINE_OPTIONS)[number], string> = { all: "All Lines", available: "Line Available", unavailable: "No Line" };
-
-const ROLE_OPTIONS = ["all", "uncertain", "confident"] as const;
-const ROLE_LABEL: Record<(typeof ROLE_OPTIONS)[number], string> = { all: "All Roles", uncertain: "Role Uncertain", confident: "Role Confident" };
+const LINE_LABEL: Record<(typeof LINE_OPTIONS)[number], string> = { all: "All Lines", available: "Live Available", unavailable: "No Line" };
 
 export default function NFLYardagePropsReview() {
   usePageSeo({
@@ -70,34 +74,44 @@ export default function NFLYardagePropsReview() {
   // an independent read-only overlay -- keyed the same way the table keys its
   // rows so a missing/failed artifact never blocks the base projection row.
   const opponentContextByKey = useMemo(() => {
-    const map = new Map<string, NflYardageOpponentContext>();
+    const map = new Map<string, NflYardageOpponentContextWithHeat>();
     for (const entry of reviewEntries) {
       const { row } = entry;
+      const context = buildYardageOpponentContext({
+        team: row.team,
+        opponent: row.opponent,
+        market: row.market,
+        position: row.position,
+        epa: opponentContextData.epa,
+        success: opponentContextData.success,
+        productionAllowed: opponentContextData.productionAllowed,
+        abbrToNflverseAbbr: opponentContextData.abbrToNflverseAbbr,
+      });
       map.set(
         `${row.market}-${row.playerId}`,
-        buildYardageOpponentContext({
-          team: row.team,
-          opponent: row.opponent,
-          market: row.market,
-          position: row.position,
-          epa: opponentContextData.epa,
-          success: opponentContextData.success,
-          productionAllowed: opponentContextData.productionAllowed,
-          abbrToNflverseAbbr: opponentContextData.abbrToNflverseAbbr,
-        }),
+        withYardsAllowedHeat(
+          context,
+          opponentContextData.productionAllowed,
+          row.market,
+          opponentContextData.abbrToNflverseAbbr.get(row.opponent),
+        ),
       );
     }
     return map;
   }, [reviewEntries, opponentContextData]);
 
-  const teamOptions = useMemo(() => {
-    const teams = new Set<string>();
-    for (const entry of reviewEntries) {
-      teams.add(entry.row.team);
-      teams.add(entry.row.opponent);
-    }
-    return ["all", ...[...teams].sort()];
-  }, [reviewEntries]);
+  // Computed from the full, unfiltered market entries -- each row's Proj
+  // Yds pool (market+position) and therefore its heat stays stable as
+  // position/band/line filters are applied.
+  const projectedYardsHeatByKey = useMemo(() => buildProjectedYardsHeatByKey(reviewEntries), [reviewEntries]);
+
+  // Derived from every market's rows for the week (not just the active market tab) so
+  // all 16 games render as filter pills regardless of which market is selected -- never
+  // a hardcoded schedule; see buildYardageWeekMatchups.
+  const weekMatchups = useMemo(() => {
+    const rowsForWeek = projections.data ? projections.data.rows.filter((r) => r.week === week) : [];
+    return buildYardageWeekMatchups(rowsForWeek);
+  }, [projections.data, week]);
 
   const positionOptions = useMemo(() => {
     const positions = new Set<string>();
@@ -106,7 +120,10 @@ export default function NFLYardagePropsReview() {
   }, [reviewEntries]);
 
   const filtered = useMemo(() => applyYardageReviewFilters(reviewEntries, filters), [reviewEntries, filters]);
-  const sorted = useMemo(() => sortYardageReviewRows(filtered, sort), [filtered, sort]);
+  const sorted = useMemo(
+    () => sortYardageReviewRows(filtered, sort, opponentContextByKey),
+    [filtered, sort, opponentContextByKey],
+  );
 
   const handleSort = (key: Parameters<typeof nextYardageReviewSort>[1]) => {
     setSort((current) => nextYardageReviewSort(current, key, key === "player" || key === "team" ? "asc" : "desc"));
@@ -122,11 +139,10 @@ export default function NFLYardagePropsReview() {
   const hasProjectionError = Boolean(projections.error);
   const availableLineCount = reviewEntries.filter((e) => e.marketInfo.available).length;
   const activeFilterCount = [
-    filters.team !== "all",
+    filters.matchup !== "all",
     filters.position !== "all",
     filters.band !== "all",
     filters.lineAvailability !== "all",
-    filters.roleUncertainty !== "all",
   ].filter(Boolean).length;
 
   return (
@@ -156,7 +172,7 @@ export default function NFLYardagePropsReview() {
 
       {!loading && !hasProjectionError && (
         <>
-          <div className="rounded-lg border border-slate-200 bg-white">
+          <div className="rounded-lg border border-slate-300 bg-white shadow-sm">
             <button
               type="button"
               onClick={() => setFiltersOpen((open) => !open)}
@@ -170,31 +186,30 @@ export default function NFLYardagePropsReview() {
             <div
               id="yardage-review-filters"
               className={cn(
-                "flex-wrap items-center gap-3 border-t border-slate-100 px-3 py-2.5 md:flex md:border-t-0 md:py-2.5",
+                "flex-col gap-3 border-t border-slate-200 px-3 py-2.5 md:flex md:border-t-0 md:py-2.5",
                 filtersOpen ? "flex" : "hidden",
               )}
             >
-              <NflFilterChips
-                label="Team or opponent"
-                options={teamOptions}
-                value={filters.team}
-                onChange={(v) => setFilters((f) => ({ ...f, team: v }))}
-                formatOption={(o) => (o === "all" ? "All Teams" : o.toUpperCase())}
-                size="sm"
+              <NflYardageMatchupFilterChips
+                matchups={weekMatchups}
+                value={filters.matchup}
+                onChange={(v) => setFilters((f) => ({ ...f, matchup: v }))}
               />
-              {positionOptions.length > 2 && (
-                <NflFilterChips
-                  label="Position"
-                  options={positionOptions}
-                  value={filters.position}
-                  onChange={(v) => setFilters((f) => ({ ...f, position: v }))}
-                  formatOption={(o) => (o === "all" ? "All Positions" : o)}
-                  size="sm"
-                />
-              )}
-              <NflFilterChips label="Matchup band" options={BAND_OPTIONS} value={filters.band} onChange={(v) => setFilters((f) => ({ ...f, band: v }))} formatOption={(o) => BAND_FILTER_LABEL[o]} size="sm" />
-              <NflFilterChips label="Line availability" options={LINE_OPTIONS} value={filters.lineAvailability} onChange={(v) => setFilters((f) => ({ ...f, lineAvailability: v }))} formatOption={(o) => LINE_LABEL[o]} size="sm" />
-              <NflFilterChips label="Role confidence" options={ROLE_OPTIONS} value={filters.roleUncertainty} onChange={(v) => setFilters((f) => ({ ...f, roleUncertainty: v }))} formatOption={(o) => ROLE_LABEL[o]} size="sm" />
+              <div className="flex flex-wrap items-center gap-3">
+                {positionOptions.length > 2 && (
+                  <NflFilterChips
+                    label="Position"
+                    options={positionOptions}
+                    value={filters.position}
+                    onChange={(v) => setFilters((f) => ({ ...f, position: v }))}
+                    formatOption={(o) => (o === "all" ? "All Positions" : o)}
+                    size="sm"
+                    tone="violet"
+                  />
+                )}
+                <NflYardageBandFilterChips value={filters.band} onChange={(v) => setFilters((f) => ({ ...f, band: v }))} formatOption={(o) => BAND_FILTER_LABEL[o]} />
+                <NflFilterChips label="Line availability" options={LINE_OPTIONS} value={filters.lineAvailability} onChange={(v) => setFilters((f) => ({ ...f, lineAvailability: v }))} formatOption={(o) => LINE_LABEL[o]} size="sm" tone="teal" />
+              </div>
             </div>
           </div>
 
@@ -205,13 +220,23 @@ export default function NFLYardagePropsReview() {
           </p>
 
           {sorted.length === 0 ? (
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+            <div className="rounded-lg border border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500 shadow-sm">
               No {MARKET_LABEL[market].toLowerCase()} candidates match the current filters.
             </div>
           ) : (
             <>
-              <NflYardageReviewTable entries={sorted} sort={sort} onSort={handleSort} opponentContextByKey={opponentContextByKey} />
-              <NflYardageReviewCardList entries={sorted} opponentContextByKey={opponentContextByKey} />
+              <NflYardageReviewTable
+                entries={sorted}
+                sort={sort}
+                onSort={handleSort}
+                opponentContextByKey={opponentContextByKey}
+                projectedYardsHeatByKey={projectedYardsHeatByKey}
+              />
+              <NflYardageReviewCardList
+                entries={sorted}
+                opponentContextByKey={opponentContextByKey}
+                projectedYardsHeatByKey={projectedYardsHeatByKey}
+              />
             </>
           )}
         </>

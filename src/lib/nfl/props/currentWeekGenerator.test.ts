@@ -208,6 +208,38 @@ describe("generateCurrentWeekYardageProjections", () => {
     expect(row!.fallbackProvenance).toBe("historicalVolume");
   });
 
+  it("emits a diagnostic featureSnapshot on every row, pulled straight from the ForTarget feature row -- never a new computation", () => {
+    const { sources } = buildLeague(2025, 1);
+    const result = generateCurrentWeekYardageProjections(sources);
+
+    const passingRow = result.rows.find((r) => r.market === "passing" && r.team === "aaa");
+    expect(passingRow).toBeDefined();
+    if (passingRow!.market !== "passing") throw new Error("expected passing row");
+    // Shape/window-key presence, market-independent of any specific fixture player's history.
+    expect(passingRow!.featureSnapshot).toHaveProperty("yardsPerAttempt");
+    expect(passingRow!.featureSnapshot).toHaveProperty("completionPct");
+    expect(passingRow!.featureSnapshot.yardsPerAttempt).toHaveProperty("seasonPrior");
+    expect(passingRow!.featureSnapshot.yardsPerAttempt).toHaveProperty("priorSeason");
+    // Market context is disclosed even though the live path has no market feed for the target week itself.
+    expect(passingRow!.featureSnapshot.market).toEqual({ spread: null, total: null, impliedTeamTotal: null, isDome: null });
+
+    const rushingRow = result.rows.find((r) => r.market === "rushing" && r.playerId === "gsis:VETCHG");
+    expect(rushingRow).toBeDefined();
+    if (rushingRow!.market !== "rushing") throw new Error("expected rushing row");
+    // VETCHG's own 2024 rolling YPC (70/15, 75/16 across two games): 145 total yards / 31 total carries.
+    expect(rushingRow!.featureSnapshot.rollingYardsPerCarry.priorSeason).toBeCloseTo(145 / 31, 5);
+    expect(rushingRow!.featureSnapshot.carriesPerGame.priorSeason).toBeCloseTo((15 + 16) / 2, 5);
+    // Never equal to the model's own shrunk YPC -- the snapshot is the raw rolling value, not a duplicate of projectedYardsPerCarry.
+    expect(rushingRow!.featureSnapshot.rollingYardsPerCarry.priorSeason).not.toBe(rushingRow!.projectedYardsPerCarry);
+
+    const receivingRow = result.rows.find((r) => r.market === "receiving");
+    expect(receivingRow).toBeDefined();
+    if (receivingRow!.market !== "receiving") throw new Error("expected receiving row");
+    expect(receivingRow!.featureSnapshot).toHaveProperty("targetsPerGame");
+    expect(receivingRow!.featureSnapshot).toHaveProperty("rollingYardsPerTarget");
+    expect(receivingRow!.featureSnapshot).toHaveProperty("opponentTargetsAllowedPerGame");
+  });
+
   it("3. Week 1 rookie RB with legitimate role evidence (team below the RB eligibility floor)", () => {
     const { sources } = buildLeague(2025, 1);
     const result = generateCurrentWeekYardageProjections(sources);

@@ -276,6 +276,16 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       projectedYards, directModelPrediction: projectedYards, estimatedRange,
       matchupScore: toScoreObject("passing", { season, week, gameId: c.gameId, playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, generatedAt: sources.generatedAt }, matchup),
       hardCaseFlags: flags,
+      featureSnapshot: {
+        qbAttemptsPerGame: liveRow.features.opportunity.qbAttemptsPerGame,
+        yardsPerAttempt: liveRow.features.qbEfficiency.yardsPerAttempt,
+        completionPct: liveRow.features.qbEfficiency.completionPct,
+        teamPassAttemptsPerGame: liveRow.features.opportunity.passAttemptsPerGame,
+        teamDropbackRate: liveRow.features.proePassTendency.overallDropbackRate,
+        earlyDownNeutralPassRate: liveRow.features.proePassTendency.earlyDownNeutralPassRate,
+        passRateOverExpected: liveRow.features.proePassTendency.passRateOverExpected,
+        market: { spread: liveRow.features.market.spread, total: liveRow.features.market.total, impliedTeamTotal: liveRow.features.market.impliedTeamTotal, isDome: liveRow.features.market.isDome },
+      },
       diagnostics: {
         starterResolution: s.resolution === "noCompetingQb" ? "onlyActiveQb" : s.resolution === "rosterOnlyCandidate" ? "noHistoryFallback" : s.resolution === "sourcedDepthChart" ? "sourcedDepthChart" : "rollingAttemptsLeader",
         gamesStartedPriorThisSeason: s.gamesStartedPriorThisSeason,
@@ -322,6 +332,16 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       estimatedRange: { estimatedLow: interval.low, estimatedHigh: interval.high, nominalLevel: rushingIntervalQ.nominalLevel, intervalVersion: INTERVAL_VERSION },
       matchupScore: toScoreObject("rushing", { season, week, gameId: c.gameId, playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, generatedAt: sources.generatedAt }, matchup),
       hardCaseFlags: flags,
+      featureSnapshot: {
+        carriesPerGame: liveRow.features.playerUsage.carriesPerGame,
+        carryShare: liveRow.features.playerUsage.carryShare,
+        rollingYardsPerCarry: liveRow.features.playerEfficiency.yardsPerCarry,
+        teamRushAttemptsPerGame: liveRow.features.teamEnvironment.rushAttemptsPerGame,
+        teamDropbackRate: liveRow.features.teamEnvironment.overallDropbackRate,
+        teamPassRateOverExpected: liveRow.features.teamEnvironment.passRateOverExpected,
+        opponentRushAttemptsAllowedPerGame: liveRow.features.opponentRushDefense.rushAttemptsPerGameAllowed,
+        market: { spread: liveRow.features.market.spread, total: liveRow.features.market.total, impliedTeamTotal: liveRow.features.market.impliedTeamTotal, isDome: liveRow.features.market.isDome },
+      },
       diagnostics: { gamesWithCarriesPriorThisSeason: liveRow.diagnostics.gamesWithCarriesPriorThisSeason, recentTeamTopCarryShareConcentration: concentration },
     };
     rows.push(rushingRow);
@@ -362,6 +382,17 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       estimatedRange: { estimatedLow: interval.low, estimatedHigh: interval.high, nominalLevel: receivingIntervalQ.nominalLevel, intervalVersion: INTERVAL_VERSION },
       matchupScore: toScoreObject("receiving", { season, week, gameId: c.gameId, playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, generatedAt: sources.generatedAt }, matchup, c.position as "RB" | "WR" | "TE"),
       hardCaseFlags: flags,
+      featureSnapshot: {
+        targetsPerGame: liveRow.features.playerUsage.targetsPerGame,
+        targetShare: liveRow.features.playerUsage.targetShare,
+        rollingYardsPerTarget: liveRow.features.playerEfficiency.yardsPerTarget,
+        teamPassAttemptsPerGame: liveRow.features.teamEnvironment.passAttemptsPerGame,
+        teamDropbackRate: liveRow.features.teamEnvironment.overallDropbackRate,
+        teamPassRateOverExpected: liveRow.features.teamEnvironment.passRateOverExpected,
+        targetConcentration: liveRow.features.targetConcentration.recentTeamTopTargetShareConcentration,
+        opponentTargetsAllowedPerGame: liveRow.features.opponentPassDefense.targetsPerGameAllowed,
+        market: { spread: liveRow.features.market.spread, total: liveRow.features.market.total, impliedTeamTotal: liveRow.features.market.impliedTeamTotal, isDome: liveRow.features.market.isDome },
+      },
       diagnostics: { gamesWithTargetsPriorThisSeason: liveRow.diagnostics.gamesWithTargetsPriorThisSeason },
     };
     rows.push(receivingRow);

@@ -6,17 +6,48 @@
  */
 import { formatYardsAllowed } from "@/lib/nfl/productionAllowedData";
 import type { NflYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
+import {
+  edgeHeatTone,
+  opponentDefenseRankHeatTone,
+  weeklyHeatClass,
+  weeklyHeatStyle,
+  type NflYardageOpponentContextWithHeat,
+} from "@/lib/nfl/props/review/yardageHeat";
+import { cn } from "@/lib/utils";
 
 const NA = <span className="text-slate-400">N/A</span>;
 
-export function OppYardsAllowedCell({ context }: { context: NflYardageOpponentContext | undefined }) {
-  if (!context) return NA;
-  const { season, last5 } = context.productionAllowed;
-  if (!season && !last5) return NA;
+/** Shared subtle tinted-cell treatment -- background/border come from the heat tone, sizing/radius stay compact and consistent. */
+const HEAT_CELL_CLASS = "inline-flex min-w-[2.5rem] items-center justify-center rounded px-1.5 py-0.5";
+
+/** Shared rank-direction disclosure for the EPA/Success rank-primary cells and their column headers. */
+export const OPP_DEFENSE_RANK_DIRECTION_HINT =
+  "Rank 1 = strongest defense (fewest yards/EPA/success allowed). Higher rank = weaker defense, more favorable for the offense.";
+
+export function OppYardsAllowedSeasonCell({ context }: { context: NflYardageOpponentContextWithHeat | undefined }) {
+  if (!context?.productionAllowed.season) return NA;
+  const tone = context.yardsAllowedSeasonTone;
   return (
-    <span className="inline-flex flex-col items-center leading-tight" title={`Opponent yards allowed to ${context.productionAllowed.position} -- 2025 season and final 5 2025 games`}>
-      <span className="font-semibold text-slate-700">{formatYardsAllowed(season)}</span>
-      <span className="text-[9px] font-normal text-slate-400">L5 {formatYardsAllowed(last5)}</span>
+    <span
+      className={cn(HEAT_CELL_CLASS, weeklyHeatClass(tone), "font-semibold")}
+      style={weeklyHeatStyle(tone)}
+      title={`Opponent yards allowed to ${context.productionAllowed.position} -- 2025 season`}
+    >
+      {formatYardsAllowed(context.productionAllowed.season)}
+    </span>
+  );
+}
+
+export function OppYardsAllowedL5Cell({ context }: { context: NflYardageOpponentContextWithHeat | undefined }) {
+  if (!context?.productionAllowed.last5) return NA;
+  const tone = context.yardsAllowedLast5Tone;
+  return (
+    <span
+      className={cn(HEAT_CELL_CLASS, weeklyHeatClass(tone), "font-semibold")}
+      style={weeklyHeatStyle(tone)}
+      title={`Opponent yards allowed to ${context.productionAllowed.position} -- final 5 applicable 2025 games`}
+    >
+      {formatYardsAllowed(context.productionAllowed.last5)}
     </span>
   );
 }
@@ -24,10 +55,15 @@ export function OppYardsAllowedCell({ context }: { context: NflYardageOpponentCo
 export function OppEpaAllowedCell({ context }: { context: NflYardageOpponentContext | undefined }) {
   if (!context?.epaEdge.defense) return NA;
   const { defense } = context.epaEdge;
+  const tone = opponentDefenseRankHeatTone(defense.rank);
   return (
-    <span className="inline-flex flex-col items-center leading-tight" title="Opponent EPA allowed -- canonical nflverse/nflfastR authority">
-      <span className="font-semibold text-slate-700">{defense.formattedValue}</span>
-      <span className="text-[9px] font-normal text-slate-400">Rk {defense.rank}</span>
+    <span
+      className={cn(HEAT_CELL_CLASS, weeklyHeatClass(tone), "flex-col leading-tight")}
+      style={weeklyHeatStyle(tone)}
+      title={`Opponent EPA allowed -- canonical nflverse/nflfastR authority. ${OPP_DEFENSE_RANK_DIRECTION_HINT}`}
+    >
+      <span className="text-sm font-bold">{defense.rank}</span>
+      <span className="text-[9px] font-normal opacity-80">{defense.formattedValue}</span>
     </span>
   );
 }
@@ -35,10 +71,17 @@ export function OppEpaAllowedCell({ context }: { context: NflYardageOpponentCont
 export function OppSuccessAllowedCell({ context }: { context: NflYardageOpponentContext | undefined }) {
   if (!context?.successEdge.defense) return NA;
   const { defense } = context.successEdge;
+  const tone = opponentDefenseRankHeatTone(defense.rank);
   return (
-    <span className="inline-flex flex-col items-center leading-tight" title="Opponent Success Rate allowed -- canonical RBSDM authority">
-      <span className="font-semibold text-slate-700">{defense.formattedValue}</span>
-      <span className="text-[9px] font-normal text-slate-400">{context.successPeriodLabel}</span>
+    <span
+      className={cn(HEAT_CELL_CLASS, weeklyHeatClass(tone), "flex-col leading-tight")}
+      style={weeklyHeatStyle(tone)}
+      title={`Opponent Success Rate allowed -- canonical RBSDM authority. ${OPP_DEFENSE_RANK_DIRECTION_HINT}`}
+    >
+      <span className="text-sm font-bold">{defense.rank}</span>
+      <span className="text-[9px] font-normal opacity-80">
+        {defense.formattedValue} · {context.successPeriodLabel}
+      </span>
     </span>
   );
 }
@@ -49,10 +92,11 @@ export function OppEdgeCell({ context }: { context: NflYardageOpponentContext | 
   // `epaEdge` is already the mode-correct edge (rush for rushing rows, pass otherwise) -- see buildYardageOpponentContext.
   const value = context.epaEdge.rankDifference;
   if (value == null) return NA;
-  const favorable = value > 0;
+  const tone = edgeHeatTone(value);
   return (
     <span
-      className={favorable ? "font-semibold text-emerald-700" : value < 0 ? "font-semibold text-red-700" : "text-slate-600"}
+      className={cn(HEAT_CELL_CLASS, weeklyHeatClass(tone), "font-semibold")}
+      style={weeklyHeatStyle(tone)}
       title="Opponent EPA-defense rank minus offense rank; positive favors the offense -- canonical matchupEdges.ts convention"
     >
       {value > 0 ? "+" : ""}

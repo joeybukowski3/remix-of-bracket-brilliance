@@ -1,27 +1,25 @@
 import type { NflMatchupScoreBand } from "@/lib/nfl/props/review/yardageMarketJoin";
 import { MATCHUP_SCORE_BAND_LABEL } from "@/lib/nfl/props/review/yardageMarketJoin";
+import { matchupScoreHeatTone, weeklyHeatClass, weeklyHeatStyle } from "@/lib/nfl/props/review/yardageHeat";
 import { cn } from "@/lib/utils";
-
-const BAND_TONE: Record<NflMatchupScoreBand, string> = {
-  elite: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  strong: "border-sky-300 bg-sky-50 text-sky-800",
-  average: "border-slate-300 bg-slate-100 text-slate-700",
-  weak: "border-amber-300 bg-amber-50 text-amber-800",
-  poor: "border-red-300 bg-red-50 text-red-800",
-};
 
 /**
  * Matchup Score value plus its presentation-only band. This is the second
  * most important number in a row (after the projection itself) -- sized to
- * scan easily but never colored as an over/under signal. Never labeled a
- * pick/recommendation.
+ * scan easily. Uses the same site-wide gold/green/neutral/red heat scale as
+ * every other ranked column on this page (never an over/under betting
+ * signal, never a pick/recommendation -- just the same visual language).
  */
 export function NflMatchupScoreBadge({ score, band }: { score: number | null; band: NflMatchupScoreBand | null }) {
   if (score == null || band == null) {
     return <span className="text-slate-400">—</span>;
   }
+  const tone = matchupScoreHeatTone(band);
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-bold tabular-nums", BAND_TONE[band])}>
+    <span
+      className={cn("inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-bold tabular-nums", weeklyHeatClass(tone))}
+      style={weeklyHeatStyle(tone)}
+    >
       {Math.round(score)}
       <span className="text-[9px] font-semibold uppercase tracking-wide opacity-80">{MATCHUP_SCORE_BAND_LABEL[band]}</span>
     </span>

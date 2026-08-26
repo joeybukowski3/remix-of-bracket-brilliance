@@ -14,7 +14,7 @@ function buildRow(overrides: Partial<NflCurrentWeekProjectionRow> & { playerName
     schemaVersion: "nfl-current-week-yardage-projection-v1",
     season: 2026,
     week: 1,
-    gameId: "2026_01_NE_SEA",
+    gameId: overrides.gameId ?? "2026_01_NE_SEA",
     kickoff: "2026-09-07T17:00:00Z",
     playerId: `gsis:${overrides.playerName}`,
     team: "ne",
@@ -53,13 +53,14 @@ function buildRow(overrides: Partial<NflCurrentWeekProjectionRow> & { playerName
 }
 
 describe("applyYardageReviewFilters", () => {
-  const rowA = buildRow({ playerName: "A", team: "ne", opponent: "sea", position: "RB" });
-  const rowB = { ...buildRow({ playerName: "B", team: "sea", opponent: "ne", position: "WR" }), band: "poor" as const };
+  const rowA = buildRow({ playerName: "A", team: "ne", opponent: "sea", position: "RB", gameId: "2026_01_NE_SEA" });
+  const rowB = { ...buildRow({ playerName: "B", team: "sea", opponent: "ne", position: "WR", gameId: "2026_01_NE_SEA" }), band: "poor" as const };
   const rowC = {
     ...buildRow({
       playerName: "C",
       team: "buf",
       opponent: "mia",
+      gameId: "2026_01_BUF_MIA",
       hardCaseFlags: { noHistory: false, limitedHistory: false, multiQbRoleUncertain: false, committeeRole: false, zeroTargetRisk: false, teamChanged: false, roleUncertain: true } as never,
     }),
     marketInfo: { available: true, line: 55, book: "draftkings", overPrice: "-110", underPrice: "-110", rawDifference: 8, lastUpdate: "x" } as const,
@@ -70,8 +71,8 @@ describe("applyYardageReviewFilters", () => {
     expect(applyYardageReviewFilters(entries, DEFAULT_YARDAGE_REVIEW_FILTERS)).toHaveLength(3);
   });
 
-  test("team filter matches either team or opponent", () => {
-    const filters: NflYardageReviewFilters = { ...DEFAULT_YARDAGE_REVIEW_FILTERS, team: "sea" };
+  test("matchup filter matches both teams playing in that game, by gameId", () => {
+    const filters: NflYardageReviewFilters = { ...DEFAULT_YARDAGE_REVIEW_FILTERS, matchup: "2026_01_NE_SEA" };
     const result = applyYardageReviewFilters(entries, filters);
     expect(result.map((e) => e.row.playerId)).toEqual(["gsis:A", "gsis:B"]);
   });
@@ -92,11 +93,6 @@ describe("applyYardageReviewFilters", () => {
 
     const unavailable: NflYardageReviewFilters = { ...DEFAULT_YARDAGE_REVIEW_FILTERS, lineAvailability: "unavailable" };
     expect(applyYardageReviewFilters(entries, unavailable).map((e) => e.row.playerId)).toEqual(["gsis:A", "gsis:B"]);
-  });
-
-  test("role uncertainty filter", () => {
-    const uncertain: NflYardageReviewFilters = { ...DEFAULT_YARDAGE_REVIEW_FILTERS, roleUncertainty: "uncertain" };
-    expect(applyYardageReviewFilters(entries, uncertain).map((e) => e.row.playerId)).toEqual(["gsis:C"]);
   });
 });
 

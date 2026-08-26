@@ -3,7 +3,8 @@ import { NFL_POWER_RATINGS, nflLogoUrl } from "@/data/nflPreseason2026";
 
 const TEAM_NAME_BY_ABBR = new Map(NFL_POWER_RATINGS.map((t) => [t.abbr, t.team]));
 
-function TeamLogo({ abbr }: { abbr: string }) {
+/** Shared team-logo badge with a lettered fallback -- reused by the matchup filter pills. */
+export function TeamLogo({ abbr }: { abbr: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) {
     return (

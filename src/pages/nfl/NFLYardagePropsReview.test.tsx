@@ -45,6 +45,16 @@ function passingRow(overrides: Partial<NflCurrentWeekPassingRow> = {}): NflCurre
       },
     },
     hardCaseFlags: { noHistory: false, limitedHistory: false, multiQbRoleUncertain: false, committeeRole: false, zeroTargetRisk: false, teamChanged: false, roleUncertain: false },
+    featureSnapshot: {
+      qbAttemptsPerGame: { seasonPrior: 34.5, last3: 33.2, priorSeason: null },
+      yardsPerAttempt: { seasonPrior: 7.2, last3: 7.0, priorSeason: null },
+      completionPct: { seasonPrior: 0.65, last3: 0.64, priorSeason: null },
+      teamPassAttemptsPerGame: { seasonPrior: 36.1, last3: 35.4, priorSeason: null },
+      teamDropbackRate: { seasonPrior: 0.6, last3: 0.59, priorSeason: null },
+      earlyDownNeutralPassRate: { seasonPrior: 0.55, last3: 0.54, priorSeason: null },
+      passRateOverExpected: { seasonPrior: 0.02, last3: 0.01, priorSeason: null },
+      market: { spread: -2.5, total: 45, impliedTeamTotal: 23.75, isDome: false },
+    },
     diagnostics: { starterResolution: "sourcedDepthChart", gamesStartedPriorThisSeason: 5, sourceAmbiguous: false },
     ...overrides,
   } as NflCurrentWeekPassingRow;
@@ -199,5 +209,43 @@ describe("NFLYardagePropsReview", () => {
 
     await waitFor(() => expect(screen.getAllByText("Rhamondre Stevenson").length).toBeGreaterThan(0));
     expect(screen.queryByText("Drake Maye")).not.toBeInTheDocument();
+  });
+
+  it("expanding a row shows the detail panel with market-specific components; collapsing hides it again", async () => {
+    stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+
+    // Detail panel content is not rendered before expansion.
+    expect(screen.queryByText("QB Attempts/Game")).not.toBeInTheDocument();
+
+    const expandButtons = screen.getAllByRole("button", { name: /expand details for drake maye/i });
+    expandButtons[0].click();
+
+    await waitFor(() => expect(screen.getAllByText("QB Attempts/Game").length).toBeGreaterThan(0));
+    // Market-specific passing fields render; rushing/receiving-only fields never appear for a passing row.
+    expect(screen.getAllByText("YPA").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Shrunk YPC")).not.toBeInTheDocument();
+    expect(screen.queryByText("Shrunk YPT")).not.toBeInTheDocument();
+    // Sportsbook section reflects the joined line, not a re-fetch or recomputation.
+    expect(screen.getAllByText("draftkings").length).toBeGreaterThan(0);
+
+    const collapseButtons = screen.getAllByRole("button", { name: /collapse details for drake maye/i });
+    collapseButtons[0].click();
+
+    await waitFor(() => expect(screen.queryByText("QB Attempts/Game")).not.toBeInTheDocument());
+  });
+
+  it("shows the no-sportsbook-line message in the detail panel when no line is available", async () => {
+    const unmatchedRow = passingRow({ playerId: "gsis:00-9999999", playerName: "No Line QB" });
+    stubFetch(projectionsArtifact([unmatchedRow]), marketArtifact());
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("No Line QB").length).toBeGreaterThan(0));
+    const expandButtons = screen.getAllByRole("button", { name: /expand details for no line qb/i });
+    expandButtons[0].click();
+
+    await waitFor(() => expect(screen.getAllByText(/no approved sportsbook line available/i).length).toBeGreaterThan(0));
   });
 });

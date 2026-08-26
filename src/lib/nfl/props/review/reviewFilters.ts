@@ -1,24 +1,23 @@
 /** Pure filter/sort helpers for the NFL Yardage Props Review UI. No data fetching, no model logic. */
+import type { NflYardageOpponentContext } from "./opponentContext";
 import type { NflMatchupScoreBand, NflYardageReviewRow } from "./yardageMarketJoin";
 
 export type NflYardageReviewLineFilter = "all" | "available" | "unavailable";
-export type NflYardageReviewRoleFilter = "all" | "uncertain" | "confident";
 export type NflYardageReviewBandFilter = "all" | NflMatchupScoreBand;
 
 export type NflYardageReviewFilters = {
-  team: string | "all";
+  /** A `gameId`, or "all" -- matches both teams playing in that game. Replaces the old per-team filter. */
+  matchup: string | "all";
   position: string | "all";
   band: NflYardageReviewBandFilter;
   lineAvailability: NflYardageReviewLineFilter;
-  roleUncertainty: NflYardageReviewRoleFilter;
 };
 
 export const DEFAULT_YARDAGE_REVIEW_FILTERS: NflYardageReviewFilters = {
-  team: "all",
+  matchup: "all",
   position: "all",
   band: "all",
   lineAvailability: "all",
-  roleUncertainty: "all",
 };
 
 export function applyYardageReviewFilters(
@@ -26,18 +25,26 @@ export function applyYardageReviewFilters(
   filters: NflYardageReviewFilters,
 ): NflYardageReviewRow[] {
   return entries.filter((entry) => {
-    if (filters.team !== "all" && entry.row.team !== filters.team && entry.row.opponent !== filters.team) return false;
+    if (filters.matchup !== "all" && entry.row.gameId !== filters.matchup) return false;
     if (filters.position !== "all" && entry.row.position !== filters.position) return false;
     if (filters.band !== "all" && entry.band !== filters.band) return false;
     if (filters.lineAvailability === "available" && !entry.marketInfo.available) return false;
     if (filters.lineAvailability === "unavailable" && entry.marketInfo.available) return false;
-    if (filters.roleUncertainty === "uncertain" && !entry.row.hardCaseFlags.roleUncertain) return false;
-    if (filters.roleUncertainty === "confident" && entry.row.hardCaseFlags.roleUncertain) return false;
     return true;
   });
 }
 
-export type NflYardageReviewSortKey = "player" | "team" | "projectedYards" | "matchupScore" | "difference" | "depthRank";
+export type NflYardageReviewSortKey =
+  | "player"
+  | "team"
+  | "projectedYards"
+  | "matchupScore"
+  | "difference"
+  | "depthRank"
+  | "oppYardsAllowedSeason"
+  | "oppYardsAllowedL5"
+  | "oppEpaAllowedRank"
+  | "oppSuccessAllowedRank";
 export type NflYardageReviewSortState = { key: NflYardageReviewSortKey; direction: "asc" | "desc" } | null;
 
 export function nextYardageReviewSort(
@@ -50,7 +57,32 @@ export function nextYardageReviewSort(
   return null;
 }
 
-function sortValue(entry: NflYardageReviewRow, key: NflYardageReviewSortKey): number | string | null {
+function opponentContextSortValue(
+  entry: NflYardageReviewRow,
+  key: NflYardageReviewSortKey,
+  contextByKey: ReadonlyMap<string, NflYardageOpponentContext>,
+): number | null {
+  const context = contextByKey.get(`${entry.row.market}-${entry.row.playerId}`);
+  if (!context) return null;
+  switch (key) {
+    case "oppYardsAllowedSeason":
+      return context.productionAllowed.season?.yardsAllowedPerGame ?? null;
+    case "oppYardsAllowedL5":
+      return context.productionAllowed.last5?.yardsAllowedPerGame ?? null;
+    case "oppEpaAllowedRank":
+      return context.epaEdge.defense?.rank ?? null;
+    case "oppSuccessAllowedRank":
+      return context.successEdge.defense?.rank ?? null;
+    default:
+      return null;
+  }
+}
+
+function sortValue(
+  entry: NflYardageReviewRow,
+  key: NflYardageReviewSortKey,
+  contextByKey: ReadonlyMap<string, NflYardageOpponentContext>,
+): number | string | null {
   switch (key) {
     case "player":
       return entry.row.playerName.toLowerCase();
@@ -64,15 +96,28 @@ function sortValue(entry: NflYardageReviewRow, key: NflYardageReviewSortKey): nu
       return entry.marketInfo.available ? entry.marketInfo.rawDifference : null;
     case "depthRank":
       return entry.row.depthRank;
+    case "oppYardsAllowedSeason":
+    case "oppYardsAllowedL5":
+    case "oppEpaAllowedRank":
+    case "oppSuccessAllowedRank":
+      return opponentContextSortValue(entry, key, contextByKey);
     default:
       return null;
   }
 }
 
-/** Rows with no value for the active sort key always sort last, regardless of direction. */
+const EMPTY_CONTEXT_MAP: ReadonlyMap<string, NflYardageOpponentContext> = new Map();
+
+/**
+ * Rows with no value for the active sort key always sort last, regardless of
+ * direction. `contextByKey` is optional -- the four opponent-context sort
+ * keys resolve to null (sort last) without it, so callers that don't have
+ * the context map yet degrade gracefully rather than breaking.
+ */
 export function sortYardageReviewRows(
   entries: readonly NflYardageReviewRow[],
   sort: NflYardageReviewSortState,
+  contextByKey: ReadonlyMap<string, NflYardageOpponentContext> = EMPTY_CONTEXT_MAP,
 ): NflYardageReviewRow[] {
   const ordered = [...entries];
   if (!sort) {
@@ -80,8 +125,8 @@ export function sortYardageReviewRows(
     return ordered;
   }
   ordered.sort((a, b) => {
-    const va = sortValue(a, sort.key);
-    const vb = sortValue(b, sort.key);
+    const va = sortValue(a, sort.key, contextByKey);
+    const vb = sortValue(b, sort.key, contextByKey);
     if (va == null && vb == null) return a.row.playerName.localeCompare(b.row.playerName);
     if (va == null) return 1;
     if (vb == null) return -1;
