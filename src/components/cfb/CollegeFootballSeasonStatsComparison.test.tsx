@@ -231,6 +231,32 @@ describe("CollegeFootballSeasonStatsComparison", () => {
     expect(headerText.indexOf("AWAY")).toBeLessThan(headerText.indexOf("HOME"));
   });
 
+  it("Matchup header: away block left-aligned, home block right-aligned, larger logo than Offense/Defense headers, with the descriptor secondary to the team name", () => {
+    const { desktopScope } = renderAndGetScopes(FULL_CONTEXT);
+    clickTab(desktopScope, "Matchup");
+
+    const matchupHeader = within(desktopScope).getByText("Away Defense").closest(".grid") as HTMLElement;
+    const leftBlock = within(matchupHeader).getByText("AWAY").closest("div")?.parentElement as HTMLElement;
+    const rightBlock = within(matchupHeader).getByText("HOME").closest("div")?.parentElement as HTMLElement;
+    expect(leftBlock.className).toContain("items-end");
+    expect(rightBlock.className).toContain("items-start");
+
+    // Matchup logos are the "md" size (h-7 w-7); Offense header logos stay "sm" (h-5 w-5).
+    const matchupLogo = within(matchupHeader).getByText("AWAY").parentElement?.querySelector("img, span.rounded-full") as HTMLElement;
+    expect(matchupLogo.className).toContain("h-7");
+
+    clickTab(desktopScope, "Offense");
+    const offenseHeader = within(desktopScope).getByText("Points/Game").closest(".overflow-hidden")!
+      .querySelector(".grid") as HTMLElement;
+    const offenseLogo = within(offenseHeader).getByText("AWAY").parentElement?.querySelector("img, span.rounded-full") as HTMLElement;
+    expect(offenseLogo.className).toContain("h-5");
+
+    // Descriptor renders, but visually secondary (smaller, muted text) to the team name.
+    clickTab(desktopScope, "Matchup");
+    const descriptor = within(desktopScope).getByText("Away Defense");
+    expect(descriptor.className).toContain("text-[9px]");
+  });
+
   it("Matchup edge comes from national RANK, not raw value: away defense #12 beats home offense #40 even though the raw numbers point the other way", () => {
     // Card 1 (Away Defense vs Home Offense) keys off yardsPerPlayAllowed (away)
     // vs yardsPerPlay (home). Raw values are deliberately "confusing" —

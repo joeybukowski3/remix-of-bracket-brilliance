@@ -1,7 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { getGameById, getTeamById } from "@/data/cfb";
+import { getAllTeams, getGameById, getTeamById } from "@/data/cfb";
+import { formatRank } from "@/lib/cfb/format";
 import { getCfbSharedBarSplit } from "@/lib/cfb/ratingPresentation";
+import { computeCompetitionRanks } from "@/lib/cfb/seasonStats/rankSeasonStats";
 import CollegeFootballPowerComparison from "./CollegeFootballPowerComparison";
 
 const GAME_ID = "401856766"; // TCU @ North Carolina — real Week 1 fixture
@@ -77,6 +79,52 @@ describe("CollegeFootballPowerComparison", () => {
     renderComparison();
     expect(screen.queryByText(/win probability/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
+  });
+
+  it("shows the national rank under each raw value for Power, Offense, and Defense — Power uses the existing JKB rank, Offense/Defense use the real-rating competition rank, never a fabricated number", () => {
+    const { away, home, container } = renderComparison();
+    const allTeams = getAllTeams();
+    const offenseRanks = computeCompetitionRanks(
+      allTeams.map((team) => ({ teamId: team.ratings.teamId, value: team.ratings.offensiveRating })),
+      "higher-is-better",
+    );
+    const defenseRanks = computeCompetitionRanks(
+      allTeams.map((team) => ({ teamId: team.ratings.teamId, value: team.ratings.defensiveRating })),
+      "higher-is-better",
+    );
+
+    const rows = container.querySelectorAll(".border-t.border-slate-200.px-3.py-3");
+    const powerRow = Array.from(rows).find((row) => within(row as HTMLElement).queryByText("Power"))!;
+    expect(within(powerRow as HTMLElement).getByText(formatRank(away.ratings.jkbRank))).toBeInTheDocument();
+    expect(within(powerRow as HTMLElement).getByText(formatRank(home.ratings.jkbRank))).toBeInTheDocument();
+
+    const offenseRow = Array.from(rows).find((row) => within(row as HTMLElement).queryByText("Offense"))!;
+    expect(
+      within(offenseRow as HTMLElement).getByText(formatRank(offenseRanks.get(away.ratings.teamId)!)),
+    ).toBeInTheDocument();
+    expect(
+      within(offenseRow as HTMLElement).getByText(formatRank(offenseRanks.get(home.ratings.teamId)!)),
+    ).toBeInTheDocument();
+
+    const defenseRow = Array.from(rows).find((row) => within(row as HTMLElement).queryByText("Defense"))!;
+    expect(
+      within(defenseRow as HTMLElement).getByText(formatRank(defenseRanks.get(away.ratings.teamId)!)),
+    ).toBeInTheDocument();
+    expect(
+      within(defenseRow as HTMLElement).getByText(formatRank(defenseRanks.get(home.ratings.teamId)!)),
+    ).toBeInTheDocument();
+  });
+
+  it("omits the rank badge entirely when the underlying rating is null, never showing a fabricated rank", () => {
+    const game = getGameById(GAME_ID)!;
+    const away = getTeamById(game.awayTeamId)!;
+    const home = { ...getTeamById(game.homeTeamId)!, ratings: { ...getTeamById(game.homeTeamId)!.ratings, jkbPowerRating: null, jkbRank: null } };
+    const { container } = render(<CollegeFootballPowerComparison away={away} home={home} />);
+    const rows = container.querySelectorAll(".border-t.border-slate-200.px-3.py-3");
+    const powerRow = Array.from(rows).find((row) => within(row as HTMLElement).queryByText("Power")) as HTMLElement;
+    // Home's power rating/rank is null -> only away's rank badge should render on this row.
+    const rankBadges = within(powerRow).getAllByText(/^#\d+$/);
+    expect(rankBadges.length).toBe(away.ratings.jkbRank != null ? 1 : 0);
   });
 
   it("never renders NaN or undefined", () => {
