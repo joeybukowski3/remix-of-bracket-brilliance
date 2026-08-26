@@ -1,0 +1,494 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-qb-passing-baseline-competition-v1",
+    "generatedAt": "2026-08-25T14:48:51.053Z",
+    "target": "primaryQbPassingYards",
+    "temporalFolds": [
+      {
+        "name": "fold1_train2022_validate2023",
+        "trainSeasons": [
+          2022
+        ],
+        "validateSeason": 2023
+      },
+      {
+        "name": "fold2_train2022-2023_validate2024",
+        "trainSeasons": [
+          2022,
+          2023
+        ],
+        "validateSeason": 2024
+      }
+    ],
+    "finalTrainSeasons": [
+      2022,
+      2023,
+      2024
+    ],
+    "frozenBenchmarkSeason": 2025,
+    "devRowCount": 1630,
+    "frozenRowCount": 544,
+    "ridgeAlphaGrid": [
+      0.1,
+      1,
+      3,
+      10,
+      30,
+      100
+    ],
+    "bestDAlphaSelectedOnDevFoldsOnly": 10,
+    "bestEAlphaSelectedOnDevFoldsOnly": 100,
+    "ablationTarget": "D"
+  },
+  "actualDistribution": {
+    "dev": {
+      "count": 1630,
+      "min": 8,
+      "max": 509,
+      "mean": 228.7803680981595,
+      "median": 226
+    },
+    "frozen2025": {
+      "count": 544,
+      "min": 33,
+      "max": 470,
+      "mean": 219.96507352941177,
+      "median": 219.5
+    }
+  },
+  "developmentValidation": {
+    "perFold": [
+      {
+        "fold": "fold1_train2022_validate2023",
+        "trainRows": 542,
+        "validateRows": 544,
+        "A": {
+          "n": 544,
+          "mae": 59.8026983394834,
+          "rmse": 74.1907396637901,
+          "bias": -1.2640953983069405,
+          "correlation": null,
+          "r2": -0.00029039316942336413,
+          "medianAbsoluteError": 51.666051660516615
+        },
+        "B": {
+          "n": 544,
+          "mae": 62.225167067707055,
+          "rmse": 77.91535558441832,
+          "bias": 1.1683953793009674,
+          "correlation": 0.20783532952014735,
+          "r2": -0.10324713938233354,
+          "medianAbsoluteError": 54.375
+        },
+        "C": {
+          "n": 544,
+          "mae": 60.34642684626988,
+          "rmse": 75.27097904161137,
+          "bias": 3.7004937292898323,
+          "correlation": 0.20285359130939593,
+          "r2": -0.029631512154919104,
+          "medianAbsoluteError": 52.95090143801501
+        },
+        "D_byAlpha": [
+          {
+            "alpha": 0.1,
+            "mae": 56.515965208016794
+          },
+          {
+            "alpha": 1,
+            "mae": 56.51247328895809
+          },
+          {
+            "alpha": 3,
+            "mae": 56.50885482028844
+          },
+          {
+            "alpha": 10,
+            "mae": 56.501103913831564
+          },
+          {
+            "alpha": 30,
+            "mae": 56.48852406879922
+          },
+          {
+            "alpha": 100,
+            "mae": 56.50276088255663
+          }
+        ],
+        "E_byAlpha": [
+          {
+            "alpha": 0.1,
+            "mae": 56.86085554215653
+          },
+          {
+            "alpha": 1,
+            "mae": 56.8329470886302
+          },
+          {
+            "alpha": 3,
+            "mae": 56.80025904821534
+          },
+          {
+            "alpha": 10,
+            "mae": 56.7396521934701
+          },
+          {
+            "alpha": 30,
+            "mae": 56.637027521396746
+          },
+          {
+            "alpha": 100,
+            "mae": 56.53034076374604
+          }
+        ]
+      },
+      {
+        "fold": "fold2_train2022-2023_validate2024",
+        "trainRows": 1086,
+        "validateRows": 544,
+        "A": {
+          "n": 544,
+          "mae": 57.917976790163586,
+          "rmse": 72.95867224577971,
+          "bias": 1.554778057631871,
+          "correlation": null,
+          "r2": -0.0004543392265385915,
+          "medianAbsoluteError": 50.5
+        },
+        "B": {
+          "n": 544,
+          "mae": 62.43181744231423,
+          "rmse": 77.54734894958722,
+          "bias": -4.6499581194329815,
+          "correlation": 0.18198451214090994,
+          "r2": -0.13025734936777655,
+          "medianAbsoluteError": 52.66666666666667
+        },
+        "C": {
+          "n": 544,
+          "mae": 61.09794373743733,
+          "rmse": 75.406918151474,
+          "bias": -3.3573583294829965,
+          "correlation": 0.1588789101697239,
+          "r2": -0.0687246146046816,
+          "medianAbsoluteError": 50.99521109085191
+        },
+        "D_byAlpha": [
+          {
+            "alpha": 0.1,
+            "mae": 55.11217546048457
+          },
+          {
+            "alpha": 1,
+            "mae": 55.111067423160435
+          },
+          {
+            "alpha": 3,
+            "mae": 55.11023345197049
+          },
+          {
+            "alpha": 10,
+            "mae": 55.11676975935171
+          },
+          {
+            "alpha": 30,
+            "mae": 55.13029346554121
+          },
+          {
+            "alpha": 100,
+            "mae": 55.19546397084696
+          }
+        ],
+        "E_byAlpha": [
+          {
+            "alpha": 0.1,
+            "mae": 55.0079730209493
+          },
+          {
+            "alpha": 1,
+            "mae": 55.02609371257095
+          },
+          {
+            "alpha": 3,
+            "mae": 55.03714509736512
+          },
+          {
+            "alpha": 10,
+            "mae": 55.05120293783335
+          },
+          {
+            "alpha": 30,
+            "mae": 55.075132813169866
+          },
+          {
+            "alpha": 100,
+            "mae": 55.17399449286682
+          }
+        ]
+      }
+    ],
+    "averagedAcrossFolds": {
+      "A_leagueMean": 58.860337564823496,
+      "B_rollingQbYards": 62.328492255010644,
+      "C_decomposition": 60.722185291853606,
+      "D_directRidge": 55.80893683659164,
+      "E_hybridRidge": 55.85216762830643
+    }
+  },
+  "frozenBenchmark2025": {
+    "A_leagueMean": {
+      "n": 544,
+      "mae": 59.8697424215085,
+      "rmse": 74.84597247370276,
+      "bias": 8.815294568747747,
+      "correlation": null,
+      "r2": -0.014067064040125477,
+      "medianAbsoluteError": 51.7803680981595
+    },
+    "B_rollingQbYards": {
+      "n": 544,
+      "mae": 62.25154247315848,
+      "rmse": 78.99830185614339,
+      "bias": 2.2271809597841448,
+      "correlation": 0.167192737180318,
+      "r2": -0.12970569474548554,
+      "medianAbsoluteError": 51.5
+    },
+    "C_decomposition": {
+      "n": 544,
+      "mae": 60.935654547961214,
+      "rmse": 76.25360034080565,
+      "bias": 4.279329532184754,
+      "correlation": 0.1833099183129586,
+      "r2": -0.052568852092807816,
+      "medianAbsoluteError": 53.175087811122154
+    },
+    "D_directRidge": {
+      "n": 544,
+      "mae": 55.80799316552778,
+      "rmse": 70.42288156562934,
+      "bias": 12.533202326535884,
+      "correlation": 0.3615458105495793,
+      "r2": 0.10224591590033605,
+      "medianAbsoluteError": 47.65292514300046
+    },
+    "E_hybridRidge": {
+      "n": 544,
+      "mae": 55.812385635934476,
+      "rmse": 70.4310424027352,
+      "bias": 12.180396057425096,
+      "correlation": 0.3590640232428991,
+      "r2": 0.10203783440228387,
+      "medianAbsoluteError": 47.79612389409566
+    }
+  },
+  "directVsDecomposition": {
+    "devAverageMae": {
+      "C_decomposition": 60.722185291853606,
+      "D_direct": 55.80893683659164,
+      "E_hybrid": 55.85216762830643
+    },
+    "frozen2025Mae": {
+      "C_decomposition": 60.935654547961214,
+      "D_direct": 55.80799316552778,
+      "E_hybrid": 55.812385635934476
+    }
+  },
+  "featureGroupAblationOnDevFolds": {
+    "alpha": 10,
+    "target": "D",
+    "results": {
+      "none": 55.80893683659164,
+      "opportunity": 55.82002186102262,
+      "qbEfficiency": 55.84011016322776,
+      "opponentPassDefense": 56.20580527060886,
+      "proePassTendency": 56.05879037627589,
+      "market": 57.21197702159205
+    }
+  },
+  "priorSeasonInformationAblationOnDevFolds": {
+    "withPriorSeasonFallback": 55.80893683659164,
+    "withoutPriorSeasonFallback": 56.07157175568536
+  },
+  "multiQbAnalysisOnFrozen2025": {
+    "fullSample": {
+      "n": 544,
+      "mae": 55.80799316552778,
+      "rmse": 70.42288156562934,
+      "bias": 12.533202326535884,
+      "correlation": 0.3615458105495793,
+      "r2": 0.10224591590033605,
+      "medianAbsoluteError": 47.65292514300046
+    },
+    "stableSingleQbOnly": {
+      "n": 460,
+      "mae": 52.95043794049369,
+      "rmse": 67.37967376314364,
+      "bias": 4.279292937656919,
+      "correlation": 0.3563801028501206,
+      "r2": 0.12288005541183711,
+      "medianAbsoluteError": 45.561874096512355
+    },
+    "multiQbOnly": {
+      "n": 84,
+      "mae": 71.4565098740478,
+      "rmse": 85.18149685614524,
+      "bias": 57.73318231325408,
+      "correlation": 0.41148175861365127,
+      "r2": -0.5374410407746535,
+      "medianAbsoluteError": 64.01560104039315
+    }
+  },
+  "pregameInstabilitySignal": {
+    "description": "Correlation between a team's recent-history multi-QB rate (strictly pregame) and whether THIS week is also a multi-QB game.",
+    "sampleSize": 2046,
+    "pointBiserialCorrelation": 0.04370196565806303
+  },
+  "uncertaintyResidualGroundworkOnFrozen2025": {
+    "byHistoryBucket": {
+      "lowHistory": {
+        "n": 152,
+        "mae": 58.87151412079398,
+        "rmse": 73.52756875929435,
+        "bias": 58.87151412079398,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 50.68077310141349
+      },
+      "noHistory": {
+        "n": 16,
+        "mae": 83.23702419013462,
+        "rmse": 91.94335103105905,
+        "bias": 83.23702419013462,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 87.40251282587354
+      },
+      "establishedHistory": {
+        "n": 376,
+        "mae": 53.40235571447941,
+        "rmse": 68.0442705205095,
+        "bias": 53.40235571447941,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 45.4919688515069
+      }
+    },
+    "byWeekBand": {
+      "week1": {
+        "n": 32,
+        "mae": 58.97344429150329,
+        "rmse": 71.72031310334617,
+        "bias": 58.97344429150329,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 56.23185032058878
+      },
+      "weeks2to3": {
+        "n": 64,
+        "mae": 55.716111787834485,
+        "rmse": 70.71242453928741,
+        "bias": 55.716111787834485,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 48.42378227646165
+      },
+      "weeks4to8": {
+        "n": 146,
+        "mae": 51.796176772476244,
+        "rmse": 64.55235280875917,
+        "bias": 51.796176772476244,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 45.289198508659865
+      },
+      "weeks9plus": {
+        "n": 302,
+        "mae": 57.43154007124521,
+        "rmse": 72.89890298399064,
+        "bias": 57.43154007124521,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 47.51328354488376
+      }
+    },
+    "byTotalBand": {
+      "midTotal": {
+        "n": 210,
+        "mae": 56.6769449262386,
+        "rmse": 70.54090369046858,
+        "bias": 56.6769449262386,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 49.05138970348828
+      },
+      "highTotal": {
+        "n": 172,
+        "mae": 54.04264785809963,
+        "rmse": 69.15682381185277,
+        "bias": 54.04264785809963,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 44.73219542431002
+      },
+      "lowTotal": {
+        "n": 162,
+        "mae": 56.55589145644359,
+        "rmse": 71.59218063600788,
+        "bias": 56.55589145644359,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 51.79298706671037
+      }
+    },
+    "bySpreadMagnitude": {
+      "moderateSpread": {
+        "n": 222,
+        "mae": 56.63939479247411,
+        "rmse": 72.20029182945518,
+        "bias": 56.63939479247411,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 47.41702856232308
+      },
+      "closeSpread": {
+        "n": 194,
+        "mae": 56.98711282811925,
+        "rmse": 71.75564409346791,
+        "bias": 56.98711282811925,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 49.15951388841546
+      },
+      "largeSpread": {
+        "n": 128,
+        "mae": 52.57892773017748,
+        "rmse": 65.05783789013243,
+        "bias": 52.57892773017748,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 45.5213785265841
+      }
+    },
+    "byInstability": {
+      "singleQbGame": {
+        "n": 460,
+        "mae": 52.95043794049369,
+        "rmse": 67.37967376314364,
+        "bias": 52.95043794049369,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 45.561874096512355
+      },
+      "multiQbGame": {
+        "n": 84,
+        "mae": 71.4565098740478,
+        "rmse": 85.18149685614524,
+        "bias": 71.4565098740478,
+        "correlation": null,
+        "r2": null,
+        "medianAbsoluteError": 64.01560104039315
+      }
+    }
+  }
+}

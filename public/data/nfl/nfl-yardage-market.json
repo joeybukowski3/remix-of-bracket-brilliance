@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-08-26T11:44:45.722Z",
+  "schemaVersion": "nfl-yardage-market-v1",
+  "sport": "americanfootball_nfl",
+  "provider": "parlayapi",
+  "approvedSportsbooks": [
+    "draftkings",
+    "fanduel",
+    "betmgm",
+    "caesars",
+    "pinnacle",
+    "bovada"
+  ],
+  "fetchStatus": {
+    "propsRows": 330
+  },
+  "crossCheck": {
+    "status": "skipped:no-ODDS_API_KEY"
+  },
+  "canonical": {
+    "passingYards": {},
+    "rushingYards": {},
+    "receivingYards": {}
+  },
+  "qa": {
+    "approvedSportsbooksObserved": [],
+    "unapprovedProvidersObserved": [
+      "novig(exchange)",
+      "prizepicks(dfs)",
+      "sleeper(dfs)"
+    ],
+    "standardMarketRowCount": 219,
+    "milestoneMarketRowCount": 111,
+    "marketCoverageByBook": {
+      "passingYards|sleeper": 27,
+      "passingYards|novig": 4,
+      "rushingYards|sleeper": 41,
+      "rushingYards|novig": 9,
+      "receivingYards|sleeper": 66,
+      "receivingYards|prizepicks": 62,
+      "receivingYards|novig": 10
+    },
+    "twoSidedCoverageByBook": {
+      "passingYards|sleeper": 27,
+      "rushingYards|sleeper": 41,
+      "rushingYards|novig": 5,
+      "receivingYards|sleeper": 66,
+      "receivingYards|prizepicks": 62,
+      "receivingYards|novig": 2
+    },
+    "playersWithDraftKingsLine": 0,
+    "playersWithNoApprovedSportsbookLine": 219,
+    "unresolvedIdentityCount": 0
+  },
+  "coverage": {
+    "currentWeek": 1,
+    "overall": {
+      "totalProviderRows": 330,
+      "standardRows": 219,
+      "milestoneRows": 111,
+      "approvedSportsbookRows": 0,
+      "canonicalSelectedRows": 0,
+      "unresolvedIdentityCount": 0,
+      "unresolvedEventCount": 0
+    },
+    "byMarket": {
+      "passingYards": {
+        "candidateProjections": 30,
+        "canonicalMarketLines": 0,
+        "coveragePercent": 0
+      },
+      "rushingYards": {
+        "candidateProjections": 60,
+        "canonicalMarketLines": 0,
+        "coveragePercent": 0
+      },
+      "receivingYards": {
+        "candidateProjections": 90,
+        "canonicalMarketLines": 0,
+        "coveragePercent": 0
+      }
+    },
+    "approvedBookRowCounts": {},
+    "oneSidedApprovedBookRows": 0,
+    "playersWithOnlyUnapprovedProviderObservations": 112,
+    "readinessGate": {
+      "overallReady": false,
+      "byMarket": {
+        "passingYards": {
+          "count": 0,
+          "threshold": 20,
+          "ready": false
+        },
+        "rushingYards": {
+          "count": 0,
+          "threshold": 40,
+          "ready": false
+        },
+        "receivingYards": {
+          "count": 0,
+          "threshold": 80,
+          "ready": false
+        }
+      }
+    }
+  }
+}
