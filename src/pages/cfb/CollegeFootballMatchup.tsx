@@ -134,6 +134,8 @@ export default function CollegeFootballMatchup() {
           game={game}
           awayAbbreviation={away.abbreviation}
           homeAbbreviation={home.abbreviation}
+          awayColor={away.primaryColor}
+          homeColor={home.primaryColor}
         />
         {hasOpenTotalContext && (
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500">
