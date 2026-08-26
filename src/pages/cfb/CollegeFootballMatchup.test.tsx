@@ -30,8 +30,9 @@ describe("CollegeFootballMatchup", () => {
     renderMatchup("401856766");
     expect(screen.getByText("Last Season · 2025")).toBeInTheDocument();
     expect(screen.queryByText("2026 Season")).not.toBeInTheDocument();
+    // Season Stats defaults to the Offense tab; Defense/Matchup are exercised in
+    // CollegeFootballSeasonStatsComparison's own test suite.
     expect(screen.getAllByText("Points/Game").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Opp Points/Game").length).toBeGreaterThan(0);
   });
 
   it("does not fabricate a win probability", () => {

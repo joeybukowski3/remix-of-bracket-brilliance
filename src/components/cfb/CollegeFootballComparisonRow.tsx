@@ -36,7 +36,7 @@ export default function CollegeFootballComparisonRow({
   homeColor = "#64748b",
 }: Props) {
   return (
-    <div className="grid grid-cols-[3.25rem_1fr_2.5rem_1fr_3.25rem] items-center gap-1.5 border-t border-slate-100 px-2.5 py-2 text-xs sm:gap-2 sm:px-3">
+    <div className="grid grid-cols-[3.25rem_1fr_2.5rem_1fr_3.25rem] items-center gap-1.5 border-t border-slate-200 px-2.5 py-2 text-xs sm:gap-2 sm:px-3">
       <div
         className={cn(
           "flex flex-col items-end text-right font-bold tabular-nums",

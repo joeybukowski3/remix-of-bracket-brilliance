@@ -72,3 +72,29 @@ export function getCfbPowerBarWidthPercent(value: number | null | undefined): nu
  */
 export const getCfbOffenseBarWidthPercent = getCfbPowerBarWidthPercent;
 export const getCfbDefenseBarWidthPercent = getCfbPowerBarWidthPercent;
+
+/**
+ * Contiguous two-team split (0-100 each, summing to 100) for a single shared
+ * comparison bar. Computed directly from each side's raw rating value —
+ * NOT from two independently clamped/rescaled display widths — so the
+ * visual ratio matches the actual relative magnitude of the two ratings.
+ *
+ * Taking a ratio of two already-clamped widths would distort the comparison:
+ * e.g. raw 45.1 vs 78.5 clamps to display widths 8.5 vs 64.2 (both compressed
+ * toward the 40-point floor by different amounts), whose ratio (~12/88) wildly
+ * overstates the real ~36/64 gap between the raw values.
+ */
+export function getCfbSharedBarSplit(
+  awayValue: number | null | undefined,
+  homeValue: number | null | undefined,
+): { awayShare: number; homeShare: number } {
+  const awayUsable = awayValue != null && !Number.isNaN(awayValue);
+  const homeUsable = homeValue != null && !Number.isNaN(homeValue);
+  if (!awayUsable && !homeUsable) return { awayShare: 50, homeShare: 50 };
+  if (!awayUsable) return { awayShare: 0, homeShare: 100 };
+  if (!homeUsable) return { awayShare: 100, homeShare: 0 };
+  const total = awayValue + homeValue;
+  if (total <= 0) return { awayShare: 50, homeShare: 50 };
+  const awayShare = (awayValue / total) * 100;
+  return { awayShare, homeShare: 100 - awayShare };
+}

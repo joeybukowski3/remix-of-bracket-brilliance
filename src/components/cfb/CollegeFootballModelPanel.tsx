@@ -13,7 +13,7 @@ export default function CollegeFootballModelPanel({ game }: Props) {
 
   if (modelReady) {
     return (
-      <div className="overflow-hidden rounded-sm border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-sm border border-slate-300 bg-white">
         <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-1.5">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
             <LineChart className="h-3.5 w-3.5" />
@@ -47,7 +47,7 @@ export default function CollegeFootballModelPanel({ game }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
       <div className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white">

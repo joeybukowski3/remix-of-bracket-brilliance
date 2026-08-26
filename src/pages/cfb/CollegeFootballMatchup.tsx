@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -10,7 +10,7 @@ import {
   getGameById,
   getTeamById,
 } from "@/data/cfb";
-import { formatSpread, formatTotal } from "@/lib/cfb/format";
+import { formatTotal } from "@/lib/cfb/format";
 import { CFB_SCHEDULE_PATH } from "@/lib/cfb/routes";
 import { selectMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
 import CollegeFootballMarketStrip from "@/components/cfb/CollegeFootballMarketStrip";
@@ -20,6 +20,21 @@ import CollegeFootballModelPanel from "@/components/cfb/CollegeFootballModelPane
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
 import CollegeFootballSeasonStatsComparison from "@/components/cfb/CollegeFootballSeasonStatsComparison";
 import CollegeFootballMobileStickyHeader from "@/components/cfb/CollegeFootballMobileStickyHeader";
+
+/**
+ * Shared prominent section heading — larger, heavier, and color-accented so
+ * each major matchup-detail section reads as an intentional dashboard block
+ * rather than a muted label. Applied consistently across Market, Power
+ * Comparison, Season Stats, and Power Rating Line.
+ */
+function SectionHeading({ id, accentColor, children }: { id: string; accentColor: string; children: ReactNode }) {
+  return (
+    <h2 id={id} className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900 sm:text-base">
+      <span aria-hidden="true" className="h-4 w-1.5 rounded-full" style={{ background: accentColor }} />
+      {children}
+    </h2>
+  );
+}
 
 export default function CollegeFootballMatchup() {
   const { gameId = "" } = useParams();
@@ -82,10 +97,6 @@ export default function CollegeFootballMatchup() {
     );
   }
 
-  const hasOpenSpreadContext =
-    game.odds.openingSpread != null &&
-    game.odds.currentSpread != null &&
-    game.odds.openingSpread !== game.odds.currentSpread;
   const hasOpenTotalContext =
     game.odds.openingTotal != null &&
     game.odds.currentTotal != null &&
@@ -117,31 +128,22 @@ export default function CollegeFootballMatchup() {
       <CollegeFootballMatchupHero game={game} away={away} home={home} />
 
       <section aria-labelledby="market-heading">
-        <h2 id="market-heading" className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <SectionHeading id="market-heading" accentColor="#0284c7">
           Market
-        </h2>
+        </SectionHeading>
         <CollegeFootballMarketStrip
           odds={game.odds}
           game={game}
           awayAbbreviation={away.abbreviation}
           homeAbbreviation={home.abbreviation}
         />
-        {(hasOpenSpreadContext || hasOpenTotalContext) && (
+        {hasOpenTotalContext && (
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500">
-            {hasOpenSpreadContext && (
-              <span>
-                Open spread: <span className="font-semibold text-slate-700">{formatSpread(game.odds.openingSpread)}</span>
-                {" "}→{" "}
-                <span className="font-semibold text-slate-700">{formatSpread(game.odds.currentSpread)}</span>
-              </span>
-            )}
-            {hasOpenTotalContext && (
-              <span>
-                Open total: <span className="font-semibold text-slate-700">{formatTotal(game.odds.openingTotal)}</span>
-                {" "}→{" "}
-                <span className="font-semibold text-slate-700">{formatTotal(game.odds.currentTotal)}</span>
-              </span>
-            )}
+            <span>
+              Open total: <span className="font-semibold text-slate-700">{formatTotal(game.odds.openingTotal)}</span>
+              {" "}→{" "}
+              <span className="font-semibold text-slate-700">{formatTotal(game.odds.currentTotal)}</span>
+            </span>
           </div>
         )}
       </section>
@@ -149,20 +151,17 @@ export default function CollegeFootballMatchup() {
       <div ref={stickyStartRef} aria-hidden="true" />
 
       <section aria-labelledby="power-heading">
-        <h2 id="power-heading" className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <SectionHeading id="power-heading" accentColor="#7c3aed">
           Power Comparison
-        </h2>
+        </SectionHeading>
         <CollegeFootballPowerComparison away={away} home={home} />
       </section>
 
       <section aria-labelledby="season-stats-heading">
-        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <h2
-            id="season-stats-heading"
-            className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"
-          >
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <SectionHeading id="season-stats-heading" accentColor="#059669">
             Season Stats
-          </h2>
+          </SectionHeading>
           {seasonStatsContext && (
             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
               {seasonStatsContext.seasonLabel}
@@ -176,6 +175,8 @@ export default function CollegeFootballMatchup() {
             context={seasonStatsContext}
             awayColor={away.primaryColor}
             homeColor={home.primaryColor}
+            awayLogo={away.logo}
+            homeLogo={home.logo}
           />
         ) : (
           <div className="rounded-sm border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-500">
@@ -185,9 +186,9 @@ export default function CollegeFootballMatchup() {
       </section>
 
       <section aria-labelledby="model-heading">
-        <h2 id="model-heading" className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <SectionHeading id="model-heading" accentColor="#d97706">
           Power Rating Line
-        </h2>
+        </SectionHeading>
         <CollegeFootballModelPanel game={game} />
       </section>
 
