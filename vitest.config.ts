@@ -30,6 +30,10 @@ export default defineConfig({
       "scripts/lib/mlb-top-hr-tracking.test.mjs",
       "scripts/lib/mlb-top-k-tracking.test.mjs",
       "scripts/lib/mlb-numerology-tracking.test.mjs",
+      // NFL Phase 10B -- ParlayAPI canonical yardage-market pipeline.
+      "scripts/lib/nfl-prop-line-selection.test.mjs",
+      "scripts/lib/nfl-roster-identity.test.mjs",
+      "scripts/lib/nfl-market-archive.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
