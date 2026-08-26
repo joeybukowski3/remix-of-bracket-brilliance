@@ -28,6 +28,13 @@ import { APPROVED_SPORTSBOOKS, classifyBook } from "./lib/nfl-book-classificatio
 import { buildGameIndex, buildRosterNameIndex, resolvePlayerIdentity } from "./lib/nfl-roster-identity.mjs";
 import { loadLastObservations, parseArchiveJsonl, selectNewArchiveObservations, toArchiveJsonlLines } from "./lib/nfl-market-archive.mjs";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
+import {
+  computeBookCoverage,
+  computeCandidateCounts,
+  computeCoveragePercentages,
+  evaluateReadinessGate,
+  resolveCurrentWeek,
+} from "./lib/nfl-market-coverage.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -91,7 +98,8 @@ function loadDepthChartEntries() {
     const team = String(row.team ?? "").trim().toLowerCase();
     const gsis = String(row.gsis_id ?? "").trim();
     if (!team || !gsis) continue;
-    entries.push({ team, position, playerId: `gsis:${gsis}`, playerName: String(row.player_name ?? "").trim() });
+    const depthRank = Number(row.pos_rank);
+    entries.push({ team, position, playerId: `gsis:${gsis}`, playerName: String(row.player_name ?? "").trim(), depthRank });
   }
   return entries;
 }
@@ -238,6 +246,55 @@ async function main() {
     Object.values(canonical[market]).filter((entry) => entry.bookmaker === "draftkings").map((entry) => entry.playerName),
   );
 
+  // Phase 10C: operational coverage QA. Uses a coarse, structural
+  // (roster-slot-based, not statistical) candidate-universe estimate --
+  // see nfl-market-coverage.mjs -- purely as a QA denominator. Never reads
+  // from or writes to the actual projection eligibility pipeline.
+  const currentWeek = resolveCurrentWeek(games);
+  const currentWeekTeams = new Set(
+    games.filter((g) => g.week === currentWeek).flatMap((g) => [String(g.homeAbbr ?? "").toLowerCase(), String(g.awayAbbr ?? "").toLowerCase()]).filter(Boolean),
+  );
+  const candidateCounts = computeCandidateCounts(depthChartEntries, currentWeekTeams);
+  const canonicalCounts = Object.fromEntries(CANONICAL_MARKETS.map((market) => [market, Object.keys(canonical[market]).length]));
+  const coveragePercentages = computeCoveragePercentages(canonicalCounts, candidateCounts);
+
+  const allQuotesFlat = Object.values(quotesByMarket).flat();
+  const bookCoverage = computeBookCoverage(allQuotesFlat);
+  const approvedSportsbookRowCount = Object.values(bookCoverage.rowsByBook).reduce((sum, n) => sum + n, 0);
+
+  const unresolvedEventIds = new Set(
+    unresolvedIdentity.filter((u) => u.reason === "unresolved_game_teams" || u.reason === "game_not_in_schedule").map((u) => u.eventId),
+  );
+
+  const readinessGate = evaluateReadinessGate(canonicalCounts);
+
+  const coverage = {
+    currentWeek,
+    overall: {
+      totalProviderRows: rows.length,
+      standardRows: allQuotesFlat.length,
+      milestoneRows: qa.milestoneMarketRowCount,
+      approvedSportsbookRows: approvedSportsbookRowCount,
+      canonicalSelectedRows: Object.values(canonicalCounts).reduce((sum, n) => sum + n, 0),
+      unresolvedIdentityCount: unresolvedIdentity.length,
+      unresolvedEventCount: unresolvedEventIds.size,
+    },
+    byMarket: Object.fromEntries(
+      CANONICAL_MARKETS.map((market) => [
+        market,
+        {
+          candidateProjections: candidateCounts[market] ?? 0,
+          canonicalMarketLines: canonicalCounts[market] ?? 0,
+          coveragePercent: coveragePercentages[market],
+        },
+      ]),
+    ),
+    approvedBookRowCounts: bookCoverage.rowsByBook,
+    oneSidedApprovedBookRows: bookCoverage.oneSidedApprovedRows,
+    playersWithOnlyUnapprovedProviderObservations: bookCoverage.playersWithOnlyUnapprovedObservations,
+    readinessGate,
+  };
+
   let crossCheck = { status: "skipped:no-ODDS_API_KEY" };
   if (oddsApiKey) {
     console.log("Running minimal Odds API cross-check (DraftKings, passing yards, up to 2 events)...");
@@ -273,6 +330,7 @@ async function main() {
       playersWithNoApprovedSportsbookLine: noApprovedBookMarket.length,
       unresolvedIdentityCount: unresolvedIdentity.length,
     },
+    coverage,
   };
 
   mkdirSync(path.dirname(OUTPUT), { recursive: true });
@@ -282,14 +340,26 @@ async function main() {
   mkdirSync(path.dirname(QA_OUTPUT), { recursive: true });
   writeFileSync(
     QA_OUTPUT,
-    JSON.stringify({ generatedAt: output.generatedAt, ...qa, playersWithDkLine, noApprovedBookMarket, unresolvedIdentity, crossCheck }, null, 2),
+    JSON.stringify(
+      { generatedAt: output.generatedAt, ...qa, playersWithDkLine, noApprovedBookMarket, unresolvedIdentity, crossCheck, coverage },
+      null,
+      2,
+    ),
     "utf8",
   );
   console.log(`✅ Wrote ${QA_OUTPUT}`);
 
   for (const market of CANONICAL_MARKETS) {
-    console.log(`  ${market}: ${Object.keys(canonical[market]).length} canonical lines`);
+    const pct = coveragePercentages[market];
+    console.log(
+      `  ${market}: ${canonicalCounts[market]} canonical / ${candidateCounts[market]} candidates` +
+        (pct == null ? "" : ` (${pct}%)`),
+    );
   }
+  console.log(
+    `  Readiness gate: ${readinessGate.overallReady ? "PASS" : "NOT READY"} — ` +
+      CANONICAL_MARKETS.map((m) => `${m}=${readinessGate.byMarket[m].count}/${readinessGate.byMarket[m].threshold}`).join(", "),
+  );
 }
 
 main().catch((err) => {

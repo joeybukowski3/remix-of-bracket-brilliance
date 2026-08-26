@@ -34,6 +34,7 @@ export default defineConfig({
       "scripts/lib/nfl-prop-line-selection.test.mjs",
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
+      "scripts/lib/nfl-market-coverage.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
