@@ -1,16 +1,17 @@
 /**
- * ROS projection authority -- Phase 3 leakage-safe historical backtest.
+ * ROS projection authority -- Phase 3/3B leakage-safe historical backtest.
  *
- * Compares each historical-baseline weighting option (and a usage-adjusted
- * variant of the selected one) against an actual future season's PPG,
- * using only data available before that season. With three approved
- * history seasons (2023-2025) the only leakage-safe fold available is
- * training on 2023-2024 to predict actual 2025 PPG -- there is no season
- * before 2023 in the approved source to run a second fold, and the
- * team/FPA/market adjustments cannot be backtested at all here because
- * their inputs (the 2026 schedule and current market) have no historical
- * analogue for a past season in this dataset. That limitation is reported
- * verbatim in the generated artifact rather than glossed over.
+ * Compares each historical-baseline weighting option (and usage-adjusted
+ * variants) against an actual future season's PPG, using only data
+ * available before that season. The committed nflverse player-week caches
+ * cover 2022-2025, so two leakage-safe folds are possible without
+ * fabricating a source: train on 2022-2023 -> label actual 2024 PPG, and
+ * train on 2023-2024 -> label actual 2025 PPG. There is no season before
+ * 2022 in the cached source, so a third fold is not available. The
+ * team/FPA/market adjustments still cannot be backtested here because their
+ * inputs (the 2026 schedule and current market) have no historical
+ * analogue for a past season in this dataset -- reported verbatim in the
+ * generated artifact rather than glossed over.
  */
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
 import { computeHistoricalBaselineOptions, computeUsageAdjustment } from "@/lib/fantasy/rosResearch/shadowProjection";
@@ -36,6 +37,12 @@ export type BacktestMetrics = {
   positionalCalibration: Partial<Record<FantasyPosition, { n: number; meanPredicted: number; meanActual: number }>>;
   outliers: Array<{ playerId: string; predicted: number; actual: number; residual: number }>;
 };
+
+export type BacktestPair = { playerId: string; position: FantasyPosition; predicted: number; actual: number };
+
+export function computeBacktestMetrics(pairs: readonly BacktestPair[]): BacktestMetrics {
+  return metrics(pairs);
+}
 
 function metrics(pairs: readonly { playerId: string; position: FantasyPosition; predicted: number; actual: number }[]): BacktestMetrics {
   const n = pairs.length;
@@ -122,5 +129,84 @@ export function runHistoricalBaselineBacktest(cases: readonly BacktestCase[], tr
       "recency-weighted-min-sample": metrics(byWeighting["recency-weighted-min-sample"]),
     },
     usageAdjustedRecencyWeightedMinSample: metrics(usageAdjustedPairs),
+  };
+}
+
+/** Raw predicted/actual pairs for the selected weighting (recency-weighted-min-sample, no usage adjustment) for one fold's cases -- the input `aggregateFolds` pools across folds. */
+export function selectedWeightingPairs(cases: readonly BacktestCase[]): BacktestPair[] {
+  const pairs: BacktestPair[] = [];
+  for (const testCase of cases) {
+    const predicted = computeHistoricalBaselineOptions(testCase.trainingSeasons)["recency-weighted-min-sample"].ppg;
+    if (predicted == null) continue;
+    pairs.push({ playerId: testCase.playerId, position: testCase.position, predicted, actual: testCase.labelPpg });
+  }
+  return pairs;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3B -- usage adjustment cap experiment
+// ---------------------------------------------------------------------------
+
+export type UsageCapExperimentResult = {
+  capsTested: number[];
+  byCap: Record<string, { overall: BacktestMetrics; byPosition: Partial<Record<FantasyPosition, BacktestMetrics>> }>;
+  noUsageBaseline: { overall: BacktestMetrics; byPosition: Partial<Record<FantasyPosition, BacktestMetrics>> };
+};
+
+/**
+ * Tests the recency-weighted-min-sample baseline with no usage adjustment
+ * and with each cap in `capsToTest` applied, overall and split by position
+ * (QB is always neutral -- see USAGE_SIGNAL_FIELD_BY_POSITION -- and is
+ * reported as such rather than omitted). Every case uses only training-side
+ * seasons; leakage-safe by construction, same as `runHistoricalBaselineBacktest`.
+ */
+export function runUsageCapExperiment(cases: readonly BacktestCase[], capsToTest: readonly number[]): UsageCapExperimentResult {
+  function byPositionMetrics(pairs: readonly BacktestPair[]): Partial<Record<FantasyPosition, BacktestMetrics>> {
+    const grouped = new Map<FantasyPosition, BacktestPair[]>();
+    for (const pair of pairs) grouped.set(pair.position, [...(grouped.get(pair.position) ?? []), pair]);
+    const out: Partial<Record<FantasyPosition, BacktestMetrics>> = {};
+    for (const [position, positionPairs] of grouped) out[position] = metrics(positionPairs);
+    return out;
+  }
+
+  function pairsWithCap(cap: number | null): BacktestPair[] {
+    const pairs: BacktestPair[] = [];
+    for (const testCase of cases) {
+      const baseline = computeHistoricalBaselineOptions(testCase.trainingSeasons)["recency-weighted-min-sample"];
+      if (baseline.ppg == null) continue;
+      const factor = cap == null ? 1 : computeUsageAdjustment(testCase.position, testCase.trainingUsageSeasons, cap).factor;
+      pairs.push({ playerId: testCase.playerId, position: testCase.position, predicted: baseline.ppg * factor, actual: testCase.labelPpg });
+    }
+    return pairs;
+  }
+
+  const noUsagePairs = pairsWithCap(null);
+  const byCap: UsageCapExperimentResult["byCap"] = {};
+  for (const cap of capsToTest) {
+    const pairs = pairsWithCap(cap);
+    byCap[String(cap)] = { overall: metrics(pairs), byPosition: byPositionMetrics(pairs) };
+  }
+
+  return {
+    capsTested: [...capsToTest],
+    byCap,
+    noUsageBaseline: { overall: metrics(noUsagePairs), byPosition: byPositionMetrics(noUsagePairs) },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3B -- multi-fold aggregation
+// ---------------------------------------------------------------------------
+
+export type FoldResult = { labelSeason: number; trainingSeasons: number[]; metrics: BacktestMetrics };
+
+/** Pools raw prediction/actual pairs across every fold that used the same weighting methodology and reports one combined metrics block, alongside each fold's own metrics for transparency. Never averages MAE-of-MAE; recomputes from pooled pairs so it is a real aggregate, not an approximation. */
+export function aggregateFolds(folds: readonly { labelSeason: number; trainingSeasons: number[]; pairs: readonly BacktestPair[] }[]): {
+  perFold: FoldResult[];
+  aggregate: BacktestMetrics;
+} {
+  return {
+    perFold: folds.map((fold) => ({ labelSeason: fold.labelSeason, trainingSeasons: fold.trainingSeasons, metrics: metrics(fold.pairs) })),
+    aggregate: metrics(folds.flatMap((fold) => fold.pairs)),
   };
 }

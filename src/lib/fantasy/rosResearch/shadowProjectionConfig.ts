@@ -85,3 +85,82 @@ export const HISTORICAL_BASELINE_WEIGHTING_IDS: readonly HistoricalBaselineWeigh
   "recency-weighted",
   "recency-weighted-min-sample",
 ];
+
+// ---------------------------------------------------------------------------
+// Phase 3B -- status/availability treatments
+// ---------------------------------------------------------------------------
+
+import type { StatusCategory } from "@/lib/fantasy/rosResearch/statusAvailability";
+
+/**
+ * Confidence ceiling imposed by status category, applied on TOP of (never
+ * raising) the existing input-completeness confidence from
+ * `shadowConfidence`. "active" imposes no ceiling. None of these ceilings
+ * are backtested against real outcomes -- 2026 has not been played -- so
+ * they are a documented judgment call, not a validated result. See
+ * Treatment A.
+ */
+export const STATUS_CONFIDENCE_CEILING: Record<StatusCategory, "high" | "medium" | "low" | "none"> = {
+  active: "high",
+  reserve: "medium",
+  released: "low",
+  suspended: "low",
+  otherUnavailable: "medium",
+  unknown: "medium",
+};
+
+/**
+ * Bounded projection modifier tested as Treatment B. Deliberately kept in
+ * the same order of magnitude as the other adjustment caps in this file
+ * (10-30%), not an arbitrary large penalty, and explicitly NOT applied by
+ * default (see `STATUS_TREATMENT_RECOMMENDATION` below) because it cannot be
+ * backtested against a real 2026 outcome any more than the ceiling above
+ * can -- it is reported as a tested alternative, not adopted.
+ */
+export const STATUS_PROJECTION_MODIFIER: Record<StatusCategory, number> = {
+  active: 1,
+  reserve: 0.85,
+  released: 0.7,
+  suspended: 0.75,
+  otherUnavailable: 0.85,
+  unknown: 1,
+};
+
+/**
+ * Which categories Treatment C excludes from shadowPositionRank/
+ * shadowModelRank while still retaining their projectedPpg/shadowParPerGame
+ * in the artifact. Only the two categories with an unambiguous, mapped
+ * "not on any 2026 team" meaning (released, suspended) are excluded;
+ * "otherUnavailable"/"unknown" are NOT excluded because their meaning is not
+ * confidently known (see the unmapped-code comments in
+ * `statusAvailability.ts`) and excluding on an unconfirmed basis would be
+ * exactly the kind of unverified inference this project avoids.
+ */
+export const STATUS_MODEL_RANK_EXCLUSION: Record<StatusCategory, boolean> = {
+  active: false,
+  reserve: false,
+  released: true,
+  suspended: true,
+  otherUnavailable: false,
+  unknown: false,
+};
+
+export const STATUS_TREATMENT_IDS = ["A", "B", "C", "D"] as const;
+export type StatusTreatmentId = typeof STATUS_TREATMENT_IDS[number];
+
+export const STATUS_TREATMENT_LABELS: Record<StatusTreatmentId, string> = {
+  A: "Status as confidence ceiling only (no PPG change, no rank exclusion)",
+  B: "Bounded projection modifier (PPG scaled by STATUS_PROJECTION_MODIFIER)",
+  C: "Exclude from Model Rank only (PPG and confidence unchanged; excluded from shadowPositionRank/shadowModelRank when STATUS_MODEL_RANK_EXCLUSION is true)",
+  D: "Combination: confidence ceiling (A) + Model Rank exclusion (C), no PPG modifier",
+};
+
+/**
+ * The artifact applies Treatment D by default (see the Phase 3B final
+ * report, section on why B is not adopted): it downgrades confidence and
+ * removes clearly-unavailable players from the ranked lists without
+ * inventing an unvalidated point deduction on top of the model's own
+ * historical/usage/team/FPA math. Treatments A-D are all still computed and
+ * reported per player so the choice is auditable, not asserted.
+ */
+export const STATUS_TREATMENT_APPLIED_TO_ARTIFACT: StatusTreatmentId = "D";

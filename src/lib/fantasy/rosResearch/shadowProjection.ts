@@ -17,6 +17,7 @@ import type { PlayerSeasonBaseline } from "@/lib/fantasy/rosResearch/historicalB
 import type { SeasonUsageAverage } from "@/lib/fantasy/rosResearch/usageRoleContext";
 import type { TeamGameEnvironment } from "@/lib/fantasy/rosResearch/teamMarketContext";
 import type { TeamPositionFpaContext } from "@/lib/fantasy/rosResearch/scheduleFpaContext";
+import type { StatusCategory } from "@/lib/fantasy/rosResearch/statusAvailability";
 import {
   ADJUSTMENT_CAPS,
   COMBINED_ADJUSTMENT_CAP,
@@ -25,9 +26,13 @@ import {
   RECENCY_WEIGHTS,
   SHADOW_CANDIDATE_IDS,
   SHADOW_CANDIDATE_INPUTS,
+  STATUS_CONFIDENCE_CEILING,
+  STATUS_MODEL_RANK_EXCLUSION,
+  STATUS_PROJECTION_MODIFIER,
   USAGE_SIGNAL_FIELD_BY_POSITION,
   type HistoricalBaselineWeightingId,
   type ShadowCandidateId,
+  type StatusTreatmentId,
 } from "@/lib/fantasy/rosResearch/shadowProjectionConfig";
 
 function clamp(value: number, lo: number, hi: number): number {
@@ -102,9 +107,16 @@ export type AdjustmentFactor = {
 
 const NEUTRAL = (reason: string): AdjustmentFactor => ({ factor: 1, applied: false, reason });
 
+/**
+ * `capOverride` lets the Phase 3B usage-cap experiment (`shadowBacktest.ts`)
+ * test alternative caps (0%, 5%, 10%, the current 15%) without mutating the
+ * shared config; the live artifact always calls this with the default
+ * (`ADJUSTMENT_CAPS.usage`).
+ */
 export function computeUsageAdjustment(
   position: FantasyPosition,
   seasons: readonly SeasonUsageAverage[],
+  capOverride?: number,
 ): AdjustmentFactor {
   const field = USAGE_SIGNAL_FIELD_BY_POSITION[position];
   if (!field) return NEUTRAL(`no reliable usage signal available for ${position} in the current source`);
@@ -121,7 +133,8 @@ export function computeUsageAdjustment(
   if (priorValue === 0) return NEUTRAL("prior-season usage value is zero; trend ratio undefined");
 
   const ratio = recentValue / priorValue;
-  const cap = ADJUSTMENT_CAPS.usage;
+  const cap = capOverride ?? ADJUSTMENT_CAPS.usage;
+  if (cap === 0) return NEUTRAL("usage cap set to 0% for this experiment; adjustment disabled");
   return { factor: clamp(ratio, 1 - cap, 1 + cap), applied: true, reason: null };
 }
 
@@ -242,6 +255,52 @@ export function buildShadowCandidates(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Phase 3B -- refined candidate set (F1-F3)
+// ---------------------------------------------------------------------------
+
+export type RefinedCandidateId = "F1" | "F2" | "F3";
+
+export const REFINED_CANDIDATE_LABELS: Record<RefinedCandidateId, string> = {
+  F1: "Best historical baseline (recency-weighted-min-sample, with PAR-consensus rookie fallback where no history exists)",
+  F2: "F1 + validated status treatment (D): confidence ceiling + Model Rank exclusion, no PPG change",
+  F3: "F2 + FPA (bounded, full remaining-schedule coverage) -- EXPERIMENTAL: FPA has not been backtested (see validation.fpaHistoricalValidationAvailability); shown for comparison only, not a validated improvement",
+};
+
+export type RefinedCandidateOutput = {
+  candidate: RefinedCandidateId;
+  label: string;
+  projectedPpg: number | null;
+  availableInputs: string[];
+  missingInputs: string[];
+};
+
+/**
+ * Deliberately excludes usage entirely: `runUsageCapExperiment`
+ * (`shadowBacktest.ts`) found it worsened MAE monotonically at every tested
+ * cap (0/5/10/15%) and at every position on the available backtest fold, so
+ * it is not a validated component and is not carried into this refined set
+ * (see the Phase 3B final report for the exact numbers). Team/market are
+ * likewise excluded -- unvalidated AND coverage-limited (~18.75%) -- leaving
+ * only the two components with either a validated backtest result (the
+ * baseline) or full data coverage (FPA, itself still unvalidated and
+ * labeled as such in F3).
+ */
+export function buildRefinedCandidates(baselinePpg: number | null, fpaFactor: AdjustmentFactor): RefinedCandidateOutput[] {
+  const f3Ppg = baselinePpg == null ? null : baselinePpg * fpaFactor.factor;
+  return [
+    { candidate: "F1", label: REFINED_CANDIDATE_LABELS.F1, projectedPpg: baselinePpg, availableInputs: [], missingInputs: [] },
+    { candidate: "F2", label: REFINED_CANDIDATE_LABELS.F2, projectedPpg: baselinePpg, availableInputs: [], missingInputs: [] },
+    {
+      candidate: "F3",
+      label: REFINED_CANDIDATE_LABELS.F3,
+      projectedPpg: f3Ppg,
+      availableInputs: fpaFactor.applied ? ["fpa"] : [],
+      missingInputs: fpaFactor.applied ? [] : ["fpa"],
+    },
+  ];
+}
+
 /** Confidence is a function of how much of a candidate's requested input chain actually resolved to real data, not a subjective call. */
 export function shadowConfidence(candidate: ShadowCandidateOutput): "high" | "medium" | "low" | "none" {
   if (candidate.projectedPpg == null) return "none";
@@ -251,4 +310,63 @@ export function shadowConfidence(candidate: ShadowCandidateOutput): "high" | "me
   if (resolvedFraction === 1) return "high";
   if (resolvedFraction > 0) return "medium";
   return "low";
+}
+
+// ---------------------------------------------------------------------------
+// 4. Phase 3B status/availability treatments (A-D)
+// ---------------------------------------------------------------------------
+
+const CONFIDENCE_RANK: Record<"high" | "medium" | "low" | "none", number> = { none: 0, low: 1, medium: 2, high: 3 };
+
+function minConfidence(a: "high" | "medium" | "low" | "none", b: "high" | "medium" | "low" | "none") {
+  return CONFIDENCE_RANK[a] <= CONFIDENCE_RANK[b] ? a : b;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3B rookie/no-history fallback wiring
+// ---------------------------------------------------------------------------
+
+export type EffectiveBaselineSource = "historical-model" | "fallback-par-consensus" | "none";
+
+export type EffectiveBaseline = { ppg: number | null; source: EffectiveBaselineSource };
+
+/** Historical-model output is always authoritative when present; the PAR-consensus fallback only fills the gap for players with zero 2023-2025 history. Never overrides a real historical baseline. */
+export function selectEffectiveBaseline(historicalPpg: number | null, fallbackPpg: number | null): EffectiveBaseline {
+  if (historicalPpg != null) return { ppg: historicalPpg, source: "historical-model" };
+  if (fallbackPpg != null) return { ppg: fallbackPpg, source: "fallback-par-consensus" };
+  return { ppg: null, source: "none" };
+}
+
+/** A candidate built on the fallback prior (not the validated historical-model methodology) can never report "high" confidence, regardless of how many adjustment inputs resolved. */
+export function capConfidenceForBaselineSource(
+  confidence: "high" | "medium" | "low" | "none",
+  baselineSource: EffectiveBaselineSource,
+): "high" | "medium" | "low" | "none" {
+  if (baselineSource !== "fallback-par-consensus") return confidence;
+  return minConfidence(confidence, "medium");
+}
+
+export type StatusTreatmentOutput = {
+  treatment: StatusTreatmentId;
+  effectiveConfidence: "high" | "medium" | "low" | "none";
+  effectivePpg: number | null;
+  excludedFromRank: boolean;
+};
+
+/** Applies each of the four Phase 3B status treatments to one candidate's already-computed confidence/PPG. Pure function; never mutates the candidate. */
+export function applyStatusTreatments(
+  category: StatusCategory,
+  baseConfidence: "high" | "medium" | "low" | "none",
+  basePpg: number | null,
+): Record<StatusTreatmentId, StatusTreatmentOutput> {
+  const ceiling = STATUS_CONFIDENCE_CEILING[category];
+  const excluded = STATUS_MODEL_RANK_EXCLUSION[category];
+  const modifiedPpg = basePpg == null ? null : basePpg * STATUS_PROJECTION_MODIFIER[category];
+
+  return {
+    A: { treatment: "A", effectiveConfidence: minConfidence(baseConfidence, ceiling), effectivePpg: basePpg, excludedFromRank: false },
+    B: { treatment: "B", effectiveConfidence: baseConfidence, effectivePpg: modifiedPpg, excludedFromRank: false },
+    C: { treatment: "C", effectiveConfidence: baseConfidence, effectivePpg: basePpg, excludedFromRank: excluded },
+    D: { treatment: "D", effectiveConfidence: minConfidence(baseConfidence, ceiling), effectivePpg: basePpg, excludedFromRank: excluded },
+  };
 }

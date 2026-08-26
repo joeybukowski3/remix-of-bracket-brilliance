@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyStatusTreatments,
+  buildRefinedCandidates,
   buildShadowCandidates,
+  capConfidenceForBaselineSource,
   computeFpaAdjustment,
   computeHistoricalBaselineOptions,
   computeMarketAdjustment,
   computeTeamAdjustment,
   computeUsageAdjustment,
+  selectEffectiveBaseline,
   shadowConfidence,
 } from "@/lib/fantasy/rosResearch/shadowProjection";
 import type { PlayerSeasonBaseline } from "@/lib/fantasy/rosResearch/historicalBaseline";
@@ -244,5 +248,102 @@ describe("shadowConfidence", () => {
     });
     const e = candidates.find((c) => c.candidate === "E")!;
     expect(shadowConfidence(e)).toBe("low");
+  });
+});
+
+describe("Phase 3B: applyStatusTreatments", () => {
+  it("Treatment A caps confidence but never changes PPG or excludes from rank", () => {
+    const result = applyStatusTreatments("released", "high", 20);
+    expect(result.A.effectiveConfidence).toBe("low");
+    expect(result.A.effectivePpg).toBe(20);
+    expect(result.A.excludedFromRank).toBe(false);
+  });
+
+  it("Treatment B scales PPG by the bounded status modifier but leaves confidence and rank exclusion untouched", () => {
+    const result = applyStatusTreatments("released", "high", 20);
+    expect(result.B.effectivePpg).toBeCloseTo(14, 5); // 20 * 0.7
+    expect(result.B.effectiveConfidence).toBe("high");
+    expect(result.B.excludedFromRank).toBe(false);
+  });
+
+  it("Treatment C excludes released/suspended from rank without touching PPG or confidence", () => {
+    const result = applyStatusTreatments("released", "high", 20);
+    expect(result.C.excludedFromRank).toBe(true);
+    expect(result.C.effectivePpg).toBe(20);
+    expect(result.C.effectiveConfidence).toBe("high");
+  });
+
+  it("Treatment D combines the confidence ceiling and rank exclusion, with no PPG modifier", () => {
+    const result = applyStatusTreatments("released", "high", 20);
+    expect(result.D.effectiveConfidence).toBe("low");
+    expect(result.D.excludedFromRank).toBe(true);
+    expect(result.D.effectivePpg).toBe(20);
+  });
+
+  it("never lowers a category's rank-exclusion for ambiguous categories (reserve/unknown/otherUnavailable stay non-excluded)", () => {
+    for (const category of ["active", "reserve", "unknown", "otherUnavailable"] as const) {
+      const result = applyStatusTreatments(category, "high", 20);
+      expect(result.C.excludedFromRank).toBe(false);
+      expect(result.D.excludedFromRank).toBe(false);
+    }
+  });
+
+  it("active status imposes no confidence ceiling", () => {
+    const result = applyStatusTreatments("active", "high", 20);
+    expect(result.A.effectiveConfidence).toBe("high");
+    expect(result.D.effectiveConfidence).toBe("high");
+  });
+
+  it("a null PPG stays null through every treatment", () => {
+    const result = applyStatusTreatments("released", "none", null);
+    expect(result.A.effectivePpg).toBeNull();
+    expect(result.B.effectivePpg).toBeNull();
+  });
+});
+
+describe("Phase 3B: selectEffectiveBaseline / capConfidenceForBaselineSource", () => {
+  it("prefers the historical baseline when present, even if a fallback value also exists", () => {
+    expect(selectEffectiveBaseline(15, 10)).toEqual({ ppg: 15, source: "historical-model" });
+  });
+
+  it("uses the fallback only when the historical baseline is null", () => {
+    expect(selectEffectiveBaseline(null, 10)).toEqual({ ppg: 10, source: "fallback-par-consensus" });
+  });
+
+  it("reports 'none' when neither is available -- never fabricates a number", () => {
+    expect(selectEffectiveBaseline(null, null)).toEqual({ ppg: null, source: "none" });
+  });
+
+  it("caps confidence at medium for a fallback-sourced baseline, regardless of how many adjustments resolved", () => {
+    expect(capConfidenceForBaselineSource("high", "fallback-par-consensus")).toBe("medium");
+    expect(capConfidenceForBaselineSource("low", "fallback-par-consensus")).toBe("low");
+  });
+
+  it("does not alter confidence for a real historical-model baseline", () => {
+    expect(capConfidenceForBaselineSource("high", "historical-model")).toBe("high");
+  });
+});
+
+describe("Phase 3B: buildRefinedCandidates", () => {
+  it("F1 and F2 both equal the plain baseline PPG (status is a metadata overlay, not a PPG change)", () => {
+    const [f1, f2] = buildRefinedCandidates(20, { factor: 1, applied: false, reason: "x" });
+    expect(f1.projectedPpg).toBe(20);
+    expect(f2.projectedPpg).toBe(20);
+  });
+
+  it("F3 applies the bounded FPA factor on top of the baseline", () => {
+    const [, , f3] = buildRefinedCandidates(20, { factor: 1.1, applied: true, reason: null });
+    expect(f3.projectedPpg).toBeCloseTo(22, 5);
+    expect(f3.availableInputs).toEqual(["fpa"]);
+  });
+
+  it("F3 is null when the baseline itself is null, never fabricated from the FPA factor alone", () => {
+    const [, , f3] = buildRefinedCandidates(null, { factor: 1.1, applied: true, reason: null });
+    expect(f3.projectedPpg).toBeNull();
+  });
+
+  it("never includes usage/team/market as a component -- only FPA and the baseline", () => {
+    const candidates = buildRefinedCandidates(20, { factor: 1, applied: false, reason: "x" });
+    expect(candidates.map((c) => c.candidate)).toEqual(["F1", "F2", "F3"]);
   });
 });

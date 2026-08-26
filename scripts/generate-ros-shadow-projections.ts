@@ -17,17 +17,31 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FANTASY_RANKINGS, type FantasyPosition } from "../src/lib/fantasy/rankings.ts";
-import { FANTASY_PAR_ROWS } from "../src/lib/fantasy/parRankings.ts";
+import { FANTASY_PAR_ROWS, type FantasyParSourceRow } from "../src/lib/fantasy/parRankings.ts";
+import parConsensusSourceRaw from "../data/fantasy/2026-par-consensus.json" with { type: "json" };
 import {
+  applyStatusTreatments,
+  buildRefinedCandidates,
   buildShadowCandidates,
+  capConfidenceForBaselineSource,
   computeFpaAdjustment,
   computeHistoricalBaselineOptions,
   computeMarketAdjustment,
   computeTeamAdjustment,
   computeUsageAdjustment,
+  REFINED_CANDIDATE_LABELS,
+  selectEffectiveBaseline,
   shadowConfidence,
 } from "../src/lib/fantasy/rosResearch/shadowProjection.ts";
-import { runHistoricalBaselineBacktest, type BacktestCase } from "../src/lib/fantasy/rosResearch/shadowBacktest.ts";
+import {
+  aggregateFolds,
+  runHistoricalBaselineBacktest,
+  runUsageCapExperiment,
+  selectedWeightingPairs,
+  type BacktestCase,
+} from "../src/lib/fantasy/rosResearch/shadowBacktest.ts";
+import { buildStatusAvailability, type StatusSourceRow } from "../src/lib/fantasy/rosResearch/statusAvailability.ts";
+import { buildRookieFallback, type RookieFallbackSourceRow } from "../src/lib/fantasy/rosResearch/rookieFallback.ts";
 import {
   SHADOW_PROJECTION_SCHEMA_VERSION,
   ADJUSTMENT_CAPS,
@@ -37,15 +51,35 @@ import {
   RECENCY_WEIGHTS,
   SHADOW_CANDIDATE_INPUTS,
   SHADOW_CANDIDATE_LABELS,
+  STATUS_CONFIDENCE_CEILING,
+  STATUS_MODEL_RANK_EXCLUSION,
+  STATUS_PROJECTION_MODIFIER,
+  STATUS_TREATMENT_APPLIED_TO_ARTIFACT,
+  STATUS_TREATMENT_LABELS,
   USAGE_SIGNAL_FIELD_BY_POSITION,
 } from "../src/lib/fantasy/rosResearch/shadowProjectionConfig.ts";
+import { normalizeHistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
+import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
+import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const RESEARCH_DIR = join(ROOT, "data", "fantasy", "ros-research", "2026");
 const POSITIONS: readonly FantasyPosition[] = ["QB", "RB", "WR", "TE"];
+const USAGE_CAPS_TO_TEST = [0, 0.05, 0.1, 0.15] as const;
 
 function sha(value: string | Buffer) { return createHash("sha256").update(value).digest("hex"); }
 function readJson<T>(path: string): T { return JSON.parse(readFileSync(path, "utf8")) as T; }
+
+type CsvRow = Record<string, string>;
+type ManifestEntry = { season: number | null; filename: string; retrievedDateUtc: string; rowCount: number; byteSize: number; sha256: string; headerColumns?: string[] };
+
+function readNflverseCsv(relativeDir: string, entry: ManifestEntry) {
+  const path = join(ROOT, relativeDir, entry.filename);
+  const text = readFileSync(path, "utf8");
+  const problems = verifyCacheEntry(entry, text);
+  if (problems.length) throw new Error(problems.join("\n"));
+  return { rows: parseCsv(text) as CsvRow[], path, observedHash: sha(readFileSync(path)) };
+}
 
 function parseArgs(argv: string[]) {
   const args = { generatedAt: new Date().toISOString() };
@@ -108,6 +142,42 @@ function main() {
   const fpaByTeamPosition = new Map(fpaData.teams.map((row) => [`${row.team}|${row.position}`, row]));
   const fpaText = readFileSync(fpaPath, "utf8");
 
+  // ---- Phase 3B: status/availability sources (read-only nflverse caches) ----
+  const playersManifest = readJson<{ files: ManifestEntry[] }>(join(ROOT, "data/nfl/nflverse/players/manifest.json"));
+  const playersEntry = playersManifest.files.find((entry) => entry.season === null)!;
+  const playersCsv = readNflverseCsv("data/nfl/nflverse/players", playersEntry);
+  const crosswalk = new Map(playersCsv.rows.map((row) => [String(row.gsis_id), { pfrId: String(row.pfr_id || "") || null, espnId: String(row.espn_id || "") || null }]));
+  const masterTableRows: StatusSourceRow[] = playersCsv.rows
+    .filter((row) => row.gsis_id)
+    .map((row) => ({ gsisId: String(row.gsis_id), team: null, rawStatus: String(row.status || "") }));
+
+  const rosterManifest = readJson<{ files: ManifestEntry[] }>(join(ROOT, "data/nfl/nflverse/weekly-rosters/manifest.json"));
+  const roster2026Entry = rosterManifest.files.find((entry) => entry.season === 2026)!;
+  const roster2026Csv = readNflverseCsv("data/nfl/nflverse/weekly-rosters", roster2026Entry);
+  const latestRosterWeek = Math.max(...roster2026Csv.rows.map((row) => Number(row.week)));
+  const currentSeasonRosterRows: StatusSourceRow[] = roster2026Csv.rows
+    .filter((row) => row.gsis_id && Number(row.week) === latestRosterWeek)
+    .map((row) => ({ gsisId: String(row.gsis_id), team: String(row.team || "") || null, rawStatus: String(row.status || "") }));
+
+  // ---- Phase 3B: second leakage-safe backtest fold. 2022 stats aren't part of
+  // the committed Phase 2 historical-baseline.json (which is fixed to
+  // 2023-2025 per that artifact's own scope); read directly here, same
+  // normalization pipeline as Phase 2's generator, purely for the fold-2
+  // training season. ----
+  const statsManifest = readJson<{ files: ManifestEntry[] }>(join(ROOT, "data/nfl/nflverse/stats-player-week/manifest.json"));
+  const stats2022Entry = statsManifest.files.find((entry) => entry.season === 2022)!;
+  const stats2022 = readNflverseCsv("data/nfl/nflverse/stats-player-week", stats2022Entry);
+  const season2022ByPlayer = new Map<string, { gamesPlayed: number; totalFantasyPoints: number }>();
+  for (const source of stats2022.rows) {
+    const ids = crosswalk.get(String(source.player_id));
+    const normalized = normalizeHistoricalPlayerWeek(source, ids, null);
+    if (!normalized) continue;
+    const cell = season2022ByPlayer.get(normalized.playerId) ?? { gamesPlayed: 0, totalFantasyPoints: 0 };
+    cell.gamesPlayed += 1;
+    cell.totalFantasyPoints += normalized.actualFantasyPoints;
+    season2022ByPlayer.set(normalized.playerId, cell);
+  }
+
   // ---- League averages used to normalize team/FPA/market factors ----
   function leagueAverageImplied(rows: readonly TeamRow[]): number {
     const values = rows.flatMap((t) => t.games.map((g) => g.impliedTeamTotal).filter((v): v is number => v != null));
@@ -136,6 +206,34 @@ function main() {
 
   // ---- Per-player shadow computation ----
   const resolved = identity.rows.filter((row) => row.identity.playerId);
+  const universe = resolved.map((row) => ({ playerId: row.identity.playerId as string, playerName: row.player, position: row.position }));
+
+  // ---- Phase 3B: status/availability (all 250 resolved players) ----
+  const statusAvailability = buildStatusAvailability({
+    currentSeasonRosterRows,
+    currentSeasonAsOf: roster2026Entry.retrievedDateUtc,
+    masterTableRows,
+    masterTableAsOf: playersEntry.retrievedDateUtc,
+    universe,
+  });
+  const statusByPlayerId = new Map(statusAvailability.players.map((p) => [p.playerId, p.status]));
+
+  // ---- Phase 3B: rookie/no-history fallback, only for players with zero historical seasons.
+  // Reads the raw live PAR consensus SOURCE file directly (read-only), not
+  // the position-limited FANTASY_PAR_ROWS board (PAR_POSITION_LIMITS caps
+  // e.g. WR at 78/TE at 18 for board-display purposes only): a rookie whose
+  // PAR row exists but falls below that display cutoff still has a real,
+  // already-approved "2026 Projected PPG" value that should not be treated
+  // as unavailable just because the JKB board doesn't show it. ----
+  const rawParBySourceId = new Map((parConsensusSourceRaw as readonly FantasyParSourceRow[]).map((row) => [row["Source ID"], row]));
+  const noHistoryUniverse = universe.filter((p) => (baselineByPlayerId.get(p.playerId) ?? []).length === 0);
+  const fallbackSourceRows: RookieFallbackSourceRow[] = noHistoryUniverse.map((p) => {
+    const row = resolved.find((r) => r.identity.playerId === p.playerId)!;
+    const rawPar = row.parMatch.found && row.parMatch.sourceId ? rawParBySourceId.get(row.parMatch.sourceId) : undefined;
+    return { playerId: p.playerId, playerName: p.playerName, position: p.position, parConsensusProjectedPpg: rawPar?.["2026 Projected PPG"] ?? null };
+  });
+  const rookieFallback = buildRookieFallback(noHistoryUniverse, fallbackSourceRows);
+  const fallbackByPlayerId = new Map(rookieFallback.players.map((p) => [p.playerId, p.fallback]));
 
   type PlayerOut = {
     canonicalPlayerId: string;
@@ -150,19 +248,36 @@ function main() {
     adp: number | null;
     historicalBaselineOptions: ReturnType<typeof computeHistoricalBaselineOptions>;
     selectedBaselineWeighting: "recency-weighted-min-sample";
+    baselineSource: "historical-model" | "fallback-par-consensus" | "none";
+    fallback: { applied: boolean; source: string; ppg: number | null; reason: string | null } | null;
+    status: { category: string; rawCode: string | null; source: string; sourceTeam: string | null; asOf: string | null };
+    statusTreatmentComparison: unknown; // Treatments A-D applied to Candidate E, for audit/comparison (see methodology.statusTreatments)
     candidates: Array<{
       candidate: string;
       label: string;
       projectedPpg: number | null;
       shadowParPerGame: number | null;
       confidence: string;
+      effectiveConfidence: string; // confidence after the applied status treatment's ceiling (Treatment D by default)
+      excludedFromShadowRank: boolean;
       adjustmentBreakdown: unknown;
       combinedFactor: number | null;
       combinedFactorClamped: boolean;
       availableInputs: string[];
       missingInputs: string[];
     }>;
-    shadowPositionRank: number | null; // based on candidate E shadowParPerGame
+    refinedCandidates: Array<{
+      candidate: string;
+      label: string;
+      projectedPpg: number | null;
+      shadowParPerGame: number | null;
+      confidence: string;
+      effectiveConfidence: string;
+      excludedFromShadowRank: boolean;
+      availableInputs: string[];
+      missingInputs: string[];
+    }>;
+    shadowPositionRank: number | null; // based on candidate E shadowParPerGame, excluding STATUS_MODEL_RANK_EXCLUSION categories
   };
 
   const playersOut: PlayerOut[] = resolved.map((row) => {
@@ -174,7 +289,10 @@ function main() {
 
     const baselineSeasons = baselineByPlayerId.get(playerId) ?? [];
     const historicalBaselineOptions = computeHistoricalBaselineOptions(baselineSeasons);
-    const selectedBaselinePpg = historicalBaselineOptions["recency-weighted-min-sample"].ppg;
+    const historicalBaselinePpg = historicalBaselineOptions["recency-weighted-min-sample"].ppg;
+    const fallback = fallbackByPlayerId.get(playerId) ?? null;
+    const effectiveBaseline = selectEffectiveBaseline(historicalBaselinePpg, fallback?.ppg ?? null);
+    const selectedBaselinePpg = effectiveBaseline.ppg;
 
     const usageSeasons = (usageByPlayerId.get(playerId) ?? []) as never;
     const usageFactor = computeUsageAdjustment(position, usageSeasons);
@@ -184,19 +302,49 @@ function main() {
 
     const rawCandidates = buildShadowCandidates(selectedBaselinePpg, { usage: usageFactor, team: teamFactor, fpa: fpaFactor, market: marketFactor });
     const replacementPpg = replacementByPosition[position];
+    const status = statusByPlayerId.get(playerId)!;
+    const appliedTreatment = STATUS_TREATMENT_APPLIED_TO_ARTIFACT;
 
-    const candidates = rawCandidates.map((candidate) => ({
-      candidate: candidate.candidate,
-      label: SHADOW_CANDIDATE_LABELS[candidate.candidate],
-      projectedPpg: candidate.projectedPpg,
-      shadowParPerGame: candidate.projectedPpg == null ? null : candidate.projectedPpg - replacementPpg,
-      confidence: shadowConfidence(candidate),
-      adjustmentBreakdown: candidate.adjustmentBreakdown,
-      combinedFactor: candidate.combinedFactor,
-      combinedFactorClamped: candidate.combinedFactorClamped,
-      availableInputs: candidate.availableInputs,
-      missingInputs: candidate.missingInputs,
-    }));
+    const candidates = rawCandidates.map((candidate) => {
+      const baseConfidence = capConfidenceForBaselineSource(shadowConfidence(candidate), effectiveBaseline.source);
+      const treatmentForCandidate = applyStatusTreatments(status.category as never, baseConfidence, candidate.projectedPpg)[appliedTreatment];
+      return {
+        candidate: candidate.candidate,
+        label: SHADOW_CANDIDATE_LABELS[candidate.candidate],
+        projectedPpg: candidate.projectedPpg,
+        shadowParPerGame: candidate.projectedPpg == null ? null : candidate.projectedPpg - replacementPpg,
+        confidence: baseConfidence,
+        effectiveConfidence: treatmentForCandidate.effectiveConfidence,
+        excludedFromShadowRank: treatmentForCandidate.excludedFromRank,
+        adjustmentBreakdown: candidate.adjustmentBreakdown,
+        combinedFactor: candidate.combinedFactor,
+        combinedFactorClamped: candidate.combinedFactorClamped,
+        availableInputs: candidate.availableInputs,
+        missingInputs: candidate.missingInputs,
+      };
+    });
+
+    const candidateE = rawCandidates.find((c) => c.candidate === "E")!;
+    const candidateEBaseConfidence = capConfidenceForBaselineSource(shadowConfidence(candidateE), effectiveBaseline.source);
+    const statusTreatmentComparison = applyStatusTreatments(status.category as never, candidateEBaseConfidence, candidateE.projectedPpg);
+
+    const rawRefinedCandidates = buildRefinedCandidates(selectedBaselinePpg, fpaFactor);
+    const refinedCandidates = rawRefinedCandidates.map((candidate) => {
+      const treatment = applyStatusTreatments(status.category as never, "high", candidate.projectedPpg)[appliedTreatment];
+      const baseConfidence: "high" | "medium" | "low" | "none" =
+        candidate.projectedPpg == null ? "none" : capConfidenceForBaselineSource("high", effectiveBaseline.source);
+      return {
+        candidate: candidate.candidate,
+        label: candidate.label,
+        projectedPpg: candidate.projectedPpg,
+        shadowParPerGame: candidate.projectedPpg == null ? null : candidate.projectedPpg - replacementPpg,
+        confidence: baseConfidence,
+        effectiveConfidence: candidate.projectedPpg == null ? "none" : capConfidenceForBaselineSource(treatment.effectiveConfidence, effectiveBaseline.source),
+        excludedFromShadowRank: treatment.excludedFromRank,
+        availableInputs: candidate.availableInputs,
+        missingInputs: candidate.missingInputs,
+      };
+    });
 
     return {
       canonicalPlayerId: playerId,
@@ -211,25 +359,32 @@ function main() {
       adp: liveRanking?.adp ?? null,
       historicalBaselineOptions,
       selectedBaselineWeighting: "recency-weighted-min-sample",
+      baselineSource: effectiveBaseline.source,
+      fallback,
+      status,
+      statusTreatmentComparison,
       candidates,
+      refinedCandidates,
       shadowPositionRank: null, // filled in below
     };
   });
 
-  // ---- SHADOW-ONLY position rank, based on Candidate E's shadowParPerGame (descending), same convention the live PAR rank uses ----
+  // ---- SHADOW-ONLY position rank, based on Candidate E's shadowParPerGame (descending), same convention the live PAR rank uses. Players Treatment D excludes (released/suspended) are left out of the ranked list but keep their shadowParPerGame in the artifact. ----
   for (const position of POSITIONS) {
     const ranked = playersOut
       .filter((p) => p.position === position)
-      .map((p) => ({ p, parPerGame: p.candidates.find((c) => c.candidate === "E")!.shadowParPerGame }))
-      .filter((row) => row.parPerGame != null)
+      .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
+      .filter((row) => row.candidateE.shadowParPerGame != null && !row.candidateE.excludedFromShadowRank)
+      .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame }))
       .sort((a, b) => (b.parPerGame as number) - (a.parPerGame as number));
     ranked.forEach((row, index) => { row.p.shadowPositionRank = index + 1; });
   }
 
-  // ---- SHADOW-ONLY cross-position Model Rank, based on Candidate E's shadowParPerGame (descending), across all positions ----
+  // ---- SHADOW-ONLY cross-position Model Rank, based on Candidate E's shadowParPerGame (descending), across all positions. Same Treatment D exclusion as shadowPositionRank above. ----
   const modelRanked = playersOut
-    .map((p) => ({ p, parPerGame: p.candidates.find((c) => c.candidate === "E")!.shadowParPerGame }))
-    .filter((row) => row.parPerGame != null)
+    .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
+    .filter((row) => row.candidateE.shadowParPerGame != null && !row.candidateE.excludedFromShadowRank)
+    .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame }))
     .sort((a, b) => (b.parPerGame as number) - (a.parPerGame as number));
   const shadowModelRankByPlayerId = new Map(modelRanked.map((row, index) => [row.p.canonicalPlayerId, index + 1]));
 
@@ -266,29 +421,63 @@ function main() {
     .map((p) => ({ player: p.player, position: p.position, candidateEConfidence: p.candidates.find((c) => c.candidate === "E")!.confidence }));
 
   const missingMajorInputsPlayers = playersWithModelRank
-    .filter((p) => p.candidates.find((c) => c.candidate === "A")!.projectedPpg == null)
-    .map((p) => ({ player: p.player, position: p.position, reason: "no historical baseline in any of the three tested weightings (no 2023-2025 game data resolved for this canonical identity)" }));
+    .filter((p) => p.baselineSource === "none")
+    .map((p) => ({ player: p.player, position: p.position, reason: "no historical baseline in any of the three tested weightings AND no live PAR-consensus fallback projection resolved for this canonical identity" }));
 
-  // ---- Leakage-safe backtest: train on 2023-2024, label = actual 2025 PPG ----
-  const backtestCases: BacktestCase[] = resolved
-    .map((row) => {
-      const playerId = row.identity.playerId as string;
-      const allSeasons = baselineByPlayerId.get(playerId) ?? [];
-      const trainingSeasons = allSeasons.filter((s) => s.season < 2025);
-      const labelSeasonRow = allSeasons.find((s) => s.season === 2025);
-      if (!trainingSeasons.length || !labelSeasonRow) return null;
-      const trainingUsageSeasons = ((usageByPlayerId.get(playerId) ?? []) as Array<{ season: number }>).filter((s) => s.season < 2025);
-      return {
-        playerId,
-        position: row.position,
-        trainingSeasons,
-        trainingUsageSeasons: trainingUsageSeasons as never,
-        labelSeason: 2025,
-        labelPpg: labelSeasonRow.ppg,
-      } satisfies BacktestCase;
-    })
-    .filter((c): c is BacktestCase => c !== null);
-  const backtest = runHistoricalBaselineBacktest(backtestCases, [2023, 2024]);
+  // ---- Leakage-safe backtest, fold 2: train on 2023-2024, label = actual 2025 PPG ----
+  function buildBacktestCases(trainSeasons: readonly number[], labelSeason: number, seasonsByPlayerId: Map<string, Array<{ season: number; gamesPlayed: number; totalFantasyPoints: number; ppg: number }>>): BacktestCase[] {
+    return resolved
+      .map((row) => {
+        const playerId = row.identity.playerId as string;
+        const allSeasons = seasonsByPlayerId.get(playerId) ?? [];
+        const trainingSeasons = allSeasons.filter((s) => trainSeasons.includes(s.season));
+        const labelSeasonRow = allSeasons.find((s) => s.season === labelSeason);
+        if (!trainingSeasons.length || !labelSeasonRow) return null;
+        const trainingUsageSeasons = ((usageByPlayerId.get(playerId) ?? []) as Array<{ season: number }>).filter((s) => trainSeasons.includes(s.season));
+        return {
+          playerId,
+          position: row.position,
+          trainingSeasons,
+          trainingUsageSeasons: trainingUsageSeasons as never,
+          labelSeason,
+          labelPpg: labelSeasonRow.ppg,
+        } satisfies BacktestCase;
+      })
+      .filter((c): c is BacktestCase => c !== null);
+  }
+
+  const fold2Cases = buildBacktestCases([2023, 2024], 2025, baselineByPlayerId);
+  const backtestFold2 = runHistoricalBaselineBacktest(fold2Cases, [2023, 2024]);
+
+  // ---- Leakage-safe backtest, fold 1: train on 2022-2023, label = actual 2024 PPG.
+  // 2022 is not part of the committed Phase 2 historical-baseline.json (fixed
+  // to 2023-2025 by that artifact's own scope), so a merged season list is
+  // built here purely for this fold: the freshly-read 2022 aggregate plus
+  // the already-approved 2023/2024 rows from historical-baseline.json. ----
+  const seasonsWithFold1ByPlayerId = new Map<string, Array<{ season: number; gamesPlayed: number; totalFantasyPoints: number; ppg: number }>>();
+  for (const player of baseline.players) {
+    const seasons = [...player.seasons];
+    const season2022 = season2022ByPlayer.get(player.playerId);
+    if (season2022) seasons.unshift({ season: 2022, gamesPlayed: season2022.gamesPlayed, totalFantasyPoints: season2022.totalFantasyPoints, ppg: season2022.totalFantasyPoints / season2022.gamesPlayed });
+    seasonsWithFold1ByPlayerId.set(player.playerId, seasons.sort((a, b) => a.season - b.season));
+  }
+  const fold1Cases = buildBacktestCases([2022, 2023], 2024, seasonsWithFold1ByPlayerId);
+  const backtestFold1 = runHistoricalBaselineBacktest(fold1Cases, [2022, 2023]);
+
+  // ---- Aggregate the two folds (recency-weighted-min-sample, no usage) by pooling raw prediction pairs ----
+  const foldAggregate = aggregateFolds([
+    { labelSeason: 2024, trainingSeasons: [2022, 2023], pairs: selectedWeightingPairs(fold1Cases) },
+    { labelSeason: 2025, trainingSeasons: [2023, 2024], pairs: selectedWeightingPairs(fold2Cases) },
+  ]);
+
+  // ---- Usage adjustment cap experiment (Phase 3B Task 3), run on fold 2 (the larger/more recent fold) ----
+  const usageCapExperiment = runUsageCapExperiment(fold2Cases, USAGE_CAPS_TO_TEST);
+
+  // ---- FPA historical validation availability (Phase 3B Task 5) ----
+  const fpaHistoricalValidationAvailability = {
+    available: false,
+    reason: "Only one season of points-allowed-by-position data is cached in this repo (data/fantasy/points-allowed-2025.csv, season 2025 only). A leakage-safe FPA backtest needs at least two seasons -- one to derive a training-period 'remaining schedule as of a past point in time' signal, one to label actual outcomes against it -- and no earlier season's points-allowed-by-position source exists in this repo to fabricate that from. FPA therefore remains an unvalidated contextual signal: full 100% remaining-schedule coverage (see schedule-fpa-context.json) describes data completeness, not predictive validation.",
+  };
 
   // ---- Write artifact ----
   const artifact = {
@@ -331,11 +520,45 @@ function main() {
       minMarketGamesForTeamFactor: MIN_MARKET_GAMES_FOR_TEAM_FACTOR,
       fpaDirection: "Higher average points-allowed across the remaining slate = more favourable remaining schedule for that position (source rank 1 = allowed the most); a team-position average above the league-position average yields a factor > 1.",
       leagueAverages: { impliedTeamTotal: leagueAvgImpliedTotal, remainingImpliedTeamTotal: leagueAvgRemainingImpliedTotal, pointsAllowedByPosition: leagueAvgPointsAllowedByPosition },
-      shadowRanking: "shadowPositionRank: rank within position by Candidate E shadowParPerGame, descending (same convention as the live PAR rank sort). shadowModelRank: SHADOW-ONLY cross-position rank by Candidate E shadowParPerGame, descending, across all resolved players with a non-null Candidate E value.",
+      shadowRanking: "shadowPositionRank: rank within position by Candidate E shadowParPerGame, descending (same convention as the live PAR rank sort), excluding players Treatment D marks excludedFromShadowRank. shadowModelRank: same, across all positions.",
+      statusAvailability: {
+        primarySource: { name: "roster_weekly_2026", path: "data/nfl/nflverse/weekly-rosters/roster_weekly_2026.csv", week: latestRosterWeek, asOf: roster2026Entry.retrievedDateUtc, note: "Current-season, week-specific roster snapshot. Used first for every player." },
+        fallbackSource: { name: "players", path: "data/nfl/nflverse/players/players.csv", asOf: playersEntry.retrievedDateUtc, note: "Master player table's status field (not season-specific; may be stale). Used ONLY when a player is absent from the current-season snapshot above." },
+        categories: ["active", "reserve", "released", "suspended", "otherUnavailable", "unknown"],
+        primaryCodeMap: { ACT: "active", CUT: "released", RES: "reserve", RET: "otherUnavailable" },
+        masterTableCodeMap: { ACT: "active", CUT: "released", RLS: "released", RES: "reserve", PUP: "reserve", SUS: "suspended", RET: "otherUnavailable", DEV: "otherUnavailable" },
+        unmappedCodesPolicy: "Any status code not in the two maps above resolves to 'unknown' rather than a guess (e.g. roster_weekly's E14, or players.csv's RSN/NWT/RSR/EXE/LB/INA -- none has a confirmed nflverse meaning in this repo).",
+        treatments: STATUS_TREATMENT_LABELS,
+        confidenceCeilingByCategory: STATUS_CONFIDENCE_CEILING,
+        projectionModifierByCategory: STATUS_PROJECTION_MODIFIER,
+        modelRankExclusionByCategory: STATUS_MODEL_RANK_EXCLUSION,
+        appliedTreatment: STATUS_TREATMENT_APPLIED_TO_ARTIFACT,
+        appliedTreatmentRationale: "Treatment D (confidence ceiling + Model Rank exclusion) is applied to every candidate's effectiveConfidence/excludedFromShadowRank in this artifact. Treatment B's PPG modifier is NOT applied by default: it cannot be backtested against a real 2026 outcome (the season has not been played), so scaling projectedPpg by an unvalidated, judgment-based factor would silently inject an unverified assumption into the one number this artifact reports as a projection. All four treatments are still computed per player (see statusTreatmentComparison) so the choice is auditable.",
+      },
+      refinedCandidates: {
+        labels: REFINED_CANDIDATE_LABELS,
+        usageOmittedRationale: "Usage was tested at caps of 0%, 5%, 10%, and 15% (see validation.usageCapExperiment) and found to worsen MAE monotonically at every cap, overall and at every position, on the available backtest fold -- it is not a validated component and is intentionally excluded from every refined candidate.",
+        teamMarketOmittedRationale: "Team/market are excluded from the refined set: unvalidated (see validation.teamFpaMarketBacktestAvailability) AND coverage-limited to ~18.75% of team-games this early in the offseason -- the combination Phase 3's Jefferson-vs-Lamb comparison flagged as producing coverage-driven noise, not signal.",
+      },
+      rookieFallback: {
+        appliesTo: "Players with zero seasons in historical-baseline.json (all three baseline weightings null).",
+        source: "par-consensus-2026-projected-ppg",
+        sourceDescription: "Live FANTASY_PAR_ROWS[...].projectedPpg (data/fantasy/2026-par-consensus.json '2026 Projected PPG' column), read-only. Already covers rookies with the same 'authoritative-derived (source-implied scoring)' Projection Status as every other row.",
+        neverOverridesHistoricalModel: true,
+        confidenceRule: "A candidate built on the fallback baseline can never report 'high' confidence (see capConfidenceForBaselineSource), regardless of how many adjustment inputs resolved -- it is not the validated historical-model methodology.",
+      },
     },
     validation: {
-      historicalBaselineBacktest: backtest,
-      teamFpaMarketBacktestAvailability: "Not backtested. Team/FPA/market adjustment inputs are tied to the specific 2026 remaining schedule and current market snapshot; no historical season in this dataset has an analogous 'remaining schedule as of a past point in time' record to backtest against. Reported explicitly rather than fabricated. Diagnostics in this artifact (largest PPG/rank disagreements, low-confidence players) are the available check for those inputs.",
+      historicalBaselineBacktest: backtestFold2,
+      backtestFolds: {
+        fold1: { labelSeason: 2024, trainingSeasons: [2022, 2023], result: backtestFold1 },
+        fold2: { labelSeason: 2025, trainingSeasons: [2023, 2024], result: backtestFold2 },
+        aggregate: foldAggregate,
+        note: "Two leakage-safe folds are possible from the committed nflverse player-week caches (2022-2025); there is no season before 2022 cached in this repo to run a third fold without fabricating a source. 'aggregate' pools raw prediction/actual pairs across both folds (recency-weighted-min-sample, no usage adjustment) and recomputes MAE/RMSE/bias/correlation from the pooled set -- not an average of the two folds' MAEs.",
+      },
+      usageCapExperiment: { ...usageCapExperiment, note: "Tests the recency-weighted-min-sample baseline with no usage adjustment and each cap applied, overall and by position, on fold 2 (train 2023-2024, label actual 2025 PPG). QB is always neutral (no reliable passing-volume signal in the current usage source) and is reported as such rather than omitted." },
+      fpaHistoricalValidationAvailability,
+      teamFpaMarketBacktestAvailability: "Team/market: not backtested -- their inputs are tied to the specific 2026 remaining schedule and current market snapshot; no historical season in this dataset has an analogous 'remaining schedule as of a past point in time' record to backtest against. FPA: see fpaHistoricalValidationAvailability above -- also not backtested, for a different reason (only one season of points-allowed-by-position source data exists in this repo). Diagnostics in this artifact (largest PPG/rank disagreements, low-confidence players) are the available check for these inputs.",
     },
     diagnostics: {
       largestPositivePpgChangesVsCurrentRos: largestPositivePpgChanges,
@@ -350,6 +573,10 @@ function main() {
       playersWithAnyCandidate: playersWithModelRank.filter((p) => p.candidates.some((c) => c.projectedPpg != null)).length,
       playersWithNoBaseline: missingMajorInputsPlayers.length,
       playersLowOrNoConfidenceOnCandidateE: lowConfidencePlayers.length,
+      statusAvailability: statusAvailability.counts,
+      rookieFallback: rookieFallback.counts,
+      playersUsingFallbackBaseline: playersWithModelRank.filter((p) => p.baselineSource === "fallback-par-consensus").length,
+      playersExcludedFromShadowRankByStatus: playersWithModelRank.filter((p) => p.candidates.find((c) => c.candidate === "E")!.excludedFromShadowRank).length,
     },
     players: playersWithModelRank,
   };

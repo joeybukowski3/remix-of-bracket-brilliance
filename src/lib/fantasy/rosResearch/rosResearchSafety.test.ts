@@ -14,7 +14,11 @@ import {
   computeTeamAdjustment,
   computeUsageAdjustment,
 } from "@/lib/fantasy/rosResearch/shadowProjection";
-import { runHistoricalBaselineBacktest } from "@/lib/fantasy/rosResearch/shadowBacktest";
+import { runHistoricalBaselineBacktest, runUsageCapExperiment } from "@/lib/fantasy/rosResearch/shadowBacktest";
+import { buildStatusAvailability } from "@/lib/fantasy/rosResearch/statusAvailability";
+import { buildRookieFallback } from "@/lib/fantasy/rosResearch/rookieFallback";
+import { applyStatusTreatments, buildRefinedCandidates, selectEffectiveBaseline } from "@/lib/fantasy/rosResearch/shadowProjection";
+import { STATUS_MODEL_RANK_EXCLUSION } from "@/lib/fantasy/rosResearch/shadowProjectionConfig";
 
 describe("Phase 1/2 ROS research safety", () => {
   it("does not mutate the live workbook rows or PAR rows while building the identity crosswalk", () => {
@@ -104,5 +108,43 @@ describe("Phase 1/2 ROS research safety", () => {
     expect(byPosition.RB).toBeCloseTo(12.1667, 3);
     expect(byPosition.WR).toBeCloseTo(11.5667, 3);
     expect(byPosition.TE).toBeCloseTo(9.9333, 3);
+  });
+
+  it("Phase 3B builders (status, rookie fallback, refined candidates, usage-cap experiment) do not mutate the live workbook rows or PAR rows", () => {
+    const rankingsBefore = structuredClone(FANTASY_RANKINGS.rows);
+    const parBefore = structuredClone(FANTASY_PAR_ROWS);
+
+    buildStatusAvailability({
+      currentSeasonRosterRows: [{ gsisId: "x", team: "KC", rawStatus: "ACT" }],
+      currentSeasonAsOf: "2026-08-22",
+      masterTableRows: [{ gsisId: "y", team: null, rawStatus: "RLS" }],
+      masterTableAsOf: "2026-08-21",
+      universe: [{ playerId: "gsis:x", playerName: "X", position: "WR" }],
+    });
+    buildRookieFallback([{ playerId: "gsis:z", playerName: "Z", position: "RB" }], []);
+    applyStatusTreatments("reserve", "high", 15);
+    buildRefinedCandidates(15, { factor: 1.05, applied: true, reason: null });
+    selectEffectiveBaseline(15, null);
+    runUsageCapExperiment([], [0, 0.05, 0.1, 0.15]);
+
+    expect(FANTASY_RANKINGS.rows).toEqual(rankingsBefore);
+    expect(FANTASY_PAR_ROWS).toEqual(parBefore);
+  });
+
+  it("STATUS_MODEL_RANK_EXCLUSION only excludes the two unambiguous not-on-any-2026-team categories, never active/reserve/unknown", () => {
+    expect(STATUS_MODEL_RANK_EXCLUSION.active).toBe(false);
+    expect(STATUS_MODEL_RANK_EXCLUSION.reserve).toBe(false);
+    expect(STATUS_MODEL_RANK_EXCLUSION.unknown).toBe(false);
+    expect(STATUS_MODEL_RANK_EXCLUSION.otherUnavailable).toBe(false);
+    expect(STATUS_MODEL_RANK_EXCLUSION.released).toBe(true);
+    expect(STATUS_MODEL_RANK_EXCLUSION.suspended).toBe(true);
+  });
+
+  it("known canonical ranking/PAR anchors are still unchanged after Phase 3B status/fallback computation runs", () => {
+    buildRefinedCandidates(15, { factor: 1.05, applied: true, reason: null });
+    const gibbs = FANTASY_RANKINGS.rows.find((row) => row.player === "Jahmyr Gibbs")!;
+    expect(gibbs).toMatchObject({ overallRank: 1, positionRank: 1, projectionRank: 1 });
+    const gibbsPar = FANTASY_PAR_ROWS.find((row) => row.player === "Jahmyr Gibbs")!;
+    expect(gibbsPar.parPerGame).toBeCloseTo(10.72, 2);
   });
 });
