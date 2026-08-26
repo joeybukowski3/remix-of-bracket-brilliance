@@ -22,8 +22,20 @@ describe("CollegeFootballMatchup", () => {
     renderMatchup("401856766");
     expect(screen.getAllByText("North Carolina").length).toBeGreaterThan(0);
     expect(screen.getAllByText("TCU").length).toBeGreaterThan(0);
-    expect(screen.getByText("Model projection coming soon")).toBeInTheDocument();
+    expect(screen.getByText("Model projections coming soon")).toBeInTheDocument();
     expect(screen.queryByText(/projected spread:/i)).not.toBeInTheDocument();
+  });
+
+  it("does not render large empty offense/defense boxes when 2026 stats are null", () => {
+    renderMatchup("401856766");
+    expect(
+      screen.getByText("2026 season statistics not yet available. This section will populate once box-score data is live."),
+    ).toBeInTheDocument();
+  });
+
+  it("does not fabricate a win probability", () => {
+    renderMatchup("401856766");
+    expect(screen.queryByText(/win probability:\s*\d/i)).not.toBeInTheDocument();
   });
 
   it("shows not found for unknown game", () => {
