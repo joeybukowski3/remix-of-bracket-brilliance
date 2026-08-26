@@ -1,3 +1,5 @@
+import type { ComponentType } from "react";
+import { BarChart3, Shield, Swords, Users, Zap } from "lucide-react";
 import type { CfbTeam } from "@/data/cfb/types";
 import { formatNullableNumber, formatRank } from "@/lib/cfb/format";
 import { higherIsBetterEdge, lowerIsBetterEdge, type CfbComparisonEdge } from "@/lib/cfb/comparison";
@@ -7,21 +9,24 @@ import {
   getCfbPowerBarWidthPercent,
 } from "@/lib/cfb/ratingPresentation";
 import { cn } from "@/lib/utils";
+import CollegeFootballStrongerBadge from "./CollegeFootballStrongerBadge";
 
 type Props = {
-  away: Pick<CfbTeam, "shortName" | "primaryColor" | "ratings">;
-  home: Pick<CfbTeam, "shortName" | "primaryColor" | "ratings">;
+  away: Pick<CfbTeam, "shortName" | "abbreviation" | "primaryColor" | "ratings">;
+  home: Pick<CfbTeam, "shortName" | "abbreviation" | "primaryColor" | "ratings">;
 };
 
-function StrongerMarker({ show }: { show: boolean }) {
-  if (!show) return null;
+function MetricIcon({ icon: Icon }: { icon: ComponentType<{ className?: string }> }) {
   return (
-    <span aria-hidden="true" className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm">
+      <Icon className="h-3.5 w-3.5" />
+    </span>
   );
 }
 
 function BarRow({
   label,
+  icon,
   awayValue,
   homeValue,
   awayPercent,
@@ -31,6 +36,7 @@ function BarRow({
   edge,
 }: {
   label: string;
+  icon: ComponentType<{ className?: string }>;
   awayValue: string;
   homeValue: string;
   awayPercent: number;
@@ -40,43 +46,46 @@ function BarRow({
   edge: CfbComparisonEdge;
 }) {
   return (
-    <div className="border-t border-slate-100 px-3 py-2">
-      <div className="grid grid-cols-[3rem_1fr_3rem] items-center gap-2 text-xs">
-        <div
-          className={cn(
-            "flex items-center justify-end font-bold tabular-nums",
-            edge === "away" ? "text-slate-900" : "text-slate-600",
-          )}
-        >
-          {awayValue}
-          <StrongerMarker show={edge === "away"} />
-        </div>
-        <div className="text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-          {label}
-        </div>
-        <div
-          className={cn(
-            "flex items-center justify-start font-bold tabular-nums",
-            edge === "home" ? "text-slate-900" : "text-slate-600",
-          )}
-        >
-          <StrongerMarker show={edge === "home"} />
-          {homeValue}
-        </div>
+    <div className="grid grid-cols-[3.25rem_1fr_2.75rem_1fr_3.25rem] items-center gap-2 border-t border-slate-100 px-3 py-3 sm:gap-3 sm:px-4">
+      <div
+        className={cn(
+          "text-right text-sm font-black tabular-nums sm:text-base",
+          edge === "away" ? "text-slate-900" : "text-slate-500",
+        )}
+      >
+        {awayValue}
       </div>
-      <div className="mt-1.5 flex items-center gap-1">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+      <div className="flex items-center justify-end gap-1.5">
+        <CollegeFootballStrongerBadge show={edge === "away"} color={awayColor} />
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
           <div
             className="ml-auto h-full rounded-full transition-[width]"
             style={{ width: `${awayPercent}%`, background: awayColor }}
           />
         </div>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <MetricIcon icon={icon} />
+        <span className="text-center text-[9px] font-bold uppercase leading-tight tracking-wide text-slate-500 sm:text-[10px]">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-center justify-start gap-1.5">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
           <div
             className="h-full rounded-full transition-[width]"
             style={{ width: `${homePercent}%`, background: homeColor }}
           />
         </div>
+        <CollegeFootballStrongerBadge show={edge === "home"} color={homeColor} />
+      </div>
+      <div
+        className={cn(
+          "text-left text-sm font-black tabular-nums sm:text-base",
+          edge === "home" ? "text-slate-900" : "text-slate-500",
+        )}
+      >
+        {homeValue}
       </div>
     </div>
   );
@@ -84,34 +93,49 @@ function BarRow({
 
 function RankRow({
   label,
+  icon,
   awayValue,
   homeValue,
+  awayColor,
+  homeColor,
   edge,
 }: {
   label: string;
+  icon: ComponentType<{ className?: string }>;
   awayValue: string;
   homeValue: string;
+  awayColor: string;
+  homeColor: string;
   edge: CfbComparisonEdge;
 }) {
   return (
-    <div className="grid grid-cols-[3rem_1fr_3rem] items-center gap-2 border-t border-slate-100 px-3 py-2 text-xs">
+    <div className="grid grid-cols-[3.25rem_1fr_2.75rem_1fr_3.25rem] items-center gap-2 border-t border-slate-100 px-3 py-2.5 sm:gap-3 sm:px-4">
       <div
         className={cn(
-          "flex items-center justify-end font-semibold tabular-nums",
-          edge === "away" ? "text-slate-900" : "text-slate-600",
+          "text-right text-sm font-bold tabular-nums",
+          edge === "away" ? "text-slate-900" : "text-slate-500",
         )}
       >
         {awayValue}
-        <StrongerMarker show={edge === "away"} />
       </div>
-      <div className="text-center text-[10px] font-medium uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="flex items-center justify-end gap-1.5">
+        <CollegeFootballStrongerBadge show={edge === "away"} color={awayColor} />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <MetricIcon icon={icon} />
+        <span className="text-center text-[9px] font-bold uppercase leading-tight tracking-wide text-slate-500 sm:text-[10px]">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-center justify-start gap-1.5">
+        <CollegeFootballStrongerBadge show={edge === "home"} color={homeColor} />
+      </div>
       <div
         className={cn(
-          "flex items-center justify-start font-semibold tabular-nums",
-          edge === "home" ? "text-slate-900" : "text-slate-600",
+          "text-left text-sm font-bold tabular-nums",
+          edge === "home" ? "text-slate-900" : "text-slate-500",
         )}
       >
-        <StrongerMarker show={edge === "home"} />
         {homeValue}
       </div>
     </div>
@@ -123,15 +147,31 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
   const homeRatings = home.ratings;
 
   return (
-    <div className="overflow-hidden rounded-sm border border-slate-200 bg-white">
-      <div className="grid grid-cols-[3rem_1fr_3rem] gap-2 bg-slate-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-        <div className="truncate text-right">{away.shortName}</div>
-        <div className="text-center">JKB Power Comparison</div>
-        <div className="truncate text-left">{home.shortName}</div>
+    <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5 sm:px-4">
+        <span className="text-[10px] font-black uppercase tracking-wide" style={{ color: away.primaryColor }}>
+          {away.shortName}
+        </span>
+        <div className="flex items-center gap-2 text-[9px] font-semibold text-slate-500 sm:gap-3 sm:text-[10px]">
+          <span className="flex items-center gap-1">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: away.primaryColor }} />
+            {away.abbreviation}
+            <span className="hidden sm:inline">&nbsp;Advantage</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: home.primaryColor }} />
+            {home.abbreviation}
+            <span className="hidden sm:inline">&nbsp;Advantage</span>
+          </span>
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-wide" style={{ color: home.primaryColor }}>
+          {home.shortName}
+        </span>
       </div>
 
       <BarRow
         label="Power"
+        icon={Zap}
         awayValue={formatNullableNumber(awayRatings.jkbPowerRating)}
         homeValue={formatNullableNumber(homeRatings.jkbPowerRating)}
         awayPercent={getCfbPowerBarWidthPercent(awayRatings.jkbPowerRating)}
@@ -142,6 +182,7 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
       />
       <BarRow
         label="Offense"
+        icon={Swords}
         awayValue={formatNullableNumber(awayRatings.offensiveRating)}
         homeValue={formatNullableNumber(homeRatings.offensiveRating)}
         awayPercent={getCfbOffenseBarWidthPercent(awayRatings.offensiveRating)}
@@ -152,6 +193,7 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
       />
       <BarRow
         label="Defense"
+        icon={Shield}
         awayValue={formatNullableNumber(awayRatings.defensiveRating)}
         homeValue={formatNullableNumber(homeRatings.defensiveRating)}
         awayPercent={getCfbDefenseBarWidthPercent(awayRatings.defensiveRating)}
@@ -162,19 +204,25 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
       />
       <RankRow
         label="SOS Played"
+        icon={Users}
         awayValue={formatRank(awayRatings.sosPlayedRank)}
         homeValue={formatRank(homeRatings.sosPlayedRank)}
+        awayColor={away.primaryColor}
+        homeColor={home.primaryColor}
         edge={lowerIsBetterEdge(awayRatings.sosPlayedRank, homeRatings.sosPlayedRank)}
       />
       <RankRow
         label="SOS Remaining"
+        icon={BarChart3}
         awayValue={formatRank(awayRatings.sosRemainingRank)}
         homeValue={formatRank(homeRatings.sosRemainingRank)}
+        awayColor={away.primaryColor}
+        homeColor={home.primaryColor}
         edge={lowerIsBetterEdge(awayRatings.sosRemainingRank, homeRatings.sosRemainingRank)}
       />
 
-      <p className="border-t border-slate-100 px-3 py-2 text-[10px] leading-4 text-slate-500">
-        Comparison markers indicate the stronger side only — not a betting recommendation.
+      <p className="border-t border-slate-100 px-3 py-2 text-[10px] leading-4 text-slate-500 sm:px-4">
+        Comparison indicators show which team has the statistical edge — not a betting recommendation.
       </p>
     </div>
   );

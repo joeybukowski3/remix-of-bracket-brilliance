@@ -1,8 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { CfbSeasonStats } from "@/data/cfb/types";
 import type { CfbMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
 import CollegeFootballSeasonStatsComparison from "./CollegeFootballSeasonStatsComparison";
+
+const AWAY_COLOR = "#4b9cd3";
+const HOME_COLOR = "#4d1979";
 
 function stats(teamId: string, overrides: Partial<CfbSeasonStats> = {}): CfbSeasonStats {
   return {
@@ -76,9 +79,31 @@ const FULL_CONTEXT: CfbMatchupSeasonStatsContext = {
   homeRanks: { pointsPerGame: 91 },
 };
 
+/**
+ * The component renders two structurally-identical trees — a desktop
+ * side-by-side pair (always mounted, CSS-hidden below `lg`) and a mobile
+ * tabbed single-card view (CSS-hidden at `lg`+) — so unit tests that need
+ * exactly one match per row scope their queries to the desktop tree, which
+ * always shows both Offense and Defense regardless of tab state.
+ */
+function renderAndGetDesktopScope(context: CfbMatchupSeasonStatsContext) {
+  const { container, ...rest } = render(
+    <CollegeFootballSeasonStatsComparison
+      awayShortName="AWAY"
+      homeShortName="HOME"
+      context={context}
+      awayColor={AWAY_COLOR}
+      homeColor={HOME_COLOR}
+    />,
+  );
+  const desktopScope = container.querySelector(".hidden.lg\\:grid") as HTMLElement;
+  expect(desktopScope).not.toBeNull();
+  return { container, desktopScope, ...rest };
+}
+
 describe("CollegeFootballSeasonStatsComparison", () => {
   it("renders all 14 metric rows across offense and defense", () => {
-    render(<CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />);
+    const { desktopScope } = renderAndGetDesktopScope(FULL_CONTEXT);
     const offenseLabels = ["Points/Game", "Yards/Play", "Points/Play", "3rd Down %", "Completion %", "Rush Yards/Att", "Pass Yards/Att"];
     const defenseLabels = [
       "Opp Points/Game",
@@ -90,50 +115,55 @@ describe("CollegeFootballSeasonStatsComparison", () => {
       "Opp Pass Yards/Att",
     ];
     for (const label of [...offenseLabels, ...defenseLabels]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(within(desktopScope).getByText(label)).toBeInTheDocument();
     }
   });
 
   it("formats each metric with its specified precision", () => {
-    render(<CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />);
-    expect(screen.getByText("31.2")).toBeInTheDocument(); // pointsPerGame, 1 decimal
-    expect(screen.getByText("0.45")).toBeInTheDocument(); // pointsPerPlay, 2 decimals
-    expect(screen.getByText("41.7%")).toBeInTheDocument(); // thirdDownPct, 1 decimal + %
-    expect(screen.getByText("65.5%")).toBeInTheDocument(); // completionPct
-    expect(screen.getByText("4.20")).toBeInTheDocument(); // yardsPerRush, 2 decimals
-    expect(screen.getByText("8.13")).toBeInTheDocument(); // yardsPerPass, 2 decimals
+    const { desktopScope } = renderAndGetDesktopScope(FULL_CONTEXT);
+    expect(within(desktopScope).getByText("31.2")).toBeInTheDocument(); // pointsPerGame, 1 decimal
+    expect(within(desktopScope).getByText("0.45")).toBeInTheDocument(); // pointsPerPlay, 2 decimals
+    expect(within(desktopScope).getByText("41.7%")).toBeInTheDocument(); // thirdDownPct, 1 decimal + %
+    expect(within(desktopScope).getByText("65.5%")).toBeInTheDocument(); // completionPct
+    expect(within(desktopScope).getByText("4.20")).toBeInTheDocument(); // yardsPerRush, 2 decimals
+    expect(within(desktopScope).getByText("8.13")).toBeInTheDocument(); // yardsPerPass, 2 decimals
   });
 
   it("displays the generated rank as a muted badge beside the value", () => {
-    render(<CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />);
-    expect(screen.getByText("#22")).toBeInTheDocument();
-    expect(screen.getByText("#91")).toBeInTheDocument();
+    const { desktopScope } = renderAndGetDesktopScope(FULL_CONTEXT);
+    expect(within(desktopScope).getByText("#22")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("#91")).toBeInTheDocument();
   });
 
   it("omits the rank badge for metrics absent from the ranks map, without a fake dash", () => {
-    render(<CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />);
+    const { desktopScope } = renderAndGetDesktopScope(FULL_CONTEXT);
     // FULL_CONTEXT only supplies ranks for pointsPerGame (both sides) and
     // thirdDownPct/opponentThirdDownPct (away only) — every other metric row
     // must render its value with no "#N" badge at all.
-    const allRankBadges = screen.getAllByText(/^#\d+$/);
+    const allRankBadges = within(desktopScope).getAllByText(/^#\d+$/);
     expect(allRankBadges.map((el) => el.textContent).sort()).toEqual(["#22", "#31", "#40", "#91"]);
   });
 
-  it("marks the correct stronger side for a higher-is-better metric (Points/Game)", () => {
-    const { container } = render(
-      <CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />,
-    );
+  it("marks the correct stronger side for a higher-is-better metric (Points/Game), in each team's own color", () => {
+    const { desktopScope } = renderAndGetDesktopScope(FULL_CONTEXT);
     // away.pointsPerGame (31.2) > home.pointsPerGame (24.1) -> away should carry the edge marker.
-    const pointsRow = screen.getByText("Points/Game").closest("div")?.parentElement;
-    expect(pointsRow?.querySelector(".text-emerald-800")?.textContent).toContain("31.2");
-    expect(container.querySelectorAll(".text-emerald-600").length).toBeGreaterThan(0);
+    const pointsRow = within(desktopScope).getByText("Points/Game").closest("div")?.parentElement;
+    expect(pointsRow).not.toBeNull();
+    expect(pointsRow?.textContent).toContain("31.2");
+    const marker = pointsRow?.querySelector('[data-testid="stronger-badge"]') as HTMLElement | null;
+    expect(marker).not.toBeNull();
+    const swatch = document.createElement("div");
+    swatch.style.background = AWAY_COLOR;
+    expect(marker?.style.background).toBe(swatch.style.background);
   });
 
   it("marks the correct stronger side for a lower-is-better metric (Opp Points/Game)", () => {
-    render(<CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />);
+    const { desktopScope } = renderAndGetDesktopScope(FULL_CONTEXT);
     // away.pointsAllowedPerGame (19.2) < home.pointsAllowedPerGame (29.7) -> away has the (defensive) edge.
-    const oppPointsRow = screen.getByText("Opp Points/Game").closest("div")?.parentElement;
-    expect(oppPointsRow?.querySelector(".text-emerald-800")?.textContent).toContain("19.2");
+    const oppPointsRow = within(desktopScope).getByText("Opp Points/Game").closest("div")?.parentElement;
+    expect(oppPointsRow).not.toBeNull();
+    expect(oppPointsRow?.textContent).toContain("19.2");
+    expect(oppPointsRow?.querySelector('[data-testid="stronger-badge"]')).not.toBeNull();
   });
 
   it("shows the existing null treatment and no rank when a value is null (NDSU-like missing side)", () => {
@@ -142,16 +172,30 @@ describe("CollegeFootballSeasonStatsComparison", () => {
       home: stats("home", { gamesPlayed: 0 }),
       homeRanks: {},
     };
-    render(<CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={context} />);
-    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+    const { desktopScope } = renderAndGetDesktopScope(context);
+    expect(within(desktopScope).getAllByText("—").length).toBeGreaterThan(0);
     // Only away's ranks should appear; no fabricated rank for the null home side.
-    expect(screen.queryByText("#91")).not.toBeInTheDocument();
+    expect(within(desktopScope).queryByText("#91")).not.toBeInTheDocument();
+  });
+
+  it("defaults the mobile tab view to Offense, and switching tabs swaps which card is shown", () => {
+    const { container } = renderAndGetDesktopScope(FULL_CONTEXT);
+    const mobileScope = container.querySelector(".lg\\:hidden") as HTMLElement;
+    expect(mobileScope).not.toBeNull();
+    expect(within(mobileScope).getByText("Points/Game")).toBeInTheDocument();
+    expect(within(mobileScope).queryByText("Opp Points/Game")).not.toBeInTheDocument();
+
+    fireEvent.click(within(mobileScope).getByRole("button", { name: "Defense" }));
+    expect(within(mobileScope).getByText("Opp Points/Game")).toBeInTheDocument();
+    expect(within(mobileScope).queryByText("Points/Game")).not.toBeInTheDocument();
+
+    fireEvent.click(within(mobileScope).getByRole("button", { name: "Off vs Def" }));
+    expect(within(mobileScope).getByText("Points/Game")).toBeInTheDocument();
+    expect(within(mobileScope).getByText("Opp Points/Game")).toBeInTheDocument();
   });
 
   it("never renders NaN or undefined", () => {
-    const { container } = render(
-      <CollegeFootballSeasonStatsComparison awayShortName="AWAY" homeShortName="HOME" context={FULL_CONTEXT} />,
-    );
+    const { container } = renderAndGetDesktopScope(FULL_CONTEXT);
     expect(container.textContent ?? "").not.toMatch(/\bNaN\b/);
     expect(container.textContent ?? "").not.toMatch(/\bundefined\b/);
   });
