@@ -121,7 +121,7 @@ export default function CollegeFootballMatchup() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4">
-      <CollegeFootballMobileStickyHeader away={away} home={home} visible={showStickyHeader} />
+      <CollegeFootballMobileStickyHeader away={away} home={home} game={game} visible={showStickyHeader} />
 
       <CollegeFootballMatchupHero game={game} away={away} home={home} />
 
@@ -134,6 +134,8 @@ export default function CollegeFootballMatchup() {
           game={game}
           awayAbbreviation={away.abbreviation}
           homeAbbreviation={home.abbreviation}
+          awayColor={away.primaryColor}
+          homeColor={home.primaryColor}
         />
         {hasOpenTotalContext && (
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500">
@@ -146,9 +148,8 @@ export default function CollegeFootballMatchup() {
         )}
       </section>
 
-      <div ref={stickyStartRef} aria-hidden="true" />
-
       <section aria-labelledby="power-heading">
+        <div ref={stickyStartRef} aria-hidden="true" />
         <SectionHeading id="power-heading" accentColor="#7c3aed">
           Power Comparison
         </SectionHeading>
@@ -188,9 +189,8 @@ export default function CollegeFootballMatchup() {
           Power Rating Line
         </SectionHeading>
         <CollegeFootballModelPanel game={game} />
+        <div ref={stickyEndRef} aria-hidden="true" />
       </section>
-
-      <div ref={stickyEndRef} aria-hidden="true" />
 
       <CollegeFootballDataNotice kind="both" />
     </div>
