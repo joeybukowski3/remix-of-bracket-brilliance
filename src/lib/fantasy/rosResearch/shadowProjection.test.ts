@@ -5,6 +5,7 @@ import {
   buildShadowCandidates,
   capConfidenceForBaselineSource,
   computeFpaAdjustment,
+  computeF2PromotedModelRanks,
   computeHistoricalBaselineOptions,
   computeMarketAdjustment,
   computeTeamAdjustment,
@@ -345,5 +346,77 @@ describe("Phase 3B: buildRefinedCandidates", () => {
   it("never includes usage/team/market as a component -- only FPA and the baseline", () => {
     const candidates = buildRefinedCandidates(20, { factor: 1, applied: false, reason: "x" });
     expect(candidates.map((c) => c.candidate)).toEqual(["F1", "F2", "F3"]);
+  });
+});
+
+describe("computeF2PromotedModelRanks", () => {
+  const player = (
+    canonicalPlayerId: string,
+    position: "RB" | "WR",
+    currentOverallRank: number,
+    f2Ppg: number,
+    f2ParPerGame: number,
+    rankEligible = true,
+    candidateEParPerGame = 0,
+  ) => ({
+    canonicalPlayerId,
+    position,
+    currentOverallRank,
+    rankEligible,
+    candidates: [{ candidate: "E", shadowParPerGame: candidateEParPerGame }],
+    refinedCandidates: [
+      { candidate: "F1" as const, projectedPpg: f2Ppg, shadowParPerGame: f2ParPerGame },
+      { candidate: "F2" as const, projectedPpg: f2Ppg, shadowParPerGame: f2ParPerGame },
+      { candidate: "F3" as const, projectedPpg: f2Ppg, shadowParPerGame: f2ParPerGame },
+    ],
+  });
+
+  it("derives both promoted ranks from F2 PAR/G across and within positions", () => {
+    const ranks = computeF2PromotedModelRanks([
+      player("rb-high", "RB", 20, 20, 8, true, -100),
+      player("wr-mid", "WR", 10, 18, 6, true, 100),
+      player("rb-low", "RB", 5, 15, 3, true, 200),
+    ]);
+    expect(ranks).toEqual([
+      { canonicalPlayerId: "rb-high", shadowPositionRank: 1, shadowModelRank: 1 },
+      { canonicalPlayerId: "wr-mid", shadowPositionRank: 1, shadowModelRank: 2 },
+      { canonicalPlayerId: "rb-low", shadowPositionRank: 2, shadowModelRank: 3 },
+    ]);
+  });
+
+  it("cannot change promoted ranks when Candidate E changes", () => {
+    const inputs = [
+      player("rb-one", "RB", 1, 20, 8, true, -100),
+      player("rb-two", "RB", 2, 19, 7, true, 100),
+    ];
+    const before = computeF2PromotedModelRanks(inputs);
+    const after = computeF2PromotedModelRanks(
+      inputs.map((input) => ({
+        ...input,
+        candidates: input.candidates.map((candidate) => ({
+          ...candidate,
+          shadowParPerGame: candidate.shadowParPerGame * -10,
+        })),
+      })),
+    );
+    expect(after).toEqual(before);
+  });
+
+  it("applies R2 eligibility only to rank inclusion and leaves F2 projections untouched", () => {
+    const released = player("released", "WR", 1, 22, 10, false, 999);
+    const beforeF2 = structuredClone(released.refinedCandidates.find((candidate) => candidate.candidate === "F2"));
+    expect(computeF2PromotedModelRanks([released, player("active", "WR", 2, 12, 0)])).toEqual([
+      { canonicalPlayerId: "active", shadowPositionRank: 1, shadowModelRank: 1 },
+    ]);
+    expect(released.refinedCandidates.find((candidate) => candidate.candidate === "F2")).toEqual(beforeF2);
+  });
+
+  it("breaks exact F2 PAR/G ties deterministically by live rank then canonical id", () => {
+    const ranks = computeF2PromotedModelRanks([
+      player("z", "RB", 2, 20, 8),
+      player("a", "WR", 1, 20, 8),
+    ]);
+    expect(ranks.find((rank) => rank.canonicalPlayerId === "a")?.shadowModelRank).toBe(1);
+    expect(ranks.find((rank) => rank.canonicalPlayerId === "z")?.shadowModelRank).toBe(2);
   });
 });

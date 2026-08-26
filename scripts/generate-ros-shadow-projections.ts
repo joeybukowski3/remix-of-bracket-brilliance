@@ -25,6 +25,7 @@ import {
   buildShadowCandidates,
   capConfidenceForBaselineSource,
   computeFpaAdjustment,
+  computeF2PromotedModelRanks,
   computeHistoricalBaselineOptions,
   computeMarketAdjustment,
   computeTeamAdjustment,
@@ -309,7 +310,7 @@ function main() {
       availableInputs: string[];
       missingInputs: string[];
     }>;
-    shadowPositionRank: number | null; // based on candidate E shadowParPerGame, excluding STATUS_MODEL_RANK_EXCLUSION categories
+    shadowPositionRank: number | null; // promoted F2 PAR/G rank within position, filtered by applied rank eligibility
   };
 
   const playersOut: PlayerOut[] = resolved.map((row) => {
@@ -437,28 +438,18 @@ function main() {
     };
   });
 
-  // ---- SHADOW-ONLY position rank, based on Candidate E's shadowParPerGame (descending), same convention the live PAR rank uses. Phase 3C: filtered by rankEligible under the applied policy (R2 by default) rather than Treatment D's excludedFromShadowRank -- see rankEligibilityReason on excluded players. Excluded players keep their shadowParPerGame (projectionEligible) in the artifact. ----
-  for (const position of POSITIONS) {
-    const ranked = playersOut
-      .filter((p) => p.position === position)
-      .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
-      .filter((row) => row.candidateE.shadowParPerGame != null && row.p.rankEligible)
-      .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame }))
-      .sort((a, b) => (b.parPerGame as number) - (a.parPerGame as number));
-    ranked.forEach((row, index) => { row.p.shadowPositionRank = index + 1; });
-  }
-
-  // ---- SHADOW-ONLY cross-position Model Rank, based on Candidate E's shadowParPerGame (descending), across all positions. Same rankEligible filter as shadowPositionRank above. ----
-  const modelRanked = playersOut
-    .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
-    .filter((row) => row.candidateE.shadowParPerGame != null && row.p.rankEligible)
-    .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame }))
-    .sort((a, b) => (b.parPerGame as number) - (a.parPerGame as number));
-  const shadowModelRankByPlayerId = new Map(modelRanked.map((row, index) => [row.p.canonicalPlayerId, index + 1]));
+  // ---- PROMOTED F2 ranks. F2 projected PPG was converted above using the
+  // existing position replacement PPG; the resulting F2 shadow PAR/G is the
+  // sole sorting authority. R2 eligibility withholds ranks without changing
+  // projected PPG or PAR/G. Candidate E remains research-only. ----
+  const promotedRanksByPlayerId = new Map(
+    computeF2PromotedModelRanks(playersOut).map((rank) => [rank.canonicalPlayerId, rank]),
+  );
 
   const playersWithModelRank = playersOut.map((p) => ({
     ...p,
-    shadowModelRank: shadowModelRankByPlayerId.get(p.canonicalPlayerId) ?? null,
+    shadowPositionRank: promotedRanksByPlayerId.get(p.canonicalPlayerId)?.shadowPositionRank ?? null,
+    shadowModelRank: promotedRanksByPlayerId.get(p.canonicalPlayerId)?.shadowModelRank ?? null,
   }));
 
   // ---- Diagnostics ----
@@ -503,14 +494,18 @@ function main() {
     .filter((p) => p.statusConflict)
     .map((p) => ({ player: p.player, position: p.position, availabilityStatus: p.availabilityStatus, reason: p.statusConflictReason }));
 
-  // ---- Phase 3C: rank a player list under an arbitrary eligibility predicate, same convention as the artifact's own shadowModelRank (Candidate E shadowParPerGame, descending). Used to compare R1/R2/R3 and the pre-Phase-3C legacy Treatment-D ranking without mutating the artifact's own field. ----
+  // ---- Phase 3C: rank F2 under an arbitrary eligibility predicate, using the
+  // same authority and deterministic ordering as the promoted fields. ----
   function rankUnder(predicate: (p: (typeof playersWithModelRank)[number]) => boolean) {
+    const rankByPlayerId = new Map(
+      computeF2PromotedModelRanks(
+        playersWithModelRank.map((player) => ({ ...player, rankEligible: predicate(player) })),
+      ).map((rank) => [rank.canonicalPlayerId, rank.shadowModelRank]),
+    );
     return playersWithModelRank
-      .map((p) => ({ p, candidateE: p.candidates.find((c) => c.candidate === "E")! }))
-      .filter((row) => row.candidateE.shadowParPerGame != null && predicate(row.p))
-      .map((row) => ({ p: row.p, parPerGame: row.candidateE.shadowParPerGame as number }))
-      .sort((a, b) => b.parPerGame - a.parPerGame)
-      .map((row, index) => ({ playerId: row.p.canonicalPlayerId, player: row.p.player, position: row.p.position, rank: index + 1 }));
+      .filter((player) => rankByPlayerId.has(player.canonicalPlayerId))
+      .map((player) => ({ playerId: player.canonicalPlayerId, player: player.player, position: player.position, rank: rankByPlayerId.get(player.canonicalPlayerId)! }))
+      .sort((a, b) => a.rank - b.rank);
   }
 
   const legacyRanked = rankUnder((p) => !p.candidates.find((c) => c.candidate === "E")!.excludedFromShadowRank);
@@ -530,7 +525,7 @@ function main() {
 
   const eligibilityPolicyComparison = {
     policies: ELIGIBILITY_POLICY_LABELS,
-    note: "Each policy's top25/50/100 is an independently recomputed SHADOW ranking (Candidate E shadowParPerGame, descending) filtered by that policy's rankEligible -- not a re-slice of the artifact's own R2-based shadowModelRank. 'legacy' is the pre-Phase-3C Treatment D (released/suspended only) ranking, for comparison.",
+    note: "Each policy's top25/50/100 is an independently recomputed F2 ranking (F2 shadowParPerGame, descending with deterministic ties) filtered by that policy's rankEligible -- not a re-slice of the artifact's own R2-based shadowModelRank. 'legacy' applies the pre-Phase-3C Treatment D (released/suspended only) eligibility rule to the same F2 ranking authority for comparison.",
     counts: { legacy: legacyRanked.length, R1: rankedByPolicy.R1.length, R2: rankedByPolicy.R2.length, R3: rankedByPolicy.R3.length },
     top25: { legacy: topN(legacyRanked, 25).size, R1: topN(rankedByPolicy.R1, 25).size, R2: topN(rankedByPolicy.R2, 25).size, R3: topN(rankedByPolicy.R3, 25).size },
     top50: { legacy: topN(legacyRanked, 50).size, R1: topN(rankedByPolicy.R1, 50).size, R2: topN(rankedByPolicy.R2, 50).size, R3: topN(rankedByPolicy.R3, 50).size },
@@ -651,7 +646,7 @@ function main() {
       ],
       notes: [
         "SHADOW-ONLY research artifact. Nothing in this file changes Overall Rank, POS RK, PAR/G, Projection RK, replacement levels, projectedFantasyPoints, or any Weekly Fantasy artifact.",
-        "shadowPositionRank and shadowModelRank are SHADOW-ONLY ranks derived from Candidate E's shadowParPerGame (descending); see methodology.shadowRanking below.",
+        "shadowPositionRank and shadowModelRank are promoted research ranks derived only from F2 shadowParPerGame (descending); Candidate E remains experimental and cannot drive either rank field. See methodology.shadowRanking below.",
       ],
     },
     methodology: {
@@ -670,7 +665,7 @@ function main() {
       minMarketGamesForTeamFactor: MIN_MARKET_GAMES_FOR_TEAM_FACTOR,
       fpaDirection: "Higher average points-allowed across the remaining slate = more favourable remaining schedule for that position (source rank 1 = allowed the most); a team-position average above the league-position average yields a factor > 1.",
       leagueAverages: { impliedTeamTotal: leagueAvgImpliedTotal, remainingImpliedTeamTotal: leagueAvgRemainingImpliedTotal, pointsAllowedByPosition: leagueAvgPointsAllowedByPosition },
-      shadowRanking: `shadowPositionRank: rank within position by Candidate E shadowParPerGame, descending (same convention as the live PAR rank sort), excluding players not rankEligible under the applied Phase 3C policy (${APPLIED_ELIGIBILITY_POLICY} -- see diagnostics.eligibilityPolicyComparison for R1/R2/R3 and legacy Treatment-D side-by-side). shadowModelRank: same, across all positions. Excluded players retain shadowParPerGame/projectionEligible in the artifact -- only rank inclusion is withheld, never the projection itself.`,
+      shadowRanking: `F2 is the sole promoted rank authority: recency-weighted-min-sample historical PPG, with PAR-consensus fallback only for players with no history, and no PPG change from status. Existing position replacement PPG is subtracted from F2 projected PPG to produce F2 shadowParPerGame. shadowPositionRank orders that value within position; shadowModelRank orders it across all positions, descending with currentOverallRank then canonicalPlayerId as deterministic tie-breakers. Players not rankEligible under the applied Phase 3C policy (${APPLIED_ELIGIBILITY_POLICY}) receive neither rank, but retain unchanged F2 projectedPpg/shadowParPerGame. Candidate E remains experimental and cannot drive either promoted rank field.`,
       statusAvailability: {
         primarySource: { name: "roster_weekly_2026", path: "data/nfl/nflverse/weekly-rosters/roster_weekly_2026.csv", week: latestRosterWeek, asOf: roster2026Entry.retrievedDateUtc, note: "Current-season, week-specific roster snapshot. Used first for every player." },
         fallbackSource: { name: "players", path: "data/nfl/nflverse/players/players.csv", asOf: playersEntry.retrievedDateUtc, note: "Master player table's status field (not season-specific; may be stale). Used ONLY when a player is absent from the current-season snapshot above." },

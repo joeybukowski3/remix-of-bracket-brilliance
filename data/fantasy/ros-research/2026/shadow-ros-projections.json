@@ -9,32 +9,32 @@
       {
         "name": "identity-crosswalk",
         "path": "data/fantasy/ros-research/2026/identity-crosswalk.json",
-        "hash": "b754bf76ef007e19299d61b70fd16279fd4f85028b5c292d2ca5aab272d6df32"
+        "hash": "140d04fb0930cc31413d823897e1373bddcf0d734d2a58fdafb4f8fa0f190411"
       },
       {
         "name": "historical-baseline",
         "path": "data/fantasy/ros-research/2026/historical-baseline.json",
-        "hash": "1c093d567660ea5166cbb0ba413cdfb9cdad3a417fbf678726e07a3762a36065"
+        "hash": "93699f9282f5c657a22568689db2ff77e5a3916027bd8ec15f388d263eb9028e"
       },
       {
         "name": "usage-role-context",
         "path": "data/fantasy/ros-research/2026/usage-role-context.json",
-        "hash": "2913e29310d828ec6f7ab5d7fb14198228afa04681919128ed34db002da346d6"
+        "hash": "440373bf2202b060ae627e9f1059f7e4f6ea5e2d84969ab28bad7eced7468f09"
       },
       {
         "name": "team-environment",
         "path": "data/fantasy/ros-research/2026/team-environment.json",
-        "hash": "73cdf2865cb86624bd597642074f6d1977c567c038f1e7919895eb40b7bb4763"
+        "hash": "9f64de8927cbf9f218d58e039623aa486207bd8465a40a6531e275c7e34dec22"
       },
       {
         "name": "schedule-fpa-context",
         "path": "data/fantasy/ros-research/2026/schedule-fpa-context.json",
-        "hash": "87c2573e3e3e0421bb275cb91f0bcce94b2cb68bb4874014a055527d5fb9c91a"
+        "hash": "c13e6f99dba6b17c3405ff71f8fc98b2b45921d252074e3ace021b4c99c1bdc7"
       },
       {
         "name": "schedule-scoring-environment",
         "path": "data/fantasy/ros-research/2026/schedule-scoring-environment.json",
-        "hash": "895d487f737866670c5e0e5ecfa4b388dc785efcf15bf4b235779a184209ffe3"
+        "hash": "e5a3db9cc979fa7a73e4abc66347f1744e661c59a1f9eea3f4bc784cb1901689"
       }
     ],
     "liveComparisonSources": [
@@ -51,7 +51,7 @@
     ],
     "notes": [
       "SHADOW-ONLY research artifact. Nothing in this file changes Overall Rank, POS RK, PAR/G, Projection RK, replacement levels, projectedFantasyPoints, or any Weekly Fantasy artifact.",
-      "shadowPositionRank and shadowModelRank are SHADOW-ONLY ranks derived from Candidate E's shadowParPerGame (descending); see methodology.shadowRanking below."
+      "shadowPositionRank and shadowModelRank are promoted research ranks derived only from F2 shadowParPerGame (descending); Candidate E remains experimental and cannot drive either rank field. See methodology.shadowRanking below."
     ]
   },
   "methodology": {
@@ -114,7 +114,7 @@
         "TE": 10.725000000000001
       }
     },
-    "shadowRanking": "shadowPositionRank: rank within position by Candidate E shadowParPerGame, descending (same convention as the live PAR rank sort), excluding players not rankEligible under the applied Phase 3C policy (R2 -- see diagnostics.eligibilityPolicyComparison for R1/R2/R3 and legacy Treatment-D side-by-side). shadowModelRank: same, across all positions. Excluded players retain shadowParPerGame/projectionEligible in the artifact -- only rank inclusion is withheld, never the projection itself.",
+    "shadowRanking": "F2 is the sole promoted rank authority: recency-weighted-min-sample historical PPG, with PAR-consensus fallback only for players with no history, and no PPG change from status. Existing position replacement PPG is subtracted from F2 projected PPG to produce F2 shadowParPerGame. shadowPositionRank orders that value within position; shadowModelRank orders it across all positions, descending with currentOverallRank then canonicalPlayerId as deterministic tie-breakers. Players not rankEligible under the applied Phase 3C policy (R2) receive neither rank, but retain unchanged F2 projectedPpg/shadowParPerGame. Candidate E remains experimental and cannot drive either promoted rank field.",
     "statusAvailability": {
       "primarySource": {
         "name": "roster_weekly_2026",
@@ -2541,144 +2541,144 @@
     ],
     "largestOverallRankDisagreements": [
       {
-        "player": "Jake Tonges",
-        "position": "TE",
-        "currentOverallRank": 227,
-        "shadowModelRank": 77,
-        "delta": -150
+        "player": "James Conner",
+        "position": "RB",
+        "currentOverallRank": 247,
+        "shadowModelRank": 29,
+        "delta": -218
       },
       {
         "player": "Jonathon Brooks",
         "position": "RB",
         "currentOverallRank": 96,
-        "shadowModelRank": 243,
-        "delta": 147
-      },
-      {
-        "player": "Keon Coleman",
-        "position": "WR",
-        "currentOverallRank": 242,
-        "shadowModelRank": 103,
-        "delta": -139
-      },
-      {
-        "player": "James Conner",
-        "position": "RB",
-        "currentOverallRank": 247,
-        "shadowModelRank": 111,
-        "delta": -136
-      },
-      {
-        "player": "Zach Charbonnet",
-        "position": "RB",
-        "currentOverallRank": 200,
-        "shadowModelRank": 68,
-        "delta": -132
+        "shadowModelRank": 241,
+        "delta": 145
       },
       {
         "player": "Bhayshul Tuten",
         "position": "RB",
         "currentOverallRank": 73,
-        "shadowModelRank": 201,
-        "delta": 128
+        "shadowModelRank": 203,
+        "delta": 130
       },
       {
-        "player": "Dalton Schultz",
+        "player": "Jake Tonges",
         "position": "TE",
-        "currentOverallRank": 187,
-        "shadowModelRank": 63,
-        "delta": -124
-      },
-      {
-        "player": "Cade Otton",
-        "position": "TE",
-        "currentOverallRank": 228,
-        "shadowModelRank": 118,
-        "delta": -110
-      },
-      {
-        "player": "Dallas Goedert",
-        "position": "TE",
-        "currentOverallRank": 138,
-        "shadowModelRank": 29,
-        "delta": -109
-      },
-      {
-        "player": "Malik Willis",
-        "position": "QB",
-        "currentOverallRank": 125,
-        "shadowModelRank": 231,
-        "delta": 106
-      },
-      {
-        "player": "Deebo Samuel",
-        "position": "WR",
-        "currentOverallRank": 154,
-        "shadowModelRank": 48,
-        "delta": -106
-      },
-      {
-        "player": "Tank Dell",
-        "position": "WR",
-        "currentOverallRank": 180,
-        "shadowModelRank": 85,
-        "delta": -95
-      },
-      {
-        "player": "Cooper Kupp",
-        "position": "WR",
-        "currentOverallRank": 189,
-        "shadowModelRank": 94,
-        "delta": -95
-      },
-      {
-        "player": "Colby Parkinson",
-        "position": "TE",
-        "currentOverallRank": 208,
-        "shadowModelRank": 113,
-        "delta": -95
-      },
-      {
-        "player": "Antonio Williams",
-        "position": "WR",
-        "currentOverallRank": 143,
-        "shadowModelRank": 232,
-        "delta": 89
-      },
-      {
-        "player": "Ashton Jeanty",
-        "position": "RB",
-        "currentOverallRank": 14,
-        "shadowModelRank": 102,
-        "delta": 88
-      },
-      {
-        "player": "Mike Gesicki",
-        "position": "TE",
-        "currentOverallRank": 233,
-        "shadowModelRank": 145,
-        "delta": -88
+        "currentOverallRank": 227,
+        "shadowModelRank": 109,
+        "delta": -118
       },
       {
         "player": "Evan Engram",
         "position": "TE",
         "currentOverallRank": 240,
-        "shadowModelRank": 152,
-        "delta": -88
+        "shadowModelRank": 122,
+        "delta": -118
       },
       {
-        "player": "Troy Franklin",
+        "player": "Tank Dell",
         "position": "WR",
-        "currentOverallRank": 243,
-        "shadowModelRank": 155,
-        "delta": -88
+        "currentOverallRank": 180,
+        "shadowModelRank": 64,
+        "delta": -116
+      },
+      {
+        "player": "Luther Burden",
+        "position": "WR",
+        "currentOverallRank": 46,
+        "shadowModelRank": 151,
+        "delta": 105
+      },
+      {
+        "player": "Matthew Golden",
+        "position": "WR",
+        "currentOverallRank": 103,
+        "shadowModelRank": 207,
+        "delta": 104
+      },
+      {
+        "player": "T.J. Hockenson",
+        "position": "TE",
+        "currentOverallRank": 214,
+        "shadowModelRank": 111,
+        "delta": -103
+      },
+      {
+        "player": "Stefon Diggs",
+        "position": "WR",
+        "currentOverallRank": 137,
+        "shadowModelRank": 36,
+        "delta": -101
+      },
+      {
+        "player": "Blake Corum",
+        "position": "RB",
+        "currentOverallRank": 113,
+        "shadowModelRank": 211,
+        "delta": 98
+      },
+      {
+        "player": "Cade Otton",
+        "position": "TE",
+        "currentOverallRank": 228,
+        "shadowModelRank": 130,
+        "delta": -98
       },
       {
         "player": "Travis Kelce",
         "position": "TE",
         "currentOverallRank": 132,
-        "shadowModelRank": 45,
-        "delta": -87
+        "shadowModelRank": 38,
+        "delta": -94
+      },
+      {
+        "player": "Keon Coleman",
+        "position": "WR",
+        "currentOverallRank": 242,
+        "shadowModelRank": 149,
+        "delta": -93
+      },
+      {
+        "player": "Antonio Williams",
+        "position": "WR",
+        "currentOverallRank": 143,
+        "shadowModelRank": 234,
+        "delta": 91
+      },
+      {
+        "player": "Alvin Kamara",
+        "position": "RB",
+        "currentOverallRank": 135,
+        "shadowModelRank": 49,
+        "delta": -86
+      },
+      {
+        "player": "Deebo Samuel",
+        "position": "WR",
+        "currentOverallRank": 154,
+        "shadowModelRank": 68,
+        "delta": -86
+      },
+      {
+        "player": "Dallas Goedert",
+        "position": "TE",
+        "currentOverallRank": 138,
+        "shadowModelRank": 56,
+        "delta": -82
+      },
+      {
+        "player": "Troy Franklin",
+        "position": "WR",
+        "currentOverallRank": 243,
+        "shadowModelRank": 162,
+        "delta": -81
+      },
+      {
+        "player": "Malik Willis",
+        "position": "QB",
+        "currentOverallRank": 125,
+        "shadowModelRank": 205,
+        "delta": 80
       }
     ],
     "adpCoverage": {
@@ -2695,7 +2695,7 @@
         "R2": "Exclude RELEASED + confirmed FREE_AGENT.",
         "R3": "Exclude RELEASED + FREE_AGENT + any player without a verified current 2026 roster attachment (currentRosterVerified === false), regardless of their normalized status category."
       },
-      "note": "Each policy's top25/50/100 is an independently recomputed SHADOW ranking (Candidate E shadowParPerGame, descending) filtered by that policy's rankEligible -- not a re-slice of the artifact's own R2-based shadowModelRank. 'legacy' is the pre-Phase-3C Treatment D (released/suspended only) ranking, for comparison.",
+      "note": "Each policy's top25/50/100 is an independently recomputed F2 ranking (F2 shadowParPerGame, descending with deterministic ties) filtered by that policy's rankEligible -- not a re-slice of the artifact's own R2-based shadowModelRank. 'legacy' applies the pre-Phase-3C Treatment D (released/suspended only) eligibility rule to the same F2 ranking authority for comparison.",
       "counts": {
         "legacy": 249,
         "R1": 249,
@@ -2727,8 +2727,8 @@
         ],
         "R3": [
           "Tyreek Hill",
-          "Deebo Samuel",
-          "Stefon Diggs"
+          "Stefon Diggs",
+          "Deebo Samuel"
         ]
       },
       "removedFromTop25VsR2": {
@@ -2747,15 +2747,15 @@
         "statusConflict": false,
         "statusConflictReason": null,
         "currentOverallRank": 137,
-        "legacyShadowRank": 75,
+        "legacyShadowRank": 37,
         "rankUnderPolicy": {
           "R1": {
-            "rank": 75,
+            "rank": 37,
             "rankEligible": true,
             "rankEligibilityReason": null
           },
           "R2": {
-            "rank": 74,
+            "rank": 36,
             "rankEligible": true,
             "rankEligibilityReason": null
           },
@@ -2777,15 +2777,15 @@
         "statusConflict": false,
         "statusConflictReason": null,
         "currentOverallRank": 154,
-        "legacyShadowRank": 49,
+        "legacyShadowRank": 69,
         "rankUnderPolicy": {
           "R1": {
-            "rank": 49,
+            "rank": 69,
             "rankEligible": true,
             "rankEligibilityReason": null
           },
           "R2": {
-            "rank": 48,
+            "rank": 68,
             "rankEligible": true,
             "rankEligibilityReason": null
           },
@@ -2837,10 +2837,10 @@
         "statusConflict": false,
         "statusConflictReason": null,
         "currentOverallRank": 212,
-        "legacyShadowRank": 21,
+        "legacyShadowRank": 28,
         "rankUnderPolicy": {
           "R1": {
-            "rank": 21,
+            "rank": 28,
             "rankEligible": true,
             "rankEligibilityReason": null
           },
@@ -2859,16 +2859,16 @@
     ],
     "top100NonActiveOrUnverified": [
       {
-        "player": "Deebo Samuel",
+        "player": "Stefon Diggs",
         "position": "WR",
-        "shadowModelRank": 48,
+        "shadowModelRank": 36,
         "availabilityStatus": "ACTIVE",
         "currentRosterVerified": false
       },
       {
-        "player": "Stefon Diggs",
+        "player": "Deebo Samuel",
         "position": "WR",
-        "shadowModelRank": 74,
+        "shadowModelRank": 68,
         "availabilityStatus": "ACTIVE",
         "currentRosterVerified": false
       }
@@ -3506,8 +3506,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 13,
-      "shadowModelRank": 34
+      "shadowPositionRank": 3,
+      "shadowModelRank": 6
     },
     {
       "canonicalPlayerId": "gsis:00-0039075",
@@ -3799,8 +3799,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 3,
-      "shadowModelRank": 5
+      "shadowPositionRank": 1,
+      "shadowModelRank": 1
     },
     {
       "canonicalPlayerId": "gsis:00-0036900",
@@ -4092,7 +4092,7 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 1,
+      "shadowPositionRank": 2,
       "shadowModelRank": 2
     },
     {
@@ -4386,7 +4386,7 @@
         }
       ],
       "shadowPositionRank": 1,
-      "shadowModelRank": 1
+      "shadowModelRank": 3
     },
     {
       "canonicalPlayerId": "gsis:00-0036963",
@@ -4678,8 +4678,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 2,
-      "shadowModelRank": 3
+      "shadowPositionRank": 3,
+      "shadowModelRank": 5
     },
     {
       "canonicalPlayerId": "gsis:00-0038543",
@@ -4971,8 +4971,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 5,
-      "shadowModelRank": 7
+      "shadowPositionRank": 6,
+      "shadowModelRank": 13
     },
     {
       "canonicalPlayerId": "gsis:00-0037248",
@@ -5264,8 +5264,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 3,
-      "shadowModelRank": 8
+      "shadowPositionRank": 9,
+      "shadowModelRank": 21
     },
     {
       "canonicalPlayerId": "gsis:00-0034844",
@@ -5557,8 +5557,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 9,
-      "shadowModelRank": 25
+      "shadowPositionRank": 6,
+      "shadowModelRank": 15
     },
     {
       "canonicalPlayerId": "gsis:00-0036223",
@@ -5850,8 +5850,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 12,
-      "shadowModelRank": 31
+      "shadowPositionRank": 4,
+      "shadowModelRank": 7
     },
     {
       "canonicalPlayerId": "gsis:00-0038597",
@@ -6143,8 +6143,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 15,
-      "shadowModelRank": 41
+      "shadowPositionRank": 18,
+      "shadowModelRank": 45
     },
     {
       "canonicalPlayerId": "gsis:00-0040666",
@@ -6431,8 +6431,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 7,
-      "shadowModelRank": 19
+      "shadowPositionRank": 14,
+      "shadowModelRank": 32
     },
     {
       "canonicalPlayerId": "gsis:00-0036322",
@@ -6724,8 +6724,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 13,
-      "shadowModelRank": 38
+      "shadowPositionRank": 11,
+      "shadowModelRank": 24
     },
     {
       "canonicalPlayerId": "gsis:00-0040122",
@@ -7012,8 +7012,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 24,
-      "shadowModelRank": 102
+      "shadowPositionRank": 16,
+      "shadowModelRank": 40
     },
     {
       "canonicalPlayerId": "gsis:00-0037238",
@@ -7305,8 +7305,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 22,
-      "shadowModelRank": 58
+      "shadowPositionRank": 12,
+      "shadowModelRank": 25
     },
     {
       "canonicalPlayerId": "gsis:00-0036358",
@@ -7598,8 +7598,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 6,
-      "shadowModelRank": 10
+      "shadowPositionRank": 4,
+      "shadowModelRank": 9
     },
     {
       "canonicalPlayerId": "gsis:00-0036554",
@@ -7891,8 +7891,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 8,
-      "shadowModelRank": 16
+      "shadowPositionRank": 7,
+      "shadowModelRank": 18
     },
     {
       "canonicalPlayerId": "gsis:00-0035676",
@@ -8184,8 +8184,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 29,
-      "shadowModelRank": 76
+      "shadowPositionRank": 10,
+      "shadowModelRank": 23
     },
     {
       "canonicalPlayerId": "gsis:00-0036912",
@@ -8477,7 +8477,7 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 15,
+      "shadowPositionRank": 20,
       "shadowModelRank": 46
     },
     {
@@ -8770,8 +8770,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 16,
-      "shadowModelRank": 51
+      "shadowPositionRank": 22,
+      "shadowModelRank": 62
     },
     {
       "canonicalPlayerId": "gsis:00-0035700",
@@ -9064,7 +9064,7 @@
         }
       ],
       "shadowPositionRank": 11,
-      "shadowModelRank": 30
+      "shadowModelRank": 27
     },
     {
       "canonicalPlayerId": "gsis:00-0032764",
@@ -9356,8 +9356,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 4,
-      "shadowModelRank": 12
+      "shadowPositionRank": 8,
+      "shadowModelRank": 17
     },
     {
       "canonicalPlayerId": "gsis:00-0039040",
@@ -9650,7 +9650,7 @@
         }
       ],
       "shadowPositionRank": 5,
-      "shadowModelRank": 17
+      "shadowModelRank": 8
     },
     {
       "canonicalPlayerId": "gsis:00-0041027",
@@ -9928,8 +9928,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 22,
-      "shadowModelRank": 79
+      "shadowPositionRank": 12,
+      "shadowModelRank": 28
     },
     {
       "canonicalPlayerId": "gsis:00-0038120",
@@ -10221,8 +10221,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 20,
-      "shadowModelRank": 66
+      "shadowPositionRank": 15,
+      "shadowModelRank": 39
     },
     {
       "canonicalPlayerId": "gsis:00-0039338",
@@ -10510,8 +10510,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 10,
-      "shadowModelRank": 69
+      "shadowPositionRank": 2,
+      "shadowModelRank": 14
     },
     {
       "canonicalPlayerId": "gsis:00-0034857",
@@ -10807,7 +10807,7 @@
         }
       ],
       "shadowPositionRank": 1,
-      "shadowModelRank": 9
+      "shadowModelRank": 11
     },
     {
       "canonicalPlayerId": "gsis:00-0039067",
@@ -11099,8 +11099,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 4,
-      "shadowModelRank": 6
+      "shadowPositionRank": 5,
+      "shadowModelRank": 12
     },
     {
       "canonicalPlayerId": "gsis:00-0037744",
@@ -11392,8 +11392,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 7,
-      "shadowModelRank": 49
+      "shadowPositionRank": 1,
+      "shadowModelRank": 10
     },
     {
       "canonicalPlayerId": "gsis:00-0037247",
@@ -11685,8 +11685,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 11,
-      "shadowModelRank": 33
+      "shadowPositionRank": 14,
+      "shadowModelRank": 31
     },
     {
       "canonicalPlayerId": "gsis:00-0037239",
@@ -11978,8 +11978,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 19,
-      "shadowModelRank": 53
+      "shadowPositionRank": 15,
+      "shadowModelRank": 33
     },
     {
       "canonicalPlayerId": "gsis:00-0037740",
@@ -12271,8 +12271,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 24,
-      "shadowModelRank": 65
+      "shadowPositionRank": 16,
+      "shadowModelRank": 34
     },
     {
       "canonicalPlayerId": "gsis:00-0040126",
@@ -12559,8 +12559,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 8,
-      "shadowModelRank": 60
+      "shadowPositionRank": 10,
+      "shadowModelRank": 77
     },
     {
       "canonicalPlayerId": "gsis:00-0036410",
@@ -12852,8 +12852,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 12,
-      "shadowModelRank": 37
+      "shadowPositionRank": 13,
+      "shadowModelRank": 30
     },
     {
       "canonicalPlayerId": "gsis:00-0040129",
@@ -13140,8 +13140,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 25,
-      "shadowModelRank": 70
+      "shadowPositionRank": 38,
+      "shadowModelRank": 94
     },
     {
       "canonicalPlayerId": "gsis:00-0039915",
@@ -13429,8 +13429,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 28,
-      "shadowModelRank": 75
+      "shadowPositionRank": 26,
+      "shadowModelRank": 61
     },
     {
       "canonicalPlayerId": "gsis:00-0039064",
@@ -13722,8 +13722,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 7,
-      "shadowModelRank": 15
+      "shadowPositionRank": 19,
+      "shadowModelRank": 44
     },
     {
       "canonicalPlayerId": "gsis:00-0039851",
@@ -14014,8 +14014,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 17,
-      "shadowModelRank": 100
+      "shadowPositionRank": 8,
+      "shadowModelRank": 74
     },
     {
       "canonicalPlayerId": "gsis:00-0034796",
@@ -14310,8 +14310,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 3,
-      "shadowModelRank": 14
+      "shadowPositionRank": 2,
+      "shadowModelRank": 35
     },
     {
       "canonicalPlayerId": "gsis:00-0039337",
@@ -14599,8 +14599,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 23,
-      "shadowModelRank": 59
+      "shadowPositionRank": 9,
+      "shadowModelRank": 22
     },
     {
       "canonicalPlayerId": "gsis:00-0034827",
@@ -14892,8 +14892,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 26,
-      "shadowModelRank": 73
+      "shadowPositionRank": 27,
+      "shadowModelRank": 63
     },
     {
       "canonicalPlayerId": "gsis:00-0040124",
@@ -15180,8 +15180,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 46,
-      "shadowModelRank": 108
+      "shadowPositionRank": 30,
+      "shadowModelRank": 66
     },
     {
       "canonicalPlayerId": "gsis:00-0037840",
@@ -15473,8 +15473,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 6,
-      "shadowModelRank": 18
+      "shadowPositionRank": 7,
+      "shadowModelRank": 16
     },
     {
       "canonicalPlayerId": "gsis:00-0035659",
@@ -15766,7 +15766,7 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 21,
+      "shadowPositionRank": 25,
       "shadowModelRank": 57
     },
     {
@@ -16059,8 +16059,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 36,
-      "shadowModelRank": 89
+      "shadowPositionRank": 35,
+      "shadowModelRank": 79
     },
     {
       "canonicalPlayerId": "gsis:00-0040735",
@@ -16347,8 +16347,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 50,
-      "shadowModelRank": 123
+      "shadowPositionRank": 63,
+      "shadowModelRank": 151
     },
     {
       "canonicalPlayerId": "gsis:00-0039910",
@@ -16639,8 +16639,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 12,
-      "shadowModelRank": 61
+      "shadowPositionRank": 7,
+      "shadowModelRank": 72
     },
     {
       "canonicalPlayerId": "gsis:00-0036442",
@@ -16935,8 +16935,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 7,
-      "shadowModelRank": 35
+      "shadowPositionRank": 9,
+      "shadowModelRank": 78
     },
     {
       "canonicalPlayerId": "gsis:00-0038124",
@@ -17228,8 +17228,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 14,
-      "shadowModelRank": 43
+      "shadowPositionRank": 41,
+      "shadowModelRank": 103
     },
     {
       "canonicalPlayerId": "gsis:00-0036997",
@@ -17521,8 +17521,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 10,
-      "shadowModelRank": 28
+      "shadowPositionRank": 25,
+      "shadowModelRank": 76
     },
     {
       "canonicalPlayerId": "gsis:00-0036355",
@@ -17817,8 +17817,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 10,
-      "shadowModelRank": 44
+      "shadowPositionRank": 13,
+      "shadowModelRank": 87
     },
     {
       "canonicalPlayerId": "gsis:00-0036275",
@@ -18110,8 +18110,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 17,
-      "shadowModelRank": 52
+      "shadowPositionRank": 20,
+      "shadowModelRank": 58
     },
     {
       "canonicalPlayerId": "gsis:00-0031408",
@@ -18403,8 +18403,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 10,
-      "shadowModelRank": 27
+      "shadowPositionRank": 18,
+      "shadowModelRank": 41
     },
     {
       "canonicalPlayerId": "gsis:00-0031381",
@@ -18696,8 +18696,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 9,
-      "shadowModelRank": 22
+      "shadowPositionRank": 8,
+      "shadowModelRank": 19
     },
     {
       "canonicalPlayerId": "gsis:00-0041438",
@@ -18975,8 +18975,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 40,
-      "shadowModelRank": 95
+      "shadowPositionRank": 23,
+      "shadowModelRank": 53
     },
     {
       "canonicalPlayerId": "gsis:00-0040128",
@@ -19263,8 +19263,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 11,
-      "shadowModelRank": 71
+      "shadowPositionRank": 9,
+      "shadowModelRank": 60
     },
     {
       "canonicalPlayerId": "gsis:00-0036973",
@@ -19556,8 +19556,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 19,
-      "shadowModelRank": 64
+      "shadowPositionRank": 21,
+      "shadowModelRank": 59
     },
     {
       "canonicalPlayerId": "gsis:00-0035685",
@@ -19849,8 +19849,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 27,
-      "shadowModelRank": 109
+      "shadowPositionRank": 24,
+      "shadowModelRank": 75
     },
     {
       "canonicalPlayerId": "gsis:00-0040715",
@@ -20137,8 +20137,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 14,
-      "shadowModelRank": 40
+      "shadowPositionRank": 10,
+      "shadowModelRank": 26
     },
     {
       "canonicalPlayerId": "gsis:00-0040784",
@@ -20425,8 +20425,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 32,
-      "shadowModelRank": 120
+      "shadowPositionRank": 29,
+      "shadowModelRank": 92
     },
     {
       "canonicalPlayerId": "gsis:00-0039065",
@@ -20718,8 +20718,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 3,
-      "shadowModelRank": 23
+      "shadowPositionRank": 5,
+      "shadowModelRank": 42
     },
     {
       "canonicalPlayerId": "gsis:00-0037240",
@@ -21011,8 +21011,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 16,
-      "shadowModelRank": 47
+      "shadowPositionRank": 34,
+      "shadowModelRank": 73
     },
     {
       "canonicalPlayerId": "gsis:00-0039919",
@@ -21300,8 +21300,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 18,
-      "shadowModelRank": 50
+      "shadowPositionRank": 44,
+      "shadowModelRank": 113
     },
     {
       "canonicalPlayerId": "gsis:00-0040734",
@@ -21588,8 +21588,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 25,
-      "shadowModelRank": 106
+      "shadowPositionRank": 28,
+      "shadowModelRank": 91
     },
     {
       "canonicalPlayerId": "gsis:00-0039361",
@@ -21877,8 +21877,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 8,
-      "shadowModelRank": 20
+      "shadowPositionRank": 17,
+      "shadowModelRank": 43
     },
     {
       "canonicalPlayerId": "gsis:00-0036389",
@@ -22173,8 +22173,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 2,
-      "shadowModelRank": 13
+      "shadowPositionRank": 3,
+      "shadowModelRank": 37
     },
     {
       "canonicalPlayerId": "gsis:00-0039918",
@@ -22465,8 +22465,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 11,
-      "shadowModelRank": 56
+      "shadowPositionRank": 16,
+      "shadowModelRank": 98
     },
     {
       "canonicalPlayerId": "gsis:00-0037664",
@@ -22758,8 +22758,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 38,
-      "shadowModelRank": 92
+      "shadowPositionRank": 51,
+      "shadowModelRank": 128
     },
     {
       "canonicalPlayerId": "gsis:00-0039893",
@@ -23047,8 +23047,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 43,
-      "shadowModelRank": 101
+      "shadowPositionRank": 31,
+      "shadowModelRank": 67
     },
     {
       "canonicalPlayerId": "gsis:00-0038996",
@@ -23340,8 +23340,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 2,
-      "shadowModelRank": 21
+      "shadowPositionRank": 7,
+      "shadowModelRank": 52
     },
     {
       "canonicalPlayerId": "gsis:00-0039849",
@@ -23629,8 +23629,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 62,
-      "shadowModelRank": 156
+      "shadowPositionRank": 43,
+      "shadowModelRank": 107
     },
     {
       "canonicalPlayerId": "gsis:00-0041029",
@@ -23908,8 +23908,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 49,
-      "shadowModelRank": 121
+      "shadowPositionRank": 39,
+      "shadowModelRank": 97
     },
     {
       "canonicalPlayerId": "gsis:00-0040719",
@@ -24196,8 +24196,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 58,
-      "shadowModelRank": 201
+      "shadowPositionRank": 54,
+      "shadowModelRank": 203
     },
     {
       "canonicalPlayerId": "gsis:00-0035640",
@@ -24489,8 +24489,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 33,
-      "shadowModelRank": 84
+      "shadowPositionRank": 24,
+      "shadowModelRank": 55
     },
     {
       "canonicalPlayerId": "gsis:00-0038544",
@@ -24782,8 +24782,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 30,
-      "shadowModelRank": 78
+      "shadowPositionRank": 40,
+      "shadowModelRank": 102
     },
     {
       "canonicalPlayerId": "gsis:00-0041512",
@@ -25061,8 +25061,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 18,
-      "shadowModelRank": 55
+      "shadowPositionRank": 31,
+      "shadowModelRank": 101
     },
     {
       "canonicalPlayerId": "gsis:00-0033077",
@@ -25357,8 +25357,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 6,
-      "shadowModelRank": 32
+      "shadowPositionRank": 12,
+      "shadowModelRank": 86
     },
     {
       "canonicalPlayerId": "gsis:00-0035261",
@@ -25650,8 +25650,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 43,
-      "shadowModelRank": 153
+      "shadowPositionRank": 30,
+      "shadowModelRank": 100
     },
     {
       "canonicalPlayerId": "gsis:00-0037228",
@@ -25943,8 +25943,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 23,
-      "shadowModelRank": 91
+      "shadowPositionRank": 33,
+      "shadowModelRank": 108
     },
     {
       "canonicalPlayerId": "gsis:00-0033921",
@@ -26236,8 +26236,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 32,
-      "shadowModelRank": 81
+      "shadowPositionRank": 22,
+      "shadowModelRank": 51
     },
     {
       "canonicalPlayerId": "gsis:00-0036875",
@@ -26529,8 +26529,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 36,
-      "shadowModelRank": 134
+      "shadowPositionRank": 26,
+      "shadowModelRank": 83
     },
     {
       "canonicalPlayerId": "gsis:00-0037834",
@@ -26825,8 +26825,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 4,
-      "shadowModelRank": 24
+      "shadowPositionRank": 5,
+      "shadowModelRank": 54
     },
     {
       "canonicalPlayerId": "gsis:00-0040663",
@@ -27113,8 +27113,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 14,
-      "shadowModelRank": 82
+      "shadowPositionRank": 6,
+      "shadowModelRank": 48
     },
     {
       "canonicalPlayerId": "gsis:00-0038606",
@@ -27406,8 +27406,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 47,
-      "shadowModelRank": 112
+      "shadowPositionRank": 60,
+      "shadowModelRank": 145
     },
     {
       "canonicalPlayerId": "gsis:00-0036139",
@@ -27699,8 +27699,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 37,
-      "shadowModelRank": 137
+      "shadowPositionRank": 35,
+      "shadowModelRank": 118
     },
     {
       "canonicalPlayerId": "gsis:00-0039894",
@@ -27988,8 +27988,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 52,
-      "shadowModelRank": 126
+      "shadowPositionRank": 56,
+      "shadowModelRank": 138
     },
     {
       "canonicalPlayerId": "gsis:00-0036252",
@@ -28281,8 +28281,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 55,
-      "shadowModelRank": 138
+      "shadowPositionRank": 33,
+      "shadowModelRank": 69
     },
     {
       "canonicalPlayerId": "gsis:00-0033288",
@@ -28574,8 +28574,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 1,
-      "shadowModelRank": 11
+      "shadowPositionRank": 3,
+      "shadowModelRank": 20
     },
     {
       "canonicalPlayerId": "gsis:00-0036971",
@@ -28870,8 +28870,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 15,
-      "shadowModelRank": 83
+      "shadowPositionRank": 14,
+      "shadowModelRank": 88
     },
     {
       "canonicalPlayerId": "gsis:00-0040730",
@@ -29158,8 +29158,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 31,
-      "shadowModelRank": 119
+      "shadowPositionRank": 27,
+      "shadowModelRank": 90
     },
     {
       "canonicalPlayerId": "gsis:00-0036555",
@@ -29451,8 +29451,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 44,
-      "shadowModelRank": 161
+      "shadowPositionRank": 36,
+      "shadowModelRank": 120
     },
     {
       "canonicalPlayerId": "gsis:00-0033873",
@@ -29747,8 +29747,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 5,
-      "shadowModelRank": 26
+      "shadowPositionRank": 4,
+      "shadowModelRank": 50
     },
     {
       "canonicalPlayerId": "gsis:00-0038997",
@@ -30040,8 +30040,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 58,
-      "shadowModelRank": 147
+      "shadowPositionRank": 52,
+      "shadowModelRank": 131
     },
     {
       "canonicalPlayerId": "gsis:00-0039732",
@@ -30332,8 +30332,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 19,
-      "shadowModelRank": 127
+      "shadowPositionRank": 6,
+      "shadowModelRank": 70
     },
     {
       "canonicalPlayerId": "gsis:00-0038994",
@@ -30625,8 +30625,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 53,
-      "shadowModelRank": 130
+      "shadowPositionRank": 37,
+      "shadowModelRank": 84
     },
     {
       "canonicalPlayerId": "gsis:00-0039344",
@@ -30913,8 +30913,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 80,
-      "shadowModelRank": 243
+      "shadowPositionRank": 78,
+      "shadowModelRank": 241
     },
     {
       "canonicalPlayerId": "gsis:00-0034348",
@@ -31206,8 +31206,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 51,
-      "shadowModelRank": 124
+      "shadowPositionRank": 21,
+      "shadowModelRank": 47
     },
     {
       "canonicalPlayerId": "gsis:00-0039916",
@@ -31495,8 +31495,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 31,
-      "shadowModelRank": 80
+      "shadowPositionRank": 55,
+      "shadowModelRank": 137
     },
     {
       "canonicalPlayerId": "gsis:00-0037256",
@@ -31789,7 +31789,7 @@
         }
       ],
       "shadowPositionRank": 34,
-      "shadowModelRank": 125
+      "shadowModelRank": 115
     },
     {
       "canonicalPlayerId": "gsis:00-0039146",
@@ -32081,8 +32081,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 20,
-      "shadowModelRank": 54
+      "shadowPositionRank": 42,
+      "shadowModelRank": 106
     },
     {
       "canonicalPlayerId": "gsis:00-0036970",
@@ -32374,8 +32374,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 15,
-      "shadowModelRank": 86
+      "shadowPositionRank": 11,
+      "shadowModelRank": 82
     },
     {
       "canonicalPlayerId": "gsis:00-0040691",
@@ -32662,8 +32662,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 16,
-      "shadowModelRank": 97
+      "shadowPositionRank": 17,
+      "shadowModelRank": 99
     },
     {
       "canonicalPlayerId": "gsis:00-0040667",
@@ -32950,8 +32950,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 79,
-      "shadowModelRank": 188
+      "shadowPositionRank": 88,
+      "shadowModelRank": 207
     },
     {
       "canonicalPlayerId": "gsis:00-0034753",
@@ -33243,8 +33243,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 5,
-      "shadowModelRank": 42
+      "shadowPositionRank": 12,
+      "shadowModelRank": 93
     },
     {
       "canonicalPlayerId": "gsis:00-0026498",
@@ -33539,8 +33539,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 8,
-      "shadowModelRank": 36
+      "shadowPositionRank": 15,
+      "shadowModelRank": 89
     },
     {
       "canonicalPlayerId": "gsis:00-0036919",
@@ -33832,8 +33832,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 28,
-      "shadowModelRank": 110
+      "shadowPositionRank": 42,
+      "shadowModelRank": 158
     },
     {
       "canonicalPlayerId": "gsis:00-0041547",
@@ -34111,8 +34111,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 63,
-      "shadowModelRank": 157
+      "shadowPositionRank": 57,
+      "shadowModelRank": 139
     },
     {
       "canonicalPlayerId": "gsis:00-0037838",
@@ -34404,8 +34404,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 30,
-      "shadowModelRank": 165
+      "shadowPositionRank": 29,
+      "shadowModelRank": 160
     },
     {
       "canonicalPlayerId": "gsis:00-0040130",
@@ -34692,8 +34692,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 59,
-      "shadowModelRank": 148
+      "shadowPositionRank": 69,
+      "shadowModelRank": 167
     },
     {
       "canonicalPlayerId": "gsis:00-0033106",
@@ -34988,8 +34988,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 9,
-      "shadowModelRank": 39
+      "shadowPositionRank": 10,
+      "shadowModelRank": 80
     },
     {
       "canonicalPlayerId": "gsis:00-0034855",
@@ -35284,8 +35284,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 14,
-      "shadowModelRank": 67
+      "shadowPositionRank": 11,
+      "shadowModelRank": 85
     },
     {
       "canonicalPlayerId": "gsis:00-0038933",
@@ -35577,8 +35577,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 18,
-      "shadowModelRank": 98
+      "shadowPositionRank": 15,
+      "shadowModelRank": 104
     },
     {
       "canonicalPlayerId": "gsis:00-0039738",
@@ -35866,8 +35866,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 47,
-      "shadowModelRank": 181
+      "shadowPositionRank": 57,
+      "shadowModelRank": 211
     },
     {
       "canonicalPlayerId": "gsis:00-0040242",
@@ -36154,8 +36154,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 42,
-      "shadowModelRank": 151
+      "shadowPositionRank": 44,
+      "shadowModelRank": 166
     },
     {
       "canonicalPlayerId": "gsis:00-0036158",
@@ -36445,8 +36445,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 26,
-      "shadowModelRank": 107
+      "shadowPositionRank": 23,
+      "shadowModelRank": 71
     },
     {
       "canonicalPlayerId": "gsis:00-0033293",
@@ -36738,8 +36738,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 41,
-      "shadowModelRank": 146
+      "shadowPositionRank": 32,
+      "shadowModelRank": 105
     },
     {
       "canonicalPlayerId": "gsis:00-0037525",
@@ -37031,8 +37031,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 59,
-      "shadowModelRank": 202
+      "shadowPositionRank": 46,
+      "shadowModelRank": 175
     },
     {
       "canonicalPlayerId": "gsis:00-0040867",
@@ -37310,8 +37310,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 45,
-      "shadowModelRank": 104
+      "shadowPositionRank": 58,
+      "shadowModelRank": 143
     },
     {
       "canonicalPlayerId": "gsis:00-0038117",
@@ -37603,8 +37603,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 37,
-      "shadowModelRank": 90
+      "shadowPositionRank": 36,
+      "shadowModelRank": 81
     },
     {
       "canonicalPlayerId": "gsis:00-0036264",
@@ -37899,8 +37899,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 13,
-      "shadowModelRank": 62
+      "shadowPositionRank": 20,
+      "shadowModelRank": 126
     },
     {
       "canonicalPlayerId": "gsis:00-0037261",
@@ -38192,8 +38192,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 41,
-      "shadowModelRank": 96
+      "shadowPositionRank": 50,
+      "shadowModelRank": 127
     },
     {
       "canonicalPlayerId": "gsis:00-0038041",
@@ -38485,8 +38485,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 12,
-      "shadowModelRank": 72
+      "shadowPositionRank": 13,
+      "shadowModelRank": 95
     },
     {
       "canonicalPlayerId": "gsis:00-0039491",
@@ -38774,8 +38774,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 68,
-      "shadowModelRank": 163
+      "shadowPositionRank": 64,
+      "shadowModelRank": 156
     },
     {
       "canonicalPlayerId": "gsis:00-0035228",
@@ -39070,8 +39070,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 21,
-      "shadowModelRank": 132
+      "shadowPositionRank": 18,
+      "shadowModelRank": 117
     },
     {
       "canonicalPlayerId": "gsis:00-0038128",
@@ -39364,8 +39364,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 31,
-      "shadowModelRank": 231
+      "shadowPositionRank": 30,
+      "shadowModelRank": 205
     },
     {
       "canonicalPlayerId": "gsis:00-0037816",
@@ -39657,8 +39657,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 54,
-      "shadowModelRank": 135
+      "shadowPositionRank": 49,
+      "shadowModelRank": 125
     },
     {
       "canonicalPlayerId": "gsis:00-0040743",
@@ -39945,8 +39945,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 25,
-      "shadowModelRank": 180
+      "shadowPositionRank": 24,
+      "shadowModelRank": 153
     },
     {
       "canonicalPlayerId": "gsis:00-0040236",
@@ -40233,8 +40233,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 35,
-      "shadowModelRank": 129
+      "shadowPositionRank": 43,
+      "shadowModelRank": 163
     },
     {
       "canonicalPlayerId": "gsis:00-0038611",
@@ -40526,8 +40526,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 49,
-      "shadowModelRank": 185
+      "shadowPositionRank": 53,
+      "shadowModelRank": 200
     },
     {
       "canonicalPlayerId": "gsis:00-0034960",
@@ -40819,8 +40819,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 35,
-      "shadowModelRank": 88
+      "shadowPositionRank": 29,
+      "shadowModelRank": 65
     },
     {
       "canonicalPlayerId": "gsis:00-0039384",
@@ -41108,8 +41108,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 30,
-      "shadowModelRank": 117
+      "shadowPositionRank": 37,
+      "shadowModelRank": 129
     },
     {
       "canonicalPlayerId": "gsis:00-0030506",
@@ -41401,8 +41401,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 6,
-      "shadowModelRank": 45
+      "shadowPositionRank": 4,
+      "shadowModelRank": 38
     },
     {
       "canonicalPlayerId": "gsis:00-0039032",
@@ -41694,8 +41694,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 53,
-      "shadowModelRank": 191
+      "shadowPositionRank": 40,
+      "shadowModelRank": 154
     },
     {
       "canonicalPlayerId": "gsis:00-0039163",
@@ -41990,8 +41990,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 18,
-      "shadowModelRank": 116
+      "shadowPositionRank": 21,
+      "shadowModelRank": 140
     },
     {
       "canonicalPlayerId": "gsis:00-0033906",
@@ -42283,8 +42283,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 33,
-      "shadowModelRank": 122
+      "shadowPositionRank": 19,
+      "shadowModelRank": 49
     },
     {
       "canonicalPlayerId": "gsis:00-0038559",
@@ -42576,8 +42576,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 48,
-      "shadowModelRank": 115
+      "shadowPositionRank": 47,
+      "shadowModelRank": 119
     },
     {
       "canonicalPlayerId": "gsis:00-0031588",
@@ -42872,8 +42872,8 @@
           ]
         }
       ],
-      "shadowPositionRank": 27,
-      "shadowModelRank": 74
+      "shadowPositionRank": 17,
+      "shadowModelRank": 36
     },
     {
       "canonicalPlayerId": "gsis:00-0034351",
@@ -43165,8 +43165,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 4,
-      "shadowModelRank": 29
+      "shadowPositionRank": 8,
+      "shadowModelRank": 56
     },
     {
       "canonicalPlayerId": "gsis:00-0040162",
@@ -43453,8 +43453,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 61,
-      "shadowModelRank": 212
+      "shadowPositionRank": 55,
+      "shadowModelRank": 204
     },
     {
       "canonicalPlayerId": "gsis:00-0035710",
@@ -43750,7 +43750,7 @@
         }
       ],
       "shadowPositionRank": 22,
-      "shadowModelRank": 143
+      "shadowModelRank": 147
     },
     {
       "canonicalPlayerId": "gsis:00-0036040",
@@ -44043,7 +44043,7 @@
         }
       ],
       "shadowPositionRank": 19,
-      "shadowModelRank": 105
+      "shadowModelRank": 112
     },
     {
       "canonicalPlayerId": "gsis:00-0038454",
@@ -44335,8 +44335,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 55,
-      "shadowModelRank": 197
+      "shadowPositionRank": 62,
+      "shadowModelRank": 221
     },
     {
       "canonicalPlayerId": "gsis:00-0041040",
@@ -44614,8 +44614,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 97,
-      "shadowModelRank": 232
+      "shadowPositionRank": 98,
+      "shadowModelRank": 234
     },
     {
       "canonicalPlayerId": "gsis:00-0040189",
@@ -44902,8 +44902,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 16,
-      "shadowModelRank": 87
+      "shadowPositionRank": 21,
+      "shadowModelRank": 123
     },
     {
       "canonicalPlayerId": "gsis:00-0037545",
@@ -45195,8 +45195,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 42,
-      "shadowModelRank": 99
+      "shadowPositionRank": 48,
+      "shadowModelRank": 121
     },
     {
       "canonicalPlayerId": "gsis:00-0037263",
@@ -45488,8 +45488,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 56,
-      "shadowModelRank": 198
+      "shadowPositionRank": 48,
+      "shadowModelRank": 183
     },
     {
       "canonicalPlayerId": "gsis:00-0041032",
@@ -45767,8 +45767,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 28,
-      "shadowModelRank": 150
+      "shadowPositionRank": 23,
+      "shadowModelRank": 132
     },
     {
       "canonicalPlayerId": "gsis:00-0036407",
@@ -46060,8 +46060,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 67,
-      "shadowModelRank": 162
+      "shadowPositionRank": 54,
+      "shadowModelRank": 136
     },
     {
       "canonicalPlayerId": "gsis:00-0036259",
@@ -46353,8 +46353,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 56,
-      "shadowModelRank": 141
+      "shadowPositionRank": 45,
+      "shadowModelRank": 114
     },
     {
       "canonicalPlayerId": "gsis:00-0040676",
@@ -46641,8 +46641,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 30,
-      "shadowModelRank": 223
+      "shadowPositionRank": 31,
+      "shadowModelRank": 208
     },
     {
       "canonicalPlayerId": "gsis:00-0040583",
@@ -46929,8 +46929,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 38,
-      "shadowModelRank": 139
+      "shadowPositionRank": 39,
+      "shadowModelRank": 152
     },
     {
       "canonicalPlayerId": "gsis:00-0038935",
@@ -47222,8 +47222,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 21,
-      "shadowModelRank": 114
+      "shadowPositionRank": 26,
+      "shadowModelRank": 142
     },
     {
       "canonicalPlayerId": "gsis:00-0037197",
@@ -47515,8 +47515,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 39,
-      "shadowModelRank": 140
+      "shadowPositionRank": 41,
+      "shadowModelRank": 157
     },
     {
       "canonicalPlayerId": "gsis:00-0035719",
@@ -47811,8 +47811,8 @@
           ]
         }
       ],
-      "shadowPositionRank": 17,
-      "shadowModelRank": 48
+      "shadowPositionRank": 32,
+      "shadowModelRank": 68
     },
     {
       "canonicalPlayerId": "gsis:00-0039150",
@@ -48108,7 +48108,7 @@
         }
       ],
       "shadowPositionRank": 26,
-      "shadowModelRank": 203
+      "shadowModelRank": 174
     },
     {
       "canonicalPlayerId": "gsis:00-0037291",
@@ -48398,8 +48398,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 81,
-      "shadowModelRank": 193
+      "shadowPositionRank": 78,
+      "shadowModelRank": 192
     },
     {
       "canonicalPlayerId": "gsis:00-0041511",
@@ -48677,8 +48677,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 83,
-      "shadowModelRank": 196
+      "shadowPositionRank": 73,
+      "shadowModelRank": 176
     },
     {
       "canonicalPlayerId": "gsis:00-0034837",
@@ -48970,8 +48970,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 71,
-      "shadowModelRank": 168
+      "shadowPositionRank": 53,
+      "shadowModelRank": 135
     },
     {
       "canonicalPlayerId": "gsis:00-0041096",
@@ -49249,8 +49249,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 72,
-      "shadowModelRank": 234
+      "shadowPositionRank": 74,
+      "shadowModelRank": 237
     },
     {
       "canonicalPlayerId": "gsis:00-0039794",
@@ -49538,8 +49538,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 74,
-      "shadowModelRank": 236
+      "shadowPositionRank": 65,
+      "shadowModelRank": 225
     },
     {
       "canonicalPlayerId": "gsis:00-0033090",
@@ -49831,8 +49831,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 23,
-      "shadowModelRank": 128
+      "shadowPositionRank": 14,
+      "shadowModelRank": 96
     },
     {
       "canonicalPlayerId": "gsis:00-0036261",
@@ -50413,8 +50413,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 77,
-      "shadowModelRank": 182
+      "shadowPositionRank": 76,
+      "shadowModelRank": 187
     },
     {
       "canonicalPlayerId": "gsis:00-0041037",
@@ -50692,8 +50692,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 65,
-      "shadowModelRank": 159
+      "shadowPositionRank": 59,
+      "shadowModelRank": 144
     },
     {
       "canonicalPlayerId": "gsis:00-0034975",
@@ -50985,8 +50985,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 45,
-      "shadowModelRank": 171
+      "shadowPositionRank": 47,
+      "shadowModelRank": 181
     },
     {
       "canonicalPlayerId": "gsis:00-0039890",
@@ -51275,7 +51275,7 @@
         }
       ],
       "shadowPositionRank": 90,
-      "shadowModelRank": 216
+      "shadowModelRank": 213
     },
     {
       "canonicalPlayerId": "gsis:00-0038563",
@@ -51567,8 +51567,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 69,
-      "shadowModelRank": 164
+      "shadowPositionRank": 65,
+      "shadowModelRank": 159
     },
     {
       "canonicalPlayerId": "gsis:00-0039798",
@@ -51856,8 +51856,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 69,
-      "shadowModelRank": 229
+      "shadowPositionRank": 67,
+      "shadowModelRank": 228
     },
     {
       "canonicalPlayerId": "gsis:00-0033526",
@@ -52149,8 +52149,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 46,
-      "shadowModelRank": 176
+      "shadowPositionRank": 56,
+      "shadowModelRank": 209
     },
     {
       "canonicalPlayerId": "gsis:00-0039410",
@@ -52438,8 +52438,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 70,
-      "shadowModelRank": 166
+      "shadowPositionRank": 83,
+      "shadowModelRank": 198
     },
     {
       "canonicalPlayerId": "gsis:00-0040238",
@@ -53014,8 +53014,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 76,
-      "shadowModelRank": 179
+      "shadowPositionRank": 85,
+      "shadowModelRank": 201
     },
     {
       "canonicalPlayerId": "gsis:00-0034869",
@@ -53310,8 +53310,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 20,
-      "shadowModelRank": 131
+      "shadowPositionRank": 27,
+      "shadowModelRank": 177
     },
     {
       "canonicalPlayerId": "gsis:00-0035537",
@@ -53603,8 +53603,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 48,
-      "shadowModelRank": 184
+      "shadowPositionRank": 58,
+      "shadowModelRank": 212
     },
     {
       "canonicalPlayerId": "gsis:00-0040138",
@@ -53891,8 +53891,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 89,
-      "shadowModelRank": 214
+      "shadowPositionRank": 95,
+      "shadowModelRank": 222
     },
     {
       "canonicalPlayerId": "gsis:00-0038951",
@@ -54182,8 +54182,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 54,
-      "shadowModelRank": 195
+      "shadowPositionRank": 61,
+      "shadowModelRank": 219
     },
     {
       "canonicalPlayerId": "gsis:00-0039793",
@@ -54471,8 +54471,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 17,
-      "shadowModelRank": 93
+      "shadowPositionRank": 25,
+      "shadowModelRank": 141
     },
     {
       "canonicalPlayerId": "gsis:00-0041044",
@@ -54750,8 +54750,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 94,
-      "shadowModelRank": 221
+      "shadowPositionRank": 92,
+      "shadowModelRank": 215
     },
     {
       "canonicalPlayerId": "gsis:00-0037809",
@@ -55043,8 +55043,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 24,
-      "shadowModelRank": 133
+      "shadowPositionRank": 27,
+      "shadowModelRank": 146
     },
     {
       "canonicalPlayerId": "gsis:00-0038977",
@@ -55332,8 +55332,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 34,
-      "shadowModelRank": 85
+      "shadowPositionRank": 28,
+      "shadowModelRank": 64
     },
     {
       "canonicalPlayerId": "gsis:00-0023459",
@@ -55627,7 +55627,7 @@
         }
       ],
       "shadowPositionRank": 23,
-      "shadowModelRank": 172
+      "shadowModelRank": 150
     },
     {
       "canonicalPlayerId": "gsis:00-0039855",
@@ -55915,8 +55915,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 60,
-      "shadowModelRank": 154
+      "shadowPositionRank": 61,
+      "shadowModelRank": 148
     },
     {
       "canonicalPlayerId": "gsis:00-0039875",
@@ -56204,8 +56204,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 64,
-      "shadowModelRank": 217
+      "shadowPositionRank": 60,
+      "shadowModelRank": 218
     },
     {
       "canonicalPlayerId": "gsis:00-0038797",
@@ -56497,8 +56497,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 50,
-      "shadowModelRank": 187
+      "shadowPositionRank": 59,
+      "shadowModelRank": 216
     },
     {
       "canonicalPlayerId": "gsis:00-0038393",
@@ -56790,8 +56790,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 74,
-      "shadowModelRank": 173
+      "shadowPositionRank": 75,
+      "shadowModelRank": 185
     },
     {
       "canonicalPlayerId": "gsis:00-0037746",
@@ -57083,8 +57083,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 60,
-      "shadowModelRank": 204
+      "shadowPositionRank": 45,
+      "shadowModelRank": 173
     },
     {
       "canonicalPlayerId": "gsis:00-0034383",
@@ -57376,8 +57376,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 9,
-      "shadowModelRank": 63
+      "shadowPositionRank": 17,
+      "shadowModelRank": 110
     },
     {
       "canonicalPlayerId": "gsis:00-0038555",
@@ -57669,8 +57669,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 68,
-      "shadowModelRank": 226
+      "shadowPositionRank": 63,
+      "shadowModelRank": 223
     },
     {
       "canonicalPlayerId": "gsis:00-0033908",
@@ -57962,8 +57962,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 39,
-      "shadowModelRank": 94
+      "shadowPositionRank": 46,
+      "shadowModelRank": 116
     },
     {
       "canonicalPlayerId": "gsis:00-0039874",
@@ -58252,7 +58252,7 @@
         }
       ],
       "shadowPositionRank": 66,
-      "shadowModelRank": 224
+      "shadowModelRank": 226
     },
     {
       "canonicalPlayerId": "gsis:00-0037252",
@@ -58542,7 +58542,7 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 33,
+      "shadowPositionRank": 32,
       "shadowModelRank": 178
     },
     {
@@ -58830,8 +58830,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 75,
-      "shadowModelRank": 177
+      "shadowPositionRank": 70,
+      "shadowModelRank": 168
     },
     {
       "canonicalPlayerId": "gsis:00-0040878",
@@ -59109,8 +59109,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 75,
-      "shadowModelRank": 237
+      "shadowPositionRank": 70,
+      "shadowModelRank": 231
     },
     {
       "canonicalPlayerId": "gsis:00-0041052",
@@ -59388,8 +59388,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 65,
-      "shadowModelRank": 222
+      "shadowPositionRank": 71,
+      "shadowModelRank": 233
     },
     {
       "canonicalPlayerId": "gsis:00-0041562",
@@ -59667,8 +59667,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 24,
-      "shadowModelRank": 174
+      "shadowPositionRank": 19,
+      "shadowModelRank": 124
     },
     {
       "canonicalPlayerId": "gsis:00-0039880",
@@ -59956,8 +59956,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 84,
-      "shadowModelRank": 199
+      "shadowPositionRank": 80,
+      "shadowModelRank": 195
     },
     {
       "canonicalPlayerId": "gsis:00-0040718",
@@ -60235,8 +60235,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 82,
-      "shadowModelRank": 194
+      "shadowPositionRank": 86,
+      "shadowModelRank": 202
     },
     {
       "canonicalPlayerId": "gsis:00-0041523",
@@ -60514,8 +60514,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 88,
-      "shadowModelRank": 210
+      "shadowPositionRank": 82,
+      "shadowModelRank": 197
     },
     {
       "canonicalPlayerId": "gsis:00-0040729",
@@ -60802,8 +60802,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 98,
-      "shadowModelRank": 238
+      "shadowPositionRank": 97,
+      "shadowModelRank": 232
     },
     {
       "canonicalPlayerId": "gsis:00-0039165",
@@ -61095,8 +61095,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 21,
-      "shadowModelRank": 68
+      "shadowPositionRank": 38,
+      "shadowModelRank": 134
     },
     {
       "canonicalPlayerId": "gsis:00-0041496",
@@ -61374,8 +61374,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 70,
-      "shadowModelRank": 230
+      "shadowPositionRank": 64,
+      "shadowModelRank": 224
     },
     {
       "canonicalPlayerId": "gsis:00-0033555",
@@ -61667,8 +61667,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 73,
-      "shadowModelRank": 170
+      "shadowPositionRank": 74,
+      "shadowModelRank": 182
     },
     {
       "canonicalPlayerId": "gsis:00-0035535",
@@ -61960,8 +61960,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 57,
-      "shadowModelRank": 144
+      "shadowPositionRank": 72,
+      "shadowModelRank": 171
     },
     {
       "canonicalPlayerId": "gsis:00-0030565",
@@ -62256,8 +62256,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 28,
-      "shadowModelRank": 209
+      "shadowPositionRank": 25,
+      "shadowModelRank": 169
     },
     {
       "canonicalPlayerId": "gsis:00-0040131",
@@ -62545,7 +62545,7 @@
         }
       ],
       "shadowPositionRank": 96,
-      "shadowModelRank": 228
+      "shadowModelRank": 227
     },
     {
       "canonicalPlayerId": "gsis:00-0039299",
@@ -62831,8 +62831,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 76,
-      "shadowModelRank": 239
+      "shadowPositionRank": 81,
+      "shadowModelRank": 244
     },
     {
       "canonicalPlayerId": "gsis:00-0040584",
@@ -63119,8 +63119,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 32,
-      "shadowModelRank": 175
+      "shadowPositionRank": 31,
+      "shadowModelRank": 172
     },
     {
       "canonicalPlayerId": "gsis:00-0036244",
@@ -63412,8 +63412,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 20,
-      "shadowModelRank": 113
+      "shadowPositionRank": 28,
+      "shadowModelRank": 155
     },
     {
       "canonicalPlayerId": "gsis:00-0040886",
@@ -63691,8 +63691,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 81,
-      "shadowModelRank": 244
+      "shadowPositionRank": 79,
+      "shadowModelRank": 242
     },
     {
       "canonicalPlayerId": "gsis:00-0040586",
@@ -63979,8 +63979,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 62,
-      "shadowModelRank": 213
+      "shadowPositionRank": 68,
+      "shadowModelRank": 229
     },
     {
       "canonicalPlayerId": "gsis:00-0036309",
@@ -64272,8 +64272,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 78,
-      "shadowModelRank": 183
+      "shadowPositionRank": 71,
+      "shadowModelRank": 170
     },
     {
       "canonicalPlayerId": "gsis:00-0033040",
@@ -64861,8 +64861,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 27,
-      "shadowModelRank": 149
+      "shadowPositionRank": 24,
+      "shadowModelRank": 133
     },
     {
       "canonicalPlayerId": "gsis:00-0035229",
@@ -65154,8 +65154,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 25,
-      "shadowModelRank": 136
+      "shadowPositionRank": 18,
+      "shadowModelRank": 111
     },
     {
       "canonicalPlayerId": "gsis:00-0041104",
@@ -65721,8 +65721,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 57,
-      "shadowModelRank": 200
+      "shadowPositionRank": 52,
+      "shadowModelRank": 194
     },
     {
       "canonicalPlayerId": "gsis:00-0037666",
@@ -66014,8 +66014,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 93,
-      "shadowModelRank": 220
+      "shadowPositionRank": 84,
+      "shadowModelRank": 199
     },
     {
       "canonicalPlayerId": "gsis:00-0034775",
@@ -66307,8 +66307,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 64,
-      "shadowModelRank": 158
+      "shadowPositionRank": 67,
+      "shadowModelRank": 164
     },
     {
       "canonicalPlayerId": "gsis:00-0039424",
@@ -66596,8 +66596,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 72,
-      "shadowModelRank": 169
+      "shadowPositionRank": 68,
+      "shadowModelRank": 165
     },
     {
       "canonicalPlayerId": "gsis:00-0033537",
@@ -66888,8 +66888,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 27,
-      "shadowModelRank": 207
+      "shadowPositionRank": 29,
+      "shadowModelRank": 191
     },
     {
       "canonicalPlayerId": "gsis:00-0039391",
@@ -67177,8 +67177,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 40,
-      "shadowModelRank": 142
+      "shadowPositionRank": 50,
+      "shadowModelRank": 186
     },
     {
       "canonicalPlayerId": "gsis:00-0038685",
@@ -67468,8 +67468,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 78,
-      "shadowModelRank": 241
+      "shadowPositionRank": 77,
+      "shadowModelRank": 240
     },
     {
       "canonicalPlayerId": "gsis:00-0040727",
@@ -67756,8 +67756,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 85,
-      "shadowModelRank": 205
+      "shadowPositionRank": 93,
+      "shadowModelRank": 217
     },
     {
       "canonicalPlayerId": "gsis:00-0037741",
@@ -68049,8 +68049,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 95,
-      "shadowModelRank": 227
+      "shadowPositionRank": 94,
+      "shadowModelRank": 220
     },
     {
       "canonicalPlayerId": "gsis:00-0039921",
@@ -68339,7 +68339,7 @@
         }
       ],
       "shadowPositionRank": 51,
-      "shadowModelRank": 189
+      "shadowModelRank": 188
     },
     {
       "canonicalPlayerId": "gsis:00-0037563",
@@ -68628,8 +68628,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 63,
-      "shadowModelRank": 215
+      "shadowPositionRank": 69,
+      "shadowModelRank": 230
     },
     {
       "canonicalPlayerId": "gsis:00-0037112",
@@ -68918,8 +68918,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 13,
-      "shadowModelRank": 77
+      "shadowPositionRank": 16,
+      "shadowModelRank": 109
     },
     {
       "canonicalPlayerId": "gsis:00-0038129",
@@ -69212,7 +69212,7 @@
         }
       ],
       "shadowPositionRank": 22,
-      "shadowModelRank": 118
+      "shadowModelRank": 130
     },
     {
       "canonicalPlayerId": "gsis:00-0040134",
@@ -69499,8 +69499,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 86,
-      "shadowModelRank": 206
+      "shadowPositionRank": 81,
+      "shadowModelRank": 196
     },
     {
       "canonicalPlayerId": "gsis:00-0039066",
@@ -69792,8 +69792,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 34,
-      "shadowModelRank": 186
+      "shadowPositionRank": 33,
+      "shadowModelRank": 180
     },
     {
       "canonicalPlayerId": "gsis:00-0041035",
@@ -70071,8 +70071,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 66,
-      "shadowModelRank": 160
+      "shadowPositionRank": 79,
+      "shadowModelRank": 193
     },
     {
       "canonicalPlayerId": "gsis:00-0033119",
@@ -70365,8 +70365,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 29,
-      "shadowModelRank": 211
+      "shadowPositionRank": 28,
+      "shadowModelRank": 179
     },
     {
       "canonicalPlayerId": "gsis:00-0034829",
@@ -70658,8 +70658,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 26,
-      "shadowModelRank": 145
+      "shadowPositionRank": 30,
+      "shadowModelRank": 161
     },
     {
       "canonicalPlayerId": "gsis:00-0041489",
@@ -70937,8 +70937,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 92,
-      "shadowModelRank": 219
+      "shadowPositionRank": 91,
+      "shadowModelRank": 214
     },
     {
       "canonicalPlayerId": "gsis:00-0041042",
@@ -71216,8 +71216,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 87,
-      "shadowModelRank": 208
+      "shadowPositionRank": 89,
+      "shadowModelRank": 210
     },
     {
       "canonicalPlayerId": "gsis:00-0040179",
@@ -71783,8 +71783,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 91,
-      "shadowModelRank": 218
+      "shadowPositionRank": 87,
+      "shadowModelRank": 206
     },
     {
       "canonicalPlayerId": "gsis:00-0038976",
@@ -72076,8 +72076,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 80,
-      "shadowModelRank": 192
+      "shadowPositionRank": 77,
+      "shadowModelRank": 189
     },
     {
       "canonicalPlayerId": "gsis:00-0040198",
@@ -72364,8 +72364,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 77,
-      "shadowModelRank": 240
+      "shadowPositionRank": 73,
+      "shadowModelRank": 236
     },
     {
       "canonicalPlayerId": "gsis:00-0033881",
@@ -72657,8 +72657,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 29,
-      "shadowModelRank": 152
+      "shadowPositionRank": 20,
+      "shadowModelRank": 122
     },
     {
       "canonicalPlayerId": "gsis:00-0040177",
@@ -72936,8 +72936,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 67,
-      "shadowModelRank": 225
+      "shadowPositionRank": 72,
+      "shadowModelRank": 235
     },
     {
       "canonicalPlayerId": "gsis:00-0039901",
@@ -73225,8 +73225,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 44,
-      "shadowModelRank": 103
+      "shadowPositionRank": 62,
+      "shadowModelRank": 149
     },
     {
       "canonicalPlayerId": "gsis:00-0039868",
@@ -73514,8 +73514,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 61,
-      "shadowModelRank": 155
+      "shadowPositionRank": 66,
+      "shadowModelRank": 162
     },
     {
       "canonicalPlayerId": "gsis:00-0039363",
@@ -73803,8 +73803,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 79,
-      "shadowModelRank": 242
+      "shadowPositionRank": 80,
+      "shadowModelRank": 243
     },
     {
       "canonicalPlayerId": "gsis:00-0041013",
@@ -74082,8 +74082,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 71,
-      "shadowModelRank": 233
+      "shadowPositionRank": 75,
+      "shadowModelRank": 238
     },
     {
       "canonicalPlayerId": "gsis:00-0040737",
@@ -74370,8 +74370,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 31,
-      "shadowModelRank": 167
+      "shadowPositionRank": 34,
+      "shadowModelRank": 190
     },
     {
       "canonicalPlayerId": "gsis:00-0033553",
@@ -74661,8 +74661,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 29,
-      "shadowModelRank": 111
+      "shadowPositionRank": 13,
+      "shadowModelRank": 29
     },
     {
       "canonicalPlayerId": "gsis:00-0039811",
@@ -74949,8 +74949,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 73,
-      "shadowModelRank": 235
+      "shadowPositionRank": 76,
+      "shadowModelRank": 239
     },
     {
       "canonicalPlayerId": "gsis:00-0039746",
@@ -75531,8 +75531,8 @@
           "missingInputs": []
         }
       ],
-      "shadowPositionRank": 52,
-      "shadowModelRank": 190
+      "shadowPositionRank": 49,
+      "shadowModelRank": 184
     }
   ]
 }
