@@ -35,6 +35,13 @@ export default defineConfig({
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
       "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL Phase 11A -- JKB-vs-sportsbook research/evaluation framework.
+      "scripts/lib/nfl-research-odds-math.test.mjs",
+      "scripts/lib/nfl-research-join.test.mjs",
+      "scripts/lib/nfl-research-metrics.test.mjs",
+      "scripts/lib/nfl-research-buckets.test.mjs",
+      "scripts/lib/nfl-research-time-split.test.mjs",
+      "scripts/lib/nfl-research-bias.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
