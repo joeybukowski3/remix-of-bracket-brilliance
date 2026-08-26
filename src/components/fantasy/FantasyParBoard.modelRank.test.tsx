@@ -1,9 +1,10 @@
 import type { ReactElement } from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render as rtlRender, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import FantasyParBoard from "@/components/fantasy/FantasyParBoard";
 import { FANTASY_RANKINGS } from "@/lib/fantasy/rankings";
+import { getOverallRowContext } from "@/lib/fantasy/overallRowContext";
 import { getShadowModelRankRow } from "@/lib/fantasy/rosResearch/shadowModelRankJoin";
 
 function render(ui: ReactElement) {
@@ -16,7 +17,32 @@ function overallRowCells(player: string): HTMLElement[] {
   return Array.from(row.querySelectorAll("td"));
 }
 
+beforeEach(() => {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    })),
+  );
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
 describe("FantasyParBoard Model Rk (Option D)", () => {
+  it("shows Jefferson and Lamb with the same canonical POS RK in Overall and the WR tab", () => {
+    render(<FantasyParBoard />);
+    expect(overallRowCells("Justin Jefferson")[2].textContent?.trim()).toBe("WR5");
+    expect(overallRowCells("CeeDee Lamb")[2].textContent?.trim()).toBe("WR7");
+
+    fireEvent.click(screen.getByRole("button", { name: /^WR \d+$/ }));
+    expect(overallRowCells("Justin Jefferson")[1].textContent?.trim()).toBe("WR5");
+    expect(overallRowCells("CeeDee Lamb")[1].textContent?.trim()).toBe("WR7");
+  });
+
   it("renders a Model Rk header and per-row Model Rk values sourced from the shadow join", () => {
     render(<FantasyParBoard />);
     expect(screen.getByRole("button", { name: /Model Rk/ })).toBeTruthy();
@@ -54,6 +80,32 @@ describe("FantasyParBoard Model Rk (Option D)", () => {
       // Every N/A row must come after every numeric row.
       expect(modelRkValues.slice(naStartIndex).every((value) => value === "N/A")).toBe(true);
     }
+  });
+
+  it("changes row order without changing displayed canonical POS RK", () => {
+    render(<FantasyParBoard />);
+    const beforeOrder = screen
+      .getAllByRole("row")
+      .filter((row) => row.querySelectorAll("td").length > 5)
+      .map((row) => row.querySelectorAll("td")[1]?.textContent);
+    const beforeRanks = new Map([
+      ["Justin Jefferson", overallRowCells("Justin Jefferson")[2].textContent?.trim()],
+      ["CeeDee Lamb", overallRowCells("CeeDee Lamb")[2].textContent?.trim()],
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: /Model Rk/ }));
+
+    const afterOrder = screen
+      .getAllByRole("row")
+      .filter((row) => row.querySelectorAll("td").length > 5)
+      .map((row) => row.querySelectorAll("td")[1]?.textContent);
+    expect(afterOrder).not.toEqual(beforeOrder);
+    expect(overallRowCells("Justin Jefferson")[2].textContent?.trim()).toBe(
+      beforeRanks.get("Justin Jefferson"),
+    );
+    expect(overallRowCells("CeeDee Lamb")[2].textContent?.trim()).toBe(
+      beforeRanks.get("CeeDee Lamb"),
+    );
   });
 
   it("clicking the Model Rk header again returns the board to JKB RANK order", () => {
@@ -98,16 +150,36 @@ describe("FantasyParBoard Model Rk (Option D)", () => {
     const jefferson = FANTASY_RANKINGS.rows.find((row) => row.player === "Justin Jefferson")!;
     const cells = overallRowCells("Justin Jefferson");
     expect(cells[0].textContent?.trim()).toBe(String(jefferson.overallRank));
+    expect(cells[2].textContent?.trim()).toBe("WR5");
+    expect(getOverallRowContext(jefferson.overallRank).parPerGame).toBeCloseTo(4.57161758429364, 12);
+    expect(jefferson.projectionRank).toBe(8);
     expect(cells[5].textContent?.trim()).toBe(String(jefferson.projectionRank));
 
     const model = getShadowModelRankRow(jefferson.overallRank)!;
+    expect(model.modelRank).toBe(24);
     expect(cells[7].textContent?.trim()).toBe(String(model.modelRank));
+  });
+
+  it("keeps Lamb's canonical ranks, PAR/G, Projection Rk, and Model Rk anchors unchanged", () => {
+    render(<FantasyParBoard />);
+    const lamb = FANTASY_RANKINGS.rows.find((row) => row.player === "CeeDee Lamb")!;
+    const cells = overallRowCells("CeeDee Lamb");
+    expect(cells[0].textContent?.trim()).toBe("16");
+    expect(cells[2].textContent?.trim()).toBe("WR7");
+    expect(getOverallRowContext(lamb.overallRank).parPerGame).toBeCloseTo(5.48480392156863, 12);
+    expect(lamb.projectionRank).toBe(7);
+    expect(cells[5].textContent?.trim()).toBe("7");
+    expect(getShadowModelRankRow(lamb.overallRank)?.modelRank).toBe(9);
+    expect(cells[7].textContent?.trim()).toBe("9");
   });
 
   it("expanded-row Model provenance labels shadow values as research, not live PPG/PAR", () => {
     render(<FantasyParBoard />);
     fireEvent.click(screen.getByRole("button", { name: "Show details for CeeDee Lamb" }));
-    expect(screen.getByText(/Model PPG \(research, not live PPG\):/)).toBeTruthy();
+    const provenance = screen.getByText(/Model PPG \(research, not live PPG\):/);
+    expect(provenance.textContent).toContain("Model Rank (research): 9");
+    expect(provenance.textContent).toContain("Model PPG (research, not live PPG): 17.74");
+    expect(provenance.textContent).toContain("Model PAR/G (research, not live PAR/G): 6.17");
     expect(screen.getByText(/Model PAR\/G \(research, not live PAR\/G\):/)).toBeTruthy();
     expect(screen.queryByText(/^Live PPG:/)).toBeNull();
   });

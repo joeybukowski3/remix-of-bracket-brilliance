@@ -275,6 +275,88 @@ export type RefinedCandidateOutput = {
   missingInputs: string[];
 };
 
+export type PromotedModelRankInput = {
+  canonicalPlayerId: string;
+  currentOverallRank: number | null;
+  position: FantasyPosition;
+  rankEligible: boolean;
+  refinedCandidates: readonly {
+    candidate: RefinedCandidateId;
+    projectedPpg: number | null;
+    shadowParPerGame: number | null;
+  }[];
+};
+
+export type PromotedModelRank = {
+  canonicalPlayerId: string;
+  shadowPositionRank: number;
+  shadowModelRank: number;
+};
+
+type RankableF2Row = {
+  canonicalPlayerId: string;
+  currentOverallRank: number | null;
+  position: FantasyPosition;
+  shadowParPerGame: number;
+};
+
+function compareRankableF2Rows(a: RankableF2Row, b: RankableF2Row): number {
+  const parDelta = b.shadowParPerGame - a.shadowParPerGame;
+  if (parDelta !== 0) return parDelta;
+  if (a.currentOverallRank != null && b.currentOverallRank != null) {
+    const liveRankDelta = a.currentOverallRank - b.currentOverallRank;
+    if (liveRankDelta !== 0) return liveRankDelta;
+  } else if (a.currentOverallRank != null) {
+    return -1;
+  } else if (b.currentOverallRank != null) {
+    return 1;
+  }
+  return a.canonicalPlayerId.localeCompare(b.canonicalPlayerId);
+}
+
+/**
+ * Assigns the promoted Model Rank fields from the approved F2 authority only.
+ * Candidate A-E inputs are deliberately absent from this contract: F2 PPG is
+ * converted to F2 PAR/G by the generator before this function is called, and
+ * R2 eligibility controls rank inclusion without changing that projection.
+ */
+export function computeF2PromotedModelRanks(
+  players: readonly PromotedModelRankInput[],
+): PromotedModelRank[] {
+  const rankable = players
+    .filter((player) => player.rankEligible)
+    .map((player): RankableF2Row | null => {
+      const f2 = player.refinedCandidates.find((candidate) => candidate.candidate === "F2");
+      if (f2?.shadowParPerGame == null) return null;
+      return {
+        canonicalPlayerId: player.canonicalPlayerId,
+        currentOverallRank: player.currentOverallRank,
+        position: player.position,
+        shadowParPerGame: f2.shadowParPerGame,
+      };
+    })
+    .filter((player): player is RankableF2Row => player != null);
+
+  const modelRankByPlayerId = new Map(
+    [...rankable]
+      .sort(compareRankableF2Rows)
+      .map((player, index) => [player.canonicalPlayerId, index + 1]),
+  );
+  const positionRankByPlayerId = new Map<string, number>();
+  for (const position of ["QB", "RB", "WR", "TE"] as const) {
+    rankable
+      .filter((player) => player.position === position)
+      .sort(compareRankableF2Rows)
+      .forEach((player, index) => positionRankByPlayerId.set(player.canonicalPlayerId, index + 1));
+  }
+
+  return rankable.map((player) => ({
+    canonicalPlayerId: player.canonicalPlayerId,
+    shadowPositionRank: positionRankByPlayerId.get(player.canonicalPlayerId)!,
+    shadowModelRank: modelRankByPlayerId.get(player.canonicalPlayerId)!,
+  }));
+}
+
 /**
  * Deliberately excludes usage entirely: `runUsageCapExperiment`
  * (`shadowBacktest.ts`) found it worsened MAE monotonically at every tested

@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import PositionParBoard from "@/components/fantasy/PositionParBoard";
 import { POSITION_BOARD_CONFIGS } from "@/lib/fantasy/positionBoardConfig";
 import { PAR_POSITIONS, PAR_POSITION_LIMITS } from "@/lib/fantasy/parRankings";
+import { getOutsideRows, getTieredRows } from "@/lib/fantasy/positionBoardModel";
 
 /** The board links to the points-allowed reference, so it needs a router. */
 function render(ui: ReactElement) {
@@ -48,14 +49,19 @@ describe.each(PAR_POSITIONS)("%s wide layout", (position) => {
     }
   });
 
-  it("labels rank as the position abbreviation, sorted PAR/G descending", () => {
+  it("displays canonical position ranks while rows stay sorted by PAR/G descending", () => {
     render(<PositionParBoard position={position} query="" />);
     const table = screen.getByRole("table");
     const ranks = within(table)
       .getAllByText(new RegExp(`^${position}\\d+$`))
-      .map((node) => Number(node.textContent!.slice(position.length)));
-    expect(ranks).toHaveLength(PAR_POSITION_LIMITS[position]);
-    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+      .map((node) => node.textContent);
+    const expected = [...getTieredRows(position), ...getOutsideRows(position)]
+      .map((entry) => entry.positionRankLabel)
+      .filter((label): label is string => label != null);
+    expect(ranks).toEqual(expected);
+    const parPerGame = getTieredRows(position).map((entry) => entry.row.par!.parPerGame);
+    expect(parPerGame).toHaveLength(PAR_POSITION_LIMITS[position]);
+    expect(parPerGame).toEqual([...parPerGame].sort((a, b) => b - a));
   });
 
   it("shows the approved baseline and keeps the outside pool section", () => {
