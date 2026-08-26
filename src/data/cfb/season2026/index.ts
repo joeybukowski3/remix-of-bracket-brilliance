@@ -10,7 +10,16 @@ export {
   type CfbOfficialRankingsArtifact,
 } from "./officialRankings";
 export { CFB_RECORDS_2026, CFB_RECORDS_BY_TEAM } from "./records";
-export { CFB_STATS_2026, CFB_STATS_BY_TEAM } from "./stats";
+export {
+  CFB_STATS_2026,
+  CFB_STATS_2026_GENERATED_AT,
+  CFB_STATS_2026_HAS_DATA,
+  CFB_STATS_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_YEAR,
+  CFB_STATS_RANKS_BY_TEAM,
+} from "./stats";
 export { CFB_CONTEXT_2026, CFB_CONTEXT_BY_TEAM } from "./context";
 export {
   CFB_GAMES_2026,

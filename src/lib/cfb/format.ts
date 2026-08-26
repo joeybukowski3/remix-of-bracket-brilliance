@@ -10,6 +10,15 @@ export function formatNullableNumber(
   return value.toFixed(digits);
 }
 
+/** Formats a 0-1 ratio (e.g. thirdDownPct: 0.417) as a percentage string ("41.7%"). */
+export function formatNullablePercent(
+  value: number | null | undefined,
+  digits = 1,
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
 export function formatNullableInteger(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return String(Math.trunc(value));
