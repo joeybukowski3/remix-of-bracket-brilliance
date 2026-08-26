@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ComponentType } from "react";
 import { CheckCircle2, Flame, Gauge, Percent, Route, Target } from "lucide-react";
 import { formatNullableNumber, formatNullablePercent } from "@/lib/cfb/format";
-import { higherIsBetterEdge, lowerIsBetterEdge } from "@/lib/cfb/comparison";
+import { higherIsBetterEdge, lowerIsBetterEdge, rankAdvantageEdge } from "@/lib/cfb/comparison";
 import { getCfbSharedBarSplit } from "@/lib/cfb/ratingPresentation";
 import { CFB_SEASON_STAT_RANK_DIRECTIONS, type CfbRankedStatMetric } from "@/lib/cfb/seasonStats/rankSeasonStats";
 import type { CfbMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
@@ -132,23 +132,35 @@ export default function CollegeFootballSeasonStatsComparison({
   const awayTeam: TeamHeaderInfo = { name: awayShortName, shortName: awayShortName, color: awayColor, logo: awayLogo };
   const homeTeam: TeamHeaderInfo = { name: homeShortName, shortName: homeShortName, color: homeColor, logo: homeLogo };
 
-  function renderCardHeader(category: SectionTab, left: TeamHeaderInfo, right: TeamHeaderInfo, subtitle?: string) {
+  function renderCardHeader(
+    category: SectionTab,
+    left: TeamHeaderInfo,
+    right: TeamHeaderInfo,
+    descriptors?: { left: string; right: string },
+  ) {
     return (
       <div className="flex items-stretch">
         <span aria-hidden="true" className="w-1.5 shrink-0" style={{ background: CATEGORY_ACCENT_COLOR[category] }} />
         <div className="flex-1 bg-slate-50 px-3 py-2.5">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <div className="flex min-w-0 items-center justify-end gap-1.5">
-              <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: left.color }}>
-                {left.shortName}
-              </span>
-              <CollegeFootballTeamLogo
-                name={left.name}
-                logo={left.logo}
-                abbreviation={left.shortName}
-                primaryColor={left.color}
-                size="sm"
-              />
+            <div className="flex min-w-0 flex-col items-end gap-0.5">
+              <div className="flex min-w-0 items-center justify-end gap-1.5">
+                <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: left.color }}>
+                  {left.shortName}
+                </span>
+                <CollegeFootballTeamLogo
+                  name={left.name}
+                  logo={left.logo}
+                  abbreviation={left.shortName}
+                  primaryColor={left.color}
+                  size="sm"
+                />
+              </div>
+              {descriptors && (
+                <span className="truncate text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                  {descriptors.left}
+                </span>
+              )}
             </div>
             <span
               className={cn(
@@ -158,24 +170,26 @@ export default function CollegeFootballSeasonStatsComparison({
             >
               {TABS.find((t) => t.key === category)?.label}
             </span>
-            <div className="flex min-w-0 items-center justify-start gap-1.5">
-              <CollegeFootballTeamLogo
-                name={right.name}
-                logo={right.logo}
-                abbreviation={right.shortName}
-                primaryColor={right.color}
-                size="sm"
-              />
-              <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: right.color }}>
-                {right.shortName}
-              </span>
+            <div className="flex min-w-0 flex-col items-start gap-0.5">
+              <div className="flex min-w-0 items-center justify-start gap-1.5">
+                <CollegeFootballTeamLogo
+                  name={right.name}
+                  logo={right.logo}
+                  abbreviation={right.shortName}
+                  primaryColor={right.color}
+                  size="sm"
+                />
+                <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: right.color }}>
+                  {right.shortName}
+                </span>
+              </div>
+              {descriptors && (
+                <span className="truncate text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                  {descriptors.right}
+                </span>
+              )}
             </div>
           </div>
-          {subtitle && (
-            <p className="mt-1 text-center text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-              {subtitle}
-            </p>
-          )}
         </div>
       </div>
     );
@@ -207,6 +221,8 @@ export default function CollegeFootballSeasonStatsComparison({
               awayColor={awayColor}
               homeColor={homeColor}
               edge={edge}
+              awayTeam={awayTeam}
+              homeTeam={homeTeam}
             />
           );
         })}
@@ -219,23 +235,31 @@ export default function CollegeFootballSeasonStatsComparison({
    * other section on the page — `awayKeyOf`/`homeKeyOf` pick which stat each
    * real team contributes to the row (e.g. away's defense vs. home's
    * offense), but the screen position always matches the real team.
+   *
+   * Advantage here is decided by NATIONAL RANK, not raw value: a defensive
+   * unit's rank and an offensive unit's rank already encode "how good is
+   * this unit nationally" on a common, comparable scale (lower rank =
+   * stronger), which raw values do not — a defense allowing 3.5 YPP and an
+   * offense gaining 3.2 YPP are not directly comparable on strength without
+   * knowing where each ranks nationally. Raw values still drive the
+   * displayed numbers and the shared-bar proportions; only the edge
+   * (stronger-side badge, bar-junction logo marker) comes from
+   * rankAdvantageEdge over the existing generated rank maps.
    */
   function renderMatchupSection(
-    title: string,
+    descriptors: { left: string; right: string },
     awayKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
     homeKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
-    direction: "higher-is-better" | "lower-is-better",
   ) {
     return (
       <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-        {renderCardHeader("matchup", awayTeam, homeTeam, title)}
+        {renderCardHeader("matchup", awayTeam, homeTeam, descriptors)}
         {MATCHUP_ROWS.map((row) => {
           const awayKey = awayKeyOf(row);
           const homeKey = homeKeyOf(row);
           const awayRaw = away[awayKey];
           const homeRaw = home[homeKey];
-          const edge =
-            direction === "higher-is-better" ? higherIsBetterEdge(awayRaw, homeRaw) : lowerIsBetterEdge(awayRaw, homeRaw);
+          const edge = rankAdvantageEdge(awayRanks[awayKey], homeRanks[homeKey]);
           return (
             <CollegeFootballSharedBarRow
               key={row.label}
@@ -250,6 +274,8 @@ export default function CollegeFootballSeasonStatsComparison({
               awayColor={awayColor}
               homeColor={homeColor}
               edge={edge}
+              awayTeam={awayTeam}
+              homeTeam={homeTeam}
             />
           );
         })}
@@ -260,16 +286,14 @@ export default function CollegeFootballSeasonStatsComparison({
   const offenseCard = renderSection("offense", OFFENSE_ROWS);
   const defenseCard = renderSection("defense", DEFENSE_ROWS);
   const awayDefenseVsHomeOffenseCard = renderMatchupSection(
-    "Away Defense vs Home Offense",
+    { left: "Away Defense", right: "Home Offense" },
     (row) => row.defenseKey,
     (row) => row.offenseKey,
-    "higher-is-better",
   );
   const awayOffenseVsHomeDefenseCard = renderMatchupSection(
-    "Away Offense vs Home Defense",
+    { left: "Away Offense", right: "Home Defense" },
     (row) => row.offenseKey,
     (row) => row.defenseKey,
-    "lower-is-better",
   );
 
   return (

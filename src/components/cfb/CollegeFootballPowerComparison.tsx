@@ -1,9 +1,11 @@
 import type { ComponentType } from "react";
 import { BarChart3, Shield, Swords, Users, Zap } from "lucide-react";
+import { getAllTeams } from "@/data/cfb";
 import type { CfbTeam } from "@/data/cfb/types";
 import { formatNullableNumber, formatRank } from "@/lib/cfb/format";
 import { higherIsBetterEdge, lowerIsBetterEdge, type CfbComparisonEdge } from "@/lib/cfb/comparison";
 import { getCfbSharedBarSplit } from "@/lib/cfb/ratingPresentation";
+import { computeCompetitionRanks } from "@/lib/cfb/seasonStats/rankSeasonStats";
 import { cn } from "@/lib/utils";
 import CollegeFootballStrongerBadge from "./CollegeFootballStrongerBadge";
 import CollegeFootballSharedBarRow from "./CollegeFootballSharedBarRow";
@@ -29,6 +31,28 @@ const METRIC_ICON_CLASSES = {
 } as const;
 
 type MetricCategory = keyof typeof METRIC_ICON_CLASSES;
+
+/**
+ * Offense/defense ratings have no pre-generated national rank field (unlike
+ * jkbRank for Power), so compute an honest one from the real rating values
+ * across every team — same competition-ranking utility the season-stats
+ * artifact uses, never a fabricated number. Computed once at module scope
+ * since the team dataset is static.
+ */
+const ALL_TEAMS = getAllTeams();
+const OFFENSE_RATING_RANKS = computeCompetitionRanks(
+  ALL_TEAMS.map((team) => ({ teamId: team.ratings.teamId, value: team.ratings.offensiveRating })),
+  "higher-is-better",
+);
+const DEFENSE_RATING_RANKS = computeCompetitionRanks(
+  ALL_TEAMS.map((team) => ({ teamId: team.ratings.teamId, value: team.ratings.defensiveRating })),
+  "higher-is-better",
+);
+
+function ratingRankBadge(ranks: ReadonlyMap<string, number>, teamId: string): string | null {
+  const rank = ranks.get(teamId);
+  return rank == null ? null : formatRank(rank);
+}
 
 function MetricIcon({
   icon: Icon,
@@ -105,6 +129,8 @@ function RankRow({
 export default function CollegeFootballPowerComparison({ away, home }: Props) {
   const awayRatings = away.ratings;
   const homeRatings = home.ratings;
+  const awayTeamIdentity = { name: away.name, logo: away.logo, abbreviation: away.abbreviation };
+  const homeTeamIdentity = { name: home.name, logo: home.logo, abbreviation: home.abbreviation };
 
   return (
     <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
@@ -150,10 +176,14 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
         iconClassName={METRIC_ICON_CLASSES.power}
         awayValue={formatNullableNumber(awayRatings.jkbPowerRating)}
         homeValue={formatNullableNumber(homeRatings.jkbPowerRating)}
+        awayRank={awayRatings.jkbRank != null ? formatRank(awayRatings.jkbRank) : null}
+        homeRank={homeRatings.jkbRank != null ? formatRank(homeRatings.jkbRank) : null}
         {...getCfbSharedBarSplit(awayRatings.jkbPowerRating, homeRatings.jkbPowerRating)}
         awayColor={away.primaryColor}
         homeColor={home.primaryColor}
         edge={higherIsBetterEdge(awayRatings.jkbPowerRating, homeRatings.jkbPowerRating)}
+        awayTeam={awayTeamIdentity}
+        homeTeam={homeTeamIdentity}
       />
       <CollegeFootballSharedBarRow
         label="Offense"
@@ -161,10 +191,14 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
         iconClassName={METRIC_ICON_CLASSES.offense}
         awayValue={formatNullableNumber(awayRatings.offensiveRating)}
         homeValue={formatNullableNumber(homeRatings.offensiveRating)}
+        awayRank={awayRatings.offensiveRating != null ? ratingRankBadge(OFFENSE_RATING_RANKS, awayRatings.teamId) : null}
+        homeRank={homeRatings.offensiveRating != null ? ratingRankBadge(OFFENSE_RATING_RANKS, homeRatings.teamId) : null}
         {...getCfbSharedBarSplit(awayRatings.offensiveRating, homeRatings.offensiveRating)}
         awayColor={away.primaryColor}
         homeColor={home.primaryColor}
         edge={higherIsBetterEdge(awayRatings.offensiveRating, homeRatings.offensiveRating)}
+        awayTeam={awayTeamIdentity}
+        homeTeam={homeTeamIdentity}
       />
       <CollegeFootballSharedBarRow
         label="Defense"
@@ -172,10 +206,14 @@ export default function CollegeFootballPowerComparison({ away, home }: Props) {
         iconClassName={METRIC_ICON_CLASSES.defense}
         awayValue={formatNullableNumber(awayRatings.defensiveRating)}
         homeValue={formatNullableNumber(homeRatings.defensiveRating)}
+        awayRank={awayRatings.defensiveRating != null ? ratingRankBadge(DEFENSE_RATING_RANKS, awayRatings.teamId) : null}
+        homeRank={homeRatings.defensiveRating != null ? ratingRankBadge(DEFENSE_RATING_RANKS, homeRatings.teamId) : null}
         {...getCfbSharedBarSplit(awayRatings.defensiveRating, homeRatings.defensiveRating)}
         awayColor={away.primaryColor}
         homeColor={home.primaryColor}
         edge={higherIsBetterEdge(awayRatings.defensiveRating, homeRatings.defensiveRating)}
+        awayTeam={awayTeamIdentity}
+        homeTeam={homeTeamIdentity}
       />
       <RankRow
         label="SOS Played"

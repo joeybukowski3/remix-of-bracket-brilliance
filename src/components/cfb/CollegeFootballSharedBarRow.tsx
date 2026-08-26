@@ -2,6 +2,14 @@ import type { ComponentType } from "react";
 import type { CfbComparisonEdge } from "@/lib/cfb/comparison";
 import { cn } from "@/lib/utils";
 import CollegeFootballStrongerBadge from "./CollegeFootballStrongerBadge";
+import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
+
+/** Minimal identity needed to render the winning-side logo accent marker. */
+type BarTeamIdentity = {
+  name: string;
+  logo?: string | null;
+  abbreviation?: string;
+};
 
 type Props = {
   label: string;
@@ -19,6 +27,13 @@ type Props = {
   awayColor: string;
   homeColor: string;
   edge: CfbComparisonEdge;
+  /**
+   * Optional team identity for the bar-junction logo accent marker. When both
+   * are provided, only the side matching `edge` renders its logo — a compact
+   * marker at the seam, never both sides on one row.
+   */
+  awayTeam?: BarTeamIdentity;
+  homeTeam?: BarTeamIdentity;
 };
 
 /**
@@ -40,7 +55,10 @@ export default function CollegeFootballSharedBarRow({
   awayColor,
   homeColor,
   edge,
+  awayTeam,
+  homeTeam,
 }: Props) {
+  const winningTeam = edge === "away" ? awayTeam : edge === "home" ? homeTeam : null;
   return (
     <div className="border-t border-slate-200 px-3 py-3 sm:px-4">
       <div className="mb-2 flex items-center justify-center gap-1.5">
@@ -73,9 +91,26 @@ export default function CollegeFootballSharedBarRow({
             </span>
           )}
         </div>
-        <div className="flex h-3 overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
-          <div className="h-full transition-[width]" style={{ width: `${awayShare}%`, background: awayColor }} />
-          <div className="h-full transition-[width]" style={{ width: `${homeShare}%`, background: homeColor }} />
+        <div className="relative flex h-3 items-center">
+          <div className="flex h-3 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200">
+            <div className="h-full transition-[width]" style={{ width: `${awayShare}%`, background: awayColor }} />
+            <div className="h-full transition-[width]" style={{ width: `${homeShare}%`, background: homeColor }} />
+          </div>
+          {winningTeam && (
+            <div
+              className="pointer-events-none absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${awayShare}%` }}
+            >
+              <CollegeFootballTeamLogo
+                name={winningTeam.name}
+                logo={winningTeam.logo}
+                abbreviation={winningTeam.abbreviation}
+                primaryColor={edge === "away" ? awayColor : homeColor}
+                size="sm"
+                className="h-4 w-4 rounded-full ring-2 ring-white shadow-sm"
+              />
+            </div>
+          )}
         </div>
         <div
           className={cn(
