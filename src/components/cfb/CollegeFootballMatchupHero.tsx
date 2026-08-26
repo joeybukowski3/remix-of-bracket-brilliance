@@ -6,7 +6,6 @@ import { getCfbTeamPath } from "@/lib/cfb/routes";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
-import CollegeFootballTeamMatchupStrip from "./CollegeFootballTeamMatchupStrip";
 
 type Props = {
   game: CfbGame;
@@ -126,25 +125,34 @@ function MatchupInfoPanel({ game }: { game: CfbGame }) {
   );
 }
 
-function CompactTeamRow({ team, align }: { team: CfbTeam; align: "left" | "right" }) {
+/**
+ * Compact mobile team panel: same team-color background + logo + name +
+ * record + rank language as the desktop wedge panels above, just scaled
+ * down and laid out two-up instead of full-bleed.
+ */
+function MobileTeamPanel({ team, side }: { team: CfbTeam; side: "away" | "home" }) {
   const record = formatRecord(team.record.wins, team.record.losses, team.record.ties);
+  const isAway = side === "away";
+
   return (
     <Link
       to={getCfbTeamPath(team.slug)}
-      className={cn("flex items-center gap-2.5 px-3 py-2", align === "right" && "flex-row-reverse text-right")}
+      className={cn(
+        "flex flex-col gap-1.5 px-3 py-4",
+        isAway ? "items-start text-left" : "items-end text-right",
+      )}
+      style={{ background: team.primaryColor }}
     >
+      <RankPills team={team} tone="light" />
       <CollegeFootballTeamLogo
         name={team.name}
         logo={team.logo}
         abbreviation={team.abbreviation}
-        primaryColor={team.primaryColor}
-        size="md"
+        primaryColor="transparent"
+        className="h-12 w-12"
       />
-      <div className={cn("flex min-w-0 flex-col gap-0.5", align === "right" && "items-end")}>
-        <RankPills team={team} tone="dark" />
-        <span className="truncate text-sm font-black text-slate-900">{team.name}</span>
-      </div>
-      <span className="ml-auto shrink-0 text-xs font-bold text-slate-400">{record}</span>
+      <span className="truncate text-sm font-black leading-tight text-white">{team.shortName}</span>
+      <span className="text-[11px] font-bold text-white/85">{record}</span>
     </Link>
   );
 }
@@ -164,15 +172,14 @@ export default function CollegeFootballMatchupHero({ game, away, home }: Props) 
         <TeamPanel team={home} score={isFinal || isLive ? game.homeScore : null} side="home" />
       </div>
 
-      {/* Mobile: compact strip + matchup info + team detail rows. */}
+      {/* Mobile: compact team-color panels (away left, home right) + matchup info below. */}
       <div className="sm:hidden">
-        <CollegeFootballTeamMatchupStrip away={away} home={home} />
-        <div className="border-y border-slate-100 bg-slate-50/60">
-          <MatchupInfoPanel game={game} />
+        <div className="grid grid-cols-2 divide-x divide-white/20">
+          <MobileTeamPanel team={away} side="away" />
+          <MobileTeamPanel team={home} side="home" />
         </div>
-        <div className="divide-y divide-slate-100">
-          <CompactTeamRow team={away} align="left" />
-          <CompactTeamRow team={home} align="right" />
+        <div className="border-t border-slate-100 bg-slate-50/60">
+          <MatchupInfoPanel game={game} />
         </div>
       </div>
     </header>

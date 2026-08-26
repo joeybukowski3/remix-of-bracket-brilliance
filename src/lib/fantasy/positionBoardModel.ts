@@ -6,9 +6,9 @@
  * shape. No PAR value is recomputed here, and tier membership always comes from
  * the approved `PAR_TIER_BOUNDARIES`.
  *
- * Everything position-specific is derived from that position's own pool: the
- * rank label prefix, the PAR/G elite cutoff, and each gradient column's max
- * rank. Nothing is shared between positions.
+ * The displayed position rank is the canonical JKB workbook value carried by
+ * the joined row. PAR/G can order the board, but it never supplies or
+ * recomputes the displayed position rank.
  */
 
 import {
@@ -35,7 +35,7 @@ import {
 
 export type PositionBoardRow = {
   row: FantasyResearchBoardRow;
-  /** "QB1", "RB12"… by PAR/G rank; undefined for the untiered outside pool. */
+  /** "QB1", "RB12"… from the canonical JKB workbook position rank. */
   positionRankLabel?: string;
   /** True when this row opens a new tier in the current (filtered) ordering. */
   isTierStart: boolean;
@@ -72,9 +72,12 @@ export type PositionBoardScales = {
 const TEAM_CONTEXT_INDEX = buildTeamContextIndex(FANTASY_RANKINGS.rows);
 
 function toBoardRow(row: FantasyResearchBoardRow, position: FantasyPosition): UnmarkedPositionBoardRow {
+  const canonicalPositionRank = row.jkb?.positionRank;
   return {
     row,
-    positionRankLabel: row.par ? `${position}${row.par.parRank}` : undefined,
+    positionRankLabel: Number.isInteger(canonicalPositionRank)
+      ? `${position}${canonicalPositionRank}`
+      : undefined,
     // Resolves each position's own three workbook metric fields. These are
     // player level, so an unmatched row keeps them undefined — never borrowed.
     metrics: row.jkb ? getFantasyMetricValues(row.jkb) : [undefined, undefined, undefined],

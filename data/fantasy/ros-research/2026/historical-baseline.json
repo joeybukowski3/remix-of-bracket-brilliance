@@ -1,0 +1,8046 @@
+{
+  "schemaVersion": "ros-historical-baseline-v1",
+  "season": 2026,
+  "generatedAt": "2026-08-26T00:00:00.000Z",
+  "identityCrosswalk": {
+    "path": "data/fantasy/ros-research/2026/identity-crosswalk.json",
+    "hash": "b754bf76ef007e19299d61b70fd16279fd4f85028b5c292d2ca5aab272d6df32"
+  },
+  "provenance": {
+    "seasons": [
+      2023,
+      2024,
+      2025
+    ],
+    "sourceFiles": [
+      {
+        "season": 2023,
+        "filename": "stats_player_week_2023.csv",
+        "retrievedDateUtc": "2026-08-21",
+        "observedHash": "f3b39ed6b189879f806c67ed597294450b750edd3403f4f7cce736ec161f0feb",
+        "manifestRowCount": 5801
+      },
+      {
+        "season": 2024,
+        "filename": "stats_player_week_2024.csv",
+        "retrievedDateUtc": "2026-08-21",
+        "observedHash": "beb1c87385daf1f6714f87130a0cad64d776b1841ab7f3a148e4597b32dec625",
+        "manifestRowCount": 5864
+      },
+      {
+        "season": 2025,
+        "filename": "stats_player_week_2025.csv",
+        "retrievedDateUtc": "2026-08-21",
+        "observedHash": "a8148c2ff27554caa2710b8a87365ad5f541d7ade2fc9df0ae3eaf0592f30632",
+        "manifestRowCount": 6037
+      }
+    ],
+    "playersCrosswalk": {
+      "path": "C:\\Users\\jbloo\\remix-of-bracket-brilliance-fantasy-ros-projection\\data\\nfl\\nflverse\\players\\players.csv",
+      "observedHash": "8e07f7d5e89f9f4bb3c1af5b124042f8782f8b62a6f66c9de1fc6d0d2764df1e",
+      "retrievedDateUtc": "2026-08-21"
+    },
+    "notes": [
+      "Committed nflverse CSV caches read directly and byte/sha256-verified against their manifest entries (scripts/lib/nfl-source-cache.mjs verifyCacheEntry), the same check the identity crosswalk generator and weekly production pipeline use. Requires data/nfl/nflverse/**/*.csv text eol=lf in .gitattributes so checkout does not smudge CRLF into these files and break byte-identity with the manifest's recorded hash."
+    ]
+  },
+  "counts": {
+    "totalPlayers": 250,
+    "playersWithAnyHistory": 224,
+    "playersWithNoHistory": 26,
+    "totalGameRows": 17702,
+    "seasonsCovered": [
+      2023,
+      2024,
+      2025
+    ]
+  },
+  "players": [
+    {
+      "playerId": "gsis:00-0039139",
+      "playerName": "Jahmyr Gibbs",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 242.10000000000008,
+          "ppg": 16.140000000000004
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 362.90000000000003,
+          "ppg": 21.347058823529412
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 366.90000000000003,
+          "ppg": 21.582352941176474
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 21.582352941176474,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038542",
+      "playerName": "Bijan Robinson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 246.3,
+          "ppg": 14.488235294117647
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 341.70000000000005,
+          "ppg": 20.1
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 370.8,
+          "ppg": 21.811764705882354
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 21.811764705882354,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039075",
+      "playerName": "Puka Nacua",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 298.5,
+          "ppg": 17.558823529411764
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 206.60000000000002,
+          "ppg": 18.781818181818185
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 375,
+          "ppg": 23.4375
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 23.4375,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036900",
+      "playerName": "Ja'Marr Chase",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 262.71999999999997,
+          "ppg": 16.419999999999998
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 403,
+          "ppg": 23.705882352941178
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 313.59999999999997,
+          "ppg": 19.599999999999998
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 19.599999999999998,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033280",
+      "playerName": "Christian McCaffrey",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 391.3,
+          "ppg": 24.45625
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 47.80000000000001,
+          "ppg": 11.950000000000003
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 416.59999999999997,
+          "ppg": 24.505882352941175
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 24.505882352941175,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 37,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036963",
+      "playerName": "Amon-Ra St. Brown",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 330.90000000000003,
+          "ppg": 20.681250000000002
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 316.18,
+          "ppg": 18.598823529411764
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 324,
+          "ppg": 19.058823529411764
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 19.058823529411764,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038543",
+      "playerName": "Jaxon Smith-Njigba",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 149.79999999999998,
+          "ppg": 8.811764705882352
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 253,
+          "ppg": 14.882352941176471
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 359.90000000000003,
+          "ppg": 21.17058823529412
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 21.17058823529412,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037248",
+      "playerName": "James Cook",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 232.70000000000002,
+          "ppg": 13.688235294117648
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 266.7,
+          "ppg": 16.66875
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 302.2,
+          "ppg": 17.776470588235295
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.776470588235295,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034844",
+      "playerName": "Saquon Barkley",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 223.2,
+          "ppg": 15.942857142857141
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 355.29999999999995,
+          "ppg": 22.206249999999997
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 232.3,
+          "ppg": 14.51875
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.51875,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036223",
+      "playerName": "Jonathan Taylor",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 156.39999999999998,
+          "ppg": 15.639999999999997
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 244.70000000000002,
+          "ppg": 17.47857142857143
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 362.29999999999995,
+          "ppg": 21.31176470588235
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 21.31176470588235,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038597",
+      "playerName": "Chase Brown",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 53.5,
+          "ppg": 4.458333333333333
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 255.00000000000003,
+          "ppg": 15.937500000000002
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 282.6,
+          "ppg": 16.623529411764707
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.623529411764707,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040666",
+      "playerName": "Omarion Hampton",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 135.7,
+          "ppg": 15.077777777777776
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.077777777777776,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 9,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036322",
+      "playerName": "Justin Jefferson",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 202.2,
+          "ppg": 20.22
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 317.47999999999996,
+          "ppg": 18.675294117647056
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 201.5,
+          "ppg": 11.852941176470589
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.852941176470589,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040122",
+      "playerName": "Ashton Jeanty",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 245.10000000000005,
+          "ppg": 14.417647058823533
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.417647058823533,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037238",
+      "playerName": "Drake London",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 174.38,
+          "ppg": 10.89875
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 280.8,
+          "ppg": 16.51764705882353
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 201.9,
+          "ppg": 16.825
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.825,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036358",
+      "playerName": "CeeDee Lamb",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 403.20000000000005,
+          "ppg": 23.71764705882353
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 263.4,
+          "ppg": 17.56
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 200.9,
+          "ppg": 15.453846153846154
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.453846153846154,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036554",
+      "playerName": "Nico Collins",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 260.40000000000003,
+          "ppg": 17.360000000000003
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 210.60000000000002,
+          "ppg": 17.55
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 226.2,
+          "ppg": 15.08
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.08,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035676",
+      "playerName": "A.J. Brown",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 289.6,
+          "ppg": 17.03529411764706
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 216.9,
+          "ppg": 16.684615384615384
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 220.3,
+          "ppg": 14.686666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.686666666666667,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036912",
+      "playerName": "DeVonta Smith",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 227.6,
+          "ppg": 14.225
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 199.4,
+          "ppg": 15.338461538461539
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 201.79999999999998,
+          "ppg": 11.870588235294116
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.870588235294116,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038134",
+      "playerName": "Kenneth Walker",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 199.39999999999998,
+          "ppg": 13.293333333333331
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 181.20000000000002,
+          "ppg": 16.472727272727273
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 191.9,
+          "ppg": 11.288235294117648
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.288235294117648,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035700",
+      "playerName": "Josh Jacobs",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 181.1,
+          "ppg": 13.930769230769231
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 293.09999999999997,
+          "ppg": 17.241176470588233
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 237.10000000000002,
+          "ppg": 15.806666666666668
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.806666666666668,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0032764",
+      "playerName": "Derrick Henry",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 246.66,
+          "ppg": 14.509411764705883
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 336.4,
+          "ppg": 19.788235294117644
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 279.5,
+          "ppg": 16.441176470588236
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.441176470588236,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039040",
+      "playerName": "De'Von Achane",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 190.69999999999996,
+          "ppg": 17.336363636363632
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 299.90000000000003,
+          "ppg": 17.64117647058824
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 322.8,
+          "ppg": 20.175
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 20.175,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041027",
+      "playerName": "Jeremiyah Love",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0038120",
+      "playerName": "Breece Hall",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 290.5,
+          "ppg": 17.08823529411765
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 240.9,
+          "ppg": 15.05625
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 207.66000000000003,
+          "ppg": 12.978750000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.978750000000002,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039338",
+      "playerName": "Brock Bowers",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 262.7,
+          "ppg": 15.452941176470588
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 176.20000000000005,
+          "ppg": 14.683333333333337
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.683333333333337,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 29,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034857",
+      "playerName": "Josh Allen",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 392.64000000000004,
+          "ppg": 23.096470588235295
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 379.04,
+          "ppg": 23.69
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 364.61999999999995,
+          "ppg": 22.788749999999997
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 22.788749999999997,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039067",
+      "playerName": "Rashee Rice",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 212.5,
+          "ppg": 13.28125
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 64.9,
+          "ppg": 16.225
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 150.10000000000002,
+          "ppg": 18.762500000000003
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 18.762500000000003,
+        "gamesPlayed": 8
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 28,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037744",
+      "playerName": "Trey McBride",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 181.5,
+          "ppg": 10.676470588235293
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 243.8,
+          "ppg": 15.2375
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 315.90000000000003,
+          "ppg": 18.582352941176474
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 18.582352941176474,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037247",
+      "playerName": "George Pickens",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 208.8,
+          "ppg": 12.282352941176471
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 164.40000000000003,
+          "ppg": 11.742857142857146
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 291.90000000000003,
+          "ppg": 17.17058823529412
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.17058823529412,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037239",
+      "playerName": "Chris Olave",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 231.30000000000004,
+          "ppg": 14.456250000000002
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 76.7,
+          "ppg": 9.5875
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 267.99999999999994,
+          "ppg": 16.749999999999996
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.749999999999996,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 40,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037740",
+      "playerName": "Garrett Wilson",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 213.20000000000005,
+          "ppg": 12.541176470588239
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 251.9,
+          "ppg": 14.81764705882353
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 99.49999999999999,
+          "ppg": 14.214285714285712
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.214285714285712,
+        "gamesPlayed": 7
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040126",
+      "playerName": "Colston Loveland",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 165.10000000000002,
+          "ppg": 10.318750000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.318750000000001,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036410",
+      "playerName": "Tee Higgins",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 137.6,
+          "ppg": 11.466666666666667
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 222.10000000000005,
+          "ppg": 18.508333333333336
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 211.6,
+          "ppg": 14.106666666666666
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.106666666666666,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 39,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040129",
+      "playerName": "Emeka Egbuka",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 195.7,
+          "ppg": 11.511764705882353
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.511764705882353,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039915",
+      "playerName": "Ladd McConkey",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 240.9,
+          "ppg": 15.05625
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 180.90000000000003,
+          "ppg": 11.306250000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.306250000000002,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 32,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039064",
+      "playerName": "Zay Flowers",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 206.39999999999998,
+          "ppg": 12.899999999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 209.50000000000003,
+          "ppg": 12.323529411764708
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 243.3,
+          "ppg": 14.311764705882354
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.311764705882354,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039851",
+      "playerName": "Drake Maye",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 177.14,
+          "ppg": 13.626153846153844
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 351.96000000000004,
+          "ppg": 20.70352941176471
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 20.70352941176471,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 30,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034796",
+      "playerName": "Lamar Jackson",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 331.22,
+          "ppg": 20.70125
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 430.38000000000005,
+          "ppg": 25.316470588235298
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 214.85999999999999,
+          "ppg": 16.527692307692305
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.527692307692305,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039337",
+      "playerName": "Malik Nabers",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 273.6,
+          "ppg": 18.240000000000002
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 57.1,
+          "ppg": 14.275
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.275,
+        "gamesPlayed": 4
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 19,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034827",
+      "playerName": "DJ Moore",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 286.5,
+          "ppg": 16.852941176470587
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 238.10000000000002,
+          "ppg": 14.005882352941178
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 172.17999999999998,
+          "ppg": 10.128235294117646
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.128235294117646,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040124",
+      "playerName": "Tetairoa McMillan",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 213.4,
+          "ppg": 12.552941176470588
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.552941176470588,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037840",
+      "playerName": "Kyren Williams",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 255,
+          "ppg": 21.25
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 272.09999999999997,
+          "ppg": 17.006249999999998
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 263.3,
+          "ppg": 15.488235294117647
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.488235294117647,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035659",
+      "playerName": "Terry McLaurin",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 203.2,
+          "ppg": 11.952941176470588
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 267.8,
+          "ppg": 15.75294117647059
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 114.2,
+          "ppg": 11.42
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.42,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036613",
+      "playerName": "Jaylen Waddle",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 198.60000000000002,
+          "ppg": 14.185714285714287
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 149.6,
+          "ppg": 9.973333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 194.11999999999995,
+          "ppg": 12.132499999999997
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.132499999999997,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040735",
+      "playerName": "Luther Burden",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 127.9,
+          "ppg": 8.526666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.526666666666667,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 15,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039910",
+      "playerName": "Jayden Daniels",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 355.82000000000005,
+          "ppg": 20.93058823529412
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 114.28,
+          "ppg": 16.325714285714287
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.325714285714287,
+        "gamesPlayed": 7
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 24,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036442",
+      "playerName": "Joe Burrow",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 147.16,
+          "ppg": 14.716
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 372.82,
+          "ppg": 21.930588235294117
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 134.45999999999998,
+          "ppg": 16.807499999999997
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.807499999999997,
+        "gamesPlayed": 8
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 35,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038124",
+      "playerName": "Christian Watson",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 101.30000000000001,
+          "ppg": 11.255555555555556
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 105.3,
+          "ppg": 7.521428571428571
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 132.4,
+          "ppg": 13.24
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.24,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 33,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036997",
+      "playerName": "Javonte Williams",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 179.20000000000002,
+          "ppg": 11.200000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 157.90000000000006,
+          "ppg": 9.288235294117651
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 242.80000000000004,
+          "ppg": 15.175000000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.175000000000002,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036355",
+      "playerName": "Justin Herbert",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 234.15999999999997,
+          "ppg": 18.01230769230769
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 285.40000000000003,
+          "ppg": 16.788235294117648
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 286.88,
+          "ppg": 17.93
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.93,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036275",
+      "playerName": "D'Andre Swift",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 199.29999999999998,
+          "ppg": 12.456249999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 214.50000000000006,
+          "ppg": 12.617647058823533
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 228.6,
+          "ppg": 14.2875
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.2875,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0031408",
+      "playerName": "Mike Evans",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 282.5,
+          "ppg": 16.61764705882353
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 240.4,
+          "ppg": 17.17142857142857
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 84.8,
+          "ppg": 10.6
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.6,
+        "gamesPlayed": 8
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 39,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0031381",
+      "playerName": "Davante Adams",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 265.40000000000003,
+          "ppg": 15.611764705882354
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 241.3,
+          "ppg": 17.235714285714288
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 222.9,
+          "ppg": 15.921428571428573
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.921428571428573,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041438",
+      "playerName": "Carnell Tate",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040128",
+      "playerName": "Tyler Warren",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 188.49999999999997,
+          "ppg": 11.088235294117645
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.088235294117645,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036973",
+      "playerName": "Travis Etienne",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 282.4,
+          "ppg": 16.61176470588235
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 130.2,
+          "ppg": 8.68
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 253.89999999999998,
+          "ppg": 14.935294117647057
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.935294117647057,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035685",
+      "playerName": "David Montgomery",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 207.2,
+          "ppg": 14.799999999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 221.72000000000003,
+          "ppg": 15.83714285714286
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 166.92000000000002,
+          "ppg": 9.818823529411766
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.818823529411766,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040715",
+      "playerName": "Cam Skattebo",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 127.70000000000002,
+          "ppg": 15.962500000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.962500000000002,
+        "gamesPlayed": 8
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 8,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040784",
+      "playerName": "Quinshon Judkins",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 169.8,
+          "ppg": 12.12857142857143
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.12857142857143,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 14,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039065",
+      "playerName": "Sam LaPorta",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 239.3,
+          "ppg": 14.076470588235296
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 174.60000000000002,
+          "ppg": 10.912500000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 106.9,
+          "ppg": 11.877777777777778
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.877777777777778,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037240",
+      "playerName": "Jameson Williams",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 80.3,
+          "ppg": 6.691666666666666
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 212.19999999999996,
+          "ppg": 14.146666666666665
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 219.9,
+          "ppg": 12.935294117647059
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.935294117647059,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039919",
+      "playerName": "Rome Odunze",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 144.9,
+          "ppg": 8.523529411764706
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 146.1,
+          "ppg": 12.174999999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.174999999999999,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 29,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040734",
+      "playerName": "TreVeyon Henderson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 206.2,
+          "ppg": 12.129411764705882
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.129411764705882,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039361",
+      "playerName": "Bucky Irving",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 244.40000000000006,
+          "ppg": 14.376470588235298
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 138.49999999999997,
+          "ppg": 13.849999999999998
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.849999999999998,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 27,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036389",
+      "playerName": "Jalen Hurts",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 356.82000000000005,
+          "ppg": 20.989411764705885
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 315.12000000000006,
+          "ppg": 21.008000000000003
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 301.05999999999995,
+          "ppg": 18.816249999999997
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 18.816249999999997,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039918",
+      "playerName": "Caleb Williams",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 254.53999999999996,
+          "ppg": 14.972941176470586
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 318.68,
+          "ppg": 18.745882352941177
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 18.745882352941177,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 34,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037664",
+      "playerName": "Alec Pierce",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 95.4,
+          "ppg": 5.611764705882353
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 161.39999999999998,
+          "ppg": 10.087499999999999
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 183.3,
+          "ppg": 12.22
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.22,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039893",
+      "playerName": "Brian Thomas Jr.",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 283.99999999999994,
+          "ppg": 16.705882352941174
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 138.79999999999998,
+          "ppg": 9.914285714285713
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.914285714285713,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 31,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038996",
+      "playerName": "Tucker Kraft",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 78.49999999999999,
+          "ppg": 5.607142857142856
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 163.29999999999998,
+          "ppg": 9.605882352941176
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 117.19999999999999,
+          "ppg": 14.649999999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.649999999999999,
+        "gamesPlayed": 8
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 39,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039849",
+      "playerName": "Marvin Harrison Jr.",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 196.50000000000003,
+          "ppg": 11.558823529411766
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 127.80000000000003,
+          "ppg": 10.650000000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.650000000000002,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 29,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041029",
+      "playerName": "Jordyn Tyson",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040719",
+      "playerName": "Bhayshul Tuten",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 88.6,
+          "ppg": 5.906666666666666
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.906666666666666,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 15,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035640",
+      "playerName": "DK Metcalf",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 225.39999999999998,
+          "ppg": 14.087499999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 191.2,
+          "ppg": 12.746666666666666
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 187.2,
+          "ppg": 12.479999999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.479999999999999,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038544",
+      "playerName": "Quentin Johnston",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 94,
+          "ppg": 5.529411764705882
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 174.70000000000002,
+          "ppg": 11.646666666666668
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 171.20000000000005,
+          "ppg": 13.169230769230772
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.169230769230772,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041512",
+      "playerName": "Jadarian Price",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0033077",
+      "playerName": "Dak Prescott",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 342.8400000000001,
+          "ppg": 20.167058823529416
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 116.52000000000001,
+          "ppg": 14.565000000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 313.78,
+          "ppg": 18.45764705882353
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 18.45764705882353,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035261",
+      "playerName": "Tony Pollard",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 222.6,
+          "ppg": 13.094117647058823
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 200.70000000000002,
+          "ppg": 12.543750000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 185.79999999999995,
+          "ppg": 10.929411764705879
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.929411764705879,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037228",
+      "playerName": "Jaylen Warren",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 196.40000000000003,
+          "ppg": 11.55294117647059
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 124.10000000000001,
+          "ppg": 8.273333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 217.10000000000002,
+          "ppg": 13.568750000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.568750000000001,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033921",
+      "playerName": "Chris Godwin",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 209.20000000000002,
+          "ppg": 12.305882352941177
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 137.8,
+          "ppg": 19.685714285714287
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 83,
+          "ppg": 9.222222222222221
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.222222222222221,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 33,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036875",
+      "playerName": "Rhamondre Stevenson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 145.70000000000002,
+          "ppg": 12.141666666666667
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 175.9,
+          "ppg": 11.726666666666667
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 178.8,
+          "ppg": 12.771428571428572
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.771428571428572,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037834",
+      "playerName": "Brock Purdy",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 295.6,
+          "ppg": 18.475
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 266.86,
+          "ppg": 17.790666666666667
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 177.38,
+          "ppg": 19.70888888888889
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 19.70888888888889,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 40,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040663",
+      "playerName": "Harold Fannin Jr.",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 186.4,
+          "ppg": 11.65
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.65,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038606",
+      "playerName": "Parker Washington",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 39.2,
+          "ppg": 4.9
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 97,
+          "ppg": 6.928571428571429
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 184.7,
+          "ppg": 11.54375
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.54375,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 38,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036139",
+      "playerName": "Rico Dowdle",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 91.50000000000001,
+          "ppg": 5.718750000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 197.8,
+          "ppg": 12.3625
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 216.30000000000007,
+          "ppg": 12.72352941176471
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.72352941176471,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039894",
+      "playerName": "Xavier Worthy",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 187.2,
+          "ppg": 11.7
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 109.9,
+          "ppg": 7.8500000000000005
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.8500000000000005,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 30,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036252",
+      "playerName": "Michael Pittman",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 252.2,
+          "ppg": 15.7625
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 165.79999999999998,
+          "ppg": 10.362499999999999
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 202.39999999999998,
+          "ppg": 11.905882352941175
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.905882352941175,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033288",
+      "playerName": "George Kittle",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 203.20000000000002,
+          "ppg": 12.700000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 236.59999999999997,
+          "ppg": 15.773333333333332
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 161.5,
+          "ppg": 14.681818181818182
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.681818181818182,
+        "gamesPlayed": 11
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036971",
+      "playerName": "Trevor Lawrence",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 262.54,
+          "ppg": 16.40875
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 145.20000000000002,
+          "ppg": 14.520000000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 338.18000000000006,
+          "ppg": 19.892941176470593
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 19.892941176470593,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040730",
+      "playerName": "RJ Harvey",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 206.6,
+          "ppg": 12.152941176470588
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.152941176470588,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036555",
+      "playerName": "Chuba Hubbard",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 182.49999999999997,
+          "ppg": 10.735294117647058
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 241.6,
+          "ppg": 16.106666666666666
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 125.4,
+          "ppg": 8.360000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.360000000000001,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033873",
+      "playerName": "Patrick Mahomes",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 280.21999999999997,
+          "ppg": 17.513749999999998
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 283.02,
+          "ppg": 17.68875
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 285.68,
+          "ppg": 20.405714285714286
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 20.405714285714286,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038997",
+      "playerName": "Josh Downs",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 157.10000000000002,
+          "ppg": 9.241176470588236
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 183.49999999999997,
+          "ppg": 13.107142857142856
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 138.4,
+          "ppg": 8.65
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.65,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039732",
+      "playerName": "Bo Nix",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 317.20000000000005,
+          "ppg": 18.658823529411766
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 304.84000000000003,
+          "ppg": 17.931764705882355
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.931764705882355,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 34,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038994",
+      "playerName": "Jordan Addison",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 221.29999999999998,
+          "ppg": 13.017647058823528
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 212.50000000000003,
+          "ppg": 14.166666666666668
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 135.1,
+          "ppg": 9.65
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.65,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039344",
+      "playerName": "Jonathon Brooks",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 3,
+          "totalFantasyPoints": 7.5,
+          "ppg": 2.5
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2024,
+        "ppg": 2.5,
+        "gamesPlayed": 3
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 3,
+        "seasonsWithData": [
+          2024
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034348",
+      "playerName": "Courtland Sutton",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 190.19999999999996,
+          "ppg": 11.887499999999998
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 240.3,
+          "ppg": 15.01875
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 219.7,
+          "ppg": 12.923529411764704
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.923529411764704,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039916",
+      "playerName": "Ricky Pearsall",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 93.5,
+          "ppg": 8.5
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 88.6,
+          "ppg": 9.844444444444443
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.844444444444443,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 20,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037256",
+      "playerName": "Rachaad White",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 267.90000000000003,
+          "ppg": 15.758823529411767
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 199.60000000000002,
+          "ppg": 13.306666666666668
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 143,
+          "ppg": 8.411764705882353
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.411764705882353,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039146",
+      "playerName": "Jayden Reed",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 217.2,
+          "ppg": 13.575
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 197,
+          "ppg": 11.588235294117647
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 5,
+          "totalFantasyPoints": 48.5,
+          "ppg": 9.7
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.7,
+        "gamesPlayed": 5
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 38,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036970",
+      "playerName": "Kyle Pitts",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 137.3,
+          "ppg": 8.076470588235296
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 131.20000000000002,
+          "ppg": 7.71764705882353
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 210.8,
+          "ppg": 12.4
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.4,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040691",
+      "playerName": "Jaxson Dart",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 241.58,
+          "ppg": 17.255714285714287
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.255714285714287,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 14,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040667",
+      "playerName": "Matthew Golden",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 70,
+          "ppg": 5
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 14,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034753",
+      "playerName": "Mark Andrews",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 135.4,
+          "ppg": 13.540000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 188.80000000000004,
+          "ppg": 11.10588235294118
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 131.00000000000003,
+          "ppg": 7.705882352941178
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.705882352941178,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0026498",
+      "playerName": "Matthew Stafford",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 243.10000000000002,
+          "ppg": 16.206666666666667
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 214.58,
+          "ppg": 13.41125
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 350.38000000000005,
+          "ppg": 20.61058823529412
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 20.61058823529412,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036919",
+      "playerName": "Kenneth Gainwell",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 97.38000000000001,
+          "ppg": 6.086250000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 62.599999999999994,
+          "ppg": 3.6823529411764704
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 221.3,
+          "ppg": 13.01764705882353
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.01764705882353,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041547",
+      "playerName": "Kevin Concepcion",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0037838",
+      "playerName": "Isaiah Likely",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 101.10000000000001,
+          "ppg": 7.221428571428572
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 123.70000000000002,
+          "ppg": 8.246666666666668
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 61.7,
+          "ppg": 5.141666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.141666666666667,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040130",
+      "playerName": "Jayden Higgins",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 129.5,
+          "ppg": 7.617647058823529
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.617647058823529,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033106",
+      "playerName": "Jared Goff",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 289.1,
+          "ppg": 17.00588235294118
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 324.46000000000004,
+          "ppg": 19.08588235294118
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 297.05999999999995,
+          "ppg": 17.47411764705882
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.47411764705882,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034855",
+      "playerName": "Baker Mayfield",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 274.06,
+          "ppg": 16.121176470588235
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 365.79999999999995,
+          "ppg": 21.517647058823528
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 271.92,
+          "ppg": 15.99529411764706
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.99529411764706,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038933",
+      "playerName": "Dalton Kincaid",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 150.29999999999998,
+          "ppg": 9.393749999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 100.80000000000001,
+          "ppg": 7.753846153846155
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 126.10000000000001,
+          "ppg": 10.508333333333335
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.508333333333335,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039738",
+      "playerName": "Blake Corum",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 33.5,
+          "ppg": 2.2333333333333334
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 122.2,
+          "ppg": 7.188235294117647
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.188235294117647,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 32,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040242",
+      "playerName": "Jacory Croskey-Merritt",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 140.3,
+          "ppg": 8.25294117647059
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.25294117647059,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036158",
+      "playerName": "J.K. Dobbins",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 1,
+          "totalFantasyPoints": 11.7,
+          "ppg": 11.7
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 191.8,
+          "ppg": 14.753846153846155
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 115.90000000000003,
+          "ppg": 11.590000000000003
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.590000000000003,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 24,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033293",
+      "playerName": "Aaron Jones",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 134.9,
+          "ppg": 12.263636363636364
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 241.60000000000005,
+          "ppg": 14.211764705882356
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 118.69999999999999,
+          "ppg": 9.891666666666666
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.891666666666666,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 40,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037525",
+      "playerName": "Jordan Mason",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 44.699999999999996,
+          "ppg": 2.7937499999999997
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 115,
+          "ppg": 9.583333333333334
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 128.9,
+          "ppg": 8.05625
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.05625,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040867",
+      "playerName": "Makai Lemon",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0038117",
+      "playerName": "Wan'Dale Robinson",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 133.2,
+          "ppg": 8.879999999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 182.70000000000002,
+          "ppg": 10.747058823529413
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 217.90000000000003,
+          "ppg": 13.618750000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.618750000000002,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036264",
+      "playerName": "Jordan Love",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 319.06,
+          "ppg": 18.76823529411765
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 233.85999999999999,
+          "ppg": 15.590666666666666
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 235.14,
+          "ppg": 15.675999999999998
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.675999999999998,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037261",
+      "playerName": "Khalil Shakir",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 113.10000000000002,
+          "ppg": 7.068750000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 182.5,
+          "ppg": 12.166666666666666
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 166.39999999999998,
+          "ppg": 10.399999999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.399999999999999,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038041",
+      "playerName": "Jake Ferguson",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 177.10000000000002,
+          "ppg": 10.417647058823531
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 104.4,
+          "ppg": 7.457142857142857
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 188.1,
+          "ppg": 11.064705882352941
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.064705882352941,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039491",
+      "playerName": "Jalen Coker",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 92.56,
+          "ppg": 8.414545454545454
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 90.39999999999999,
+          "ppg": 8.218181818181817
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.218181818181817,
+        "gamesPlayed": 11
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 22,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035228",
+      "playerName": "Kyler Murray",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 146.36,
+          "ppg": 18.295
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 297.24,
+          "ppg": 17.48470588235294
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 5,
+          "totalFantasyPoints": 77.78,
+          "ppg": 15.556000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 15.556000000000001,
+        "gamesPlayed": 5
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 30,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038128",
+      "playerName": "Malik Willis",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 2,
+          "totalFantasyPoints": 3.06,
+          "ppg": 1.53
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 6,
+          "totalFantasyPoints": 51.800000000000004,
+          "ppg": 8.633333333333335
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 51.17999999999999,
+          "ppg": 12.794999999999998
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.794999999999998,
+        "gamesPlayed": 4
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 12,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037816",
+      "playerName": "Romeo Doubs",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 174.4,
+          "ppg": 10.258823529411766
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 132.1,
+          "ppg": 10.161538461538461
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 165.4,
+          "ppg": 10.3375
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.3375,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040743",
+      "playerName": "Tyler Shough",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 157.96,
+          "ppg": 14.360000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.360000000000001,
+        "gamesPlayed": 11
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 11,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040236",
+      "playerName": "Kyle Monangai",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 146.7,
+          "ppg": 8.629411764705882
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.629411764705882,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038611",
+      "playerName": "Chris Rodriguez Jr.",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 37.9,
+          "ppg": 4.211111111111111
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 31.5,
+          "ppg": 4.5
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 92,
+          "ppg": 7.666666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.666666666666667,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 28,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034960",
+      "playerName": "Jakobi Meyers",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 218.57999999999998,
+          "ppg": 13.661249999999999
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 217.99999999999997,
+          "ppg": 14.533333333333331
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 175.8,
+          "ppg": 10.9875
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.9875,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039384",
+      "playerName": "Tyrone Tracy",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 182.30000000000004,
+          "ppg": 10.723529411764709
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 160.8,
+          "ppg": 10.72
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.72,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 32,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0030506",
+      "playerName": "Travis Kelce",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 219.40000000000003,
+          "ppg": 14.626666666666669
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 195.4,
+          "ppg": 12.2125
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 193.2,
+          "ppg": 11.36470588235294
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.36470588235294,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039032",
+      "playerName": "Tyjae Spears",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 153.79999999999998,
+          "ppg": 9.047058823529412
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 113.59999999999998,
+          "ppg": 9.466666666666665
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 111.69999999999999,
+          "ppg": 8.592307692307692
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.592307692307692,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039163",
+      "playerName": "C.J. Stroud",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 276.02,
+          "ppg": 18.401333333333334
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 220.38000000000002,
+          "ppg": 12.963529411764707
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 208.54,
+          "ppg": 14.895714285714286
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.895714285714286,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033906",
+      "playerName": "Alvin Kamara",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 233.00000000000003,
+          "ppg": 17.923076923076927
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 265.3,
+          "ppg": 18.95
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 100.7,
+          "ppg": 9.154545454545454
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.154545454545454,
+        "gamesPlayed": 11
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 38,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038559",
+      "playerName": "Michael Wilson",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 114.5,
+          "ppg": 8.807692307692308
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 124.50000000000003,
+          "ppg": 7.781250000000002
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 220.6,
+          "ppg": 12.976470588235294
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.976470588235294,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0031588",
+      "playerName": "Stefon Diggs",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 273.8,
+          "ppg": 16.105882352941176
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 121.92,
+          "ppg": 15.24
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 210.3,
+          "ppg": 12.370588235294118
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.370588235294118,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034351",
+      "playerName": "Dallas Goedert",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 136.29999999999998,
+          "ppg": 9.735714285714284
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 103.6,
+          "ppg": 10.36
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 185.10000000000002,
+          "ppg": 12.340000000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 12.340000000000002,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 39,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040162",
+      "playerName": "Dylan Sampson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 87.60000000000001,
+          "ppg": 5.840000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.840000000000001,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 15,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035710",
+      "playerName": "Daniel Jones",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 6,
+          "totalFantasyPoints": 56.96,
+          "ppg": 9.493333333333334
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 135.29999999999998,
+          "ppg": 13.529999999999998
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 226.44,
+          "ppg": 17.41846153846154
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 17.41846153846154,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 29,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036040",
+      "playerName": "Juwan Johnson",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 97.8,
+          "ppg": 7.523076923076923
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 122.80000000000001,
+          "ppg": 8.186666666666667
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 179.90000000000003,
+          "ppg": 10.582352941176472
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.582352941176472,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038454",
+      "playerName": "Keaton Mitchell",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 69.9,
+          "ppg": 9.985714285714286
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 6.800000000000001,
+          "ppg": 1.7000000000000002
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 55.4,
+          "ppg": 4.2615384615384615
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.2615384615384615,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 24,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041040",
+      "playerName": "Antonio Williams",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040189",
+      "playerName": "Oronde Gadsden II",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 131.4,
+          "ppg": 8.76
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.76,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 15,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037545",
+      "playerName": "Rashid Shaheed",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 157.6,
+          "ppg": 10.506666666666666
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 6,
+          "totalFantasyPoints": 81.8,
+          "ppg": 13.633333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 18,
+          "totalFantasyPoints": 156.6,
+          "ppg": 8.7
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.7,
+        "gamesPlayed": 18
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 39,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037263",
+      "playerName": "Tyler Allgeier",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 137.6,
+          "ppg": 8.094117647058823
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 106.20000000000002,
+          "ppg": 6.247058823529413
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 123,
+          "ppg": 7.235294117647059
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.235294117647059,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 51,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041032",
+      "playerName": "Kenyon Sadiq",
+      "position": "TE",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0036407",
+      "playerName": "Jerry Jeudy",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 141.8,
+          "ppg": 8.8625
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 240.90000000000003,
+          "ppg": 14.170588235294119
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 120.7,
+          "ppg": 7.1000000000000005
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.1000000000000005,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036259",
+      "playerName": "Jauan Jennings",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 51.5,
+          "ppg": 3.9615384615384617
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 210.49999999999997,
+          "ppg": 14.033333333333331
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 173.29999999999998,
+          "ppg": 11.553333333333333
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.553333333333333,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040676",
+      "playerName": "Cam Ward",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 186.66000000000003,
+          "ppg": 10.980000000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.980000000000002,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040583",
+      "playerName": "Woody Marks",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 145.10000000000002,
+          "ppg": 9.068750000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.068750000000001,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038935",
+      "playerName": "Brenton Strange",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 14.499999999999998,
+          "ppg": 2.071428571428571
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 91.10000000000001,
+          "ppg": 6.507142857142858
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 118.00000000000001,
+          "ppg": 9.833333333333334
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.833333333333334,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 33,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037197",
+      "playerName": "Isiah Pacheco",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 213.9,
+          "ppg": 15.278571428571428
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 56.900000000000006,
+          "ppg": 8.12857142857143
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 87.3,
+          "ppg": 6.7153846153846155
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.7153846153846155,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 34,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035719",
+      "playerName": "Deebo Samuel",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 243.7,
+          "ppg": 16.246666666666666
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 155.6,
+          "ppg": 10.373333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 188.20000000000002,
+          "ppg": 11.762500000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.762500000000001,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039150",
+      "playerName": "Bryce Young",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 156.38000000000002,
+          "ppg": 9.773750000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 195.02000000000004,
+          "ppg": 13.930000000000003
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 218.04,
+          "ppg": 13.6275
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.6275,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037291",
+      "playerName": "Jalen Nailor",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 3,
+          "totalFantasyPoints": 5.9,
+          "ppg": 1.9666666666666668
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 105.00000000000001,
+          "ppg": 7.000000000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 100.7,
+          "ppg": 5.923529411764706
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.923529411764706,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 35,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041511",
+      "playerName": "Omar Cooper Jr.",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0034837",
+      "playerName": "Calvin Ridley",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 229.90000000000003,
+          "ppg": 13.523529411764708
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 199.20000000000002,
+          "ppg": 11.71764705882353
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 47.3,
+          "ppg": 6.757142857142857
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.757142857142857,
+        "gamesPlayed": 7
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041096",
+      "playerName": "Kaytron Allen",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0039794",
+      "playerName": "Braelon Allen",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 85.19999999999999,
+          "ppg": 5.011764705882352
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 15.299999999999999,
+          "ppg": 3.8249999999999997
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.8249999999999997,
+        "gamesPlayed": 4
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 21,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033090",
+      "playerName": "Hunter Henry",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 119.9,
+          "ppg": 9.223076923076924
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 145.4,
+          "ppg": 9.0875
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 178.80000000000004,
+          "ppg": 10.517647058823531
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.517647058823531,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036261",
+      "playerName": "Brandon Aiyuk",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 249.20000000000002,
+          "ppg": 15.575000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 62.400000000000006,
+          "ppg": 8.914285714285715
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2024,
+        "ppg": 8.914285714285715,
+        "gamesPlayed": 7
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 23,
+        "seasonsWithData": [
+          2023,
+          2024
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036550",
+      "playerName": "Rashod Bateman",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 76.50000000000001,
+          "ppg": 5.1000000000000005
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 174.59999999999997,
+          "ppg": 10.912499999999998
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 55.400000000000006,
+          "ppg": 4.261538461538462
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.261538461538462,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041037",
+      "playerName": "Denzel Boston",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0034975",
+      "playerName": "Justice Hill",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 109.3,
+          "ppg": 6.83125
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 127.1,
+          "ppg": 8.473333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 65.2,
+          "ppg": 6.5200000000000005
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.5200000000000005,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 41,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039890",
+      "playerName": "Adonai Mitchell",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 53.76,
+          "ppg": 3.1623529411764704
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 87.9,
+          "ppg": 5.49375
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.49375,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 33,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038563",
+      "playerName": "Tre Tucker",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 71.8,
+          "ppg": 5.523076923076923
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 129.3,
+          "ppg": 7.605882352941177
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 161.70000000000002,
+          "ppg": 9.511764705882355
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.511764705882355,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039798",
+      "playerName": "Isaiah Davis",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 45.9,
+          "ppg": 3.5307692307692307
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 71.20000000000002,
+          "ppg": 4.450000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.450000000000001,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 29,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033526",
+      "playerName": "Samaje Perine",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 121.3,
+          "ppg": 7.135294117647058
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 81.40000000000002,
+          "ppg": 4.788235294117648
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 77.89999999999999,
+          "ppg": 5.1933333333333325
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.1933333333333325,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039410",
+      "playerName": "Ryan Flournoy",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 18.200000000000003,
+          "ppg": 2.0222222222222226
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 114,
+          "ppg": 7.6
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.6,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 24,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040238",
+      "playerName": "LeQuint Allen",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 24.800000000000004,
+          "ppg": 1.5500000000000003
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 1.5500000000000003,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040669",
+      "playerName": "Isaac TeSlaa",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 75.9,
+          "ppg": 5.421428571428572
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.421428571428572,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 14,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034869",
+      "playerName": "Sam Darnold",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 23.380000000000003,
+          "ppg": 2.338
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 307.96,
+          "ppg": 18.115294117647057
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 235.41999999999996,
+          "ppg": 13.848235294117645
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.848235294117645,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035537",
+      "playerName": "Ty Johnson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 32.4,
+          "ppg": 3.5999999999999996
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 91.69999999999999,
+          "ppg": 5.394117647058823
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 100.29999999999998,
+          "ppg": 5.899999999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.899999999999999,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040138",
+      "playerName": "Jaylin Noel",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 68.4,
+          "ppg": 4.023529411764706
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.023529411764706,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038951",
+      "playerName": "Sean Tucker",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 3,
+          "totalFantasyPoints": 5.2,
+          "ppg": 1.7333333333333334
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 68.70000000000002,
+          "ppg": 4.041176470588236
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 91.39999999999999,
+          "ppg": 5.376470588235294
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.376470588235294,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 37,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039793",
+      "playerName": "AJ Barner",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 78.5,
+          "ppg": 5.233333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 147.3,
+          "ppg": 8.664705882352942
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.664705882352942,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 32,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041044",
+      "playerName": "Zachariah Branch",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0037809",
+      "playerName": "Chigoziem Okonkwo",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 113.39999999999999,
+          "ppg": 6.670588235294117
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 113.60000000000002,
+          "ppg": 7.100000000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 124.00000000000001,
+          "ppg": 7.294117647058824
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.294117647058824,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 50,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038977",
+      "playerName": "Tank Dell",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 165,
+          "ppg": 16.5
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 140,
+          "ppg": 10
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2024,
+        "ppg": 10,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 24,
+        "seasonsWithData": [
+          2023,
+          2024
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0023459",
+      "playerName": "Aaron Rodgers",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 1,
+          "totalFantasyPoints": 0,
+          "ppg": 0
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 256.58,
+          "ppg": 15.092941176470587
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 227.07999999999998,
+          "ppg": 14.192499999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 14.192499999999999,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 34,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039855",
+      "playerName": "Jalen McMillan",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 135.39999999999998,
+          "ppg": 10.415384615384614
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 29.9,
+          "ppg": 7.475
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.475,
+        "gamesPlayed": 4
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039875",
+      "playerName": "Ray Davis",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 116.1,
+          "ppg": 6.829411764705882
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 64.10000000000001,
+          "ppg": 3.770588235294118
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.770588235294118,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 34,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038797",
+      "playerName": "Emanuel Wilson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 5,
+          "totalFantasyPoints": 14.799999999999999,
+          "ppg": 2.96
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 96,
+          "ppg": 5.647058823529412
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 94.50000000000001,
+          "ppg": 5.558823529411765
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.558823529411765,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 39,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038393",
+      "playerName": "Dontayvion Wicks",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 119.76000000000002,
+          "ppg": 7.984000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 110.5,
+          "ppg": 6.5
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 75.80000000000001,
+          "ppg": 5.830769230769231
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.830769230769231,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037746",
+      "playerName": "Brian Robinson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 198.10000000000002,
+          "ppg": 13.206666666666669
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 159.79999999999998,
+          "ppg": 11.414285714285713
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 62.5,
+          "ppg": 3.676470588235294
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.676470588235294,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034383",
+      "playerName": "Dalton Schultz",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 150.5,
+          "ppg": 10.033333333333333
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 118.2,
+          "ppg": 6.952941176470588
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 177.70000000000002,
+          "ppg": 10.452941176470588
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.452941176470588,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038555",
+      "playerName": "Tank Bigsby",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 24.800000000000004,
+          "ppg": 1.907692307692308
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 129,
+          "ppg": 8.0625
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 53.8,
+          "ppg": 3.5866666666666664
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.5866666666666664,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 44,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033908",
+      "playerName": "Cooper Kupp",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 164.4,
+          "ppg": 13.700000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 175,
+          "ppg": 14.583333333333334
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 116.30000000000001,
+          "ppg": 7.268750000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.268750000000001,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 40,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039874",
+      "playerName": "Jaylen Wright",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 26.700000000000006,
+          "ppg": 2.0538461538461545
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 48.20000000000001,
+          "ppg": 5.355555555555557
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.355555555555557,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 22,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037252",
+      "playerName": "Greg Dulcich",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 2,
+          "totalFantasyPoints": 5.5,
+          "ppg": 2.75
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 7.8,
+          "ppg": 1.95
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 62.80000000000001,
+          "ppg": 6.977777777777779
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.977777777777779,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 15,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040705",
+      "playerName": "Chimere Dike",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 128.1,
+          "ppg": 7.535294117647059
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.535294117647059,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040878",
+      "playerName": "Mike Washington",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0041052",
+      "playerName": "Kaelon Black",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0041562",
+      "playerName": "Fernando Mendoza",
+      "position": "QB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0039880",
+      "playerName": "Malik Washington",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 56.8,
+          "ppg": 4.057142857142857
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 116.7,
+          "ppg": 6.864705882352942
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.864705882352942,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 31,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040718",
+      "playerName": "Travis Hunter",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0041523",
+      "playerName": "Caleb Douglas",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040729",
+      "playerName": "Jack Bech",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 42.400000000000006,
+          "ppg": 3.028571428571429
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.028571428571429,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 14,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039165",
+      "playerName": "Zach Charbonnet",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 106.1,
+          "ppg": 6.63125
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 186.9,
+          "ppg": 10.994117647058824
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 181.39999999999998,
+          "ppg": 11.337499999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.337499999999999,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041496",
+      "playerName": "Jonah Coleman",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0033555",
+      "playerName": "Mack Hollins",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 43.1,
+          "ppg": 3.591666666666667
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 98.80000000000001,
+          "ppg": 5.811764705882354
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 113.4,
+          "ppg": 8.1
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.1,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035535",
+      "playerName": "Darius Slayton",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 151,
+          "ppg": 8.882352941176471
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 110.00000000000001,
+          "ppg": 6.875000000000001
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 98.8,
+          "ppg": 7.057142857142857
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.057142857142857,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0030565",
+      "playerName": "Geno Smith",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 227.26000000000005,
+          "ppg": 15.15066666666667
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 266.00000000000006,
+          "ppg": 15.647058823529415
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 173.89999999999998,
+          "ppg": 11.593333333333332
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.593333333333332,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 47,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040131",
+      "playerName": "Kyle Williams",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 49.2,
+          "ppg": 3.5142857142857147
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.5142857142857147,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 14,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039299",
+      "playerName": "George Holani",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 3,
+          "totalFantasyPoints": 1.9,
+          "ppg": 0.6333333333333333
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 20.8,
+          "ppg": 2.08
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 2.08,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 13,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040584",
+      "playerName": "Gunnar Helm",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 91.7,
+          "ppg": 5.73125
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.73125,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036244",
+      "playerName": "Colby Parkinson",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 61.7,
+          "ppg": 4.113333333333333
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 65.4,
+          "ppg": 4.0875
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 129.8,
+          "ppg": 9.271428571428572
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.271428571428572,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040886",
+      "playerName": "Nicholas Singleton",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040586",
+      "playerName": "Jaydon Blue",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 5,
+          "totalFantasyPoints": 20.4,
+          "ppg": 4.08
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.08,
+        "gamesPlayed": 5
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 5,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036309",
+      "playerName": "Darnell Mooney",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 78.9,
+          "ppg": 5.635714285714286
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 193.2,
+          "ppg": 12.075
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 82.30000000000001,
+          "ppg": 5.486666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.486666666666667,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 45,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033040",
+      "playerName": "Tyreek Hill",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 376.40000000000003,
+          "ppg": 23.525000000000002
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 218.20000000000002,
+          "ppg": 12.83529411764706
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 53.5,
+          "ppg": 13.375
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 13.375,
+        "gamesPlayed": 4
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 37,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0036894",
+      "playerName": "Pat Freiermuth",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 76.8,
+          "ppg": 6.9818181818181815
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 170.3,
+          "ppg": 10.01764705882353
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 113.60000000000002,
+          "ppg": 7.573333333333335
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.573333333333335,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035229",
+      "playerName": "T.J. Hockenson",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 219.00000000000003,
+          "ppg": 14.600000000000001
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 86.5,
+          "ppg": 8.65
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 112.80000000000003,
+          "ppg": 7.520000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.520000000000001,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 40,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041104",
+      "playerName": "Demond Claiborne",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040202",
+      "playerName": "Devin Neal",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 60,
+          "ppg": 6.666666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.666666666666667,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 9,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037666",
+      "playerName": "Jalen Tolbert",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 60.8,
+          "ppg": 4.3428571428571425
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 152,
+          "ppg": 8.941176470588236
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 46.300000000000004,
+          "ppg": 3.858333333333334
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.858333333333334,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034775",
+      "playerName": "Christian Kirk",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 150.26000000000002,
+          "ppg": 12.521666666666668
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 8,
+          "totalFantasyPoints": 70.9,
+          "ppg": 8.8625
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 57.900000000000006,
+          "ppg": 5.263636363636365
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.263636363636365,
+        "gamesPlayed": 11
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 31,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039424",
+      "playerName": "Devaughn Vele",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 106.49999999999999,
+          "ppg": 8.192307692307692
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 66.3,
+          "ppg": 7.366666666666666
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 7.366666666666666,
+        "gamesPlayed": 9
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 22,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033537",
+      "playerName": "Deshaun Watson",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 6,
+          "totalFantasyPoints": 86.80000000000001,
+          "ppg": 14.466666666666669
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 76.72,
+          "ppg": 10.959999999999999
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2024,
+        "ppg": 10.959999999999999,
+        "gamesPlayed": 7
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 13,
+        "seasonsWithData": [
+          2023,
+          2024
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039391",
+      "playerName": "Kimani Vidal",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 32.7,
+          "ppg": 3.6333333333333337
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 117.9,
+          "ppg": 9.069230769230769
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.069230769230769,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 22,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038685",
+      "playerName": "Chris Brooks",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 3,
+          "totalFantasyPoints": 10.600000000000001,
+          "ppg": 3.5333333333333337
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 42.199999999999996,
+          "ppg": 3.836363636363636
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 32.7,
+          "ppg": 1.9235294117647062
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 1.9235294117647062,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 31,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040727",
+      "playerName": "Tre Harris",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 69.39999999999999,
+          "ppg": 4.3374999999999995
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.3374999999999995,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037741",
+      "playerName": "Jahan Dotson",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 124.8,
+          "ppg": 7.341176470588235
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 41.9,
+          "ppg": 2.992857142857143
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 50.199999999999996,
+          "ppg": 3.3466666666666662
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.3466666666666662,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039921",
+      "playerName": "Trey Benson",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 46.99999999999999,
+          "ppg": 3.916666666666666
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 4,
+          "totalFantasyPoints": 35.4,
+          "ppg": 8.85
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.85,
+        "gamesPlayed": 4
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 16,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037563",
+      "playerName": "Malik Davis",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 1,
+          "totalFantasyPoints": 0,
+          "ppg": 0
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 40.6,
+          "ppg": 4.0600000000000005
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.0600000000000005,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 11,
+        "seasonsWithData": [
+          2023,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0037112",
+      "playerName": "Jake Tonges",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 2,
+          "totalFantasyPoints": 0,
+          "ppg": 0
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 10,
+          "totalFantasyPoints": 93.30000000000001,
+          "ppg": 9.330000000000002
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 9.330000000000002,
+        "gamesPlayed": 10
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 12,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0038129",
+      "playerName": "Cade Otton",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 118.50000000000001,
+          "ppg": 6.970588235294119
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 140.6,
+          "ppg": 10.042857142857143
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 122.20000000000002,
+          "ppg": 8.146666666666668
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.146666666666668,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 46,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040134",
+      "playerName": "Pat Bryant",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 74.8,
+          "ppg": 5.753846153846154
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.753846153846154,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 13,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039066",
+      "playerName": "Michael Mayer",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 71.4,
+          "ppg": 5.492307692307692
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 36.6,
+          "ppg": 3.3272727272727276
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 73.8,
+          "ppg": 5.676923076923076
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.676923076923076,
+        "gamesPlayed": 13
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 37,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041035",
+      "playerName": "De'Zhaun Stribling",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0033119",
+      "playerName": "Jacoby Brissett",
+      "position": "QB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 2,
+          "totalFantasyPoints": 22.86,
+          "ppg": 11.43
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 45.24000000000001,
+          "ppg": 6.462857142857144
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 227.44,
+          "ppg": 16.245714285714286
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 16.245714285714286,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 23,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0034829",
+      "playerName": "Mike Gesicki",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 65.4,
+          "ppg": 4.36
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 141.50000000000003,
+          "ppg": 8.843750000000002
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 70.7,
+          "ppg": 5.891666666666667
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 5.891666666666667,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 43,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041489",
+      "playerName": "Germie Bernard",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0041042",
+      "playerName": "Malachi Fields",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040179",
+      "playerName": "DJ Giddens",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 5,
+          "totalFantasyPoints": 9.600000000000001,
+          "ppg": 1.9200000000000004
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 1.9200000000000004,
+        "gamesPlayed": 5
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 5,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041525",
+      "playerName": "Chris Bell",
+      "position": "WR",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0038976",
+      "playerName": "Marvin Mims",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 74.7,
+          "ppg": 4.66875
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 129.50000000000003,
+          "ppg": 7.617647058823531
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 95.00000000000001,
+          "ppg": 6.333333333333334
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.333333333333334,
+        "gamesPlayed": 15
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 48,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040198",
+      "playerName": "Ollie Gordon",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 54.10000000000001,
+          "ppg": 3.1823529411764713
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 3.1823529411764713,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 17,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033881",
+      "playerName": "Evan Engram",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 230.30000000000004,
+          "ppg": 13.547058823529413
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 9,
+          "totalFantasyPoints": 89.50000000000001,
+          "ppg": 9.944444444444446
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 102.8,
+          "ppg": 6.425
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.425,
+        "gamesPlayed": 16
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 42,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0040177",
+      "playerName": "Jordan James",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0039901",
+      "playerName": "Keon Coleman",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 111.5,
+          "ppg": 8.576923076923077
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 12,
+          "totalFantasyPoints": 102.4,
+          "ppg": 8.533333333333333
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 8.533333333333333,
+        "gamesPlayed": 12
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 25,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039868",
+      "playerName": "Troy Franklin",
+      "position": "WR",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 67.1,
+          "ppg": 4.19375
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 177.09999999999997,
+          "ppg": 10.417647058823528
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 10.417647058823528,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 33,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039363",
+      "playerName": "Isaac Guerendo",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 96.2,
+          "ppg": 6.0125
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 7,
+          "totalFantasyPoints": 0,
+          "ppg": 0
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 0,
+        "gamesPlayed": 7
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 23,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0041013",
+      "playerName": "Emmett Johnson",
+      "position": "RB",
+      "seasons": [],
+      "recentHistoricalPpg": null,
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 0,
+        "seasonsWithData": []
+      }
+    },
+    {
+      "playerId": "gsis:00-0040737",
+      "playerName": "Terrance Ferguson",
+      "position": "TE",
+      "seasons": [
+        {
+          "season": 2025,
+          "gamesPlayed": 11,
+          "totalFantasyPoints": 52.1,
+          "ppg": 4.736363636363636
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 4.736363636363636,
+        "gamesPlayed": 11
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 11,
+        "seasonsWithData": [
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0033553",
+      "playerName": "James Conner",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 201.50000000000003,
+          "ppg": 15.500000000000002
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 16,
+          "totalFantasyPoints": 253.8,
+          "ppg": 15.8625
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 3,
+          "totalFantasyPoints": 33.300000000000004,
+          "ppg": 11.100000000000001
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 11.100000000000001,
+        "gamesPlayed": 3
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 32,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039811",
+      "playerName": "MarShawn Lloyd",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 1,
+          "totalFantasyPoints": 2.8,
+          "ppg": 2.8
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2024,
+        "ppg": 2.8,
+        "gamesPlayed": 1
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 1,
+        "seasonsWithData": [
+          2024
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0039746",
+      "playerName": "Will Shipley",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2024,
+          "gamesPlayed": 13,
+          "totalFantasyPoints": 15.7,
+          "ppg": 1.2076923076923076
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 14,
+          "totalFantasyPoints": 19.5,
+          "ppg": 1.3928571428571428
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 1.3928571428571428,
+        "gamesPlayed": 14
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 27,
+        "seasonsWithData": [
+          2024,
+          2025
+        ]
+      }
+    },
+    {
+      "playerId": "gsis:00-0035250",
+      "playerName": "Devin Singletary",
+      "position": "RB",
+      "seasons": [
+        {
+          "season": 2023,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 167.34,
+          "ppg": 9.843529411764706
+        },
+        {
+          "season": 2024,
+          "gamesPlayed": 15,
+          "totalFantasyPoints": 96.6,
+          "ppg": 6.4399999999999995
+        },
+        {
+          "season": 2025,
+          "gamesPlayed": 17,
+          "totalFantasyPoints": 108.8,
+          "ppg": 6.3999999999999995
+        }
+      ],
+      "recentHistoricalPpg": {
+        "season": 2025,
+        "ppg": 6.3999999999999995,
+        "gamesPlayed": 17
+      },
+      "sampleMetadata": {
+        "totalGamesAllSeasons": 49,
+        "seasonsWithData": [
+          2023,
+          2024,
+          2025
+        ]
+      }
+    }
+  ]
+}

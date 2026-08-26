@@ -7,7 +7,7 @@ import {
 } from "@/lib/fantasy/positionBoardModel";
 import { getParPerGameTone } from "@/lib/fantasy/parPresentation";
 import { PAR_POSITIONS, PAR_POSITION_LIMITS, PAR_TIER_BOUNDARIES } from "@/lib/fantasy/parRankings";
-import type { FantasyPosition } from "@/lib/fantasy/rankings";
+import { FANTASY_RANKINGS, type FantasyPosition } from "@/lib/fantasy/rankings";
 
 describe.each(PAR_POSITIONS)("%s board rows", (position) => {
   const rows = getTieredRows(position);
@@ -21,11 +21,13 @@ describe.each(PAR_POSITIONS)("%s board rows", (position) => {
     expect(parPerGame).toEqual([...parPerGame].sort((a, b) => b - a));
   });
 
-  it("labels rank by PAR rank with the position abbreviation", () => {
-    expect(rows.map((entry) => entry.positionRankLabel)).toEqual(
-      rows.map((entry) => `${position}${entry.row.par!.parRank}`),
-    );
-    expect(rows[0].positionRankLabel).toBe(`${position}1`);
+  it("preserves the canonical JKB position rank while PAR/G controls row order", () => {
+    for (const entry of rows) {
+      const canonicalRank = entry.row.jkb?.positionRank;
+      expect(entry.positionRankLabel).toBe(
+        Number.isInteger(canonicalRank) ? `${position}${canonicalRank}` : undefined,
+      );
+    }
   });
 
   it("marks the first row of each approved tier, never the leading row", () => {
@@ -40,10 +42,14 @@ describe.each(PAR_POSITIONS)("%s board rows", (position) => {
     expect(rows.every((entry) => entry.metrics.length === 3)).toBe(true);
   });
 
-  it("leaves untiered rows without a rank label, tier or 2025 join", () => {
+  it("keeps canonical ranks on untiered JKB rows without adding a tier or 2025 join", () => {
     const outside = getOutsideRows(position);
     expect(outside.length).toBeGreaterThan(0);
-    expect(outside.every((entry) => entry.positionRankLabel === undefined)).toBe(true);
+    expect(
+      outside.every(
+        (entry) => entry.positionRankLabel === `${position}${entry.row.jkb?.positionRank}`,
+      ),
+    ).toBe(true);
     expect(outside.every((entry) => entry.row.tier === undefined)).toBe(true);
     expect(outside.every((entry) => entry.actual2025 === undefined)).toBe(true);
   });
@@ -120,5 +126,22 @@ describe("filterRows", () => {
     const filtered = filterRows(getTieredRows("WR"), "phi");
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered[0].isTierStart).toBe(false);
+  });
+
+  it.each(PAR_POSITIONS)("keeps canonical %s ranks fixed when filtering", (position) => {
+    const rows = getTieredRows(position);
+    const target = rows.find((entry) => entry.row.jkb?.positionRank != null)!;
+    const filtered = filterRows(rows, target.row.player.toLowerCase());
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].positionRankLabel).toBe(`${position}${target.row.jkb!.positionRank}`);
+  });
+
+  it("does not mutate FANTASY_RANKINGS while ordering or filtering position boards", () => {
+    const before = structuredClone(FANTASY_RANKINGS.rows);
+    for (const position of PAR_POSITIONS) {
+      filterRows(getTieredRows(position), "a");
+      filterRows(getOutsideRows(position), "a");
+    }
+    expect(FANTASY_RANKINGS.rows).toEqual(before);
   });
 });

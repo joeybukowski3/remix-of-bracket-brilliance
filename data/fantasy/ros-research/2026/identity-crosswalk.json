@@ -1,0 +1,5318 @@
+{
+  "schemaVersion": "ros-identity-crosswalk-v1",
+  "season": 2026,
+  "generatedAt": "2026-08-26T00:00:00.000Z",
+  "provenance": {
+    "inputAsOf": "2026-08-22",
+    "sources": [
+      {
+        "name": "jkb-workbook",
+        "path": "src/data/fantasyRankings2026.ts",
+        "rowCount": 250
+      },
+      {
+        "name": "par-consensus",
+        "path": "data/fantasy/2026-par-consensus.json",
+        "hash": "d0274bd88ffd6c709492982240b136011dc4470cdb0f7a0418cd32b7255d1023",
+        "rowCount": 587
+      },
+      {
+        "name": "nflverse-players",
+        "path": "C:\\Users\\jbloo\\remix-of-bracket-brilliance-fantasy-ros-projection\\data\\nfl\\nflverse\\players\\players.csv",
+        "hash": "8e07f7d5e89f9f4bb3c1af5b124042f8782f8b62a6f66c9de1fc6d0d2764df1e",
+        "retrievedDateUtc": "2026-08-21",
+        "rowCount": 22555
+      },
+      {
+        "name": "nflverse-weekly-roster",
+        "path": "C:\\Users\\jbloo\\remix-of-bracket-brilliance-fantasy-ros-projection\\data\\nfl\\nflverse\\weekly-rosters\\roster_weekly_2026.csv",
+        "hash": "a64af59281050f82cb011e89de40afdcb5368b7080df062b1a8896d30b62d9e7",
+        "retrievedDateUtc": "2026-08-22",
+        "season": 2026,
+        "week": 1,
+        "rowCount": 2930
+      }
+    ]
+  },
+  "methodology": {
+    "priority": [
+      "stable-id",
+      "exact-name-position",
+      "reviewed-alias",
+      "unresolved"
+    ],
+    "notes": [
+      "JKB workbook rows join to PAR consensus rows by exact normalized name+position, or a reviewed literal alias (rosPlayerIdentity.CONSENSUS_NAME_ALIASES). No fuzzy/similarity matching.",
+      "PAR consensus rows (Source ID = PFR id) join to a canonical GSIS identity via the already-approved weekly production resolver (resolveProductionProjectionIdentity): direct PFR id match first, then exact normalized name+position against the current roster/player crosswalk (team disambiguates ties), then a reviewed literal alias, else unresolved.",
+      "This artifact is read-only research input. It does not change Overall Rank, PAR/G, replacement levels, projectedFantasyPoints, weekly fantasy artifacts, or 2026-par-consensus.json."
+    ]
+  },
+  "counts": {
+    "totalRows": 250,
+    "resolved": 250,
+    "unresolved": 0,
+    "ambiguousParMatches": 0,
+    "duplicateCanonicalIds": 0,
+    "duplicateCanonicalIdGroups": [],
+    "resolutionMethodCounts": {
+      "stable-id": 165,
+      "stable-id-off-roster": 4,
+      "exact-name-position": 62,
+      "reviewed-alias": 19,
+      "unresolved-no-par-match": 0,
+      "unresolved-no-gsis-match": 0
+    }
+  },
+  "rows": [
+    {
+      "overallRank": 1,
+      "player": "Jahmyr Gibbs",
+      "position": "RB",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GibbJa00",
+        "parPlayer": "Jahmyr Gibbs",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039139",
+        "gsisId": "00-0039139",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 2,
+      "player": "Bijan Robinson",
+      "position": "RB",
+      "team": "atl",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RobiBi01",
+        "parPlayer": "Bijan Robinson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038542",
+        "gsisId": "00-0038542",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 3,
+      "player": "Puka Nacua",
+      "position": "WR",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "NacuPu00",
+        "parPlayer": "Puka Nacua",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039075",
+        "gsisId": "00-0039075",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 4,
+      "player": "Ja'Marr Chase",
+      "position": "WR",
+      "team": "cin",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ChasJa00",
+        "parPlayer": "Ja'Marr Chase",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036900",
+        "gsisId": "00-0036900",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 5,
+      "player": "Christian McCaffrey",
+      "position": "RB",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "McCaCh00",
+        "parPlayer": "Christian McCaffrey",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033280",
+        "gsisId": "00-0033280",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 6,
+      "player": "Amon-Ra St. Brown",
+      "position": "WR",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "StBrAm00",
+        "parPlayer": "Amon-Ra St. Brown",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036963",
+        "gsisId": "00-0036963",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 7,
+      "player": "Jaxon Smith-Njigba",
+      "position": "WR",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SmitJa02",
+        "parPlayer": "Jaxon Smith-Njigba",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038543",
+        "gsisId": "00-0038543",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 8,
+      "player": "James Cook",
+      "position": "RB",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CookJa05",
+        "parPlayer": "James Cook III",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037248",
+        "gsisId": "00-0037248",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 9,
+      "player": "Saquon Barkley",
+      "position": "RB",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BarkSa00",
+        "parPlayer": "Saquon Barkley",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034844",
+        "gsisId": "00-0034844",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 10,
+      "player": "Jonathan Taylor",
+      "position": "RB",
+      "team": "ind",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TaylJo02",
+        "parPlayer": "Jonathan Taylor",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036223",
+        "gsisId": "00-0036223",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 11,
+      "player": "Chase Brown",
+      "position": "RB",
+      "team": "cin",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BrowCh06",
+        "parPlayer": "Chase Brown",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038597",
+        "gsisId": "00-0038597",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 12,
+      "player": "Omarion Hampton",
+      "position": "RB",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HampOm00",
+        "parPlayer": "Omarion Hampton",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040666",
+        "gsisId": "00-0040666",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 13,
+      "player": "Justin Jefferson",
+      "position": "WR",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JeffJu00",
+        "parPlayer": "Justin Jefferson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036322",
+        "gsisId": "00-0036322",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 14,
+      "player": "Ashton Jeanty",
+      "position": "RB",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JeanAs00",
+        "parPlayer": "Ashton Jeanty",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040122",
+        "gsisId": "00-0040122",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 15,
+      "player": "Drake London",
+      "position": "WR",
+      "team": "atl",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LondDr00",
+        "parPlayer": "Drake London",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037238",
+        "gsisId": "00-0037238",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 16,
+      "player": "CeeDee Lamb",
+      "position": "WR",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LambCe00",
+        "parPlayer": "CeeDee Lamb",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036358",
+        "gsisId": "00-0036358",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 17,
+      "player": "Nico Collins",
+      "position": "WR",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CollNi00",
+        "parPlayer": "Nico Collins",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036554",
+        "gsisId": "00-0036554",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 18,
+      "player": "A.J. Brown",
+      "position": "WR",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BrowAJ00",
+        "parPlayer": "A.J. Brown",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035676",
+        "gsisId": "00-0035676",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 19,
+      "player": "DeVonta Smith",
+      "position": "WR",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SmitDe04",
+        "parPlayer": "DeVonta Smith",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036912",
+        "gsisId": "00-0036912",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 20,
+      "player": "Kenneth Walker",
+      "position": "RB",
+      "team": "kc",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WalkKe01",
+        "parPlayer": "Ken Walker III",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038134",
+        "gsisId": "00-0038134",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "audited-alias",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 21,
+      "player": "Josh Jacobs",
+      "position": "RB",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JacoJo00",
+        "parPlayer": "Josh Jacobs",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035700",
+        "gsisId": "00-0035700",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 22,
+      "player": "Derrick Henry",
+      "position": "RB",
+      "team": "bal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HenrDe00",
+        "parPlayer": "Derrick Henry",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0032764",
+        "gsisId": "00-0032764",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 23,
+      "player": "De'Von Achane",
+      "position": "RB",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AchaDe00",
+        "parPlayer": "De'Von Achane",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039040",
+        "gsisId": "00-0039040",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 24,
+      "player": "Jeremiyah Love",
+      "position": "RB",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LoveJe01",
+        "parPlayer": "Jeremiyah Love",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041027",
+        "gsisId": "00-0041027",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 25,
+      "player": "Breece Hall",
+      "position": "RB",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HallBr01",
+        "parPlayer": "Breece Hall",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038120",
+        "gsisId": "00-0038120",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 26,
+      "player": "Brock Bowers",
+      "position": "TE",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BoweBr00",
+        "parPlayer": "Brock Bowers",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039338",
+        "gsisId": "00-0039338",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 27,
+      "player": "Josh Allen",
+      "position": "QB",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AlleJo01",
+        "parPlayer": "Josh Allen",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034857",
+        "gsisId": "00-0034857",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 28,
+      "player": "Rashee Rice",
+      "position": "WR",
+      "team": "kc",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RiceRa01",
+        "parPlayer": "Rashee Rice",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039067",
+        "gsisId": "00-0039067",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 29,
+      "player": "Trey McBride",
+      "position": "TE",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "McBrTr01",
+        "parPlayer": "Trey McBride",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037744",
+        "gsisId": "00-0037744",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 30,
+      "player": "George Pickens",
+      "position": "WR",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PickGe00",
+        "parPlayer": "George Pickens",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037247",
+        "gsisId": "00-0037247",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 31,
+      "player": "Chris Olave",
+      "position": "WR",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "OlavCh00",
+        "parPlayer": "Chris Olave",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037239",
+        "gsisId": "00-0037239",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 32,
+      "player": "Garrett Wilson",
+      "position": "WR",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WilsGa00",
+        "parPlayer": "Garrett Wilson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037740",
+        "gsisId": "00-0037740",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 33,
+      "player": "Colston Loveland",
+      "position": "TE",
+      "team": "chi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LoveCo00",
+        "parPlayer": "Colston Loveland",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040126",
+        "gsisId": "00-0040126",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 34,
+      "player": "Tee Higgins",
+      "position": "WR",
+      "team": "cin",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HiggTe00",
+        "parPlayer": "Tee Higgins",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036410",
+        "gsisId": "00-0036410",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 35,
+      "player": "Emeka Egbuka",
+      "position": "WR",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "EgbuEm00",
+        "parPlayer": "Emeka Egbuka",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040129",
+        "gsisId": "00-0040129",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 36,
+      "player": "Ladd McConkey",
+      "position": "WR",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "McCoLa00",
+        "parPlayer": "Ladd McConkey",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039915",
+        "gsisId": "00-0039915",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 37,
+      "player": "Zay Flowers",
+      "position": "WR",
+      "team": "bal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FlowZa00",
+        "parPlayer": "Zay Flowers",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039064",
+        "gsisId": "00-0039064",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 38,
+      "player": "Drake Maye",
+      "position": "QB",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MayeDr00",
+        "parPlayer": "Drake Maye",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039851",
+        "gsisId": "00-0039851",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 39,
+      "player": "Lamar Jackson",
+      "position": "QB",
+      "team": "bal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JackLa00",
+        "parPlayer": "Lamar Jackson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034796",
+        "gsisId": "00-0034796",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 40,
+      "player": "Malik Nabers",
+      "position": "WR",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "NabeMa00",
+        "parPlayer": "Malik Nabers",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039337",
+        "gsisId": "00-0039337",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 41,
+      "player": "DJ Moore",
+      "position": "WR",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MoorDJ00",
+        "parPlayer": "DJ Moore",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034827",
+        "gsisId": "00-0034827",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 42,
+      "player": "Tetairoa McMillan",
+      "position": "WR",
+      "team": "car",
+      "parMatch": {
+        "found": true,
+        "sourceId": "McMiTe00",
+        "parPlayer": "Tetairoa McMillan",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040124",
+        "gsisId": "00-0040124",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 43,
+      "player": "Kyren Williams",
+      "position": "RB",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillKy02",
+        "parPlayer": "Kyren Williams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037840",
+        "gsisId": "00-0037840",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 44,
+      "player": "Terry McLaurin",
+      "position": "WR",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "McLaTe00",
+        "parPlayer": "Terry McLaurin",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035659",
+        "gsisId": "00-0035659",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 45,
+      "player": "Jaylen Waddle",
+      "position": "WR",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WaddJa00",
+        "parPlayer": "Jaylen Waddle",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036613",
+        "gsisId": "00-0036613",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 46,
+      "player": "Luther Burden",
+      "position": "WR",
+      "team": "chi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BurdLu00",
+        "parPlayer": "Luther Burden III",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040735",
+        "gsisId": "00-0040735",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 47,
+      "player": "Jayden Daniels",
+      "position": "QB",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DaniJa00",
+        "parPlayer": "Jayden Daniels",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039910",
+        "gsisId": "00-0039910",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 48,
+      "player": "Joe Burrow",
+      "position": "QB",
+      "team": "cin",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BurrJo01",
+        "parPlayer": "Joe Burrow",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036442",
+        "gsisId": "00-0036442",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 49,
+      "player": "Christian Watson",
+      "position": "WR",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WatsCh00",
+        "parPlayer": "Christian Watson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038124",
+        "gsisId": "00-0038124",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 50,
+      "player": "Javonte Williams",
+      "position": "RB",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillJa08",
+        "parPlayer": "Javonte Williams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036997",
+        "gsisId": "00-0036997",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 51,
+      "player": "Justin Herbert",
+      "position": "QB",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HerbJu00",
+        "parPlayer": "Justin Herbert",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036355",
+        "gsisId": "00-0036355",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 52,
+      "player": "D'Andre Swift",
+      "position": "RB",
+      "team": "chi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SwifDA00",
+        "parPlayer": "D'Andre Swift",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036275",
+        "gsisId": "00-0036275",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 53,
+      "player": "Mike Evans",
+      "position": "WR",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "EvanMi00",
+        "parPlayer": "Mike Evans",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0031408",
+        "gsisId": "00-0031408",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 54,
+      "player": "Davante Adams",
+      "position": "WR",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AdamDa01",
+        "parPlayer": "Davante Adams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0031381",
+        "gsisId": "00-0031381",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 55,
+      "player": "Carnell Tate",
+      "position": "WR",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TateCa00",
+        "parPlayer": "Carnell Tate",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041438",
+        "gsisId": "00-0041438",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 56,
+      "player": "Tyler Warren",
+      "position": "TE",
+      "team": "ind",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WarrTy00",
+        "parPlayer": "Tyler Warren",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040128",
+        "gsisId": "00-0040128",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 57,
+      "player": "Travis Etienne",
+      "position": "RB",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "EtieTr00",
+        "parPlayer": "Travis Etienne Jr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036973",
+        "gsisId": "00-0036973",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 58,
+      "player": "David Montgomery",
+      "position": "RB",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MontDa01",
+        "parPlayer": "David Montgomery",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035685",
+        "gsisId": "00-0035685",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 59,
+      "player": "Cam Skattebo",
+      "position": "RB",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SkatCa00",
+        "parPlayer": "Cam Skattebo",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040715",
+        "gsisId": "00-0040715",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 60,
+      "player": "Quinshon Judkins",
+      "position": "RB",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JudkQu00",
+        "parPlayer": "Quinshon Judkins",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040784",
+        "gsisId": "00-0040784",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 61,
+      "player": "Sam LaPorta",
+      "position": "TE",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LapoSa00",
+        "parPlayer": "Sam LaPorta",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039065",
+        "gsisId": "00-0039065",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 62,
+      "player": "Jameson Williams",
+      "position": "WR",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillJa09",
+        "parPlayer": "Jameson Williams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037240",
+        "gsisId": "00-0037240",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 63,
+      "player": "Rome Odunze",
+      "position": "WR",
+      "team": "chi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "OdunRo00",
+        "parPlayer": "Rome Odunze",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039919",
+        "gsisId": "00-0039919",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 64,
+      "player": "TreVeyon Henderson",
+      "position": "RB",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HendTr00",
+        "parPlayer": "TreVeyon Henderson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040734",
+        "gsisId": "00-0040734",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 65,
+      "player": "Bucky Irving",
+      "position": "RB",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "IrviBu00",
+        "parPlayer": "Bucky Irving",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039361",
+        "gsisId": "00-0039361",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 66,
+      "player": "Jalen Hurts",
+      "position": "QB",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HurtJa00",
+        "parPlayer": "Jalen Hurts",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036389",
+        "gsisId": "00-0036389",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 67,
+      "player": "Caleb Williams",
+      "position": "QB",
+      "team": "chi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillCa01",
+        "parPlayer": "Caleb Williams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039918",
+        "gsisId": "00-0039918",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 68,
+      "player": "Alec Pierce",
+      "position": "WR",
+      "team": "ind",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PierAl00",
+        "parPlayer": "Alec Pierce",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037664",
+        "gsisId": "00-0037664",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 69,
+      "player": "Brian Thomas Jr.",
+      "position": "WR",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ThomBr01",
+        "parPlayer": "Brian Thomas Jr.",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039893",
+        "gsisId": "00-0039893",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 70,
+      "player": "Tucker Kraft",
+      "position": "TE",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KrafTu00",
+        "parPlayer": "Tucker Kraft",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038996",
+        "gsisId": "00-0038996",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 71,
+      "player": "Marvin Harrison Jr.",
+      "position": "WR",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HarrMa05",
+        "parPlayer": "Marvin Harrison Jr.",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039849",
+        "gsisId": "00-0039849",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 72,
+      "player": "Jordyn Tyson",
+      "position": "WR",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TysoJo00",
+        "parPlayer": "Jordyn Tyson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041029",
+        "gsisId": "00-0041029",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 73,
+      "player": "Bhayshul Tuten",
+      "position": "RB",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TuteBh00",
+        "parPlayer": "Bhayshul Tuten",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040719",
+        "gsisId": "00-0040719",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 74,
+      "player": "DK Metcalf",
+      "position": "WR",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MetcDK00",
+        "parPlayer": "DK Metcalf",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035640",
+        "gsisId": "00-0035640",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 75,
+      "player": "Quentin Johnston",
+      "position": "WR",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JohnQu01",
+        "parPlayer": "Quentin Johnston",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038544",
+        "gsisId": "00-0038544",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 76,
+      "player": "Jadarian Price",
+      "position": "RB",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PricJa00",
+        "parPlayer": "Jadarian Price",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041512",
+        "gsisId": "00-0041512",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 77,
+      "player": "Dak Prescott",
+      "position": "QB",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PresDa01",
+        "parPlayer": "Dak Prescott",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033077",
+        "gsisId": "00-0033077",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 78,
+      "player": "Tony Pollard",
+      "position": "RB",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PollTo01",
+        "parPlayer": "Tony Pollard",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035261",
+        "gsisId": "00-0035261",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 79,
+      "player": "Jaylen Warren",
+      "position": "RB",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WarrJa00",
+        "parPlayer": "Jaylen Warren",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037228",
+        "gsisId": "00-0037228",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 80,
+      "player": "Chris Godwin",
+      "position": "WR",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GodwCh00",
+        "parPlayer": "Chris Godwin Jr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033921",
+        "gsisId": "00-0033921",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 81,
+      "player": "Rhamondre Stevenson",
+      "position": "RB",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "StevRh00",
+        "parPlayer": "Rhamondre Stevenson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036875",
+        "gsisId": "00-0036875",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 82,
+      "player": "Brock Purdy",
+      "position": "QB",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PurdBr00",
+        "parPlayer": "Brock Purdy",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037834",
+        "gsisId": "00-0037834",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 83,
+      "player": "Harold Fannin Jr.",
+      "position": "TE",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FannHa00",
+        "parPlayer": "Harold Fannin Jr.",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040663",
+        "gsisId": "00-0040663",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 84,
+      "player": "Parker Washington",
+      "position": "WR",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WashPa01",
+        "parPlayer": "Parker Washington",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038606",
+        "gsisId": "00-0038606",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 85,
+      "player": "Rico Dowdle",
+      "position": "RB",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DowdDa00",
+        "parPlayer": "Rico Dowdle",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036139",
+        "gsisId": "00-0036139",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 86,
+      "player": "Xavier Worthy",
+      "position": "WR",
+      "team": "kc",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WortXa00",
+        "parPlayer": "Xavier Worthy",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039894",
+        "gsisId": "00-0039894",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 87,
+      "player": "Michael Pittman",
+      "position": "WR",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PittMi01",
+        "parPlayer": "Michael Pittman Jr",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036252",
+        "gsisId": "00-0036252",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 88,
+      "player": "George Kittle",
+      "position": "TE",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KittGe00",
+        "parPlayer": "George Kittle",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033288",
+        "gsisId": "00-0033288",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 89,
+      "player": "Trevor Lawrence",
+      "position": "QB",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LawrTr00",
+        "parPlayer": "Trevor Lawrence",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036971",
+        "gsisId": "00-0036971",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 90,
+      "player": "RJ Harvey",
+      "position": "RB",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HarvRj00",
+        "parPlayer": "RJ Harvey",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040730",
+        "gsisId": "00-0040730",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 91,
+      "player": "Chuba Hubbard",
+      "position": "RB",
+      "team": "car",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HubbCh00",
+        "parPlayer": "Chuba Hubbard",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036555",
+        "gsisId": "00-0036555",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 92,
+      "player": "Patrick Mahomes",
+      "position": "QB",
+      "team": "kc",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MahoPa00",
+        "parPlayer": "Patrick Mahomes II",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033873",
+        "gsisId": "00-0033873",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 93,
+      "player": "Josh Downs",
+      "position": "WR",
+      "team": "ind",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DownJo00",
+        "parPlayer": "Josh Downs",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038997",
+        "gsisId": "00-0038997",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 94,
+      "player": "Bo Nix",
+      "position": "QB",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "NixxBo00",
+        "parPlayer": "Bo Nix",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039732",
+        "gsisId": "00-0039732",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 95,
+      "player": "Jordan Addison",
+      "position": "WR",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AddiJo00",
+        "parPlayer": "Jordan Addison",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038994",
+        "gsisId": "00-0038994",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 96,
+      "player": "Jonathon Brooks",
+      "position": "RB",
+      "team": "car",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BrooJo00",
+        "parPlayer": "Jonathon Brooks",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039344",
+        "gsisId": "00-0039344",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 97,
+      "player": "Courtland Sutton",
+      "position": "WR",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SuttCo00",
+        "parPlayer": "Courtland Sutton",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034348",
+        "gsisId": "00-0034348",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 98,
+      "player": "Ricky Pearsall",
+      "position": "WR",
+      "team": "sf",
+      "parMatch": {
+        "found": false,
+        "sourceId": null,
+        "parPlayer": null,
+        "method": null,
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039916",
+        "gsisId": "00-0039916",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 99,
+      "player": "Rachaad White",
+      "position": "RB",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WhitRa00",
+        "parPlayer": "Rachaad White",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037256",
+        "gsisId": "00-0037256",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 100,
+      "player": "Jayden Reed",
+      "position": "WR",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ReedJa01",
+        "parPlayer": "Jayden Reed",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039146",
+        "gsisId": "00-0039146",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 101,
+      "player": "Kyle Pitts",
+      "position": "TE",
+      "team": "atl",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PittKy00",
+        "parPlayer": "Kyle Pitts Sr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036970",
+        "gsisId": "00-0036970",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 102,
+      "player": "Jaxson Dart",
+      "position": "QB",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DartJa00",
+        "parPlayer": "Jaxson Dart",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040691",
+        "gsisId": "00-0040691",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 103,
+      "player": "Matthew Golden",
+      "position": "WR",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GoldMa00",
+        "parPlayer": "Matthew Golden",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040667",
+        "gsisId": "00-0040667",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 104,
+      "player": "Mark Andrews",
+      "position": "TE",
+      "team": "bal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AndrMa00",
+        "parPlayer": "Mark Andrews",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034753",
+        "gsisId": "00-0034753",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 105,
+      "player": "Matthew Stafford",
+      "position": "QB",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "StafMa00",
+        "parPlayer": "Matthew Stafford",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0026498",
+        "gsisId": "00-0026498",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 106,
+      "player": "Kenneth Gainwell",
+      "position": "RB",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GainKe00",
+        "parPlayer": "Kenny Gainwell",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036919",
+        "gsisId": "00-0036919",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 107,
+      "player": "Kevin Concepcion",
+      "position": "WR",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ConcKC00",
+        "parPlayer": "KC Concepcion",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041547",
+        "gsisId": "00-0041547",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 108,
+      "player": "Isaiah Likely",
+      "position": "TE",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LikeIs00",
+        "parPlayer": "Isaiah Likely",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037838",
+        "gsisId": "00-0037838",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 109,
+      "player": "Jayden Higgins",
+      "position": "WR",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HiggJa00",
+        "parPlayer": "Jayden Higgins",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040130",
+        "gsisId": "00-0040130",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 110,
+      "player": "Jared Goff",
+      "position": "QB",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GoffJa00",
+        "parPlayer": "Jared Goff",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033106",
+        "gsisId": "00-0033106",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 111,
+      "player": "Baker Mayfield",
+      "position": "QB",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MayfBa00",
+        "parPlayer": "Baker Mayfield",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034855",
+        "gsisId": "00-0034855",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 112,
+      "player": "Dalton Kincaid",
+      "position": "TE",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KincDa00",
+        "parPlayer": "Dalton Kincaid",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038933",
+        "gsisId": "00-0038933",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 113,
+      "player": "Blake Corum",
+      "position": "RB",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CoruBl00",
+        "parPlayer": "Blake Corum",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039738",
+        "gsisId": "00-0039738",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 114,
+      "player": "Jacory Croskey-Merritt",
+      "position": "RB",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CrosJa00",
+        "parPlayer": "Jacory Croskey-Merritt",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040242",
+        "gsisId": "00-0040242",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 115,
+      "player": "J.K. Dobbins",
+      "position": "RB",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DobbJ.00",
+        "parPlayer": "J.K. Dobbins",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036158",
+        "gsisId": "00-0036158",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 116,
+      "player": "Aaron Jones",
+      "position": "RB",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JoneAa00",
+        "parPlayer": "Aaron Jones Sr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033293",
+        "gsisId": "00-0033293",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 117,
+      "player": "Jordan Mason",
+      "position": "RB",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MasoJo00",
+        "parPlayer": "Jordan Mason",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037525",
+        "gsisId": "00-0037525",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 118,
+      "player": "Makai Lemon",
+      "position": "WR",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LemoMa00",
+        "parPlayer": "Makai Lemon",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040867",
+        "gsisId": "00-0040867",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 119,
+      "player": "Wan'Dale Robinson",
+      "position": "WR",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RobiWa00",
+        "parPlayer": "Wan'Dale Robinson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038117",
+        "gsisId": "00-0038117",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 120,
+      "player": "Jordan Love",
+      "position": "QB",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LoveJo01",
+        "parPlayer": "Jordan Love",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036264",
+        "gsisId": "00-0036264",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 121,
+      "player": "Khalil Shakir",
+      "position": "WR",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ShakKh00",
+        "parPlayer": "Khalil Shakir",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037261",
+        "gsisId": "00-0037261",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 122,
+      "player": "Jake Ferguson",
+      "position": "TE",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FergJa01",
+        "parPlayer": "Jake Ferguson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038041",
+        "gsisId": "00-0038041",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 123,
+      "player": "Jalen Coker",
+      "position": "WR",
+      "team": "car",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CokeJa01",
+        "parPlayer": "Jalen Coker",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039491",
+        "gsisId": "00-0039491",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 124,
+      "player": "Kyler Murray",
+      "position": "QB",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MurrKy00",
+        "parPlayer": "Kyler Murray",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035228",
+        "gsisId": "00-0035228",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 125,
+      "player": "Malik Willis",
+      "position": "QB",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillMa05",
+        "parPlayer": "Malik Willis",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038128",
+        "gsisId": "00-0038128",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 126,
+      "player": "Romeo Doubs",
+      "position": "WR",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DoubRo00",
+        "parPlayer": "Romeo Doubs",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037816",
+        "gsisId": "00-0037816",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 127,
+      "player": "Tyler Shough",
+      "position": "QB",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ShouTy00",
+        "parPlayer": "Tyler Shough",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040743",
+        "gsisId": "00-0040743",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 128,
+      "player": "Kyle Monangai",
+      "position": "RB",
+      "team": "chi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MonaKy00",
+        "parPlayer": "Kyle Monangai",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040236",
+        "gsisId": "00-0040236",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 129,
+      "player": "Chris Rodriguez Jr.",
+      "position": "RB",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RodrCh01",
+        "parPlayer": "Chris Rodriguez Jr.",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038611",
+        "gsisId": "00-0038611",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 130,
+      "player": "Jakobi Meyers",
+      "position": "WR",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MeyeJa00",
+        "parPlayer": "Jakobi Meyers",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034960",
+        "gsisId": "00-0034960",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 131,
+      "player": "Tyrone Tracy",
+      "position": "RB",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TracTy00",
+        "parPlayer": "Tyrone Tracy Jr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039384",
+        "gsisId": "00-0039384",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 132,
+      "player": "Travis Kelce",
+      "position": "TE",
+      "team": "kc",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KelcTr00",
+        "parPlayer": "Travis Kelce",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0030506",
+        "gsisId": "00-0030506",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 133,
+      "player": "Tyjae Spears",
+      "position": "RB",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SpeaTy00",
+        "parPlayer": "Tyjae Spears",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039032",
+        "gsisId": "00-0039032",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 134,
+      "player": "C.J. Stroud",
+      "position": "QB",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "StroCJ00",
+        "parPlayer": "C.J. Stroud",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039163",
+        "gsisId": "00-0039163",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 135,
+      "player": "Alvin Kamara",
+      "position": "RB",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KamaAl00",
+        "parPlayer": "Alvin Kamara",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033906",
+        "gsisId": "00-0033906",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 136,
+      "player": "Michael Wilson",
+      "position": "WR",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WilsMi01",
+        "parPlayer": "Michael Wilson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038559",
+        "gsisId": "00-0038559",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 137,
+      "player": "Stefon Diggs",
+      "position": "WR",
+      "team": null,
+      "parMatch": {
+        "found": true,
+        "sourceId": "DiggSt00",
+        "parPlayer": "Stefon Diggs",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0031588",
+        "gsisId": "00-0031588",
+        "resolutionMethod": "stable-id-off-roster",
+        "resolverStrategy": "unresolved",
+        "failureReason": null,
+        "offRosterStatus": "ACT"
+      }
+    },
+    {
+      "overallRank": 138,
+      "player": "Dallas Goedert",
+      "position": "TE",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GoedDa00",
+        "parPlayer": "Dallas Goedert",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034351",
+        "gsisId": "00-0034351",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 139,
+      "player": "Dylan Sampson",
+      "position": "RB",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SampDy00",
+        "parPlayer": "Dylan Sampson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040162",
+        "gsisId": "00-0040162",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 140,
+      "player": "Daniel Jones",
+      "position": "QB",
+      "team": "ind",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JoneDa05",
+        "parPlayer": "Daniel Jones",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035710",
+        "gsisId": "00-0035710",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 141,
+      "player": "Juwan Johnson",
+      "position": "TE",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JohnJu00",
+        "parPlayer": "Juwan Johnson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036040",
+        "gsisId": "00-0036040",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 142,
+      "player": "Keaton Mitchell",
+      "position": "RB",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MitcKe01",
+        "parPlayer": "Keaton Mitchell",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038454",
+        "gsisId": "00-0038454",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 143,
+      "player": "Antonio Williams",
+      "position": "WR",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillAn02",
+        "parPlayer": "Antonio Williams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041040",
+        "gsisId": "00-0041040",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 144,
+      "player": "Oronde Gadsden II",
+      "position": "TE",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GadsOr01",
+        "parPlayer": "Oronde Gadsden",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040189",
+        "gsisId": "00-0040189",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 145,
+      "player": "Rashid Shaheed",
+      "position": "WR",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ShahRa00",
+        "parPlayer": "Rashid Shaheed",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037545",
+        "gsisId": "00-0037545",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 146,
+      "player": "Tyler Allgeier",
+      "position": "RB",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AllgTy00",
+        "parPlayer": "Tyler Allgeier",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037263",
+        "gsisId": "00-0037263",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 147,
+      "player": "Kenyon Sadiq",
+      "position": "TE",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SadiKe00",
+        "parPlayer": "Kenyon Sadiq",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041032",
+        "gsisId": "00-0041032",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 148,
+      "player": "Jerry Jeudy",
+      "position": "WR",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JeudJe00",
+        "parPlayer": "Jerry Jeudy",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036407",
+        "gsisId": "00-0036407",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 149,
+      "player": "Jauan Jennings",
+      "position": "WR",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JennJa00",
+        "parPlayer": "Jauan Jennings",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036259",
+        "gsisId": "00-0036259",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 150,
+      "player": "Cam Ward",
+      "position": "QB",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WardCa00",
+        "parPlayer": "Cam Ward",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040676",
+        "gsisId": "00-0040676",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 151,
+      "player": "Woody Marks",
+      "position": "RB",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MarkWo00",
+        "parPlayer": "Woody Marks",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040583",
+        "gsisId": "00-0040583",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 152,
+      "player": "Brenton Strange",
+      "position": "TE",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "StraBr00",
+        "parPlayer": "Brenton Strange",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038935",
+        "gsisId": "00-0038935",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 153,
+      "player": "Isiah Pacheco",
+      "position": "RB",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PachIs00",
+        "parPlayer": "Isiah Pacheco",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037197",
+        "gsisId": "00-0037197",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 154,
+      "player": "Deebo Samuel",
+      "position": "WR",
+      "team": null,
+      "parMatch": {
+        "found": true,
+        "sourceId": "SamuDe00",
+        "parPlayer": "Deebo Samuel Sr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035719",
+        "gsisId": "00-0035719",
+        "resolutionMethod": "stable-id-off-roster",
+        "resolverStrategy": "unresolved",
+        "failureReason": null,
+        "offRosterStatus": "ACT"
+      }
+    },
+    {
+      "overallRank": 155,
+      "player": "Bryce Young",
+      "position": "QB",
+      "team": "car",
+      "parMatch": {
+        "found": true,
+        "sourceId": "YounBr01",
+        "parPlayer": "Bryce Young",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039150",
+        "gsisId": "00-0039150",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 156,
+      "player": "Jalen Nailor",
+      "position": "WR",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "NailJa00",
+        "parPlayer": "Jalen Nailor",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037291",
+        "gsisId": "00-0037291",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 157,
+      "player": "Omar Cooper Jr.",
+      "position": "WR",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CoopOm00",
+        "parPlayer": "Omar Cooper Jr.",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041511",
+        "gsisId": "00-0041511",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 158,
+      "player": "Calvin Ridley",
+      "position": "WR",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RidlCa00",
+        "parPlayer": "Calvin Ridley",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034837",
+        "gsisId": "00-0034837",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 159,
+      "player": "Kaytron Allen",
+      "position": "RB",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AlleKa01",
+        "parPlayer": "Kaytron Allen",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041096",
+        "gsisId": "00-0041096",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 160,
+      "player": "Braelon Allen",
+      "position": "RB",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AlleBr01",
+        "parPlayer": "Braelon Allen",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039794",
+        "gsisId": "00-0039794",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 161,
+      "player": "Hunter Henry",
+      "position": "TE",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HenrHu00",
+        "parPlayer": "Hunter Henry",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033090",
+        "gsisId": "00-0033090",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 162,
+      "player": "Brandon Aiyuk",
+      "position": "WR",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AiyuBr00",
+        "parPlayer": "Brandon Aiyuk",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036261",
+        "gsisId": "00-0036261",
+        "resolutionMethod": "stable-id-off-roster",
+        "resolverStrategy": "unresolved",
+        "failureReason": null,
+        "offRosterStatus": "RLS"
+      }
+    },
+    {
+      "overallRank": 163,
+      "player": "Rashod Bateman",
+      "position": "WR",
+      "team": "bal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BateRa00",
+        "parPlayer": "Rashod Bateman",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036550",
+        "gsisId": "00-0036550",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 164,
+      "player": "Denzel Boston",
+      "position": "WR",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BostDe00",
+        "parPlayer": "Denzel Boston",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041037",
+        "gsisId": "00-0041037",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 165,
+      "player": "Justice Hill",
+      "position": "RB",
+      "team": "bal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HillJu00",
+        "parPlayer": "Justice Hill",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034975",
+        "gsisId": "00-0034975",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 166,
+      "player": "Adonai Mitchell",
+      "position": "WR",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MitcAd00",
+        "parPlayer": "Adonai Mitchell",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039890",
+        "gsisId": "00-0039890",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 167,
+      "player": "Tre Tucker",
+      "position": "WR",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TuckTr00",
+        "parPlayer": "Tre Tucker",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038563",
+        "gsisId": "00-0038563",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 168,
+      "player": "Isaiah Davis",
+      "position": "RB",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DaviIs00",
+        "parPlayer": "Isaiah Davis",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039798",
+        "gsisId": "00-0039798",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 169,
+      "player": "Samaje Perine",
+      "position": "RB",
+      "team": "cin",
+      "parMatch": {
+        "found": true,
+        "sourceId": "PeriSa00",
+        "parPlayer": "Samaje Perine",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033526",
+        "gsisId": "00-0033526",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 170,
+      "player": "Ryan Flournoy",
+      "position": "WR",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FlouRy00",
+        "parPlayer": "Ryan Flournoy",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039410",
+        "gsisId": "00-0039410",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 171,
+      "player": "LeQuint Allen",
+      "position": "RB",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "AlleLe01",
+        "parPlayer": "LeQuint Allen Jr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040238",
+        "gsisId": "00-0040238",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 172,
+      "player": "Isaac TeSlaa",
+      "position": "WR",
+      "team": "det",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TeSlIs00",
+        "parPlayer": "Isaac TeSlaa",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040669",
+        "gsisId": "00-0040669",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 173,
+      "player": "Sam Darnold",
+      "position": "QB",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DarnSa00",
+        "parPlayer": "Sam Darnold",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034869",
+        "gsisId": "00-0034869",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 174,
+      "player": "Ty Johnson",
+      "position": "RB",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JohnTy00",
+        "parPlayer": "Ty Johnson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035537",
+        "gsisId": "00-0035537",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 175,
+      "player": "Jaylin Noel",
+      "position": "WR",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "NoelJa00",
+        "parPlayer": "Jaylin Noel",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040138",
+        "gsisId": "00-0040138",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 176,
+      "player": "Sean Tucker",
+      "position": "RB",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TuckSe00",
+        "parPlayer": "Sean Tucker",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038951",
+        "gsisId": "00-0038951",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 177,
+      "player": "AJ Barner",
+      "position": "TE",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BarnAJ00",
+        "parPlayer": "AJ Barner",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039793",
+        "gsisId": "00-0039793",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 178,
+      "player": "Zachariah Branch",
+      "position": "WR",
+      "team": "atl",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BranZa00",
+        "parPlayer": "Zachariah Branch",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041044",
+        "gsisId": "00-0041044",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 179,
+      "player": "Chigoziem Okonkwo",
+      "position": "TE",
+      "team": "wsh",
+      "parMatch": {
+        "found": true,
+        "sourceId": "OkonCh00",
+        "parPlayer": "Chig Okonkwo",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037809",
+        "gsisId": "00-0037809",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 180,
+      "player": "Tank Dell",
+      "position": "WR",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DellNa00",
+        "parPlayer": "Tank Dell",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038977",
+        "gsisId": "00-0038977",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 181,
+      "player": "Aaron Rodgers",
+      "position": "QB",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RodgAa00",
+        "parPlayer": "Aaron Rodgers",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0023459",
+        "gsisId": "00-0023459",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 182,
+      "player": "Jalen McMillan",
+      "position": "WR",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "McMiJa00",
+        "parPlayer": "Jalen McMillan",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039855",
+        "gsisId": "00-0039855",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 183,
+      "player": "Ray Davis",
+      "position": "RB",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DaviRa02",
+        "parPlayer": "Ray Davis",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039875",
+        "gsisId": "00-0039875",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 184,
+      "player": "Emanuel Wilson",
+      "position": "RB",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WilsEm00",
+        "parPlayer": "Emanuel Wilson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038797",
+        "gsisId": "00-0038797",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 185,
+      "player": "Dontayvion Wicks",
+      "position": "WR",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WickDo00",
+        "parPlayer": "Dontayvion Wicks",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038393",
+        "gsisId": "00-0038393",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 186,
+      "player": "Brian Robinson",
+      "position": "RB",
+      "team": "atl",
+      "parMatch": {
+        "found": true,
+        "sourceId": "RobiBr01",
+        "parPlayer": "Brian Robinson Jr",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037746",
+        "gsisId": "00-0037746",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 187,
+      "player": "Dalton Schultz",
+      "position": "TE",
+      "team": "hou",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SchuDa00",
+        "parPlayer": "Dalton Schultz",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034383",
+        "gsisId": "00-0034383",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 188,
+      "player": "Tank Bigsby",
+      "position": "RB",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BigsTa00",
+        "parPlayer": "Tank Bigsby",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038555",
+        "gsisId": "00-0038555",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 189,
+      "player": "Cooper Kupp",
+      "position": "WR",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KuppCo00",
+        "parPlayer": "Cooper Kupp",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033908",
+        "gsisId": "00-0033908",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 190,
+      "player": "Jaylen Wright",
+      "position": "RB",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WrigJa04",
+        "parPlayer": "Jaylen Wright",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039874",
+        "gsisId": "00-0039874",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 191,
+      "player": "Greg Dulcich",
+      "position": "TE",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DulcGr00",
+        "parPlayer": "Greg Dulcich",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037252",
+        "gsisId": "00-0037252",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 192,
+      "player": "Chimere Dike",
+      "position": "WR",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DikeCh00",
+        "parPlayer": "Chimere Dike",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040705",
+        "gsisId": "00-0040705",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 193,
+      "player": "Mike Washington",
+      "position": "RB",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WashMi00",
+        "parPlayer": "Mike Washington Jr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040878",
+        "gsisId": "00-0040878",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 194,
+      "player": "Kaelon Black",
+      "position": "RB",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BlacKa00",
+        "parPlayer": "Kaelon Black",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041052",
+        "gsisId": "00-0041052",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 195,
+      "player": "Fernando Mendoza",
+      "position": "QB",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MendFe00",
+        "parPlayer": "Fernando Mendoza",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041562",
+        "gsisId": "00-0041562",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 196,
+      "player": "Malik Washington",
+      "position": "WR",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WashMa01",
+        "parPlayer": "Malik Washington",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039880",
+        "gsisId": "00-0039880",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 197,
+      "player": "Travis Hunter",
+      "position": "WR",
+      "team": "jax",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HuntTr00",
+        "parPlayer": "Travis Hunter",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040718",
+        "gsisId": "00-0040718",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 198,
+      "player": "Caleb Douglas",
+      "position": "WR",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DougCa00",
+        "parPlayer": "Caleb Douglas",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041523",
+        "gsisId": "00-0041523",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 199,
+      "player": "Jack Bech",
+      "position": "WR",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BechJa00",
+        "parPlayer": "Jack Bech",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040729",
+        "gsisId": "00-0040729",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 200,
+      "player": "Zach Charbonnet",
+      "position": "RB",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "CharZa00",
+        "parPlayer": "Zach Charbonnet",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039165",
+        "gsisId": "00-0039165",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 201,
+      "player": "Jonah Coleman",
+      "position": "RB",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ColeJo00",
+        "parPlayer": "Jonah Coleman",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041496",
+        "gsisId": "00-0041496",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 202,
+      "player": "Mack Hollins",
+      "position": "WR",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HollMa00",
+        "parPlayer": "Mack Hollins",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033555",
+        "gsisId": "00-0033555",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 203,
+      "player": "Darius Slayton",
+      "position": "WR",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SlayDa00",
+        "parPlayer": "Darius Slayton",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035535",
+        "gsisId": "00-0035535",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 204,
+      "player": "Geno Smith",
+      "position": "QB",
+      "team": "nyj",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SmitGe01",
+        "parPlayer": "Geno Smith",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0030565",
+        "gsisId": "00-0030565",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 205,
+      "player": "Kyle Williams",
+      "position": "WR",
+      "team": "ne",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WillKy01",
+        "parPlayer": "Kyle Williams",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040131",
+        "gsisId": "00-0040131",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 206,
+      "player": "George Holani",
+      "position": "RB",
+      "team": "sea",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HolaGe01",
+        "parPlayer": "George Holani",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039299",
+        "gsisId": "00-0039299",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 207,
+      "player": "Gunnar Helm",
+      "position": "TE",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HelmGu00",
+        "parPlayer": "Gunnar Helm",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040584",
+        "gsisId": "00-0040584",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 208,
+      "player": "Colby Parkinson",
+      "position": "TE",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ParkCo00",
+        "parPlayer": "Colby Parkinson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036244",
+        "gsisId": "00-0036244",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 209,
+      "player": "Nicholas Singleton",
+      "position": "RB",
+      "team": "ten",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SingNi00",
+        "parPlayer": "Nicholas Singleton",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040886",
+        "gsisId": "00-0040886",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 210,
+      "player": "Jaydon Blue",
+      "position": "RB",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BlueJa01",
+        "parPlayer": "Jaydon Blue",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040586",
+        "gsisId": "00-0040586",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 211,
+      "player": "Darnell Mooney",
+      "position": "WR",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MoonDa00",
+        "parPlayer": "Darnell Mooney",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036309",
+        "gsisId": "00-0036309",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 212,
+      "player": "Tyreek Hill",
+      "position": "WR",
+      "team": null,
+      "parMatch": {
+        "found": true,
+        "sourceId": "HillTy00",
+        "parPlayer": "Tyreek Hill",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033040",
+        "gsisId": "00-0033040",
+        "resolutionMethod": "stable-id-off-roster",
+        "resolverStrategy": "unresolved",
+        "failureReason": null,
+        "offRosterStatus": "RES"
+      }
+    },
+    {
+      "overallRank": 213,
+      "player": "Pat Freiermuth",
+      "position": "TE",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FreiPa00",
+        "parPlayer": "Pat Freiermuth",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0036894",
+        "gsisId": "00-0036894",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 214,
+      "player": "T.J. Hockenson",
+      "position": "TE",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HockTJ00",
+        "parPlayer": "T.J. Hockenson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035229",
+        "gsisId": "00-0035229",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 215,
+      "player": "Demond Claiborne",
+      "position": "RB",
+      "team": "min",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ClaiDe00",
+        "parPlayer": "Demond Claiborne",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041104",
+        "gsisId": "00-0041104",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 216,
+      "player": "Devin Neal",
+      "position": "RB",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "NealDe00",
+        "parPlayer": "Devin Neal",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040202",
+        "gsisId": "00-0040202",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 217,
+      "player": "Jalen Tolbert",
+      "position": "WR",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TolbJa00",
+        "parPlayer": "Jalen Tolbert",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037666",
+        "gsisId": "00-0037666",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 218,
+      "player": "Christian Kirk",
+      "position": "WR",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "KirkCh00",
+        "parPlayer": "Christian Kirk",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034775",
+        "gsisId": "00-0034775",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 219,
+      "player": "Devaughn Vele",
+      "position": "WR",
+      "team": "no",
+      "parMatch": {
+        "found": true,
+        "sourceId": "VeleDe00",
+        "parPlayer": "Devaughn Vele",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039424",
+        "gsisId": "00-0039424",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 220,
+      "player": "Deshaun Watson",
+      "position": "QB",
+      "team": "cle",
+      "parMatch": {
+        "found": true,
+        "sourceId": "WatsDe00",
+        "parPlayer": "Deshaun Watson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033537",
+        "gsisId": "00-0033537",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 221,
+      "player": "Kimani Vidal",
+      "position": "RB",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "VidaKi00",
+        "parPlayer": "Kimani Vidal",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039391",
+        "gsisId": "00-0039391",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 222,
+      "player": "Chris Brooks",
+      "position": "RB",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BrooCh01",
+        "parPlayer": "Chris Brooks",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038685",
+        "gsisId": "00-0038685",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 223,
+      "player": "Tre Harris",
+      "position": "WR",
+      "team": "lac",
+      "parMatch": {
+        "found": true,
+        "sourceId": "HarrTr03",
+        "parPlayer": "Tre' Harris",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040727",
+        "gsisId": "00-0040727",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 224,
+      "player": "Jahan Dotson",
+      "position": "WR",
+      "team": "atl",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DotsJa00",
+        "parPlayer": "Jahan Dotson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037741",
+        "gsisId": "00-0037741",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 225,
+      "player": "Trey Benson",
+      "position": "RB",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BensTr01",
+        "parPlayer": "Trey Benson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039921",
+        "gsisId": "00-0039921",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 226,
+      "player": "Malik Davis",
+      "position": "RB",
+      "team": "dal",
+      "parMatch": {
+        "found": true,
+        "sourceId": "DaviMa02",
+        "parPlayer": "Malik Davis",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037563",
+        "gsisId": "00-0037563",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 227,
+      "player": "Jake Tonges",
+      "position": "TE",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "TongJa00",
+        "parPlayer": "Jake Tonges",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0037112",
+        "gsisId": "00-0037112",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 228,
+      "player": "Cade Otton",
+      "position": "TE",
+      "team": "tb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "OttoCa00",
+        "parPlayer": "Cade Otton",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038129",
+        "gsisId": "00-0038129",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 229,
+      "player": "Pat Bryant",
+      "position": "WR",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BryaPa00",
+        "parPlayer": "Pat Bryant",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040134",
+        "gsisId": "00-0040134",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 230,
+      "player": "Michael Mayer",
+      "position": "TE",
+      "team": "lv",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MayeMi00",
+        "parPlayer": "Michael Mayer",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039066",
+        "gsisId": "00-0039066",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 231,
+      "player": "De'Zhaun Stribling",
+      "position": "WR",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "StriDe00",
+        "parPlayer": "De'Zhaun Stribling",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041035",
+        "gsisId": "00-0041035",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 232,
+      "player": "Jacoby Brissett",
+      "position": "QB",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BrisJa00",
+        "parPlayer": "Jacoby Brissett",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033119",
+        "gsisId": "00-0033119",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 233,
+      "player": "Mike Gesicki",
+      "position": "TE",
+      "team": "cin",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GesiMi00",
+        "parPlayer": "Mike Gesicki",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0034829",
+        "gsisId": "00-0034829",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 234,
+      "player": "Germie Bernard",
+      "position": "WR",
+      "team": "pit",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BernGe00",
+        "parPlayer": "Germie Bernard",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041489",
+        "gsisId": "00-0041489",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 235,
+      "player": "Malachi Fields",
+      "position": "WR",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FielMa00",
+        "parPlayer": "Malachi Fields",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041042",
+        "gsisId": "00-0041042",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 236,
+      "player": "DJ Giddens",
+      "position": "RB",
+      "team": "ind",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GiddDJ00",
+        "parPlayer": "DJ Giddens",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040179",
+        "gsisId": "00-0040179",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 237,
+      "player": "Chris Bell",
+      "position": "WR",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "BellCh01",
+        "parPlayer": "Chris Bell",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041525",
+        "gsisId": "00-0041525",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 238,
+      "player": "Marvin Mims",
+      "position": "WR",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "MimsMa00",
+        "parPlayer": "Marvin Mims Jr.",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0038976",
+        "gsisId": "00-0038976",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 239,
+      "player": "Ollie Gordon",
+      "position": "RB",
+      "team": "mia",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GordOl00",
+        "parPlayer": "Ollie Gordon II",
+        "method": "reviewed-alias",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040198",
+        "gsisId": "00-0040198",
+        "resolutionMethod": "reviewed-alias",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 240,
+      "player": "Evan Engram",
+      "position": "TE",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "EngrEv00",
+        "parPlayer": "Evan Engram",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033881",
+        "gsisId": "00-0033881",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 241,
+      "player": "Jordan James",
+      "position": "RB",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JameJo02",
+        "parPlayer": "Jordan James",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040177",
+        "gsisId": "00-0040177",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 242,
+      "player": "Keon Coleman",
+      "position": "WR",
+      "team": "buf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ColeKe01",
+        "parPlayer": "Keon Coleman",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039901",
+        "gsisId": "00-0039901",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 243,
+      "player": "Troy Franklin",
+      "position": "WR",
+      "team": "den",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FranTr00",
+        "parPlayer": "Troy Franklin",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039868",
+        "gsisId": "00-0039868",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 244,
+      "player": "Isaac Guerendo",
+      "position": "RB",
+      "team": "sf",
+      "parMatch": {
+        "found": true,
+        "sourceId": "GuerIs00",
+        "parPlayer": "Isaac Guerendo",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039363",
+        "gsisId": "00-0039363",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 245,
+      "player": "Emmett Johnson",
+      "position": "RB",
+      "team": "kc",
+      "parMatch": {
+        "found": true,
+        "sourceId": "JohnEm00",
+        "parPlayer": "Emmett Johnson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0041013",
+        "gsisId": "00-0041013",
+        "resolutionMethod": "exact-name-position",
+        "resolverStrategy": "exact-name-position",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 246,
+      "player": "Terrance Ferguson",
+      "position": "TE",
+      "team": "lar",
+      "parMatch": {
+        "found": true,
+        "sourceId": "FergTe00",
+        "parPlayer": "Terrance Ferguson",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0040737",
+        "gsisId": "00-0040737",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 247,
+      "player": "James Conner",
+      "position": "RB",
+      "team": "ari",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ConnJa00",
+        "parPlayer": "James Conner",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0033553",
+        "gsisId": "00-0033553",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 248,
+      "player": "MarShawn Lloyd",
+      "position": "RB",
+      "team": "gb",
+      "parMatch": {
+        "found": true,
+        "sourceId": "LloyMa00",
+        "parPlayer": "MarShawn Lloyd",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039811",
+        "gsisId": "00-0039811",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 249,
+      "player": "Will Shipley",
+      "position": "RB",
+      "team": "phi",
+      "parMatch": {
+        "found": true,
+        "sourceId": "ShipWi00",
+        "parPlayer": "Will Shipley",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0039746",
+        "gsisId": "00-0039746",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    },
+    {
+      "overallRank": 250,
+      "player": "Devin Singletary",
+      "position": "RB",
+      "team": "nyg",
+      "parMatch": {
+        "found": true,
+        "sourceId": "SingDe00",
+        "parPlayer": "Devin Singletary",
+        "method": "exact-normalized-name",
+        "ambiguous": false
+      },
+      "identity": {
+        "playerId": "gsis:00-0035250",
+        "gsisId": "00-0035250",
+        "resolutionMethod": "stable-id",
+        "resolverStrategy": "direct-pfr",
+        "failureReason": null,
+        "offRosterStatus": null
+      }
+    }
+  ]
+}
