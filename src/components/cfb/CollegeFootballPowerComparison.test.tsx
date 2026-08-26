@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { getGameById, getTeamById } from "@/data/cfb";
-import { getCfbPowerBarWidthPercent } from "@/lib/cfb/ratingPresentation";
+import { getCfbSharedBarSplit } from "@/lib/cfb/ratingPresentation";
 import CollegeFootballPowerComparison from "./CollegeFootballPowerComparison";
 
 const GAME_ID = "401856766"; // TCU @ North Carolina — real Week 1 fixture
@@ -27,18 +27,33 @@ describe("CollegeFootballPowerComparison", () => {
     expect(screen.getByText("SOS Remaining")).toBeInTheDocument();
   });
 
-  it("fills the power/offense/defense bars using each team's own primary color, scaled by the shared presentation helper", () => {
+  it("fills each unified power/offense/defense bar with both teams' own primary colors, sharing width by raw-value ratio (not clamped display widths)", () => {
     const { away, home, container } = renderComparison();
-    const bars = container.querySelectorAll<HTMLDivElement>(".h-2\\.5.flex-1.overflow-hidden.rounded-full.bg-slate-100 > div");
-    // 3 bar rows (power/offense/defense) x 2 sides = 6 bars
-    expect(bars.length).toBe(6);
-    const swatch = document.createElement("div");
-    swatch.style.background = away.primaryColor;
-    expect(bars[0].style.background).toBe(swatch.style.background);
-    swatch.style.background = home.primaryColor;
-    expect(bars[1].style.background).toBe(swatch.style.background);
-    const expectedPercent = `${getCfbPowerBarWidthPercent(away.ratings.jkbPowerRating)}%`;
-    expect(bars[0].style.width).toBe(expectedPercent);
+    const tracks = container.querySelectorAll<HTMLDivElement>(".h-3.overflow-hidden.rounded-full.bg-slate-100");
+    // 3 bar rows (power/offense/defense), one shared track each.
+    expect(tracks.length).toBe(3);
+    const powerSegments = tracks[0].querySelectorAll<HTMLDivElement>(":scope > div");
+    expect(powerSegments.length).toBe(2);
+    const awaySwatch = document.createElement("div");
+    awaySwatch.style.background = away.primaryColor;
+    const homeSwatch = document.createElement("div");
+    homeSwatch.style.background = home.primaryColor;
+    expect(powerSegments[0].style.background).toBe(awaySwatch.style.background);
+    expect(powerSegments[1].style.background).toBe(homeSwatch.style.background);
+
+    const { awayShare, homeShare } = getCfbSharedBarSplit(away.ratings.jkbPowerRating, home.ratings.jkbPowerRating);
+    expect(powerSegments[0].style.width).toBe(`${awayShare}%`);
+    expect(powerSegments[1].style.width).toBe(`${homeShare}%`);
+  });
+
+  it("computes the shared bar split from raw values, not from independently clamped display widths (regression: UNC 45.1 vs TCU 78.5 offense case)", () => {
+    // Two ratings that clamp-compress very differently (one near the 40-point
+    // floor) previously produced an ~12/88 split from a real ~36/64 gap.
+    const { awayShare, homeShare } = getCfbSharedBarSplit(45.1, 78.5);
+    expect(awayShare).toBeCloseTo((45.1 / 123.6) * 100, 5);
+    expect(homeShare).toBeCloseTo((78.5 / 123.6) * 100, 5);
+    // Must stay well clear of the old distorted ~11.7/88.3 result.
+    expect(awayShare).toBeGreaterThan(30);
   });
 
   it("marks only the stronger side, in that team's own color, never a generic green and never both sides on one row", () => {

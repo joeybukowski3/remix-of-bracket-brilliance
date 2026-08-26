@@ -151,6 +151,22 @@ export function getCfbMarketFavorite(
   return spread < 0 ? "home" : "away";
 }
 
+/**
+ * Formats a home-perspective spread value relative to whichever team it
+ * favors, e.g. "TCU -7.5". Shared by the current-line display and the
+ * open-line footnote so both use identical favorite-side math.
+ */
+export function formatFavoriteSpreadValue(
+  spread: number | null | undefined,
+  awayAbbreviation: string,
+  homeAbbreviation: string,
+): string {
+  if (spread == null || Number.isNaN(spread)) return "—";
+  if (spread === 0) return "PICK";
+  const favorite = spread < 0 ? homeAbbreviation : awayAbbreviation;
+  return `${favorite} -${Math.abs(spread)}`;
+}
+
 /** Spread formatted relative to the favored team, e.g. "TCU -7.5". */
 export function formatFavoriteSpread(
   game: Pick<CfbGame, "homeTeamId" | "awayTeamId" | "odds">,
@@ -158,10 +174,7 @@ export function formatFavoriteSpread(
   homeAbbreviation: string,
 ): string {
   const spread = game.odds.currentSpread ?? game.odds.openingSpread;
-  if (spread == null || Number.isNaN(spread)) return "—";
-  if (spread === 0) return "PICK";
-  const favorite = spread < 0 ? homeAbbreviation : awayAbbreviation;
-  return `${favorite} -${Math.abs(spread)}`;
+  return formatFavoriteSpreadValue(spread, awayAbbreviation, homeAbbreviation);
 }
 
 const GAME_STATUS_LABELS: Record<CfbGameStatus, string> = {

@@ -19,7 +19,7 @@ export default function CollegeFootballMobileStickyHeader({ away, home, visible 
     <div
       aria-hidden={!visible}
       className={cn(
-        "fixed inset-x-0 top-[72px] z-40 border-b border-slate-200 shadow-sm transition-transform duration-200 ease-out sm:hidden",
+        "fixed inset-x-0 top-[72px] z-40 border-b border-slate-300 shadow-md transition-transform duration-200 ease-out sm:hidden",
         visible ? "translate-y-0" : "-translate-y-full",
       )}
     >
