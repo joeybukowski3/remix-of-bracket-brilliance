@@ -1,8 +1,17 @@
 import { Link, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getGameById, getTeamById } from "@/data/cfb";
+import {
+  CFB_SEASON,
+  CFB_STATS_PREVIOUS_SEASON_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_YEAR,
+  CFB_STATS_RANKS_BY_TEAM,
+  getGameById,
+  getTeamById,
+} from "@/data/cfb";
 import { formatSpread, formatTotal } from "@/lib/cfb/format";
 import { CFB_SCHEDULE_PATH } from "@/lib/cfb/routes";
+import { selectMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
 import CollegeFootballOddsDisplay from "@/components/cfb/CollegeFootballOddsDisplay";
 import CollegeFootballMatchupHero from "@/components/cfb/CollegeFootballMatchupHero";
 import CollegeFootballPowerComparison from "@/components/cfb/CollegeFootballPowerComparison";
@@ -45,11 +54,22 @@ export default function CollegeFootballMatchup() {
     game.odds.currentTotal != null &&
     game.odds.openingTotal !== game.odds.currentTotal;
 
-  const hasSeasonStats =
-    away.stats.pointsPerGame != null ||
-    home.stats.pointsPerGame != null ||
-    away.stats.pointsAllowedPerGame != null ||
-    home.stats.pointsAllowedPerGame != null;
+  const seasonStatsContext = selectMatchupSeasonStatsContext({
+    currentSeason: CFB_SEASON,
+    previousSeason: CFB_STATS_PREVIOUS_SEASON_YEAR,
+    away: {
+      current: away.stats,
+      currentRanks: CFB_STATS_RANKS_BY_TEAM[away.id] ?? {},
+      previous: CFB_STATS_PREVIOUS_SEASON_BY_TEAM[away.id],
+      previousRanks: CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[away.id],
+    },
+    home: {
+      current: home.stats,
+      currentRanks: CFB_STATS_RANKS_BY_TEAM[home.id] ?? {},
+      previous: CFB_STATS_PREVIOUS_SEASON_BY_TEAM[home.id],
+      previousRanks: CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[home.id],
+    },
+  });
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4">
@@ -100,17 +120,28 @@ export default function CollegeFootballMatchup() {
       </section>
 
       <section aria-labelledby="season-stats-heading">
-        <h2
-          id="season-stats-heading"
-          className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"
-        >
-          Season Stats
-        </h2>
-        {hasSeasonStats ? (
-          <CollegeFootballSeasonStatsComparison away={away} home={home} />
+        <div className="mb-1.5 flex items-baseline justify-between gap-2">
+          <h2
+            id="season-stats-heading"
+            className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500"
+          >
+            Season Stats
+          </h2>
+          {seasonStatsContext && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              {seasonStatsContext.seasonLabel}
+            </span>
+          )}
+        </div>
+        {seasonStatsContext ? (
+          <CollegeFootballSeasonStatsComparison
+            awayShortName={away.shortName}
+            homeShortName={home.shortName}
+            context={seasonStatsContext}
+          />
         ) : (
           <div className="rounded-sm border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-            2026 season statistics not yet available. This section will populate once box-score data is live.
+            Season statistics not yet available for this matchup.
           </div>
         )}
       </section>

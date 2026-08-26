@@ -26,11 +26,12 @@ describe("CollegeFootballMatchup", () => {
     expect(screen.queryByText(/projected spread:/i)).not.toBeInTheDocument();
   });
 
-  it("does not render large empty offense/defense boxes when 2026 stats are null", () => {
+  it("shows the real 2025 'Last Season' comparison while 2026 has no completed games, never labeled as current", () => {
     renderMatchup("401856766");
-    expect(
-      screen.getByText("2026 season statistics not yet available. This section will populate once box-score data is live."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Last Season · 2025")).toBeInTheDocument();
+    expect(screen.queryByText("2026 Season")).not.toBeInTheDocument();
+    expect(screen.getByText("Points/Game")).toBeInTheDocument();
+    expect(screen.getByText("Opp Points/Game")).toBeInTheDocument();
   });
 
   it("does not fabricate a win probability", () => {

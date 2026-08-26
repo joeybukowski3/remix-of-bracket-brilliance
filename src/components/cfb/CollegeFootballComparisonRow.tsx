@@ -9,6 +9,9 @@ type Props = {
   homeValueClassName?: string;
   /** Which side has the edge for display only — not a bet recommendation. */
   edge?: CfbComparisonEdge;
+  /** Compact muted national-rank badge, e.g. "#22". Omit (or null) to show no rank. */
+  awayRank?: string | null;
+  homeRank?: string | null;
 };
 
 export default function CollegeFootballComparisonRow({
@@ -18,6 +21,8 @@ export default function CollegeFootballComparisonRow({
   awayValueClassName,
   homeValueClassName,
   edge = "none",
+  awayRank = null,
+  homeRank = null,
 }: Props) {
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-t border-slate-100 px-3 py-2 text-xs">
@@ -30,6 +35,9 @@ export default function CollegeFootballComparisonRow({
         )}
       >
         {awayValue}
+        {awayRank && (
+          <span className="ml-1 text-[10px] font-normal tabular-nums text-slate-400">{awayRank}</span>
+        )}
         {edge === "away" && (
           <span className="ml-1 text-[10px] font-medium text-emerald-600">●</span>
         )}
@@ -49,6 +57,9 @@ export default function CollegeFootballComparisonRow({
           <span className="mr-1 text-[10px] font-medium text-emerald-600">●</span>
         )}
         {homeValue}
+        {homeRank && (
+          <span className="ml-1 text-[10px] font-normal tabular-nums text-slate-400">{homeRank}</span>
+        )}
       </div>
     </div>
   );
