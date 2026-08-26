@@ -22,11 +22,12 @@ function renderComparison() {
 describe("CollegeFootballPowerComparison", () => {
   it("renders JKB Power, Offense, Defense, and SOS rows from real ratings", () => {
     renderComparison();
-    expect(screen.getByText("Power")).toBeInTheDocument();
-    expect(screen.getByText("Offense")).toBeInTheDocument();
-    expect(screen.getByText("Defense")).toBeInTheDocument();
-    expect(screen.getByText("SOS Played")).toBeInTheDocument();
-    expect(screen.getByText("SOS Remaining")).toBeInTheDocument();
+    const desktop = screen.getByTestId("cfb-power-desktop");
+    expect(within(desktop).getByText("Power")).toBeInTheDocument();
+    expect(within(desktop).getByText("Offense")).toBeInTheDocument();
+    expect(within(desktop).getByText("Defense")).toBeInTheDocument();
+    expect(within(desktop).getByText("SOS Played")).toBeInTheDocument();
+    expect(within(desktop).getByText("SOS Remaining")).toBeInTheDocument();
   });
 
   it("fills each unified power/offense/defense bar with both teams' own primary colors, sharing width by raw-value ratio (not clamped display widths)", () => {
@@ -59,8 +60,9 @@ describe("CollegeFootballPowerComparison", () => {
   });
 
   it("marks only the stronger side, in that team's own color, never a generic green and never both sides on one row", () => {
-    const { away, home, container } = renderComparison();
-    const markers = container.querySelectorAll('[data-testid="stronger-badge"]');
+    const { away, home } = renderComparison();
+    const desktop = screen.getByTestId("cfb-power-desktop");
+    const markers = desktop.querySelectorAll('[data-testid="stronger-badge"]');
     // At most one marker per row (5 rows total)
     expect(markers.length).toBeLessThanOrEqual(5);
     expect(markers.length).toBeGreaterThan(0);
@@ -130,6 +132,69 @@ describe("CollegeFootballPowerComparison", () => {
   it("never renders NaN or undefined", () => {
     const { container } = renderComparison();
     const body = container.textContent ?? "";
+    expect(body).not.toMatch(/\bNaN\b/);
+    expect(body).not.toMatch(/\bundefined\b/);
+  });
+});
+
+describe("CollegeFootballPowerComparison — mobile presentation", () => {
+  it("renders a dedicated mobile block with away/advantage/home header identity and all five metric rows", () => {
+    const { away, home } = renderComparison();
+    const mobile = screen.getByTestId("cfb-power-mobile");
+    expect(within(mobile).getByText(away.abbreviation)).toBeInTheDocument();
+    expect(within(mobile).getByText(home.abbreviation)).toBeInTheDocument();
+    expect(within(mobile).getByText("Advantage")).toBeInTheDocument();
+    expect(within(mobile).getByText("JKB Rating")).toBeInTheDocument();
+    expect(within(mobile).getByText("Power")).toBeInTheDocument();
+    expect(within(mobile).getByText("Offense")).toBeInTheDocument();
+    expect(within(mobile).getByText("Defense")).toBeInTheDocument();
+    expect(within(mobile).getByText("SOS Played")).toBeInTheDocument();
+    expect(within(mobile).getByText("SOS Remaining")).toBeInTheDocument();
+  });
+
+  it("renders the split-bar junction marker (not a team logo) for Power/Offense/Defense rows", () => {
+    renderComparison();
+    const mobile = screen.getByTestId("cfb-power-mobile");
+    const rows = within(mobile).getAllByTestId("cfb-mobile-shared-bar-row");
+    expect(rows.length).toBe(3);
+    for (const row of rows) {
+      expect(within(row).getByTestId("split-bar-marker")).toBeInTheDocument();
+      expect(row.querySelector("img")).toBeNull();
+    }
+  });
+
+  it("preserves the same edge/winner logic as desktop — stronger-side badges match between mobile and desktop", () => {
+    const { container } = renderComparison();
+    const desktopBadges = container.querySelectorAll('[data-testid="cfb-power-desktop"] [data-testid="stronger-badge"]');
+    const mobileBadges = container.querySelectorAll('[data-testid="cfb-power-mobile"] [data-testid="stronger-badge"]');
+    expect(mobileBadges.length).toBe(desktopBadges.length);
+  });
+
+  it("shows the same national ranks under each mobile value as desktop, using the shared getCfbSharedBarSplit shares", () => {
+    const { away, home } = renderComparison();
+    const mobile = screen.getByTestId("cfb-power-mobile");
+    expect(within(mobile).getByText(formatRank(away.ratings.jkbRank))).toBeInTheDocument();
+    expect(within(mobile).getByText(formatRank(home.ratings.jkbRank))).toBeInTheDocument();
+  });
+
+  it("preserves honest null SOS behavior on mobile — no fabricated rank text", () => {
+    const { away, home } = renderComparison();
+    const mobile = screen.getByTestId("cfb-power-mobile");
+    const rankRows = within(mobile).getAllByTestId("cfb-mobile-rank-row");
+    const sosPlayedRow = rankRows.find((row) => within(row).queryByText("SOS Played"))!;
+    const sosRemainingRow = rankRows.find((row) => within(row).queryByText("SOS Remaining"))!;
+    const sosPlayedText = sosPlayedRow.textContent ?? "";
+    const sosRemainingText = sosRemainingRow.textContent ?? "";
+    expect(sosPlayedText).toContain(formatRank(away.ratings.sosPlayedRank));
+    expect(sosPlayedText).toContain(formatRank(home.ratings.sosPlayedRank));
+    expect(sosRemainingText).toContain(formatRank(away.ratings.sosRemainingRank));
+    expect(sosRemainingText).toContain(formatRank(home.ratings.sosRemainingRank));
+  });
+
+  it("never renders NaN or undefined in the mobile block", () => {
+    renderComparison();
+    const mobile = screen.getByTestId("cfb-power-mobile");
+    const body = mobile.textContent ?? "";
     expect(body).not.toMatch(/\bNaN\b/);
     expect(body).not.toMatch(/\bundefined\b/);
   });

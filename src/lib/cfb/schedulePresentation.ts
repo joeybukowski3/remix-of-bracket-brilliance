@@ -62,18 +62,33 @@ const dateOnlyShortFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
 });
 
-/** Compact kickoff label for tight card layouts, e.g. "Aug 30 · 7:30 PM ET". */
-export function formatCfbKickoffLabel(date: string, utcTime: string | null): string {
+/**
+ * Compact date + kickoff-time parts, e.g. { date: "Aug 30", time: "7:30 PM ET" }.
+ * `time` is null when no scheduled time is known (date-only fixtures).
+ */
+export function formatCfbKickoffParts(
+  date: string,
+  utcTime: string | null,
+): { date: string; time: string | null } {
   if (!utcTime) {
     const dateOnly = new Date(`${date}T12:00:00Z`);
-    return Number.isNaN(dateOnly.getTime()) ? date : dateOnlyShortFormatter.format(dateOnly);
+    return { date: Number.isNaN(dateOnly.getTime()) ? date : dateOnlyShortFormatter.format(dateOnly), time: null };
   }
 
   const scheduledAt = new Date(`${date}T${utcTime}:00Z`);
-  if (Number.isNaN(scheduledAt.getTime())) return date;
+  if (Number.isNaN(scheduledAt.getTime())) return { date, time: null };
 
   const parts = easternDateTimeShortFormatter.formatToParts(scheduledAt);
-  return `${getPart(parts, "month")} ${getPart(parts, "day")} · ${getPart(parts, "hour")}:${getPart(parts, "minute")} ${getPart(parts, "dayPeriod")} ET`;
+  return {
+    date: `${getPart(parts, "month")} ${getPart(parts, "day")}`,
+    time: `${getPart(parts, "hour")}:${getPart(parts, "minute")} ${getPart(parts, "dayPeriod")} ET`,
+  };
+}
+
+/** Compact kickoff label for tight card layouts, e.g. "Aug 30 · 7:30 PM ET". */
+export function formatCfbKickoffLabel(date: string, utcTime: string | null): string {
+  const parts = formatCfbKickoffParts(date, utcTime);
+  return parts.time ? `${parts.date} · ${parts.time}` : parts.date;
 }
 
 export function formatCfbOpponentRecord(record: CfbSeasonRecord | null | undefined): string {

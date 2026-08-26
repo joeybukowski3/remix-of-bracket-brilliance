@@ -121,7 +121,7 @@ export default function CollegeFootballMatchup() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4">
-      <CollegeFootballMobileStickyHeader away={away} home={home} visible={showStickyHeader} />
+      <CollegeFootballMobileStickyHeader away={away} home={home} game={game} visible={showStickyHeader} />
 
       <CollegeFootballMatchupHero game={game} away={away} home={home} />
 
