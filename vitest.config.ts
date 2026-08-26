@@ -50,6 +50,8 @@ export default defineConfig({
       // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
       "scripts/cfb-fetch-rankings.test.ts",
       "scripts/cfb-update-rankings.test.ts",
+      // CFB matchup-stats WU -- CFBD-derived season-stats build CLI behavior.
+      "scripts/cfb-build-season-stats.test.ts",
     ],
   },
   resolve: {

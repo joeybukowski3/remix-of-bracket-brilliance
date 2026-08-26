@@ -22,6 +22,7 @@ import {
   CFB_V1_MODEL_VERSION,
   CFB_V1_RATINGS_BY_TEAM,
   CFB_STATS_BY_TEAM,
+  CFB_STATS_2026_HAS_DATA,
   getGamesForTeam,
   getGamesByWeek,
 } from "./season2026";
@@ -29,6 +30,7 @@ import type {
   CfbConferenceId,
   CfbDataProvenance,
   CfbGame,
+  CfbSeasonStats,
   CfbTeam,
   CfbTeamMetadata,
 } from "./types";
@@ -75,7 +77,11 @@ export const CFB_PROVENANCE: CfbDataProvenance = {
   label: "2026 Preseason",
   ratingsSource: "generated-v1.1-market-anchor",
   scheduleSource: "live",
-  statsSource: "unavailable",
+  // CFBD-derived (npm run cfb:build-season-stats), computed from raw
+  // /games + /games/teams box scores rather than an external provider's own
+  // aggregate — "derived" is the accurate CfbDataSourceStatus, not "api".
+  // Honestly "unavailable" until the artifact reflects a completed game.
+  statsSource: CFB_STATS_2026_HAS_DATA ? "derived" : "unavailable",
   rosterSource: "unavailable",
   oddsSource: "api",
   officialRankingsSource: ACTIVE_OFFICIAL_POLL ? "api" : "unavailable",
@@ -90,7 +96,9 @@ export const CFB_PROVENANCE: CfbDataProvenance = {
     "Schedule is sourced from the authenticated 2026 CFBD cache.",
     "Eight Pac-12 schedules remain provisional until the Week 13 flex opponents are assigned.",
     "SOS Played is null until games are completed.",
-    "Season statistics are unavailable in preseason.",
+    CFB_STATS_2026_HAS_DATA
+      ? "Season statistics are derived from the authenticated CFBD /games/teams box scores (npm run cfb:build-season-stats)."
+      : "Season statistics are unavailable in preseason (no 2026 games completed yet).",
     "Model projections (power line, win probability) are intentionally null.",
     "Ratings are descriptive team-strength summaries, not betting predictions or picks.",
     "Market odds are sourced from the authenticated CFBD /lines endpoint (DraftKings/Bovada per game); not every game has posted odds, and coverage/provider mix changes as sportsbooks update lines.",
@@ -146,22 +154,29 @@ function emptyContext(teamId: string) {
   };
 }
 
-function emptyStats(teamId: string) {
+function emptyStats(teamId: string): CfbSeasonStats {
   return {
     teamId,
+    gamesPlayed: 0,
     pointsPerGame: null,
     yardsPerPlay: null,
+    pointsPerPlay: null,
     rushYardsPerGame: null,
     yardsPerRush: null,
     passYardsPerGame: null,
     yardsPerPass: null,
+    thirdDownPct: null,
+    completionPct: null,
     turnovers: null,
     pointsAllowedPerGame: null,
     yardsPerPlayAllowed: null,
+    opponentPointsPerPlay: null,
     rushYardsAllowedPerGame: null,
     yardsPerRushAllowed: null,
     passYardsAllowedPerGame: null,
     yardsPerPassAllowed: null,
+    opponentThirdDownPct: null,
+    opponentCompletionPct: null,
     takeaways: null,
   };
 }
