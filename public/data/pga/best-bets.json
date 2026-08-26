@@ -4,7 +4,7 @@
   "tournamentId": "R2026060",
   "localScheduleId": "tour-championship-2026",
   "course": "East Lake Golf Club",
-  "generatedAt": "2026-08-25T12:21:05.309Z",
+  "generatedAt": "2026-08-26T12:22:26.117Z",
   "status": "model-leans-only",
   "reason": "Verified exact-market prices were unavailable this week (no event matched tournament \"TOUR Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship).",
   "sourceStatus": {
@@ -28,10 +28,10 @@
       "top20"
     ],
     "marketsAvailable": [],
-    "fetchedAt": "2026-08-25T12:20:45.850Z",
+    "fetchedAt": "2026-08-26T12:22:09.121Z",
     "quotaDiagnostics": {
-      "requestsRemaining": 275,
-      "requestsUsed": 225
+      "requestsRemaining": 264,
+      "requestsUsed": 236
     },
     "errors": [
       "no event matched tournament \"TOUR Championship\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship"
@@ -327,86 +327,82 @@
     }
   ],
   "preview": {
-    "tournamentOverview": "East Lake Golf Club hosts the TOUR Championship with a course profile that heavily rewards approach play 7%) and putting 0%), while off-the-tee and around-the-green skills carry less weight. The event is the PGA Tour's season finale, crowning the FedEx Cup champion among the top 30 players in the standings.",
-    "modelExplainer": "Our model places the highest emphasis on strokes-gained approach 7%) and total strokes-gained 0%), followed by putting 0%), making ball-striking and green play the decisive factors. Driving accuracy and bogey avoidance each receive only 0% weight, indicating that raw distance and scrambling matter less than consistent iron play and converting putts at East Lake.",
-    "pickApproach": "We tier players by combining their current power ranking with course-specific fit, prioritizing those who excel in approach play and putting over pure distance metrics."
+    "tournamentOverview": "East Lake Golf Club rewards ball-striking and putting, with SG Approach 7%) and SG Total 0%) carrying the heaviest weights. SG Putting 0%) is equally critical, while SG Off-the-Tee 3%) and SG Around-the-Green 9%) play smaller roles. The TOUR Championship is the season finale where the top 30 FedExCup players compete for the title and a $25 million bonus.",
+    "modelExplainer": "Our model emphasizes approach play and total strokes gained, which together account for over half the weighting. Driving accuracy and bogey avoidance each receive just 0%, reflecting East Lake's emphasis on precision iron play over raw distance. Birdie/bogey ratio also carries a 0% weight, highlighting the importance of capitalizing on scoring opportunities.",
+    "pickApproach": "We tier players by combining tournament-specific rankings with power rankings, prioritizing those who excel in approach and putting. Top-tier bets target players like Jacob Bridgeman and Akshay Bhatia who rank highest in the model. Mid-tier options include Scottie Scheffler and Rory McIlroy, whose elite power rankings offset slightly lower tournament-specific scores."
   },
   "article": {
     "title": "TOUR Championship Model Targets: Bridgeman, Bhatia, Scheffler Lead East Lake Rankings",
     "dek": "Model ranks Bridgeman #1, Bhatia #2, Scheffler #3 for the 30-player field at East Lake Golf Club.",
-    "introduction": "The tournament model places Jacob Bridgeman at #1 with 933 SG Total, Akshay Bhatia at #2 with 646 SG Total, and Scottie Scheffler at #3 with 868 SG Total. All three skipped the Scottish Open and carry zero tracked rounds in the major swing workload classification. East Lake weights SG APP at 7% and SG PUTT at 0%, aligning with the strengths shown in the top model ranks.",
+    "introduction": "The tournament model places Jacob Bridgeman at rank 1 with 933 SG Total, Akshay Bhatia at rank 2 with 646 SG Total, and Scottie Scheffler at rank 3 with 868 SG Total. East Lake weights SG APP at 7% and SG PUTT at 0%, aligning with the top three players' combined strengths in those categories. All three carry the same contextual profile: skipped the Scottish Open, zero tracked rounds in the major swing, and safe FedExCup top-50 status.",
     "sections": [
       {
         "heading": "Tournament Overview",
-        "body": "The 30-player TOUR Championship field at East Lake Golf Club begins 2026-08-27. The model weights SG Total at 0%, SG APP at 7%, and SG PUTT at 0%. The top 20 model ranks show SG Total values ranging from 933 (Bridgeman) to 552 (Rose)."
+        "body": "The 30-player TOUR Championship at East Lake carries course weights of SG APP 7%, SG PUTT 0%, and SG TOTAL 0%. The model ranks the top 20 players by weighted SG TOTAL, with Bridgeman 933), Scheffler 868), and Bhatia 646) occupying the first three spots."
       },
       {
         "heading": "Course Fit",
-        "body": "East Lake's weighting places the heaviest emphasis on SG APP 7%) and SG PUTT 0%). Bridgeman's 501 SG APP and 339 SG PUTT align with these weights. Bhatia's 792 SG APP leads the top three. Scheffler's 618 SG ATG and 547 SG PUTT provide balanced contributions across the weighted categories."
+        "body": "East Lake's emphasis on SG APP 7%) and SG PUTT 0%) aligns with Bridgeman's 501 SG APP and 339 SG PUTT, Bhatia's 792 SG APP, and Scheffler's 547 SG PUTT. Scheffler's 623 SG OTT also matches the 3% off-the-tee weight."
       },
       {
-        "heading": "Model Strength and Ranking Differentials",
-        "body": "Bridgeman holds model rank #1 and power rank #4. Bhatia holds model rank #2 and power rank #7. Scheffler holds model rank #3 and power rank #1. The model ranks place these three players ahead of McIlroy (model rank #4, power rank #2) and Morikawa (model rank #5, power rank #9)."
+        "heading": "Recent Form",
+        "body": "Model SG TOTAL values reflect recent performance: Bridgeman at 933, Scheffler at 868, and Bhatia at 646. These figures incorporate the 0% SG TOTAL course weight and the listed strokes-gained subcategories."
       },
       {
-        "heading": "Post-Open Workload Classification",
-        "body": "All three targets carry the NO_TRACKED_ROUNDS classification with zero tracked rounds in the major swing workload. The classification indicates no rounds were recorded in the tracked events and does not imply rest. This shared classification applies to Bridgeman, Bhatia, and Scheffler."
+        "heading": "Post-Open Workload",
+        "body": "All three players recorded DID_NOT_PLAY at the Open and skipped the Scottish Open, resulting in NO_TRACKED_ROUNDS (0 tracked rounds) for the major swing. The classifications note that zero tracked rounds does not equate to rest."
       },
       {
-        "heading": "FedExCup Standing Context",
-        "body": "Scheffler enters at FedExCup rank #1. Bridgeman enters at FedExCup rank #13. Bhatia enters at FedExCup rank #15. All three are classified SAFE_TOP_50."
+        "heading": "FedExCup Motivation",
+        "body": "Bridgeman enters at FedExCup rank #13, Bhatia at #15, and Scheffler at #1, all classified SAFE_TOP_50. The model does not adjust rankings for FedExCup position beyond the supplied data."
       },
       {
         "heading": "Crossover Research Angles",
-        "body": "The three targets share the crossover classification of skipped Scottish Open plus top-10 model rank. Bridgeman, Bhatia, and Scheffler each meet both criteria. This classification is a contextual research factor and does not automatically signal positive or negative performance."
+        "body": "Each player carries the crossover flag 'Skipped the Scottish Open + top-10 model ' Bridgeman is model rank 1 and power rank 4; Bhatia is model rank 2 and power rank 7; Scheffler is model rank 3 and power rank 1."
       },
       {
         "heading": "Outright Targets",
-        "body": "The model outright targets are Jacob Bridgeman (model rank #1) and Akshay Bhatia (model rank #2). Both carry the skipped Scottish Open plus top-10 model rank crossover classification."
-      },
-      {
-        "heading": "Top-5 Targets",
-        "body": "The model top-5 targets are Jacob Bridgeman (model rank #1) and Akshay Bhatia (model rank #2). Both players rank inside the top two model positions and share the same crossover classification."
+        "body": "Model-supported outright targets are Jacob Bridgeman (model rank 1, 933 SG TOTAL) and Akshay Bhatia (model rank 2, 646 SG TOTAL). Both are classified as strong model-supported bets based on the supplied ranks and SG figures."
       },
       {
         "heading": "Top-10 Targets",
-        "body": "The model top-10 targets are Jacob Bridgeman (model rank #1), Akshay Bhatia (model rank #2), and Scottie Scheffler (model rank #3). These three occupy the top three model ranks and share the skipped Scottish Open plus top-10 model rank crossover classification."
+        "body": "Top-10 model-supported targets include Jacob Bridgeman (rank 1), Akshay Bhatia (rank 2), and Scottie Scheffler (rank 3). Scheffler's 868 SG TOTAL and 623 SG OTT provide the third data point supporting inclusion."
       },
       {
         "heading": "Top-20 Targets",
-        "body": "The model top-20 targets are Jacob Bridgeman (model rank #1), Akshay Bhatia (model rank #2), and Scottie Scheffler (model rank #3). These three occupy the top three model ranks."
-      },
-      {
-        "heading": "Data Limitations",
-        "body": "Weather and tee-time data are not available in this pipeline. The article does not make weather- or tee-time-specific claims."
+        "body": "Top-20 model-supported targets are the same three players: Bridgeman (rank 1), Bhatia (rank 2), and Scheffler (rank 3). All three sit inside the top 3 of the 20-player model output."
       },
       {
         "heading": "Final Betting Card",
-        "body": "Strong model-supported tier: Jacob Bridgeman (model rank #1), Akshay Bhatia (model rank #2). Secondary tier: Scottie Scheffler (model rank #3)."
+        "body": "Strong model-supported bets: Jacob Bridgeman (rank 1) and Akshay Bhatia (rank 2) for outright, top-5, top-10, and top-20. Secondary model-supported bet: Scottie Scheffler (rank 3) for top-10 and top-20 only. All recommendations are based on model rank, SG TOTAL, and the listed research classifications."
+      },
+      {
+        "heading": "Data Limitations",
+        "body": "Weather and tee-time data are not available in this pipeline; the article does not make weather- or tee-time-specific claims."
       }
     ],
-    "conclusion": "Strong model-supported tier: Bridgeman (model rank #1), Bhatia (model rank #2). Secondary tier: Scheffler (model rank #3).",
+    "conclusion": "Strong model-supported bets: Bridgeman (rank 1) and Bhatia (rank 2) across all cards. Secondary model-supported bet: Scheffler (rank 3) for top-10 and top-20. All selections cite model rank and at least one SG figure from the supplied data.",
     "keyTakeaways": [
       {
-        "text": "Bridgeman leads the model at rank #1 with 1.933 SG Total and 1.339 SG PUTT, the highest putting mark among the top 20.",
+        "text": "Bridgeman leads the model at rank 1 with 1.933 SG Total and 1.339 SG PUTT, the highest putting mark among the top 20.",
         "players": [
           "Jacob Bridgeman"
         ]
       },
       {
-        "text": "Bhatia ranks #2 with 1.646 SG Total and 0.792 SG APP, the strongest approach play figure in the top three.",
+        "text": "Bhatia ranks 2nd in the model with 1.646 SG Total and 0.792 SG APP, the strongest approach game among the three picks.",
         "players": [
           "Akshay Bhatia"
         ]
       },
       {
-        "text": "Scheffler sits at model rank #3 with 1.868 SG Total and power rank #1, the highest power ranking in the field.",
+        "text": "Scheffler sits 3rd in the model at 1.868 SG Total and 0.623 SG OTT, the best off-the-tee figure of the trio.",
         "players": [
           "Scottie Scheffler"
         ]
       },
       {
-        "text": "All three targets share the same crossover classification: skipped Scottish Open plus top-10 model rank.",
+        "text": "All three players share identical research flags: DID_NOT_PLAY at the Open, skipped the Scottish Open, and zero tracked major-swing rounds.",
         "players": [
           "Jacob Bridgeman",
           "Akshay Bhatia",
@@ -414,9 +410,8 @@
         ]
       },
       {
-        "text": "East Lake course weights favor SG APP (28.7%) and SG PUTT (23.0%), categories where the top three model ranks show positive values.",
+        "text": "East Lake's 28.7% SG APP weight favors Bhatia's 0.792 mark and Scheffler's balanced 0.08 SG APP alongside elite SG OTT.",
         "players": [
-          "Jacob Bridgeman",
           "Akshay Bhatia",
           "Scottie Scheffler"
         ]

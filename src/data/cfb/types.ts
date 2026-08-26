@@ -97,21 +97,29 @@ export type CfbTeamContext = {
 /** Basic box-score style season stats (null until available). */
 export type CfbSeasonStats = {
   teamId: string;
+  /** Completed games contributing to these totals (0 in preseason). */
+  gamesPlayed: number;
   // Offense
   pointsPerGame: number | null;
   yardsPerPlay: number | null;
+  pointsPerPlay: number | null;
   rushYardsPerGame: number | null;
   yardsPerRush: number | null;
   passYardsPerGame: number | null;
   yardsPerPass: number | null;
+  thirdDownPct: number | null;
+  completionPct: number | null;
   turnovers: number | null;
-  // Defense
+  // Defense (opponent offensive production against this team)
   pointsAllowedPerGame: number | null;
   yardsPerPlayAllowed: number | null;
+  opponentPointsPerPlay: number | null;
   rushYardsAllowedPerGame: number | null;
   yardsPerRushAllowed: number | null;
   passYardsAllowedPerGame: number | null;
   yardsPerPassAllowed: number | null;
+  opponentThirdDownPct: number | null;
+  opponentCompletionPct: number | null;
   takeaways: number | null;
 };
 

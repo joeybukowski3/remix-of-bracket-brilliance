@@ -29,7 +29,7 @@ describe("CollegeFootballPowerComparison", () => {
 
   it("fills the power/offense/defense bars using each team's own primary color, scaled by the shared presentation helper", () => {
     const { away, home, container } = renderComparison();
-    const bars = container.querySelectorAll<HTMLDivElement>(".h-1\\.5.flex-1.overflow-hidden.rounded-full.bg-slate-100 > div");
+    const bars = container.querySelectorAll<HTMLDivElement>(".h-2\\.5.flex-1.overflow-hidden.rounded-full.bg-slate-100 > div");
     // 3 bar rows (power/offense/defense) x 2 sides = 6 bars
     expect(bars.length).toBe(6);
     const swatch = document.createElement("div");
@@ -41,11 +41,20 @@ describe("CollegeFootballPowerComparison", () => {
     expect(bars[0].style.width).toBe(expectedPercent);
   });
 
-  it("marks only the stronger side, never both, and never implies a betting pick", () => {
-    const { container } = renderComparison();
-    const markers = container.querySelectorAll(".bg-emerald-600");
+  it("marks only the stronger side, in that team's own color, never a generic green and never both sides on one row", () => {
+    const { away, home, container } = renderComparison();
+    const markers = container.querySelectorAll('[data-testid="stronger-badge"]');
     // At most one marker per row (5 rows total)
     expect(markers.length).toBeLessThanOrEqual(5);
+    expect(markers.length).toBeGreaterThan(0);
+    const awaySwatch = document.createElement("div");
+    awaySwatch.style.background = away.primaryColor;
+    const homeSwatch = document.createElement("div");
+    homeSwatch.style.background = home.primaryColor;
+    for (const marker of Array.from(markers)) {
+      const bg = (marker as HTMLElement).style.background;
+      expect([awaySwatch.style.background, homeSwatch.style.background]).toContain(bg);
+    }
     expect(screen.getByText(/not a betting recommendation/i)).toBeInTheDocument();
   });
 
