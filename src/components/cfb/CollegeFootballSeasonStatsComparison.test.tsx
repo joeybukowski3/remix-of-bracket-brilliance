@@ -204,29 +204,29 @@ describe("CollegeFootballSeasonStatsComparison", () => {
     expect(within(mobileScope).queryByText("Points/Game")).not.toBeInTheDocument();
   });
 
-  it("Matchup tab renders Home Offense vs Away Defense and Home Defense vs Away Offense, with home always on the left", () => {
+  it("Matchup tab renders Away Defense vs Home Offense and Away Offense vs Home Defense, with away always on the left", () => {
     const { desktopScope } = renderAndGetScopes(FULL_CONTEXT);
     clickTab(desktopScope, "Matchup");
 
-    expect(within(desktopScope).getByText("Home Offense vs Away Defense")).toBeInTheDocument();
-    expect(within(desktopScope).getByText("Home Defense vs Away Offense")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("Away Defense vs Home Offense")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("Away Offense vs Home Defense")).toBeInTheDocument();
 
     // Both matchup cards reuse the shared offense/defense-paired row labels.
     expect(within(desktopScope).getAllByText("Points/Game").length).toBe(2);
 
-    // Card 1 (Home Offense vs Away Defense): left = home.pointsPerGame (24.1), right = away.pointsAllowedPerGame (19.2).
-    expect(within(desktopScope).getByText("24.1")).toBeInTheDocument();
+    // Card 1 (Away Defense vs Home Offense): left = away.pointsAllowedPerGame (19.2), right = home.pointsPerGame (24.1).
     expect(within(desktopScope).getByText("19.2")).toBeInTheDocument();
-    // Card 2 (Home Defense vs Away Offense): left = home.pointsAllowedPerGame (29.7), right = away.pointsPerGame (31.2).
-    expect(within(desktopScope).getByText("29.7")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("24.1")).toBeInTheDocument();
+    // Card 2 (Away Offense vs Home Defense): left = away.pointsPerGame (31.2), right = home.pointsAllowedPerGame (29.7).
     expect(within(desktopScope).getByText("31.2")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("29.7")).toBeInTheDocument();
 
-    // Orientation rule: HOME renders before AWAY in each matchup card header.
-    const header = within(desktopScope).getByText("Home Offense vs Away Defense").closest("div")
+    // Orientation rule: AWAY renders before HOME in each matchup card header.
+    const header = within(desktopScope).getByText("Away Defense vs Home Offense").closest("div")
       ?.parentElement as HTMLElement;
     const headerText = header.textContent ?? "";
-    expect(headerText.indexOf("HOME")).toBeGreaterThanOrEqual(0);
-    expect(headerText.indexOf("HOME")).toBeLessThan(headerText.indexOf("AWAY"));
+    expect(headerText.indexOf("AWAY")).toBeGreaterThanOrEqual(0);
+    expect(headerText.indexOf("AWAY")).toBeLessThan(headerText.indexOf("HOME"));
   });
 
   it("desktop: Offense and Defense each render exactly one full-width card, Matchup renders two cards side by side", () => {
