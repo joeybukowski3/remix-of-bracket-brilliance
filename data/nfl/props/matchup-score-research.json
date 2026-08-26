@@ -1,0 +1,2503 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-yardage-matchup-score-research-v1",
+    "generatedAt": "2026-08-25T17:30:00.000Z",
+    "developmentSeasons": [
+      2022,
+      2023,
+      2024
+    ],
+    "temporalFolds": [
+      {
+        "name": "fold1_train2022_validate2023",
+        "trainSeasons": [
+          2022
+        ],
+        "validateSeason": 2023
+      },
+      {
+        "name": "fold2_train2022-2023_validate2024",
+        "trainSeasons": [
+          2022,
+          2023
+        ],
+        "validateSeason": 2024
+      }
+    ],
+    "frozenRetrospectiveSeason": 2025,
+    "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+    "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+    "projectionArchitecturesPreserved": {
+      "passing": "direct ridge alpha=10",
+      "rushing": "projected carries x shrunk YPC",
+      "receiving": "projected targets x shrunk YPT"
+    }
+  },
+  "methodology": {
+    "normalization": "indicator-level empirical mid-rank percentiles; fold-train reference during selection; fixed 2022-2024 reference for final/2025; missing pregame indicator is neutral 50",
+    "scaleMeaning": "50 approximates a development-era league-typical environment; scores are market-specific composites on a common percentile-derived 0-100 presentation scale",
+    "week1Handling": "prior-season value when available, otherwise neutral 50; never a current-week distribution",
+    "driftControl": "fixed reference version; no annual min/max recalibration",
+    "uncertaintySeparation": "prediction intervals, residual risk, and target-game outcomes are not score inputs",
+    "unsupportedDimensions": {
+      "rushingTrench": "excluded: no validated historical weekly trench source",
+      "rushingMarket": "excluded: development ablations found no incremental value",
+      "receivingMarket": "excluded: development ablations found no incremental value"
+    }
+  },
+  "interpretationBands": {
+    "derivation": "common thresholds rounded to 5 points from pooled 2022-2024 selected-score p10/p30/p70/p90; held fixed for every market and 2025",
+    "cuts": {
+      "difficultMax": 30,
+      "challengingMax": 45,
+      "neutralMax": 55,
+      "positiveMax": 70
+    }
+  },
+  "passing": {
+    "candidateResearch": {
+      "candidates": [
+        {
+          "id": "P1_opportunity_opponent",
+          "dimensions": [
+            "opportunity",
+            "opponent"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.5,
+              "opponent": 0.5
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.1463115261607677,
+                "scoreWithProjection": 0.5652522172971077,
+                "scoreWithOpportunityComponent": 0.7069605097080357,
+                "scoreWithEnvironmentComponent": 0.7034714037268167,
+                "scoreWithActualOpportunity": 0.15420026651039123,
+                "scoreWithActualEfficiency": 0.03839719696983468
+              },
+              {
+                "scoreWithActualYards": 0.07653530670004334,
+                "scoreWithProjection": 0.29832779353602584,
+                "scoreWithOpportunityComponent": 0.7512103604828128,
+                "scoreWithEnvironmentComponent": 0.6647793846671112,
+                "scoreWithActualOpportunity": 0.18244041432833022,
+                "scoreWithActualEfficiency": -0.1118190195631251
+              }
+            ],
+            "avgActualYardsCorrelation": 0.11142341643040551,
+            "avgProjectionCorrelation": 0.43179000541656676
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.4,
+              "opponent": 0.6
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.14465117370920474,
+                "scoreWithProjection": 0.5150952351071606,
+                "scoreWithOpportunityComponent": 0.5535153099264151,
+                "scoreWithEnvironmentComponent": 0.8298742079201902,
+                "scoreWithActualOpportunity": 0.14537703941378421,
+                "scoreWithActualEfficiency": 0.05043991158759475
+              },
+              {
+                "scoreWithActualYards": 0.08378178284472229,
+                "scoreWithProjection": 0.3096965823833435,
+                "scoreWithOpportunityComponent": 0.60549925098309,
+                "scoreWithEnvironmentComponent": 0.7996423048793977,
+                "scoreWithActualOpportunity": 0.174431150079829,
+                "scoreWithActualEfficiency": -0.09361283616786849
+              }
+            ],
+            "avgActualYardsCorrelation": 0.11421647827696352,
+            "avgProjectionCorrelation": 0.41239590874525206,
+            "avgActualOpportunityCorrelation": 0.1599040947468066,
+            "avgActualEfficiencyCorrelation": -0.02158646229013687
+          },
+          "selectionScore": 0.11421647827696352
+        },
+        {
+          "id": "P2_add_game_environment",
+          "dimensions": [
+            "opportunity",
+            "opponent",
+            "gameEnvironment"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.3333333333333333,
+              "opponent": 0.3333333333333333,
+              "gameEnvironment": 0.3333333333333333
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.1425740517800938,
+                "scoreWithProjection": 0.49020225452483995,
+                "scoreWithOpportunityComponent": 0.5593917944797451,
+                "scoreWithEnvironmentComponent": 0.8520815885694751,
+                "scoreWithActualOpportunity": 0.16954950971550414,
+                "scoreWithActualEfficiency": 0.014937486614319265
+              },
+              {
+                "scoreWithActualYards": 0.07772591212314651,
+                "scoreWithProjection": 0.2700141579676513,
+                "scoreWithOpportunityComponent": 0.5727242325292404,
+                "scoreWithEnvironmentComponent": 0.8248580149322131,
+                "scoreWithActualOpportunity": 0.18966419817457664,
+                "scoreWithActualEfficiency": -0.11365024979732233
+              }
+            ],
+            "avgActualYardsCorrelation": 0.11014998195162015,
+            "avgProjectionCorrelation": 0.38010820624624564
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.3,
+              "opponent": 0.5,
+              "gameEnvironment": 0.2
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.14624270471516865,
+                "scoreWithProjection": 0.4822865914177006,
+                "scoreWithOpportunityComponent": 0.47339745981662057,
+                "scoreWithEnvironmentComponent": 0.8537952642659244,
+                "scoreWithActualOpportunity": 0.15760673282644108,
+                "scoreWithActualEfficiency": 0.03893188045838432
+              },
+              {
+                "scoreWithActualYards": 0.08641189778810382,
+                "scoreWithProjection": 0.29918377548361685,
+                "scoreWithOpportunityComponent": 0.5001467018013611,
+                "scoreWithEnvironmentComponent": 0.8302210892508726,
+                "scoreWithActualOpportunity": 0.18085057058758144,
+                "scoreWithActualEfficiency": -0.09477525067813651
+              }
+            ],
+            "avgActualYardsCorrelation": 0.11632730125163623,
+            "avgProjectionCorrelation": 0.3907351834506587,
+            "avgActualOpportunityCorrelation": 0.16922865170701126,
+            "avgActualEfficiencyCorrelation": -0.027921685109876096
+          },
+          "selectionScore": 0.11132730125163623
+        },
+        {
+          "id": "P3_add_passing_quality",
+          "dimensions": [
+            "opportunity",
+            "opponent",
+            "passingQuality",
+            "gameEnvironment"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.25,
+              "opponent": 0.25,
+              "passingQuality": 0.25,
+              "gameEnvironment": 0.25
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.21143013568085617,
+                "scoreWithProjection": 0.6830826783145856,
+                "scoreWithOpportunityComponent": 0.4858808851985618,
+                "scoreWithEnvironmentComponent": 0.9047161667515583,
+                "scoreWithActualOpportunity": 0.15026051886878766,
+                "scoreWithActualEfficiency": 0.12112829666389924
+              },
+              {
+                "scoreWithActualYards": 0.17763189958259243,
+                "scoreWithProjection": 0.6026788727437213,
+                "scoreWithOpportunityComponent": 0.36392438071951855,
+                "scoreWithEnvironmentComponent": 0.8774078602111322,
+                "scoreWithActualOpportunity": 0.15623153910069018,
+                "scoreWithActualEfficiency": 0.052014573181716824
+              }
+            ],
+            "avgActualYardsCorrelation": 0.1945310176317243,
+            "avgProjectionCorrelation": 0.6428807755291535
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.2,
+              "opponent": 0.3,
+              "passingQuality": 0.4,
+              "gameEnvironment": 0.1
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.22368693281193683,
+                "scoreWithProjection": 0.7032344540225317,
+                "scoreWithOpportunityComponent": 0.35408429650745693,
+                "scoreWithEnvironmentComponent": 0.8861236103816984,
+                "scoreWithActualOpportunity": 0.1122128028033467,
+                "scoreWithActualEfficiency": 0.17811019513993914
+              },
+              {
+                "scoreWithActualYards": 0.20418734348193981,
+                "scoreWithProjection": 0.6927015691500658,
+                "scoreWithOpportunityComponent": 0.16253962839995795,
+                "scoreWithEnvironmentComponent": 0.8866389700230182,
+                "scoreWithActualOpportunity": 0.10304696431810242,
+                "scoreWithActualEfficiency": 0.14424257523409267
+              }
+            ],
+            "avgActualYardsCorrelation": 0.21393713814693832,
+            "avgProjectionCorrelation": 0.6979680115862987,
+            "avgActualOpportunityCorrelation": 0.10762988356072456,
+            "avgActualEfficiencyCorrelation": 0.1611763851870159
+          },
+          "selectionScore": 0.2039371381469383
+        }
+      ],
+      "winner": {
+        "id": "P3_add_passing_quality",
+        "dimensions": [
+          "opportunity",
+          "opponent",
+          "passingQuality",
+          "gameEnvironment"
+        ],
+        "normalization": "pooled",
+        "equalWeightBenchmark": {
+          "weights": {
+            "opportunity": 0.25,
+            "opponent": 0.25,
+            "passingQuality": 0.25,
+            "gameEnvironment": 0.25
+          },
+          "byFold": [
+            {
+              "scoreWithActualYards": 0.21143013568085617,
+              "scoreWithProjection": 0.6830826783145856,
+              "scoreWithOpportunityComponent": 0.4858808851985618,
+              "scoreWithEnvironmentComponent": 0.9047161667515583,
+              "scoreWithActualOpportunity": 0.15026051886878766,
+              "scoreWithActualEfficiency": 0.12112829666389924
+            },
+            {
+              "scoreWithActualYards": 0.17763189958259243,
+              "scoreWithProjection": 0.6026788727437213,
+              "scoreWithOpportunityComponent": 0.36392438071951855,
+              "scoreWithEnvironmentComponent": 0.8774078602111322,
+              "scoreWithActualOpportunity": 0.15623153910069018,
+              "scoreWithActualEfficiency": 0.052014573181716824
+            }
+          ],
+          "avgActualYardsCorrelation": 0.1945310176317243,
+          "avgProjectionCorrelation": 0.6428807755291535
+        },
+        "predictiveWeighting": {
+          "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+          "weights": {
+            "opportunity": 0.2,
+            "opponent": 0.3,
+            "passingQuality": 0.4,
+            "gameEnvironment": 0.1
+          },
+          "byFold": [
+            {
+              "scoreWithActualYards": 0.22368693281193683,
+              "scoreWithProjection": 0.7032344540225317,
+              "scoreWithOpportunityComponent": 0.35408429650745693,
+              "scoreWithEnvironmentComponent": 0.8861236103816984,
+              "scoreWithActualOpportunity": 0.1122128028033467,
+              "scoreWithActualEfficiency": 0.17811019513993914
+            },
+            {
+              "scoreWithActualYards": 0.20418734348193981,
+              "scoreWithProjection": 0.6927015691500658,
+              "scoreWithOpportunityComponent": 0.16253962839995795,
+              "scoreWithEnvironmentComponent": 0.8866389700230182,
+              "scoreWithActualOpportunity": 0.10304696431810242,
+              "scoreWithActualEfficiency": 0.14424257523409267
+            }
+          ],
+          "avgActualYardsCorrelation": 0.21393713814693832,
+          "avgProjectionCorrelation": 0.6979680115862987,
+          "avgActualOpportunityCorrelation": 0.10762988356072456,
+          "avgActualEfficiencyCorrelation": 0.1611763851870159
+        },
+        "selectionScore": 0.2039371381469383
+      }
+    },
+    "selectedDefinition": {
+      "opportunityComponent": "opportunity",
+      "environmentComponents": [
+        "opponent",
+        "passingQuality",
+        "gameEnvironment"
+      ],
+      "weights": {
+        "opportunity": 0.2,
+        "opponent": 0.3,
+        "passingQuality": 0.4,
+        "gameEnvironment": 0.1
+      }
+    },
+    "correlations": {
+      "development": {
+        "matchupScoreWithProjectedYards": 0.659393416835828,
+        "matchupScoreWithActualYards": 0.2445286862852122,
+        "matchupScoreWithOpportunityScore": 0.3605943906288523,
+        "matchupScoreWithEnvironmentScore": 0.8543755311900181,
+        "opportunityScoreWithEnvironmentScore": -0.0031127691434950124
+      },
+      "retrospective2025": {
+        "matchupScoreWithProjectedYards": 0.5770432341805731,
+        "matchupScoreWithActualYards": 0.18239300139571693,
+        "matchupScoreWithOpportunityScore": 0.1078934582893978,
+        "matchupScoreWithEnvironmentScore": 0.8898138263153228,
+        "opportunityScoreWithEnvironmentScore": -0.13867049109905114
+      }
+    },
+    "scoreDistributionBySeason": {
+      "2022": {
+        "n": 542,
+        "mean": 50.4395063472437,
+        "median": 49.851780804197475,
+        "standardDeviation": 11.584463147363977,
+        "percentiles": {
+          "p05": 30.537362996334302,
+          "p10": 36.360540656081675,
+          "p25": 43.65590953847926,
+          "p50": 49.851780804197475,
+          "p75": 57.033622195798934,
+          "p90": 65.52995903016361,
+          "p95": 70.6639760424372
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 25,
+            "pct": 0.046125461254612546
+          },
+          "challenging": {
+            "n": 141,
+            "pct": 0.26014760147601473
+          },
+          "neutral": {
+            "n": 208,
+            "pct": 0.3837638376383764
+          },
+          "positive": {
+            "n": 139,
+            "pct": 0.2564575645756458
+          },
+          "elite": {
+            "n": 29,
+            "pct": 0.05350553505535055
+          }
+        }
+      },
+      "2023": {
+        "n": 544,
+        "mean": 50.5865460751925,
+        "median": 50.58421817533071,
+        "standardDeviation": 11.838264526757023,
+        "percentiles": {
+          "p05": 30.58151923695531,
+          "p10": 35.34573271139981,
+          "p25": 42.07293800818947,
+          "p50": 50.58421817533071,
+          "p75": 58.836260194495864,
+          "p90": 65.57563766971673,
+          "p95": 70.22849170284235
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 22,
+            "pct": 0.04044117647058824
+          },
+          "challenging": {
+            "n": 160,
+            "pct": 0.29411764705882354
+          },
+          "neutral": {
+            "n": 160,
+            "pct": 0.29411764705882354
+          },
+          "positive": {
+            "n": 173,
+            "pct": 0.3180147058823529
+          },
+          "elite": {
+            "n": 29,
+            "pct": 0.05330882352941176
+          }
+        }
+      },
+      "2024": {
+        "n": 544,
+        "mean": 48.97556340972283,
+        "median": 49.993756274317406,
+        "standardDeviation": 12.09914381936482,
+        "percentiles": {
+          "p05": 27.506875801283186,
+          "p10": 32.64246846234503,
+          "p25": 40.47320230915748,
+          "p50": 49.993756274317406,
+          "p75": 57.97162297031593,
+          "p90": 63.60024621163296,
+          "p95": 66.86230814940744
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 38,
+            "pct": 0.06985294117647059
+          },
+          "challenging": {
+            "n": 159,
+            "pct": 0.2922794117647059
+          },
+          "neutral": {
+            "n": 163,
+            "pct": 0.29963235294117646
+          },
+          "positive": {
+            "n": 168,
+            "pct": 0.3088235294117647
+          },
+          "elite": {
+            "n": 16,
+            "pct": 0.029411764705882353
+          }
+        }
+      },
+      "2025": {
+        "n": 544,
+        "mean": 50.65506545516706,
+        "median": 50.7483117954865,
+        "standardDeviation": 11.9309687146566,
+        "percentiles": {
+          "p05": 31.173261457691332,
+          "p10": 35.08904024463255,
+          "p25": 41.834619904986766,
+          "p50": 50.7483117954865,
+          "p75": 59.14255538231548,
+          "p90": 65.94107254698999,
+          "p95": 69.02265544830486
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 23,
+            "pct": 0.042279411764705885
+          },
+          "challenging": {
+            "n": 158,
+            "pct": 0.29044117647058826
+          },
+          "neutral": {
+            "n": 153,
+            "pct": 0.28125
+          },
+          "positive": {
+            "n": 187,
+            "pct": 0.34375
+          },
+          "elite": {
+            "n": 23,
+            "pct": 0.042279411764705885
+          }
+        }
+      }
+    },
+    "outcomeByBand": {
+      "development": {
+        "difficult": {
+          "n": 85,
+          "meanScore": 25.80035008071537,
+          "meanActualYards": 201.41176470588235,
+          "meanActualOpportunity": 30.105882352941176,
+          "meanActualEfficiency": 6.817978273266239
+        },
+        "challenging": {
+          "n": 460,
+          "meanScore": 38.983211990352345,
+          "meanActualYards": 208.56304347826088,
+          "meanActualOpportunity": 30.452173913043477,
+          "meanActualEfficiency": 6.923814930122231
+        },
+        "neutral": {
+          "n": 531,
+          "meanScore": 50.08776932008216,
+          "meanActualYards": 230.95291902071563,
+          "meanActualOpportunity": 32.644067796610166,
+          "meanActualEfficiency": 7.148944176891058
+        },
+        "positive": {
+          "n": 480,
+          "meanScore": 60.98201046942376,
+          "meanActualYards": 243.28541666666666,
+          "meanActualOpportunity": 33.16458333333333,
+          "meanActualEfficiency": 7.4332277262325155
+        },
+        "elite": {
+          "n": 74,
+          "meanScore": 74.41516477419013,
+          "meanActualYards": 276.2162162162162,
+          "meanActualOpportunity": 36.7972972972973,
+          "meanActualEfficiency": 7.629171004325477
+        }
+      },
+      "retrospective2025": {
+        "difficult": {
+          "n": 23,
+          "meanScore": 26.2447282918513,
+          "meanActualYards": 196.65217391304347,
+          "meanActualOpportunity": 30.869565217391305,
+          "meanActualEfficiency": 6.25898296300606
+        },
+        "challenging": {
+          "n": 158,
+          "meanScore": 38.93832154867117,
+          "meanActualYards": 207.46835443037975,
+          "meanActualOpportunity": 30.651898734177216,
+          "meanActualEfficiency": 6.81980654416219
+        },
+        "neutral": {
+          "n": 153,
+          "meanScore": 49.79443712721459,
+          "meanActualYards": 210.6797385620915,
+          "meanActualOpportunity": 30.725490196078432,
+          "meanActualEfficiency": 6.947792084524056
+        },
+        "positive": {
+          "n": 187,
+          "meanScore": 61.27269709298512,
+          "meanActualYards": 239.5614973262032,
+          "meanActualOpportunity": 31.67914438502674,
+          "meanActualEfficiency": 7.664613458505636
+        },
+        "elite": {
+          "n": 23,
+          "meanScore": 74.9534267546175,
+          "meanActualYards": 231.56521739130434,
+          "meanActualOpportunity": 34.391304347826086,
+          "meanActualEfficiency": 6.814061611298655
+        }
+      }
+    },
+    "representative2025Examples": {
+      "A_highScore_highProjection": {
+        "season": 2025,
+        "week": 9,
+        "playerId": "gsis:00-0033119",
+        "playerName": "Jacoby Brissett",
+        "team": "ari",
+        "opponent": "dal",
+        "matchupScore": 67.35584015483924,
+        "opportunityScore": 82.14763925327965,
+        "environmentScore": 69.82210936531897,
+        "projectedYards": 266.253888879688,
+        "actualYards": 261,
+        "scorePercentile": 92.46323529411765,
+        "projectionPercentile": 89.33823529411765
+      },
+      "B_highScore_modestProjection": {
+        "season": 2025,
+        "week": 2,
+        "playerId": "gsis:00-0023459",
+        "playerName": "Aaron Rodgers",
+        "team": "pit",
+        "opponent": "sea",
+        "matchupScore": 66.71206153456268,
+        "opportunityScore": 44.84728919225871,
+        "environmentScore": 59.67407747821962,
+        "projectedYards": 221.74191875895266,
+        "actualYards": 203,
+        "scorePercentile": 91.91176470588235,
+        "projectionPercentile": 33.088235294117645
+      },
+      "C_lowScore_highProjection": {
+        "season": 2025,
+        "week": 2,
+        "playerId": "gsis:00-0033077",
+        "playerName": "Dak Prescott",
+        "team": "dal",
+        "opponent": "nyg",
+        "matchupScore": 40.32063695245853,
+        "opportunityScore": 56.35080851719528,
+        "environmentScore": 41.413991863593225,
+        "projectedYards": 260.9420464756082,
+        "actualYards": 361,
+        "scorePercentile": 21.50735294117647,
+        "projectionPercentile": 86.58088235294117
+      },
+      "D_lowScore_lowProjection": {
+        "season": 2025,
+        "week": 12,
+        "playerId": "gsis:00-0040743",
+        "playerName": "Tyler Shough",
+        "team": "no",
+        "opponent": "atl",
+        "matchupScore": 39.77085979331013,
+        "opportunityScore": 42.102740300512075,
+        "environmentScore": 40.59370187212824,
+        "projectedYards": 207.01385993679665,
+        "actualYards": 243,
+        "scorePercentile": 19.485294117647058,
+        "projectionPercentile": 18.566176470588236
+      }
+    },
+    "hardCases2025": {
+      "multiQbGames": {
+        "n": 84,
+        "matchupScore": {
+          "n": 84,
+          "mean": 51.35934735508435,
+          "median": 49.597871403515896,
+          "standardDeviation": 11.233079525235105,
+          "percentiles": {
+            "p05": 35.0682477433941,
+            "p10": 36.83819365361921,
+            "p25": 42.53206403799162,
+            "p50": 49.597871403515896,
+            "p75": 59.391217365171,
+            "p90": 66.69270281862866,
+            "p95": 71.65643855136867
+          }
+        },
+        "opportunityScore": {
+          "n": 84,
+          "mean": 50.61741755948016,
+          "median": 45.700815647916144,
+          "standardDeviation": 20.826503072340447,
+          "percentiles": {
+            "p05": 18.05014672619316,
+            "p10": 25.176783479349186,
+            "p25": 36.445956170928575,
+            "p50": 45.700815647916144,
+            "p75": 68.53538937834048,
+            "p90": 81.50927068844787,
+            "p95": 85.40833639325953
+          }
+        },
+        "environmentScore": {
+          "n": 84,
+          "mean": 51.37461882703066,
+          "median": 51.73704752525141,
+          "standardDeviation": 10.904511025247178,
+          "percentiles": {
+            "p05": 34.0616496658736,
+            "p10": 36.70129123735576,
+            "p25": 43.18861316872962,
+            "p50": 51.73704752525141,
+            "p75": 59.7140296699024,
+            "p90": 66.0514358935816,
+            "p95": 69.29115712823761
+          }
+        }
+      },
+      "noHistoryQbs": {
+        "n": 16,
+        "matchupScore": {
+          "n": 16,
+          "mean": 50.26571522013714,
+          "median": 52.44529748330608,
+          "standardDeviation": 7.737658300534295,
+          "percentiles": {
+            "p05": 38.87033510702284,
+            "p10": 39.98178624993922,
+            "p25": 42.78587666139423,
+            "p50": 52.44529748330608,
+            "p75": 56.60247455920104,
+            "p90": 58.78688515936331,
+            "p95": 59.54526363475817
+          }
+        },
+        "opportunityScore": {
+          "n": 16,
+          "mean": 45.363344806007504,
+          "median": 45.40310805173132,
+          "standardDeviation": 19.301529444556188,
+          "percentiles": {
+            "p05": 21.576449728827704,
+            "p10": 24.668856904463915,
+            "p25": 30.42605340008344,
+            "p50": 45.40310805173132,
+            "p75": 58.62797246558198,
+            "p90": 73.98310387984982,
+            "p95": 76.75870880267001
+          }
+        },
+        "environmentScore": {
+          "n": 16,
+          "mean": 52.77392835859923,
+          "median": 55.83050782206457,
+          "standardDeviation": 10.361851367492218,
+          "percentiles": {
+            "p05": 36.023894312761435,
+            "p10": 39.34785131038883,
+            "p25": 44.68236406406099,
+            "p50": 55.83050782206457,
+            "p75": 59.153428781119544,
+            "p90": 64.83074979545836,
+            "p95": 66.57603275396221
+          }
+        }
+      }
+    }
+  },
+  "rushing": {
+    "candidateResearch": {
+      "candidates": [
+        {
+          "id": "R1_workload_opponent",
+          "dimensions": [
+            "workload",
+            "opponent"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "workload": 0.5,
+              "opponent": 0.5
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.4991273368771808,
+                "scoreWithProjection": 0.668187104337468,
+                "scoreWithOpportunityComponent": 0.7637548824553362,
+                "scoreWithEnvironmentComponent": 0.6421188115368432,
+                "scoreWithActualOpportunity": 0.5683017189848011,
+                "scoreWithActualEfficiency": 0.2565766168929886
+              },
+              {
+                "scoreWithActualYards": 0.4963356986088853,
+                "scoreWithProjection": 0.6366641369226125,
+                "scoreWithOpportunityComponent": 0.7296959951479357,
+                "scoreWithEnvironmentComponent": 0.6783491753482038,
+                "scoreWithActualOpportunity": 0.5533048435278389,
+                "scoreWithActualEfficiency": 0.3130618953740744
+              }
+            ],
+            "avgActualYardsCorrelation": 0.49773151774303304,
+            "avgProjectionCorrelation": 0.6524256206300403
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "workload": 0.5,
+              "opponent": 0.5
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.4991273368771808,
+                "scoreWithProjection": 0.668187104337468,
+                "scoreWithOpportunityComponent": 0.7637548824553362,
+                "scoreWithEnvironmentComponent": 0.6421188115368432,
+                "scoreWithActualOpportunity": 0.5683017189848011,
+                "scoreWithActualEfficiency": 0.2565766168929886
+              },
+              {
+                "scoreWithActualYards": 0.4963356986088853,
+                "scoreWithProjection": 0.6366641369226125,
+                "scoreWithOpportunityComponent": 0.7296959951479357,
+                "scoreWithEnvironmentComponent": 0.6783491753482038,
+                "scoreWithActualOpportunity": 0.5533048435278389,
+                "scoreWithActualEfficiency": 0.3130618953740744
+              }
+            ],
+            "avgActualYardsCorrelation": 0.49773151774303304,
+            "avgProjectionCorrelation": 0.6524256206300403,
+            "avgActualOpportunityCorrelation": 0.56080328125632,
+            "avgActualEfficiencyCorrelation": 0.28481925613353154
+          },
+          "selectionScore": 0.49773151774303304
+        },
+        {
+          "id": "R2_add_team_environment",
+          "dimensions": [
+            "workload",
+            "teamRushingEnvironment",
+            "opponent"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "workload": 0.3333333333333333,
+              "teamRushingEnvironment": 0.3333333333333333,
+              "opponent": 0.3333333333333333
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.4361846538640982,
+                "scoreWithProjection": 0.6199265333293361,
+                "scoreWithOpportunityComponent": 0.6778043115490832,
+                "scoreWithEnvironmentComponent": 0.757568631037738,
+                "scoreWithActualOpportunity": 0.4929296265923494,
+                "scoreWithActualEfficiency": 0.22128354011946125
+              },
+              {
+                "scoreWithActualYards": 0.4366127252656776,
+                "scoreWithProjection": 0.5828574382920653,
+                "scoreWithOpportunityComponent": 0.6129431693354241,
+                "scoreWithEnvironmentComponent": 0.797648409057155,
+                "scoreWithActualOpportunity": 0.47424789920553306,
+                "scoreWithActualEfficiency": 0.26647964343122943
+              }
+            ],
+            "avgActualYardsCorrelation": 0.4363986895648879,
+            "avgProjectionCorrelation": 0.6013919858107006
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "workload": 0.5,
+              "teamRushingEnvironment": 0.2,
+              "opponent": 0.3
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.5551266355535814,
+                "scoreWithProjection": 0.7771332830555531,
+                "scoreWithOpportunityComponent": 0.8688107051285288,
+                "scoreWithEnvironmentComponent": 0.5125835943698327,
+                "scoreWithActualOpportunity": 0.6315288825721778,
+                "scoreWithActualEfficiency": 0.2853675458897647
+              },
+              {
+                "scoreWithActualYards": 0.5599133988783698,
+                "scoreWithProjection": 0.7509852062683554,
+                "scoreWithOpportunityComponent": 0.8322457502577284,
+                "scoreWithEnvironmentComponent": 0.5540331928595648,
+                "scoreWithActualOpportunity": 0.6213841582327345,
+                "scoreWithActualEfficiency": 0.3465194633197274
+              }
+            ],
+            "avgActualYardsCorrelation": 0.5575200172159755,
+            "avgProjectionCorrelation": 0.7640592446619543,
+            "avgActualOpportunityCorrelation": 0.6264565204024561,
+            "avgActualEfficiencyCorrelation": 0.3159435046047461
+          },
+          "selectionScore": 0.5525200172159755
+        },
+        {
+          "id": "R3_add_role_quality",
+          "dimensions": [
+            "workload",
+            "roleQuality",
+            "teamRushingEnvironment",
+            "opponent"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "workload": 0.25,
+              "roleQuality": 0.25,
+              "teamRushingEnvironment": 0.25,
+              "opponent": 0.25
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.4009901479783012,
+                "scoreWithProjection": 0.5673118909201653,
+                "scoreWithOpportunityComponent": 0.6174495245474324,
+                "scoreWithEnvironmentComponent": 0.7801670684961484,
+                "scoreWithActualOpportunity": 0.45920134060746015,
+                "scoreWithActualEfficiency": 0.20919220336572614
+              },
+              {
+                "scoreWithActualYards": 0.3875112961615332,
+                "scoreWithProjection": 0.5161800989426256,
+                "scoreWithOpportunityComponent": 0.5217255215170711,
+                "scoreWithEnvironmentComponent": 0.8442823959396418,
+                "scoreWithActualOpportunity": 0.4238918484893244,
+                "scoreWithActualEfficiency": 0.23770160324175252
+              }
+            ],
+            "avgActualYardsCorrelation": 0.3942507220699172,
+            "avgProjectionCorrelation": 0.5417459949313954
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "workload": 0.5,
+              "roleQuality": 0.1,
+              "teamRushingEnvironment": 0.2,
+              "opponent": 0.2
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.5819325001912475,
+                "scoreWithProjection": 0.8221058982536228,
+                "scoreWithOpportunityComponent": 0.9167384266475483,
+                "scoreWithEnvironmentComponent": 0.3610798962264337,
+                "scoreWithActualOpportunity": 0.6645710004881791,
+                "scoreWithActualEfficiency": 0.3016841103136692
+              },
+              {
+                "scoreWithActualYards": 0.5847720421172277,
+                "scoreWithProjection": 0.7951604752269389,
+                "scoreWithOpportunityComponent": 0.8752748086253516,
+                "scoreWithEnvironmentComponent": 0.44920986743742064,
+                "scoreWithActualOpportunity": 0.6520577920879731,
+                "scoreWithActualEfficiency": 0.36127095332087233
+              }
+            ],
+            "avgActualYardsCorrelation": 0.5833522711542376,
+            "avgProjectionCorrelation": 0.8086331867402808,
+            "avgActualOpportunityCorrelation": 0.6583143962880761,
+            "avgActualEfficiencyCorrelation": 0.3314775318172708
+          },
+          "selectionScore": 0.5733522711542376
+        }
+      ],
+      "winner": {
+        "id": "R3_add_role_quality",
+        "dimensions": [
+          "workload",
+          "roleQuality",
+          "teamRushingEnvironment",
+          "opponent"
+        ],
+        "normalization": "pooled",
+        "equalWeightBenchmark": {
+          "weights": {
+            "workload": 0.25,
+            "roleQuality": 0.25,
+            "teamRushingEnvironment": 0.25,
+            "opponent": 0.25
+          },
+          "byFold": [
+            {
+              "scoreWithActualYards": 0.4009901479783012,
+              "scoreWithProjection": 0.5673118909201653,
+              "scoreWithOpportunityComponent": 0.6174495245474324,
+              "scoreWithEnvironmentComponent": 0.7801670684961484,
+              "scoreWithActualOpportunity": 0.45920134060746015,
+              "scoreWithActualEfficiency": 0.20919220336572614
+            },
+            {
+              "scoreWithActualYards": 0.3875112961615332,
+              "scoreWithProjection": 0.5161800989426256,
+              "scoreWithOpportunityComponent": 0.5217255215170711,
+              "scoreWithEnvironmentComponent": 0.8442823959396418,
+              "scoreWithActualOpportunity": 0.4238918484893244,
+              "scoreWithActualEfficiency": 0.23770160324175252
+            }
+          ],
+          "avgActualYardsCorrelation": 0.3942507220699172,
+          "avgProjectionCorrelation": 0.5417459949313954
+        },
+        "predictiveWeighting": {
+          "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+          "weights": {
+            "workload": 0.5,
+            "roleQuality": 0.1,
+            "teamRushingEnvironment": 0.2,
+            "opponent": 0.2
+          },
+          "byFold": [
+            {
+              "scoreWithActualYards": 0.5819325001912475,
+              "scoreWithProjection": 0.8221058982536228,
+              "scoreWithOpportunityComponent": 0.9167384266475483,
+              "scoreWithEnvironmentComponent": 0.3610798962264337,
+              "scoreWithActualOpportunity": 0.6645710004881791,
+              "scoreWithActualEfficiency": 0.3016841103136692
+            },
+            {
+              "scoreWithActualYards": 0.5847720421172277,
+              "scoreWithProjection": 0.7951604752269389,
+              "scoreWithOpportunityComponent": 0.8752748086253516,
+              "scoreWithEnvironmentComponent": 0.44920986743742064,
+              "scoreWithActualOpportunity": 0.6520577920879731,
+              "scoreWithActualEfficiency": 0.36127095332087233
+            }
+          ],
+          "avgActualYardsCorrelation": 0.5833522711542376,
+          "avgProjectionCorrelation": 0.8086331867402808,
+          "avgActualOpportunityCorrelation": 0.6583143962880761,
+          "avgActualEfficiencyCorrelation": 0.3314775318172708
+        },
+        "selectionScore": 0.5733522711542376
+      }
+    },
+    "selectedDefinition": {
+      "opportunityComponent": "workload",
+      "environmentComponents": [
+        "roleQuality",
+        "teamRushingEnvironment",
+        "opponent"
+      ],
+      "weights": {
+        "workload": 0.5,
+        "roleQuality": 0.1,
+        "teamRushingEnvironment": 0.2,
+        "opponent": 0.2
+      }
+    },
+    "correlations": {
+      "development": {
+        "matchupScoreWithProjectedYards": 0.8016377675065341,
+        "matchupScoreWithActualYards": 0.5752169172518147,
+        "matchupScoreWithOpportunityScore": 0.8874664388920942,
+        "matchupScoreWithEnvironmentScore": 0.4245557149902715,
+        "opportunityScoreWithEnvironmentScore": -0.012720777822640814
+      },
+      "retrospective2025": {
+        "matchupScoreWithProjectedYards": 0.8102406142794288,
+        "matchupScoreWithActualYards": 0.5895569170849707,
+        "matchupScoreWithOpportunityScore": 0.8953223909217458,
+        "matchupScoreWithEnvironmentScore": 0.4044689919120661,
+        "opportunityScoreWithEnvironmentScore": -0.022474179415799645
+      }
+    },
+    "scoreDistributionBySeason": {
+      "2022": {
+        "n": 2886,
+        "mean": 50.519081727271775,
+        "median": 50.02123950618946,
+        "standardDeviation": 15.730503049622286,
+        "percentiles": {
+          "p05": 24.685967403562316,
+          "p10": 29.792249094593195,
+          "p25": 39.56404654641459,
+          "p50": 50.02123950618946,
+          "p75": 61.94328709588408,
+          "p90": 72.03264312464887,
+          "p95": 76.4055823227005
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 296,
+            "pct": 0.10256410256410256
+          },
+          "challenging": {
+            "n": 790,
+            "pct": 0.27373527373527373
+          },
+          "neutral": {
+            "n": 687,
+            "pct": 0.23804573804573806
+          },
+          "positive": {
+            "n": 753,
+            "pct": 0.2609147609147609
+          },
+          "elite": {
+            "n": 360,
+            "pct": 0.12474012474012475
+          }
+        }
+      },
+      "2023": {
+        "n": 3417,
+        "mean": 48.59351456197633,
+        "median": 48.731105488530694,
+        "standardDeviation": 15.524143564776399,
+        "percentiles": {
+          "p05": 24.255093876238607,
+          "p10": 27.766168562093778,
+          "p25": 36.29769311861847,
+          "p50": 48.731105488530694,
+          "p75": 60.52969610620349,
+          "p90": 69.23332241656318,
+          "p95": 73.62210167417516
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 478,
+            "pct": 0.13988879133743048
+          },
+          "challenging": {
+            "n": 971,
+            "pct": 0.2841673983026046
+          },
+          "neutral": {
+            "n": 721,
+            "pct": 0.2110038045068774
+          },
+          "positive": {
+            "n": 941,
+            "pct": 0.27538776704711737
+          },
+          "elite": {
+            "n": 306,
+            "pct": 0.08955223880597014
+          }
+        }
+      },
+      "2024": {
+        "n": 3387,
+        "mean": 50.976643305822385,
+        "median": 50.99009189343582,
+        "standardDeviation": 16.06553784013115,
+        "percentiles": {
+          "p05": 24.946060622383087,
+          "p10": 29.73460381327785,
+          "p25": 38.59668012503188,
+          "p50": 50.99009189343582,
+          "p75": 62.718801811429415,
+          "p90": 72.35652634368775,
+          "p95": 76.93893735356752
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 350,
+            "pct": 0.10333628579864186
+          },
+          "challenging": {
+            "n": 895,
+            "pct": 0.26424564511366994
+          },
+          "neutral": {
+            "n": 743,
+            "pct": 0.21936817242397402
+          },
+          "positive": {
+            "n": 957,
+            "pct": 0.28255093002657217
+          },
+          "elite": {
+            "n": 442,
+            "pct": 0.130498966637142
+          }
+        }
+      },
+      "2025": {
+        "n": 3448,
+        "mean": 48.836699007576925,
+        "median": 48.256229646615935,
+        "standardDeviation": 15.530671288222624,
+        "percentiles": {
+          "p05": 24.9942457777023,
+          "p10": 28.803081044634837,
+          "p25": 37.16336907506319,
+          "p50": 48.256229646615935,
+          "p75": 59.891012737311875,
+          "p90": 70.34464398266012,
+          "p95": 75.50938870119829
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 427,
+            "pct": 0.1238399071925754
+          },
+          "challenging": {
+            "n": 1044,
+            "pct": 0.302784222737819
+          },
+          "neutral": {
+            "n": 780,
+            "pct": 0.22621809744779584
+          },
+          "positive": {
+            "n": 835,
+            "pct": 0.242169373549884
+          },
+          "elite": {
+            "n": 362,
+            "pct": 0.10498839907192575
+          }
+        }
+      }
+    },
+    "outcomeByBand": {
+      "development": {
+        "difficult": {
+          "n": 1124,
+          "meanScore": 24.36480431781127,
+          "meanActualYards": 1.9688612099644127,
+          "meanActualOpportunity": 0.40480427046263345,
+          "meanActualEfficiency": 0.8628826072108989
+        },
+        "challenging": {
+          "n": 2656,
+          "meanScore": 37.988583019168885,
+          "meanActualYards": 4.236822289156627,
+          "meanActualOpportunity": 0.9890813253012049,
+          "meanActualEfficiency": 1.4843472068081085
+        },
+        "neutral": {
+          "n": 2151,
+          "meanScore": 50.00369333187539,
+          "meanActualYards": 12.125523012552302,
+          "meanActualOpportunity": 2.771269177126918,
+          "meanActualEfficiency": 2.8652162161806993
+        },
+        "positive": {
+          "n": 2651,
+          "meanScore": 61.95849164380604,
+          "meanActualYards": 28.648057336854016,
+          "meanActualOpportunity": 6.683515654470011,
+          "meanActualEfficiency": 3.507367207000179
+        },
+        "elite": {
+          "n": 1108,
+          "meanScore": 76.17904128454279,
+          "meanActualYards": 60.04332129963899,
+          "meanActualOpportunity": 13.379061371841155,
+          "meanActualEfficiency": 4.33486240560214
+        }
+      },
+      "retrospective2025": {
+        "difficult": {
+          "n": 427,
+          "meanScore": 24.76129449089956,
+          "meanActualYards": 2.6533957845433256,
+          "meanActualOpportunity": 0.5831381733021077,
+          "meanActualEfficiency": 1.0476021831408249
+        },
+        "challenging": {
+          "n": 1044,
+          "meanScore": 38.04571308147147,
+          "meanActualYards": 3.2691570881226055,
+          "meanActualOpportunity": 0.7701149425287356,
+          "meanActualEfficiency": 1.4110350218108836
+        },
+        "neutral": {
+          "n": 780,
+          "meanScore": 50.066687160503946,
+          "meanActualYards": 11.688461538461539,
+          "meanActualOpportunity": 2.8333333333333335,
+          "meanActualEfficiency": 2.4849029338725104
+        },
+        "positive": {
+          "n": 835,
+          "meanScore": 61.740669371422236,
+          "meanActualYards": 31.4,
+          "meanActualOpportunity": 7.0802395209580835,
+          "meanActualEfficiency": 3.879030833504403
+        },
+        "elite": {
+          "n": 362,
+          "meanScore": 75.94106647271916,
+          "meanActualYards": 60.466850828729285,
+          "meanActualOpportunity": 13.591160220994475,
+          "meanActualEfficiency": 4.3139602611305765
+        }
+      }
+    },
+    "representative2025Examples": {
+      "A_highScore_highProjection": {
+        "season": 2025,
+        "week": 14,
+        "playerId": "gsis:00-0040122",
+        "playerName": "Ashton Jeanty",
+        "team": "lv",
+        "opponent": "den",
+        "position": "RB",
+        "matchupScore": 70.63972546114647,
+        "opportunityScore": 95.15470094781567,
+        "environmentScore": 54.67013425972103,
+        "projectedYards": 56.90219184873928,
+        "actualYards": 30,
+        "scorePercentile": 90.37122969837587,
+        "projectionPercentile": 89.96519721577727
+      },
+      "B_highScore_modestProjection": {
+        "season": 2025,
+        "week": 6,
+        "playerId": "gsis:00-0040009",
+        "playerName": "Savion Williams",
+        "team": "gb",
+        "opponent": "cin",
+        "position": "WR",
+        "matchupScore": 62.59431393719305,
+        "opportunityScore": 44.21777971456585,
+        "environmentScore": 79.62633620031957,
+        "projectedYards": 4.354724776299354,
+        "actualYards": 3,
+        "scorePercentile": 79.35034802784223,
+        "projectionPercentile": 42.459396751740144
+      },
+      "C_lowScore_highProjection": {
+        "season": 2025,
+        "week": 2,
+        "playerId": "gsis:00-0036355",
+        "playerName": "Justin Herbert",
+        "team": "lac",
+        "opponent": "lv",
+        "position": "QB",
+        "matchupScore": 40.32790464901469,
+        "opportunityScore": 78.75040854123543,
+        "environmentScore": 1.5878339639949541,
+        "projectedYards": 30.78645874727638,
+        "actualYards": 31,
+        "scorePercentile": 32.10556844547564,
+        "projectionPercentile": 79.26334106728538
+      },
+      "D_lowScore_lowProjection": {
+        "season": 2025,
+        "week": 17,
+        "playerId": "gsis:00-0027973",
+        "playerName": "Andy Dalton",
+        "team": "car",
+        "opponent": "sea",
+        "position": "QB",
+        "matchupScore": 34.57947749128912,
+        "opportunityScore": 25.468460616624903,
+        "environmentScore": 41.650193281634174,
+        "projectedYards": 0.30039373135827946,
+        "actualYards": 0,
+        "scorePercentile": 19.51856148491879,
+        "projectionPercentile": 19.634570765661252
+      }
+    },
+    "hardCases2025": {
+      "committee": {
+        "n": 1390,
+        "matchupScore": {
+          "n": 1390,
+          "mean": 45.704412519671386,
+          "median": 45.15641331738086,
+          "standardDeviation": 15.338118492030848,
+          "percentiles": {
+            "p05": 22.38836488099173,
+            "p10": 25.782648877816946,
+            "p25": 33.35081372635889,
+            "p50": 45.15641331738086,
+            "p75": 57.21518900452196,
+            "p90": 66.47959630782964,
+            "p95": 70.60637334241324
+          }
+        },
+        "opportunityScore": {
+          "n": 1390,
+          "mean": 48.190281852304146,
+          "median": 48.42711624359952,
+          "standardDeviation": 27.741669474475643,
+          "percentiles": {
+            "p05": 8.819043468787449,
+            "p10": 8.819043468787449,
+            "p25": 24.86722409848567,
+            "p50": 48.42711624359952,
+            "p75": 74.47979082688747,
+            "p90": 85.34889421505612,
+            "p95": 90.08470421614554
+          }
+        },
+        "environmentScore": {
+          "n": 1390,
+          "mean": 39.97336867849827,
+          "median": 39.34316739533362,
+          "standardDeviation": 12.226101536633704,
+          "percentiles": {
+            "p05": 18.62286435041853,
+            "p10": 24.792560931683802,
+            "p25": 33.37533489334532,
+            "p50": 39.34316739533362,
+            "p75": 47.81748583931818,
+            "p90": 56.31960754711516,
+            "p95": 60.664312239018905
+          }
+        }
+      },
+      "lowHistory": {
+        "n": 291,
+        "matchupScore": {
+          "n": 291,
+          "mean": 42.18982732482283,
+          "median": 44.36477315520926,
+          "standardDeviation": 13.105750970142688,
+          "percentiles": {
+            "p05": 19.058512469073353,
+            "p10": 24.939814446180467,
+            "p25": 32.16779972321568,
+            "p50": 44.36477315520926,
+            "p75": 51.65938915935871,
+            "p90": 57.90937729027681,
+            "p95": 62.015318854016144
+          }
+        },
+        "opportunityScore": {
+          "n": 291,
+          "mean": 38.53515363958302,
+          "median": 50,
+          "standardDeviation": 23.58627017308388,
+          "percentiles": {
+            "p05": 8.819043468787449,
+            "p10": 8.819043468787449,
+            "p25": 8.819043468787449,
+            "p50": 50,
+            "p75": 50,
+            "p90": 66.23815230417257,
+            "p95": 76.86158622943677
+          }
+        },
+        "environmentScore": {
+          "n": 291,
+          "mean": 46.469952157488116,
+          "median": 47.713679880775025,
+          "standardDeviation": 15.813051548880592,
+          "percentiles": {
+            "p05": 17.588847362615596,
+            "p10": 25.950111848646497,
+            "p25": 36.5617441115517,
+            "p50": 47.713679880775025,
+            "p75": 57.77648864435996,
+            "p90": 66.08504544807678,
+            "p95": 69.82712817196546
+          }
+        }
+      },
+      "highVolume": {
+        "n": 414,
+        "matchupScore": {
+          "n": 414,
+          "mean": 72.8295300259892,
+          "median": 72.7835350277755,
+          "standardDeviation": 6.887178728981171,
+          "percentiles": {
+            "p05": 61.63883315333128,
+            "p10": 63.744729282814966,
+            "p25": 67.96217997105663,
+            "p50": 72.7835350277755,
+            "p75": 78.14779917160774,
+            "p90": 81.45100993526987,
+            "p95": 83.52806472553412
+          }
+        },
+        "opportunityScore": {
+          "n": 414,
+          "mean": 93.66143997035871,
+          "median": 93.87869048916005,
+          "standardDeviation": 3.411719972565,
+          "percentiles": {
+            "p05": 87.374850201547,
+            "p10": 88.68041180956531,
+            "p25": 91.30283799978211,
+            "p50": 93.87869048916005,
+            "p75": 96.40347532410938,
+            "p90": 97.98371282274758,
+            "p95": 98.49016777426733
+          }
+        },
+        "environmentScore": {
+          "n": 414,
+          "mean": 52.969017914154016,
+          "median": 53.5842262497374,
+          "standardDeviation": 12.291833093131785,
+          "percentiles": {
+            "p05": 32.2146337814007,
+            "p10": 36.65575285795267,
+            "p25": 44.23787132638719,
+            "p50": 53.5842262497374,
+            "p75": 62.56194789891222,
+            "p90": 68.21343230477397,
+            "p95": 72.07759064532986
+          }
+        }
+      }
+    }
+  },
+  "receiving": {
+    "candidateResearch": {
+      "candidates": [
+        {
+          "id": "C1_opportunity_opponent_pooled",
+          "dimensions": [
+            "opportunity",
+            "opponent"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.5,
+              "opponent": 0.5
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.2815872867732422,
+                "scoreWithProjection": 0.4390652511698483,
+                "scoreWithOpportunityComponent": 0.6865634529324323,
+                "scoreWithEnvironmentComponent": 0.7370712449849145,
+                "scoreWithActualOpportunity": 0.32866336640790556,
+                "scoreWithActualEfficiency": 0.14893972909431644
+              },
+              {
+                "scoreWithActualYards": 0.25227073391631744,
+                "scoreWithProjection": 0.42399836466125995,
+                "scoreWithOpportunityComponent": 0.7339024465745714,
+                "scoreWithEnvironmentComponent": 0.6986875028807648,
+                "scoreWithActualOpportunity": 0.3164714434689715,
+                "scoreWithActualEfficiency": 0.11109550862373567
+              }
+            ],
+            "avgActualYardsCorrelation": 0.2669290103447798,
+            "avgProjectionCorrelation": 0.4315318079155541
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.5,
+              "opponent": 0.5
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.2815872867732422,
+                "scoreWithProjection": 0.4390652511698483,
+                "scoreWithOpportunityComponent": 0.6865634529324323,
+                "scoreWithEnvironmentComponent": 0.7370712449849145,
+                "scoreWithActualOpportunity": 0.32866336640790556,
+                "scoreWithActualEfficiency": 0.14893972909431644
+              },
+              {
+                "scoreWithActualYards": 0.25227073391631744,
+                "scoreWithProjection": 0.42399836466125995,
+                "scoreWithOpportunityComponent": 0.7339024465745714,
+                "scoreWithEnvironmentComponent": 0.6986875028807648,
+                "scoreWithActualOpportunity": 0.3164714434689715,
+                "scoreWithActualEfficiency": 0.11109550862373567
+              }
+            ],
+            "avgActualYardsCorrelation": 0.2669290103447798,
+            "avgProjectionCorrelation": 0.4315318079155541,
+            "avgActualOpportunityCorrelation": 0.3225674049384385,
+            "avgActualEfficiencyCorrelation": 0.13001761885902605
+          },
+          "selectionScore": 0.2669290103447798
+        },
+        {
+          "id": "C2_add_role_stability_pooled",
+          "dimensions": [
+            "opportunity",
+            "roleStability",
+            "opponent"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.3333333333333333,
+              "roleStability": 0.3333333333333333,
+              "opponent": 0.3333333333333333
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.08536487702499808,
+                "scoreWithProjection": 0.1376192731506965,
+                "scoreWithOpportunityComponent": 0.37339353735076675,
+                "scoreWithEnvironmentComponent": 0.8609029786622576,
+                "scoreWithActualOpportunity": 0.08949044412870437,
+                "scoreWithActualEfficiency": 0.03721237321412555
+              },
+              {
+                "scoreWithActualYards": 0.039365703036146824,
+                "scoreWithProjection": 0.09297285279935644,
+                "scoreWithOpportunityComponent": 0.4056630716290687,
+                "scoreWithEnvironmentComponent": 0.8316755363394746,
+                "scoreWithActualOpportunity": 0.06904432228115696,
+                "scoreWithActualEfficiency": -0.011334529897556693
+              }
+            ],
+            "avgActualYardsCorrelation": 0.06236529003057245,
+            "avgProjectionCorrelation": 0.11529606297502647
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.5,
+              "roleStability": 0.1,
+              "opponent": 0.4
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.2742075337256118,
+                "scoreWithProjection": 0.4362607694207509,
+                "scoreWithOpportunityComponent": 0.7239674997463114,
+                "scoreWithEnvironmentComponent": 0.45330219580100184,
+                "scoreWithActualOpportunity": 0.31947324120669157,
+                "scoreWithActualEfficiency": 0.13947777349764517
+              },
+              {
+                "scoreWithActualYards": 0.23481632808674205,
+                "scoreWithProjection": 0.40715112304756773,
+                "scoreWithOpportunityComponent": 0.7700919441641194,
+                "scoreWithEnvironmentComponent": 0.3718029223618823,
+                "scoreWithActualOpportunity": 0.3000761412778429,
+                "scoreWithActualEfficiency": 0.09628655056781606
+              }
+            ],
+            "avgActualYardsCorrelation": 0.2545119309061769,
+            "avgProjectionCorrelation": 0.42170594623415936,
+            "avgActualOpportunityCorrelation": 0.3097746912422672,
+            "avgActualEfficiencyCorrelation": 0.11788216203273061
+          },
+          "selectionScore": 0.2495119309061769
+        },
+        {
+          "id": "C3_add_efficiency_pooled",
+          "dimensions": [
+            "opportunity",
+            "roleStability",
+            "opponent",
+            "efficiencyProfile"
+          ],
+          "normalization": "pooled",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.25,
+              "roleStability": 0.25,
+              "opponent": 0.25,
+              "efficiencyProfile": 0.25
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.2517973177873775,
+                "scoreWithProjection": 0.37861465348012596,
+                "scoreWithOpportunityComponent": 0.4086220769450922,
+                "scoreWithEnvironmentComponent": 0.9053026962542459,
+                "scoreWithActualOpportunity": 0.24092082280764107,
+                "scoreWithActualEfficiency": 0.14240645203813904
+              },
+              {
+                "scoreWithActualYards": 0.21252060102653988,
+                "scoreWithProjection": 0.34446681152573755,
+                "scoreWithOpportunityComponent": 0.4088114168909151,
+                "scoreWithEnvironmentComponent": 0.8773013974890633,
+                "scoreWithActualOpportunity": 0.2249603467138742,
+                "scoreWithActualEfficiency": 0.1057474408730543
+              }
+            ],
+            "avgActualYardsCorrelation": 0.2321589594069587,
+            "avgProjectionCorrelation": 0.3615407325029317
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.5,
+              "roleStability": 0.1,
+              "opponent": 0.1,
+              "efficiencyProfile": 0.3
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.4374254619607439,
+                "scoreWithProjection": 0.6933738616369335,
+                "scoreWithOpportunityComponent": 0.7885600088401139,
+                "scoreWithEnvironmentComponent": 0.5093961154099604,
+                "scoreWithActualOpportunity": 0.47123339035220974,
+                "scoreWithActualEfficiency": 0.23297967368686362
+              },
+              {
+                "scoreWithActualYards": 0.40098036878811555,
+                "scoreWithProjection": 0.6654246411075776,
+                "scoreWithOpportunityComponent": 0.8110454575532777,
+                "scoreWithEnvironmentComponent": 0.4281164966711962,
+                "scoreWithActualOpportunity": 0.4503393550016015,
+                "scoreWithActualEfficiency": 0.20891569844400049
+              }
+            ],
+            "avgActualYardsCorrelation": 0.4192029153744297,
+            "avgProjectionCorrelation": 0.6793992513722555,
+            "avgActualOpportunityCorrelation": 0.4607863726769056,
+            "avgActualEfficiencyCorrelation": 0.22094768606543205
+          },
+          "selectionScore": 0.4092029153744297
+        },
+        {
+          "id": "C3_position_normalized",
+          "dimensions": [
+            "opportunity",
+            "roleStability",
+            "opponent",
+            "efficiencyProfile"
+          ],
+          "normalization": "position",
+          "equalWeightBenchmark": {
+            "weights": {
+              "opportunity": 0.25,
+              "roleStability": 0.25,
+              "opponent": 0.25,
+              "efficiencyProfile": 0.25
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.15862254432137096,
+                "scoreWithProjection": 0.2725486866341276,
+                "scoreWithOpportunityComponent": 0.3546266028340311,
+                "scoreWithEnvironmentComponent": 0.898869070699648,
+                "scoreWithActualOpportunity": 0.1610223654006752,
+                "scoreWithActualEfficiency": 0.09384070811839373
+              },
+              {
+                "scoreWithActualYards": 0.11800507553371896,
+                "scoreWithProjection": 0.2374492802372081,
+                "scoreWithOpportunityComponent": 0.35960022715015294,
+                "scoreWithEnvironmentComponent": 0.8740081115905807,
+                "scoreWithActualOpportunity": 0.1357645617832501,
+                "scoreWithActualEfficiency": 0.06268550816174787
+              }
+            ],
+            "avgActualYardsCorrelation": 0.13831380992754497,
+            "avgProjectionCorrelation": 0.25499898343566785
+          },
+          "predictiveWeighting": {
+            "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+            "weights": {
+              "opportunity": 0.5,
+              "roleStability": 0.1,
+              "opponent": 0.1,
+              "efficiencyProfile": 0.3
+            },
+            "byFold": [
+              {
+                "scoreWithActualYards": 0.3321978408139859,
+                "scoreWithProjection": 0.5797527522929895,
+                "scoreWithOpportunityComponent": 0.769208868308392,
+                "scoreWithEnvironmentComponent": 0.47443405176268866,
+                "scoreWithActualOpportunity": 0.38688068024221456,
+                "scoreWithActualEfficiency": 0.17638873638540337
+              },
+              {
+                "scoreWithActualYards": 0.291574861523262,
+                "scoreWithProjection": 0.5484116021475525,
+                "scoreWithOpportunityComponent": 0.7898161576572479,
+                "scoreWithEnvironmentComponent": 0.40443476263128436,
+                "scoreWithActualOpportunity": 0.35062137958774026,
+                "scoreWithActualEfficiency": 0.1590616980691544
+              }
+            ],
+            "avgActualYardsCorrelation": 0.31188635116862395,
+            "avgProjectionCorrelation": 0.564082177220271,
+            "avgActualOpportunityCorrelation": 0.36875102991497744,
+            "avgActualEfficiencyCorrelation": 0.1677252172272789
+          },
+          "selectionScore": 0.30188635116862395
+        }
+      ],
+      "winner": {
+        "id": "C3_position_normalized",
+        "dimensions": [
+          "opportunity",
+          "roleStability",
+          "opponent",
+          "efficiencyProfile"
+        ],
+        "normalization": "position",
+        "equalWeightBenchmark": {
+          "weights": {
+            "opportunity": 0.25,
+            "roleStability": 0.25,
+            "opponent": 0.25,
+            "efficiencyProfile": 0.25
+          },
+          "byFold": [
+            {
+              "scoreWithActualYards": 0.15862254432137096,
+              "scoreWithProjection": 0.2725486866341276,
+              "scoreWithOpportunityComponent": 0.3546266028340311,
+              "scoreWithEnvironmentComponent": 0.898869070699648,
+              "scoreWithActualOpportunity": 0.1610223654006752,
+              "scoreWithActualEfficiency": 0.09384070811839373
+            },
+            {
+              "scoreWithActualYards": 0.11800507553371896,
+              "scoreWithProjection": 0.2374492802372081,
+              "scoreWithOpportunityComponent": 0.35960022715015294,
+              "scoreWithEnvironmentComponent": 0.8740081115905807,
+              "scoreWithActualOpportunity": 0.1357645617832501,
+              "scoreWithActualEfficiency": 0.06268550816174787
+            }
+          ],
+          "avgActualYardsCorrelation": 0.13831380992754497,
+          "avgProjectionCorrelation": 0.25499898343566785
+        },
+        "predictiveWeighting": {
+          "method": "non-negative 0.1-step grid; every dimension >=0.1; opportunity <=0.5; maximize average development-fold correlation with actual yards; reject projection correlation >=0.95",
+          "weights": {
+            "opportunity": 0.5,
+            "roleStability": 0.1,
+            "opponent": 0.1,
+            "efficiencyProfile": 0.3
+          },
+          "byFold": [
+            {
+              "scoreWithActualYards": 0.3321978408139859,
+              "scoreWithProjection": 0.5797527522929895,
+              "scoreWithOpportunityComponent": 0.769208868308392,
+              "scoreWithEnvironmentComponent": 0.47443405176268866,
+              "scoreWithActualOpportunity": 0.38688068024221456,
+              "scoreWithActualEfficiency": 0.17638873638540337
+            },
+            {
+              "scoreWithActualYards": 0.291574861523262,
+              "scoreWithProjection": 0.5484116021475525,
+              "scoreWithOpportunityComponent": 0.7898161576572479,
+              "scoreWithEnvironmentComponent": 0.40443476263128436,
+              "scoreWithActualOpportunity": 0.35062137958774026,
+              "scoreWithActualEfficiency": 0.1590616980691544
+            }
+          ],
+          "avgActualYardsCorrelation": 0.31188635116862395,
+          "avgProjectionCorrelation": 0.564082177220271,
+          "avgActualOpportunityCorrelation": 0.36875102991497744,
+          "avgActualEfficiencyCorrelation": 0.1677252172272789
+        },
+        "selectionScore": 0.30188635116862395
+      },
+      "unconstrainedCorrelationWinner": "C3_add_efficiency_pooled",
+      "selectionRationale": "C3 position-normalized is selected despite lower raw outcome correlation because pooled normalization shifts the score's meaning by position; the position-relative empirical CDF makes the same score represent comparable within-role favorability for RB/WR/TE."
+    },
+    "selectedDefinition": {
+      "opportunityComponent": "opportunity",
+      "environmentComponents": [
+        "roleStability",
+        "opponent",
+        "efficiencyProfile"
+      ],
+      "weights": {
+        "opportunity": 0.5,
+        "roleStability": 0.1,
+        "opponent": 0.1,
+        "efficiencyProfile": 0.3
+      }
+    },
+    "correlations": {
+      "development": {
+        "matchupScoreWithProjectedYards": 0.5489719110536508,
+        "matchupScoreWithActualYards": 0.2962920101937604,
+        "matchupScoreWithOpportunityScore": 0.8046035043370589,
+        "matchupScoreWithEnvironmentScore": 0.430692614281004,
+        "opportunityScoreWithEnvironmentScore": -0.08872723373935686
+      },
+      "retrospective2025": {
+        "matchupScoreWithProjectedYards": 0.5877850328530491,
+        "matchupScoreWithActualYards": 0.3175174284569775,
+        "matchupScoreWithOpportunityScore": 0.779554388238843,
+        "matchupScoreWithEnvironmentScore": 0.450665118589687,
+        "opportunityScoreWithEnvironmentScore": -0.09747859000541143
+      }
+    },
+    "scoreDistributionBySeason": {
+      "2022": {
+        "n": 4339,
+        "mean": 52.2675691993308,
+        "median": 52.6695984175787,
+        "standardDeviation": 12.291442398057844,
+        "percentiles": {
+          "p05": 31.473611465861733,
+          "p10": 35.785370186276104,
+          "p25": 43.86167175251149,
+          "p50": 52.6695984175787,
+          "p75": 60.80921530213352,
+          "p90": 68.23894275989129,
+          "p95": 71.91798872913854
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 172,
+            "pct": 0.03964047015441346
+          },
+          "challenging": {
+            "n": 1038,
+            "pct": 0.23922562802489053
+          },
+          "neutral": {
+            "n": 1291,
+            "pct": 0.2975339940078359
+          },
+          "positive": {
+            "n": 1520,
+            "pct": 0.3503111315971422
+          },
+          "elite": {
+            "n": 318,
+            "pct": 0.0732887762157179
+          }
+        }
+      },
+      "2023": {
+        "n": 5369,
+        "mean": 50.71690802513802,
+        "median": 50.8796441572406,
+        "standardDeviation": 11.45179217159089,
+        "percentiles": {
+          "p05": 31.454717300555256,
+          "p10": 35.433927808308255,
+          "p25": 42.77151401247086,
+          "p50": 50.8796441572406,
+          "p75": 58.64439600503843,
+          "p90": 65.6279772999917,
+          "p95": 69.50922654871076
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 189,
+            "pct": 0.035202086049543675
+          },
+          "challenging": {
+            "n": 1475,
+            "pct": 0.27472527472527475
+          },
+          "neutral": {
+            "n": 1803,
+            "pct": 0.33581672564723414
+          },
+          "positive": {
+            "n": 1658,
+            "pct": 0.30880983423356306
+          },
+          "elite": {
+            "n": 244,
+            "pct": 0.04544607934438443
+          }
+        }
+      },
+      "2024": {
+        "n": 5244,
+        "mean": 47.38976698267307,
+        "median": 47.43076728376205,
+        "standardDeviation": 11.602345925553745,
+        "percentiles": {
+          "p05": 28.22286303637517,
+          "p10": 32.35691211339995,
+          "p25": 39.356048454246135,
+          "p50": 47.43076728376205,
+          "p75": 55.511599762772164,
+          "p90": 62.28524239018873,
+          "p95": 66.40189158226482
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 358,
+            "pct": 0.06826849733028223
+          },
+          "challenging": {
+            "n": 1830,
+            "pct": 0.3489702517162471
+          },
+          "neutral": {
+            "n": 1658,
+            "pct": 0.3161708619374523
+          },
+          "positive": {
+            "n": 1277,
+            "pct": 0.2435163996948894
+          },
+          "elite": {
+            "n": 121,
+            "pct": 0.023073989321128908
+          }
+        }
+      },
+      "2025": {
+        "n": 5179,
+        "mean": 49.530012495496,
+        "median": 49.569890454511636,
+        "standardDeviation": 11.341765747655744,
+        "percentiles": {
+          "p05": 30.725544395809827,
+          "p10": 34.74456474668956,
+          "p25": 41.545105877588995,
+          "p50": 49.569890454511636,
+          "p75": 57.07391493246324,
+          "p90": 64.172171079476,
+          "p95": 68.20787240983014
+        },
+        "bandDistribution": {
+          "difficult": {
+            "n": 219,
+            "pct": 0.04228615562849971
+          },
+          "challenging": {
+            "n": 1586,
+            "pct": 0.30623672523653217
+          },
+          "neutral": {
+            "n": 1750,
+            "pct": 0.3379030700907511
+          },
+          "positive": {
+            "n": 1442,
+            "pct": 0.27843212975477893
+          },
+          "elite": {
+            "n": 182,
+            "pct": 0.03514191928943811
+          }
+        }
+      }
+    },
+    "outcomeByBand": {
+      "development": {
+        "difficult": {
+          "n": 719,
+          "meanScore": 25.503849108384998,
+          "meanActualYards": 8.400556328233657,
+          "meanActualOpportunity": 1.2726008344923505,
+          "meanActualEfficiency": 3.594431499577537
+        },
+        "challenging": {
+          "n": 4343,
+          "meanScore": 38.81355231098298,
+          "meanActualYards": 14.939212525903754,
+          "meanActualOpportunity": 2.128482615703431,
+          "meanActualEfficiency": 4.675007622471935
+        },
+        "neutral": {
+          "n": 4752,
+          "meanScore": 50.08863813308811,
+          "meanActualYards": 24.452651515151516,
+          "meanActualOpportunity": 3.244107744107744,
+          "meanActualEfficiency": 5.814469033027693
+        },
+        "positive": {
+          "n": 4455,
+          "meanScore": 61.069910497274016,
+          "meanActualYards": 33.308417508417506,
+          "meanActualOpportunity": 4.427833894500561,
+          "meanActualEfficiency": 6.504310427572774
+        },
+        "elite": {
+          "n": 683,
+          "meanScore": 74.09636183116073,
+          "meanActualYards": 41.82869692532943,
+          "meanActualOpportunity": 5.390922401171303,
+          "meanActualEfficiency": 7.080397321364941
+        }
+      },
+      "retrospective2025": {
+        "difficult": {
+          "n": 219,
+          "meanScore": 26.352498890853926,
+          "meanActualYards": 8.858447488584474,
+          "meanActualOpportunity": 1.36986301369863,
+          "meanActualEfficiency": 3.7215644705370727
+        },
+        "challenging": {
+          "n": 1586,
+          "meanScore": 38.92697223328456,
+          "meanActualYards": 12.939470365699874,
+          "meanActualOpportunity": 1.8076923076923077,
+          "meanActualEfficiency": 4.510285385064706
+        },
+        "neutral": {
+          "n": 1750,
+          "meanScore": 50.110414985860274,
+          "meanActualYards": 22.97942857142857,
+          "meanActualOpportunity": 3.1068571428571428,
+          "meanActualEfficiency": 5.628432092510666
+        },
+        "positive": {
+          "n": 1442,
+          "meanScore": 60.80233654316798,
+          "meanActualYards": 33.342579750346744,
+          "meanActualOpportunity": 4.415395284327323,
+          "meanActualEfficiency": 6.47705533454996
+        },
+        "elite": {
+          "n": 182,
+          "meanScore": 74.92507678342382,
+          "meanActualYards": 41.395604395604394,
+          "meanActualOpportunity": 5.329670329670329,
+          "meanActualEfficiency": 7.368771933195008
+        }
+      }
+    },
+    "representative2025Examples": {
+      "A_highScore_highProjection": {
+        "season": 2025,
+        "week": 11,
+        "playerId": "gsis:00-0038544",
+        "playerName": "Quentin Johnston",
+        "team": "lac",
+        "opponent": "jax",
+        "position": "WR",
+        "matchupScore": 64.43759763900101,
+        "opportunityScore": 77.55622748374527,
+        "environmentScore": 49.97454297174952,
+        "projectedYards": 53.48942000677427,
+        "actualYards": 0,
+        "scorePercentile": 90.44217030314734,
+        "projectionPercentile": 90.24908283452405
+      },
+      "B_highScore_modestProjection": {
+        "season": 2025,
+        "week": 2,
+        "playerId": "gsis:00-0035537",
+        "playerName": "Ty Johnson",
+        "team": "buf",
+        "opponent": "nyj",
+        "position": "RB",
+        "matchupScore": 64.0608801322027,
+        "opportunityScore": 70.06243610837006,
+        "environmentScore": 63.72565030132436,
+        "projectedYards": 11.227497682532828,
+        "actualYards": 0,
+        "scorePercentile": 89.72774666924117,
+        "projectionPercentile": 36.33906159490249
+      },
+      "C_lowScore_highProjection": {
+        "season": 2025,
+        "week": 1,
+        "playerId": "gsis:00-0038997",
+        "playerName": "Josh Downs",
+        "team": "ind",
+        "opponent": "mia",
+        "position": "WR",
+        "matchupScore": 40.56401182593647,
+        "opportunityScore": 42.85560258941724,
+        "environmentScore": 41.39350706128402,
+        "projectedYards": 54.376509001107586,
+        "actualYards": 12,
+        "scorePercentile": 22.301602625989574,
+        "projectionPercentile": 90.82834524039389
+      },
+      "D_lowScore_lowProjection": {
+        "season": 2025,
+        "week": 13,
+        "playerId": "gsis:00-0033217",
+        "playerName": "Mo Alie-Cox",
+        "team": "ind",
+        "opponent": "hou",
+        "position": "TE",
+        "matchupScore": 39.424363358948334,
+        "opportunityScore": 38.4200058242749,
+        "environmentScore": 41.71193210844378,
+        "projectedYards": 5.46435574458781,
+        "actualYards": 0,
+        "scorePercentile": 19.63699555898822,
+        "projectionPercentile": 20.525197914655337
+      }
+    },
+    "crossPosition2025": {
+      "RB": {
+        "scoreDistribution": {
+          "n": 1326,
+          "mean": 49.107891764242645,
+          "median": 48.708357243247484,
+          "standardDeviation": 10.98039105456908,
+          "percentiles": {
+            "p05": 31.490306905733934,
+            "p10": 34.90704753041463,
+            "p25": 41.562170002878354,
+            "p50": 48.708357243247484,
+            "p75": 56.34135534041848,
+            "p90": 63.97097685166823,
+            "p95": 68.21535901460442
+          }
+        },
+        "correlations": {
+          "matchupScoreWithProjectedYards": 0.6182333466942033,
+          "matchupScoreWithActualYards": 0.26812845306365013,
+          "matchupScoreWithOpportunityScore": 0.7902227388501284,
+          "matchupScoreWithEnvironmentScore": 0.42005588163368096,
+          "opportunityScoreWithEnvironmentScore": -0.11134986298325801
+        },
+        "bandOutcomes": {
+          "difficult": {
+            "n": 51,
+            "meanScore": 27.142977289170783,
+            "meanActualYards": 4.7254901960784315,
+            "meanActualOpportunity": 0.7843137254901961,
+            "meanActualEfficiency": 2.950980392156863
+          },
+          "challenging": {
+            "n": 430,
+            "meanScore": 39.09321846697727,
+            "meanActualYards": 8.474418604651163,
+            "meanActualOpportunity": 1.3093023255813954,
+            "meanActualEfficiency": 3.726521779254338
+          },
+          "neutral": {
+            "n": 470,
+            "meanScore": 49.91458399284521,
+            "meanActualYards": 11.991489361702127,
+            "meanActualOpportunity": 2.217021276595745,
+            "meanActualEfficiency": 3.9468092250539053
+          },
+          "positive": {
+            "n": 336,
+            "meanScore": 61.13702860051169,
+            "meanActualYards": 16.660714285714285,
+            "meanActualOpportunity": 2.8601190476190474,
+            "meanActualEfficiency": 4.826242226688653
+          },
+          "elite": {
+            "n": 39,
+            "meanScore": 74.89211821611846,
+            "meanActualYards": 28.564102564102566,
+            "meanActualOpportunity": 4.282051282051282,
+            "meanActualEfficiency": 5.725990675990675
+          }
+        }
+      },
+      "WR": {
+        "scoreDistribution": {
+          "n": 2443,
+          "mean": 49.96817617804743,
+          "median": 50.330793350072085,
+          "standardDeviation": 11.224248146181695,
+          "percentiles": {
+            "p05": 30.766755614607188,
+            "p10": 35.32499473552906,
+            "p25": 42.36450003916934,
+            "p50": 50.330793350072085,
+            "p75": 57.25855717391358,
+            "p90": 64.09953097810155,
+            "p95": 68.08547778236021
+          }
+        },
+        "correlations": {
+          "matchupScoreWithProjectedYards": 0.6127159567498313,
+          "matchupScoreWithActualYards": 0.3141067476735354,
+          "matchupScoreWithOpportunityScore": 0.7711284597959925,
+          "matchupScoreWithEnvironmentScore": 0.4675922561989108,
+          "opportunityScoreWithEnvironmentScore": -0.09231247590047127
+        },
+        "bandOutcomes": {
+          "difficult": {
+            "n": 106,
+            "meanScore": 25.80140933027742,
+            "meanActualYards": 12.443396226415095,
+            "meanActualOpportunity": 1.849056603773585,
+            "meanActualEfficiency": 4.185186433063792
+          },
+          "challenging": {
+            "n": 681,
+            "meanScore": 39.14712839584758,
+            "meanActualYards": 17.854625550660792,
+            "meanActualOpportunity": 2.3876651982378854,
+            "meanActualEfficiency": 5.273467729855397
+          },
+          "neutral": {
+            "n": 857,
+            "meanScore": 50.19502215111135,
+            "meanActualYards": 30.504084014002334,
+            "meanActualOpportunity": 3.7829638273045507,
+            "meanActualEfficiency": 6.752743197098505
+          },
+          "positive": {
+            "n": 714,
+            "meanScore": 60.65773635342524,
+            "meanActualYards": 42.372549019607845,
+            "meanActualOpportunity": 5.302521008403361,
+            "meanActualEfficiency": 7.217498958545507
+          },
+          "elite": {
+            "n": 85,
+            "meanScore": 74.72179807694407,
+            "meanActualYards": 46.45882352941177,
+            "meanActualOpportunity": 5.8,
+            "meanActualEfficiency": 7.562741931271344
+          }
+        }
+      },
+      "TE": {
+        "scoreDistribution": {
+          "n": 1410,
+          "mean": 49.16781264667909,
+          "median": 49.26832726626481,
+          "standardDeviation": 11.839978753908532,
+          "percentiles": {
+            "p05": 30.550744691186424,
+            "p10": 33.63180643986384,
+            "p25": 40.08298877690421,
+            "p50": 49.26832726626481,
+            "p75": 57.37460074086053,
+            "p90": 64.49062099335848,
+            "p95": 68.67201602315016
+          }
+        },
+        "correlations": {
+          "matchupScoreWithProjectedYards": 0.6751402044959122,
+          "matchupScoreWithActualYards": 0.4033599715840542,
+          "matchupScoreWithOpportunityScore": 0.7908612930930692,
+          "matchupScoreWithEnvironmentScore": 0.44539383373126906,
+          "opportunityScoreWithEnvironmentScore": -0.089291116116516
+        },
+        "bandOutcomes": {
+          "difficult": {
+            "n": 62,
+            "meanScore": 26.644452037740173,
+            "meanActualYards": 6.129032258064516,
+            "meanActualOpportunity": 1.032258064516129,
+            "meanActualEfficiency": 3.5627880184331797
+          },
+          "challenging": {
+            "n": 475,
+            "meanScore": 38.46084122866727,
+            "meanActualYards": 9.934736842105263,
+            "meanActualOpportunity": 1.4273684210526316,
+            "meanActualEfficiency": 4.125635224424699
+          },
+          "neutral": {
+            "n": 423,
+            "meanScore": 50.15659046126636,
+            "meanActualYards": 19.94326241134752,
+            "meanActualOpportunity": 2.7257683215130024,
+            "meanActualEfficiency": 5.219042331453677
+          },
+          "positive": {
+            "n": 392,
+            "meanScore": 60.7788365539047,
+            "meanActualYards": 31.193877551020407,
+            "meanActualOpportunity": 4.13265306122449,
+            "meanActualEfficiency": 6.543372826153435
+          },
+          "elite": {
+            "n": 58,
+            "meanScore": 75.24514702783245,
+            "meanActualYards": 42.60344827586207,
+            "meanActualOpportunity": 5.344827586206897,
+            "meanActualEfficiency": 8.18913433309985
+          }
+        }
+      }
+    },
+    "hardCases2025": {
+      "lowHistory": {
+        "n": 315,
+        "matchupScore": {
+          "n": 315,
+          "mean": 51.47540377972102,
+          "median": 51.80362593652648,
+          "standardDeviation": 10.85633123461797,
+          "percentiles": {
+            "p05": 35.062004035594114,
+            "p10": 37.27953350949423,
+            "p25": 43.02615395754016,
+            "p50": 51.80362593652648,
+            "p75": 58.68317154796445,
+            "p90": 65.3617219504287,
+            "p95": 69.1208616715552
+          }
+        },
+        "opportunityScore": {
+          "n": 315,
+          "mean": 48.30190991530492,
+          "median": 47.89152872975143,
+          "standardDeviation": 18.747017649554934,
+          "percentiles": {
+            "p05": 17.36102422451868,
+            "p10": 22.57074173133632,
+            "p25": 35.53056661011508,
+            "p50": 47.89152872975143,
+            "p75": 62.96456963535009,
+            "p90": 73.85939506620775,
+            "p95": 76.92933519058353
+          }
+        },
+        "environmentScore": {
+          "n": 315,
+          "mean": 58.49286570313806,
+          "median": 58.562912514288335,
+          "standardDeviation": 10.26405580557152,
+          "percentiles": {
+            "p05": 39.54639695710935,
+            "p10": 47.05626200987184,
+            "p25": 51.1939513047998,
+            "p50": 58.562912514288335,
+            "p75": 65.98333645011178,
+            "p90": 71.08991835286443,
+            "p95": 75.42310868516982
+          }
+        }
+      },
+      "zeroTargetActualDiagnosticOnly": {
+        "n": 1188,
+        "matchupScore": {
+          "n": 1188,
+          "mean": 43.86575358824235,
+          "median": 43.59656220382669,
+          "standardDeviation": 10.197995939028344,
+          "percentiles": {
+            "p05": 28.10663215417816,
+            "p10": 30.844643932197986,
+            "p25": 36.6516660864684,
+            "p50": 43.59656220382669,
+            "p75": 50.64216768309355,
+            "p90": 56.48241045455545,
+            "p95": 60.69875641715962
+          }
+        },
+        "opportunityScore": {
+          "n": 1188,
+          "mean": 38.86719869370219,
+          "median": 37.89177251920311,
+          "standardDeviation": 16.25336546822893,
+          "percentiles": {
+            "p05": 12.89498652536848,
+            "p10": 18.097581175316417,
+            "p25": 27.524368012425512,
+            "p50": 37.89177251920311,
+            "p75": 50.5462646963981,
+            "p90": 60.27530952408415,
+            "p95": 66.52386390143455
+          }
+        },
+        "environmentScore": {
+          "n": 1188,
+          "mean": 51.64869702434476,
+          "median": 51.563524944994626,
+          "standardDeviation": 12.252982681496864,
+          "percentiles": {
+            "p05": 31.79766850579283,
+            "p10": 35.73153392150505,
+            "p25": 42.92694340393323,
+            "p50": 51.563524944994626,
+            "p75": 60.228420023814145,
+            "p90": 67.38501348919851,
+            "p95": 71.44492136522912
+          }
+        }
+      },
+      "volatileTargetShare": {
+        "n": 27,
+        "matchupScore": {
+          "n": 27,
+          "mean": 50.17684977101704,
+          "median": 52.75346533962484,
+          "standardDeviation": 11.310301791013181,
+          "percentiles": {
+            "p05": 26.081012424215235,
+            "p10": 30.364120041211965,
+            "p25": 44.63720569069329,
+            "p50": 52.75346533962484,
+            "p75": 59.414553724640136,
+            "p90": 61.75753106863311,
+            "p95": 63.266443019510454
+          }
+        },
+        "opportunityScore": {
+          "n": 27,
+          "mean": 56.26941875212237,
+          "median": 51.92536654620203,
+          "standardDeviation": 19.578933360042722,
+          "percentiles": {
+            "p05": 30.717985545744156,
+            "p10": 31.934051863711446,
+            "p25": 40.73233144093692,
+            "p50": 51.92536654620203,
+            "p75": 71.6178442788079,
+            "p90": 85.69412058758108,
+            "p95": 86.86628721195119
+          }
+        },
+        "environmentScore": {
+          "n": 27,
+          "mean": 36.02180252747511,
+          "median": 35.9507043742414,
+          "standardDeviation": 7.687705689319947,
+          "percentiles": {
+            "p05": 25.603231592843148,
+            "p10": 25.82087898114859,
+            "p25": 30.601626741527767,
+            "p50": 35.9507043742414,
+            "p75": 41.840589973651205,
+            "p90": 43.2169868218157,
+            "p95": 48.74444581616557
+          }
+        }
+      }
+    }
+  },
+  "companionScoreDecision": "Expose opportunityScore and environmentScore beside matchupScore. They remain inspectable components, not confidence or uncertainty scores.",
+  "productionReadiness": {
+    "passing": "research baseline; unchanged; calibration and operational status/low-history gates remain open",
+    "rushing": "research baseline; unchanged; history/status and role-conditioned interval gates remain open",
+    "receiving": "research baseline; unchanged; history/status, zero-target handling, and role-conditioned interval gates remain open"
+  }
+}
