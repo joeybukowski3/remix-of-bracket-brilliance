@@ -4,6 +4,7 @@ import {
   formatFavoriteSpread,
   formatMoneyline,
   formatNullableNumber,
+  formatNullablePercent,
   formatRank,
   formatRankChange,
   formatSpread,
@@ -27,6 +28,15 @@ describe("CFB format helpers", () => {
   it("formats real zero values correctly", () => {
     expect(formatNullableNumber(0)).toBe("0.0");
     expect(formatSpread(0)).toBe("PICK");
+  });
+
+  it("formats a 0-1 ratio as a percentage", () => {
+    expect(formatNullablePercent(0.4166666)).toBe("41.7%");
+    expect(formatNullablePercent(0)).toBe("0.0%");
+    expect(formatNullablePercent(1)).toBe("100.0%");
+    expect(formatNullablePercent(null)).toBe("—");
+    expect(formatNullablePercent(undefined)).toBe("—");
+    expect(formatNullablePercent(Number.NaN)).toBe("—");
   });
 
   it("hides rank movement when previous rank is unavailable", () => {

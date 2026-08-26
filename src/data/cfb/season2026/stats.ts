@@ -87,14 +87,16 @@ export const CFB_STATS_2026: CfbSeasonStats[] = CFB_TEAM_METADATA.map(
   (team) => CFB_STATS_BY_TEAM[team.id],
 );
 
+function ranksByTeamFromArtifact(
+  artifact: CfbSeasonStatsArtifact | null,
+): Record<string, Partial<Record<CfbRankedStatMetric, number>>> {
+  const byTeam = new Map(artifact?.teams.map((row) => [row.teamId, row.ranks]) ?? []);
+  return Object.fromEntries(CFB_TEAM_METADATA.map((team) => [team.id, byTeam.get(team.id) ?? {}]));
+}
+
 /** Per-team, per-metric national rank (competition ranking) for the 2026 artifact. */
 export const CFB_STATS_RANKS_BY_TEAM: Record<string, Partial<Record<CfbRankedStatMetric, number>>> =
-  Object.fromEntries(
-    CFB_TEAM_METADATA.map((team) => [
-      team.id,
-      ARTIFACT_2026?.teams.find((row) => row.teamId === team.id)?.ranks ?? {},
-    ]),
-  );
+  ranksByTeamFromArtifact(ARTIFACT_2026);
 
 /**
  * 2025 ("Last Season") stats — a SEPARATE dataset from CFB_STATS_BY_TEAM.
@@ -106,3 +108,9 @@ export const CFB_STATS_PREVIOUS_SEASON_BY_TEAM: Record<string, CfbSeasonStats> =
   statsByTeamFromArtifact(ARTIFACT_2025);
 
 export const CFB_STATS_PREVIOUS_SEASON_YEAR: number | null = ARTIFACT_2025?.season ?? null;
+
+/** Per-team, per-metric national rank for the 2025 ("Last Season") artifact. */
+export const CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM: Record<
+  string,
+  Partial<Record<CfbRankedStatMetric, number>>
+> = ranksByTeamFromArtifact(ARTIFACT_2025);
