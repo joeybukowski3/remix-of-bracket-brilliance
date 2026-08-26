@@ -13,6 +13,9 @@ import type { NflQbPassingOutcome } from "./types/qbPassing";
 import type { NflRushingOutcome } from "./types/rushingOutcome";
 import type { NflReceivingOutcome } from "./types/receivingOutcome";
 import type { NflFrozenScoreDefinition } from "./currentWeekMatchupScore";
+import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow } from "./currentWeekDepthChart";
+import { resolvePassingStarters } from "./qbStarterResolution";
+import type { NflCurrentWeekCandidate } from "./currentWeekRosterUniverse";
 
 // A tiny, fully synthetic two-team, two-season league so every code path
 // (roster membership, eligibility, model fit, score reference, interval,
@@ -25,7 +28,11 @@ function schedule(season: number, week: number, home: string, away: string, date
   return { gameId: `${season}_${String(week).padStart(2, "0")}_${away.toUpperCase()}_${home.toUpperCase()}`, season, week, seasonType: "REG", homeAbbr: home, awayAbbr: away, dateUtc };
 }
 
-function buildLeague(targetSeason: number, targetWeek: number) {
+function buildLeague(
+  targetSeason: number,
+  targetWeek: number,
+  options: { depthChartRows?: readonly NflDepthChartCsvRow[]; depthChartAsOf?: string } = {},
+) {
   // Two prior-season games (2024 wk1, wk2) so every candidate clears the pregame eligibility bar, plus the target game itself.
   const games: NflPropRawGameRecord[] = [
     schedule(2024, 1, "aaa", "bbb", "2024-09-08T17:00:00.000Z"),
@@ -129,12 +136,16 @@ function buildLeague(targetSeason: number, targetWeek: number) {
   const rushingWinner: NflFrozenScoreDefinition = { opportunityComponent: "workload", environmentComponents: ["roleQuality", "teamRushingEnvironment", "opponent"], weights: { workload: 0.5, roleQuality: 0.1, teamRushingEnvironment: 0.2, opponent: 0.2 } };
   const receivingWinner: NflFrozenScoreDefinition = { opportunityComponent: "opportunity", environmentComponents: ["roleStability", "opponent", "efficiencyProfile"], weights: { opportunity: 0.5, roleStability: 0.1, opponent: 0.1, efficiencyProfile: 0.3 } };
 
+  const generatedAt = options.depthChartAsOf ?? "2026-01-01T00:00:00.000Z";
+  const depthChartIndex = options.depthChartRows ? buildDepthChartIndex(parseDepthChartRows(options.depthChartRows)) : null;
+
   const sources: NflCurrentWeekSources = {
-    season: targetSeason, week: targetWeek, generatedAt: "2026-01-01T00:00:00.000Z",
+    season: targetSeason, week: targetWeek, generatedAt,
     rosterRows, games, gameJoinIndex, fullTeamGameLog, passEpaGameLog, rushEpaGameLog, marketByKey, marketAvailable: false, domeByGameId,
     qbStatGameLog, playerRushingStatLog, playerReceivingStatLog, teamTopRbCarryShareByGameTeam, teamTopTargetShareByGameTeam,
     rushActivityLog, targetActivityLog, attemptActivityLog,
     historicalPassingRows, historicalRushingRows, historicalReceivingRows,
+    depthChartIndex,
     scoreDefinitions: { passing: passingWinner, rushing: rushingWinner, receiving: receivingWinner },
   };
   return { sources, games };
@@ -276,5 +287,127 @@ describe("generateCurrentWeekYardageProjections", () => {
     expect(result.qa.gamesExpected).toBe(1);
     expect(result.rows.length).toBeGreaterThan(0);
     expect(result.rows.every((r) => r.season === 2025 && r.week === 1)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 9.2: depth-chart role integration
+// ---------------------------------------------------------------------------
+
+function dcRow(team: string, posName: string, gsisId: string, rank: number, playerName = "", dt = "2026-01-01T00:00:00.000Z"): NflDepthChartCsvRow {
+  return { dt, team, player_name: playerName, espn_id: "", gsis_id: gsisId, pos_name: posName, pos_rank: String(rank) };
+}
+
+describe("Phase 9.2 depth-chart role integration", () => {
+  it("QB rank-1 sourced selection: an established starter is confirmed via sourced depth evidence", () => {
+    const { sources } = buildLeague(2025, 1, { depthChartRows: [dcRow("aaa", "Quarterback", "QB1aaa", 1, "QB One")] });
+    const result = generateCurrentWeekYardageProjections(sources);
+    const row = result.rows.find((r) => r.market === "passing" && r.team === "aaa");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("depthChart");
+    expect(row!.roleConfidence).toBe("sourced");
+    expect(row!.starterFlag).toBe(true);
+    expect(row!.depthRank).toBe(1);
+    if (row!.market === "passing") expect(row!.diagnostics.starterResolution).toBe("sourcedDepthChart");
+  });
+
+  it("sourced QB overrides the attempts-history heuristic: a no-history QB with depthRank=1 resolves confidently, not starterUncertain", () => {
+    // QB Two (team bbb) has zero historical attempts in the base fixture --
+    // without depth data this resolves via the "noCompetingQb" heuristic
+    // path with starterUncertain=true (see the Phase 9.1 rookie-QB test).
+    // Sourced depth evidence should override that uncertainty.
+    const { sources } = buildLeague(2025, 1, { depthChartRows: [dcRow("bbb", "Quarterback", "QB2bbb", 1, "QB Two")] });
+    const result = generateCurrentWeekYardageProjections(sources);
+    const row = result.rows.find((r) => r.market === "passing" && r.team === "bbb");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("depthChart");
+    expect(row!.roleConfidence).toBe("sourced");
+    expect(row!.hardCaseFlags.roleUncertain).toBe(false);
+    if (row!.market === "passing") expect(row!.diagnostics.starterResolution).toBe("sourcedDepthChart");
+  });
+
+  it("ambiguous QB depth source falls back deterministically and flags sourceAmbiguous", () => {
+    const candidateA: NflCurrentWeekCandidate = {
+      season: 2025, week: 1, gameId: "g1", gameDateUtc: "2025-09-07T17:00:00.000Z", homeAway: "home",
+      playerId: "gsis:QBX", playerName: "QB X", team: "ccc", opponent: "ddd", position: "QB",
+      rushingEligiblePregame: false, receivingEligiblePregame: false, passingEligiblePregame: false,
+      rushingRoleUncertain: false, receivingRoleUncertain: false,
+      rushingFallbackProvenance: null, receivingFallbackProvenance: null, rushingRoleEvidence: null, receivingRoleEvidence: null,
+    };
+    const candidateB: NflCurrentWeekCandidate = { ...candidateA, playerId: "gsis:QBY", playerName: "QB Y" };
+    const depthChartIndex = buildDepthChartIndex(parseDepthChartRows([
+      dcRow("ccc", "Quarterback", "QBX", 1, "QB X"),
+      dcRow("ccc", "Quarterback", "QBY", 1, "QB Y"),
+    ]));
+    const results = resolvePassingStarters([candidateA, candidateB], [], depthChartIndex);
+    expect(results).toHaveLength(1);
+    expect(results[0].sourceAmbiguous).toBe(true);
+    expect(results[0].resolution).not.toBe("sourcedDepthChart");
+    expect(results[0].starterUncertain).toBe(true);
+    expect(results[0].roleEvidence.roleConfidence).toBe("inferred");
+  });
+
+  it("rookie RB admitted through sourced depth evidence (not the scarcity floor)", () => {
+    const { sources } = buildLeague(2025, 1, { depthChartRows: [dcRow("aaa", "Running Back", "ROOKIE_RB_aaa", 2, "Rookie RB aaa")] });
+    const result = generateCurrentWeekYardageProjections(sources);
+    const row = result.rows.find((r) => r.market === "rushing" && r.playerId === "gsis:ROOKIE_RB_aaa");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("depthChart");
+    expect(row!.roleConfidence).toBe("sourced");
+    expect(row!.depthRank).toBe(2);
+    expect(row!.hardCaseFlags.roleUncertain).toBe(false); // sourced evidence, not the arbitrary scarcity-floor tie-break
+  });
+
+  it("rookie WR admitted through sourced depth evidence (not the scarcity floor)", () => {
+    const { sources } = buildLeague(2025, 1, { depthChartRows: [dcRow("aaa", "Wide Receiver", "ROOKIE_aaa", 3, "Rookie aaa")] });
+    const result = generateCurrentWeekYardageProjections(sources);
+    const row = result.rows.find((r) => r.market === "receiving" && r.playerId === "gsis:ROOKIE_aaa");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("depthChart");
+    expect(row!.roleConfidence).toBe("sourced");
+    expect(row!.depthRank).toBe(3);
+    expect(row!.hardCaseFlags.roleUncertain).toBe(false);
+  });
+
+  it("a historically eligible veteran survives complete absence from the depth-chart feed", () => {
+    // Depth chart snapshot covers only team aaa this run -- team bbb's
+    // RB_bbb (historically eligible) must still appear.
+    const { sources } = buildLeague(2025, 1, { depthChartRows: [dcRow("aaa", "Running Back", "RB_aaa", 1, "RB aaa")] });
+    const result = generateCurrentWeekYardageProjections(sources);
+    const row = result.rows.find((r) => r.market === "rushing" && r.playerId === "gsis:RB_bbb");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("historicalVolume");
+  });
+
+  it("scarcity-floor fallback still activates when the depth-chart source is entirely unavailable", () => {
+    const { sources } = buildLeague(2025, 1); // no depthChartRows -> depthChartIndex: null
+    const result = generateCurrentWeekYardageProjections(sources);
+    expect(result.depthChartSource.available).toBe(false);
+    expect(result.depthChartSource.stale).toBe(false);
+    const row = result.rows.find((r) => r.market === "rushing" && r.playerId === "gsis:ROOKIE_RB_aaa");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("rosterScarcityFloor");
+    expect(row!.hardCaseFlags.roleUncertain).toBe(true);
+  });
+
+  it("a stale depth-chart snapshot is disclosed as stale and NOT used as sourced evidence", () => {
+    const { sources } = buildLeague(2025, 1, {
+      depthChartRows: [dcRow("aaa", "Running Back", "ROOKIE_RB_aaa", 2, "Rookie RB aaa", "2025-01-01T00:00:00.000Z")],
+      depthChartAsOf: "2026-01-01T00:00:00.000Z", // ~1 year after the snapshot -> far beyond the 48h staleness threshold
+    });
+    const result = generateCurrentWeekYardageProjections(sources);
+    expect(result.depthChartSource.stale).toBe(true);
+    expect(result.depthChartSource.available).toBe(false);
+    expect(result.depthChartSource.snapshotAt).toBe("2025-01-01T00:00:00.000Z");
+    const row = result.rows.find((r) => r.market === "rushing" && r.playerId === "gsis:ROOKIE_RB_aaa");
+    expect(row).toBeDefined();
+    expect(row!.fallbackProvenance).toBe("rosterScarcityFloor"); // fell back, not silently treated as sourced
+  });
+
+  it("is deterministic with a depth chart present", () => {
+    const { sources } = buildLeague(2025, 1, { depthChartRows: [dcRow("aaa", "Quarterback", "QB1aaa", 1, "QB One"), dcRow("aaa", "Running Back", "ROOKIE_RB_aaa", 2, "Rookie RB aaa")] });
+    const first = generateCurrentWeekYardageProjections(sources);
+    const second = generateCurrentWeekYardageProjections(sources);
+    expect(second).toEqual(first);
   });
 });

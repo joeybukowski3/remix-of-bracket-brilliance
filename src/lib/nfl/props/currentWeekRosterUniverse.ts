@@ -4,20 +4,34 @@
  * games' `stats_player_week` rows, a future/current week has no outcome
  * rows yet -- membership here comes entirely from the live weekly-rosters
  * "ACT" snapshot (the same source `playerGameUniverse.ts` uses as its own
- * Tier 2), joined to the target week's schedule. Eligibility PRIMARILY
- * reuses the exact Phase 5.5 rule (`isMarketPregameEligible`) against an
- * activity log built from historical outcome rows, plus (Phase 9.1) an
- * additive roster-scarcity-floor fallback -- see `applyRoleScarcityFallback`
- * -- so a legitimate rookie/new-starter with zero qualifying prior-season
- * volume is not unconditionally invisible. Passing candidacy is decided
- * separately by `qbStarterResolution.ts`, not by `passingEligiblePregame`
- * on this module's candidates (that flag is historical-volume-only and
- * informational).
+ * Tier 2), joined to the target week's schedule.
+ *
+ * Rushing/receiving eligibility (Phase 9.2 hierarchy):
+ * 1. **Primary -- sourced depth chart** (`currentWeekDepthChart.ts`): a
+ *    player at RB with `depthRank <= RB_DEPTH_CHART_THRESHOLD`, or WR/TE
+ *    with `depthRank <= RECEIVER_DEPTH_CHART_THRESHOLD`, enters on that
+ *    evidence alone -- no historical volume required. This is how a
+ *    legitimate rookie/new starter enters with zero prior NFL usage.
+ * 2. **Secondary -- historical volume** (Phase 5.5's `isMarketPregameEligible`
+ *    rule, unchanged): a player who cleared the prior-season/current-season
+ *    activity threshold is eligible regardless of what the depth chart says
+ *    (or whether it has data for them at all) -- an established veteran
+ *    never disappears merely because a depth-chart source temporarily
+ *    omits him.
+ * 3. **Final fallback -- roster-scarcity floor** (Phase 9.1,
+ *    `applyRoleScarcityFallback`): only reached when a team is STILL below
+ *    the position floor after steps 1-2 combined.
+ *
+ * Passing candidacy is decided separately by `qbStarterResolution.ts`
+ * (which implements its own depth-chart-first hierarchy), not by
+ * `passingEligiblePregame` on this module's candidates (that flag stays
+ * historical-volume-only and informational).
  */
 import { normalizeNflPropTeamAbbr, resolveNflPropPlayerIdentity, type NflPropPosition } from "./types/identity";
 import { gameJoinKey, type NflGameJoinRecord, type NflPropRawGameRecord } from "./historicalOutcomes";
 import { isMarketPregameEligible, PRIOR_SEASON_ELIGIBILITY_THRESHOLD, UNIVERSE_POSITIONS } from "./playerGameUniverse";
 import type { NflPlayerGameUniverseRow } from "./types/playerGameUniverse";
+import { fallbackRoleEvidence, lookupDepthChartEntry, sourcedRoleEvidence, type NflDepthChartIndex, type NflRoleEvidence } from "./currentWeekDepthChart";
 
 export type NflCurrentWeekRosterSourceRow = {
   season: number;
@@ -45,9 +59,14 @@ export type NflCurrentWeekCandidate = {
   receivingEligiblePregame: boolean;
   /** Historical-volume eligibility only (Phase 5.5 rule) -- informational; passing candidacy is decided by `qbStarterResolution.ts`, not this flag. */
   passingEligiblePregame: boolean;
-  /** True iff `rushingEligiblePregame`/`receivingEligiblePregame` is true ONLY because of the roster-scarcity-floor fallback, not historical volume. */
+  /** True only when admission rests on the roster-scarcity-floor tie-break (the weakest evidence tier) -- false for historical-volume OR sourced-depth-chart admits, both of which are real evidence. */
   rushingRoleUncertain: boolean;
   receivingRoleUncertain: boolean;
+  /** Which evidence tier actually admitted this candidate for each market. Disclosed, never hidden. */
+  rushingFallbackProvenance: "historicalVolume" | "depthChart" | "rosterScarcityFloor" | null;
+  receivingFallbackProvenance: "historicalVolume" | "depthChart" | "rosterScarcityFloor" | null;
+  rushingRoleEvidence: NflRoleEvidence | null;
+  receivingRoleEvidence: NflRoleEvidence | null;
 };
 
 export type NflCurrentWeekUnresolvedRosterRow = {
@@ -79,6 +98,21 @@ export function buildActivityLogFromUniverse(
  * A roster row with no schedule entry (bye week, or a team code the
  * schedule join cannot resolve) is reported, never silently dropped.
  */
+/**
+ * Phase 9.2: minimum sourced depth-chart rank a player must hold to enter
+ * the rushing/receiving candidate universe on depth evidence alone (no
+ * historical volume required). Calibrated against the real 2026 Week 1
+ * depth-chart snapshot (`docs/nfl-depth-chart-role-integration.md`):
+ * every position has EXACTLY 32 rows at each rank through at least rank 4
+ * (perfectly clean, one player per team per rank -- no ties/gaps observed),
+ * so these thresholds admit a small, conservative, evidence-backed slice
+ * per team, not the ~90-man camp roster. Never tuned against any
+ * current/future-week outcome -- these are pregame roster-construction
+ * priors only.
+ */
+export const RB_DEPTH_CHART_THRESHOLD = 3;
+export const RECEIVER_DEPTH_CHART_THRESHOLD = 4;
+
 export function buildCurrentWeekRosterUniverse(
   rosterRows: readonly NflCurrentWeekRosterSourceRow[],
   season: number,
@@ -88,6 +122,7 @@ export function buildCurrentWeekRosterUniverse(
   rushLog: readonly ActivityLogEntry[],
   targetLog: readonly ActivityLogEntry[],
   attemptLog: readonly ActivityLogEntry[],
+  depthChartIndex: NflDepthChartIndex | null,
 ): { candidates: NflCurrentWeekCandidate[]; unresolved: NflCurrentWeekUnresolvedRosterRow[] } {
   const candidates: NflCurrentWeekCandidate[] = [];
   const unresolved: NflCurrentWeekUnresolvedRosterRow[] = [];
@@ -126,14 +161,38 @@ export function buildCurrentWeekRosterUniverse(
     }
 
     const playerId = identity.identity.playerId;
-    const rushingEligiblePregame = isMarketPregameEligible(rushLog, playerId, season, join.gameDateUtc, PRIOR_SEASON_ELIGIBILITY_THRESHOLD.carries);
-    const receivingEligiblePregame = isMarketPregameEligible(targetLog, playerId, season, join.gameDateUtc, PRIOR_SEASON_ELIGIBILITY_THRESHOLD.targets);
+    const position = identity.identity.position as NflPropPosition;
+    const historicalRushing = isMarketPregameEligible(rushLog, playerId, season, join.gameDateUtc, PRIOR_SEASON_ELIGIBILITY_THRESHOLD.carries);
+    const historicalReceiving = isMarketPregameEligible(targetLog, playerId, season, join.gameDateUtc, PRIOR_SEASON_ELIGIBILITY_THRESHOLD.targets);
+
+    const depthEntry = depthChartIndex ? lookupDepthChartEntry(depthChartIndex, team, position, playerId) : null;
+    const depthAdmitsRushing = position === "RB" && depthEntry != null && depthEntry.depthRank <= RB_DEPTH_CHART_THRESHOLD;
+    const depthAdmitsReceiving = (position === "WR" || position === "TE") && depthEntry != null && depthEntry.depthRank <= RECEIVER_DEPTH_CHART_THRESHOLD;
+
+    // Evidence hierarchy: sourced depth chart is shown whenever available
+    // (strongest signal), even for an already historically-eligible
+    // veteran -- it is still real, current, corroborating evidence.
+    // Provenance reflects what actually admitted the candidate.
+    const rushingEligiblePregame = historicalRushing || depthAdmitsRushing;
+    const receivingEligiblePregame = historicalReceiving || depthAdmitsReceiving;
+    const rushingFallbackProvenance: NflCurrentWeekCandidate["rushingFallbackProvenance"] = !rushingEligiblePregame
+      ? null : depthEntry != null ? "depthChart" : "historicalVolume";
+    const receivingFallbackProvenance: NflCurrentWeekCandidate["receivingFallbackProvenance"] = !receivingEligiblePregame
+      ? null : depthEntry != null ? "depthChart" : "historicalVolume";
+    const rushingRoleEvidence = !rushingEligiblePregame ? null
+      : depthEntry != null ? sourcedRoleEvidence(depthEntry)
+      : fallbackRoleEvidence("historicalVolume", "Cleared the historical prior-season/current-season carry-volume threshold.");
+    const receivingRoleEvidence = !receivingEligiblePregame ? null
+      : depthEntry != null ? sourcedRoleEvidence(depthEntry)
+      : fallbackRoleEvidence("historicalVolume", "Cleared the historical prior-season/current-season target-volume threshold.");
+
     candidates.push({
       season, week, gameId: join.gameId, gameDateUtc: join.gameDateUtc, homeAway: join.homeAway,
-      playerId, playerName: identity.identity.playerName, team, opponent, position: identity.identity.position as NflPropPosition,
+      playerId, playerName: identity.identity.playerName, team, opponent, position,
       rushingEligiblePregame, receivingEligiblePregame,
-      passingEligiblePregame: identity.identity.position === "QB" && isMarketPregameEligible(attemptLog, playerId, season, join.gameDateUtc, PRIOR_SEASON_ELIGIBILITY_THRESHOLD.passAttempts),
+      passingEligiblePregame: position === "QB" && isMarketPregameEligible(attemptLog, playerId, season, join.gameDateUtc, PRIOR_SEASON_ELIGIBILITY_THRESHOLD.passAttempts),
       rushingRoleUncertain: false, receivingRoleUncertain: false,
+      rushingFallbackProvenance, receivingFallbackProvenance, rushingRoleEvidence, receivingRoleEvidence,
     });
   }
 
@@ -198,6 +257,10 @@ export function applyRoleScarcityFallback(candidates: readonly NflCurrentWeekCan
       receivingEligiblePregame: c.receivingEligiblePregame || receivingAdmitted,
       rushingRoleUncertain: rushingAdmitted,
       receivingRoleUncertain: receivingAdmitted,
+      rushingFallbackProvenance: rushingAdmitted ? "rosterScarcityFloor" : c.rushingFallbackProvenance,
+      receivingFallbackProvenance: receivingAdmitted ? "rosterScarcityFloor" : c.receivingFallbackProvenance,
+      rushingRoleEvidence: rushingAdmitted ? fallbackRoleEvidence("rosterScarcityFloor", `Admitted via the roster-scarcity floor (team had fewer than ${RB_ELIGIBLE_FLOOR} historically/depth-eligible RBs) -- a deterministic tie-break among equally-unknown roster candidates, not a depth-chart-informed pick.`) : c.rushingRoleEvidence,
+      receivingRoleEvidence: receivingAdmitted ? fallbackRoleEvidence("rosterScarcityFloor", `Admitted via the roster-scarcity floor (team had fewer than ${RECEIVER_ELIGIBLE_FLOOR} historically/depth-eligible WR/TE) -- a deterministic tie-break among equally-unknown roster candidates, not a depth-chart-informed pick.`) : c.receivingRoleEvidence,
     };
   });
 }

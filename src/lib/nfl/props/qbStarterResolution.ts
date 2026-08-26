@@ -1,39 +1,47 @@
 /**
- * Phase 9: current-week passing-starter resolution.
+ * Phase 9 / 9.2: current-week passing-starter resolution.
  *
  * The historical passing feature/outcome pipeline (`qbPassingOutcomes.ts`,
  * `qbPassingFeatures.ts`) always starts from a KNOWN primary QB -- the
  * player who recorded the most attempts in that already-played game. A
  * future/current week has no attempts yet, so "who gets a passing
  * projection this week" cannot be read off a box score; it must be
- * inferred pregame. No depth-chart-order, beat-writer, or injury-report
- * starter designation exists anywhere in this repository's committed data
- * (`weekly_rosters`' `depth_chart_position` is confirmed, by direct
- * inspection, to equal the player's position group for every QB on a roster
- * -- e.g. three ACT quarterbacks on one team can all read
- * `depth_chart_position: "QB"` -- so it carries no ordinal depth
- * information and cannot be used to pick a starter).
+ * inferred pregame.
  *
- * This module implements the one defensible, deterministic, fully
- * pregame-observable heuristic available: for each team, the ACT QB with
- * the highest rolling attempts (seasonPrior -> priorSeason coalesce, the
- * same coalesce Baseline B/D use) is treated as the passing-projection
- * candidate. Ties or an entirely QB-history-free roster are flagged, never
- * silently resolved. This is intentionally a heuristic, not a certainty --
- * see `starterUncertain`/`multiQbRoleUncertain` hard-case flags in the
- * output schema.
+ * Phase 9.2 resolution hierarchy:
+ * 1. **Sourced depth chart**: the ACT QB holding the nflverse/ESPN depth
+ *    chart's rank-1 slot for this team (`currentWeekDepthChart.ts`). This is
+ *    now the strongest available pregame evidence -- unlike
+ *    `weekly_rosters`' `depth_chart_position` (confirmed, by direct
+ *    inspection, to equal the position group for every QB -- no ordinal
+ *    information), the depth-chart source carries a real ordinal rank. If
+ *    the source lists more than one player at rank 1 for the same team (a
+ *    data quirk, not expected but never assumed away), that is treated as
+ *    AMBIGUOUS, never silently resolved by picking one -- falls through to
+ *    step 2 with `roleUncertain: true`.
+ * 2. **Historical rolling-attempts heuristic** (Phase 9 original): the ACT
+ *    QB with the highest rolling attempts (seasonPrior -> priorSeason
+ *    coalesce, the same coalesce Baseline B/D use).
+ * 3. **Deterministic roster fallback**: first ACT QB by playerId, flagged
+ *    `starterUncertain`.
+ *
+ * Every path emits exactly one row per team with >=1 ACT QB. Which path won
+ * is always recorded (`resolution`), never hidden.
  */
 import type { NflCurrentWeekCandidate } from "./currentWeekRosterUniverse";
 import type { NflQbStatGameLogEntry } from "./qbPassingFeatures";
+import { depthRankOneCandidates, fallbackRoleEvidence, sourcedRoleEvidence, type NflDepthChartIndex, type NflRoleEvidence } from "./currentWeekDepthChart";
 
 export type NflQbStarterResolution = {
   candidate: NflCurrentWeekCandidate;
   rollingAttempts: number | null;
   gamesStartedPriorThisSeason: number;
   hasPriorSeasonStarts: boolean;
-  resolution: "rosterOnlyCandidate" | "rollingAttemptsLeader" | "noCompetingQb";
+  resolution: "sourcedDepthChart" | "rosterOnlyCandidate" | "rollingAttemptsLeader" | "noCompetingQb";
   starterUncertain: boolean;
   multiQbRoleUncertain: boolean;
+  sourceAmbiguous: boolean;
+  roleEvidence: NflRoleEvidence;
 };
 
 function rollingAttempts(
@@ -61,19 +69,15 @@ function rollingAttempts(
 
 /**
  * Resolves one passing-projection candidate per team from the current-week
- * roster pool. A team with zero ACT/passing-eligible QBs produces no row
- * (not a failure -- e.g. a team could theoretically have every QB on
- * injured reserve, though `weekly_rosters` "ACT" already excludes that).
- * A team with 2+ ACT QBs and no rolling-attempts history for any of them
- * emits its first roster QB (by playerId, deterministic tie-break) flagged
- * `starterUncertain`. A team with 2+ ACT QBs where more than one has
- * meaningful rolling attempts (>= 5/game) is flagged `multiQbRoleUncertain`
- * even though only the leader gets a projection row -- production should
- * treat that projection as materially less reliable.
+ * roster pool. `depthChartIndex` is optional (null when the source is
+ * unavailable/stale -- see `currentWeekGenerator.ts`'s failover); when null,
+ * resolution falls straight to the historical/roster heuristic (steps 2-3),
+ * exactly reproducing pre-9.2 behavior.
  */
 export function resolvePassingStarters(
   candidates: readonly NflCurrentWeekCandidate[],
   qbStatGameLog: readonly NflQbStatGameLogEntry[],
+  depthChartIndex: NflDepthChartIndex | null,
 ): NflQbStarterResolution[] {
   const byTeam = new Map<string, NflCurrentWeekCandidate[]>();
   for (const c of candidates) {
@@ -84,23 +88,46 @@ export function resolvePassingStarters(
   }
 
   const results: NflQbStarterResolution[] = [];
-  for (const [, qbs] of byTeam) {
+  for (const [team, qbs] of byTeam) {
     const ranked = qbs
       .map((c) => ({ candidate: c, ...rollingAttempts(qbStatGameLog, c.playerId, c.season, c.gameDateUtc) }))
       .sort((a, b) => (b.attempts ?? -1) - (a.attempts ?? -1) || a.candidate.playerId.localeCompare(b.candidate.playerId));
-
     if (ranked.length === 0) continue;
+
+    // Step 1: sourced depth chart, restricted to ACT candidates on this team's own roster.
+    const actPlayerIds = new Set(qbs.map((c) => c.playerId));
+    const sourcedCandidates = depthChartIndex
+      ? depthRankOneCandidates(depthChartIndex, team, "QB").filter((e) => actPlayerIds.has(e.playerId))
+      : [];
+    if (sourcedCandidates.length === 1) {
+      const winner = qbs.find((c) => c.playerId === sourcedCandidates[0].playerId)!;
+      const rolling = rollingAttempts(qbStatGameLog, winner.playerId, winner.season, winner.gameDateUtc);
+      const meaningfulCompetitors = ranked.filter((r) => r.candidate.playerId !== winner.playerId && (r.attempts ?? 0) >= 5);
+      results.push({
+        candidate: winner, rollingAttempts: rolling.attempts,
+        gamesStartedPriorThisSeason: rolling.gamesStartedPriorThisSeason, hasPriorSeasonStarts: rolling.hasPriorSeasonStarts,
+        resolution: "sourcedDepthChart", starterUncertain: false, multiQbRoleUncertain: meaningfulCompetitors.length > 0,
+        sourceAmbiguous: false, roleEvidence: sourcedRoleEvidence(sourcedCandidates[0]),
+      });
+      continue;
+    }
+    const sourceAmbiguous = sourcedCandidates.length > 1;
+
+    // Steps 2-3: historical rolling-attempts heuristic, deterministic roster fallback.
     const leader = ranked[0];
     const meaningfulCompetitors = ranked.slice(1).filter((r) => (r.attempts ?? 0) >= 5);
+    const resolution = ranked.length === 1 ? "noCompetingQb" : leader.attempts != null ? "rollingAttemptsLeader" : "rosterOnlyCandidate";
+    const roleEvidence = sourceAmbiguous
+      ? fallbackRoleEvidence("unavailable", `Depth chart source listed ${sourcedCandidates.length} players at QB rank 1 for ${team} -- ambiguous, fell back to rolling-attempts heuristic.`)
+      : depthChartIndex == null
+        ? fallbackRoleEvidence("unavailable", "Depth chart source unavailable this run -- fell back to rolling-attempts heuristic.")
+        : fallbackRoleEvidence("historicalVolume", `No depth chart rank-1 entry found for ${team} QB -- used rolling-attempts heuristic (${resolution}).`);
 
     results.push({
-      candidate: leader.candidate,
-      rollingAttempts: leader.attempts,
-      gamesStartedPriorThisSeason: leader.gamesStartedPriorThisSeason,
-      hasPriorSeasonStarts: leader.hasPriorSeasonStarts,
-      resolution: ranked.length === 1 ? "noCompetingQb" : leader.attempts != null ? "rollingAttemptsLeader" : "rosterOnlyCandidate",
-      starterUncertain: leader.attempts == null,
-      multiQbRoleUncertain: meaningfulCompetitors.length > 0,
+      candidate: leader.candidate, rollingAttempts: leader.attempts,
+      gamesStartedPriorThisSeason: leader.gamesStartedPriorThisSeason, hasPriorSeasonStarts: leader.hasPriorSeasonStarts,
+      resolution, starterUncertain: leader.attempts == null || sourceAmbiguous,
+      multiQbRoleUncertain: meaningfulCompetitors.length > 0, sourceAmbiguous, roleEvidence,
     });
   }
   return results;

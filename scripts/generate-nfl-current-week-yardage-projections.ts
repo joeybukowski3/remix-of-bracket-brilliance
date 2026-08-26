@@ -28,6 +28,7 @@ import { buildActivityLogFromUniverse, type NflCurrentWeekRosterSourceRow } from
 import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/playerGameUniverse";
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
 import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
+import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow, type NflDepthChartIndex } from "../src/lib/nfl/props/currentWeekDepthChart";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
 
@@ -37,6 +38,7 @@ const PLAY_VOLUME_CACHE_DIR = "data/nfl/nflverse/play-volume-team-game";
 const EPA_CACHE_DIR = "data/nfl/nflverse/epa-team-game";
 const STATS_CACHE_DIR = "data/nfl/nflverse/stats-player-week";
 const ROSTER_CACHE_DIR = "data/nfl/nflverse/weekly-rosters";
+const DEPTH_CHART_CACHE_DIR = "data/nfl/nflverse/depth-charts";
 const HISTORICAL_SEASONS = [2022, 2023, 2024, 2025] as const;
 
 type CsvRow = Record<string, string>;
@@ -152,8 +154,8 @@ function main(): void {
         if (g.season !== args.season || g.spread == null || g.total == null) continue;
         const impliedHome = g.total / 2 - g.spread.home / 2;
         const impliedAway = g.total / 2 - g.spread.away / 2;
-        marketByKey.set(marketKey(g.season, g.week, g.homeAbbr), { season: g.season, week: g.week, gameId: g.gameId, team: g.homeAbbr, opponent: g.awayAbbr, homeAway: "home", spread: g.spread.home, total: g.total, impliedTeamTotal: impliedHome, neutralSite: false });
-        marketByKey.set(marketKey(g.season, g.week, g.awayAbbr), { season: g.season, week: g.week, gameId: g.gameId, team: g.awayAbbr, opponent: g.homeAbbr, homeAway: "away", spread: g.spread.away, total: g.total, impliedTeamTotal: impliedAway, neutralSite: false });
+        marketByKey.set(marketKey(g.season, g.week, g.homeAbbr), { season: g.season, week: g.week, team: g.homeAbbr, homeAway: "home", spread: g.spread.home, total: g.total, impliedTeamTotal: impliedHome });
+        marketByKey.set(marketKey(g.season, g.week, g.awayAbbr), { season: g.season, week: g.week, team: g.awayAbbr, homeAway: "away", spread: g.spread.away, total: g.total, impliedTeamTotal: impliedAway });
         marketAvailable = true;
       }
     }
@@ -202,6 +204,29 @@ function main(): void {
     }));
   if (rosterRows.length === 0) throw new Error(`No weekly-rosters rows found for season ${args.season} week ${args.week}. Fail-closed.`);
 
+  // Live depth-chart role evidence (Phase 9.2). NOT fail-closed: a missing
+  // or malformed cache falls back to Phase 9.1 historical-volume/scarcity-
+  // floor behavior (see `depthChartSource` on the returned artifact) --
+  // depth-chart availability must never block the whole pipeline.
+  let depthChartIndex: NflDepthChartIndex | null = null;
+  try {
+    const depthChartManifest = readManifest(DEPTH_CHART_CACHE_DIR);
+    const depthChartEntry = depthChartManifest.files?.find((c) => c.season === args.season);
+    if (depthChartEntry) {
+      const depthChartCsvRows = verifiedCsvRows(DEPTH_CHART_CACHE_DIR, depthChartManifest, args.season) as unknown as NflDepthChartCsvRow[];
+      depthChartIndex = buildDepthChartIndex(parseDepthChartRows(depthChartCsvRows));
+      console.log(`[nfl:current-week-projections] depth chart: snapshot ${depthChartIndex.sourceSnapshotAt}, ${depthChartCsvRows.length} rows`);
+    } else {
+      console.log(`[nfl:current-week-projections] no depth chart cache for season ${args.season}, falling back to Phase 9.1 behavior`);
+    }
+  } catch (err) {
+    // Any failure reading/parsing the depth-chart cache (missing directory,
+    // missing manifest, malformed CSV) must never block generation -- the
+    // whole pipeline falls back to Phase 9.1 historical-volume/scarcity-
+    // floor behavior, disclosed via `depthChartSource` on the artifact.
+    console.error(`[nfl:current-week-projections] depth chart cache unusable, falling back to Phase 9.1 behavior: ${(err as Error).message}`);
+  }
+
   // Frozen Matchup Score weight definitions (Phase 8 research artifact).
   const scoreResearch = JSON.parse(readFileSync(join(DATA_DIR, "matchup-score-research.json"), "utf8")) as {
     passing: { selectedDefinition: NflFrozenScoreDefinition }; rushing: { selectedDefinition: NflFrozenScoreDefinition }; receiving: { selectedDefinition: NflFrozenScoreDefinition };
@@ -213,6 +238,7 @@ function main(): void {
     qbStatGameLog, playerRushingStatLog, playerReceivingStatLog, teamTopRbCarryShareByGameTeam, teamTopTargetShareByGameTeam,
     rushActivityLog, targetActivityLog, attemptActivityLog,
     historicalPassingRows, historicalRushingRows, historicalReceivingRows,
+    depthChartIndex,
     scoreDefinitions: { passing: scoreResearch.passing.selectedDefinition, rushing: scoreResearch.rushing.selectedDefinition, receiving: scoreResearch.receiving.selectedDefinition },
   };
 
@@ -220,6 +246,8 @@ function main(): void {
 
   console.log(`[nfl:current-week-projections] season=${args.season} week=${args.week} games=${artifact.qa.gamesExpected} playersEvaluated=${artifact.qa.playersEvaluated}`);
   console.log(`[nfl:current-week-projections] emitted passing=${artifact.qa.projectionsEmittedByMarket.passing} rushing=${artifact.qa.projectionsEmittedByMarket.rushing} receiving=${artifact.qa.projectionsEmittedByMarket.receiving}`);
+  console.log(`[nfl:current-week-projections] depth chart source: available=${artifact.depthChartSource.available} stale=${artifact.depthChartSource.stale} snapshotAt=${artifact.depthChartSource.snapshotAt}`);
+  console.log(`[nfl:current-week-projections] sourced role candidates passing=${artifact.qa.sourcedRoleCandidates.passing} rushing=${artifact.qa.sourcedRoleCandidates.rushing} receiving=${artifact.qa.sourcedRoleCandidates.receiving}`);
   console.log(`[nfl:current-week-projections] limited/no-history passing=${artifact.qa.limitedOrNoHistoryRows.passing} rushing=${artifact.qa.limitedOrNoHistoryRows.rushing} receiving=${artifact.qa.limitedOrNoHistoryRows.receiving}`);
   console.log(`[nfl:current-week-projections] unresolved identity rows=${artifact.qa.unresolvedIdentityRows}`);
 

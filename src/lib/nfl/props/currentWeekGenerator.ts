@@ -18,6 +18,7 @@ import {
   type NflCurrentWeekUnresolvedRosterRow,
 } from "./currentWeekRosterUniverse";
 import { resolvePassingStarters } from "./qbStarterResolution";
+import { computeDepthChartStaleness, fallbackRoleEvidence, type NflDepthChartIndex } from "./currentWeekDepthChart";
 import { buildQbPassingFeatureRowForTarget, type NflQbStatGameLogEntry } from "./qbPassingFeatures";
 import { buildRushingFeatureRowForTarget, type NflPlayerRushingStatLogEntry } from "./rushingFeatures";
 import { buildReceivingFeatureRowForTarget, type NflPlayerReceivingStatLogEntry } from "./receivingFeatures";
@@ -71,6 +72,8 @@ export type NflCurrentWeekSources = {
   historicalReceivingRows: readonly NflReceivingFeatureRow[];
   scoreDefinitions: { passing: NflFrozenScoreDefinition; rushing: NflFrozenScoreDefinition; receiving: NflFrozenScoreDefinition };
   generationMode?: "currentWeek" | "historicalReplay";
+  /** Phase 9.2: null when the depth-chart source is unavailable this run -- generation still succeeds via Phase 9.1 fallback behavior (see `depthChartSource` on the returned artifact). */
+  depthChartIndex: NflDepthChartIndex | null;
 };
 
 function historyStatusFor(gamesPriorThisSeason: number, hasPriorSeason: boolean): NflCurrentWeekHistoryStatus {
@@ -177,9 +180,23 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
   const historicalRushingRows = sources.historicalRushingRows.filter(notTargetWeek);
   const historicalReceivingRows = sources.historicalReceivingRows.filter(notTargetWeek);
 
+  // Phase 9.2 source-failure handling: a stale or missing depth-chart
+  // snapshot never silently masquerades as current sourced evidence --
+  // generation falls back to Phase 9.1 historical-volume/scarcity-floor
+  // behavior only, with the failure disclosed on `depthChartSource`.
+  const rawStaleness = computeDepthChartStaleness(sources.depthChartIndex?.sourceSnapshotAt ?? null, sources.generatedAt);
+  const depthChartSource = {
+    available: sources.depthChartIndex != null && !rawStaleness.isStale,
+    stale: sources.depthChartIndex != null && rawStaleness.isStale,
+    snapshotAt: sources.depthChartIndex?.sourceSnapshotAt ?? null,
+    ageHours: rawStaleness.ageHours,
+  };
+  const effectiveDepthChartIndex = depthChartSource.available ? sources.depthChartIndex : null;
+
   const { candidates, unresolved } = buildCurrentWeekRosterUniverse(
     sources.rosterRows, season, week, sources.gameJoinIndex, sources.games,
     sources.rushActivityLog, sources.targetActivityLog, sources.attemptActivityLog,
+    effectiveDepthChartIndex,
   );
 
   const teamPregameFeaturesByKey = new Map<string, NflTeamPregameFeatures>();
@@ -223,10 +240,12 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
   // fallback), flagged `historyStatus: "noHistory"` /
   // `status: "eligibleInsufficientHistory"` / `roleUncertain: true`
   // instead of being silently omitted (Phase 9.1).
-  const starters = resolvePassingStarters(candidates, sources.qbStatGameLog);
+  const starters = resolvePassingStarters(candidates, sources.qbStatGameLog, effectiveDepthChartIndex);
   const teamsWithAnActQb = new Set(starters.map((s) => s.candidate.team));
+  const ambiguousQbDepthGroups: string[] = [];
   for (const s of starters) {
     const c = s.candidate;
+    if (s.sourceAmbiguous) ambiguousQbDepthGroups.push(c.team);
     const noHistoryAtAll = s.gamesStartedPriorThisSeason === 0 && !s.hasPriorSeasonStarts;
     const status = noHistoryAtAll ? "eligibleInsufficientHistory" : "projected";
     const historyStatus = historyStatusFor(s.gamesStartedPriorThisSeason, s.hasPriorSeasonStarts);
@@ -238,8 +257,9 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     const interval = applyInterval(projectedYards, passingIntervalQ);
     const estimatedRange: NflCurrentWeekPassingRow["estimatedRange"] = { estimatedLow: interval.low, estimatedHigh: interval.high, nominalLevel: passingIntervalQ.nominalLevel, intervalVersion: INTERVAL_VERSION };
     if (noHistoryAtAll) bump("passing_noHistoryFallback");
+    if (s.resolution === "sourcedDepthChart") bump("passing_sourcedDepthChart");
     const priorTeam = mostRecentTeam(sources.qbStatGameLog, c.playerId, c.gameDateUtc);
-    const roleUncertain = s.starterUncertain || s.multiQbRoleUncertain;
+    const roleUncertain = (s.starterUncertain || s.multiQbRoleUncertain) && s.resolution !== "sourcedDepthChart";
     const flags: NflCurrentWeekHardCaseFlags = {
       noHistory: historyStatus === "noHistory", limitedHistory: historyStatus === "limitedHistory",
       multiQbRoleUncertain: s.multiQbRoleUncertain, committeeRole: false, zeroTargetRisk: false,
@@ -250,13 +270,16 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       schemaVersion: NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION, season, week, gameId: c.gameId, kickoff: c.gameDateUtc,
       playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, homeAway: c.homeAway, position: "QB",
       market: "passing", status, historyStatus, generatedAt: sources.generatedAt, modelVersion: MODEL_VERSIONS.passing,
-      fallbackProvenance: "starterHeuristic",
+      fallbackProvenance: s.resolution === "sourcedDepthChart" ? "depthChart" : "starterHeuristic",
+      roleSource: s.roleEvidence.roleSource, roleSourceUpdatedAt: s.roleEvidence.roleSourceUpdatedAt,
+      depthRank: s.roleEvidence.depthRank, starterFlag: s.roleEvidence.starterFlag, roleConfidence: s.roleEvidence.roleConfidence,
       projectedYards, directModelPrediction: projectedYards, estimatedRange,
       matchupScore: toScoreObject("passing", { season, week, gameId: c.gameId, playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, generatedAt: sources.generatedAt }, matchup),
       hardCaseFlags: flags,
       diagnostics: {
-        starterResolution: s.resolution === "noCompetingQb" ? "onlyActiveQb" : s.resolution === "rosterOnlyCandidate" ? "noHistoryFallback" : "rollingAttemptsLeader",
+        starterResolution: s.resolution === "noCompetingQb" ? "onlyActiveQb" : s.resolution === "rosterOnlyCandidate" ? "noHistoryFallback" : s.resolution === "sourcedDepthChart" ? "sourcedDepthChart" : "rollingAttemptsLeader",
         gamesStartedPriorThisSeason: s.gamesStartedPriorThisSeason,
+        sourceAmbiguous: s.sourceAmbiguous,
       },
     };
     rows.push(passingRow);
@@ -286,11 +309,15 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     const matchup = scoreLiveRowPooled(liveRow, RUSHING_DIMENSIONS, rushingReference, sources.scoreDefinitions.rushing);
     if (status === "eligibleInsufficientHistory") bump("rushing_noHistoryFallback");
     if (c.rushingRoleUncertain) bump("rushing_rosterScarcityFloorAdmit");
+    if (c.rushingFallbackProvenance === "depthChart") bump("rushing_sourcedDepthChart");
+    const rushingRoleEvidence = c.rushingRoleEvidence ?? fallbackRoleEvidence("unavailable", "No eligibility evidence recorded (unexpected).");
     const rushingRow: NflCurrentWeekRushingRow = {
       schemaVersion: NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION, season, week, gameId: c.gameId, kickoff: c.gameDateUtc,
       playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, homeAway: c.homeAway, position: c.position,
       market: "rushing", status, historyStatus, generatedAt: sources.generatedAt, modelVersion: MODEL_VERSIONS.rushing,
-      fallbackProvenance: c.rushingRoleUncertain ? "rosterScarcityFloor" : "historicalVolume",
+      fallbackProvenance: c.rushingFallbackProvenance ?? "historicalVolume",
+      roleSource: rushingRoleEvidence.roleSource, roleSourceUpdatedAt: rushingRoleEvidence.roleSourceUpdatedAt,
+      depthRank: rushingRoleEvidence.depthRank, starterFlag: rushingRoleEvidence.starterFlag, roleConfidence: rushingRoleEvidence.roleConfidence,
       projectedCarries: prediction.projectedCarries, projectedYardsPerCarry: prediction.projectedYpc, projectedYards: prediction.predicted,
       estimatedRange: { estimatedLow: interval.low, estimatedHigh: interval.high, nominalLevel: rushingIntervalQ.nominalLevel, intervalVersion: INTERVAL_VERSION },
       matchupScore: toScoreObject("rushing", { season, week, gameId: c.gameId, playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, generatedAt: sources.generatedAt }, matchup),
@@ -320,12 +347,16 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     };
     if (status === "eligibleInsufficientHistory") bump("receiving_noHistoryFallback");
     if (c.receivingRoleUncertain) bump("receiving_rosterScarcityFloorAdmit");
+    if (c.receivingFallbackProvenance === "depthChart") bump("receiving_sourcedDepthChart");
     const matchup = scoreLiveRowGrouped(liveRow, RECEIVING_DIMENSIONS, receivingReference, c.position, sources.scoreDefinitions.receiving);
+    const receivingRoleEvidence = c.receivingRoleEvidence ?? fallbackRoleEvidence("unavailable", "No eligibility evidence recorded (unexpected).");
     const receivingRow: NflCurrentWeekReceivingRow = {
       schemaVersion: NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION, season, week, gameId: c.gameId, kickoff: c.gameDateUtc,
       playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, homeAway: c.homeAway, position: c.position,
       market: "receiving", status, historyStatus, generatedAt: sources.generatedAt, modelVersion: MODEL_VERSIONS.receiving,
-      fallbackProvenance: c.receivingRoleUncertain ? "rosterScarcityFloor" : "historicalVolume",
+      fallbackProvenance: c.receivingFallbackProvenance ?? "historicalVolume",
+      roleSource: receivingRoleEvidence.roleSource, roleSourceUpdatedAt: receivingRoleEvidence.roleSourceUpdatedAt,
+      depthRank: receivingRoleEvidence.depthRank, starterFlag: receivingRoleEvidence.starterFlag, roleConfidence: receivingRoleEvidence.roleConfidence,
       positionSegment: c.position as "RB" | "WR" | "TE",
       projectedTargets: prediction.projectedTargets, projectedYardsPerTarget: prediction.projectedYpt, projectedYards: prediction.predicted,
       estimatedRange: { estimatedLow: interval.low, estimatedHigh: interval.high, nominalLevel: receivingIntervalQ.nominalLevel, intervalVersion: INTERVAL_VERSION },
@@ -359,6 +390,21 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     rushing: byMarket("rushing").filter((r) => r.historyStatus !== "normal").length,
     receiving: byMarket("receiving").filter((r) => r.historyStatus !== "normal").length,
   };
+  const byProvenance = (market: "passing" | "rushing" | "receiving", provenance: string) => byMarket(market).filter((r) => r.fallbackProvenance === provenance).length;
+  const sourcedRoleCandidates = { passing: byProvenance("passing", "depthChart"), rushing: byProvenance("rushing", "depthChart"), receiving: byProvenance("receiving", "depthChart") };
+  const historicalVolumeCandidates = { passing: byProvenance("passing", "starterHeuristic"), rushing: byProvenance("rushing", "historicalVolume"), receiving: byProvenance("receiving", "historicalVolume") };
+  const scarcityFloorCandidates = { passing: 0, rushing: byProvenance("rushing", "rosterScarcityFloor"), receiving: byProvenance("receiving", "rosterScarcityFloor") };
+  const noHistoryAndSourced = (market: "passing" | "rushing" | "receiving") => byMarket(market).filter((r) => r.roleConfidence === "sourced" && r.historyStatus === "noHistory").length;
+  const noHistorySourcedCandidates = { passing: noHistoryAndSourced("passing"), rushing: noHistoryAndSourced("rushing"), receiving: noHistoryAndSourced("receiving") };
+  const missingDepthChartGroups: string[] = [];
+  if (effectiveDepthChartIndex) {
+    const teamsSeen = new Set(candidates.map((c) => c.team));
+    for (const team of teamsSeen) {
+      for (const position of ["QB", "RB", "WR", "TE"] as const) {
+        if (!effectiveDepthChartIndex.byTeamPosition.has(`${team}|${position}`)) missingDepthChartGroups.push(`${team}|${position}`);
+      }
+    }
+  }
   const yardsOf = (market: "passing" | "rushing" | "receiving") => byMarket(market).map((r) => r.projectedYards).filter((v): v is number => v != null);
   const scoresOf = (market: "passing" | "rushing" | "receiving") => byMarket(market).map((r) => r.matchupScore?.matchupScore).filter((v): v is number => v != null);
   const widthsOf = (market: "passing" | "rushing" | "receiving") => byMarket(market).map((r) => r.estimatedRange).filter((v): v is NonNullable<typeof v> => v != null).map((r) => r.estimatedHigh - r.estimatedLow);
@@ -370,6 +416,8 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     gamesExpected, gamesResolved, playersEvaluated: candidates.length,
     projectionsEmittedByMarket, excludedByEligibility, limitedOrNoHistoryRows, roleUncertainRows,
     unresolvedIdentityRows: unresolved.length, fallbackCounts,
+    sourcedRoleCandidates, historicalVolumeCandidates, scarcityFloorCandidates, noHistorySourcedCandidates,
+    ambiguousQbDepthGroups, missingDepthChartGroups,
     projectionYardsDistribution: { passing: distributionOf(yardsOf("passing")), rushing: distributionOf(yardsOf("rushing")), receiving: distributionOf(yardsOf("receiving")) },
     matchupScoreDistribution: { passing: distributionOf(scoresOf("passing")), rushing: distributionOf(scoresOf("rushing")), receiving: distributionOf(scoresOf("receiving")) },
     intervalWidthDistribution: { passing: distributionOf(widthsOf("passing")), rushing: distributionOf(widthsOf("rushing")), receiving: distributionOf(widthsOf("receiving")) },
@@ -384,6 +432,7 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       trainingSeasons: PRODUCTION_TRAIN_SEASONS, rosterSnapshotSeason: season, rosterSnapshotWeek: week,
       marketSource: sources.marketAvailable ? "matchup-market.json (live current-week feed)" : "unavailable",
     },
+    depthChartSource,
     rows, qa,
   };
 }

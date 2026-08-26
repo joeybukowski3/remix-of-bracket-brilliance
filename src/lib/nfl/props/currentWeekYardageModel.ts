@@ -27,6 +27,12 @@ import type { NflRushingFeatureRow } from "./types/rushingFeatures";
 import { computeReceivingBaselineConstants, predictReceivingBaselineC, type NflReceivingBaselineConstants } from "./receivingBaselines";
 import type { NflReceivingFeatureRow } from "./types/receivingFeatures";
 import { computeResidualQuantiles, type NflResidualQuantiles } from "./predictionIntervals";
+import type { buildQbPassingFeatureRowForTarget } from "./qbPassingFeatures";
+import type { buildReceivingFeatureRowForTarget } from "./receivingFeatures";
+
+/** The live "ForTarget" builders omit a couple of outcome-derived diagnostic subfields (never available pregame) -- these are the true shapes `predictPassing`/`predictReceiving` accept, matching the builders exactly rather than the full historical row type. */
+type NflLiveQbPassingRow = ReturnType<typeof buildQbPassingFeatureRowForTarget>;
+type NflLiveReceivingRow = ReturnType<typeof buildReceivingFeatureRowForTarget>;
 
 /** Selection frozen before 2025 (Phase 4/5.5/6); final coefficient fit includes 2025. */
 export const PRODUCTION_TRAIN_SEASONS: readonly number[] = [2022, 2023, 2024, 2025];
@@ -56,8 +62,8 @@ export function fitPassingModel(trainRows: readonly NflQbPassingFeatureRow[]): N
   return { model, fallbacks };
 }
 
-export function predictPassing(fitted: NflFittedPassingModel, row: Omit<NflQbPassingFeatureRow, "target">): number {
-  return scoreRidgeModel(fitted.model, encodePassingFeatureRow(row as NflQbPassingFeatureRow, fitted.fallbacks));
+export function predictPassing(fitted: NflFittedPassingModel, row: NflLiveQbPassingRow): number {
+  return scoreRidgeModel(fitted.model, encodePassingFeatureRow(row as unknown as NflQbPassingFeatureRow, fitted.fallbacks));
 }
 
 // ---------------------------------------------------------------------------
@@ -91,9 +97,9 @@ export function fitReceivingModel(trainRows: readonly NflReceivingFeatureRow[]):
 
 export function predictReceiving(
   fitted: NflFittedReceivingModel,
-  row: Omit<NflReceivingFeatureRow, "target">,
+  row: NflLiveReceivingRow,
 ): { predicted: number; projectedTargets: number; projectedYpt: number } {
-  return predictReceivingBaselineC(row as NflReceivingFeatureRow, fitted.constants, fitted.fallbackTargets);
+  return predictReceivingBaselineC(row as unknown as NflReceivingFeatureRow, fitted.constants, fitted.fallbackTargets);
 }
 
 // ---------------------------------------------------------------------------

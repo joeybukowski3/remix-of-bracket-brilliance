@@ -89,9 +89,30 @@ export type NflCurrentWeekRowIdentity = {
    * repository yet. `"starterHeuristic"` -- passing only: the row exists
    * because this player is the rolling-attempts leader (or sole candidate)
    * among this team's ACT quarterbacks, independent of whether that
-   * leader's own history clears any threshold.
+   * leader's own history clears any threshold -- used only when sourced
+   * depth-chart evidence was unavailable or ambiguous for this team.
+   * `"depthChart"` (Phase 9.2) -- admitted primarily on sourced
+   * ESPN/nflverse depth-chart evidence (`roleSource`/`depthRank` below),
+   * independent of historical volume. This is how a legitimate rookie/new
+   * starter enters with zero prior NFL usage.
    */
-  fallbackProvenance: "historicalVolume" | "rosterScarcityFloor" | "starterHeuristic";
+  fallbackProvenance: "historicalVolume" | "depthChart" | "rosterScarcityFloor" | "starterHeuristic";
+  /**
+   * Phase 9.2 role-evidence disclosure. `roleSource` is
+   * `"nflverse-depth-charts-espn"` when sourced depth-chart data actually
+   * informed this row, `"historicalVolume"`/`"rosterScarcityFloor"` when it
+   * did not (mirrors `fallbackProvenance`), or `"unavailable"` when the
+   * depth-chart source itself could not be used this run (stale/missing --
+   * see the artifact-level `depthChartSource` block). `depthRank`/
+   * `starterFlag` are null/false whenever `roleConfidence` is `"inferred"`.
+   * This block answers ONLY "should this player plausibly be in the
+   * universe" -- it never feeds `projectedYards` or the Matchup Score.
+   */
+  roleSource: "nflverse-depth-charts-espn" | "historicalVolume" | "rosterScarcityFloor" | "unavailable";
+  roleSourceUpdatedAt: string | null;
+  depthRank: number | null;
+  starterFlag: boolean;
+  roleConfidence: "sourced" | "inferred";
 };
 
 export type NflCurrentWeekPassingRow = NflCurrentWeekRowIdentity & {
@@ -102,7 +123,12 @@ export type NflCurrentWeekPassingRow = NflCurrentWeekRowIdentity & {
   estimatedRange: NflEstimatedRange | null;
   matchupScore: NflYardageMatchupScore | null;
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
-  diagnostics: { starterResolution: "rollingAttemptsLeader" | "onlyActiveQb" | "noHistoryFallback"; gamesStartedPriorThisSeason: number };
+  diagnostics: {
+    starterResolution: "sourcedDepthChart" | "rollingAttemptsLeader" | "onlyActiveQb" | "noHistoryFallback";
+    gamesStartedPriorThisSeason: number;
+    /** True when the depth-chart source listed more than one ACT QB at rank 1 for this team -- never silently resolved; resolution fell back to the historical heuristic. */
+    sourceAmbiguous: boolean;
+  };
 };
 
 export type NflCurrentWeekRushingRow = NflCurrentWeekRowIdentity & {
@@ -144,6 +170,16 @@ export type NflCurrentWeekQaSummary = {
   /** Rows admitted via roster/role evidence rather than historical volume -- see `fallbackProvenance`. */
   roleUncertainRows: Record<NflProjectionMarket, number>;
   fallbackCounts: Record<string, number>;
+  /** Phase 9.2: rows by which evidence tier actually admitted them (mirrors `fallbackProvenance`). */
+  sourcedRoleCandidates: Record<NflProjectionMarket, number>;
+  historicalVolumeCandidates: Record<NflProjectionMarket, number>;
+  scarcityFloorCandidates: Record<NflProjectionMarket, number>;
+  /** Rows with sourced depth-chart evidence AND zero historical volume -- the concrete "rookie/new player captured" count. */
+  noHistorySourcedCandidates: Record<NflProjectionMarket, number>;
+  /** Passing-only: teams where the source listed >1 ACT QB at rank 1 (never silently resolved). */
+  ambiguousQbDepthGroups: readonly string[];
+  /** team|position groups with zero rows in the depth-chart snapshot (not an error -- e.g. a team's TE room may be thin that day). */
+  missingDepthChartGroups: readonly string[];
   projectionYardsDistribution: Record<NflProjectionMarket, { n: number; mean: number | null; p10: number | null; p50: number | null; p90: number | null }>;
   matchupScoreDistribution: Record<NflProjectionMarket, { n: number; mean: number | null; p10: number | null; p50: number | null; p90: number | null }>;
   intervalWidthDistribution: Record<NflProjectionMarket, { n: number; mean: number | null; p10: number | null; p50: number | null; p90: number | null }>;
@@ -164,6 +200,14 @@ export type NflCurrentWeekProjectionArtifact = {
     rosterSnapshotWeek: number;
     marketSource: "matchup-market.json (live current-week feed)" | "unavailable";
   };
+  /**
+   * Phase 9.2 source-failure visibility. `available: false` means no depth
+   * chart data was usable this run (missing or stale beyond the source's
+   * daily-cadence threshold) -- generation still succeeds, using Phase 9.1
+   * historical-volume + roster-scarcity-floor behavior only, never
+   * pretending fallback rows are sourced.
+   */
+  depthChartSource: { available: boolean; stale: boolean; snapshotAt: string | null; ageHours: number | null };
   rows: readonly NflCurrentWeekProjectionRow[];
   qa: NflCurrentWeekQaSummary;
 };

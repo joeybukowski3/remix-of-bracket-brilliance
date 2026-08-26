@@ -1,0 +1,128 @@
+{
+  "schemaVersion": "nfl-depth-chart-source-cache-v1",
+  "source": "nflverse/nflverse-data releases (depth_charts release, ESPN origin, CC-BY 4.0)",
+  "files": [
+    {
+      "season": 2025,
+      "filename": "depth_charts_2025.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2025.csv",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-08-25",
+      "byteSize": 219136,
+      "sha256": "349289f28a0c93cfc477ead687e040c8dd69e2467517643166e2c6ad463dc8a9",
+      "rowCount": 2291,
+      "headerColumns": [
+        "dt",
+        "team",
+        "player_name",
+        "espn_id",
+        "gsis_id",
+        "pos_grp_id",
+        "pos_grp",
+        "pos_id",
+        "pos_name",
+        "pos_abb",
+        "pos_slot",
+        "pos_rank"
+      ],
+      "upstream": {
+        "byteSize": 52917870,
+        "sha256": "f5a4aa3fa70150e810b2255200c8735a6c1cc8ff77361308ce39149345b39b4a",
+        "rowCount": 554215,
+        "headerColumns": [
+          "dt",
+          "team",
+          "player_name",
+          "espn_id",
+          "gsis_id",
+          "pos_grp_id",
+          "pos_grp",
+          "pos_id",
+          "pos_name",
+          "pos_abb",
+          "pos_slot",
+          "pos_rank"
+        ]
+      },
+      "projectedColumns": [
+        "dt",
+        "team",
+        "player_name",
+        "espn_id",
+        "gsis_id",
+        "pos_grp_id",
+        "pos_grp",
+        "pos_id",
+        "pos_name",
+        "pos_abb",
+        "pos_slot",
+        "pos_rank"
+      ],
+      "projectionFilter": "dt == max(dt) present in the fetched upstream file (most-recent daily snapshot only)",
+      "sourceSnapshotAt": "2026-03-14T07:32:09Z",
+      "unresolvedIdentityRowsDropped": 22
+    },
+    {
+      "season": 2026,
+      "filename": "depth_charts_2026.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-08-25",
+      "byteSize": 310128,
+      "sha256": "0c4184d545f15327aea31ecbb396d78158f912d9cafbd1fb5d125de95267f246",
+      "rowCount": 3241,
+      "headerColumns": [
+        "dt",
+        "team",
+        "player_name",
+        "espn_id",
+        "gsis_id",
+        "pos_grp_id",
+        "pos_grp",
+        "pos_id",
+        "pos_name",
+        "pos_abb",
+        "pos_slot",
+        "pos_rank"
+      ],
+      "upstream": {
+        "byteSize": 44799889,
+        "sha256": "f78ed291b716fb0e569e38463d15df3e84d0214cda9eaebe06c9dedf20fb01d7",
+        "rowCount": 469064,
+        "headerColumns": [
+          "dt",
+          "team",
+          "player_name",
+          "espn_id",
+          "gsis_id",
+          "pos_grp_id",
+          "pos_grp",
+          "pos_id",
+          "pos_name",
+          "pos_abb",
+          "pos_slot",
+          "pos_rank"
+        ]
+      },
+      "projectedColumns": [
+        "dt",
+        "team",
+        "player_name",
+        "espn_id",
+        "gsis_id",
+        "pos_grp_id",
+        "pos_grp",
+        "pos_id",
+        "pos_name",
+        "pos_abb",
+        "pos_slot",
+        "pos_rank"
+      ],
+      "projectionFilter": "dt == max(dt) present in the fetched upstream file (most-recent daily snapshot only)",
+      "sourceSnapshotAt": "2026-08-25T07:39:23Z",
+      "unresolvedIdentityRowsDropped": 40
+    }
+  ],
+  "attribution": "nflverse; depth chart data originates with ESPN",
+  "notPublished": []
+}
