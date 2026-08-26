@@ -1,0 +1,7634 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-08-26T16:32:53.409Z",
+    "source": "nflverse stats_player_week (player-week box score)",
+    "season": 2025,
+    "week": null,
+    "modelVersion": null,
+    "notes": [
+      "Yardage production ALLOWED, not fantasy points allowed -- see src/lib/fantasy/pointsAllowed2025.ts for the separate fantasy-scoring metric.",
+      "Regular season only (season_type === \"REG\"); source season fixed at 2025 so no 2026 outcome can enter a Week 1 2026 value.",
+      "passing/QB sums passing_yards conceded to opposing rows recorded at position QB only -- a trick-play pass thrown by a non-QB does not count as passing offense allowed.",
+      "rushing/ALL sums rushing_yards across every ball-carrier position (the conventional team rush-yards-allowed figure); rushing/RB isolates the RB slice.",
+      "receiving/{WR,TE,RB} is strictly position-specific -- no team-wide receiving slice is produced, since a team-wide number would misrepresent position-specific defense.",
+      "last5 is each team's final five REG-season games in the source data, ordered by week number; bye weeks never appear as rows, so this is always five actual games.",
+      "A team with zero recorded games in a window is omitted from that window entirely, never zero-filled.",
+      "This compact stats_player_week cache carries no sack/sack-yardage column at all -- sacks are simply absent from passing_yards, neither added nor subtracted. QB rushing (scrambles) lands only in rushing/ALL; rushing/QB is not a produced slice, so QB scramble yards never enter the RB rushing slice."
+    ]
+  },
+  "schemaVersion": "nfl-matchup-production-allowed-v1",
+  "sourceSeason": 2025,
+  "marketPositions": {
+    "passing": [
+      "QB"
+    ],
+    "rushing": [
+      "ALL",
+      "RB"
+    ],
+    "receiving": [
+      "WR",
+      "TE",
+      "RB"
+    ]
+  },
+  "teams": {
+    "ARI": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 242.8,
+            "totalYardsAllowed": 4128,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 265.2,
+            "totalYardsAllowed": 1326,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 126.9,
+            "totalYardsAllowed": 2158,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 161.4,
+            "totalYardsAllowed": 807,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 113.3,
+            "totalYardsAllowed": 1926,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 155.2,
+            "totalYardsAllowed": 776,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 137.1,
+            "totalYardsAllowed": 2330,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 126.8,
+            "totalYardsAllowed": 634,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 68.6,
+            "totalYardsAllowed": 1166,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 84.8,
+            "totalYardsAllowed": 424,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 34.2,
+            "totalYardsAllowed": 582,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 49.4,
+            "totalYardsAllowed": 247,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "ATL": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 221.9,
+            "totalYardsAllowed": 3773,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 251.4,
+            "totalYardsAllowed": 1257,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 126.4,
+            "totalYardsAllowed": 2148,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 114.4,
+            "totalYardsAllowed": 572,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 99.8,
+            "totalYardsAllowed": 1697,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 95.6,
+            "totalYardsAllowed": 478,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 143.4,
+            "totalYardsAllowed": 2438,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 157.8,
+            "totalYardsAllowed": 789,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 48,
+            "totalYardsAllowed": 816,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 70.2,
+            "totalYardsAllowed": 351,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 30,
+            "totalYardsAllowed": 510,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 23.4,
+            "totalYardsAllowed": 117,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "BAL": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 259,
+            "totalYardsAllowed": 4403,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 295.8,
+            "totalYardsAllowed": 1479,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 106.4,
+            "totalYardsAllowed": 1809,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 77.6,
+            "totalYardsAllowed": 388,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 82.1,
+            "totalYardsAllowed": 1396,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 55.2,
+            "totalYardsAllowed": 276,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 169.6,
+            "totalYardsAllowed": 2883,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 205.8,
+            "totalYardsAllowed": 1029,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 46.5,
+            "totalYardsAllowed": 791,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 38,
+            "totalYardsAllowed": 190,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 42.6,
+            "totalYardsAllowed": 725,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 53.2,
+            "totalYardsAllowed": 266,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "BUF": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 170.2,
+            "totalYardsAllowed": 2894,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 153.2,
+            "totalYardsAllowed": 766,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 135.8,
+            "totalYardsAllowed": 2309,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 123.8,
+            "totalYardsAllowed": 619,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 107.3,
+            "totalYardsAllowed": 1824,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 94,
+            "totalYardsAllowed": 470,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 115.6,
+            "totalYardsAllowed": 1965,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 90.6,
+            "totalYardsAllowed": 453,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 29.6,
+            "totalYardsAllowed": 504,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 35,
+            "totalYardsAllowed": 175,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 24.9,
+            "totalYardsAllowed": 423,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 27.2,
+            "totalYardsAllowed": 136,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "CAR": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 215.1,
+            "totalYardsAllowed": 3657,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 202,
+            "totalYardsAllowed": 1010,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 123.3,
+            "totalYardsAllowed": 2096,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 141,
+            "totalYardsAllowed": 705,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 106.4,
+            "totalYardsAllowed": 1808,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 117.6,
+            "totalYardsAllowed": 588,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 124.6,
+            "totalYardsAllowed": 2118,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 136.6,
+            "totalYardsAllowed": 683,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 59.9,
+            "totalYardsAllowed": 1019,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 44,
+            "totalYardsAllowed": 220,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 28.6,
+            "totalYardsAllowed": 487,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 21.4,
+            "totalYardsAllowed": 107,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "CHI": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 239.2,
+            "totalYardsAllowed": 4067,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 248.6,
+            "totalYardsAllowed": 1243,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 134.5,
+            "totalYardsAllowed": 2287,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 136.2,
+            "totalYardsAllowed": 681,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 104.2,
+            "totalYardsAllowed": 1772,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 105.2,
+            "totalYardsAllowed": 526,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 160.1,
+            "totalYardsAllowed": 2721,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 181.4,
+            "totalYardsAllowed": 907,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 51.5,
+            "totalYardsAllowed": 876,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 41,
+            "totalYardsAllowed": 205,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 26.8,
+            "totalYardsAllowed": 456,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 23.4,
+            "totalYardsAllowed": 117,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "CIN": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 245.1,
+            "totalYardsAllowed": 4166,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 196.8,
+            "totalYardsAllowed": 984,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 146.6,
+            "totalYardsAllowed": 2493,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 132.2,
+            "totalYardsAllowed": 661,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 119.2,
+            "totalYardsAllowed": 2027,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 98.6,
+            "totalYardsAllowed": 493,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 115.2,
+            "totalYardsAllowed": 1958,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 98.6,
+            "totalYardsAllowed": 493,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 84.9,
+            "totalYardsAllowed": 1444,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 64.6,
+            "totalYardsAllowed": 323,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 41.8,
+            "totalYardsAllowed": 711,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 31.8,
+            "totalYardsAllowed": 159,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "CLE": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 187.5,
+            "totalYardsAllowed": 3188,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 178.6,
+            "totalYardsAllowed": 893,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 114.9,
+            "totalYardsAllowed": 1953,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 147.4,
+            "totalYardsAllowed": 737,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 96.4,
+            "totalYardsAllowed": 1638,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 132.4,
+            "totalYardsAllowed": 662,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 109.5,
+            "totalYardsAllowed": 1862,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 99.6,
+            "totalYardsAllowed": 498,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 51.5,
+            "totalYardsAllowed": 875,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 58.4,
+            "totalYardsAllowed": 292,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 26.1,
+            "totalYardsAllowed": 444,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 20.6,
+            "totalYardsAllowed": 103,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "DAL": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 265.9,
+            "totalYardsAllowed": 4521,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 257.4,
+            "totalYardsAllowed": 1287,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 125.4,
+            "totalYardsAllowed": 2132,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 127.2,
+            "totalYardsAllowed": 636,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 95.2,
+            "totalYardsAllowed": 1618,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 101.6,
+            "totalYardsAllowed": 508,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 171,
+            "totalYardsAllowed": 2907,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 178.2,
+            "totalYardsAllowed": 891,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 51.7,
+            "totalYardsAllowed": 879,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 39.4,
+            "totalYardsAllowed": 197,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 43.2,
+            "totalYardsAllowed": 734,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 39.8,
+            "totalYardsAllowed": 199,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "DEN": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 212.1,
+            "totalYardsAllowed": 3606,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 194,
+            "totalYardsAllowed": 970,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 91.1,
+            "totalYardsAllowed": 1548,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 86.2,
+            "totalYardsAllowed": 431,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 71.8,
+            "totalYardsAllowed": 1220,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 58,
+            "totalYardsAllowed": 290,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 130.8,
+            "totalYardsAllowed": 2224,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 131.6,
+            "totalYardsAllowed": 658,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 59.7,
+            "totalYardsAllowed": 1015,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 50,
+            "totalYardsAllowed": 250,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 21.2,
+            "totalYardsAllowed": 361,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 12.4,
+            "totalYardsAllowed": 62,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "DET": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 234.9,
+            "totalYardsAllowed": 3994,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 254.6,
+            "totalYardsAllowed": 1273,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 114.5,
+            "totalYardsAllowed": 1947,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 140.6,
+            "totalYardsAllowed": 703,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 89.1,
+            "totalYardsAllowed": 1515,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 109.2,
+            "totalYardsAllowed": 546,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 155.5,
+            "totalYardsAllowed": 2644,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 159.2,
+            "totalYardsAllowed": 796,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 54.8,
+            "totalYardsAllowed": 932,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 69.6,
+            "totalYardsAllowed": 348,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 24.6,
+            "totalYardsAllowed": 418,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 25.8,
+            "totalYardsAllowed": 129,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "GB": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 206.8,
+            "totalYardsAllowed": 3516,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 216.8,
+            "totalYardsAllowed": 1084,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 117.7,
+            "totalYardsAllowed": 2001,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 164.2,
+            "totalYardsAllowed": 821,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 100.5,
+            "totalYardsAllowed": 1708,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 134,
+            "totalYardsAllowed": 670,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 135.1,
+            "totalYardsAllowed": 2296,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 145.8,
+            "totalYardsAllowed": 729,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 44.6,
+            "totalYardsAllowed": 759,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 48,
+            "totalYardsAllowed": 240,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 26.5,
+            "totalYardsAllowed": 451,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 21.8,
+            "totalYardsAllowed": 109,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "HOU": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 204.1,
+            "totalYardsAllowed": 3470,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 223.2,
+            "totalYardsAllowed": 1116,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 93.6,
+            "totalYardsAllowed": 1591,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 98.6,
+            "totalYardsAllowed": 493,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 73.4,
+            "totalYardsAllowed": 1248,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 71.4,
+            "totalYardsAllowed": 357,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 127.2,
+            "totalYardsAllowed": 2162,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 134.8,
+            "totalYardsAllowed": 674,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 45.6,
+            "totalYardsAllowed": 775,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 60.4,
+            "totalYardsAllowed": 302,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 31.6,
+            "totalYardsAllowed": 537,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 33.8,
+            "totalYardsAllowed": 169,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "IND": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 262.5,
+            "totalYardsAllowed": 4462,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 256.2,
+            "totalYardsAllowed": 1281,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 101.6,
+            "totalYardsAllowed": 1728,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 110.6,
+            "totalYardsAllowed": 553,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 86.8,
+            "totalYardsAllowed": 1475,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 96.2,
+            "totalYardsAllowed": 481,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 168.3,
+            "totalYardsAllowed": 2861,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 178.2,
+            "totalYardsAllowed": 891,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 69.8,
+            "totalYardsAllowed": 1186,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 64.2,
+            "totalYardsAllowed": 321,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 24.4,
+            "totalYardsAllowed": 414,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 13.8,
+            "totalYardsAllowed": 69,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "JAX": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 231.4,
+            "totalYardsAllowed": 3933,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 200.8,
+            "totalYardsAllowed": 1004,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 85.3,
+            "totalYardsAllowed": 1450,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 92.2,
+            "totalYardsAllowed": 461,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 67.7,
+            "totalYardsAllowed": 1151,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 77.4,
+            "totalYardsAllowed": 387,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 137.8,
+            "totalYardsAllowed": 2343,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 137.6,
+            "totalYardsAllowed": 688,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 59.1,
+            "totalYardsAllowed": 1004,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 34.6,
+            "totalYardsAllowed": 173,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 32.6,
+            "totalYardsAllowed": 554,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 28.6,
+            "totalYardsAllowed": 143,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "KC": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 205.1,
+            "totalYardsAllowed": 3487,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 185.6,
+            "totalYardsAllowed": 928,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 105.4,
+            "totalYardsAllowed": 1791,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 116,
+            "totalYardsAllowed": 580,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 83.1,
+            "totalYardsAllowed": 1412,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 100,
+            "totalYardsAllowed": 500,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 124.6,
+            "totalYardsAllowed": 2119,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 113.2,
+            "totalYardsAllowed": 566,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 47.6,
+            "totalYardsAllowed": 809,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 45.6,
+            "totalYardsAllowed": 228,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 27.8,
+            "totalYardsAllowed": 472,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 25,
+            "totalYardsAllowed": 125,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "LA": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 232.9,
+            "totalYardsAllowed": 3960,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 249.6,
+            "totalYardsAllowed": 1248,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 110.9,
+            "totalYardsAllowed": 1885,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 118,
+            "totalYardsAllowed": 590,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 88.6,
+            "totalYardsAllowed": 1506,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 101.8,
+            "totalYardsAllowed": 509,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 144.8,
+            "totalYardsAllowed": 2462,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 161,
+            "totalYardsAllowed": 805,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 45.6,
+            "totalYardsAllowed": 775,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 46.2,
+            "totalYardsAllowed": 231,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 36.5,
+            "totalYardsAllowed": 621,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 48,
+            "totalYardsAllowed": 240,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "LAC": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 194.5,
+            "totalYardsAllowed": 3306,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 218.2,
+            "totalYardsAllowed": 1091,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 105.2,
+            "totalYardsAllowed": 1788,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 101.6,
+            "totalYardsAllowed": 508,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 84.8,
+            "totalYardsAllowed": 1441,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 78.4,
+            "totalYardsAllowed": 392,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 127.5,
+            "totalYardsAllowed": 2167,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 154.4,
+            "totalYardsAllowed": 772,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 42.2,
+            "totalYardsAllowed": 717,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 46.2,
+            "totalYardsAllowed": 231,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 24,
+            "totalYardsAllowed": 408,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 17.6,
+            "totalYardsAllowed": 88,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "LV": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 214.4,
+            "totalYardsAllowed": 3644,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 192,
+            "totalYardsAllowed": 960,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 115.5,
+            "totalYardsAllowed": 1964,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 127,
+            "totalYardsAllowed": 635,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 97.7,
+            "totalYardsAllowed": 1661,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 103.6,
+            "totalYardsAllowed": 518,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 147.2,
+            "totalYardsAllowed": 2503,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 126.2,
+            "totalYardsAllowed": 631,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 38.6,
+            "totalYardsAllowed": 656,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 38.8,
+            "totalYardsAllowed": 194,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 26.5,
+            "totalYardsAllowed": 450,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 24.8,
+            "totalYardsAllowed": 124,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "MIA": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 230.6,
+            "totalYardsAllowed": 3920,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 253.2,
+            "totalYardsAllowed": 1266,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 132.2,
+            "totalYardsAllowed": 2247,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 119.4,
+            "totalYardsAllowed": 597,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 107.2,
+            "totalYardsAllowed": 1822,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 102.8,
+            "totalYardsAllowed": 514,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 127.4,
+            "totalYardsAllowed": 2165,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 153.8,
+            "totalYardsAllowed": 769,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 66.7,
+            "totalYardsAllowed": 1134,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 63.4,
+            "totalYardsAllowed": 317,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 35.5,
+            "totalYardsAllowed": 604,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 32.6,
+            "totalYardsAllowed": 163,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "MIN": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 177.7,
+            "totalYardsAllowed": 3021,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 133.2,
+            "totalYardsAllowed": 666,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 123.6,
+            "totalYardsAllowed": 2102,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 112.6,
+            "totalYardsAllowed": 563,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 105.1,
+            "totalYardsAllowed": 1787,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 100.2,
+            "totalYardsAllowed": 501,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 115.9,
+            "totalYardsAllowed": 1971,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 103,
+            "totalYardsAllowed": 515,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 42.3,
+            "totalYardsAllowed": 719,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 14.2,
+            "totalYardsAllowed": 71,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 19.5,
+            "totalYardsAllowed": 331,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 16,
+            "totalYardsAllowed": 80,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "NE": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 206.4,
+            "totalYardsAllowed": 3509,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 157.4,
+            "totalYardsAllowed": 787,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 102.5,
+            "totalYardsAllowed": 1742,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 138,
+            "totalYardsAllowed": 690,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 77.1,
+            "totalYardsAllowed": 1311,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 111,
+            "totalYardsAllowed": 555,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 118.5,
+            "totalYardsAllowed": 2014,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 92.4,
+            "totalYardsAllowed": 462,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 57.1,
+            "totalYardsAllowed": 971,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 42.2,
+            "totalYardsAllowed": 211,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 29.9,
+            "totalYardsAllowed": 508,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 22.2,
+            "totalYardsAllowed": 111,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "NO": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 196.2,
+            "totalYardsAllowed": 3336,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 180.8,
+            "totalYardsAllowed": 904,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 120.6,
+            "totalYardsAllowed": 2050,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 105.4,
+            "totalYardsAllowed": 527,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 102.7,
+            "totalYardsAllowed": 1746,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 83.4,
+            "totalYardsAllowed": 417,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 121.5,
+            "totalYardsAllowed": 2066,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 114.2,
+            "totalYardsAllowed": 571,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 51.1,
+            "totalYardsAllowed": 869,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 41.6,
+            "totalYardsAllowed": 208,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 23.3,
+            "totalYardsAllowed": 396,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 25,
+            "totalYardsAllowed": 125,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "NYG": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 228.8,
+            "totalYardsAllowed": 3889,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 197.6,
+            "totalYardsAllowed": 988,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 145.1,
+            "totalYardsAllowed": 2467,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 116.2,
+            "totalYardsAllowed": 581,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 116.5,
+            "totalYardsAllowed": 1981,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 91.8,
+            "totalYardsAllowed": 459,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 151.8,
+            "totalYardsAllowed": 2580,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 115.6,
+            "totalYardsAllowed": 578,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 47.5,
+            "totalYardsAllowed": 807,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 57,
+            "totalYardsAllowed": 285,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 29.9,
+            "totalYardsAllowed": 508,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 25,
+            "totalYardsAllowed": 125,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "NYJ": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 224.2,
+            "totalYardsAllowed": 3811,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 262,
+            "totalYardsAllowed": 1310,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 139.3,
+            "totalYardsAllowed": 2368,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 159.4,
+            "totalYardsAllowed": 797,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 110,
+            "totalYardsAllowed": 1870,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 125.6,
+            "totalYardsAllowed": 628,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 136.1,
+            "totalYardsAllowed": 2313,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 141.4,
+            "totalYardsAllowed": 707,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 55.8,
+            "totalYardsAllowed": 949,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 79.4,
+            "totalYardsAllowed": 397,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 34.5,
+            "totalYardsAllowed": 587,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 48.8,
+            "totalYardsAllowed": 244,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "PHI": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 204.5,
+            "totalYardsAllowed": 3476,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 146.8,
+            "totalYardsAllowed": 734,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 123.9,
+            "totalYardsAllowed": 2107,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 113.6,
+            "totalYardsAllowed": 568,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 96.1,
+            "totalYardsAllowed": 1634,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 84,
+            "totalYardsAllowed": 420,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 137.1,
+            "totalYardsAllowed": 2330,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 95.6,
+            "totalYardsAllowed": 478,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 29.8,
+            "totalYardsAllowed": 507,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 17.4,
+            "totalYardsAllowed": 87,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 37.3,
+            "totalYardsAllowed": 634,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 33.8,
+            "totalYardsAllowed": 169,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "PIT": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 261,
+            "totalYardsAllowed": 4437,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 252,
+            "totalYardsAllowed": 1260,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 112.9,
+            "totalYardsAllowed": 1919,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 102,
+            "totalYardsAllowed": 510,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 96.4,
+            "totalYardsAllowed": 1639,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 87.2,
+            "totalYardsAllowed": 436,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 163.6,
+            "totalYardsAllowed": 2782,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 144.2,
+            "totalYardsAllowed": 721,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 65.9,
+            "totalYardsAllowed": 1121,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 71.2,
+            "totalYardsAllowed": 356,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 31.2,
+            "totalYardsAllowed": 530,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 35.8,
+            "totalYardsAllowed": 179,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "SEA": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 212.9,
+            "totalYardsAllowed": 3619,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 184,
+            "totalYardsAllowed": 920,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 91.9,
+            "totalYardsAllowed": 1563,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 99.6,
+            "totalYardsAllowed": 498,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 72.9,
+            "totalYardsAllowed": 1239,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 88.6,
+            "totalYardsAllowed": 443,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 110.8,
+            "totalYardsAllowed": 1884,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 103.8,
+            "totalYardsAllowed": 519,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 63.2,
+            "totalYardsAllowed": 1074,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 47.4,
+            "totalYardsAllowed": 237,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 35.5,
+            "totalYardsAllowed": 603,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 31.8,
+            "totalYardsAllowed": 159,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "SF": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 241.8,
+            "totalYardsAllowed": 4110,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 224.8,
+            "totalYardsAllowed": 1124,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 107.8,
+            "totalYardsAllowed": 1833,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 124.4,
+            "totalYardsAllowed": 622,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 93.1,
+            "totalYardsAllowed": 1582,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 114.6,
+            "totalYardsAllowed": 573,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 146.6,
+            "totalYardsAllowed": 2492,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 123.4,
+            "totalYardsAllowed": 617,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 56.9,
+            "totalYardsAllowed": 968,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 66.2,
+            "totalYardsAllowed": 331,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 35.7,
+            "totalYardsAllowed": 607,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 35,
+            "totalYardsAllowed": 175,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              13,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "TB": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 254.8,
+            "totalYardsAllowed": 4332,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 229.2,
+            "totalYardsAllowed": 1146,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 101.1,
+            "totalYardsAllowed": 1718,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 103,
+            "totalYardsAllowed": 515,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 78.8,
+            "totalYardsAllowed": 1340,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 82.2,
+            "totalYardsAllowed": 411,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 147.6,
+            "totalYardsAllowed": 2509,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 117.2,
+            "totalYardsAllowed": 586,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 57,
+            "totalYardsAllowed": 969,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 77.4,
+            "totalYardsAllowed": 387,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 50.1,
+            "totalYardsAllowed": 851,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 35.8,
+            "totalYardsAllowed": 179,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "TEN": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 248.3,
+            "totalYardsAllowed": 4221,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 277.8,
+            "totalYardsAllowed": 1389,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 114.6,
+            "totalYardsAllowed": 1948,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 83.4,
+            "totalYardsAllowed": 417,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 91.4,
+            "totalYardsAllowed": 1553,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 62.4,
+            "totalYardsAllowed": 312,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 165.5,
+            "totalYardsAllowed": 2814,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 158.8,
+            "totalYardsAllowed": 794,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 55.7,
+            "totalYardsAllowed": 947,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 77.4,
+            "totalYardsAllowed": 387,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 26.3,
+            "totalYardsAllowed": 447,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 40.2,
+            "totalYardsAllowed": 201,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "WAS": {
+      "passing": {
+        "QB": {
+          "season": {
+            "yardsAllowedPerGame": 257.1,
+            "totalYardsAllowed": 4371,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 228.4,
+            "totalYardsAllowed": 1142,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "rushing": {
+        "ALL": {
+          "season": {
+            "yardsAllowedPerGame": 141.6,
+            "totalYardsAllowed": 2408,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 161.2,
+            "totalYardsAllowed": 806,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 115.5,
+            "totalYardsAllowed": 1963,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 131.8,
+            "totalYardsAllowed": 659,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      },
+      "receiving": {
+        "WR": {
+          "season": {
+            "yardsAllowedPerGame": 162.7,
+            "totalYardsAllowed": 2766,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 152,
+            "totalYardsAllowed": 760,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "TE": {
+          "season": {
+            "yardsAllowedPerGame": 61.2,
+            "totalYardsAllowed": 1040,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 57.4,
+            "totalYardsAllowed": 287,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        },
+        "RB": {
+          "season": {
+            "yardsAllowedPerGame": 32.6,
+            "totalYardsAllowed": 554,
+            "gamesIncluded": 17,
+            "weeksIncluded": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          },
+          "last5": {
+            "yardsAllowedPerGame": 19,
+            "totalYardsAllowed": 95,
+            "gamesIncluded": 5,
+            "weeksIncluded": [
+              14,
+              15,
+              16,
+              17,
+              18
+            ]
+          }
+        }
+      }
+    }
+  },
+  "coverage": {
+    "passing": {
+      "QB": {
+        "season": 32,
+        "last5": 32,
+        "ofTeams": 32
+      }
+    },
+    "rushing": {
+      "ALL": {
+        "season": 32,
+        "last5": 32,
+        "ofTeams": 32
+      },
+      "RB": {
+        "season": 32,
+        "last5": 32,
+        "ofTeams": 32
+      }
+    },
+    "receiving": {
+      "WR": {
+        "season": 32,
+        "last5": 32,
+        "ofTeams": 32
+      },
+      "TE": {
+        "season": 32,
+        "last5": 32,
+        "ofTeams": 32
+      },
+      "RB": {
+        "season": 32,
+        "last5": 32,
+        "ofTeams": 32
+      }
+    }
+  },
+  "provenance": {
+    "generatedAt": "2026-08-26T16:32:53.410Z",
+    "sourceFile": "data/nfl/nflverse/stats-player-week/stats_player_week_2025.csv",
+    "teamsWithData": 32,
+    "teamsRequested": 32
+  }
+}
