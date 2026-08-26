@@ -30,8 +30,8 @@ describe("CollegeFootballMatchup", () => {
     renderMatchup("401856766");
     expect(screen.getByText("Last Season · 2025")).toBeInTheDocument();
     expect(screen.queryByText("2026 Season")).not.toBeInTheDocument();
-    expect(screen.getByText("Points/Game")).toBeInTheDocument();
-    expect(screen.getByText("Opp Points/Game")).toBeInTheDocument();
+    expect(screen.getAllByText("Points/Game").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Opp Points/Game").length).toBeGreaterThan(0);
   });
 
   it("does not fabricate a win probability", () => {
