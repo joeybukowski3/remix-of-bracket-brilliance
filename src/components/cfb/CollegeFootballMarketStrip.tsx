@@ -33,7 +33,7 @@ function MobileMarketColumn({
         <Icon className="h-3 w-3" aria-hidden="true" />
         {label}
       </span>
-      <span className="text-lg font-black tabular-nums text-slate-900">{value}</span>
+      <span className="text-xl font-black tabular-nums text-slate-900">{value}</span>
       {supporting && <span className="text-[9px] font-semibold text-slate-400">{supporting}</span>}
     </div>
   );

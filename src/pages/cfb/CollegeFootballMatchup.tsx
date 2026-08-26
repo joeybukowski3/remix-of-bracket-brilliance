@@ -148,9 +148,8 @@ export default function CollegeFootballMatchup() {
         )}
       </section>
 
-      <div ref={stickyStartRef} aria-hidden="true" />
-
       <section aria-labelledby="power-heading">
+        <div ref={stickyStartRef} aria-hidden="true" />
         <SectionHeading id="power-heading" accentColor="#7c3aed">
           Power Comparison
         </SectionHeading>
@@ -190,9 +189,8 @@ export default function CollegeFootballMatchup() {
           Power Rating Line
         </SectionHeading>
         <CollegeFootballModelPanel game={game} />
+        <div ref={stickyEndRef} aria-hidden="true" />
       </section>
-
-      <div ref={stickyEndRef} aria-hidden="true" />
 
       <CollegeFootballDataNotice kind="both" />
     </div>

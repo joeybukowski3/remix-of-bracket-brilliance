@@ -22,7 +22,7 @@ describe("CollegeFootballMatchup", () => {
     renderMatchup("401856766");
     expect(screen.getAllByText("North Carolina").length).toBeGreaterThan(0);
     expect(screen.getAllByText("TCU").length).toBeGreaterThan(0);
-    expect(screen.getByText("Model projections coming soon")).toBeInTheDocument();
+    expect(screen.getAllByText("Model projections coming soon").length).toBeGreaterThan(0);
     expect(screen.queryByText(/projected spread:/i)).not.toBeInTheDocument();
   });
 
