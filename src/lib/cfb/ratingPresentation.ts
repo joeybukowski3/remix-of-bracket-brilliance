@@ -63,3 +63,12 @@ export function getCfbPowerBarWidthPercent(value: number | null | undefined): nu
   const clamped = Math.min(CFB_POWER_BAR_MAX, Math.max(CFB_POWER_BAR_MIN, value));
   return ((clamped - CFB_POWER_BAR_MIN) / (CFB_POWER_BAR_MAX - CFB_POWER_BAR_MIN)) * 100;
 }
+
+/**
+ * Offense/defense ratings share the exact same generated 40–100 distribution
+ * as JKB power (audited against data/generated/cfb/2026-preseason-ratings-v1.1.json:
+ * jkbOffense/jkbDefense min 40.00, max 98.57 — identical range to jkbPower).
+ * Reuse the same anchors rather than inventing a second scale.
+ */
+export const getCfbOffenseBarWidthPercent = getCfbPowerBarWidthPercent;
+export const getCfbDefenseBarWidthPercent = getCfbPowerBarWidthPercent;
