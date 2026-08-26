@@ -10,11 +10,17 @@
   "sourceUrl": "https://www.pgatour.com/tournaments/2026/tour-championship/R2026060",
   "validated": true,
   "validationNote": "Tournament ID, tournament name, dates, and player list were matched to the official PGA TOUR schedule and field endpoints.",
-  "fetchedAt": "2026-08-25T12:19:56.081Z",
+  "fetchedAt": "2026-08-26T12:21:19.824Z",
   "fieldCount": 30,
   "alternatesExcluded": true,
   "alternatePolicy": "Only field.players is imported. Alternate lists are intentionally not queried or merged.",
-  "crossCheck": null,
+  "crossCheck": {
+    "source": "espn-scoreboard",
+    "playerCount": 30,
+    "overlap": 30,
+    "union": 30,
+    "agreementPercent": 100
+  },
   "players": [
     "Adam Scott",
     "Akshay Bhatia",

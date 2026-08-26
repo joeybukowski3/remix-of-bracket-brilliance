@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { getGameById, getTeamById } from "@/data/cfb";
+import { getCfbRankDisplay } from "@/lib/cfb/format";
 import CollegeFootballGameCard from "./CollegeFootballGameCard";
 
 const GAME_ID = "401856766"; // TCU @ North Carolina — real Week 1 fixture, not prototype data
@@ -48,11 +49,19 @@ describe("CollegeFootballGameCard", () => {
     expect(rightColumns.length).toBe(2);
   });
 
-  it("shows a JKB-marked fallback rank badge rather than a bare hash when AP rank is unavailable", () => {
-    const { away } = renderCard();
-    expect(away.ratings.apRank).toBeNull();
-    if (away.ratings.jkbRank != null) {
-      expect(screen.getByText(`JKB ${away.ratings.jkbRank}`)).toBeInTheDocument();
+  it("renders each team's rank badge from the live official-ranking data path, never a prototype value", () => {
+    const { away, home } = renderCard();
+    for (const team of [away, home]) {
+      const expected = getCfbRankDisplay(team.ratings);
+      if (expected.text === "") continue;
+      expect(screen.getAllByText(expected.text).length).toBeGreaterThan(0);
+      // Official polls render a bare "#N"; the internal JKB rank never does.
+      if (expected.isOfficial) {
+        expect(expected.text.startsWith("#")).toBe(true);
+      } else {
+        expect(expected.text).toMatch(/^JKB \d+$/);
+      }
+      expect(screen.getAllByText(expected.label).length).toBeGreaterThan(0);
     }
   });
 
@@ -94,6 +103,28 @@ describe("CollegeFootballGameCard", () => {
     } else {
       expect(screen.queryByText("Neutral")).not.toBeInTheDocument();
     }
+  });
+
+  it("renders the venue name and, when verified, its city/state from the canonical data path", () => {
+    const { game, container } = renderCard();
+    if (game.venue) {
+      expect(container.textContent).toContain(game.venue);
+    }
+    if (game.venueCity) {
+      const location = game.venueState ? `${game.venueCity}, ${game.venueState}` : game.venueCity;
+      expect(container.textContent).toContain(location);
+    }
+  });
+
+  it("never fabricates a state for a verified international venue with no US state", () => {
+    // This fixture (TCU vs. North Carolina) is the real 2026 Aer Lingus Classic
+    // at Aviva Stadium, Dublin — a genuine neutral-site game with no US state.
+    const { game, container } = renderCard();
+    expect(game.venue).toBe("Aviva Stadium");
+    expect(game.venueCity).toBe("Dublin");
+    expect(game.venueState).toBeNull();
+    expect(container.textContent).toContain("Aviva Stadium");
+    expect(container.textContent).toContain("Dublin");
   });
 
   it("never renders NaN or undefined", () => {

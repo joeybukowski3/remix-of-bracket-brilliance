@@ -10,6 +10,15 @@ export function formatNullableNumber(
   return value.toFixed(digits);
 }
 
+/** Formats a 0-1 ratio (e.g. thirdDownPct: 0.417) as a percentage string ("41.7%"). */
+export function formatNullablePercent(
+  value: number | null | undefined,
+  digits = 1,
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
 export function formatNullableInteger(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return String(Math.trunc(value));
@@ -89,25 +98,43 @@ export function rankHeatStyle(
 }
 
 /**
- * Ranking display hierarchy: official CFP rank (not yet available in this
- * dataset) > official AP rank > JKB rank as a clearly-marked fallback.
- * Never fabricates a ranking — returns "none" when nothing is available.
+ * Ranking display hierarchy: official CFP rank > official AP rank > JKB rank as
+ * a clearly-marked fallback. Never fabricates a ranking — returns "none" when
+ * nothing is available.
+ *
+ * Official polls render as a bare "#N"; the internal JKB power rank NEVER does,
+ * so a reader can always tell an official ranking from a model output at a
+ * glance. `label` carries the same distinction for assistive technology.
  */
 export type CfbRankDisplay = {
   text: string;
-  source: "ap" | "jkb" | "none";
+  /** Accessible/title text, e.g. "AP rank 8", "CFP rank 6", "JKB power rank 14". */
+  label: string;
+  source: "cfp" | "ap" | "jkb" | "none";
+  /** True for CFP/AP — i.e. an actual published poll, not a JKB model rank. */
+  isOfficial: boolean;
 };
 
+function isUsableRank(value: number | null | undefined): value is number {
+  return value != null && !Number.isNaN(value);
+}
+
 export function getCfbRankDisplay(
-  ratings: Pick<CfbJkbRatings, "apRank" | "jkbRank">,
+  ratings: Pick<CfbJkbRatings, "apRank" | "jkbRank"> & { cfpRank?: number | null },
 ): CfbRankDisplay {
-  if (ratings.apRank != null && !Number.isNaN(ratings.apRank)) {
-    return { text: `#${Math.trunc(ratings.apRank)}`, source: "ap" };
+  if (isUsableRank(ratings.cfpRank)) {
+    const rank = Math.trunc(ratings.cfpRank);
+    return { text: `#${rank}`, label: `CFP rank ${rank}`, source: "cfp", isOfficial: true };
   }
-  if (ratings.jkbRank != null && !Number.isNaN(ratings.jkbRank)) {
-    return { text: `JKB ${Math.trunc(ratings.jkbRank)}`, source: "jkb" };
+  if (isUsableRank(ratings.apRank)) {
+    const rank = Math.trunc(ratings.apRank);
+    return { text: `#${rank}`, label: `AP rank ${rank}`, source: "ap", isOfficial: true };
   }
-  return { text: "", source: "none" };
+  if (isUsableRank(ratings.jkbRank)) {
+    const rank = Math.trunc(ratings.jkbRank);
+    return { text: `JKB ${rank}`, label: `JKB power rank ${rank}`, source: "jkb", isOfficial: false };
+  }
+  return { text: "", label: "", source: "none", isOfficial: false };
 }
 
 /**
@@ -124,6 +151,22 @@ export function getCfbMarketFavorite(
   return spread < 0 ? "home" : "away";
 }
 
+/**
+ * Formats a home-perspective spread value relative to whichever team it
+ * favors, e.g. "TCU -7.5". Shared by the current-line display and the
+ * open-line footnote so both use identical favorite-side math.
+ */
+export function formatFavoriteSpreadValue(
+  spread: number | null | undefined,
+  awayAbbreviation: string,
+  homeAbbreviation: string,
+): string {
+  if (spread == null || Number.isNaN(spread)) return "—";
+  if (spread === 0) return "PICK";
+  const favorite = spread < 0 ? homeAbbreviation : awayAbbreviation;
+  return `${favorite} -${Math.abs(spread)}`;
+}
+
 /** Spread formatted relative to the favored team, e.g. "TCU -7.5". */
 export function formatFavoriteSpread(
   game: Pick<CfbGame, "homeTeamId" | "awayTeamId" | "odds">,
@@ -131,10 +174,7 @@ export function formatFavoriteSpread(
   homeAbbreviation: string,
 ): string {
   const spread = game.odds.currentSpread ?? game.odds.openingSpread;
-  if (spread == null || Number.isNaN(spread)) return "—";
-  if (spread === 0) return "PICK";
-  const favorite = spread < 0 ? homeAbbreviation : awayAbbreviation;
-  return `${favorite} -${Math.abs(spread)}`;
+  return formatFavoriteSpreadValue(spread, awayAbbreviation, homeAbbreviation);
 }
 
 const GAME_STATUS_LABELS: Record<CfbGameStatus, string> = {
@@ -144,6 +184,15 @@ const GAME_STATUS_LABELS: Record<CfbGameStatus, string> = {
   postponed: "Postponed",
   canceled: "Canceled",
 };
+
+/** "City, ST" — falls back to just the city, or "" when no verified location exists. */
+export function formatCfbVenueLocation(
+  city: string | null | undefined,
+  state: string | null | undefined,
+): string {
+  if (!city) return "";
+  return state ? `${city}, ${state}` : city;
+}
 
 export function formatCfbGameStatusLabel(status: CfbGameStatus): string {
   return GAME_STATUS_LABELS[status] ?? "Scheduled";

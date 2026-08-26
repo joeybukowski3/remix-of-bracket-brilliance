@@ -23,3 +23,23 @@ export function lowerIsBetterEdge(
   if (away === home) return "even";
   return away < home ? "away" : "home";
 }
+
+/**
+ * Edge from two NATIONAL RANK numbers (lower = stronger; #12 beats #40).
+ * Unlike lowerIsBetterEdge, a single missing side does not blank the row:
+ * when only one side has a usable rank, that side gets the edge (the other
+ * has no ranked unit to compare against). Both missing, or equal ranks,
+ * yield no advantage.
+ */
+export function rankAdvantageEdge(
+  away: number | null | undefined,
+  home: number | null | undefined,
+): CfbComparisonEdge {
+  const awayUsable = away != null && !Number.isNaN(away);
+  const homeUsable = home != null && !Number.isNaN(home);
+  if (!awayUsable && !homeUsable) return "none";
+  if (!homeUsable) return "away";
+  if (!awayUsable) return "home";
+  if (away === home) return "even";
+  return away < home ? "away" : "home";
+}

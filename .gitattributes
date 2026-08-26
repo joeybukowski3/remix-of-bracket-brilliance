@@ -1,0 +1,9 @@
+# Committed nflverse CSV caches under data/nfl/nflverse/ are byte/sha256
+# verified against their manifest.json entries (scripts/lib/nfl-source-cache.mjs
+# verifyCacheEntry), which record the hash of the original upstream (LF)
+# bytes at commit time. Pin these files to LF on checkout so that contract
+# holds on every platform, regardless of core.autocrlf -- without this,
+# Windows checkouts with core.autocrlf=true can smudge CRLF into these files
+# on checkout, changing byteSize/sha256 with no actual content change and
+# breaking cache verification.
+data/nfl/nflverse/**/*.csv text eol=lf

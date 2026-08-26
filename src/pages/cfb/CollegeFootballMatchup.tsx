@@ -1,26 +1,50 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getGameById, getTeamById } from "@/data/cfb";
 import {
-  formatMoneyline,
-  formatNullableNumber,
-  formatRank,
-  formatSpread,
-  formatTotal,
-} from "@/lib/cfb/format";
-import { CFB_SCHEDULE_PATH, getCfbTeamPath } from "@/lib/cfb/routes";
-import { getCfbRatingHeatClass } from "@/lib/cfb/ratingPresentation";
-import CollegeFootballTeamLogo from "@/components/cfb/CollegeFootballTeamLogo";
-import CollegeFootballOddsDisplay from "@/components/cfb/CollegeFootballOddsDisplay";
-import CollegeFootballComparisonRow from "@/components/cfb/CollegeFootballComparisonRow";
-import { higherIsBetterEdge, lowerIsBetterEdge } from "@/lib/cfb/comparison";
+  CFB_SEASON,
+  CFB_STATS_PREVIOUS_SEASON_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM,
+  CFB_STATS_PREVIOUS_SEASON_YEAR,
+  CFB_STATS_RANKS_BY_TEAM,
+  getGameById,
+  getTeamById,
+} from "@/data/cfb";
+import { formatTotal } from "@/lib/cfb/format";
+import { CFB_SCHEDULE_PATH } from "@/lib/cfb/routes";
+import { selectMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
+import CollegeFootballMarketStrip from "@/components/cfb/CollegeFootballMarketStrip";
+import CollegeFootballMatchupHero from "@/components/cfb/CollegeFootballMatchupHero";
+import CollegeFootballPowerComparison from "@/components/cfb/CollegeFootballPowerComparison";
+import CollegeFootballModelPanel from "@/components/cfb/CollegeFootballModelPanel";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
+import CollegeFootballSeasonStatsComparison from "@/components/cfb/CollegeFootballSeasonStatsComparison";
+import CollegeFootballMobileStickyHeader from "@/components/cfb/CollegeFootballMobileStickyHeader";
+
+/**
+ * Shared prominent section heading — larger, heavier, and color-accented so
+ * each major matchup-detail section reads as an intentional dashboard block
+ * rather than a muted label. Applied consistently across Market, Power
+ * Comparison, Season Stats, and Power Rating Line.
+ */
+function SectionHeading({ id, accentColor, children }: { id: string; accentColor: string; children: ReactNode }) {
+  return (
+    <h2 id={id} className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900 sm:text-base">
+      <span aria-hidden="true" className="h-4 w-1.5 rounded-full" style={{ background: accentColor }} />
+      {children}
+    </h2>
+  );
+}
 
 export default function CollegeFootballMatchup() {
   const { gameId = "" } = useParams();
   const game = getGameById(gameId);
   const away = game ? getTeamById(game.awayTeamId) : undefined;
   const home = game ? getTeamById(game.homeTeamId) : undefined;
+
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
+  const stickyStartRef = useRef<HTMLDivElement>(null);
+  const stickyEndRef = useRef<HTMLDivElement>(null);
 
   usePageSeo({
     title:
@@ -30,6 +54,37 @@ export default function CollegeFootballMatchup() {
     description: "Side-by-side College Football matchup comparison — ratings, stats, and market odds.",
     path: `/college-football/matchup/${gameId}`,
   });
+
+  useEffect(() => {
+    const startEl = stickyStartRef.current;
+    const endEl = stickyEndRef.current;
+    if (!startEl || !endEl) return;
+
+    // A scroll-position check (rather than IntersectionObserver's threshold
+    // crossings) so this stays correct even when a fast or programmatic
+    // scroll jumps straight past the sentinel's visible window in one frame.
+    let ticking = false;
+    const evaluate = () => {
+      ticking = false;
+      const pastStart = startEl.getBoundingClientRect().top < 0;
+      const pastEnd = endEl.getBoundingClientRect().top < 0;
+      setShowStickyHeader(pastStart && !pastEnd);
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(evaluate);
+    };
+
+    evaluate();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [gameId]);
 
   if (!game || !away || !home) {
     return (
@@ -42,290 +97,102 @@ export default function CollegeFootballMatchup() {
     );
   }
 
-  const modelReady =
-    game.model.jkbPowerLine != null || game.model.jkbProjectedSpread != null;
+  const hasOpenTotalContext =
+    game.odds.openingTotal != null &&
+    game.odds.currentTotal != null &&
+    game.odds.openingTotal !== game.odds.currentTotal;
+
+  const seasonStatsContext = selectMatchupSeasonStatsContext({
+    currentSeason: CFB_SEASON,
+    previousSeason: CFB_STATS_PREVIOUS_SEASON_YEAR,
+    away: {
+      current: away.stats,
+      currentRanks: CFB_STATS_RANKS_BY_TEAM[away.id] ?? {},
+      previous: CFB_STATS_PREVIOUS_SEASON_BY_TEAM[away.id],
+      previousRanks: CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[away.id],
+    },
+    home: {
+      current: home.stats,
+      currentRanks: CFB_STATS_RANKS_BY_TEAM[home.id] ?? {},
+      previous: CFB_STATS_PREVIOUS_SEASON_BY_TEAM[home.id],
+      previousRanks: CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[home.id],
+    },
+  });
 
   return (
-    <div className="space-y-5">
-      <CollegeFootballDataNotice kind="both" />
-      <header className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <Link
-            to={getCfbTeamPath(away.slug)}
-            className="flex flex-col items-center gap-2 text-center hover:opacity-90"
-          >
-            <CollegeFootballTeamLogo
-              name={away.name}
-              logo={away.logo}
-              abbreviation={away.abbreviation}
-              primaryColor={away.primaryColor}
-              size="lg"
-              className="h-12 w-12"
-            />
-            <span className="text-sm font-bold text-slate-900">{away.name}</span>
-            <span className="text-[11px] text-slate-500">{formatRank(away.ratings.jkbRank)} JKB</span>
-          </Link>
+    <div className="mx-auto max-w-[1200px] space-y-4">
+      <CollegeFootballMobileStickyHeader away={away} home={home} visible={showStickyHeader} />
 
-          <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              {game.neutralSite ? "Neutral Site" : "vs"}
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              {game.date}
-              {game.time ? ` · ${game.time} ET` : ""}
-            </p>
-            {game.venue && (
-              <p className="mt-0.5 text-[11px] text-slate-500">{game.venue}</p>
-            )}
-            {game.tvNetwork && (
-              <p className="mt-1 text-[11px] font-semibold text-slate-600">{game.tvNetwork}</p>
-            )}
-          </div>
-
-          <Link
-            to={getCfbTeamPath(home.slug)}
-            className="flex flex-col items-center gap-2 text-center hover:opacity-90"
-          >
-            <CollegeFootballTeamLogo
-              name={home.name}
-              logo={home.logo}
-              abbreviation={home.abbreviation}
-              primaryColor={home.primaryColor}
-              size="lg"
-              className="h-12 w-12"
-            />
-            <span className="text-sm font-bold text-slate-900">{home.name}</span>
-            <span className="text-[11px] text-slate-500">{formatRank(home.ratings.jkbRank)} JKB</span>
-          </Link>
-        </div>
-      </header>
+      <CollegeFootballMatchupHero game={game} away={away} home={home} />
 
       <section aria-labelledby="market-heading">
-        <h2 id="market-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <SectionHeading id="market-heading" accentColor="#0284c7">
           Market
-        </h2>
-        <div className="rounded-lg border border-slate-200 bg-white p-3">
-          <CollegeFootballOddsDisplay
-            odds={game.odds}
-            game={game}
-            awayAbbreviation={away.abbreviation}
-            homeAbbreviation={home.abbreviation}
-          />
-          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-500 sm:grid-cols-4">
-            <div>
-              Open spread:{" "}
-              <span className="font-semibold text-slate-700">
-                {formatSpread(game.odds.openingSpread)}
-              </span>
-            </div>
-            <div>
-              Current:{" "}
-              <span className="font-semibold text-slate-700">
-                {formatSpread(game.odds.currentSpread)}
-              </span>
-            </div>
-            <div>
-              Open total:{" "}
-              <span className="font-semibold text-slate-700">
-                {formatTotal(game.odds.openingTotal)}
-              </span>
-            </div>
-            <div>
-              ML:{" "}
-              <span className="font-semibold text-slate-700">
-                {formatMoneyline(game.odds.awayMoneyline)} / {formatMoneyline(game.odds.homeMoneyline)}
-              </span>
-            </div>
+        </SectionHeading>
+        <CollegeFootballMarketStrip
+          odds={game.odds}
+          game={game}
+          awayAbbreviation={away.abbreviation}
+          homeAbbreviation={home.abbreviation}
+        />
+        {hasOpenTotalContext && (
+          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 px-1 text-[11px] text-slate-500">
+            <span>
+              Open total: <span className="font-semibold text-slate-700">{formatTotal(game.odds.openingTotal)}</span>
+              {" "}→{" "}
+              <span className="font-semibold text-slate-700">{formatTotal(game.odds.currentTotal)}</span>
+            </span>
           </div>
-          {game.odds.currentSpread == null && game.odds.openingSpread == null && (
-            <p className="mt-2 text-xs text-slate-500">No odds currently available.</p>
-          )}
-        </div>
+        )}
       </section>
+
+      <div ref={stickyStartRef} aria-hidden="true" />
 
       <section aria-labelledby="power-heading">
-        <h2 id="power-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <SectionHeading id="power-heading" accentColor="#7c3aed">
           Power Comparison
-        </h2>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-2 bg-slate-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-            <div className="text-right">{away.shortName}</div>
-            <div className="min-w-[7rem] text-center">Metric</div>
-            <div className="text-left">{home.shortName}</div>
+        </SectionHeading>
+        <CollegeFootballPowerComparison away={away} home={home} />
+      </section>
+
+      <section aria-labelledby="season-stats-heading">
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <SectionHeading id="season-stats-heading" accentColor="#059669">
+            Season Stats
+          </SectionHeading>
+          {seasonStatsContext && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              {seasonStatsContext.seasonLabel}
+            </span>
+          )}
+        </div>
+        {seasonStatsContext ? (
+          <CollegeFootballSeasonStatsComparison
+            awayShortName={away.shortName}
+            homeShortName={home.shortName}
+            context={seasonStatsContext}
+            awayColor={away.primaryColor}
+            homeColor={home.primaryColor}
+            awayLogo={away.logo}
+            homeLogo={home.logo}
+          />
+        ) : (
+          <div className="rounded-sm border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+            Season statistics not yet available for this matchup.
           </div>
-          <CollegeFootballComparisonRow
-            label="JKB Power"
-            awayValue={formatNullableNumber(away.ratings.jkbPowerRating)}
-            homeValue={formatNullableNumber(home.ratings.jkbPowerRating)}
-            awayValueClassName={getCfbRatingHeatClass(away.ratings.jkbPowerRating)}
-            homeValueClassName={getCfbRatingHeatClass(home.ratings.jkbPowerRating)}
-            edge={higherIsBetterEdge(away.ratings.jkbPowerRating, home.ratings.jkbPowerRating)}
-          />
-          <CollegeFootballComparisonRow
-            label="JKB Rank"
-            awayValue={formatRank(away.ratings.jkbRank)}
-            homeValue={formatRank(home.ratings.jkbRank)}
-            edge={lowerIsBetterEdge(away.ratings.jkbRank, home.ratings.jkbRank)}
-          />
-          <CollegeFootballComparisonRow
-            label="Offense"
-            awayValue={formatNullableNumber(away.ratings.offensiveRating)}
-            homeValue={formatNullableNumber(home.ratings.offensiveRating)}
-            awayValueClassName={getCfbRatingHeatClass(away.ratings.offensiveRating)}
-            homeValueClassName={getCfbRatingHeatClass(home.ratings.offensiveRating)}
-            edge={higherIsBetterEdge(away.ratings.offensiveRating, home.ratings.offensiveRating)}
-          />
-          <CollegeFootballComparisonRow
-            label="Defense"
-            awayValue={formatNullableNumber(away.ratings.defensiveRating)}
-            homeValue={formatNullableNumber(home.ratings.defensiveRating)}
-            awayValueClassName={getCfbRatingHeatClass(away.ratings.defensiveRating)}
-            homeValueClassName={getCfbRatingHeatClass(home.ratings.defensiveRating)}
-            edge={higherIsBetterEdge(away.ratings.defensiveRating, home.ratings.defensiveRating)}
-          />
-          <CollegeFootballComparisonRow
-            label="SOS Played"
-            awayValue={formatRank(away.ratings.sosPlayedRank)}
-            homeValue={formatRank(home.ratings.sosPlayedRank)}
-            edge={lowerIsBetterEdge(away.ratings.sosPlayedRank, home.ratings.sosPlayedRank)}
-          />
-          <CollegeFootballComparisonRow
-            label="SOS Remaining"
-            awayValue={formatRank(away.ratings.sosRemainingRank)}
-            homeValue={formatRank(home.ratings.sosRemainingRank)}
-            edge={lowerIsBetterEdge(away.ratings.sosRemainingRank, home.ratings.sosRemainingRank)}
-          />
-        </div>
-        <p className="mt-1.5 text-[11px] text-slate-500">
-          Edge markers highlight the stronger side for comparison only — not a betting recommendation.
-        </p>
+        )}
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section aria-labelledby="off-comp-heading">
-          <h2 id="off-comp-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Offense
-          </h2>
-          {away.stats.pointsPerGame == null && home.stats.pointsPerGame == null ? (
-            <p className="rounded border border-slate-200 bg-white px-3 py-4 text-sm text-slate-500">
-              2026 statistics not yet available.
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-              <CollegeFootballComparisonRow
-                label="PPG"
-                awayValue={formatNullableNumber(away.stats.pointsPerGame)}
-                homeValue={formatNullableNumber(home.stats.pointsPerGame)}
-                edge={higherIsBetterEdge(away.stats.pointsPerGame, home.stats.pointsPerGame)}
-              />
-              <CollegeFootballComparisonRow
-                label="Yards/Play"
-                awayValue={formatNullableNumber(away.stats.yardsPerPlay)}
-                homeValue={formatNullableNumber(home.stats.yardsPerPlay)}
-                edge={higherIsBetterEdge(away.stats.yardsPerPlay, home.stats.yardsPerPlay)}
-              />
-              <CollegeFootballComparisonRow
-                label="Rush Yds/G"
-                awayValue={formatNullableNumber(away.stats.rushYardsPerGame, 0)}
-                homeValue={formatNullableNumber(home.stats.rushYardsPerGame, 0)}
-                edge={higherIsBetterEdge(away.stats.rushYardsPerGame, home.stats.rushYardsPerGame)}
-              />
-              <CollegeFootballComparisonRow
-                label="Yards/Rush"
-                awayValue={formatNullableNumber(away.stats.yardsPerRush)}
-                homeValue={formatNullableNumber(home.stats.yardsPerRush)}
-                edge={higherIsBetterEdge(away.stats.yardsPerRush, home.stats.yardsPerRush)}
-              />
-              <CollegeFootballComparisonRow
-                label="Pass Yds/G"
-                awayValue={formatNullableNumber(away.stats.passYardsPerGame, 0)}
-                homeValue={formatNullableNumber(home.stats.passYardsPerGame, 0)}
-                edge={higherIsBetterEdge(away.stats.passYardsPerGame, home.stats.passYardsPerGame)}
-              />
-              <CollegeFootballComparisonRow
-                label="Yards/Pass"
-                awayValue={formatNullableNumber(away.stats.yardsPerPass)}
-                homeValue={formatNullableNumber(home.stats.yardsPerPass)}
-                edge={higherIsBetterEdge(away.stats.yardsPerPass, home.stats.yardsPerPass)}
-              />
-            </div>
-          )}
-        </section>
-
-        <section aria-labelledby="def-comp-heading">
-          <h2 id="def-comp-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Defense
-          </h2>
-          {away.stats.pointsAllowedPerGame == null && home.stats.pointsAllowedPerGame == null ? (
-            <p className="rounded border border-slate-200 bg-white px-3 py-4 text-sm text-slate-500">
-              2026 statistics not yet available.
-            </p>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-              <CollegeFootballComparisonRow
-                label="PPG Allowed"
-                awayValue={formatNullableNumber(away.stats.pointsAllowedPerGame)}
-                homeValue={formatNullableNumber(home.stats.pointsAllowedPerGame)}
-                edge={lowerIsBetterEdge(away.stats.pointsAllowedPerGame, home.stats.pointsAllowedPerGame)}
-              />
-              <CollegeFootballComparisonRow
-                label="Yds/Play All."
-                awayValue={formatNullableNumber(away.stats.yardsPerPlayAllowed)}
-                homeValue={formatNullableNumber(home.stats.yardsPerPlayAllowed)}
-                edge={lowerIsBetterEdge(away.stats.yardsPerPlayAllowed, home.stats.yardsPerPlayAllowed)}
-              />
-              <CollegeFootballComparisonRow
-                label="Rush All./G"
-                awayValue={formatNullableNumber(away.stats.rushYardsAllowedPerGame, 0)}
-                homeValue={formatNullableNumber(home.stats.rushYardsAllowedPerGame, 0)}
-                edge={lowerIsBetterEdge(away.stats.rushYardsAllowedPerGame, home.stats.rushYardsAllowedPerGame)}
-              />
-              <CollegeFootballComparisonRow
-                label="Yds/Rush All."
-                awayValue={formatNullableNumber(away.stats.yardsPerRushAllowed)}
-                homeValue={formatNullableNumber(home.stats.yardsPerRushAllowed)}
-                edge={lowerIsBetterEdge(away.stats.yardsPerRushAllowed, home.stats.yardsPerRushAllowed)}
-              />
-              <CollegeFootballComparisonRow
-                label="Pass All./G"
-                awayValue={formatNullableNumber(away.stats.passYardsAllowedPerGame, 0)}
-                homeValue={formatNullableNumber(home.stats.passYardsAllowedPerGame, 0)}
-                edge={lowerIsBetterEdge(away.stats.passYardsAllowedPerGame, home.stats.passYardsAllowedPerGame)}
-              />
-              <CollegeFootballComparisonRow
-                label="Yds/Pass All."
-                awayValue={formatNullableNumber(away.stats.yardsPerPassAllowed)}
-                homeValue={formatNullableNumber(home.stats.yardsPerPassAllowed)}
-                edge={lowerIsBetterEdge(away.stats.yardsPerPassAllowed, home.stats.yardsPerPassAllowed)}
-              />
-            </div>
-          )}
-        </section>
-      </div>
-
-      <section aria-labelledby="power-line-heading">
-        <h2 id="power-line-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <section aria-labelledby="model-heading">
+        <SectionHeading id="model-heading" accentColor="#d97706">
           Power Rating Line
-        </h2>
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          {modelReady ? (
-            <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <div>Neutral Power Diff: {formatNullableNumber(game.model.neutralPowerDifference)}</div>
-              <div>Home Field Adj: {formatNullableNumber(game.model.homeFieldAdjustment)}</div>
-              <div>JKB Power Line: {formatSpread(game.model.jkbPowerLine)}</div>
-              <div>Market Spread: {formatSpread(game.odds.currentSpread)}</div>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-sm font-semibold text-slate-800">Model projection coming soon</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Power-line fields (neutral difference, home-field adjustment, JKB line vs market) are
-                structured for Phase 2 and intentionally not calculated yet.
-              </p>
-            </div>
-          )}
-        </div>
+        </SectionHeading>
+        <CollegeFootballModelPanel game={game} />
       </section>
+
+      <div ref={stickyEndRef} aria-hidden="true" />
+
+      <CollegeFootballDataNotice kind="both" />
     </div>
   );
 }

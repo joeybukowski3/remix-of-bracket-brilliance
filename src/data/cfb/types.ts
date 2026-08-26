@@ -48,8 +48,17 @@ export type CfbJkbRatings = {
   teamId: string;
   jkbRank: number | null;
   previousJkbRank: number | null;
-  /** Independent AP poll reference; never an input into JKB Power. */
+  /**
+   * Official AP Top 25 rank (1-25) or null when officially unranked.
+   * Independent poll reference; never an input into JKB Power.
+   */
   apRank: number | null;
+  /**
+   * Official CFP selection-committee rank (1-25) or null. Null for the whole
+   * field until the committee publishes its first poll of the season — that is
+   * a normal state, not missing data. Never an input into JKB Power.
+   */
+  cfpRank: number | null;
   jkbPowerRating: number | null;
   offensiveRating: number | null;
   defensiveRating: number | null;
@@ -88,21 +97,29 @@ export type CfbTeamContext = {
 /** Basic box-score style season stats (null until available). */
 export type CfbSeasonStats = {
   teamId: string;
+  /** Completed games contributing to these totals (0 in preseason). */
+  gamesPlayed: number;
   // Offense
   pointsPerGame: number | null;
   yardsPerPlay: number | null;
+  pointsPerPlay: number | null;
   rushYardsPerGame: number | null;
   yardsPerRush: number | null;
   passYardsPerGame: number | null;
   yardsPerPass: number | null;
+  thirdDownPct: number | null;
+  completionPct: number | null;
   turnovers: number | null;
-  // Defense
+  // Defense (opponent offensive production against this team)
   pointsAllowedPerGame: number | null;
   yardsPerPlayAllowed: number | null;
+  opponentPointsPerPlay: number | null;
   rushYardsAllowedPerGame: number | null;
   yardsPerRushAllowed: number | null;
   passYardsAllowedPerGame: number | null;
   yardsPerPassAllowed: number | null;
+  opponentThirdDownPct: number | null;
+  opponentCompletionPct: number | null;
   takeaways: number | null;
 };
 
@@ -144,6 +161,10 @@ export type CfbGame = {
   homeClassification?: string | null;
   neutralSite: boolean;
   venue: string | null;
+  /** Verified venue city, joined by CFBD venue ID. Never inferred from a team's home city. */
+  venueCity: string | null;
+  /** Verified venue state/region, joined by CFBD venue ID. Empty for non-US venues (e.g. Dublin, London). */
+  venueState: string | null;
   tvNetwork: string | null;
   gameStatus: CfbGameStatus;
   awayScore: number | null;
@@ -168,6 +189,8 @@ export type CfbConferenceMeta = {
   shortName: string;
   /** Full official conference name, e.g. "Southeastern Conference". */
   fullName: string;
+  /** Conference logo URL, or null when no verified asset exists (renders name-only). */
+  logo: string | null;
 };
 
 /**
@@ -192,6 +215,20 @@ export type CfbDataProvenance = {
   rosterSource: CfbDataSourceStatus;
   /** Market odds dataset status. */
   oddsSource: CfbDataSourceStatus;
+  /**
+   * Official poll (AP / CFP) dataset status. Describes ONLY the official polls
+   * ingested from the rankings endpoint — never the internal JKB power rank,
+   * which is always reported via ratingsSource.
+   */
+  officialRankingsSource: CfbDataSourceStatus;
+  /** Which official poll is currently driving rank display, if any. */
+  officialRankingsPoll: {
+    /** Poll name exactly as published, e.g. "AP Top 25". Null when none published. */
+    activePoll: string | null;
+    /** "cfp" once the committee poll exists, otherwise "ap", or null when neither. */
+    activeKind: "ap" | "cfp" | null;
+    week: number | null;
+  };
   generatedAt: string;
   notes: string[];
 };

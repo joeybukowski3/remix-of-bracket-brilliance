@@ -30,6 +30,18 @@ export default defineConfig({
       "scripts/lib/mlb-top-hr-tracking.test.mjs",
       "scripts/lib/mlb-top-k-tracking.test.mjs",
       "scripts/lib/mlb-numerology-tracking.test.mjs",
+      // NFL Phase 10B -- ParlayAPI canonical yardage-market pipeline.
+      "scripts/lib/nfl-prop-line-selection.test.mjs",
+      "scripts/lib/nfl-roster-identity.test.mjs",
+      "scripts/lib/nfl-market-archive.test.mjs",
+      "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL Phase 11A -- JKB-vs-sportsbook research/evaluation framework.
+      "scripts/lib/nfl-research-odds-math.test.mjs",
+      "scripts/lib/nfl-research-join.test.mjs",
+      "scripts/lib/nfl-research-metrics.test.mjs",
+      "scripts/lib/nfl-research-buckets.test.mjs",
+      "scripts/lib/nfl-research-time-split.test.mjs",
+      "scripts/lib/nfl-research-bias.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
@@ -47,6 +59,16 @@ export default defineConfig({
       // CFB Week 1 market odds -- odds-only fetch/update CLI behavior.
       "scripts/cfb-fetch-market-odds.test.ts",
       "scripts/cfb-update-market-odds.test.ts",
+      // NFL yardage-prop Phase 1 -- historical outcome artifact generator CLI.
+      "scripts/generate-nfl-yardage-outcomes.test.ts",
+      // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
+      "scripts/lib/nfl-play-volume-core.test.mjs",
+      "scripts/generate-nfl-team-pregame-features.test.ts",
+      // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
+      "scripts/cfb-fetch-rankings.test.ts",
+      "scripts/cfb-update-rankings.test.ts",
+      // CFB matchup-stats WU -- CFBD-derived season-stats build CLI behavior.
+      "scripts/cfb-build-season-stats.test.ts",
     ],
   },
   resolve: {
