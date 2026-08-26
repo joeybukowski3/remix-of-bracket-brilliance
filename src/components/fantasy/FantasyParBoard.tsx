@@ -66,6 +66,12 @@ export default function FantasyParBoard() {
           <div className="flex flex-col items-end gap-1">
             <span className="text-xs font-semibold tabular-nums text-slate-200">{FANTASY_RANKINGS.rows.length} JKB-ranked players</span>
             <Link
+              to="/fantasy-football/draft-preview"
+              className="text-xs font-semibold text-sky-300 underline hover:text-sky-200"
+            >
+              Fantasy Draft Preview →
+            </Link>
+            <Link
               to="/fantasy-football/points-allowed"
               className="text-xs font-semibold text-sky-300 underline hover:text-sky-200"
             >
