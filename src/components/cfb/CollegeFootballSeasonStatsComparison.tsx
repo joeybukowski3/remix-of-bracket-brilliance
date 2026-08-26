@@ -2,11 +2,12 @@ import { useState } from "react";
 import type { ComponentType } from "react";
 import { CheckCircle2, Flame, Gauge, Percent, Route, Target } from "lucide-react";
 import { formatNullableNumber, formatNullablePercent } from "@/lib/cfb/format";
-import { higherIsBetterEdge, lowerIsBetterEdge } from "@/lib/cfb/comparison";
+import { higherIsBetterEdge, lowerIsBetterEdge, rankAdvantageEdge } from "@/lib/cfb/comparison";
+import { getCfbSharedBarSplit } from "@/lib/cfb/ratingPresentation";
 import { CFB_SEASON_STAT_RANK_DIRECTIONS, type CfbRankedStatMetric } from "@/lib/cfb/seasonStats/rankSeasonStats";
 import type { CfbMatchupSeasonStatsContext } from "@/lib/cfb/seasonStatsPresentation";
 import { cn } from "@/lib/utils";
-import CollegeFootballComparisonRow from "./CollegeFootballComparisonRow";
+import CollegeFootballSharedBarRow from "./CollegeFootballSharedBarRow";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 
 type Props = {
@@ -70,21 +71,17 @@ function rankBadge(rank: number | undefined): string | null {
   return rank == null ? null : `#${rank}`;
 }
 
-/**
- * Relative-magnitude bar fill (0-100), mirrored as each side's share of the
- * combined total. Null-safe, presentation-only: a value with no real
- * counterpart on the other side (e.g. the NDSU no-prior-season case) still
- * renders its own bar at full width rather than looking empty/broken.
- */
-function barShare(value: number | null, other: number | null): number {
-  if (value == null) return 0;
-  if (other == null) return 100;
-  const total = value + other;
-  if (total <= 0) return 0;
-  return (value / total) * 100;
-}
-
 type SectionTab = "offense" | "defense" | "matchup";
+
+/**
+ * Icon-tile accent per section — same border/bg-50/text-600 language as
+ * Power Comparison's metric icons, so both sections read as one system.
+ */
+const ICON_TILE_CLASSES: Record<SectionTab, string> = {
+  offense: "border-orange-200 bg-orange-50 text-orange-600",
+  defense: "border-sky-200 bg-sky-50 text-sky-600",
+  matchup: "border-violet-200 bg-violet-50 text-violet-600",
+};
 
 const TABS: { key: SectionTab; label: string }[] = [
   { key: "offense", label: "Offense" },
@@ -135,23 +132,35 @@ export default function CollegeFootballSeasonStatsComparison({
   const awayTeam: TeamHeaderInfo = { name: awayShortName, shortName: awayShortName, color: awayColor, logo: awayLogo };
   const homeTeam: TeamHeaderInfo = { name: homeShortName, shortName: homeShortName, color: homeColor, logo: homeLogo };
 
-  function renderCardHeader(category: SectionTab, left: TeamHeaderInfo, right: TeamHeaderInfo, subtitle?: string) {
+  function renderCardHeader(
+    category: SectionTab,
+    left: TeamHeaderInfo,
+    right: TeamHeaderInfo,
+    descriptors?: { left: string; right: string },
+  ) {
     return (
       <div className="flex items-stretch">
         <span aria-hidden="true" className="w-1.5 shrink-0" style={{ background: CATEGORY_ACCENT_COLOR[category] }} />
         <div className="flex-1 bg-slate-50 px-3 py-2.5">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <div className="flex min-w-0 items-center justify-end gap-1.5">
-              <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: left.color }}>
-                {left.shortName}
-              </span>
-              <CollegeFootballTeamLogo
-                name={left.name}
-                logo={left.logo}
-                abbreviation={left.shortName}
-                primaryColor={left.color}
-                size="sm"
-              />
+            <div className="flex min-w-0 flex-col items-end gap-0.5">
+              <div className="flex min-w-0 items-center justify-end gap-1.5">
+                <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: left.color }}>
+                  {left.shortName}
+                </span>
+                <CollegeFootballTeamLogo
+                  name={left.name}
+                  logo={left.logo}
+                  abbreviation={left.shortName}
+                  primaryColor={left.color}
+                  size="sm"
+                />
+              </div>
+              {descriptors && (
+                <span className="truncate text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                  {descriptors.left}
+                </span>
+              )}
             </div>
             <span
               className={cn(
@@ -161,24 +170,26 @@ export default function CollegeFootballSeasonStatsComparison({
             >
               {TABS.find((t) => t.key === category)?.label}
             </span>
-            <div className="flex min-w-0 items-center justify-start gap-1.5">
-              <CollegeFootballTeamLogo
-                name={right.name}
-                logo={right.logo}
-                abbreviation={right.shortName}
-                primaryColor={right.color}
-                size="sm"
-              />
-              <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: right.color }}>
-                {right.shortName}
-              </span>
+            <div className="flex min-w-0 flex-col items-start gap-0.5">
+              <div className="flex min-w-0 items-center justify-start gap-1.5">
+                <CollegeFootballTeamLogo
+                  name={right.name}
+                  logo={right.logo}
+                  abbreviation={right.shortName}
+                  primaryColor={right.color}
+                  size="sm"
+                />
+                <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: right.color }}>
+                  {right.shortName}
+                </span>
+              </div>
+              {descriptors && (
+                <span className="truncate text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                  {descriptors.right}
+                </span>
+              )}
             </div>
           </div>
-          {subtitle && (
-            <p className="mt-1 text-center text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-              {subtitle}
-            </p>
-          )}
         </div>
       </div>
     );
@@ -197,19 +208,21 @@ export default function CollegeFootballSeasonStatsComparison({
               ? higherIsBetterEdge(awayRaw, homeRaw)
               : lowerIsBetterEdge(awayRaw, homeRaw);
           return (
-            <CollegeFootballComparisonRow
+            <CollegeFootballSharedBarRow
               key={row.key}
               label={row.label}
               icon={row.icon}
+              iconClassName={ICON_TILE_CLASSES[category]}
               awayValue={row.format(awayRaw)}
               homeValue={row.format(homeRaw)}
               awayRank={awayRaw != null ? rankBadge(awayRanks[row.key]) : null}
               homeRank={homeRaw != null ? rankBadge(homeRanks[row.key]) : null}
-              awayBarPercent={barShare(awayRaw, homeRaw)}
-              homeBarPercent={barShare(homeRaw, awayRaw)}
+              {...getCfbSharedBarSplit(awayRaw, homeRaw)}
               awayColor={awayColor}
               homeColor={homeColor}
               edge={edge}
+              awayTeam={awayTeam}
+              homeTeam={homeTeam}
             />
           );
         })}
@@ -218,43 +231,51 @@ export default function CollegeFootballSeasonStatsComparison({
   }
 
   /**
-   * Matchup mode always keeps home on the left, away on the right — the
-   * opposite screen position from the Offense/Defense cards above, per the
-   * explicit orientation rule for this tab. `leftValue`/`rightValue` map onto
-   * CollegeFootballComparisonRow's away/home slots purely by screen position
-   * (its away slot is always the left-rendered one), not by which team is
-   * actually away.
+   * Matchup mode follows the same away-left/home-right orientation as every
+   * other section on the page — `awayKeyOf`/`homeKeyOf` pick which stat each
+   * real team contributes to the row (e.g. away's defense vs. home's
+   * offense), but the screen position always matches the real team.
+   *
+   * Advantage here is decided by NATIONAL RANK, not raw value: a defensive
+   * unit's rank and an offensive unit's rank already encode "how good is
+   * this unit nationally" on a common, comparable scale (lower rank =
+   * stronger), which raw values do not — a defense allowing 3.5 YPP and an
+   * offense gaining 3.2 YPP are not directly comparable on strength without
+   * knowing where each ranks nationally. Raw values still drive the
+   * displayed numbers and the shared-bar proportions; only the edge
+   * (stronger-side badge, bar-junction logo marker) comes from
+   * rankAdvantageEdge over the existing generated rank maps.
    */
   function renderMatchupSection(
-    title: string,
-    leftKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
-    rightKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
-    direction: "higher-is-better" | "lower-is-better",
+    descriptors: { left: string; right: string },
+    awayKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
+    homeKeyOf: (row: (typeof MATCHUP_ROWS)[number]) => CfbRankedStatMetric,
   ) {
     return (
       <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-        {renderCardHeader("matchup", homeTeam, awayTeam, title)}
+        {renderCardHeader("matchup", awayTeam, homeTeam, descriptors)}
         {MATCHUP_ROWS.map((row) => {
-          const leftKey = leftKeyOf(row);
-          const rightKey = rightKeyOf(row);
-          const leftRaw = home[leftKey];
-          const rightRaw = away[rightKey];
-          const edge =
-            direction === "higher-is-better" ? higherIsBetterEdge(leftRaw, rightRaw) : lowerIsBetterEdge(leftRaw, rightRaw);
+          const awayKey = awayKeyOf(row);
+          const homeKey = homeKeyOf(row);
+          const awayRaw = away[awayKey];
+          const homeRaw = home[homeKey];
+          const edge = rankAdvantageEdge(awayRanks[awayKey], homeRanks[homeKey]);
           return (
-            <CollegeFootballComparisonRow
+            <CollegeFootballSharedBarRow
               key={row.label}
               label={row.label}
               icon={row.icon}
-              awayValue={row.format(leftRaw)}
-              homeValue={row.format(rightRaw)}
-              awayRank={leftRaw != null ? rankBadge(homeRanks[leftKey]) : null}
-              homeRank={rightRaw != null ? rankBadge(awayRanks[rightKey]) : null}
-              awayBarPercent={barShare(leftRaw, rightRaw)}
-              homeBarPercent={barShare(rightRaw, leftRaw)}
-              awayColor={homeColor}
-              homeColor={awayColor}
+              iconClassName={ICON_TILE_CLASSES.matchup}
+              awayValue={row.format(awayRaw)}
+              homeValue={row.format(homeRaw)}
+              awayRank={awayRaw != null ? rankBadge(awayRanks[awayKey]) : null}
+              homeRank={homeRaw != null ? rankBadge(homeRanks[homeKey]) : null}
+              {...getCfbSharedBarSplit(awayRaw, homeRaw)}
+              awayColor={awayColor}
+              homeColor={homeColor}
               edge={edge}
+              awayTeam={awayTeam}
+              homeTeam={homeTeam}
             />
           );
         })}
@@ -264,17 +285,15 @@ export default function CollegeFootballSeasonStatsComparison({
 
   const offenseCard = renderSection("offense", OFFENSE_ROWS);
   const defenseCard = renderSection("defense", DEFENSE_ROWS);
-  const homeOffenseVsAwayDefenseCard = renderMatchupSection(
-    "Home Offense vs Away Defense",
-    (row) => row.offenseKey,
+  const awayDefenseVsHomeOffenseCard = renderMatchupSection(
+    { left: "Away Defense", right: "Home Offense" },
     (row) => row.defenseKey,
-    "higher-is-better",
+    (row) => row.offenseKey,
   );
-  const homeDefenseVsAwayOffenseCard = renderMatchupSection(
-    "Home Defense vs Away Offense",
-    (row) => row.defenseKey,
+  const awayOffenseVsHomeDefenseCard = renderMatchupSection(
+    { left: "Away Offense", right: "Home Defense" },
     (row) => row.offenseKey,
-    "lower-is-better",
+    (row) => row.defenseKey,
   );
 
   return (
@@ -302,8 +321,8 @@ export default function CollegeFootballSeasonStatsComparison({
           {tab === "defense" && defenseCard}
           {tab === "matchup" && (
             <>
-              {homeOffenseVsAwayDefenseCard}
-              {homeDefenseVsAwayOffenseCard}
+              {awayDefenseVsHomeOffenseCard}
+              {awayOffenseVsHomeDefenseCard}
             </>
           )}
         </div>
@@ -332,8 +351,8 @@ export default function CollegeFootballSeasonStatsComparison({
           {tab === "defense" && defenseCard}
           {tab === "matchup" && (
             <>
-              {homeOffenseVsAwayDefenseCard}
-              {homeDefenseVsAwayOffenseCard}
+              {awayDefenseVsHomeOffenseCard}
+              {awayOffenseVsHomeDefenseCard}
             </>
           )}
         </div>

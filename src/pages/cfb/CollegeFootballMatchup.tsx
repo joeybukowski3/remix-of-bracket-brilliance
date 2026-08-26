@@ -123,8 +123,6 @@ export default function CollegeFootballMatchup() {
     <div className="mx-auto max-w-[1200px] space-y-4">
       <CollegeFootballMobileStickyHeader away={away} home={home} visible={showStickyHeader} />
 
-      <CollegeFootballDataNotice kind="both" />
-
       <CollegeFootballMatchupHero game={game} away={away} home={home} />
 
       <section aria-labelledby="market-heading">
@@ -193,6 +191,8 @@ export default function CollegeFootballMatchup() {
       </section>
 
       <div ref={stickyEndRef} aria-hidden="true" />
+
+      <CollegeFootballDataNotice kind="both" />
     </div>
   );
 }

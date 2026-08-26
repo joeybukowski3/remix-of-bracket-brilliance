@@ -204,29 +204,189 @@ describe("CollegeFootballSeasonStatsComparison", () => {
     expect(within(mobileScope).queryByText("Points/Game")).not.toBeInTheDocument();
   });
 
-  it("Matchup tab renders Home Offense vs Away Defense and Home Defense vs Away Offense, with home always on the left", () => {
+  it("Matchup tab renders per-side Away Defense/Home Offense and Away Offense/Home Defense descriptors, with away always on the left", () => {
     const { desktopScope } = renderAndGetScopes(FULL_CONTEXT);
     clickTab(desktopScope, "Matchup");
 
-    expect(within(desktopScope).getByText("Home Offense vs Away Defense")).toBeInTheDocument();
-    expect(within(desktopScope).getByText("Home Defense vs Away Offense")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("Away Defense")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("Home Offense")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("Away Offense")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("Home Defense")).toBeInTheDocument();
 
     // Both matchup cards reuse the shared offense/defense-paired row labels.
     expect(within(desktopScope).getAllByText("Points/Game").length).toBe(2);
 
-    // Card 1 (Home Offense vs Away Defense): left = home.pointsPerGame (24.1), right = away.pointsAllowedPerGame (19.2).
-    expect(within(desktopScope).getByText("24.1")).toBeInTheDocument();
+    // Card 1 (Away Defense vs Home Offense): left = away.pointsAllowedPerGame (19.2), right = home.pointsPerGame (24.1).
     expect(within(desktopScope).getByText("19.2")).toBeInTheDocument();
-    // Card 2 (Home Defense vs Away Offense): left = home.pointsAllowedPerGame (29.7), right = away.pointsPerGame (31.2).
-    expect(within(desktopScope).getByText("29.7")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("24.1")).toBeInTheDocument();
+    // Card 2 (Away Offense vs Home Defense): left = away.pointsPerGame (31.2), right = home.pointsAllowedPerGame (29.7).
     expect(within(desktopScope).getByText("31.2")).toBeInTheDocument();
+    expect(within(desktopScope).getByText("29.7")).toBeInTheDocument();
 
-    // Orientation rule: HOME renders before AWAY in each matchup card header.
-    const header = within(desktopScope).getByText("Home Offense vs Away Defense").closest("div")
-      ?.parentElement as HTMLElement;
+    // Orientation rule: AWAY renders before HOME in each matchup card header.
+    const header = within(desktopScope).getByText("Away Defense").closest("div")
+      ?.parentElement?.parentElement as HTMLElement;
     const headerText = header.textContent ?? "";
-    expect(headerText.indexOf("HOME")).toBeGreaterThanOrEqual(0);
-    expect(headerText.indexOf("HOME")).toBeLessThan(headerText.indexOf("AWAY"));
+    expect(headerText.indexOf("AWAY")).toBeGreaterThanOrEqual(0);
+    expect(headerText.indexOf("AWAY")).toBeLessThan(headerText.indexOf("HOME"));
+  });
+
+  it("Matchup edge comes from national RANK, not raw value: away defense #12 beats home offense #40 even though the raw numbers point the other way", () => {
+    // Card 1 (Away Defense vs Home Offense) keys off yardsPerPlayAllowed (away)
+    // vs yardsPerPlay (home). Raw values are deliberately "confusing" —
+    // away's allowed-YPP raw number is higher than home's gained-YPP raw
+    // number, which would hand the edge to home under a raw-value comparison.
+    // The away defense's rank (#12) is nonetheless far better than the home
+    // offense's rank (#40), so away must win.
+    const context: CfbMatchupSeasonStatsContext = {
+      ...FULL_CONTEXT,
+      away: stats("away", { yardsPerPlayAllowed: 6.0 }),
+      home: stats("home", { yardsPerPlay: 3.0 }),
+      awayRanks: { yardsPerPlayAllowed: 12 },
+      homeRanks: { yardsPerPlay: 40 },
+    };
+    const { desktopScope } = renderAndGetScopes(context);
+    clickTab(desktopScope, "Matchup");
+
+    const card1Row = within(desktopScope).getAllByText("Yards/Play")[0].closest("div")?.parentElement as HTMLElement;
+    expect(card1Row.textContent).toContain("6.0");
+    expect(card1Row.textContent).toContain("#12");
+    const marker = card1Row.querySelector('[data-testid="stronger-badge"]') as HTMLElement;
+    expect(marker).not.toBeNull();
+    const awaySwatch = document.createElement("div");
+    awaySwatch.style.background = AWAY_COLOR;
+    expect(marker.style.background).toBe(awaySwatch.style.background);
+  });
+
+  it("Matchup edge from rank: away offense #20 beats home defense #55", () => {
+    // Card 2 (Away Offense vs Home Defense) keys off yardsPerPlay (away) vs
+    // yardsPerPlayAllowed (home). Away's offense rank (#20) beats home's
+    // defense rank (#55), so away wins regardless of raw magnitude.
+    const context: CfbMatchupSeasonStatsContext = {
+      ...FULL_CONTEXT,
+      away: stats("away", { yardsPerPlay: 3.0 }),
+      home: stats("home", { yardsPerPlayAllowed: 6.0 }),
+      awayRanks: { yardsPerPlay: 20 },
+      homeRanks: { yardsPerPlayAllowed: 55 },
+    };
+    const { desktopScope } = renderAndGetScopes(context);
+    clickTab(desktopScope, "Matchup");
+
+    const card2Row = within(desktopScope).getAllByText("Yards/Play")[1].closest("div")?.parentElement as HTMLElement;
+    expect(card2Row.textContent).toContain("#20");
+    const marker = card2Row.querySelector('[data-testid="stronger-badge"]') as HTMLElement;
+    expect(marker).not.toBeNull();
+    const awaySwatch = document.createElement("div");
+    awaySwatch.style.background = AWAY_COLOR;
+    expect(marker.style.background).toBe(awaySwatch.style.background);
+  });
+
+  it("equal rank yields no edge marker", () => {
+    const context: CfbMatchupSeasonStatsContext = {
+      ...FULL_CONTEXT,
+      away: stats("away", { yardsPerPlayAllowed: 6.0 }),
+      home: stats("home", { yardsPerPlay: 3.0 }),
+      awayRanks: { yardsPerPlayAllowed: 30 },
+      homeRanks: { yardsPerPlay: 30 },
+    };
+    const { desktopScope } = renderAndGetScopes(context);
+    clickTab(desktopScope, "Matchup");
+
+    const card1Row = within(desktopScope).getAllByText("Yards/Play")[0].closest("div")?.parentElement as HTMLElement;
+    expect(card1Row.querySelector('[data-testid="stronger-badge"]')).toBeNull();
+  });
+
+  it("null rank handling is honest: both null shows no edge, and a single valid side wins by default", () => {
+    // Both sides missing a rank for this metric -> no edge, no fabricated marker.
+    const bothNullContext: CfbMatchupSeasonStatsContext = {
+      ...FULL_CONTEXT,
+      away: stats("away", { yardsPerPlayAllowed: 6.0 }),
+      home: stats("home", { yardsPerPlay: 3.0 }),
+      awayRanks: {},
+      homeRanks: {},
+    };
+    const { desktopScope: bothNullScope } = renderAndGetScopes(bothNullContext);
+    clickTab(bothNullScope, "Matchup");
+    const bothNullRow = within(bothNullScope).getAllByText("Yards/Play")[0].closest("div")?.parentElement as HTMLElement;
+    expect(bothNullRow.querySelector('[data-testid="stronger-badge"]')).toBeNull();
+
+    // Only home has a usable rank -> home wins by default (nothing to compare away against).
+    const oneNullContext: CfbMatchupSeasonStatsContext = {
+      ...FULL_CONTEXT,
+      away: stats("away", { yardsPerPlayAllowed: 6.0 }),
+      home: stats("home", { yardsPerPlay: 3.0 }),
+      awayRanks: {},
+      homeRanks: { yardsPerPlay: 45 },
+    };
+    const { desktopScope: oneNullScope } = renderAndGetScopes(oneNullContext);
+    clickTab(oneNullScope, "Matchup");
+    const oneNullRow = within(oneNullScope).getAllByText("Yards/Play")[0].closest("div")?.parentElement as HTMLElement;
+    const marker = oneNullRow.querySelector('[data-testid="stronger-badge"]') as HTMLElement;
+    expect(marker).not.toBeNull();
+    const homeSwatch = document.createElement("div");
+    homeSwatch.style.background = HOME_COLOR;
+    expect(marker.style.background).toBe(homeSwatch.style.background);
+  });
+
+  it("UNC/TCU matchup (real fixture): rank-derived winner, not the raw-value winner (regression for the reported discrepancy)", async () => {
+    const {
+      CFB_SEASON,
+      CFB_STATS_PREVIOUS_SEASON_BY_TEAM,
+      CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM,
+      CFB_STATS_PREVIOUS_SEASON_YEAR,
+      CFB_STATS_RANKS_BY_TEAM,
+      getGameById,
+      getTeamById,
+    } = await import("@/data/cfb");
+    const { selectMatchupSeasonStatsContext } = await import("@/lib/cfb/seasonStatsPresentation");
+
+    const game = getGameById("401856766")!; // TCU @ North Carolina — real Week 1 fixture
+    const awayTeam = getTeamById(game.awayTeamId)!;
+    const homeTeam = getTeamById(game.homeTeamId)!;
+
+    const context = selectMatchupSeasonStatsContext({
+      currentSeason: CFB_SEASON,
+      previousSeason: CFB_STATS_PREVIOUS_SEASON_YEAR,
+      away: {
+        current: awayTeam.stats,
+        currentRanks: CFB_STATS_RANKS_BY_TEAM[awayTeam.id] ?? {},
+        previous: CFB_STATS_PREVIOUS_SEASON_BY_TEAM[awayTeam.id],
+        previousRanks: CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[awayTeam.id],
+      },
+      home: {
+        current: homeTeam.stats,
+        currentRanks: CFB_STATS_RANKS_BY_TEAM[homeTeam.id] ?? {},
+        previous: CFB_STATS_PREVIOUS_SEASON_BY_TEAM[homeTeam.id],
+        previousRanks: CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[homeTeam.id],
+      },
+    })!;
+
+    // Real data: away (UNC) yardsPerPlayAllowed rank #25, raw 4.95.
+    // Real data: home (TCU) yardsPerPlay rank #33, raw 6.14 (the higher raw number).
+    // Raw-value comparison would (wrongly) hand this to home; rank #25 beats #33, so away must win.
+    expect(context.awayRanks.yardsPerPlayAllowed).toBe(25);
+    expect(context.homeRanks.yardsPerPlay).toBe(33);
+    expect(context.away.yardsPerPlayAllowed).toBeLessThan(context.home.yardsPerPlay as number);
+
+    const { container } = render(
+      <CollegeFootballSeasonStatsComparison
+        awayShortName={awayTeam.shortName}
+        homeShortName={homeTeam.shortName}
+        context={context}
+        awayColor={awayTeam.primaryColor}
+        homeColor={homeTeam.primaryColor}
+      />,
+    );
+    const desktopScope = container.querySelector(".hidden.lg\\:block") as HTMLElement;
+    clickTab(desktopScope, "Matchup");
+
+    const card1Row = within(desktopScope).getAllByText("Yards/Play")[0].closest("div")?.parentElement as HTMLElement;
+    const marker = card1Row.querySelector('[data-testid="stronger-badge"]') as HTMLElement;
+    expect(marker).not.toBeNull();
+    const awaySwatch = document.createElement("div");
+    awaySwatch.style.background = awayTeam.primaryColor;
+    // Away (UNC defense, rank #25) beats home (TCU offense, rank #33) -> away wins.
+    expect(marker.style.background).toBe(awaySwatch.style.background);
   });
 
   it("desktop: Offense and Defense each render exactly one full-width card, Matchup renders two cards side by side", () => {
