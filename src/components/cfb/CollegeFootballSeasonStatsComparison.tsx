@@ -138,6 +138,11 @@ export default function CollegeFootballSeasonStatsComparison({
     right: TeamHeaderInfo,
     descriptors?: { left: string; right: string },
   ) {
+    /** Matchup cards carry a unit descriptor line, so give their team identity more visual weight. */
+    const logoSize = descriptors ? "md" : "sm";
+    const nameTextClass = descriptors
+      ? "truncate text-sm font-black uppercase tracking-wide sm:text-base"
+      : "truncate text-xs font-black uppercase tracking-wide sm:text-sm";
     return (
       <div className="flex items-stretch">
         <span aria-hidden="true" className="w-1.5 shrink-0" style={{ background: CATEGORY_ACCENT_COLOR[category] }} />
@@ -145,7 +150,7 @@ export default function CollegeFootballSeasonStatsComparison({
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex min-w-0 flex-col items-end gap-0.5">
               <div className="flex min-w-0 items-center justify-end gap-1.5">
-                <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: left.color }}>
+                <span className={nameTextClass} style={{ color: left.color }}>
                   {left.shortName}
                 </span>
                 <CollegeFootballTeamLogo
@@ -153,7 +158,7 @@ export default function CollegeFootballSeasonStatsComparison({
                   logo={left.logo}
                   abbreviation={left.shortName}
                   primaryColor={left.color}
-                  size="sm"
+                  size={logoSize}
                 />
               </div>
               {descriptors && (
@@ -177,9 +182,9 @@ export default function CollegeFootballSeasonStatsComparison({
                   logo={right.logo}
                   abbreviation={right.shortName}
                   primaryColor={right.color}
-                  size="sm"
+                  size={logoSize}
                 />
-                <span className="truncate text-xs font-black uppercase tracking-wide sm:text-sm" style={{ color: right.color }}>
+                <span className={nameTextClass} style={{ color: right.color }}>
                   {right.shortName}
                 </span>
               </div>
