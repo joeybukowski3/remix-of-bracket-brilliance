@@ -71,6 +71,8 @@ export default defineConfig({
       "scripts/cfb-update-rankings.test.ts",
       // CFB matchup-stats WU -- CFBD-derived season-stats build CLI behavior.
       "scripts/cfb-build-season-stats.test.ts",
+      // NFL Yardage Projection refresh pipeline -- CI artifact validation gate.
+      "scripts/validate-nfl-current-week-yardage-projections.test.mjs",
     ],
   },
   resolve: {
