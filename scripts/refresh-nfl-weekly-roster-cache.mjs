@@ -7,7 +7,14 @@
  * only -- it never touches 2023/2024/2025 entries, `players.csv`, `injuries`,
  * or `snap-counts`. Network-touching; run manually, not wired into CI.
  *
- * Usage: node scripts/refresh-fantasy-2026-weekly-roster-cache.mjs [--dry-run]
+ * Shared NFL-domain cache infrastructure -- consumed by both the fantasy
+ * weekly-projection pipeline and the NFL yardage-props current-week
+ * projection generator (`generate-nfl-current-week-yardage-projections.ts`),
+ * neither of which owns this cache exclusively. Originally named/located
+ * under a fantasy-specific path; renamed here since nothing in its logic is
+ * fantasy-specific -- see the NFL yardage-props live-refresh audit.
+ *
+ * Usage: node scripts/refresh-nfl-weekly-roster-cache.mjs [--dry-run]
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -21,7 +28,7 @@ const MANIFEST_PATH = join(DIR, "manifest.json");
 const SEASON = 2026;
 const FILENAME = `roster_weekly_${SEASON}.csv`;
 const RELEASE = "weekly_rosters";
-const USER_AGENT = "JoeKnowsBall-fantasy-weekly-projections/1.0 (+https://www.joeknowsball.com)";
+const USER_AGENT = "JoeKnowsBall-nfl-weekly-roster-cache/1.0 (+https://www.joeknowsball.com)";
 const REQUEST_TIMEOUT_MS = 120000;
 
 const PROJECTED_COLUMNS = Object.freeze([
@@ -108,7 +115,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`[refresh-fantasy-2026-weekly-roster-cache] FAILED: ${err.message}`);
-  console.error("[refresh-fantasy-2026-weekly-roster-cache] existing cache left untouched");
+  console.error(`[refresh-nfl-weekly-roster-cache] FAILED: ${err.message}`);
+  console.error("[refresh-nfl-weekly-roster-cache] existing cache left untouched");
   process.exit(1);
 });

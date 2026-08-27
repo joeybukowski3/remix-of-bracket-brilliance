@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
 import type { CfbGame, CfbTeam } from "@/data/cfb/types";
-import { formatCfbGameStatusLabel, formatCfbVenueLocation, formatRecord } from "@/lib/cfb/format";
+import { formatCfbGameStatusLabel, formatCfbVenueLocation, formatRecord, getCfbRankDisplay } from "@/lib/cfb/format";
 import { formatCfbKickoffLabel } from "@/lib/cfb/schedulePresentation";
 import { getCfbTeamPath } from "@/lib/cfb/routes";
 import { Link } from "react-router-dom";
@@ -126,34 +126,88 @@ function MatchupInfoPanel({ game }: { game: CfbGame }) {
 }
 
 /**
- * Compact mobile team panel: same team-color background + logo + name +
- * record + rank language as the desktop wedge panels above, just scaled
- * down and laid out two-up instead of full-bleed.
+ * Compact mobile hero team panel: strong team-color background, large logo,
+ * shortName, record, and a single honest CFP > AP > JKB rank pill (same
+ * hierarchy as CollegeFootballGameCard's getCfbRankDisplay — never two
+ * independent JKB/AP pills side by side, unlike the desktop wedge panel).
  */
-function MobileTeamPanel({ team, side }: { team: CfbTeam; side: "away" | "home" }) {
+function MobileHeroTeamPanel({ team, score, side }: { team: CfbTeam; score: number | null; side: "away" | "home" }) {
   const record = formatRecord(team.record.wins, team.record.losses, team.record.ties);
+  const rank = getCfbRankDisplay(team.ratings);
   const isAway = side === "away";
 
   return (
     <Link
       to={getCfbTeamPath(team.slug)}
       className={cn(
-        "flex flex-col gap-1.5 px-3 py-4",
+        "flex min-w-0 flex-col gap-1.5 px-2.5 py-4",
         isAway ? "items-start text-left" : "items-end text-right",
       )}
       style={{ background: team.primaryColor }}
     >
-      <RankPills team={team} tone="light" />
       <CollegeFootballTeamLogo
         name={team.name}
         logo={team.logo}
         abbreviation={team.abbreviation}
         primaryColor="transparent"
-        className="h-12 w-12"
+        className="h-14 w-14"
       />
       <span className="truncate text-sm font-black leading-tight text-white">{team.shortName}</span>
-      <span className="text-[11px] font-bold text-white/85">{record}</span>
+      <div className={cn("flex min-w-0 items-center gap-1.5", isAway ? "flex-row" : "flex-row-reverse")}>
+        {rank.text && (
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none",
+              rank.isOfficial ? "bg-white text-slate-900" : "bg-white/20 text-white",
+            )}
+            title={rank.label}
+          >
+            <span aria-hidden="true">{rank.text}</span>
+            <span className="sr-only">{rank.label}</span>
+          </span>
+        )}
+        <span className="truncate text-[11px] font-bold text-white/85">{record}</span>
+      </div>
+      {score != null && <span className="text-2xl font-black tabular-nums text-white">{score}</span>}
     </Link>
+  );
+}
+
+/**
+ * Mobile hero's compact center matchup-context column: same underlying
+ * kickoff/venue/neutral-site/status data and formatting as the desktop
+ * MatchupInfoPanel, styled light-on-dark-navy to match the Phase 1/2 mobile
+ * center-surface language instead of the desktop's light background.
+ */
+function MobileHeroMatchupInfoPanel({ game }: { game: CfbGame }) {
+  const kickoffLabel = formatCfbKickoffLabel(game.date, game.time);
+  const venueLocation = formatCfbVenueLocation(game.venueCity, game.venueState);
+  const isFinal = game.gameStatus === "final" && game.awayScore != null && game.homeScore != null;
+  const isLive = game.gameStatus === "in_progress";
+  const statusLabel = formatCfbGameStatusLabel(game.gameStatus);
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-1 bg-slate-900 px-2 py-3 text-center">
+      <p className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-[0.14em] text-white/50">
+        {game.neutralSite && <MapPin className="h-2.5 w-2.5" aria-hidden="true" />}
+        {game.neutralSite ? "Neutral Site" : "Matchup"}
+      </p>
+      <p className={cn("text-xs font-black uppercase tracking-wide", isLive ? "text-rose-400" : "text-white")}>
+        {isFinal || isLive ? statusLabel : kickoffLabel}
+      </p>
+      {!isFinal && <p className="text-[9px] font-semibold text-white/70">{kickoffLabel}</p>}
+      {game.venue && (
+        <p className="max-w-[6.5rem] text-[8px] leading-tight text-white/60">
+          {game.venue}
+          {venueLocation && <span className="text-white/40"> · {venueLocation}</span>}
+        </p>
+      )}
+      {game.neutralSite && (
+        <span className="rounded-full bg-violet-500/20 px-1.5 py-0.5 text-[8px] font-bold text-violet-200">
+          Neutral
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -162,9 +216,9 @@ export default function CollegeFootballMatchupHero({ game, away, home }: Props) 
   const isLive = game.gameStatus === "in_progress";
 
   return (
-    <header className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+    <header className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm sm:rounded-md sm:border-slate-200">
       {/* Desktop: full-bleed wedge panels. */}
-      <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr]">
+      <div data-testid="cfb-hero-desktop" className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr]">
         <TeamPanel team={away} score={isFinal || isLive ? game.awayScore : null} side="away" />
         <div className="border-x border-slate-100 bg-white">
           <MatchupInfoPanel game={game} />
@@ -172,14 +226,12 @@ export default function CollegeFootballMatchupHero({ game, away, home }: Props) 
         <TeamPanel team={home} score={isFinal || isLive ? game.homeScore : null} side="home" />
       </div>
 
-      {/* Mobile: compact team-color panels (away left, home right) + matchup info below. */}
-      <div className="sm:hidden">
-        <div className="grid grid-cols-2 divide-x divide-white/20">
-          <MobileTeamPanel team={away} side="away" />
-          <MobileTeamPanel team={home} side="home" />
-        </div>
-        <div className="border-t border-slate-100 bg-slate-50/60">
-          <MatchupInfoPanel game={game} />
+      {/* Mobile: compact single-row team panels + dark center matchup context (away left, home right). */}
+      <div data-testid="cfb-hero-mobile" className="sm:hidden">
+        <div className="grid grid-cols-[1fr_auto_1fr] divide-x divide-white/10">
+          <MobileHeroTeamPanel team={away} score={isFinal || isLive ? game.awayScore : null} side="away" />
+          <MobileHeroMatchupInfoPanel game={game} />
+          <MobileHeroTeamPanel team={home} score={isFinal || isLive ? game.homeScore : null} side="home" />
         </div>
       </div>
     </header>

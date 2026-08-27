@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// Emergency refresh touch 2026-08-27: this file is a configured push trigger for the MLB data workflow.
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 

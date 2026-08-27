@@ -201,6 +201,7 @@ describe("deriveOpponentGameSummary", () => {
       date: "2026-07-05",
       opponent: "BAL",
       opposingStartingPitcher: "Home Starter",
+      opposingStartingPitcherId: 3,
       opposingStarterInningsPitched: "6.0",
       opposingStarterStrikeouts: 7,
       opposingStarterWalks: 1,
@@ -220,6 +221,7 @@ describe("deriveOpponentGameSummary", () => {
       date: "2026-07-05",
       opponent: null,
       opposingStartingPitcher: null,
+      opposingStartingPitcherId: null,
       opposingStarterInningsPitched: null,
       opposingStarterStrikeouts: null,
       opposingStarterWalks: null,
@@ -284,7 +286,7 @@ describe("fetchOpponentLastFiveGamesDetail", () => {
       retries: 0,
     });
     expect(rows).toEqual([
-      { date: "2026-07-01", opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null },
+      { date: "2026-07-01", opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null },
     ]);
   });
 });

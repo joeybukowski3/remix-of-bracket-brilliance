@@ -240,20 +240,20 @@ describe("Mobile compact rows -- collapsed header and K Model Metrics expand gri
     expect(opposingStats.className).toContain("border-indigo-200");
     expect(pitcherStats).toHaveAttribute("aria-expanded", "false");
     expect(opposingStats).toHaveAttribute("aria-expanded", "false");
-    expect(within(rowArticle).queryByText("K/Inning SZN")).not.toBeInTheDocument();
-    expect(within(rowArticle).queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+    expect(within(rowArticle).queryByText("K Per Game SZN")).not.toBeInTheDocument();
+    expect(within(rowArticle).queryByText("Opp wRC+ Rank L30 vs Hand")).not.toBeInTheDocument();
 
     fireEvent.click(pitcherStats);
     expect(pitcherStats).toHaveAttribute("aria-expanded", "true");
-    for (const label of ["K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP"]) {
+    for (const label of ["K Per Game SZN", "K Per Game L5", "K Per Game @ Site", "Avg IP"]) {
       expect(within(rowArticle).getByText(label)).toBeInTheDocument();
     }
     expect(opposingStats).toHaveAttribute("aria-expanded", "false");
-    expect(within(rowArticle).queryByText("Opp K/Game L10")).not.toBeInTheDocument();
+    expect(within(rowArticle).queryByText("Opp wRC+ Rank L30 vs Hand")).not.toBeInTheDocument();
 
     fireEvent.click(opposingStats);
     expect(opposingStats).toHaveAttribute("aria-expanded", "true");
-    for (const label of ["Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10"]) {
+    for (const label of ["Szn vs Hand", "Opp wRC+ Rank L30 vs Hand", "Opp K/Game @ Site", "Opp wRC+ Rank L30 @ Site", "Opp wRC+ Rank L10"]) {
       expect(within(rowArticle).getByText(label)).toBeInTheDocument();
     }
   }, SLOW_RENDER_TIMEOUT_MS);
