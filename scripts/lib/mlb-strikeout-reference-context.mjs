@@ -1,10 +1,14 @@
 import { parseCsv } from "./mlb-opponent-k-context.mjs";
 import { runLimited } from "./mlb-strikeout-prop-details-fetch.mjs";
+import { fetchSavantCsv } from "./mlb-savant-fetch.mjs";
 import { approximateWrcPlusFromWoba, MLB_FALLBACK_RUNS_PER_PA } from "./mlb-wrc-plus.mjs";
 
 const SAVANT_SEARCH_CSV = "https://baseballsavant.mlb.com/statcast_search/csv";
-const DEFAULT_TIMEOUT_MS = 30000;
-const DEFAULT_CONCURRENCY = 4;
+// Savant's search endpoint is prone to rate-limiting/slow responses when hit
+// with several concurrent identical-shaped team CSV requests, which is
+// exactly this call's access pattern (one request per MLB team). Keep
+// concurrency low; fetchSavantCsv already retries transient aborts/429/5xx.
+const DEFAULT_CONCURRENCY = 2;
 
 function finite(value) {
   if (value == null || value === "") return null;
@@ -17,22 +21,6 @@ function shiftDate(dateStr, deltaDays) {
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + deltaDays);
   return date.toISOString().slice(0, 10);
-}
-
-async function fetchText(url, options = {}) {
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  try {
-    const response = await fetchImpl(url, {
-      signal: controller.signal,
-      headers: { Accept: "text/csv,*/*", "User-Agent": "Mozilla/5.0 (compatible; joeknowsball/1.0)" },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
-    return await response.text();
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 export function normalizeReferencePlateAppearances(rows, teamAbbr) {
@@ -73,12 +61,14 @@ export async function fetchTeamReferencePlateAppearances(teamAbbr, season, befor
     min_abs: "0",
     type: "details",
   });
-  const text = await fetchText(`${SAVANT_SEARCH_CSV}?${params.toString()}`, options);
+  const text = await fetchSavantCsv(`${SAVANT_SEARCH_CSV}?${params.toString()}`, options);
   return normalizeReferencePlateAppearances(parseCsv(text), teamAbbr);
 }
 
 export async function fetchLeagueReferencePlateAppearances(teams, season, beforeDate, options = {}) {
   const errors = [];
+  const logProgress = options.logProgress ?? true;
+  let completed = 0;
   const results = await runLimited(teams, options.concurrency ?? DEFAULT_CONCURRENCY, async (team) => {
     try {
       const rows = await fetchTeamReferencePlateAppearances(team.abbreviation, season, beforeDate, options);
@@ -86,6 +76,9 @@ export async function fetchLeagueReferencePlateAppearances(teams, season, before
     } catch (error) {
       errors.push(`${team.abbreviation}:${error?.message ?? "unknown"}`);
       return { abbreviation: team.abbreviation, rows: [] };
+    } finally {
+      completed += 1;
+      if (logProgress) console.log(`[reference-context] fetched ${completed}/${teams.length} teams`);
     }
   });
   return { rowsByTeam: new Map(results.map((result) => [result.abbreviation, result.rows])), errors };

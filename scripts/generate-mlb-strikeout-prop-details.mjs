@@ -78,6 +78,7 @@ async function main() {
   const teamAbbrById = buildTeamAbbrById(teams);
   const teamIdByAbbr = buildTeamIdByAbbr(teams);
 
+  console.log(`[reference-context] fetching league plate-appearance reference for ${teams.length} teams...`);
   const leagueReference = await fetchLeagueReferencePlateAppearances(teams, season, slateDate);
   const referenceContextCache = new Map();
   const referenceFor = (team, cutoffDate, pitcherHand) => {
