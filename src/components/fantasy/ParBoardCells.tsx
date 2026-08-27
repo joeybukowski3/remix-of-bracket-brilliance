@@ -47,9 +47,12 @@ const PAR_TONE_CLASS: Record<ParPerGameTone, string> = {
 export function PositionRankBadge({
   position,
   positionRank,
+  className,
 }: {
   position: FantasyPosition;
   positionRank: number | undefined;
+  /** Scoped override for callers (e.g. Draft Preview) that need fluid/compact sizing without changing the canonical badge elsewhere. */
+  className?: string;
 }) {
   const tone = getPositionTone(position);
   return (
@@ -57,6 +60,7 @@ export function PositionRankBadge({
       className={cn(
         "inline-flex min-w-10 justify-center rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
         tone.badge,
+        className,
       )}
     >
       {position}
@@ -144,14 +148,20 @@ export function GradientRankCell({
   value,
   maxRank,
   className,
+  displayText,
+  title,
 }: {
   value: number | undefined;
   maxRank: number | null;
   className?: string;
+  /** Overrides the rendered text (e.g. a position-relative "RB6" label) without affecting the value the heat colour is derived from. */
+  displayText?: string;
+  title?: string;
 }) {
   const background = getRankGradientColor(value, maxRank);
   return (
     <td
+      title={title}
       style={background ? { backgroundColor: background } : undefined}
       className={cn(
         // 11px/bold: at the previous 10px/semibold these read as regular weight
@@ -162,7 +172,7 @@ export function GradientRankCell({
         className,
       )}
     >
-      {formatRank(value)}
+      {displayText ?? formatRank(value)}
     </td>
   );
 }
