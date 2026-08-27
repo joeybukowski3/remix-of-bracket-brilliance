@@ -13,6 +13,7 @@
 import type { NflProjectionMarket, NflProjectionStatus } from "./projectionOutput";
 import type { NflYardageMatchupScore } from "./matchupScore";
 import type { NflPropPosition } from "./identity";
+import type { NflWindowedRate } from "./qbPassingFeatures";
 
 export const NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION = "nfl-current-week-yardage-projection-v1" as const;
 
@@ -49,6 +50,64 @@ export type NflCurrentWeekHardCaseFlags = {
    * a handful of games). Never used to lower a Matchup Score.
    */
   roleUncertain: boolean;
+};
+
+/**
+ * Diagnostic-only snapshot of the literal (unshrunk-score, pre-Matchup-
+ * Score-transform) pregame feature values the generator already computes
+ * to produce this row -- a straight field-selection from the "ForTarget"
+ * feature-row builders (`qbPassingFeatures.ts` / `rushingFeatures.ts` /
+ * `receivingFeatures.ts`), never a new computation. Distinct from
+ * `matchupScore.components.*.indicatorScores`, which are 0-100
+ * percentile-style scores, not literal values. Never feeds `projectedYards`
+ * or the Matchup Score -- purely presentation/diagnostic provenance for the
+ * Yardage Props Review detail panel. Each `NflWindowedRate` explicitly
+ * carries which prior-season/current-season window backs it
+ * (seasonPrior/last3/priorSeason), so a null `seasonPrior` with a populated
+ * `priorSeason` truthfully discloses an early-season fallback rather than
+ * hiding it.
+ */
+export type NflCurrentWeekMarketContext = {
+  spread: number | null;
+  total: number | null;
+  impliedTeamTotal: number | null;
+  isDome: boolean | null;
+};
+
+export type NflCurrentWeekPassingFeatureSnapshot = {
+  qbAttemptsPerGame: NflWindowedRate;
+  yardsPerAttempt: NflWindowedRate;
+  completionPct: NflWindowedRate;
+  teamPassAttemptsPerGame: NflWindowedRate;
+  teamDropbackRate: NflWindowedRate;
+  earlyDownNeutralPassRate: NflWindowedRate;
+  passRateOverExpected: NflWindowedRate;
+  market: NflCurrentWeekMarketContext;
+};
+
+export type NflCurrentWeekRushingFeatureSnapshot = {
+  carriesPerGame: NflWindowedRate;
+  carryShare: NflWindowedRate;
+  /** This player's own raw rolling YPC, pre-shrinkage -- distinct from `projectedYardsPerCarry`, the model's shrunk value. */
+  rollingYardsPerCarry: NflWindowedRate;
+  teamRushAttemptsPerGame: NflWindowedRate;
+  teamDropbackRate: NflWindowedRate;
+  teamPassRateOverExpected: NflWindowedRate;
+  opponentRushAttemptsAllowedPerGame: NflWindowedRate;
+  market: NflCurrentWeekMarketContext;
+};
+
+export type NflCurrentWeekReceivingFeatureSnapshot = {
+  targetsPerGame: NflWindowedRate;
+  targetShare: NflWindowedRate;
+  /** This player's own raw rolling YPT, pre-shrinkage -- distinct from `projectedYardsPerTarget`, the model's shrunk value. */
+  rollingYardsPerTarget: NflWindowedRate;
+  teamPassAttemptsPerGame: NflWindowedRate;
+  teamDropbackRate: NflWindowedRate;
+  teamPassRateOverExpected: NflWindowedRate;
+  targetConcentration: NflWindowedRate;
+  opponentTargetsAllowedPerGame: NflWindowedRate;
+  market: NflCurrentWeekMarketContext;
 };
 
 export type NflEstimatedRange = {
@@ -123,6 +182,7 @@ export type NflCurrentWeekPassingRow = NflCurrentWeekRowIdentity & {
   estimatedRange: NflEstimatedRange | null;
   matchupScore: NflYardageMatchupScore | null;
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
+  featureSnapshot: NflCurrentWeekPassingFeatureSnapshot;
   diagnostics: {
     starterResolution: "sourcedDepthChart" | "rollingAttemptsLeader" | "onlyActiveQb" | "noHistoryFallback";
     gamesStartedPriorThisSeason: number;
@@ -139,6 +199,7 @@ export type NflCurrentWeekRushingRow = NflCurrentWeekRowIdentity & {
   estimatedRange: NflEstimatedRange | null;
   matchupScore: NflYardageMatchupScore | null;
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
+  featureSnapshot: NflCurrentWeekRushingFeatureSnapshot;
   diagnostics: { gamesWithCarriesPriorThisSeason: number; recentTeamTopCarryShareConcentration: number | null };
 };
 
@@ -151,6 +212,7 @@ export type NflCurrentWeekReceivingRow = NflCurrentWeekRowIdentity & {
   estimatedRange: NflEstimatedRange | null;
   matchupScore: NflYardageMatchupScore | null;
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
+  featureSnapshot: NflCurrentWeekReceivingFeatureSnapshot;
   diagnostics: { gamesWithTargetsPriorThisSeason: number };
 };
 

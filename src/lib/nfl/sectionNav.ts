@@ -120,6 +120,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         description: "Historical winner profile and 2026 candidate elimination model.",
         icon: "🏅",
       },
+      {
+        to: "/nfl/yardage-props-review",
+        label: "Yardage Props Review",
+        shortLabel: "Yardage Props",
+        description: "Preview of current-week passing, rushing and receiving yardage projections against available sportsbook lines.",
+        icon: "📏",
+        status: "beta",
+      },
     ],
   },
   {

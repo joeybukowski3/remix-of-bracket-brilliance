@@ -63,12 +63,16 @@ export default defineConfig({
       "scripts/generate-nfl-yardage-outcomes.test.ts",
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
+      // NFL Yardage Props Review -- shared opponent-production-allowed artifact.
+      "scripts/lib/nfl-production-allowed-core.test.mjs",
       "scripts/generate-nfl-team-pregame-features.test.ts",
       // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
       "scripts/cfb-fetch-rankings.test.ts",
       "scripts/cfb-update-rankings.test.ts",
       // CFB matchup-stats WU -- CFBD-derived season-stats build CLI behavior.
       "scripts/cfb-build-season-stats.test.ts",
+      // NFL Yardage Projection refresh pipeline -- CI artifact validation gate.
+      "scripts/validate-nfl-current-week-yardage-projections.test.mjs",
     ],
   },
   resolve: {
