@@ -21,7 +21,6 @@ import {
   ParPerGameValue,
   PositionRankBadge,
 } from "@/components/fantasy/ParBoardCells";
-import { ModelRankCell } from "@/components/fantasy/FantasyParBoard";
 import { formatSigned } from "@/lib/fantasy/formatBoardValue";
 import { getMaxRank, getParPerGameThresholds, getRankGradientColor } from "@/lib/fantasy/parPresentation";
 import { FANTASY_POSITIONS, type FantasyPosition } from "@/lib/fantasy/rankings";
@@ -89,9 +88,26 @@ const DRAFT_PREVIEW_ROW_BY_RANK: ReadonlyMap<number, DraftPreviewRow> = new Map(
   DRAFT_PREVIEW_ROWS_2026.map((row) => [row.sleeperRank, row]),
 );
 
-/** Responsive cell padding: denser on mobile/tablet, current desktop density preserved at `md:` and up. */
-const CELL_PAD = "px-1.5 py-1 sm:px-2 sm:py-1.5 md:px-3 md:py-2";
-const CELL_TEXT = "text-[10px] sm:text-[11px] md:text-xs";
+/**
+ * Fluid, viewport-scaled cell sizing (Draft Preview only): `clamp()` lets the
+ * board pack materially more columns into view on desktop/laptop widths
+ * without breakpoint jumps, while never shrinking body text/padding below a
+ * readable floor on narrow viewports. Scoped to this page's constants only --
+ * no other fantasy board's typography is touched.
+ */
+const CELL_PAD = "px-[clamp(4px,0.35vw,10px)] py-[clamp(3px,0.22vw,7px)]";
+const CELL_TEXT = "text-[clamp(8px,0.58vw,11px)]";
+const HEADER_CELL_TEXT = "text-[clamp(7px,0.50vw,10px)]";
+const PLAYER_NAME_TEXT = "text-[clamp(9px,0.64vw,12px)]";
+const TEAM_ABBR_TEXT = "text-[clamp(7px,0.48vw,9px)]";
+const POSITION_BADGE_TEXT = "text-[clamp(8px,0.55vw,11px)] min-w-[clamp(1.75rem,3vw,2.5rem)]";
+
+/** Site header clears at 73px (see `SiteHeader`'s min-h-[72px] + 1px border) -- every sticky header cell shares this same offset so the board header stacks directly beneath it, never overlapping. */
+const STICKY_HEADER_TOP = "top-[73px]";
+/** Ordinary sticky header cells: below the pinned Rank/Player header corner, above the sticky Rank/Player body cells. */
+const STICKY_HEADER_CELL = cn("sticky", STICKY_HEADER_TOP, "z-20 bg-slate-100");
+/** Rank/Player header cells stick on both axes (top AND left) and must out-rank every other header cell so the corner never disappears under a plain column header while the board scrolls both ways. */
+const STICKY_HEADER_PINNED_CELL = cn("sticky", STICKY_HEADER_TOP, "z-30 bg-slate-100");
 
 export default function FantasyDraftPreview() {
   const seo = getSeoMeta("fantasy-draft-preview");
@@ -387,11 +403,13 @@ const DRAFT_PREVIEW_HEAT_SCALES = {
  * ramp. Scoping per position, using the exact same canonical helpers,
  * restores the same strong tier separation the source page shows.
  *
- * Model Rk is deliberately excluded here: `shadowModelRankJoin.ts` documents
- * it as a genuinely cross-position rank, and its own canonical rendering
- * (`FantasyParBoard.tsx`'s `ModelRankCell`) is a flat muted pill, never a
- * gradient -- reused directly below rather than inventing a Draft-Preview-only
- * gradient for a metric that has no canonical gradient treatment anywhere.
+ * Model Rk is deliberately excluded from this per-position map:
+ * `shadowModelRankJoin.ts` documents `modelRank` itself as a genuinely
+ * cross-position authority, so it cannot be grouped into one position's raw
+ * value pool the way the position-relative fields above can. Its own
+ * DISPLAY-ONLY position-relative heat scale (derived without mutating that
+ * authority) is built separately by `MODEL_POSITION_RANK_BY_SLEEPER_RANK`
+ * below.
  */
 const HEAT_SCALE_ROWS_BY_POSITION: Readonly<Record<FantasyPosition, readonly DraftPreviewRow[]>> = (() => {
   const groups: Record<FantasyPosition, DraftPreviewRow[]> = { QB: [], RB: [], WR: [], TE: [] };
@@ -441,6 +459,41 @@ const NEUTRAL_POSITION_HEAT_SCALE: PositionHeatScale = {
   lastEightPointsRankMax: null,
 };
 
+/**
+ * Display-only positional rank prefix, e.g. "RB6" for `position=RB,
+ * value=6`. Purely presentational -- callers still pass the untouched raw
+ * rank value to the heat-map helpers; this only changes the rendered text.
+ */
+function positionPrefixedRank(position: FantasyPosition | undefined, value: number | undefined): string | undefined {
+  if (!position || !Number.isFinite(value)) return undefined;
+  return `${position}${value}`;
+}
+
+type ModelPositionRankEntry = { positionRank: number; poolSize: number };
+
+/**
+ * DISPLAY-ONLY position-relative Model Rank, derived (never written back) by:
+ * grouping the canonical full board by position, sorting each group by the
+ * existing Model Rank authority (ascending -- lower Model Rank is better),
+ * tie-breaking deterministically on Sleeper Rank, then numbering 1..n within
+ * that position. `row.modelRank` itself -- the cross-position authority
+ * documented in `shadowModelRankJoin.ts` -- is never mutated or reordered;
+ * this map only supplies a friendlier label ("RB4") and a same-position pool
+ * size for a matching heat-map scale.
+ */
+const MODEL_POSITION_RANK_BY_SLEEPER_RANK: ReadonlyMap<number, ModelPositionRankEntry> = (() => {
+  const map = new Map<number, ModelPositionRankEntry>();
+  for (const position of FANTASY_POSITIONS) {
+    const eligible = HEAT_SCALE_ROWS_BY_POSITION[position]
+      .filter((row) => Number.isFinite(row.modelRank))
+      .sort((a, b) => (a.modelRank as number) - (b.modelRank as number) || a.sleeperRank - b.sleeperRank);
+    eligible.forEach((row, index) => {
+      map.set(row.sleeperRank, { positionRank: index + 1, poolSize: eligible.length });
+    });
+  }
+  return map;
+})();
+
 /** Best-value-first rank (1 = highest) for a raw stat, used only to drive heat-map colour -- never displayed or sorted on. */
 function buildDescendingRankMap(
   rows: readonly DraftPreviewRow[],
@@ -476,26 +529,48 @@ function DraftPreviewTable({
 }) {
   return (
     <NflTableScroller label="Draft preview board" className="overflow-y-visible">
-      <table className={cn("w-full min-w-[1500px] border-collapse text-left", CELL_TEXT)}>
-        {/* top-[73px] clears SiteHeader's sticky nav bar (min-h-[72px] + 1px border, see src/components/layout/SiteHeader.tsx) so the two sticky bars stack instead of overlapping. */}
-        <thead className="sticky top-[73px] z-20 bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600 sm:text-[10px]">
+      {/*
+        `border-separate` (never `border-collapse`) is load-bearing: collapsed
+        table borders merge every cell's border into one shared line owned by
+        the table itself, which breaks `position: sticky` on individual `th`
+        cells in this exact combination (horizontal-scroll ancestor + a table
+        that also needs to stick vertically against page scroll) -- borders
+        and backgrounds detach from the sticky cell as it pins, which is what
+        rendered as a header row "floating" mid-table while scrolling. Every
+        cell here only declares its own bottom/right border (see
+        `FANTASY_TABLE_HEADER_CELL`/`FANTASY_TABLE_BODY_CELL`), so
+        `border-spacing-0` reproduces the exact same hairline grid with zero
+        gaps -- this is a visual no-op, purely the sticky-header fix.
+      */}
+      <table className={cn("w-full min-w-[1500px] border-separate border-spacing-0 text-left", CELL_TEXT)}>
+        {/*
+          Sticky positioning lives on every individual `<th>`, never on
+          `<thead>` itself: `position: sticky` on a table-header-group
+          (`<thead>`) is unreliable across browsers once the table also
+          scrolls horizontally in an ancestor -- cells can stick independently
+          of the row, producing overlapping/duplicated header rows. Per-`<th>`
+          sticky is the standard fix and is exactly as sticky against page
+          scroll; `top-[73px]` clears SiteHeader's sticky nav bar (min-h-[72px]
+          + 1px border, see src/components/layout/SiteHeader.tsx).
+        */}
+        <thead className={cn(HEADER_CELL_TEXT, "font-semibold uppercase tracking-wider text-slate-600")}>
           <tr>
-            <th className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "sticky left-0 z-30 w-10 bg-slate-100 text-center")}>Rk</th>
-            <th className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "sticky left-10 z-30 min-w-[150px] bg-slate-100 sm:min-w-56 md:min-w-64")}>Player</th>
-            <th title="Canonical JKB rank within the player's position" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>Pos Rk</th>
-            <th title="Sleeper projected season fantasy points" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>Sleeper Proj</th>
-            <th title="Sleeper projected fantasy points per game" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>Sleeper PPG</th>
-            <th title="Existing Joe Knows Ball projected PPG (approved PAR authority)" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>JKB Proj PPG</th>
-            <th title="Approved projected Points Above Replacement per game" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>JKB PAR/G</th>
-            <th title="Corrected F2 ROS research Model Rank (independent authority)" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>Model Rk</th>
-            <th title="FantasyPros projection rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>Projection Rk</th>
-            <th title="Workbook average of component ranks" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>AVG Rk</th>
-            <th title="Positional strength of schedule; 1 is the easiest slate" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>SOS</th>
-            <th title="2025 positional finish by total fantasy points" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>2025 Pts Rk</th>
-            <th title="2025 positional finish by fantasy points per game" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>2025 PPG Rk</th>
-            <th title="Last-eight-game total points rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>L8 Pts Rk</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_PINNED_CELL, "left-0 w-10 text-center")}>Rk</th>
+            <th className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_PINNED_CELL, "left-10 min-w-[150px] sm:min-w-56 md:min-w-64")}>Player</th>
+            <th title="Canonical JKB rank within the player's position" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>Pos Rk</th>
+            <th title="Sleeper projected season fantasy points" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>Sleeper Proj</th>
+            <th title="Sleeper projected fantasy points per game" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>Sleeper PPG</th>
+            <th title="Existing Joe Knows Ball projected PPG (approved PAR authority)" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>JKB Proj PPG</th>
+            <th title="Approved projected Points Above Replacement per game" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>JKB PAR/G</th>
+            <th title="Model Rank shown as position-relative rank for display. Underlying F2 Model Rank authority is unchanged." className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>Model Rk</th>
+            <th title="Projection rank within position." className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>Projection Rk</th>
+            <th title="Average rank within position." className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>AVG Rk</th>
+            <th title="Positional strength of schedule within position; 1 is the easiest slate" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>SOS</th>
+            <th title="2025 positional finish by total fantasy points" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>2025 Pts Rk</th>
+            <th title="2025 positional finish by fantasy points per game" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>2025 PPG Rk</th>
+            <th title="Last-eight-game total points rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>L8 Pts Rk</th>
             {["W15", "W16", "W17"].map((week) => (
-              <th key={week} className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, "text-center")}>{week}</th>
+              <th key={week} className={cn(FANTASY_TABLE_HEADER_CELL, CELL_PAD, STICKY_HEADER_CELL, "text-center")}>{week}</th>
             ))}
           </tr>
         </thead>
@@ -596,6 +671,7 @@ function DraftPreviewTableRow({
   const canonicalPosition = row.canonicalPosition;
   const heat = DRAFT_PREVIEW_HEAT_SCALES;
   const positionHeat = canonicalPosition ? DRAFT_PREVIEW_HEAT_SCALES_BY_POSITION[canonicalPosition] : NEUTRAL_POSITION_HEAT_SCALE;
+  const modelPositionRank = MODEL_POSITION_RANK_BY_SLEEPER_RANK.get(row.sleeperRank);
   const isTargeted = targetRounds.length > 0;
   return (
     <tr
@@ -616,7 +692,13 @@ function DraftPreviewTableRow({
       <td className={cn(FANTASY_TABLE_BODY_CELL, CELL_PAD, "sticky left-0 z-10 bg-white text-center font-bold tabular-nums text-slate-800 group-hover:bg-slate-50", selected && "bg-emerald-50/60 group-hover:bg-emerald-50/60")}>{row.sleeperRank}</td>
       <td className={cn(FANTASY_TABLE_BODY_CELL, CELL_PAD, "sticky left-10 z-10 bg-white group-hover:bg-slate-50", selected && "bg-emerald-50/60 group-hover:bg-emerald-50/60")}>
         <div className="flex min-w-0 items-center justify-between gap-1">
-          <FantasyPlayerIdentity player={row.player} team={row.displayTeam ?? undefined} compact />
+          <FantasyPlayerIdentity
+            player={row.player}
+            team={row.displayTeam ?? undefined}
+            compact
+            nameClassName={PLAYER_NAME_TEXT}
+            teamClassName={TEAM_ABBR_TEXT}
+          />
           <div className="flex shrink-0 items-center gap-0.5">
             <TargetButton row={row} targetRounds={targetRounds} onToggleRound={onToggleTargetRound} />
             <AddRemoveButton row={row} selected={selected} disabled={!selected && !canAddToTeam} onToggleTeam={onToggleTeam} />
@@ -630,7 +712,7 @@ function DraftPreviewTableRow({
       </td>
       <td className={cn(FANTASY_TABLE_BODY_CELL, CELL_PAD, "text-center")}>
         {canonicalPosition ? (
-          <PositionRankBadge position={canonicalPosition} positionRank={row.jkb?.positionRank} />
+          <PositionRankBadge position={canonicalPosition} positionRank={row.jkb?.positionRank} className={POSITION_BADGE_TEXT} />
         ) : (
           <NotAvailable />
         )}
@@ -641,13 +723,23 @@ function DraftPreviewTableRow({
       <td className={cn(FANTASY_TABLE_BODY_CELL, CELL_PAD, "text-center")}>
         <ParPerGameValue value={row.jkbParPerGame} thresholds={positionHeat.parThresholds} />
       </td>
-      <ModelRankCell rank={row.modelRank} />
-      <GradientRankCell value={row.jkb?.projectionRank} maxRank={positionHeat.projectionRankMax} className={CELL_PAD} />
-      <GradientRankCell value={row.jkb?.averageRank} maxRank={positionHeat.avgRankMax} className={CELL_PAD} />
-      <GradientRankCell value={row.jkb?.strengthOfSchedule} maxRank={positionHeat.sosMax} className={CELL_PAD} />
-      <GradientRankCell value={row.seasonPointsRank2025} maxRank={positionHeat.seasonPointsRankMax} className={CELL_PAD} />
-      <GradientRankCell value={row.seasonPpgRank2025} maxRank={positionHeat.seasonPpgRankMax} className={CELL_PAD} />
-      <GradientRankCell value={row.lastEightPointsRank} maxRank={positionHeat.lastEightPointsRankMax} className={CELL_PAD} />
+      {canonicalPosition && row.modelRank != null && modelPositionRank ? (
+        <GradientRankCell
+          value={modelPositionRank.positionRank}
+          maxRank={modelPositionRank.poolSize}
+          displayText={`${canonicalPosition}${modelPositionRank.positionRank}`}
+          title={`Model Rank: ${row.modelRank} overall\nModel positional rank: ${canonicalPosition}${modelPositionRank.positionRank}`}
+          className={CELL_PAD}
+        />
+      ) : (
+        <NotAvailableCell />
+      )}
+      <GradientRankCell value={row.jkb?.projectionRank} maxRank={positionHeat.projectionRankMax} className={CELL_PAD} displayText={positionPrefixedRank(canonicalPosition, row.jkb?.projectionRank)} />
+      <GradientRankCell value={row.jkb?.averageRank} maxRank={positionHeat.avgRankMax} className={CELL_PAD} displayText={positionPrefixedRank(canonicalPosition, row.jkb?.averageRank)} />
+      <GradientRankCell value={row.jkb?.strengthOfSchedule} maxRank={positionHeat.sosMax} className={CELL_PAD} displayText={positionPrefixedRank(canonicalPosition, row.jkb?.strengthOfSchedule)} />
+      <GradientRankCell value={row.seasonPointsRank2025} maxRank={positionHeat.seasonPointsRankMax} className={CELL_PAD} displayText={positionPrefixedRank(canonicalPosition, row.seasonPointsRank2025)} />
+      <GradientRankCell value={row.seasonPpgRank2025} maxRank={positionHeat.seasonPpgRankMax} className={CELL_PAD} displayText={positionPrefixedRank(canonicalPosition, row.seasonPpgRank2025)} />
+      <GradientRankCell value={row.lastEightPointsRank} maxRank={positionHeat.lastEightPointsRankMax} className={CELL_PAD} displayText={positionPrefixedRank(canonicalPosition, row.lastEightPointsRank)} />
       {canonicalPosition ? (
         <>
           <MatchupOpponentCell opponent={row.jkb?.playoffWeek15Opponent} position={canonicalPosition} className={CELL_PAD} />

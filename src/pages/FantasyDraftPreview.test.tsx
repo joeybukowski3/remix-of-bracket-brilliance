@@ -456,13 +456,13 @@ describe("/fantasy-football/draft-preview — player-cell add/remove action (Pha
   });
 });
 
-describe("/fantasy-football/draft-preview — responsive table density (Phase 2D)", () => {
-  it("applies responsive compact cell classes to the board table (denser on mobile, current density preserved at md:)", () => {
+describe("/fantasy-football/draft-preview — responsive table density (Phase 2F fluid sizing)", () => {
+  it("applies fluid clamp()-based cell padding to the board table (scales continuously with viewport width)", () => {
     renderPage();
     const table = getBoardTable();
     const firstHeaderCell = within(table).getAllByRole("columnheader")[0];
-    expect(firstHeaderCell.className).toMatch(/md:px-3/);
-    expect(firstHeaderCell.className).toMatch(/px-1\.5/);
+    expect(firstHeaderCell.className).toMatch(/px-\[clamp\(/);
+    expect(firstHeaderCell.className).toMatch(/py-\[clamp\(/);
   });
 
   it("keeps player identity (name + team) present and legible in the sticky player cell", () => {
@@ -724,14 +724,19 @@ describe("/fantasy-football/draft-preview — heat-map coverage (Phase 2E)", () 
     expect(projectionCell.textContent?.trim()).toBe("—");
   });
 
-  it("renders Model Rk as the canonical flat muted pill (reused from FantasyParBoard's ModelRankCell), not an invented gradient", () => {
+  it("renders Model Rk as a position-relative display label (e.g. RB4), derived from -- but never overwriting -- the cross-position Model Rank authority (Phase 2F)", () => {
     renderPage();
-    const withModelRank = DRAFT_PREVIEW_ROWS_2026.find((row) => row.modelRank != null)!;
+    const withModelRank = DRAFT_PREVIEW_ROWS_2026.find(
+      (row) => row.modelRank != null && row.canonicalPosition != null,
+    )!;
+    const modelRankBefore = withModelRank.modelRank;
     const row = findRowByPlayer(getBoardTable(), withModelRank.player);
     const cell = row.querySelectorAll("td")[7] as HTMLElement; // Model Rk
-    expect(cell.style.backgroundColor).toBe(""); // no gradient background
-    expect(cell.querySelector("span")?.className ?? "").toMatch(/border-slate-300/);
-    expect(cell.textContent?.trim()).toBe(String(withModelRank.modelRank));
+    expect(cell.textContent?.trim()).toMatch(new RegExp(`^${withModelRank.canonicalPosition}\\d+$`));
+    expect(cell.style.backgroundColor).not.toBe(""); // now heat-mapped, scoped to the derived positional pool
+    expect(cell.getAttribute("title")).toContain(`Model Rank: ${withModelRank.modelRank} overall`);
+    // The underlying authority itself is never mutated by deriving the display label.
+    expect(withModelRank.modelRank).toBe(modelRankBefore);
   });
 
   it("keeps canonical heat-map treatment visible when a position focus is active (dimming is opacity-only, no color override)", () => {
@@ -751,25 +756,60 @@ describe("/fantasy-football/draft-preview — heat-map coverage (Phase 2E)", () 
   });
 });
 
-describe("/fantasy-football/draft-preview — sticky column header (Phase 2E)", () => {
-  it("makes the board's thead sticky against page scroll, offset below the site header, with an opaque background", () => {
+describe("/fantasy-football/draft-preview — sticky column header (Phase 2F)", () => {
+  it("does not rely on thead itself for sticky positioning (root-cause fix -- sticky lives on every th)", () => {
     renderPage();
     const table = getBoardTable();
     const thead = table.querySelector("thead")!;
-    expect(thead.className).toMatch(/sticky/);
-    expect(thead.className).toMatch(/top-\[73px\]/);
-    expect(thead.className).toMatch(/bg-slate-100/);
-    expect(thead.className).toMatch(/z-20/);
+    expect(thead.className).not.toMatch(/sticky/);
   });
 
-  it("keeps the sticky Sleeper Rank and Player columns working alongside the sticky header", () => {
+  it("makes every header cell sticky against page scroll, offset below the site header, with an opaque background", () => {
     renderPage();
     const table = getBoardTable();
     const headerCells = within(table).getAllByRole("columnheader");
-    expect(headerCells[0].className).toMatch(/sticky/);
-    expect(headerCells[0].className).toMatch(/left-0/);
-    expect(headerCells[1].className).toMatch(/sticky/);
-    expect(headerCells[1].className).toMatch(/left-10/);
+    expect(headerCells.length).toBeGreaterThan(2);
+    for (const cell of headerCells) {
+      expect(cell.className).toMatch(/sticky/);
+      expect(cell.className).toMatch(/top-\[73px\]/);
+      expect(cell.className).toMatch(/bg-slate-100/);
+    }
+  });
+
+  it("gives the sticky Sleeper Rank and Player header cells a higher z-index than ordinary sticky header cells", () => {
+    renderPage();
+    const table = getBoardTable();
+    const headerCells = within(table).getAllByRole("columnheader");
+    const rankHeader = headerCells[0];
+    const playerHeader = headerCells[1];
+    const posRkHeader = headerCells[2];
+
+    expect(rankHeader.className).toMatch(/sticky/);
+    expect(rankHeader.className).toMatch(/left-0/);
+    expect(rankHeader.className).toMatch(/z-30/);
+    expect(playerHeader.className).toMatch(/sticky/);
+    expect(playerHeader.className).toMatch(/left-10/);
+    expect(playerHeader.className).toMatch(/z-30/);
+
+    expect(posRkHeader.className).toMatch(/z-20/);
+    expect(posRkHeader.className).not.toMatch(/left-0|left-10/);
+  });
+
+  it("keeps the sticky body Rank/Player cells below the sticky header layer", () => {
+    renderPage();
+    const gibbsRow = findRowByPlayer(getBoardTable(), "Jahmyr Gibbs");
+    const bodyCells = gibbsRow.querySelectorAll("td");
+    expect(bodyCells[0].className).toMatch(/sticky/);
+    expect(bodyCells[0].className).toMatch(/z-10/);
+    expect(bodyCells[1].className).toMatch(/sticky/);
+    expect(bodyCells[1].className).toMatch(/z-10/);
+  });
+
+  it("renders exactly one visible column-header row", () => {
+    renderPage();
+    const table = getBoardTable();
+    expect(table.querySelectorAll("thead").length).toBe(1);
+    expect(table.querySelectorAll("thead tr").length).toBe(1);
   });
 
   it("still does not reintroduce a max-height internal vertical scroller on the board", () => {
@@ -782,6 +822,115 @@ describe("/fantasy-football/draft-preview — sticky column header (Phase 2E)", 
     renderPage();
     const scroller = screen.getByRole("region", { name: "Draft preview board" });
     expect(scroller.className).toMatch(/overflow-x-auto/);
+  });
+
+  it("uses border-separate (never border-collapse) on the board table, the root-cause fix for sticky th cells", () => {
+    renderPage();
+    const table = getBoardTable();
+    expect(table.className).toMatch(/border-separate/);
+    expect(table.className).not.toMatch(/border-collapse/);
+  });
+});
+
+describe("/fantasy-football/draft-preview — responsive fluid sizing (Phase 2F)", () => {
+  it("scopes fluid clamp() sizing to the board's header and body cells", () => {
+    renderPage();
+    const table = getBoardTable();
+    const thead = table.querySelector("thead")!;
+    expect(thead.className).toMatch(/text-\[clamp\(/); // header text size, inherited by every th
+
+    const headerCells = within(table).getAllByRole("columnheader");
+    expect(headerCells[2].className).toMatch(/px-\[clamp\(/);
+
+    const gibbsRow = findRowByPlayer(table, "Jahmyr Gibbs");
+    expect(table.className).toMatch(/text-\[clamp\(/); // body cell text size
+    expect(gibbsRow.querySelectorAll("td")[0].className).toMatch(/px-\[clamp\(/);
+  });
+
+  it("keeps player identity (name + team) present and legible under fluid sizing", () => {
+    renderPage();
+    const gibbsRow = findRowByPlayer(getBoardTable(), "Jahmyr Gibbs");
+    expect(within(gibbsRow).getByText("Jahmyr Gibbs")).toBeTruthy();
+    expect(within(gibbsRow).getByText("DET")).toBeTruthy();
+  });
+
+  it("keeps the add/remove and target action controls rendered and operable under fluid sizing", () => {
+    renderPage();
+    const gibbsRow = findRowByPlayer(getBoardTable(), "Jahmyr Gibbs");
+    expect(within(gibbsRow).getByRole("button", { name: "Add Jahmyr Gibbs to team" })).toBeTruthy();
+    expect(within(gibbsRow).getByRole("button", { name: "Target Jahmyr Gibbs for a round" })).toBeTruthy();
+  });
+});
+
+describe("/fantasy-football/draft-preview — position-relative display ranks (Phase 2F)", () => {
+  it("shows RB-prefixed Projection Rk / AVG Rk for an RB row", () => {
+    renderPage();
+    const rbRows = filterDraftPreviewRows(DRAFT_PREVIEW_ROWS_2026, "RB", "");
+    const sample = rbRows.find((row) => row.jkb?.projectionRank != null && row.jkb?.averageRank != null)!;
+    expect(sample).toBeTruthy();
+    const row = findRowByPlayer(getBoardTable(), sample.player);
+    const cells = row.querySelectorAll("td");
+    expect(cells[8].textContent?.trim()).toBe(`RB${sample.jkb!.projectionRank}`); // Projection Rk
+    expect(cells[9].textContent?.trim()).toBe(`RB${sample.jkb!.averageRank}`); // AVG Rk
+  });
+
+  it("shows WR-prefixed 2025 Pts Rk / 2025 PPG Rk / L8 Pts Rk for a WR row", () => {
+    renderPage();
+    const wrRows = filterDraftPreviewRows(DRAFT_PREVIEW_ROWS_2026, "WR", "");
+    const sample = wrRows.find(
+      (row) => row.seasonPointsRank2025 != null && row.seasonPpgRank2025 != null && row.lastEightPointsRank != null,
+    )!;
+    expect(sample).toBeTruthy();
+    const row = findRowByPlayer(getBoardTable(), sample.player);
+    const cells = row.querySelectorAll("td");
+    expect(cells[11].textContent?.trim()).toBe(`WR${sample.seasonPointsRank2025}`);
+    expect(cells[12].textContent?.trim()).toBe(`WR${sample.seasonPpgRank2025}`);
+    expect(cells[13].textContent?.trim()).toBe(`WR${sample.lastEightPointsRank}`);
+  });
+
+  it("shows a QB-prefixed Model Rk display label, distinct from the raw cross-position authority", () => {
+    renderPage();
+    const qbRows = filterDraftPreviewRows(DRAFT_PREVIEW_ROWS_2026, "QB", "");
+    const sample = qbRows.find((row) => row.modelRank != null)!;
+    expect(sample).toBeTruthy();
+    const row = findRowByPlayer(getBoardTable(), sample.player);
+    const cell = row.querySelectorAll("td")[7];
+    expect(cell.textContent?.trim()).toMatch(/^QB\d+$/);
+  });
+
+  it("shows a TE-prefixed SOS label when SOS is populated for a TE row", () => {
+    renderPage();
+    const teRows = filterDraftPreviewRows(DRAFT_PREVIEW_ROWS_2026, "TE", "");
+    const sample = teRows.find((row) => row.jkb?.strengthOfSchedule != null)!;
+    if (!sample) return; // no TE with SOS in the fixed source data -- nothing to assert
+    const row = findRowByPlayer(getBoardTable(), sample.player);
+    const cell = row.querySelectorAll("td")[10];
+    expect(cell.textContent?.trim()).toBe(`TE${sample.jkb!.strengthOfSchedule}`);
+  });
+
+  it("derives the Model positional rank deterministically and never mutates the source Model Rank authority", () => {
+    const before = JSON.stringify(DRAFT_PREVIEW_ROWS_2026.map((row) => row.modelRank));
+    const first = renderPage();
+    expect(JSON.stringify(DRAFT_PREVIEW_ROWS_2026.map((row) => row.modelRank))).toBe(before);
+
+    // Re-rendering produces the exact same derived label -- deterministic, not randomly tie-broken.
+    const qbRows = filterDraftPreviewRows(DRAFT_PREVIEW_ROWS_2026, "QB", "");
+    const sample = qbRows.find((row) => row.modelRank != null)!;
+    const firstLabel = findRowByPlayer(getBoardTable(), sample.player).querySelectorAll("td")[7].textContent?.trim();
+    first.unmount();
+
+    renderPage();
+    const secondLabel = findRowByPlayer(getBoardTable(), sample.player).querySelectorAll("td")[7].textContent?.trim();
+    expect(secondLabel).toBe(firstLabel);
+  });
+
+  it("keeps JKB PAR/G numeric (not position-rank text) and PPG columns numeric", () => {
+    renderPage();
+    const gibbsRow = findRowByPlayer(getBoardTable(), "Jahmyr Gibbs");
+    const cells = gibbsRow.querySelectorAll("td");
+    expect(cells[6].textContent?.trim()).toMatch(/^[+-]\d/); // JKB PAR/G
+    expect(cells[4].textContent?.trim()).toMatch(/^\d/); // Sleeper PPG
+    expect(cells[5].textContent?.trim()).toMatch(/^\d/); // JKB Proj PPG
   });
 });
 
