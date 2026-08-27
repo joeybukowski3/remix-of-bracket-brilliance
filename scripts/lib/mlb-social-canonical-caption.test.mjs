@@ -9,8 +9,6 @@ import {
   buildCanonicalOmittedReply,
   buildHrCanonicalCaption,
   buildKCanonicalCaption,
-  HR_CANONICAL_LINK,
-  K_CANONICAL_LINK,
   weightedLength,
 } from "./mlb-social-canonical-caption.mjs";
 
@@ -69,7 +67,8 @@ describe("buildKCanonicalCaption", () => {
     assert.equal(result.captionRows.length, 2);
     assert.ok(weightedLength(result.caption) <= 280);
     assert.deepEqual(result.captionRows.map((r) => r.playerName), plan.rows.map((r) => r.playerName));
-    assert.ok(result.caption.includes(K_CANONICAL_LINK));
+    assert.ok(result.caption.split("\n").includes("Free model at link in bio"));
+    assert.doesNotMatch(result.caption, /joeknowsball\.com/);
     for (const banned of FORBIDDEN_WORDING) assert.doesNotMatch(result.caption, banned);
   });
 
@@ -120,7 +119,8 @@ describe("buildHrCanonicalCaption", () => {
     assert.equal(result.captionRows.length, 2);
     assert.ok(weightedLength(result.caption) <= 280);
     assert.deepEqual(result.captionRows.map((r) => r.playerName), plan.rows.map((r) => r.playerName));
-    assert.ok(result.caption.includes(HR_CANONICAL_LINK));
+    assert.ok(result.caption.split("\n").includes("Free model at link in bio"));
+    assert.doesNotMatch(result.caption, /joeknowsball\.com/);
     for (const banned of FORBIDDEN_WORDING) assert.doesNotMatch(result.caption, banned);
   });
 
