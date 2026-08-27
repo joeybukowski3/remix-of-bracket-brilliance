@@ -82,12 +82,12 @@ const availableDetail: StrikeoutPropDetail = {
 function comparativeDetail(
   row: PitcherStrikeoutTeamRow,
   key: string,
-  kPerInning: number,
+  kPerGame: number,
   opponentKPerGame: number,
   opponentXba: number | null,
 ): StrikeoutPropDetail {
   const totalOuts = 60;
-  const strikeouts = kPerInning * (totalOuts / 3);
+  const strikeouts = kPerGame * 10;
   return {
     key,
     pitcher: row.pitcher,
@@ -95,24 +95,35 @@ function comparativeDetail(
     opponent: row.opponent,
     gameDate: "2026-07-08",
     pitcherLastFiveStarts: [],
-    pitcherLastFiveSummary: { gamesUsed: 5, totalOuts, totalStrikeouts: strikeouts },
+    pitcherLastFiveSummary: { gamesUsed: 5, totalOuts, totalStrikeouts: strikeouts / 2, averageStrikeouts: kPerGame },
     opponentLastFiveGames: [],
     pitcherVenueSplits: {
       home: {
         site: "home",
-        season: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
-        lastFiveAtSite: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
+        season: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerGame * 4 },
+        lastFiveAtSite: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerGame * 4 },
       },
       away: {
         site: "away",
-        season: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
-        lastFiveAtSite: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerInning * 20 },
+        season: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerGame * 4 },
+        lastFiveAtSite: { gamesUsed: 5, totalOuts: 30, strikeouts: strikeouts / 2, hitsAllowed: 20, strikeoutRate: kPerGame * 4 },
       },
     },
     opponentContext: {
       home: { kPerNine: opponentKPerGame, xba: opponentXba },
       away: { kPerNine: opponentKPerGame, xba: opponentXba },
       last10: { kPerNine: opponentKPerGame, xba: opponentXba },
+    },
+    opponentReference: {
+      cutoffDate: "2026-07-08",
+      pitcherHand: "R",
+      opponentKRateRankL30: 1,
+      opponentKRateRankL30VsHand: 2,
+      opponentWrcPlusRankL30: 3,
+      opponentWrcPlusRankL30VsHand: 4,
+      opponentWrcPlusRankL30Home: 5,
+      opponentWrcPlusRankL30Away: 25,
+      opponentWrcPlusRankL10: 8,
     },
     generatedAt: "2026-07-08T12:00:00.000Z",
     source: "test",
@@ -340,11 +351,50 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     expect(screen.getByText("Core / Market")).toHaveClass("text-center");
     expect(screen.getByText("Pitcher Stats")).toHaveClass("text-center");
     expect(screen.getByText("Opposing Team Stats")).toHaveClass("text-center");
-    expect(screen.getByText("Opp K/Game L10")).toHaveClass("text-center");
-    expect(screen.getByText("Opp xBA Split")).toHaveClass("text-center");
+    expect(screen.getByText("Opp wRC+ Rank L30 vs Hand")).toHaveClass("text-center");
+    expect(screen.getByText("Opp wRC+ Rank L30 @ Site")).toHaveClass("text-center");
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("applies visible-row metric tones with reversed xBA direction and neutral unavailable values", async () => {
+  it("selects pitcher and opponent site metrics from the correct side of an away matchup", async () => {
+    vi.resetModules();
+    const detail = comparativeDetail(baseRow, "dean-kremer|bal|chc|2026-07-08", 6, 12, null);
+    detail.pitcherVenueSplits!.home.season.strikeouts = 40;
+    detail.pitcherVenueSplits!.away.season.strikeouts = 15;
+    detail.opponentContext!.home.kPerNine = 12;
+    detail.opponentContext!.away.kPerNine = 7;
+    mockPropsData([baseRow]);
+    mockDetails({ detailsByKey: new Map([[detail.key, detail]]) });
+    await renderPage();
+
+    const row = firstTrigger("Show recent strikeout details for Dean Kremer");
+    // BAL is away in BAL@CHC: pitcher uses away (15 / 5 = 3.0), while CHC uses its home split.
+    expect(within(row).getAllByText("3.0").length).toBeGreaterThan(0);
+    expect(within(row).getByText("12.0")).toBeInTheDocument();
+    expect(within(row).getByText("5th")).toHaveAttribute("data-testid", "mlb-rank-heat");
+    expect(within(row).queryByText("25th")).not.toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("selects pitcher and opponent site metrics from the correct side of a home matchup", async () => {
+    vi.resetModules();
+    const homeRow = { ...baseRow, gameKey: "CHC@BAL" };
+    const detail = comparativeDetail(homeRow, "dean-kremer|bal|chc|2026-07-08", 6, 12, null);
+    detail.pitcherVenueSplits!.home.season.strikeouts = 40;
+    detail.pitcherVenueSplits!.away.season.strikeouts = 15;
+    detail.opponentContext!.home.kPerNine = 12;
+    detail.opponentContext!.away.kPerNine = 7;
+    mockPropsData([homeRow]);
+    mockDetails({ detailsByKey: new Map([[detail.key, detail]]) });
+    await renderPage();
+
+    const row = firstTrigger("Show recent strikeout details for Dean Kremer");
+    // BAL is home in CHC@BAL: pitcher uses home (40 / 5 = 8.0), while CHC uses its away split.
+    expect(within(row).getByText("8.0")).toBeInTheDocument();
+    expect(within(row).getByText("7.0")).toBeInTheDocument();
+    expect(within(row).getByText("25th")).toHaveAttribute("data-testid", "mlb-rank-heat");
+    expect(within(row).queryByText("5th")).not.toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("applies visible-row tones to the new K/game metrics and keeps unavailable values neutral", async () => {
     vi.resetModules();
     const rows = [
       { ...baseRow, projectedIP: 4.5, strikeoutMatchupScore: 60 },
@@ -361,12 +411,10 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     await renderPage();
 
     const highRow = firstTrigger("Show recent strikeout details for Ian Seymour");
-    expect(within(highRow).getAllByText("1.10").every((value) => value.getAttribute("data-metric-tone") === "positive")).toBe(true);
-    expect(within(highRow).getAllByText("0.190").every((value) => value.getAttribute("data-metric-tone") === "positive")).toBe(true);
+    expect(within(highRow).getAllByText("1.1").filter((value) => value.hasAttribute("data-metric-tone")).every((value) => value.getAttribute("data-metric-tone") === "positive")).toBe(true);
 
     const lowRow = firstTrigger("Show recent strikeout details for Dean Kremer");
-    expect(within(lowRow).getAllByText("0.50").every((value) => value.getAttribute("data-metric-tone") === "negative")).toBe(true);
-    expect(within(lowRow).getAllByText("0.310").every((value) => value.getAttribute("data-metric-tone") === "negative")).toBe(true);
+    expect(within(lowRow).getAllByText("0.5").filter((value) => value.hasAttribute("data-metric-tone")).every((value) => value.getAttribute("data-metric-tone") === "negative")).toBe(true);
 
     const unavailableRow = firstTrigger("Show recent strikeout details for Zac Gallen");
     const unavailableMetrics = within(unavailableRow).getAllByText("—").filter((value) => value.hasAttribute("data-metric-tone"));

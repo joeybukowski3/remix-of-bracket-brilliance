@@ -170,11 +170,12 @@ export async function fetchBoxscoreCached(gamePk, cache, options = {}) {
 }
 
 export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
-  if (!boxscore?.teams) return { date: officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
+  if (!boxscore?.teams) return { date: officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
   const isHomeTeam = boxscore.teams.home?.team?.id === teamId;
   const own = isHomeTeam ? boxscore.teams.home : boxscore.teams.away;
   const opposing = isHomeTeam ? boxscore.teams.away : boxscore.teams.home;
   let opposingStartingPitcher = null;
+  let opposingStartingPitcherId = null;
   let opposingStarterInningsPitched = null;
   let opposingStarterStrikeouts = null;
   let opposingStarterWalks = null;
@@ -182,6 +183,7 @@ export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
     const pitching = player?.stats?.pitching;
     if (pitching?.gamesStarted === 1) {
       opposingStartingPitcher = player?.person?.fullName ?? null;
+      opposingStartingPitcherId = toFiniteNumber(player?.person?.id);
       opposingStarterInningsPitched = pitching.inningsPitched ?? null;
       opposingStarterStrikeouts = pitching.strikeOuts ?? null;
       opposingStarterWalks = pitching.baseOnBalls ?? pitching.walks ?? null;
@@ -192,6 +194,7 @@ export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
     date: officialDate ?? null,
     opponent: opposing?.team?.abbreviation ?? null,
     opposingStartingPitcher,
+    opposingStartingPitcherId,
     opposingStarterInningsPitched,
     opposingStarterStrikeouts,
     opposingStarterWalks,
@@ -203,7 +206,7 @@ export async function fetchOpponentLastFiveGamesDetail(teamId, games, boxscoreCa
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   return runLimited(games, concurrency, async (game) => {
     const { boxscore, error } = await fetchBoxscoreCached(game.gamePk, boxscoreCache, options);
-    if (error || !boxscore) return { date: game.officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
+    if (error || !boxscore) return { date: game.officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
     return deriveOpponentGameSummary(boxscore, teamId, game.officialDate);
   });
 }

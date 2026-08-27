@@ -26,6 +26,10 @@ export type PitcherStartDetail = StrikeoutPropStartRow & {
   pitchCount?: number | null;
   battersFaced?: number | null;
   gamesStarted?: number | null;
+  opponentKRateRankL30?: number | null;
+  opponentKRateRankL30VsHand?: number | null;
+  opponentWrcPlusRankL30?: number | null;
+  opponentMetricsCutoff?: string | null;
 };
 
 export type PitcherLastFiveSummary = {
@@ -80,9 +84,12 @@ export type StrikeoutPropOpponentGameRow = {
   date: string | null;
   opponent: string | null;
   opposingStartingPitcher: string | null;
+  opposingStartingPitcherId?: number | null;
   opposingStarterInningsPitched: number | string | null;
   opposingStarterStrikeouts: number | null;
   opposingStarterWalks?: number | null;
+  opposingStarterSeasonKPerGame?: number | null;
+  opposingStarterLastFiveKPerGamePrior?: number | null;
   teamTotalStrikeouts: number | null;
 };
 
@@ -113,6 +120,18 @@ export type OpponentContext = {
   warnings?: string[];
 };
 
+export type OpponentReferenceContext = {
+  cutoffDate: string;
+  pitcherHand: "L" | "R" | null;
+  opponentKRateRankL30: number | null;
+  opponentKRateRankL30VsHand: number | null;
+  opponentWrcPlusRankL30: number | null;
+  opponentWrcPlusRankL30VsHand: number | null;
+  opponentWrcPlusRankL30Home: number | null;
+  opponentWrcPlusRankL30Away: number | null;
+  opponentWrcPlusRankL10: number | null;
+};
+
 export type StrikeoutPropDetail = {
   key: string;
   legacyKey?: string;
@@ -126,6 +145,7 @@ export type StrikeoutPropDetail = {
   pitcher: string;
   team: string;
   opponent: string;
+  pitcherHand?: "L" | "R" | null;
   gameDate: string | null;
   pitcherLastFiveStarts: PitcherStartDetail[];
   pitcherRecentStarts?: PitcherStartDetail[];
@@ -134,6 +154,7 @@ export type StrikeoutPropDetail = {
   opponentLastFiveGames: StrikeoutPropOpponentGameRow[];
   opponentLastFiveVsStartersSummary?: OpponentLastFiveVsStartersSummary | null;
   opponentContext?: OpponentContext | null;
+  opponentReference?: OpponentReferenceContext | null;
   sourceWarnings?: string[];
   completeness?: StrikeoutDetailCompleteness | null;
   generatedAt: string;

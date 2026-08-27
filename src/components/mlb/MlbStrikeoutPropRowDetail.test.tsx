@@ -97,9 +97,9 @@ describe("MlbStrikeoutPropRowDetail", () => {
   const rateDetail: StrikeoutPropDetail = {
     ...detail,
     pitcherRecentStarts: [
-      { date: "2026-07-18", opponent: "CWS", inningsPitched: "6.0", outsRecorded: 18, strikeouts: 7, hitsAllowed: 3, walksAllowed: 2, pitchCount: 96 },
-      { date: "2026-07-10", opponent: "SD", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 4, hitsAllowed: 5, walksAllowed: null, pitchCount: 88 },
-      { date: "2026-07-04", opponent: "NYY", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 5, hitsAllowed: 4, walksAllowed: 2, pitchCount: 91 },
+      { date: "2026-07-18", opponent: "CWS", inningsPitched: "6.0", outsRecorded: 18, strikeouts: 7, hitsAllowed: 3, walksAllowed: 2, pitchCount: 96, opponentKRateRankL30: 1, opponentKRateRankL30VsHand: 2, opponentWrcPlusRankL30: 30 },
+      { date: "2026-07-10", opponent: "SD", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 4, hitsAllowed: 5, walksAllowed: null, pitchCount: 88, opponentKRateRankL30: 8, opponentKRateRankL30VsHand: 21, opponentWrcPlusRankL30: 3 },
+      { date: "2026-07-04", opponent: "NYY", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 5, hitsAllowed: 4, walksAllowed: 2, pitchCount: 91, opponentKRateRankL30: 21, opponentKRateRankL30VsHand: 30, opponentWrcPlusRankL30: 8 },
     ],
     pitcherLastFiveSummary: {
       gamesUsed: 3,
@@ -117,39 +117,44 @@ describe("MlbStrikeoutPropRowDetail", () => {
       averagePitchCount: 91.67,
     },
     opponentLastFiveGames: [
-      { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Starter Over", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, opposingStarterWalks: 2, teamTotalStrikeouts: 9 },
-      { date: "2026-07-21", opponent: "BOS", opposingStartingPitcher: "Starter Under", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 4, opposingStarterWalks: null, teamTotalStrikeouts: 8 },
-      { date: "2026-07-20", opponent: "NYY", opposingStartingPitcher: "Starter Push", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, opposingStarterWalks: 1, teamTotalStrikeouts: 10 },
+      { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Starter Over", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, opposingStarterWalks: 2, opposingStarterSeasonKPerGame: 6.4, opposingStarterLastFiveKPerGamePrior: 7.2, teamTotalStrikeouts: 9 },
+      { date: "2026-07-21", opponent: "BOS", opposingStartingPitcher: "Starter Under", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 4, opposingStarterWalks: null, opposingStarterSeasonKPerGame: 5.1, opposingStarterLastFiveKPerGamePrior: 4.8, teamTotalStrikeouts: 8 },
+      { date: "2026-07-20", opponent: "NYY", opposingStartingPitcher: "Starter Push", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, opposingStarterWalks: 1, opposingStarterSeasonKPerGame: 5.8, opposingStarterLastFiveKPerGamePrior: 6, teamTotalStrikeouts: 10 },
     ],
     opponentLastFiveVsStartersSummary: undefined,
   };
   const currentLineRow = { gameKey: "TB@TOR", team: "TOR", kLine: 5 } as PitcherStrikeoutTeamRow;
 
-  it("replaces pitcher H/9 and K/9 with per-inning H/K/BB rates and total-based AVG values", () => {
+  it("renders the requested recent-performance columns, ordinal ranks, and rank heat styling", () => {
     render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
     const panel = screen.getByText("Shane Bieber — Last 5 Starts").parentElement as HTMLElement;
-    expect(within(panel).getAllByText("Hits/Inning").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("K/Inning").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("BB/Inning").length).toBeGreaterThan(0);
-    expect(within(panel).queryByText("H/9")).not.toBeInTheDocument();
-    expect(within(panel).queryByText("K/9")).not.toBeInTheDocument();
-    expect(within(panel).getAllByText("0.50").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("1.17").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("0.33").length).toBeGreaterThan(0);
+    const headers = Array.from(panel.querySelectorAll("table thead th")).map((header) => header.textContent?.trim());
+    expect(headers).toEqual(["Date", "Opp", "IP", "K", "Hits Allowed", "BB Allowed", "Opp K% Rank L30", "Opp K% Rank L30 vs Hand", "Opp wRC+ Rank L30", "Pitch Count"]);
+    for (const label of ["Hits Allowed", "BB Allowed", "Opp K% Rank L30", "Opp K% Rank L30 vs Hand", "Opp wRC+ Rank L30", "Pitch Count"]) {
+      expect(within(panel).getAllByText(label).length).toBeGreaterThan(0);
+    }
+    expect(within(panel).queryByText("Hits/Inning")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("BB/Inning")).not.toBeInTheDocument();
+    expect(within(panel).getAllByText("1st").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("21st").length).toBeGreaterThan(0);
+    const rankCells = within(panel).getAllByTestId("mlb-rank-heat");
+    expect(rankCells.some((cell) => cell.className.includes("emerald"))).toBe(true);
+    expect(rankCells.some((cell) => cell.className.includes("rose"))).toBe(true);
     const desktopRows = panel.querySelectorAll("table tbody tr");
-    expect(desktopRows[1].children[6]).toHaveTextContent("N/A");
+    expect(desktopRows[1].children[5]).toHaveTextContent("N/A");
   });
 
-  it("adds opponent starter and team per-inning columns with clear Team K naming", () => {
+  it("renders opposing starter pregame K/game fields without relabeling matchup rates", () => {
     render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
     const panel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
-    for (const label of ["SP K/Inning", "SP BB/Inning", "Team K", "Team K/Inning"]) {
+    const headers = Array.from(panel.querySelectorAll("table thead th")).map((header) => header.textContent?.trim());
+    expect(headers).toEqual(["Date", "Opp", "Opposing SP", "SP IP", "SP K", "SP K Per Game SZN", "SP K Avg Per Game L5 Prior", "Team K", "Team K/Inning"]);
+    for (const label of ["SP K Per Game SZN", "SP K Avg Per Game L5 Prior", "Team K", "Team K/Inning"]) {
       expect(within(panel).getAllByText(label).length).toBeGreaterThan(0);
     }
     expect(within(panel).queryByText("Game K")).not.toBeInTheDocument();
-    expect(within(panel).getAllByText("1.17").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("0.33").length).toBeGreaterThan(0);
-    expect(within(panel).getAllByText("1.00").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("6.4").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("7.2").length).toBeGreaterThan(0);
   });
 
   it("colors pitcher K and opponent SP K against today's line for over, under, and push", () => {
@@ -341,7 +346,7 @@ describe("opponent AVG footer", () => {
     const opposingSpValue = opposingSpLabel.nextElementSibling;
     expect(opposingSpValue).not.toBeNull();
     expect(opposingSpValue?.textContent).toBe("");
-    expect(within(opponentAvgCard).getByText("SP BB/Inning").nextElementSibling).toHaveTextContent("N/A");
+    expect(within(opponentAvgCard).getByText("SP K Avg Per Game L5 Prior").nextElementSibling).toHaveTextContent("N/A");
   });
 });
 
@@ -405,7 +410,7 @@ describe("opponent Last 10 games", () => {
   });
 });
 
-describe("pitcher Home/Away split K/Inning and H/9", () => {
+describe("pitcher Home/Away split K/Inning and K/Game", () => {
   const venueDetail: StrikeoutPropDetail = {
     ...detail,
     pitcherVenueSplits: {
@@ -432,11 +437,12 @@ describe("pitcher Home/Away split K/Inning and H/9", () => {
     expect(within(splitTable).getAllByText("K/Inning").length).toBeGreaterThanOrEqual(2);
     expect(within(splitTable).getAllByText("K/Inning +/-").length).toBeGreaterThanOrEqual(2);
     expect(within(splitTable).queryByText("K/9")).not.toBeInTheDocument();
-    expect(within(splitTable).getAllByText("H/9").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).getAllByText("K/Game").length).toBeGreaterThanOrEqual(2);
+    expect(within(splitTable).queryByText("H/9")).not.toBeInTheDocument();
     expect(within(splitTable).getAllByText("Hit Avg +/-").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("uses combined season totals for K/Inning and H/9 baselines and all four deltas", () => {
+  it("uses combined season totals for K/Inning and hit-rate baselines while displaying K/Game", () => {
     render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
     const detailPanel = screen.getByTestId("strikeout-prop-detail");
     expect(within(detailPanel).getAllByText("+0.13").length).toBeGreaterThan(0);
