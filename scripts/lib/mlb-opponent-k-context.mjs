@@ -1,3 +1,5 @@
+import { fetchSavantCsv } from "./mlb-savant-fetch.mjs";
+
 const MLB_STATS_API = "https://statsapi.mlb.com/api/v1";
 const SAVANT_SEARCH_CSV = "https://baseballsavant.mlb.com/statcast_search/csv";
 const FETCH_HEADERS = {
@@ -35,14 +37,14 @@ async function fetchText(url, options = {}) {
   try {
     return await fetchTextOnce(url, options);
   } catch (error) {
-    // Savant occasionally leaves a cold CSV request open until our timeout.
-    // Retry only that transient abort once; HTTP/source failures still surface
+    // Retry only a transient abort once; HTTP/source failures still surface
     // immediately and remain traceable through opponentContext.warnings.
     if (error?.name !== "AbortError" || options.retryOnTimeout !== true) throw error;
     return fetchTextOnce(url, { ...options, retryOnTimeout: false });
   }
 }
 
+/** MLB Stats API JSON fetch. Savant CSV requests use fetchSavantCsv instead. */
 async function fetchJson(url, options = {}) {
   const text = await fetchText(url, options);
   return JSON.parse(text);
@@ -210,7 +212,7 @@ export async function fetchTeamXbaContext(teamAbbr, season, beforeDate, options 
     min_abs: "0",
     type: "details",
   });
-  const text = await fetchText(`${SAVANT_SEARCH_CSV}?${params.toString()}`, { ...options, retryOnTimeout: true });
+  const text = await fetchSavantCsv(`${SAVANT_SEARCH_CSV}?${params.toString()}`, options);
   const completedGamePks = options.completedGamePks ? new Set(options.completedGamePks.map(String)) : null;
   const rows = plateAppearanceRows(parseCsv(text)).filter((row) =>
     row.game_date < beforeDate
