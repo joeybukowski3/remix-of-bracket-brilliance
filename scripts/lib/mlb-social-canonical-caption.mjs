@@ -16,9 +16,7 @@
  */
 import { compactPlayerName, fitCaption, weightedLength, X_CHARACTER_LIMIT } from "./mlb-x-caption-budget.mjs";
 
-export const K_CANONICAL_LINK = "joeknowsball.com/mlb/strikeout-props";
 export const K_CANONICAL_HASHTAGS = "#MLB #StrikeoutProps";
-export const HR_CANONICAL_LINK = "joeknowsball.com/mlb/hr-props";
 export const HR_CANONICAL_HASHTAGS = "#MLB #HomeRunProps";
 
 function normalizeText(value) {
@@ -68,7 +66,7 @@ function hrRowLine(row, variant, index) {
   return `${index + 1}. ${who}${variant.team && row?.team ? ` (${row.team})` : ""}${doubleheaderSuffix(row)}${odds}${scoreLabel}`;
 }
 
-function buildCanonicalCaption({ plan, headline, link, hashtags, lineOf }) {
+function buildCanonicalCaption({ plan, headline, hashtags, lineOf }) {
   const rows = Array.isArray(plan?.rows) ? plan.rows : [];
   if (!rows.length) return { skipped: true, reason: "Skipping: plan has no rows.", caption: "", captionRows: [], omittedRows: [], diagnostics: null };
 
@@ -79,7 +77,7 @@ function buildCanonicalCaption({ plan, headline, link, hashtags, lineOf }) {
     "",
     ...rowsA.map((row, index) => lineOf(row, variant, index)),
     "",
-    `Full board: ${link}`,
+    "Free model at link in bio",
     hashtags,
   ].join("\n");
 
@@ -102,7 +100,6 @@ export function buildKCanonicalCaption(plan) {
   return buildCanonicalCaption({
     plan,
     headline: "⚾ MLB Strikeout Props",
-    link: K_CANONICAL_LINK,
     hashtags: K_CANONICAL_HASHTAGS,
     lineOf: kRowLine,
   });
@@ -113,7 +110,6 @@ export function buildHrCanonicalCaption(plan) {
   return buildCanonicalCaption({
     plan,
     headline: "💣 MLB Home Run Targets",
-    link: HR_CANONICAL_LINK,
     hashtags: HR_CANONICAL_HASHTAGS,
     lineOf: hrRowLine,
   });
