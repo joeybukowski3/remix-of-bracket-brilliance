@@ -58,8 +58,8 @@ describe("/fantasy-football/draft-preview", () => {
     const gibbsRow = rows.find((row) => within(row).queryByText("Jahmyr Gibbs"))!;
     const cells = [...gibbsRow.querySelectorAll("td")].map((cell) => cell.textContent!.trim());
     expect(cells[0]).toBe("1"); // Sleeper Rk
-    expect(cells[3]).toBe("331.4"); // Sleeper Proj
-    expect(cells[4]).toBe("19.5"); // Sleeper PPG
+    expect(cells[4]).toBe("331.4"); // Sleeper Proj
+    expect(cells[5]).toBe("19.5"); // Sleeper PPG
   });
 
   it("keeps JKB Proj PPG and JKB PAR/G distinct from Sleeper's own projections", () => {
@@ -69,8 +69,8 @@ describe("/fantasy-football/draft-preview", () => {
     const gibbsRow = rows.find((row) => within(row).queryByText("Jahmyr Gibbs"))!;
     const cells = [...gibbsRow.querySelectorAll("td")].map((cell) => cell.textContent!.trim());
     // Sleeper PPG (19.5) and JKB Proj PPG are independent authorities and need not match.
-    expect(cells[5]).not.toBe(""); // JKB Proj PPG populated
-    expect(cells[6]).toMatch(/^[+-]/); // JKB PAR/G is signed
+    expect(cells[6]).not.toBe(""); // JKB Proj PPG populated
+    expect(cells[7]).toMatch(/^[+-]/); // JKB PAR/G is signed
   });
 
   it("reuses the corrected F2 Model Rank column", () => {
@@ -153,5 +153,84 @@ describe("/fantasy-football/draft-preview", () => {
     const before = JSON.stringify(SLEEPER_DRAFT_BOARD_2026);
     renderPage();
     expect(JSON.stringify(SLEEPER_DRAFT_BOARD_2026)).toBe(before);
+  });
+});
+
+function getDecisionPanel() {
+  const heading = screen.getByRole("heading", { level: 2, name: "Draft decision support" });
+  return within(heading.closest("section")!);
+}
+
+describe("/fantasy-football/draft-preview — decision support panel", () => {
+  it("renders the panel with the default slot-10 round-1 pick window", () => {
+    renderPage();
+    const panel = getDecisionPanel();
+    expect(panel.getByText("Your pick")).toBeTruthy();
+    expect(panel.getByText("Round 1 • Pick 1.10")).toBeTruthy();
+    expect(panel.getByText("Overall 10")).toBeTruthy();
+    expect(panel.getByText("Next pick")).toBeTruthy();
+    expect(panel.getByText("Round 2 • Pick 2.10")).toBeTruthy();
+    expect(panel.getByText("Overall 15")).toBeTruthy();
+    expect(panel.getByText("Opponent picks before next turn")).toBeTruthy();
+    expect(panel.getByText("4")).toBeTruthy();
+  });
+
+  it("updates the panel when the evaluated round changes", () => {
+    renderPage();
+    fireEvent.click(getDecisionPanel().getByRole("button", { name: "R2 • 2.10" }));
+    const panel = getDecisionPanel();
+    expect(panel.getByText("Round 2 • Pick 2.10")).toBeTruthy();
+    expect(panel.getByText("Overall 15")).toBeTruthy();
+    expect(panel.getByText("Round 3 • Pick 3.10")).toBeTruthy();
+    expect(panel.getByText("Overall 34")).toBeTruthy();
+    // 15 -> 34 leaves 18 opponent picks in between.
+    expect(panel.getByText("18")).toBeTruthy();
+  });
+
+  it("recomputes the pick window when the draft slot changes", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "1" }));
+    const panel = getDecisionPanel();
+    expect(panel.getByText("Round 1 • Pick 1.01")).toBeTruthy();
+    expect(panel.getByText("Overall 1")).toBeTruthy();
+  });
+
+  it("renders Best Available, Best JKB Projection and Best PAR cards with a named player", () => {
+    renderPage();
+    const panel = getDecisionPanel();
+    expect(panel.getByText("Best Available")).toBeTruthy();
+    expect(panel.getByText("Best JKB Projection")).toBeTruthy();
+    expect(panel.getByText("Best PAR")).toBeTruthy();
+  });
+
+  it("renders position opportunity-cost cards for QB/RB/WR/TE with Now/Next/Wait cost values", () => {
+    renderPage();
+    const panel = getDecisionPanel();
+    expect(panel.getByText("Position opportunity cost")).toBeTruthy();
+    for (const position of ["QB", "RB", "WR", "TE"]) {
+      expect(panel.getAllByText(position).length).toBeGreaterThan(0);
+    }
+    expect(panel.getAllByText(/^Wait cost: /).length).toBeGreaterThan(0);
+  });
+
+  it("shows insufficient data instead of a fabricated zero wait cost on the last tracked turn", () => {
+    renderPage();
+    const lastRoundButtons = getDecisionPanel().getAllByRole("button", { name: /^R\d+ • \d+\.10$/ });
+    fireEvent.click(lastRoundButtons[lastRoundButtons.length - 1]);
+    const panel = getDecisionPanel();
+    expect(panel.getByText("Last tracked turn")).toBeTruthy();
+    expect(panel.getAllByText(/^Wait cost: insufficient data$/).length).toBe(4);
+  });
+
+  it("adds a per-row availability Status column without changing Sleeper Rank order", () => {
+    renderPage();
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("Status")).toBeTruthy();
+    const rows = within(table).getAllByRole("row");
+    const sleeperRanks = rows
+      .map((row) => row.querySelectorAll("td")[0]?.textContent?.trim())
+      .filter((value): value is string => value != null && /^\d+$/.test(value))
+      .map(Number);
+    expect(sleeperRanks).toEqual([...sleeperRanks].sort((a, b) => a - b));
   });
 });
