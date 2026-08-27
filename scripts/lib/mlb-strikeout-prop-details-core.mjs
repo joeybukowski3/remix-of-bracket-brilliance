@@ -109,6 +109,10 @@ export function normalizePitcherStart(start) {
     pitchCount: integer(start?.pitchCount),
     battersFaced: integer(start?.battersFaced),
     gamesStarted: integer(start?.gamesStarted),
+    opponentKRateRankL30: integer(start?.opponentKRateRankL30),
+    opponentKRateRankL30VsHand: integer(start?.opponentKRateRankL30VsHand),
+    opponentWrcPlusRankL30: integer(start?.opponentWrcPlusRankL30),
+    opponentMetricsCutoff: typeof start?.opponentMetricsCutoff === "string" ? start.opponentMetricsCutoff : null,
   };
 }
 
@@ -227,11 +231,28 @@ export function buildOpponentLastFiveGames(games) {
     date: game?.date ?? null,
     opponent: game?.opponent ?? null,
     opposingStartingPitcher: game?.opposingStartingPitcher ?? null,
+    opposingStartingPitcherId: integer(game?.opposingStartingPitcherId),
     opposingStarterInningsPitched: game?.opposingStarterInningsPitched == null ? null : String(game.opposingStarterInningsPitched),
     opposingStarterStrikeouts: finite(game?.opposingStarterStrikeouts),
     opposingStarterWalks: finite(game?.opposingStarterWalks),
+    opposingStarterSeasonKPerGame: finite(game?.opposingStarterSeasonKPerGame),
+    opposingStarterLastFiveKPerGamePrior: finite(game?.opposingStarterLastFiveKPerGamePrior),
     teamTotalStrikeouts: finite(game?.teamTotalStrikeouts),
   }));
+}
+
+export function buildStarterPregameKContext(starts, beforeDate) {
+  const priorStarts = (starts ?? [])
+    .map(normalizePitcherStart)
+    .filter((start) => start.date && start.date < beforeDate && start.strikeouts != null)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const average = (rows) => rows.length ? rows.reduce((sum, row) => sum + row.strikeouts, 0) / rows.length : null;
+  return {
+    seasonKPerGame: average(priorStarts),
+    lastFiveKPerGame: average(priorStarts.slice(0, 5)),
+    seasonStartsUsed: priorStarts.length,
+    lastFiveStartsUsed: Math.min(5, priorStarts.length),
+  };
 }
 
 export function buildStrikeoutPropDetail({
@@ -250,6 +271,8 @@ export function buildStrikeoutPropDetail({
   sourceWarnings = [],
   generatedAt,
   source,
+  pitcherHand = null,
+  opponentReference = null,
 }) {
   const pitcherDetails = buildPitcherDetails(pitcherStarts.length ? pitcherStarts : pitcherLastFiveStarts, {
     pitcherId,
@@ -271,6 +294,7 @@ export function buildStrikeoutPropDetail({
     pitcher,
     team,
     opponent,
+    pitcherHand,
     gameDate: slateDate ?? null,
     pitcherLastFiveStarts: pitcherDetails.recentStarts,
     pitcherRecentStarts: pitcherDetails.recentStarts,
@@ -278,6 +302,7 @@ export function buildStrikeoutPropDetail({
     pitcherVenueSplits: pitcherDetails.venueSplits,
     opponentLastFiveGames: normalizedOpponentLastFiveGames,
     opponentLastFiveVsStartersSummary: summarizeOpponentLastFiveVsStarters(normalizedOpponentLastFiveGames),
+    opponentReference,
     sourceWarnings: [...sourceWarnings, ...pitcherDetails.diagnostics.warnings],
     completeness: pitcherDetails.diagnostics,
     generatedAt,

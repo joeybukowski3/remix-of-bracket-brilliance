@@ -4,6 +4,7 @@ import {
   buildPitcherDetails,
   buildPitcherLastFiveStarts,
   buildPitcherVenueSplit,
+  buildStarterPregameKContext,
   buildStrikeoutPropDetail,
   buildStrikeoutPropDetailKey,
   buildStrikeoutPropStableKeys,
@@ -48,6 +49,25 @@ describe("buildStrikeoutPropDetailKey", () => {
     expect(buildStrikeoutPropDetailKey({ pitcher: null, team: undefined, opponent: "", gameDate: "2026-07-08" })).toBe(
       "|||2026-07-08"
     );
+  });
+});
+
+describe("buildStarterPregameKContext", () => {
+  it("uses only starts strictly before the matchup for season and immediately-prior L5 K/game", () => {
+    const starts = [
+      { date: "2026-08-10", strikeouts: 20, gamesStarted: 1 },
+      { date: "2026-08-04", strikeouts: 19, gamesStarted: 1 },
+      { date: "2026-08-03", strikeouts: 8, gamesStarted: 1 },
+      { date: "2026-07-28", strikeouts: 7, gamesStarted: 1 },
+      { date: "2026-07-22", strikeouts: 6, gamesStarted: 1 },
+      { date: "2026-07-16", strikeouts: 5, gamesStarted: 1 },
+      { date: "2026-07-10", strikeouts: 4, gamesStarted: 1 },
+      { date: "2026-07-04", strikeouts: 3, gamesStarted: 1 },
+    ];
+    const result = buildStarterPregameKContext(starts, "2026-08-04");
+    expect(result.seasonStartsUsed).toBe(6);
+    expect(result.seasonKPerGame).toBeCloseTo(5.5);
+    expect(result.lastFiveKPerGame).toBe(6);
   });
 });
 
@@ -239,9 +259,12 @@ describe("buildOpponentLastFiveGames", () => {
         date: "2026-07-05",
         opponent: "MIL",
         opposingStartingPitcher: "Freddy Peralta",
+        opposingStartingPitcherId: 123,
         opposingStarterInningsPitched: "6.0",
         opposingStarterStrikeouts: 8,
         opposingStarterWalks: 2,
+        opposingStarterSeasonKPerGame: 7,
+        opposingStarterLastFiveKPerGamePrior: 8,
         teamTotalStrikeouts: 11,
       },
     ]);
@@ -250,9 +273,12 @@ describe("buildOpponentLastFiveGames", () => {
         date: "2026-07-05",
         opponent: "MIL",
         opposingStartingPitcher: "Freddy Peralta",
+        opposingStartingPitcherId: 123,
         opposingStarterInningsPitched: "6.0",
         opposingStarterStrikeouts: 8,
         opposingStarterWalks: 2,
+        opposingStarterSeasonKPerGame: 7,
+        opposingStarterLastFiveKPerGamePrior: 8,
         teamTotalStrikeouts: 11,
       },
     ]);

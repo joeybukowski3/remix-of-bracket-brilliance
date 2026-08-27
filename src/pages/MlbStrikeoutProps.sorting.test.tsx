@@ -277,8 +277,8 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     const headers = Array.from(headerRows[1].querySelectorAll("th")).map((header) => header.textContent?.replace(/[↑↓]/g, "").trim());
     expect(headers).toEqual([
       "#", "Pitcher", "Game Time", "K Line", "Proj K", "Edge", "K Score",
-      "K/Inning SZN", "K/Inning L5", "K% Split", "Avg IP",
-      "Szn vs Hand", "Opp K/Game L10", "Opp K/Game Split", "Opp xBA Split", "Opp xBA L10",
+      "K Per Game SZN", "K Per Game L5", "K Per Game @ Site", "Avg IP",
+      "Szn vs Hand", "Opp wRC+ Rank L30 vs Hand", "Opp K/Game @ Site", "Opp wRC+ Rank L30 @ Site", "Opp wRC+ Rank L10",
     ]);
     for (const removed of ["K%", "Whiff%", "K VS", "Pitcher K", "Opp K%", "Opp Whiff%", "Opp K Score", "K/9", "Opp K/9"]) {
       expect(headers).not.toContain(removed);

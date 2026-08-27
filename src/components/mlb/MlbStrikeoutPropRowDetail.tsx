@@ -6,6 +6,7 @@ import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { mlbInningsToOuts, outsToMlbInnings } from "@/lib/mlb/baseballInnings";
 import { cn } from "@/lib/utils";
+import { formatRankOrdinal, rankHeatValueClass } from "@/lib/mlb/rankPresentation";
 
 const DASH = "N/A";
 
@@ -66,6 +67,9 @@ function fmtNumber(value: number | null | undefined) {
 }
 function fmtFixed(value: number | null | undefined, digits = 1) {
   return value == null || !Number.isFinite(value) ? DASH : value.toFixed(digits);
+}
+function RankHeatValue({ rank }: { rank: number | null | undefined }) {
+  return <span data-testid="mlb-rank-heat" className={rankHeatValueClass(rank)}>{formatRankOrdinal(rank)}</span>;
 }
 function fmtRate(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return DASH;
@@ -418,6 +422,11 @@ function ratePerInning(total: number | null | undefined, outs: number | null | u
   return (total * 3) / outs;
 }
 
+function ratePerGame(total: number | null | undefined, games: number | null | undefined) {
+  if (total == null || games == null || !Number.isFinite(total) || !Number.isFinite(games) || games <= 0) return null;
+  return total / games;
+}
+
 function signedTone(value: number | null, invert = false) {
   if (value == null || !Number.isFinite(value) || Math.abs(value) < 0.0001) return "bg-slate-100 text-slate-600";
   const favorable = invert ? value < 0 : value > 0;
@@ -435,20 +444,22 @@ function DifferenceCell({ value, percent = false, invert = false }: { value: num
 function pitcherVenueRow(split: PitcherVenueSplit, label: string, overallKPerInning: number | null, overallH9: number | null, isToday: boolean): ReactNode[] {
   const seasonKPerInning = ratePerInning(split.season.strikeouts, split.season.totalOuts);
   const seasonH9 = ratePerNine(split.season.hitsAllowed, split.season.totalOuts);
+  const seasonKPerGame = ratePerGame(split.season.strikeouts, split.season.gamesUsed);
   const lastFiveKPerInning = ratePerInning(split.lastFiveAtSite.strikeouts, split.lastFiveAtSite.totalOuts);
   const lastFiveH9 = ratePerNine(split.lastFiveAtSite.hitsAllowed, split.lastFiveAtSite.totalOuts);
+  const lastFiveKPerGame = ratePerGame(split.lastFiveAtSite.strikeouts, split.lastFiveAtSite.gamesUsed);
   const shortSample = split.lastFiveAtSite.gamesUsed < 5;
   return [
     <span key="site" className="flex flex-wrap items-center gap-1"><span>{label}</span>{isToday && <span className="rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-800">Today</span>}</span>,
     formatVenueInnings(split.season),
     fmtFixed(seasonKPerInning, 2),
     <DifferenceCell key="season-k-diff" value={seasonKPerInning != null && overallKPerInning != null ? seasonKPerInning - overallKPerInning : null} />,
-    fmtFixed(seasonH9),
+    fmtFixed(seasonKPerGame),
     <DifferenceCell key="season-hit-diff" value={seasonH9 != null && overallH9 != null && overallH9 > 0 ? ((seasonH9 - overallH9) / overallH9) * 100 : null} percent invert />,
     <span key="last-five-ip">{formatVenueInnings(split.lastFiveAtSite)}{shortSample ? <sup className="ml-0.5 font-black text-amber-700">*</sup> : null}</span>,
     fmtFixed(lastFiveKPerInning, 2),
     <DifferenceCell key="last-five-k-diff" value={lastFiveKPerInning != null && overallKPerInning != null ? lastFiveKPerInning - overallKPerInning : null} />,
-    fmtFixed(lastFiveH9),
+    fmtFixed(lastFiveKPerGame),
     <DifferenceCell key="last-five-hit-diff" value={lastFiveH9 != null && overallH9 != null && overallH9 > 0 ? ((lastFiveH9 - overallH9) / overallH9) * 100 : null} percent invert />,
   ];
 }
@@ -625,7 +636,19 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const opponentSummaryRows = getArray(opponentSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
 
   const currentKLine = row?.kLine ?? null;
-  const fallbackStartSource = pitcherSummaryRows.length ? pitcherSummaryRows : detail.pitcherLastFiveStarts.map((start, index) => ({ index, date: start.date, opponent: start.opponent, inningsPitched: start.inningsPitched, strikeouts: start.strikeouts, hitsAllowed: start.hitsAllowed, walksAllowed: start.walksAllowed, pitchCount: start.pitchCount }));
+  const fallbackStartSource = pitcherSummaryRows.length ? pitcherSummaryRows : detail.pitcherLastFiveStarts.map((start, index) => ({
+    index,
+    date: start.date,
+    opponent: start.opponent,
+    inningsPitched: start.inningsPitched,
+    strikeouts: start.strikeouts,
+    hitsAllowed: start.hitsAllowed,
+    walksAllowed: start.walksAllowed,
+    pitchCount: start.pitchCount,
+    opponentKRateRankL30: start.opponentKRateRankL30,
+    opponentKRateRankL30VsHand: start.opponentKRateRankL30VsHand,
+    opponentWrcPlusRankL30: start.opponentWrcPlusRankL30,
+  }));
   const fallbackStartOuts = (start: Record<string, unknown>) => getNumber(start, "outs") ?? mlbInningsToOuts(start.inningsPitched as number | string | null | undefined);
   const perInningFromRecords = (records: Record<string, unknown>[], numeratorKey: string, outsKey: string, inningsKey?: string) => {
     const eligible = records.map((record) => ({
@@ -638,6 +661,10 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       eligible.reduce((sum, record) => sum + (record.outs ?? 0), 0),
     );
   };
+  const averageFromRecords = (records: Record<string, unknown>[], key: string) => {
+    const values = records.map((record) => getNumber(record, key)).filter((value): value is number => value != null);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  };
   const fallbackStartRows: ReactNode[][] = fallbackStartSource.map((start, index) => {
     const outs = fallbackStartOuts(start);
     const strikeouts = getNumber(start, "strikeouts");
@@ -646,9 +673,11 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       <TeamCell key={`start-opp-${index}`} team={getString(start, "opponent")} />,
       outs != null ? fmtOutsIp(outs) : fmtIp(start.inningsPitched as number | string | null | undefined),
       <StrikeoutsVsCurrentLine key={`start-k-${index}`} strikeouts={strikeouts} currentKLine={currentKLine} />,
-      fmtFixed(ratePerInning(getNumber(start, "hitsAllowed"), outs), 2),
-      fmtFixed(ratePerInning(strikeouts, outs), 2),
-      fmtFixed(ratePerInning(getNumber(start, "walksAllowed"), outs), 2),
+      fmtNumber(getNumber(start, "hitsAllowed")),
+      fmtNumber(getNumber(start, "walksAllowed")),
+      <RankHeatValue key={`start-k-rank-${index}`} rank={getNumber(start, "opponentKRateRankL30")} />,
+      <RankHeatValue key={`start-k-hand-rank-${index}`} rank={getNumber(start, "opponentKRateRankL30VsHand")} />,
+      <RankHeatValue key={`start-wrc-rank-${index}`} rank={getNumber(start, "opponentWrcPlusRankL30")} />,
       fmtNumber(getNumber(start, "pitchCount")),
     ];
   });
@@ -662,9 +691,11 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       primaryValue: <StrikeoutsVsCurrentLine strikeouts={strikeouts} currentKLine={currentKLine} suffix=" K" />,
       details: [
         { label: "IP", value: outs != null ? fmtOutsIp(outs) : fmtIp(start.inningsPitched as number | string | null | undefined) },
-        { label: "Hits/Inning", value: fmtFixed(ratePerInning(getNumber(start, "hitsAllowed"), outs), 2) },
-        { label: "K/Inning", value: fmtFixed(ratePerInning(strikeouts, outs), 2) },
-        { label: "BB/Inning", value: fmtFixed(ratePerInning(getNumber(start, "walksAllowed"), outs), 2) },
+        { label: "Hits Allowed", value: fmtNumber(getNumber(start, "hitsAllowed")) },
+        { label: "BB Allowed", value: fmtNumber(getNumber(start, "walksAllowed")) },
+        { label: "Opp K% Rank L30", value: <RankHeatValue rank={getNumber(start, "opponentKRateRankL30")} /> },
+        { label: "Opp K% Rank L30 vs Hand", value: <RankHeatValue rank={getNumber(start, "opponentKRateRankL30VsHand")} /> },
+        { label: "Opp wRC+ Rank L30", value: <RankHeatValue rank={getNumber(start, "opponentWrcPlusRankL30")} /> },
         { label: "Pitch Count", value: fmtNumber(getNumber(start, "pitchCount")) },
       ],
     };
@@ -675,9 +706,11 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     formatGamesUsedLabel(pitcherSummary),
     formatAverageIp(pitcherSummary, "totalOuts"),
     fmtFixed(getNumber(pitcherSummary, "averageStrikeouts")),
-    fmtFixed(perInningFromRecords(fallbackStartSource, "hitsAllowed", "outs", "inningsPitched"), 2),
-    fmtFixed(perInningFromRecords(fallbackStartSource, "strikeouts", "outs", "inningsPitched"), 2),
-    fmtFixed(perInningFromRecords(fallbackStartSource, "walksAllowed", "outs", "inningsPitched"), 2),
+    fmtFixed(getNumber(pitcherSummary, "totalHitsAllowed") == null || getNumber(pitcherSummary, "gamesUsed") == null ? null : (getNumber(pitcherSummary, "totalHitsAllowed") ?? 0) / (getNumber(pitcherSummary, "gamesUsed") ?? 1)),
+    fmtFixed(getNumber(pitcherSummary, "totalWalksAllowed") == null || getNumber(pitcherSummary, "gamesUsed") == null ? null : (getNumber(pitcherSummary, "totalWalksAllowed") ?? 0) / (getNumber(pitcherSummary, "gamesUsed") ?? 1)),
+    DASH,
+    DASH,
+    DASH,
     fmtFixed(getNumber(pitcherSummary, "averagePitchCount")),
   ]];
 
@@ -685,24 +718,20 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const enrichedSummary = detail.pitcherLastFiveSummary;
   const hasEnrichedPitcherStarts = Array.isArray(enrichedStarts) && enrichedSummary != null;
   const enrichedStartRows: ReactNode[][] = (enrichedStarts ?? []).map((start, index) => {
-    const hitsPerInning = ratePerInning(start.hitsAllowed, start.outsRecorded);
-    const strikeoutsPerInning = ratePerInning(start.strikeouts, start.outsRecorded);
-    const walksPerInning = ratePerInning(start.walksAllowed, start.outsRecorded);
     return [
       fmtDate(start.date),
       <TeamCell key={`pitcher-start-opp-${index}`} team={start.opponentAbbr ?? start.opponent ?? null} />,
       start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched),
       <StrikeoutsVsCurrentLine key={`pitcher-start-k-${index}`} strikeouts={start.strikeouts} currentKLine={currentKLine} />,
-      fmtFixed(hitsPerInning, 2),
-      fmtFixed(strikeoutsPerInning, 2),
-      fmtFixed(walksPerInning, 2),
+      fmtNumber(start.hitsAllowed),
+      fmtNumber(start.walksAllowed),
+      <RankHeatValue key={`pitcher-start-k-rank-${index}`} rank={start.opponentKRateRankL30} />,
+      <RankHeatValue key={`pitcher-start-k-hand-rank-${index}`} rank={start.opponentKRateRankL30VsHand} />,
+      <RankHeatValue key={`pitcher-start-wrc-rank-${index}`} rank={start.opponentWrcPlusRankL30} />,
       fmtNumber(start.pitchCount),
     ];
   });
   const enrichedStartCollapsibleRows: CollapsibleGameRow[] = (enrichedStarts ?? []).map((start, index) => {
-    const hitsPerInning = ratePerInning(start.hitsAllowed, start.outsRecorded);
-    const strikeoutsPerInning = ratePerInning(start.strikeouts, start.outsRecorded);
-    const walksPerInning = ratePerInning(start.walksAllowed, start.outsRecorded);
     return {
       key: `pitcher-enriched-start-${index}`,
       date: fmtDate(start.date),
@@ -710,9 +739,11 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       primaryValue: <StrikeoutsVsCurrentLine strikeouts={start.strikeouts} currentKLine={currentKLine} suffix=" K" />,
       details: [
         { label: "IP", value: start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched) },
-        { label: "Hits/Inning", value: fmtFixed(hitsPerInning, 2) },
-        { label: "K/Inning", value: fmtFixed(strikeoutsPerInning, 2) },
-        { label: "BB/Inning", value: fmtFixed(walksPerInning, 2) },
+        { label: "Hits Allowed", value: fmtNumber(start.hitsAllowed) },
+        { label: "BB Allowed", value: fmtNumber(start.walksAllowed) },
+        { label: "Opp K% Rank L30", value: <RankHeatValue rank={start.opponentKRateRankL30} /> },
+        { label: "Opp K% Rank L30 vs Hand", value: <RankHeatValue rank={start.opponentKRateRankL30VsHand} /> },
+        { label: "Opp wRC+ Rank L30", value: <RankHeatValue rank={start.opponentWrcPlusRankL30} /> },
         { label: "Pitch Count", value: fmtNumber(start.pitchCount) },
       ],
     };
@@ -722,12 +753,14 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     `${fmtNumber(enrichedSummary.gamesUsed)} used`,
     enrichedSummary.averageInningsOuts != null ? fmtOutsIp(Math.round(enrichedSummary.averageInningsOuts)) : DASH,
     fmtFixed(enrichedSummary.averageStrikeouts),
-    fmtFixed(enrichedSummary.hitsPerInning ?? ratePerInning(enrichedSummary.totalHitsAllowed, enrichedSummary.totalOuts), 2),
-    fmtFixed(enrichedSummary.strikeoutsPerInning ?? ratePerInning(enrichedSummary.totalStrikeouts, enrichedSummary.totalOuts), 2),
-    fmtFixed(enrichedSummary.walksPerInning ?? ratePerInning(enrichedSummary.totalWalksAllowed, enrichedSummary.totalOuts), 2),
+    fmtFixed(enrichedSummary.totalHitsAllowed == null || enrichedSummary.gamesUsed <= 0 ? null : enrichedSummary.totalHitsAllowed / enrichedSummary.gamesUsed),
+    fmtFixed(enrichedSummary.totalWalksAllowed == null || enrichedSummary.gamesUsed <= 0 ? null : enrichedSummary.totalWalksAllowed / enrichedSummary.gamesUsed),
+    DASH,
+    DASH,
+    DASH,
     fmtFixed(enrichedSummary.averagePitchCount),
   ]] : [];
-  const startColumns = ["Date", "Opp", "IP", "K", "Hits/Inning", "K/Inning", "BB/Inning", "Pitch Count"];
+  const startColumns = ["Date", "Opp", "IP", "K", "Hits Allowed", "BB Allowed", "Opp K% Rank L30", "Opp K% Rank L30 vs Hand", "Opp wRC+ Rank L30", "Pitch Count"];
   const startRows = hasEnrichedPitcherStarts ? enrichedStartRows : fallbackStartRows;
   const startAvg = hasEnrichedPitcherStarts ? enrichedStartAvg : fallbackStartAvg;
   const startCollapsibleRows = hasEnrichedPitcherStarts ? enrichedStartCollapsibleRows : fallbackStartCollapsibleRows;
@@ -768,7 +801,18 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     ? [todaySite === "home", todaySite === "away"]
     : [];
 
-  const opponentSource = opponentSummaryRows.length ? opponentSummaryRows : detail.opponentLastFiveGames.map((game, index) => ({ index, date: game.date, opponent: game.opponent, opposingStartingPitcher: game.opposingStartingPitcher, opposingStarterInningsPitched: game.opposingStarterInningsPitched, opposingStarterStrikeouts: game.opposingStarterStrikeouts, opposingStarterWalks: game.opposingStarterWalks, teamStrikeouts: game.teamTotalStrikeouts }));
+  const opponentSource = detail.opponentLastFiveGames.length ? detail.opponentLastFiveGames.map((game, index) => ({
+    index,
+    date: game.date,
+    opponent: game.opponent,
+    opposingStartingPitcher: game.opposingStartingPitcher,
+    opposingStarterInningsPitched: game.opposingStarterInningsPitched,
+    opposingStarterStrikeouts: game.opposingStarterStrikeouts,
+    opposingStarterWalks: game.opposingStarterWalks,
+    opposingStarterSeasonKPerGame: game.opposingStarterSeasonKPerGame,
+    opposingStarterLastFiveKPerGamePrior: game.opposingStarterLastFiveKPerGamePrior,
+    teamStrikeouts: game.teamTotalStrikeouts,
+  })) : opponentSummaryRows;
   const opponentRows: ReactNode[][] = opponentSource.map((game, index) => {
     const starterOuts = getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined);
     const starterStrikeouts = getNumber(game, "opposingStarterStrikeouts");
@@ -779,8 +823,8 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       fmtText(getString(game, "opposingStartingPitcher")),
       starterOuts != null ? fmtOutsIp(starterOuts) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined),
       <StrikeoutsVsCurrentLine key={`opponent-sp-k-${index}`} strikeouts={starterStrikeouts} currentKLine={currentKLine} />,
-      fmtFixed(ratePerInning(starterStrikeouts, starterOuts), 2),
-      fmtFixed(ratePerInning(getNumber(game, "opposingStarterWalks"), starterOuts), 2),
+      fmtFixed(getNumber(game, "opposingStarterSeasonKPerGame")),
+      fmtFixed(getNumber(game, "opposingStarterLastFiveKPerGamePrior")),
       fmtNumber(teamStrikeouts),
       fmtFixed(teamStrikeouts == null ? null : teamStrikeouts / 9, 2),
     ];
@@ -793,8 +837,8 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     details: [
       { label: "Opposing SP", value: fmtText(getString(game, "opposingStartingPitcher")) },
       { label: "SP IP", value: getNumber(game, "opposingStarterOuts") != null ? fmtOutsIp(getNumber(game, "opposingStarterOuts")) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined) },
-      { label: "SP K/Inning", value: fmtFixed(ratePerInning(getNumber(game, "opposingStarterStrikeouts"), getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined)), 2) },
-      { label: "SP BB/Inning", value: fmtFixed(ratePerInning(getNumber(game, "opposingStarterWalks"), getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined)), 2) },
+      { label: "SP K Per Game SZN", value: fmtFixed(getNumber(game, "opposingStarterSeasonKPerGame")) },
+      { label: "SP K Avg Per Game L5 Prior", value: fmtFixed(getNumber(game, "opposingStarterLastFiveKPerGamePrior")) },
       { label: "Team K", value: fmtNumber(getNumber(game, "teamStrikeouts")) },
       { label: "Team K/Inning", value: fmtFixed(getNumber(game, "teamStrikeouts") == null ? null : (getNumber(game, "teamStrikeouts") ?? 0) / 9, 2) },
     ],
@@ -806,8 +850,8 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     "",
     formatAverageIp(opponentSummary, "totalOpposingStarterOuts"),
     fmtFixed(getNumber(opponentSummary, "averageOpposingStarterStrikeouts")),
-    fmtFixed(perInningFromRecords(opponentSource, "opposingStarterStrikeouts", "opposingStarterOuts", "opposingStarterInningsPitched"), 2),
-    fmtFixed(perInningFromRecords(opponentSource, "opposingStarterWalks", "opposingStarterOuts", "opposingStarterInningsPitched"), 2),
+    fmtFixed(averageFromRecords(opponentSource, "opposingStarterSeasonKPerGame")),
+    fmtFixed(averageFromRecords(opponentSource, "opposingStarterLastFiveKPerGamePrior")),
     fmtFixed(getNumber(opponentSummary, "averageTeamStrikeouts")),
     fmtFixed(getNumber(opponentSummary, "teamStrikeoutsPerInning") ?? (getNumber(opponentSummary, "averageTeamStrikeouts") == null ? null : (getNumber(opponentSummary, "averageTeamStrikeouts") ?? 0) / 9), 2),
   ]];
@@ -816,7 +860,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     <MiniTable
       title={`${detail.pitcher} — Last 5 Starts`}
       columns={startColumns}
-      columnAlignments={["left", "left", "center", "center", "center", "center", "center", "center"]}
+      columnAlignments={["left", "left", "center", "center", "center", "center", "center", "center", "center", "center"]}
       rows={startRows}
       footRows={startAvg}
       mobileCollapsibleRows={startCollapsibleRows}
@@ -827,13 +871,13 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     <div>
       <MiniTable
         title={`${detail.pitcher} — Home/Away Splits`}
-        columns={["Site", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "H/9", "Hit Avg +/-"]}
+        columns={["Site", "IP", "K/Inning", "K/Inning +/-", "K/Game", "Hit Avg +/-", "IP", "K/Inning", "K/Inning +/-", "K/Game", "Hit Avg +/-"]}
         columnWidths={["8%", "13%", "8%", "10%", "7%", "8%", "13%", "8%", "10%", "7%", "8%"]}
         headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
         leadingUngroupedColumns={1}
         columnAlignments={["left", "center", "center", "center", "center", "center", "center", "center", "center", "center", "center"]}
         centerHeaderGroups
-        mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season H/9", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 H/9", "Last 5 Hit Avg +/-"]}
+        mobileLabels={["Site", "Season IP", "Season K/Inning", "Season K/Inning +/-", "Season K/Game", "Season Hit Avg +/-", "Last 5 IP", "Last 5 K/Inning", "Last 5 K/Inning +/-", "Last 5 K/Game", "Last 5 Hit Avg +/-"]}
         rows={pitcherVenueRows}
         rowClassNames={pitcherVenueRowClasses}
         boldRows={pitcherVenueBoldRows}
@@ -845,7 +889,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const opponentLastTen = (
     <MiniTable
       title={`${detail.opponent} — Last 10 Games vs SP`}
-      columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "SP K/Inning", "SP BB/Inning", "Team K", "Team K/Inning"]}
+      columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "SP K Per Game SZN", "SP K Avg Per Game L5 Prior", "Team K", "Team K/Inning"]}
       columnWidths={["11%", "9%", "24%", "10%", "8%", "10%", "10%", "8%", "10%"]}
       columnAlignments={["left", "left", "left", "center", "center", "center", "center", "center", "center"]}
       rows={opponentRows}

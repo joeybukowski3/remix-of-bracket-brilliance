@@ -19,12 +19,12 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { approximateWrcPlusFromWoba } from "./lib/mlb-wrc-plus.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const OUTPUT_PATH = path.join(DATA_DIR, "team-wrc-plus.json");
 const SEASON = new Date().getFullYear();
-const WOBA_SCALE = 1.157;
 
 const FETCH_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -154,12 +154,7 @@ function approximateWrcPlus(stat, lgWoba, lgRunsPerPA) {
   const woba = safeNum(stat.wOBA ?? stat.obp, null);
   if (woba === null) return null;
 
-  // Use passed-in lgRunsPerPA if valid, otherwise fall back to constant
-  const rpa = (lgRunsPerPA > 0) ? lgRunsPerPA : 0.122;
-
-  // wRC+ = ((wOBA - lgWOBA) / wOBAScale + lgR/PA) / lgR/PA * 100
-  const wrcPlus = ((woba - lgWoba) / WOBA_SCALE + rpa) / rpa * 100;
-  return Math.round(wrcPlus);
+  return approximateWrcPlusFromWoba(woba, lgWoba, lgRunsPerPA);
 }
 
 /**

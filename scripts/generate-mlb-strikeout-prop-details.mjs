@@ -2,8 +2,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildStrikeoutPropDetail } from "./lib/mlb-strikeout-prop-details-core.mjs";
+import { buildStarterPregameKContext, buildStrikeoutPropDetail } from "./lib/mlb-strikeout-prop-details-core.mjs";
 import { fetchOpponentContext } from "./lib/mlb-opponent-k-context.mjs";
+import {
+  buildLeagueReferenceContext,
+  fetchLeagueReferencePlateAppearances,
+} from "./lib/mlb-strikeout-reference-context.mjs";
 import {
   buildTeamAbbrById,
   buildTeamIdByAbbr,
@@ -19,6 +23,7 @@ const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const DEFAULT_INPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const OUTPUT_PATH = path.join(DATA_DIR, "strikeout-prop-details.json");
 const SOURCE_LABEL = "mlb_stats_api+baseball_savant";
+const MLB_TEAM_COUNT = 30;
 const OPPONENT_RECENT_GAMES_LIMIT = 10;
 const OPPONENT_RECENT_GAMES_LOOKBACK_DAYS = 45;
 
@@ -73,14 +78,36 @@ async function main() {
   const teamAbbrById = buildTeamAbbrById(teams);
   const teamIdByAbbr = buildTeamIdByAbbr(teams);
 
+  const leagueReference = await fetchLeagueReferencePlateAppearances(teams, season, slateDate);
+  const referenceContextCache = new Map();
+  const referenceFor = (team, cutoffDate, pitcherHand) => {
+    if (!team || !cutoffDate) return null;
+    const normalizedHand = pitcherHand === "L" || pitcherHand === "R" ? pitcherHand : null;
+    const cacheKey = `${cutoffDate}|${normalizedHand ?? "unknown"}`;
+    if (!referenceContextCache.has(cacheKey)) {
+      referenceContextCache.set(cacheKey, buildLeagueReferenceContext(
+        leagueReference.rowsByTeam,
+        cutoffDate,
+        normalizedHand,
+        { expectedTeamCount: MLB_TEAM_COUNT },
+      ));
+    }
+    return referenceContextCache.get(cacheKey).get(team) ?? null;
+  };
+
   const boxscoreCache = new Map();
   const pitcherStartsCache = new Map();
   const opponentGamesCache = new Map();
   const opponentContextCache = new Map();
+  const opposingStarterStartsCache = new Map();
   const details = [];
   const warnings = [];
   let successCount = 0;
   let partialCount = 0;
+
+  if (leagueReference.errors.length) {
+    warnings.push(`visual reference ranks unavailable for ${leagueReference.errors.length} team feed(s): ${leagueReference.errors.join(", ")}`);
+  }
 
   for (const pitcher of pitcherRows) {
     const gamePk = positiveId(pitcher.gamePk ?? pitcher.gameId);
@@ -102,6 +129,18 @@ async function main() {
       sourceWarnings.push("API_REQUEST_FAILED");
       warnings.push(`${pitcher.pitcher}: pitcher last-5-starts unavailable (${startsError.message})`);
     }
+
+    const pitcherHand = pitcher.hand === "L" || pitcher.hand === "R" ? pitcher.hand : null;
+    const startsWithPregameOpponentContext = starts.map((start) => {
+      const reference = referenceFor(start.opponentAbbr, start.date, pitcherHand);
+      return {
+        ...start,
+        opponentKRateRankL30: reference?.opponentKRateRankL30 ?? null,
+        opponentKRateRankL30VsHand: reference?.opponentKRateRankL30VsHand ?? null,
+        opponentWrcPlusRankL30: reference?.opponentWrcPlusRankL30 ?? null,
+        opponentMetricsCutoff: start.date ?? null,
+      };
+    });
 
     let opponentGameRows = [];
     let opponentContext = null;
@@ -126,7 +165,28 @@ async function main() {
         sourceWarnings.push("OPPONENT_API_REQUEST_FAILED");
         warnings.push(`${pitcher.opponent}: opponent last-10-games unavailable (${opponentError.message})`);
       }
-      opponentGameRows = rows;
+      opponentGameRows = await Promise.all(rows.map(async (game) => {
+        if (game.opposingStartingPitcherId == null || !game.date) {
+          return { ...game, opposingStarterSeasonKPerGame: null, opposingStarterLastFiveKPerGamePrior: null };
+        }
+        if (!opposingStarterStartsCache.has(game.opposingStartingPitcherId)) {
+          opposingStarterStartsCache.set(
+            game.opposingStartingPitcherId,
+            fetchPitcherSeasonStarts(game.opposingStartingPitcherId, season, slateDate, teamAbbrById),
+          );
+        }
+        const starterHistory = await opposingStarterStartsCache.get(game.opposingStartingPitcherId);
+        if (starterHistory.error) {
+          sourceWarnings.push("OPPOSING_STARTER_HISTORY_FAILED");
+          return { ...game, opposingStarterSeasonKPerGame: null, opposingStarterLastFiveKPerGamePrior: null };
+        }
+        const pregame = buildStarterPregameKContext(starterHistory.starts, game.date);
+        return {
+          ...game,
+          opposingStarterSeasonKPerGame: pregame.seasonKPerGame,
+          opposingStarterLastFiveKPerGamePrior: pregame.lastFiveKPerGame,
+        };
+      }));
 
       if (!opponentContextCache.has(pitcher.opponent)) {
         opponentContextCache.set(
@@ -151,11 +211,13 @@ async function main() {
       pitcherId: pitcher.pitcherId,
       teamId,
       opponentId,
-      pitcherStarts: starts,
+      pitcherStarts: startsWithPregameOpponentContext,
       opponentLastFiveGames: opponentGameRows,
       sourceWarnings,
       generatedAt: new Date().toISOString(),
       source: SOURCE_LABEL,
+      pitcherHand,
+      opponentReference: referenceFor(pitcher.opponent, slateDate, pitcherHand),
     });
     detail.opponentContext = opponentContext;
     details.push(detail);
@@ -165,12 +227,13 @@ async function main() {
   }
 
   const payload = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     generatedAt: new Date().toISOString(),
     source: SOURCE_LABEL,
     sources: {
       pitcherAndTeamStrikeouts: "MLB Stats API",
       opponentExpectedBattingAverage: "Baseball Savant Statcast",
+      visualReferenceRanks: "Baseball Savant Statcast plate appearances (strict pregame cutoffs)",
     },
     date: slateDate,
     details,
