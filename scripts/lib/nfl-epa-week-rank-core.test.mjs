@@ -40,6 +40,39 @@ describe("buildPregameRollingEpa", () => {
   });
 });
 
+describe("normalizeEpaTeamGameRows team code aliasing", () => {
+  it("aliases the Rams' epa_team_game code 'LAR' to the stats_player_week/teams.json convention 'LA'", () => {
+    const rows = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "lar", opponent: "sea", offEpa: 5 }),
+      row({ season: 2025, week: 1, team: "sea", opponent: "lar", offEpa: -5 }),
+    ]);
+    expect(rows[0].team).toBe("LA");
+    expect(rows[1].opponent).toBe("LA");
+  });
+
+  it("aliases Washington's epa_team_game code 'WSH' to the stats_player_week/teams.json convention 'WAS'", () => {
+    const rows = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "wsh", opponent: "dal", offEpa: 5 }),
+    ]);
+    expect(rows[0].team).toBe("WAS");
+  });
+
+  it("regression: an LAR opponent now resolves a pregame defense rank instead of a silent null", () => {
+    // Before the alias fix, epaRollingIndex was keyed by "LAR" while every join key elsewhere
+    // in the yardage-history pipeline (stats_player_week opponentTeam, teams.json nflverseAbbr)
+    // used "LA" -- the lookup below would always miss and return null.
+    const rows = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "lar", opponent: "sea", offEpa: 5 }),
+      row({ season: 2025, week: 1, team: "sea", opponent: "lar", offEpa: -5 }),
+      row({ season: 2025, week: 2, team: "lar", opponent: "dal", offEpa: 3 }),
+      row({ season: 2025, week: 2, team: "dal", opponent: "lar", offEpa: -3 }),
+    ]);
+    const index = buildPregameRollingEpa(rows);
+    const ranks = rankTeamsAt(index, 2025, 2, "defense");
+    expect(ranks.get("LA")).not.toBeUndefined();
+  });
+});
+
 describe("rankTeamsAt", () => {
   it("ranks defense (allowed) ascending -- lowest EPA allowed is rank 1", () => {
     const rows = normalizeEpaTeamGameRows([

@@ -28,6 +28,8 @@ export type NflYardagePlayerHistoryGame = {
   opponentAbbr: string | null;
   homeAway: "home" | "away" | null;
   oppDefRank: number | null;
+  /** Teams with a resolvable pregame rank at this game's cutoff -- not always 32; null whenever oppDefRank is null. */
+  oppDefRankPoolSize: number | null;
   oppYdsAllowAvg: number | null;
   stat: NflYardageStatBlock;
   actualYards: number;
@@ -52,6 +54,8 @@ export type NflYardageOpponentHistoryGame = {
   opponentPlayerName: string;
   homeAway: "home" | "away" | null;
   oppOffRank: number | null;
+  /** Teams with a resolvable pregame rank at this game's cutoff -- not always 32; null whenever oppOffRank is null. */
+  oppOffRankPoolSize: number | null;
   oppPlayerYpg: number | null;
   stat: NflYardageStatBlock;
   yardsAllowed: number;

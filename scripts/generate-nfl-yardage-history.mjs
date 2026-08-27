@@ -201,6 +201,7 @@ function main() {
         "Opp Yds Allow Avg is a pregame trailing-10-game rolling yards-allowed average (see nfl-yardage-rolling-core.mjs) over the same nflverse stats_player_week cache the frozen Season/Last-5 production-allowed artifact uses.",
         "Vegas Line resolves only from an approved-sportsbook, final pre-kickoff observation in the yardage market archive; the archive only began collecting 2026-08-26, so every historical (pre-2026) game resolves to null -- never backfilled/estimated.",
         "Opponent Last-10 tables identify the 'opposing player' per historical game as that game's leader at the requested position by primary volume stat (attempts/carries/targets) -- a documented deterministic choice, not a random or fuzzy match.",
+        "epa_team_game's Rams ('LAR') and Washington ('WSH') team codes are aliased to the stats_player_week/teams.json convention ('LA'/'WAS') before ranking (see EPA_TEAM_CODE_ALIAS in nfl-epa-week-rank-core.mjs) -- unaliased, every historical game for those two teams' Opp Def Rank / Opp Off Rank resolved to null despite abundant EPA history, a join-key mismatch rather than genuinely missing data.",
         missingPregameRank.length > 0
           ? `${missingPregameRank.length} player market(s) had no pregame EPA rank for their most recent Last-10 game (first tracked game in the 2020-2025 EPA window) -- rendered as null, never fabricated.`
           : "Every built player's most recent Last-10 game had a resolvable pregame EPA rank.",

@@ -181,13 +181,19 @@ export function buildHistoryRollingIndexes(normalizedStatRows, epaRows) {
   return { epaRollingIndex, yardsAllowedRolling, playerRollingByMarket };
 }
 
+/**
+ * Pool size is however many teams had a resolvable pregame rank at that same
+ * chronological cutoff -- not always 32 (early-season weeks have fewer teams
+ * with 1+ trailing games), so it travels with the rank for the heat scale to
+ * bucket against, rather than assuming a fixed 32-team pool.
+ */
 function defRank(epaRollingIndex, season, week, nflverseAbbr) {
   const ranks = rankTeamsAt(epaRollingIndex, season, week, "defense");
-  return ranks.get(nflverseAbbr) ?? null;
+  return { rank: ranks.get(nflverseAbbr) ?? null, poolSize: ranks.size };
 }
 function offRank(epaRollingIndex, season, week, nflverseAbbr) {
   const ranks = rankTeamsAt(epaRollingIndex, season, week, "offense");
-  return ranks.get(nflverseAbbr) ?? null;
+  return { rank: ranks.get(nflverseAbbr) ?? null, poolSize: ranks.size };
 }
 
 function statBlockFor(market, row) {
@@ -234,7 +240,7 @@ export function buildPlayerLast10(params) {
     const lookupKey = `${row.team}|${row.season}|${row.week}`;
     const game = gameLookup.get(lookupKey) ?? null;
     const oppYdsAllow = rollingIndexes.yardsAllowedRolling[market][position]?.get(`${row.opponentTeam}|${row.season}|${row.week}`) ?? null;
-    const oppDefRank = defRank(rollingIndexes.epaRollingIndex, row.season, row.week, row.opponentTeam);
+    const { rank: oppDefRank, poolSize: oppDefRankPoolSize } = defRank(rollingIndexes.epaRollingIndex, row.season, row.week, row.opponentTeam);
 
     const vegasLine = game
       ? resolveFinalPreKickoffLineFromIndex(archiveIndex, {
@@ -253,6 +259,7 @@ export function buildPlayerLast10(params) {
       opponentAbbr: game?.opponentAbbr ?? null,
       homeAway: game?.homeAway ?? null,
       oppDefRank,
+      oppDefRankPoolSize: oppDefRank != null ? oppDefRankPoolSize : null,
       oppYdsAllowAvg: oppYdsAllow?.avg ?? null,
       stat: statBlockFor(market, row),
       actualYards: market === "passing" ? row.passingYards : market === "rushing" ? row.rushingYards : row.receivingYards,
@@ -304,7 +311,7 @@ export function buildOpponentLast10(params) {
   return games.map((leaderRow) => {
     const lookupKey = `${defenseTeamNflverseAbbr}|${leaderRow.season}|${leaderRow.week}`;
     const game = gameLookup.get(lookupKey) ?? null;
-    const oppOffRank = offRank(rollingIndexes.epaRollingIndex, leaderRow.season, leaderRow.week, leaderRow.team);
+    const { rank: oppOffRank, poolSize: oppOffRankPoolSize } = offRank(rollingIndexes.epaRollingIndex, leaderRow.season, leaderRow.week, leaderRow.team);
     const oppPlayerYpg = rollingIndexes.playerRollingByMarket[market]?.get(`${leaderRow.playerId}|${leaderRow.season}|${leaderRow.week}`) ?? null;
 
     const vegasLine = game
@@ -325,6 +332,7 @@ export function buildOpponentLast10(params) {
       opponentPlayerName: leaderRow.playerName,
       homeAway: game?.homeAway ?? null,
       oppOffRank,
+      oppOffRankPoolSize: oppOffRank != null ? oppOffRankPoolSize : null,
       oppPlayerYpg: oppPlayerYpg?.avg ?? null,
       stat: statBlockFor(market, leaderRow),
       yardsAllowed: market === "passing" ? leaderRow.passingYards : market === "rushing" ? leaderRow.rushingYards : leaderRow.receivingYards,

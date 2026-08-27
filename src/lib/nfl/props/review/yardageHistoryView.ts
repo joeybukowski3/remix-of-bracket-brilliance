@@ -126,3 +126,96 @@ export function formatGameScore(score: { result: "W" | "L" | "T" | null; teamSco
   if (!score || score.result == null || score.teamScore == null || score.oppScore == null) return "N/A";
   return `${score.result} ${score.teamScore}–${score.oppScore}`;
 }
+
+/**
+ * Actual yards minus a comparison average (Opp Yds Allow Avg for the player
+ * table's VS OPP AVG, or the opposing player's entering YPG for the opponent
+ * table's VS QB/RB/WR/TE AVG). Works even when TODAY's current sportsbook
+ * line is unavailable -- this comparison never depends on the current line.
+ */
+export function computeVsAverageDiff(actualValue: number, comparisonAvg: number | null): number | null {
+  if (comparisonAvg == null || !Number.isFinite(comparisonAvg)) return null;
+  return actualValue - comparisonAvg;
+}
+
+/** positive -> "over" (green), negative -> "under" (red), zero -> "push" (neutral styling), missing -> "neutral". */
+export function classifyVsAverageDiff(diff: number | null): NflYardageOverUnderResult {
+  if (diff == null || !Number.isFinite(diff)) return "neutral";
+  if (diff > 0) return "over";
+  if (diff < 0) return "under";
+  return "push";
+}
+
+export function formatSignedDiff(diff: number | null): string {
+  if (diff == null || !Number.isFinite(diff)) return "N/A";
+  const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
+  return `${sign}${Math.abs(diff).toFixed(1)}`;
+}
+
+/** Arithmetic mean over the non-null, finite values only -- nulls are excluded from the denominator, never coerced to zero. */
+export function averageExcludingNulls(values: readonly (number | null | undefined)[]): number | null {
+  const finite = values.filter((v): v is number => v != null && Number.isFinite(v));
+  if (finite.length === 0) return null;
+  return finite.reduce((sum, v) => sum + v, 0) / finite.length;
+}
+
+export type NflYardagePlayerLast10FooterAverages = {
+  oppDefRankAvg: number | null;
+  oppYdsAllowAvgAvg: number | null;
+  actualYardsAvg: number | null;
+  vsOppAvgAvg: number | null;
+  /** Keyed by the stat block's own field names (e.g. "completions", "attempts", "rushAttempts", "recTds"). */
+  statAverages: Record<string, number | null>;
+  vegasLineAvg: number | null;
+  sampleSize: number;
+};
+
+/** Last-10 footer averages for the Player table. Excludes nulls from every denominator; never fabricates zero. */
+export function buildPlayerLast10FooterAverages(
+  games: readonly NflYardagePlayerHistoryGame[],
+): NflYardagePlayerLast10FooterAverages {
+  const statKeys = games.length > 0 ? Object.keys(games[0].stat) : [];
+  const statAverages: Record<string, number | null> = {};
+  for (const key of statKeys) {
+    statAverages[key] = averageExcludingNulls(games.map((g) => (g.stat as unknown as Record<string, number>)[key]));
+  }
+  return {
+    oppDefRankAvg: averageExcludingNulls(games.map((g) => g.oppDefRank)),
+    oppYdsAllowAvgAvg: averageExcludingNulls(games.map((g) => g.oppYdsAllowAvg)),
+    actualYardsAvg: averageExcludingNulls(games.map((g) => g.actualYards)),
+    vsOppAvgAvg: averageExcludingNulls(games.map((g) => computeVsAverageDiff(g.actualYards, g.oppYdsAllowAvg))),
+    statAverages,
+    vegasLineAvg: averageExcludingNulls(games.map((g) => g.vegasLine)),
+    sampleSize: games.length,
+  };
+}
+
+export type NflYardageOpponentLast10FooterAverages = {
+  oppOffRankAvg: number | null;
+  oppPlayerYpgAvg: number | null;
+  yardsAllowedAvg: number | null;
+  vsPlayerAvgAvg: number | null;
+  statAverages: Record<string, number | null>;
+  vegasLineAvg: number | null;
+  sampleSize: number;
+};
+
+/** Last-10 footer averages for the Opponent (defense) table. Excludes nulls from every denominator; never fabricates zero. */
+export function buildOpponentLast10FooterAverages(
+  games: readonly NflYardageOpponentHistoryGame[],
+): NflYardageOpponentLast10FooterAverages {
+  const statKeys = games.length > 0 ? Object.keys(games[0].stat) : [];
+  const statAverages: Record<string, number | null> = {};
+  for (const key of statKeys) {
+    statAverages[key] = averageExcludingNulls(games.map((g) => (g.stat as unknown as Record<string, number>)[key]));
+  }
+  return {
+    oppOffRankAvg: averageExcludingNulls(games.map((g) => g.oppOffRank)),
+    oppPlayerYpgAvg: averageExcludingNulls(games.map((g) => g.oppPlayerYpg)),
+    yardsAllowedAvg: averageExcludingNulls(games.map((g) => g.yardsAllowed)),
+    vsPlayerAvgAvg: averageExcludingNulls(games.map((g) => computeVsAverageDiff(g.yardsAllowed, g.oppPlayerYpg))),
+    statAverages,
+    vegasLineAvg: averageExcludingNulls(games.map((g) => g.vegasLine)),
+    sampleSize: games.length,
+  };
+}

@@ -6,11 +6,14 @@
 import { cn } from "@/lib/utils";
 import {
   classifyVsCurrentLine,
+  classifyVsAverageDiff,
   formatGameScore,
   formatHomeAway,
   formatRank,
+  formatSignedDiff,
   type NflYardageLast10Summary,
 } from "@/lib/nfl/props/review/yardageHistoryView";
+import { weeklyHeatClass, weeklyHeatStyle, type WeeklyHeatTone } from "@/lib/nfl/props/review/yardageHeat";
 
 export function NflYardageHomeAwayPill({ homeAway }: { homeAway: "home" | "away" | null }) {
   const label = formatHomeAway(homeAway);
@@ -59,8 +62,34 @@ export function NflYardageActualYardsCell({ actualYards, currentLine }: { actual
   );
 }
 
-export function NflYardageRankCell({ rank }: { rank: number | null }) {
-  return <span className="tabular-nums text-slate-700">{formatRank(rank)}</span>;
+export function NflYardageRankCell({ rank, heatTone }: { rank: number | null; heatTone?: WeeklyHeatTone }) {
+  if (heatTone == null) {
+    return <span className="tabular-nums text-slate-700">{formatRank(rank)}</span>;
+  }
+  return (
+    <span
+      className={cn("inline-block rounded px-1.5 py-0.5 tabular-nums font-semibold", weeklyHeatClass(heatTone))}
+      style={weeklyHeatStyle(heatTone)}
+    >
+      {formatRank(rank)}
+    </span>
+  );
+}
+
+/** VS OPP AVG / VS QB|RB|WR|TE AVG cell -- actual value minus a comparison average, works with or without a current sportsbook line. */
+export function NflYardageVsAverageCell({ diff }: { diff: number | null }) {
+  const result = classifyVsAverageDiff(diff);
+  const tone =
+    result === "over"
+      ? "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200"
+      : result === "under"
+        ? "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200"
+        : "text-slate-800";
+  return (
+    <span data-result={result} className={cn("inline-block rounded px-1.5 py-0.5 font-semibold tabular-nums", tone)}>
+      {formatSignedDiff(diff)}
+    </span>
+  );
 }
 
 export function NflYardageVegasLineCell({ line }: { line: number | null }) {

@@ -28,6 +28,26 @@
 const TRAILING_GAMES = 10;
 
 /**
+ * `epa_team_game_<season>.csv` (nflfastR play-by-play) uses a different team
+ * code than `stats_player_week_<season>.csv` (nflverse weekly stats) for two
+ * franchises: the Rams ("LAR" vs "LA") and Washington ("WSH" vs "WAS"). Every
+ * other team code agrees between the two files. `nfl-yardage-history-core.mjs`
+ * joins this module's rolling rank index against `opponentTeam`/`team` codes
+ * that come from `stats_player_week` (via `normalizeHistoryStatRows`) and from
+ * `teams.json`'s `nflverseAbbr` (which also uses the `stats_player_week`
+ * convention -- see `buildNflverseTeamMap`), so an unaliased "LAR"/"WSH" key
+ * here would never match and would silently rank those two teams' games as
+ * null forever. Aliasing at ingestion keeps every downstream key in this
+ * module on the single `stats_player_week` convention.
+ */
+const EPA_TEAM_CODE_ALIAS = { LAR: "LA", WSH: "WAS" };
+
+function normalizeEpaTeamCode(code) {
+  const upper = String(code).toUpperCase();
+  return EPA_TEAM_CODE_ALIAS[upper] ?? upper;
+}
+
+/**
  * @param {ReadonlyArray<Record<string,string>>} rows - parsed epa_team_game_<season>.csv rows (string cells).
  * @returns {{ gameId: string, season: number, week: number, team: string, opponent: string, offEpa: number, offPlays: number }[]}
  */
@@ -45,8 +65,8 @@ export function normalizeEpaTeamGameRows(rows) {
       gameId: row.game_id,
       season,
       week,
-      team: String(row.team).toUpperCase(),
-      opponent: String(row.opponent).toUpperCase(),
+      team: normalizeEpaTeamCode(row.team),
+      opponent: normalizeEpaTeamCode(row.opponent),
       offEpa,
       offPlays,
     });
