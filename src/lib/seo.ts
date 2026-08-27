@@ -12,6 +12,7 @@ export type SeoPage =
   | "pga-model"
   | "nfl"
   | "fantasy-football"
+  | "fantasy-draft-preview"
   | "fantasy-points-allowed"
   | "fantasy-weekly-rankings"
   | "nba"
@@ -105,6 +106,12 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "Joe Knows Ball rest-of-season fantasy football rankings, season projections, position filters and PAR-based draft research.",
     path: "/fantasy-football",
+  },
+  "fantasy-draft-preview": {
+    title: "2026 Fantasy Draft Preview — Sleeper Draft Board | Joe Knows Ball",
+    description:
+      "Compare the Sleeper 2026 draft board against Joe Knows Ball rest-of-season projections, PAR/G and Model Rank, with 12-team snake draft pick markers.",
+    path: "/fantasy-football/draft-preview",
   },
   "fantasy-points-allowed": {
     title: "2025 Fantasy Points Allowed by Position | Joe Knows Ball",
