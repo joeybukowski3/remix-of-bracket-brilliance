@@ -1,10 +1,10 @@
 {
   "date": "2026-08-27",
-  "generatedAt": "2026-08-27T18:20:29.234Z",
+  "generatedAt": "2026-08-27T22:27:31.197Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Yankee Stadium (1.18) and Rogers Centre (1.08) leading the way, while Busch Stadium (0.92) and Oracle Park (0.85) suppress power. Right-handed pitching dominates the slate, but several matchups feature fly-ball prone arms like Graceffo and Cabrera who have allowed elevated HR/FB rates. Weather looks neutral across the board, so park and pitcher factors drive the leverage.",
-    "modelNote": "The model is overweighting barrel rate and recent power trends while discounting park suppression when hard contact metrics are elite, which is why Alonso and Devers rank 1-2 despite subpar venues."
+    "slateOverview": "Busch Stadium and Yankee Stadium are the clearest HR venues today, with Graceffo and Wesneski both allowing elevated fly-ball contact and HR/FB rates. Rogers Centre’s 1.08 park factor and Arrighetti’s 55.6 HR/9 mark also create a favorable environment for power, while Oracle Park’s 0.85 factor caps Devers’ upside despite his recent surge.",
+    "modelNote": "The model is prioritizing barrel rate, recent HR volume, and opposing pitcher HR vulnerability over park factor, which is why Alonso (82.1) and Goodman (68.4) sit atop the slate despite sub-1.00 parks."
   },
   "bestBets": [
     {
@@ -18,12 +18,31 @@
         "HH=56.8%"
       ],
       "bullets": [
-        "hrScore=82",
+        "hrScore=82.1",
         "park=0.92"
       ],
-      "hrOddsYes": "+391",
-      "marketImpliedProbability": 0.20366598778004075,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "WSH",
+      "opposingPitcher": "Jake Irvin",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=17%",
+        "HH=45.8%"
+      ],
+      "bullets": [
+        "hrScore=68.4",
+        "park=0.98"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -31,17 +50,17 @@
       "team": "SF",
       "opponent": "AZ",
       "opposingPitcher": "Jose Cabrera",
-      "hrScoreRank": 2,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=11.2%",
         "HH=50.7%"
       ],
       "bullets": [
-        "hrScore=68.2",
+        "hrScore=68.1",
         "park=0.85"
       ],
-      "hrOddsYes": "+380",
-      "marketImpliedProbability": 0.20833333333333334,
+      "hrOddsYes": "+379",
+      "marketImpliedProbability": 0.20876826722338204,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,14 +69,14 @@
       "team": "KC",
       "opponent": "TOR",
       "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=56.2",
+        "Pitcher HR VS=55.6",
         "Hard Hit%=54.6"
       ],
       "bullets": [
-        "HR score 67.0 (#3)",
-        "Pitcher HR VS 56.2 at park 1.08"
+        "HR score 66.4 (#4)",
+        "Pitcher HR VS 55.6 at park 1.08"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -69,36 +88,17 @@
       "team": "NYY",
       "opponent": "HOU",
       "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=49.0",
+        "Pitcher HR VS=47.8",
         "Hard Hit%=46.2"
       ],
       "bullets": [
-        "HR score 65.4 (#4)",
-        "Pitcher HR VS 49.0 at park 1.18"
+        "HR score 64.8 (#5)",
+        "Pitcher HR VS 47.8 at park 1.18"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Christian Encarnacion-Strand",
-      "team": "BAL",
-      "opponent": "STL",
-      "opposingPitcher": "Gordon Graceffo",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=55.9",
-        "Hard Hit%=43.6"
-      ],
-      "bullets": [
-        "HR score 63.5 (#5)",
-        "Pitcher HR VS 55.9 at park 0.92"
-      ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -109,13 +109,13 @@
       "team": "KC",
       "opponent": "TOR",
       "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=14.3%",
         "HH=54.6%"
       ],
       "bullets": [
-        "hrScore=67",
+        "hrScore=66.4",
         "park=1.08"
       ],
       "hrOddsYes": "+350",
@@ -128,17 +128,17 @@
       "team": "NYY",
       "opponent": "HOU",
       "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=12.4%",
         "HH=46.2%"
       ],
       "bullets": [
-        "hrScore=65.4",
+        "hrScore=64.8",
         "park=1.18"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,13 +147,13 @@
       "team": "BAL",
       "opponent": "STL",
       "opposingPitcher": "Gordon Graceffo",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=16.7%",
         "HH=43.6%"
       ],
       "bullets": [
-        "hrScore=63.5",
+        "hrScore=64.3",
         "park=0.92"
       ],
       "hrOddsYes": "+525",
@@ -166,17 +166,17 @@
       "team": "HOU",
       "opponent": "NYY",
       "opposingPitcher": "Gerrit Cole",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
         "Pitcher HR VS=54.6",
         "Hard Hit%=53.6"
       ],
       "bullets": [
-        "HR score 62.2 (#6)",
+        "HR score 62.1 (#7)",
         "Pitcher HR VS 54.6 at park 1.18"
       ],
-      "hrOddsYes": "+226",
-      "marketImpliedProbability": 0.3067484662576687,
+      "hrOddsYes": "+223",
+      "marketImpliedProbability": 0.30959752321981426,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,53 +185,53 @@
       "team": "KC",
       "opponent": "TOR",
       "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=56.2",
+        "Pitcher HR VS=55.6",
         "Hard Hit%=51.2"
       ],
       "bullets": [
-        "HR score 61.2 (#7)",
-        "Pitcher HR VS 56.2 at park 1.08"
+        "HR score 60.9 (#8)",
+        "Pitcher HR VS 55.6 at park 1.08"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=49.0",
-        "Pitcher HR VS=49.0"
-      ],
-      "bullets": [
-        "HR score 59.4 (#8)",
-        "Pitcher HR VS 49.0 at park 1.18"
-      ],
-      "hrOddsYes": "+276",
-      "marketImpliedProbability": 0.26595744680851063,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "NYY",
+      "opposingPitcher": "Gerrit Cole",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=17.1%",
+        "HH=53.6%"
+      ],
+      "bullets": [
+        "hrScore=62.1",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+223",
+      "marketImpliedProbability": 0.30959752321981426,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Bobby Witt Jr.",
       "team": "KC",
       "opponent": "TOR",
       "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
         "barrel=11.5%",
         "HH=51.2%"
       ],
       "bullets": [
-        "hrScore=61.2",
+        "hrScore=60.9",
         "park=1.08"
       ],
       "hrOddsYes": "+350",
@@ -240,59 +240,40 @@
       "hrValueEdge": null
     },
     {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 8,
+      "player": "Shay Whitcomb",
+      "team": "SF",
+      "opponent": "AZ",
+      "opposingPitcher": "Jose Cabrera",
+      "hrScoreRank": 23,
       "topStats": [
-        "barrel=14.8%",
-        "HH=49%"
+        "Pitcher HR VS=55.5",
+        "Hard Hit%=47.4"
       ],
       "bullets": [
-        "hrScore=59.4",
-        "park=1.18"
+        "HR score 53.3 (#23)",
+        "Pitcher HR VS 55.5 at park 0.85"
       ],
-      "hrOddsYes": "+276",
-      "marketImpliedProbability": 0.26595744680851063,
+      "hrOddsYes": "+850",
+      "marketImpliedProbability": 0.10526315789473684,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Garrett Mitchell",
-      "team": "MIL",
-      "opponent": "NYM",
-      "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 21,
+      "player": "Jonah Cox",
+      "team": "SF",
+      "opponent": "AZ",
+      "opposingPitcher": "Jose Cabrera",
+      "hrScoreRank": 14,
       "topStats": [
-        "Pitcher HR VS=69.0",
-        "Hard Hit%=51.9"
+        "Pitcher HR VS=55.5",
+        "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 51.7 (#21)",
-        "Pitcher HR VS 69.0 at park 1.06"
+        "HR score 55.7 (#14)",
+        "Pitcher HR VS 55.5 at park 0.85"
       ],
-      "hrOddsYes": "+1000",
-      "marketImpliedProbability": 0.09090909090909091,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "BAL",
-      "opposingPitcher": "Trevor Rogers",
-      "hrScoreRank": 18,
-      "topStats": [
-        "Pitcher HR VS=50.8",
-        "Hard Hit%=49.9"
-      ],
-      "bullets": [
-        "HR score 53.9 (#18)",
-        "Pitcher HR VS 50.8 at park 0.92"
-      ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+765",
+      "marketImpliedProbability": 0.11560693641618497,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
