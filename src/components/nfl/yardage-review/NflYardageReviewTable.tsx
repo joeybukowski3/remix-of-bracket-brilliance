@@ -18,6 +18,18 @@ import {
 } from "./opponentContextCells";
 import NflYardageReviewDetailPanel from "./NflYardageReviewDetailPanel";
 
+/**
+ * True when a click/keydown originated on a native interactive child (button,
+ * link, form control) rather than the row background -- used so the
+ * whole-row expand toggle never fires from a click meant for a child
+ * control. Deliberately excludes `[role="button"]` -- the row itself carries
+ * that role for its own click/keyboard handling, and matching it here would
+ * make every click on the row look like a click on an "interactive child".
+ */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("button, a, input, select, textarea") != null;
+}
+
 function SortArrow({ direction }: { direction: "asc" | "desc" | null }) {
   if (!direction) {
     return (
@@ -77,12 +89,14 @@ export default function NflYardageReviewTable({
   onSort,
   opponentContextByKey,
   projectedYardsHeatByKey,
+  season,
 }: {
   entries: readonly NflYardageReviewRow[];
   sort: NflYardageReviewSortState;
   onSort: (key: NflYardageReviewSortKey) => void;
   opponentContextByKey: ReadonlyMap<string, NflYardageOpponentContextWithHeat>;
   projectedYardsHeatByKey: ReadonlyMap<string, WeeklyHeatTone>;
+  season: number;
 }) {
   // Passing has no opportunity x efficiency breakdown (no carries/targets leg) --
   // the Role column is always empty for that market, so it is dropped rather
@@ -136,7 +150,7 @@ export default function NflYardageReviewTable({
                   onSort={onSort}
                   title={`Opponent Success Rate allowed, by defensive rank. ${OPP_DEFENSE_RANK_DIRECTION_HINT}`}
                 />
-                <th scope="col" className="px-2 py-2 text-center align-bottom" title="Opponent EPA-defense rank minus offense rank; positive favors the offense">Edge</th>
+                <th scope="col" className="px-2 py-2 text-center align-bottom" title="Team Edge: opponent EPA-defense rank minus offense rank; positive favors the offense">Team Edge</th>
               </tr>
             </thead>
             <tbody>
@@ -144,16 +158,33 @@ export default function NflYardageReviewTable({
                 const rowKey = `${row.market}-${row.playerId}`;
                 const context = opponentContextByKey.get(rowKey);
                 const expanded = expandedKey === rowKey;
+                const toggle = () => setExpandedKey(expanded ? null : rowKey);
                 return (
                   <Fragment key={rowKey}>
-                  <tr className={NFL_TABLE_ROW}>
+                  <tr
+                    className={cn(NFL_TABLE_ROW, "cursor-pointer")}
+                    tabIndex={0}
+                    role="button"
+                    aria-expanded={expanded}
+                    aria-label={expanded ? `Collapse details for ${row.playerName}` : `Expand details for ${row.playerName}`}
+                    onClick={(event) => {
+                      if (isInteractiveTarget(event.target)) return;
+                      toggle();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      toggle();
+                    }}
+                  >
                     <td className="px-1 py-1.5 text-center">
                       <button
                         type="button"
-                        onClick={() => setExpandedKey(expanded ? null : rowKey)}
-                        aria-expanded={expanded}
-                        aria-label={expanded ? `Collapse details for ${row.playerName}` : `Expand details for ${row.playerName}`}
-                        className="rounded p-0.5 text-slate-400 transition hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
+                        onClick={toggle}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        className="pointer-events-none rounded p-0.5 text-slate-400 transition"
                       >
                         <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-90")} aria-hidden="true" />
                       </button>
@@ -213,7 +244,7 @@ export default function NflYardageReviewTable({
                   {expanded && (
                     <tr className="border-b border-slate-100">
                       <td colSpan={showRoleStat ? 15 : 14} className="p-0">
-                        <NflYardageReviewDetailPanel row={row} marketInfo={marketInfo} opponentContext={context} />
+                        <NflYardageReviewDetailPanel row={row} marketInfo={marketInfo} opponentContext={context} season={season} />
                       </td>
                     </tr>
                   )}

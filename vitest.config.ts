@@ -35,6 +35,10 @@ export default defineConfig({
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
       "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL Yardage Player Detail v2 -- Last-10 history pipeline.
+      "scripts/lib/nfl-epa-week-rank-core.test.mjs",
+      "scripts/lib/nfl-yardage-rolling-core.test.mjs",
+      "scripts/lib/nfl-yardage-historical-line-core.test.mjs",
       // NFL Phase 11A -- JKB-vs-sportsbook research/evaluation framework.
       "scripts/lib/nfl-research-odds-math.test.mjs",
       "scripts/lib/nfl-research-join.test.mjs",

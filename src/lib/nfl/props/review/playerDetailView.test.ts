@@ -6,6 +6,9 @@ import {
   buildSportsbookDetail,
   buildDetailNotes,
   resolveWindowSource,
+  buildDiffEquation,
+  buildMatchupSummary,
+  buildEdgeEquation,
 } from "./playerDetailView";
 import type {
   NflCurrentWeekPassingRow,
@@ -14,6 +17,8 @@ import type {
   NflCurrentWeekHardCaseFlags,
 } from "../types/currentWeekProjection";
 import type { NflYardageReviewMarketInfo } from "./yardageMarketJoin";
+import type { NflYardageOpponentContext } from "./opponentContext";
+import type { NflPassingMatchupScore } from "../types/matchupScore";
 
 const NO_FLAGS: NflCurrentWeekHardCaseFlags = {
   noHistory: false, limitedHistory: false, multiQbRoleUncertain: false, committeeRole: false,
@@ -243,5 +248,71 @@ describe("buildDetailNotes", () => {
     for (const note of notes) {
       expect(note.text.toLowerCase()).not.toMatch(/injur|hurt|out for|questionable|doubtful/);
     }
+  });
+});
+
+describe("buildDiffEquation", () => {
+  it("computes Projection − Line = Diff verbatim", () => {
+    const row = passingRow({ projectedYards: 220.7 });
+    const result = buildDiffEquation(row, { ...AVAILABLE, line: 233.5 });
+    expect(result).toEqual({ projectedYards: 220.7, line: 233.5, diff: 220.7 - 233.5 });
+  });
+
+  it("returns null with no available line", () => {
+    expect(buildDiffEquation(passingRow(), UNAVAILABLE)).toBeNull();
+  });
+});
+
+const MATCHUP_SCORE: NflPassingMatchupScore = {
+  schemaVersion: "nfl-yardage-matchup-score-v2",
+  scoreVersion: "nfl-yardage-matchup-score-phase8-v1",
+  referenceDistributionVersion: "nfl-yardage-matchup-reference-2022-2024-v1",
+  season: 2026, week: 1, gameId: "2026_01_NE_SEA", playerId: "gsis:QB1", playerName: "Test QB",
+  team: "ne", opponent: "sea", market: "passing",
+  matchupScore: 72, opportunityScore: 70, environmentScore: 74, generatedAt: "2026-08-26T14:41:55Z",
+  components: {
+    opportunity: { score: 30, indicatorScores: {} },
+    opponent: { score: 20, indicatorScores: {} },
+    gameEnvironment: { score: 10, indicatorScores: {} },
+    passingQuality: { score: 40, indicatorScores: {} },
+  },
+};
+
+describe("buildMatchupSummary", () => {
+  it("reads the total score, band, and per-component scores verbatim -- never re-derives them", () => {
+    const row = passingRow({ matchupScore: MATCHUP_SCORE });
+    const summary = buildMatchupSummary(row);
+    expect(summary?.matchupScore).toBe(72);
+    expect(summary?.band).toBe("strong");
+    const opportunity = summary?.components.find((c) => c.key === "opportunity");
+    expect(opportunity?.score).toBe(30);
+    // 30 / (30+20+10+40) = 0.3
+    expect(opportunity?.weight).toBeCloseTo(0.3, 5);
+  });
+
+  it("returns null when the row has no matchup score", () => {
+    expect(buildMatchupSummary(passingRow({ matchupScore: null }))).toBeNull();
+  });
+});
+
+function opponentContext(overrides: Partial<NflYardageOpponentContext["epaEdge"]> = {}): NflYardageOpponentContext {
+  return {
+    mode: "pass",
+    productionAllowed: { position: "QB", season: null, last5: null },
+    epaEdge: { score: 50, offenseRank: 24, defenseRank: 9, rankDifference: -15, offense: null, defense: null, ...overrides },
+    successEdge: { score: null, offenseRank: null, defenseRank: null, rankDifference: null, offense: null, defense: null },
+    successPeriodLabel: "2025 L8",
+  };
+}
+
+describe("buildEdgeEquation", () => {
+  it("computes Opponent Defense Rank − Team Offense Rank = Edge verbatim from the existing matchupEdges rankDifference", () => {
+    const result = buildEdgeEquation(opponentContext());
+    expect(result).toEqual({ defenseRank: 9, offenseRank: 24, edge: -15 });
+  });
+
+  it("returns null with no opponent context or unranked edges", () => {
+    expect(buildEdgeEquation(undefined)).toBeNull();
+    expect(buildEdgeEquation(opponentContext({ defenseRank: null }))).toBeNull();
   });
 });
