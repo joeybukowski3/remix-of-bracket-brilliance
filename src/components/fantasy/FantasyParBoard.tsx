@@ -281,10 +281,13 @@ function OverallBoard({ query }: { query: string }) {
  * Secondary/independent-authority cell for the SHADOW Model Rk column.
  * Deliberately lighter (outlined pill, muted slate) than the primary Rank
  * column's bold plain text, so it never reads as equal or dominant to the
- * JKB RANK authority it sits beside.
+ * JKB RANK authority it sits beside. `modelRank` is a cross-position rank
+ * (see `shadowModelRankJoin.ts`), so this is deliberately NOT a heat-map
+ * gradient cell -- exported so other boards showing the same Model Rank
+ * authority (e.g. Draft Preview) reuse this exact canonical treatment
+ * instead of inventing a separate one.
  */
-function ModelRankCell({ model }: { model: ShadowModelRankRow | undefined }) {
-  const rank = model?.modelRank ?? null;
+export function ModelRankCell({ rank }: { rank: number | null }) {
   if (rank == null) {
     return (
       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
@@ -341,7 +344,7 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
         <OverallStatCell tone={tone} value={formatSigned(context.parPerGame, 2)} />
         <OverallStatCell tone={tone} value={formatRank(row.projectionRank)} />
         <OverallStatCell tone={tone} value={formatRank(row.averageRank)} />
-        <ModelRankCell model={model} />
+        <ModelRankCell rank={model?.modelRank ?? null} />
         <OverallStatCell tone={tone} value={formatRank(row.strengthOfSchedule)} />
         <PositionalHistoryCell tone={tone} position={row.position} rank={context.seasonRank2025?.byPoints} />
         <PositionalHistoryCell tone={tone} position={row.position} rank={context.seasonRank2025?.byPpg} />

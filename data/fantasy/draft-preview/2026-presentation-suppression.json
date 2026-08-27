@@ -1,0 +1,136 @@
+{
+  "_meta": {
+    "schemaVersion": "fantasy-draft-preview-presentation-suppression-v1",
+    "source": "data/nfl/nflverse/weekly-rosters/roster_weekly_2026.csv",
+    "generatedBy": "scripts/audit-fantasy-draft-preview-identity.ts",
+    "duplicateGroupCount": 8,
+    "suppressedDuplicateRankCount": 9,
+    "malformedRankCount": 1
+  },
+  "duplicateGroups": [
+    {
+      "canonicalPlayer": "Jalen Milroe",
+      "canonicalTeam": "SEA",
+      "canonicalPosition": "QB",
+      "sourceRanks": [
+        60,
+        182
+      ],
+      "retainedRank": 60,
+      "suppressedRanks": [
+        182
+      ]
+    },
+    {
+      "canonicalPlayer": "Dylan Sampson",
+      "canonicalTeam": "CLE",
+      "canonicalPosition": "RB",
+      "sourceRanks": [
+        89,
+        188
+      ],
+      "retainedRank": 89,
+      "suppressedRanks": [
+        188
+      ]
+    },
+    {
+      "canonicalPlayer": "T.J. Hockenson",
+      "canonicalTeam": "MIN",
+      "canonicalPosition": "TE",
+      "sourceRanks": [
+        116,
+        164
+      ],
+      "retainedRank": 116,
+      "suppressedRanks": [
+        164
+      ]
+    },
+    {
+      "canonicalPlayer": "Keon Coleman",
+      "canonicalTeam": "BUF",
+      "canonicalPosition": "WR",
+      "sourceRanks": [
+        151,
+        167,
+        257
+      ],
+      "retainedRank": 151,
+      "suppressedRanks": [
+        167,
+        257
+      ]
+    },
+    {
+      "canonicalPlayer": "Braelon Allen",
+      "canonicalTeam": "NYJ",
+      "canonicalPosition": "RB",
+      "sourceRanks": [
+        152,
+        206
+      ],
+      "retainedRank": 152,
+      "suppressedRanks": [
+        206
+      ]
+    },
+    {
+      "canonicalPlayer": "Malik Washington",
+      "canonicalTeam": "MIA",
+      "canonicalPosition": "WR",
+      "sourceRanks": [
+        172,
+        200
+      ],
+      "retainedRank": 172,
+      "suppressedRanks": [
+        200
+      ]
+    },
+    {
+      "canonicalPlayer": "Kaleb Johnson",
+      "canonicalTeam": "PIT",
+      "canonicalPosition": "RB",
+      "sourceRanks": [
+        209,
+        220
+      ],
+      "retainedRank": 209,
+      "suppressedRanks": [
+        220
+      ]
+    },
+    {
+      "canonicalPlayer": "Rashod Bateman",
+      "canonicalTeam": "BAL",
+      "canonicalPosition": "WR",
+      "sourceRanks": [
+        235,
+        254
+      ],
+      "retainedRank": 235,
+      "suppressedRanks": [
+        254
+      ]
+    }
+  ],
+  "suppressedDuplicateRanks": [
+    164,
+    167,
+    182,
+    188,
+    200,
+    206,
+    220,
+    254,
+    257
+  ],
+  "malformedRanks": [
+    {
+      "sleeperRank": 256,
+      "player": "Denver Broncos",
+      "reason": "Player name is \"Denver Broncos\" (an NFL team, not a person) with a fabricated WR-shaped stat line under POS \"TE\" -- source-data row corruption, not a real draftable player."
+    }
+  ]
+}
