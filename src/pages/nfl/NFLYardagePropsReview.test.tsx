@@ -126,9 +126,51 @@ function emptyTeamsArtifact() {
   return { teams: [{ abbr: "ne", nflverseAbbr: "NE" }, { abbr: "sea", nflverseAbbr: "SEA" }] };
 }
 
+function yardageHistoryArtifact() {
+  return {
+    _meta: { generatedAt: "2026-08-26T00:00:00Z", source: "test", season: 2026, week: 1, notes: [] },
+    schemaVersion: "nfl-yardage-history-v1",
+    season: 2026,
+    week: 1,
+    players: {
+      "gsis:00-0039851:passing": {
+        playerId: "gsis:00-0039851",
+        playerName: "Drake Maye",
+        market: "passing",
+        position: "QB",
+        games: [
+          {
+            gameId: "2025_18_MIA_NE", season: 2025, week: 18, dateUtc: "2026-01-04T21:25:00.000Z",
+            opponentAbbr: "mia", homeAway: "home", oppDefRank: 14, oppYdsAllowAvg: 230.3,
+            stat: { completions: 14, attempts: 18, passingTds: 1, interceptions: 0 },
+            actualYards: 191, gameScore: { result: "W", teamScore: 38, oppScore: 10 }, vegasLine: null,
+          },
+        ],
+      },
+    },
+    teamDefense: {
+      "sea:passing:QB": {
+        team: "sea",
+        market: "passing",
+        position: "QB",
+        games: [
+          {
+            gameId: "2025_18_ARI_SEA", season: 2025, week: 18, dateUtc: "2026-01-04T21:25:00.000Z",
+            opponentPlayerId: "00-1", opponentPlayerName: "Test Opp QB", homeAway: "home",
+            oppOffRank: 20, oppPlayerYpg: 210.4,
+            stat: { completions: 22, attempts: 33, passingTds: 1, interceptions: 1 },
+            yardsAllowed: 245, gameScore: { result: "L", teamScore: 17, oppScore: 24 }, vegasLine: null,
+          },
+        ],
+      },
+    },
+  };
+}
+
 function stubFetch(projections: NflCurrentWeekProjectionArtifact, market: NflYardageMarketArtifact) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes("yardage-history.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(yardageHistoryArtifact()) } as Response);
     if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projections) } as Response);
     if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(market) } as Response);
     if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
@@ -235,6 +277,89 @@ describe("NFLYardagePropsReview", () => {
     collapseButtons[0].click();
 
     await waitFor(() => expect(screen.queryByText("QB Attempts/Game")).not.toBeInTheDocument());
+  });
+
+  it("expanding a row shows Show the Work cards, the Diff/Edge equations, and the Last-10 history tables", async () => {
+    stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    const expandButtons = screen.getAllByRole("button", { name: /expand details for drake maye/i });
+    expandButtons[0].click();
+
+    await waitFor(() => expect(screen.getAllByText("Show the Work").length).toBeGreaterThan(0));
+    expect(screen.getAllByText("1. Projected Yards").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2. Sportsbook").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3. Diff").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("4. Matchup").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("8. Team Edge").length).toBeGreaterThan(0);
+    // Diff literal equation: 245.3 - 228.5 = +16.8
+    expect(screen.getAllByText(/245\.3.*228\.5/).length).toBeGreaterThan(0);
+
+    await waitFor(() => expect(screen.getAllByText("Player Last 10").length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0);
+  });
+
+  it("clicking anywhere on the row body (not just the chevron) expands and collapses the detail panel", async () => {
+    stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    expect(screen.queryByText("QB Attempts/Game")).not.toBeInTheDocument();
+
+    // The player name cell is plain row content, not the chevron affordance.
+    const nameCell = screen.getAllByText("Drake Maye")[0];
+    nameCell.click();
+    await waitFor(() => expect(screen.getAllByText("QB Attempts/Game").length).toBeGreaterThan(0));
+
+    nameCell.click();
+    await waitFor(() => expect(screen.queryByText("QB Attempts/Game")).not.toBeInTheDocument());
+  });
+
+  it("a click on the (decorative) chevron toggles the row exactly once, never twice", async () => {
+    stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
+    const { container } = renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    const chevronButton = container.querySelector('tr[role="button"] button[aria-hidden="true"]') as HTMLButtonElement;
+    expect(chevronButton).toBeTruthy();
+
+    chevronButton.click();
+    // A single toggle expands the panel -- if the row-level click handler also fired (double toggle), it would still be collapsed.
+    await waitFor(() => expect(screen.getAllByText("QB Attempts/Game").length).toBeGreaterThan(0));
+  });
+
+  it("the three detail subsections default expanded and collapse/expand independently, without discarding loaded history", async () => {
+    stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
+    // Default state: all three subsections expanded.
+    expect(screen.getAllByText("1. Projected Yards").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0);
+
+    // Collapsing "Show the Work" hides only its own content.
+    const showWorkHeader = screen.getAllByRole("button", { name: "Show the Work" })[0];
+    showWorkHeader.click();
+    await waitFor(() => expect(screen.queryByText("1. Projected Yards")).not.toBeInTheDocument());
+    expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0);
+
+    // Collapsing "Player Last 10" leaves "Opponent Last 10" (and the still-collapsed Show the Work) alone.
+    const playerLast10Header = screen.getAllByRole("button", { name: "Player Last 10" })[0];
+    playerLast10Header.click();
+    await waitFor(() => expect(screen.queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument());
+    expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0);
+    expect(screen.queryByText("1. Projected Yards")).not.toBeInTheDocument();
+
+    // Re-expanding "Show the Work" shows its content again -- the underlying data was never discarded by collapsing.
+    showWorkHeader.click();
+    await waitFor(() => expect(screen.getAllByText("1. Projected Yards").length).toBeGreaterThan(0));
   });
 
   it("shows the no-sportsbook-line message in the detail panel when no line is available", async () => {

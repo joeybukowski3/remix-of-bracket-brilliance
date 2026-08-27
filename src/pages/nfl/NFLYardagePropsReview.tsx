@@ -250,11 +250,13 @@ export default function NFLYardagePropsReview() {
                 onSort={handleSort}
                 opponentContextByKey={opponentContextByKey}
                 projectedYardsHeatByKey={projectedYardsHeatByKey}
+                season={SEASON}
               />
               <NflYardageReviewCardList
                 entries={sorted}
                 opponentContextByKey={opponentContextByKey}
                 projectedYardsHeatByKey={projectedYardsHeatByKey}
+                season={SEASON}
               />
             </>
           )}

@@ -9,15 +9,28 @@ import { marketRoleStat } from "./marketRoleStat";
 import { OppEdgeCell, OppEpaAllowedCell, OppSuccessAllowedCell, OppYardsAllowedL5Cell, OppYardsAllowedSeasonCell } from "./opponentContextCells";
 import NflYardageReviewDetailPanel from "./NflYardageReviewDetailPanel";
 
+/**
+ * True when a click/keydown originated on a native interactive child rather
+ * than the card background. Deliberately excludes `[role="button"]` -- the
+ * card itself (the `<li>`) carries that role for its own tap/keyboard
+ * handling, and matching it here would make every tap on the card look like
+ * a tap on an "interactive child" and never toggle.
+ */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("button, a, input, select, textarea") != null;
+}
+
 /** Highly compact mobile stand-in for the desktop table -- one dense card per player, not a horizontally-scrolled table. */
 export default function NflYardageReviewCardList({
   entries,
   opponentContextByKey,
   projectedYardsHeatByKey,
+  season,
 }: {
   entries: readonly NflYardageReviewRow[];
   opponentContextByKey: ReadonlyMap<string, NflYardageOpponentContextWithHeat>;
   projectedYardsHeatByKey: ReadonlyMap<string, WeeklyHeatTone>;
+  season: number;
 }) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
@@ -27,8 +40,26 @@ export default function NflYardageReviewCardList({
         const rowKey = `${row.market}-${row.playerId}`;
         const context = opponentContextByKey.get(rowKey);
         const expanded = expandedKey === rowKey;
+        const toggle = () => setExpandedKey(expanded ? null : rowKey);
         return (
-          <li key={rowKey} className="rounded-lg border border-slate-300 bg-white p-2.5 shadow-sm">
+          <li
+            key={rowKey}
+            className="cursor-pointer rounded-lg border border-slate-300 bg-white p-2.5 shadow-sm transition hover:border-slate-400"
+            tabIndex={0}
+            role="button"
+            aria-expanded={expanded}
+            aria-label={expanded ? `Collapse details for ${row.playerName}` : `Expand details for ${row.playerName}`}
+            onClick={(event) => {
+              if (isInteractiveTarget(event.target)) return;
+              toggle();
+            }}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              toggle();
+            }}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-[13px] font-semibold text-slate-900">{row.playerName}</p>
@@ -98,24 +129,22 @@ export default function NflYardageReviewCardList({
                 <OppSuccessAllowedCell context={context} />
               </div>
               <div>
-                <p className="text-[8px] uppercase tracking-wide text-slate-400">Edge</p>
+                <p className="text-[8px] uppercase tracking-wide text-slate-400">Team Edge</p>
                 <OppEdgeCell context={context} />
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setExpandedKey(expanded ? null : rowKey)}
-              aria-expanded={expanded}
-              aria-controls={`${rowKey}-detail`}
-              className="mt-1.5 flex w-full items-center justify-center gap-1 rounded border border-slate-100 py-1 text-[10px] font-semibold text-slate-500 transition hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
+            {/* Visual affordance only -- the whole card (li, role="button" above) handles the tap/keyboard toggle so this never nests an interactive control inside another. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none mt-1.5 flex w-full items-center justify-center gap-1 rounded border border-slate-100 py-1 text-[10px] font-semibold text-slate-500"
             >
               {expanded ? "Hide details" : "Show details"}
               <ChevronDown className={cn("h-3 w-3 transition-transform", expanded && "rotate-180")} aria-hidden="true" />
-            </button>
+            </div>
             {expanded && (
               <div id={`${rowKey}-detail`} className="-mx-2.5 -mb-2.5 mt-1.5 rounded-b-lg">
-                <NflYardageReviewDetailPanel row={row} marketInfo={marketInfo} opponentContext={context} />
+                <NflYardageReviewDetailPanel row={row} marketInfo={marketInfo} opponentContext={context} season={season} />
               </div>
             )}
           </li>

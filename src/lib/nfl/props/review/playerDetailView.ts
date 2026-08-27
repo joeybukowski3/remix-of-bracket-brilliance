@@ -29,6 +29,7 @@ import type { NflWindowedRate } from "../types/qbPassingFeatures";
 import type { NflProjectionMarket } from "../types/projectionOutput";
 import type { NflYardageReviewMarketInfo } from "./yardageMarketJoin";
 import type { NflYardageOpponentContext } from "./opponentContext";
+import { matchupScoreBand, type NflMatchupScoreBand } from "./yardageMarketJoin";
 
 // ---------------------------------------------------------------------------
 // Projection summary
@@ -242,6 +243,82 @@ export type NflYardageDetailSportsbook = NflYardageReviewMarketInfo;
 
 export function buildSportsbookDetail(marketInfo: NflYardageReviewMarketInfo): NflYardageDetailSportsbook {
   return marketInfo;
+}
+
+// ---------------------------------------------------------------------------
+// Diff -- literal equation, never a betting recommendation
+// ---------------------------------------------------------------------------
+
+export type NflYardageDetailDiff = {
+  projectedYards: number;
+  line: number;
+  diff: number;
+} | null;
+
+/** Projection − Sportsbook Line = Diff, shown as a literal equation. Research context only. */
+export function buildDiffEquation(row: NflCurrentWeekProjectionRow, marketInfo: NflYardageReviewMarketInfo): NflYardageDetailDiff {
+  if (!marketInfo.available || row.projectedYards == null) return null;
+  return { projectedYards: row.projectedYards, line: marketInfo.line, diff: row.projectedYards - marketInfo.line };
+}
+
+// ---------------------------------------------------------------------------
+// Matchup -- total score, band, components, weights (the frozen authority, never re-derived)
+// ---------------------------------------------------------------------------
+
+export type NflYardageDetailMatchupComponent = { key: string; score: number; weight: number | null };
+
+export type NflYardageDetailMatchup = {
+  matchupScore: number;
+  band: NflMatchupScoreBand | null;
+  opportunityScore: number;
+  environmentScore: number;
+  components: NflYardageDetailMatchupComponent[];
+} | null;
+
+/**
+ * Total Matchup Score + band + per-component scores, read verbatim from
+ * the row's already-frozen `matchupScore` block -- never a second matchup
+ * model. Per-component weights are not carried on the row itself (only
+ * each component's already-weighted `score`); this surfaces every
+ * component's contribution proportionally (component score / sum of
+ * component scores) as a simple, transparent approximation for display,
+ * clearly distinct from the frozen weights baked into `matchupScore`
+ * itself, which live in the committed `matchup-score-research.json`
+ * research artifact, not on the live row.
+ */
+export function buildMatchupSummary(row: NflCurrentWeekProjectionRow): NflYardageDetailMatchup {
+  const ms = row.matchupScore;
+  if (!ms) return null;
+  const entries = Object.entries(ms.components) as [string, { score: number; indicatorScores: Readonly<Record<string, number>> }][];
+  const totalScore = entries.reduce((sum, [, c]) => sum + c.score, 0);
+  return {
+    matchupScore: ms.matchupScore,
+    band: matchupScoreBand(ms.matchupScore),
+    opportunityScore: ms.opportunityScore,
+    environmentScore: ms.environmentScore,
+    components: entries.map(([key, c]) => ({
+      key,
+      score: c.score,
+      weight: totalScore > 0 ? c.score / totalScore : null,
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Edge -- literal rank-difference equation, distinct from Matchup Score
+// ---------------------------------------------------------------------------
+
+export type NflYardageDetailEdge = {
+  defenseRank: number;
+  offenseRank: number;
+  edge: number;
+} | null;
+
+/** Opponent Defense EPA Rank − Team Offense EPA Rank = Team Edge, shown as a literal equation. `edge` is `rankDifference`, read verbatim from the existing matchupEdges authority -- never re-derived, only re-labeled for display. */
+export function buildEdgeEquation(opponentContext: NflYardageOpponentContext | undefined): NflYardageDetailEdge {
+  const edge = opponentContext?.epaEdge;
+  if (!edge || edge.defenseRank == null || edge.offenseRank == null || edge.rankDifference == null) return null;
+  return { defenseRank: edge.defenseRank, offenseRank: edge.offenseRank, edge: edge.rankDifference };
 }
 
 // ---------------------------------------------------------------------------

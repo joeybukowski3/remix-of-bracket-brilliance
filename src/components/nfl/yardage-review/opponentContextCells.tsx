@@ -97,7 +97,7 @@ export function OppEdgeCell({ context }: { context: NflYardageOpponentContext | 
     <span
       className={cn(HEAT_CELL_CLASS, weeklyHeatClass(tone), "font-semibold")}
       style={weeklyHeatStyle(tone)}
-      title="Opponent EPA-defense rank minus offense rank; positive favors the offense -- canonical matchupEdges.ts convention"
+      title="Team Edge: opponent EPA-defense rank minus offense rank; positive favors the offense -- canonical matchupEdges.ts convention"
     >
       {value > 0 ? "+" : ""}
       {value}

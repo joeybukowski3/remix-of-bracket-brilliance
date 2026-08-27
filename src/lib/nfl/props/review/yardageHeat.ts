@@ -177,6 +177,36 @@ export function buildProjectedYardsHeatByKey(entries: readonly NflYardageReviewR
   return tones;
 }
 
+/**
+ * Last-10 history table rank heat (Opp Def Rank on the Player table, Opp Off
+ * Rank on the Opponent-defense table). Distinct from `opponentDefenseRankHeatTone`
+ * above -- those Season/Last-5 ranks are always out of the fixed 32-team
+ * `matchup-epa.json` pool; these are the generator's per-game pregame
+ * trailing-10 EPA ranks (`yardage-history.json`), whose pool can be smaller
+ * than 32 early in a season, so the pool size travels with the rank instead
+ * of being assumed.
+ *
+ * Player table's Opp Def Rank, offensive-player perspective: rank 1 is the
+ * stingiest (most unfavorable) defense, rank N (weakest defense) is most
+ * favorable -- so the rank is inverted before bucketing, same convention as
+ * `opponentDefenseRankHeatTone`.
+ */
+export function historicalDefRankHeatTone(rank: number | null, poolSize: number | null): WeeklyHeatTone {
+  if (rank == null || poolSize == null || poolSize <= 0 || rank < 1 || rank > poolSize) return "missing";
+  const favorableRank = poolSize + 1 - rank;
+  return weeklyRankHeatTone(favorableRank, poolSize);
+}
+
+/**
+ * Opponent-defense table's Opp Off Rank, yardage-production perspective:
+ * rank 1 is the strongest (most favorable) offense to have produced against
+ * this defense -- no inversion needed.
+ */
+export function historicalOffRankHeatTone(rank: number | null, poolSize: number | null): WeeklyHeatTone {
+  if (rank == null || poolSize == null || poolSize <= 0 || rank < 1 || rank > poolSize) return "missing";
+  return weeklyRankHeatTone(rank, poolSize);
+}
+
 /** Opponent context enriched with the two yards-allowed heat tones the resolved cells alone can't derive. */
 export type NflYardageOpponentContextWithHeat = NflYardageOpponentContext & {
   yardsAllowedSeasonTone: WeeklyHeatTone;
