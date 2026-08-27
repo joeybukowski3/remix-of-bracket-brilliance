@@ -248,4 +248,34 @@ describe("NFLYardagePropsReview", () => {
 
     await waitFor(() => expect(screen.getAllByText(/no approved sportsbook line available/i).length).toBeGreaterThan(0));
   });
+
+  it("shows a fresh status chip for every source when every artifact was just generated", async () => {
+    const now = new Date().toISOString();
+    stubFetch(
+      { ...projectionsArtifact([passingRow({ generatedAt: now })]), generatedAt: now, depthChartSource: { available: true, stale: false, snapshotAt: now, ageHours: 0 } },
+      { ...marketArtifact(), generatedAt: now },
+    );
+    renderPage();
+
+    const status = await screen.findByTestId("nfl-yardage-freshness-status");
+    expect(within(status).getByText(/Projections fresh/i)).toBeInTheDocument();
+    expect(within(status).getByText(/Depth chart fresh/i)).toBeInTheDocument();
+    expect(within(status).getByText(/Sportsbook fresh/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("nfl-yardage-freshness-warning")).not.toBeInTheDocument();
+  });
+
+  it("shows a stale warning when the projection artifact is far older than its freshness budget", async () => {
+    const ancient = "2020-01-01T00:00:00.000Z";
+    stubFetch(
+      { ...projectionsArtifact([passingRow({ generatedAt: ancient })]), generatedAt: ancient },
+      marketArtifact(),
+    );
+    renderPage();
+
+    const status = await screen.findByTestId("nfl-yardage-freshness-status");
+    expect(within(status).getByText(/Projections stale/i)).toBeInTheDocument();
+    const warning = await screen.findByTestId("nfl-yardage-freshness-warning");
+    expect(warning).toHaveTextContent(/Projections/);
+    expect(warning).toHaveTextContent(/stale for this preview/i);
+  });
 });

@@ -9,9 +9,11 @@ import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import NflYardageReviewTable from "@/components/nfl/yardage-review/NflYardageReviewTable";
 import NflYardageReviewCardList from "@/components/nfl/yardage-review/NflYardageReviewCardList";
+import NflYardageFreshnessStatus from "@/components/nfl/yardage-review/NflYardageFreshnessStatus";
 import { NflYardageMatchupFilterChips } from "@/components/nfl/yardage-review/NflYardageMatchupFilterChips";
 import { NflYardageBandFilterChips } from "@/components/nfl/yardage-review/NflYardageBandFilterChips";
 import { buildYardageReviewRows, type NflMatchupScoreBand } from "@/lib/nfl/props/review/yardageMarketJoin";
+import { buildYardageReviewFreshness } from "@/lib/nfl/props/review/freshness";
 import { buildYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
 import { buildYardageWeekMatchups } from "@/lib/nfl/props/review/yardageWeekMatchups";
 import {
@@ -69,6 +71,21 @@ export default function NFLYardagePropsReview() {
   );
 
   const reviewEntries = useMemo(() => buildYardageReviewRows(marketRows, marketData.data), [marketRows, marketData.data]);
+
+  const freshnessSources = useMemo(
+    () =>
+      buildYardageReviewFreshness({
+        projectionGeneratedAt: projections.data?.generatedAt ?? null,
+        depthChartSnapshotAt: projections.data?.depthChartSource.snapshotAt ?? null,
+        sportsbookGeneratedAt: marketData.data?.generatedAt ?? null,
+        opponentContextGeneratedAts: [
+          opponentContextData.epa?._meta.generatedAt,
+          opponentContextData.success?._meta.generatedAt,
+          opponentContextData.productionAllowed?._meta.generatedAt,
+        ],
+      }),
+    [projections.data, marketData.data, opponentContextData],
+  );
 
   // Opponent-defense context (yards allowed, EPA/Success allowed, matchup edge) is
   // an independent read-only overlay -- keyed the same way the table keys its
@@ -162,6 +179,8 @@ export default function NFLYardagePropsReview() {
         <strong className="font-semibold">Projection preview</strong> — sportsbook-relative performance has not yet been validated on the required
         2026 sample.
       </p>
+
+      <NflYardageFreshnessStatus sources={freshnessSources} />
 
       {loading && <p className="text-sm text-slate-500">Loading yardage projections…</p>}
       {hasProjectionError && (
