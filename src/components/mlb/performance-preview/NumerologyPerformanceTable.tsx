@@ -6,7 +6,9 @@ import PlayerCell from "./PlayerCell";
 import ResultBadge, { classifyResultStatus } from "./ResultBadge";
 import ResultFilter, { type ResultFilterValue } from "./ResultFilter";
 import ShowMoreFooter from "./ShowMoreFooter";
+import { type PerformanceTableColumn, reorderColumns, STICKY_PLAYER_TH_CLASS, stickyPlayerTdClass } from "./tableColumns";
 import { numOrDash } from "./format";
+import { useIsCompactTable } from "./useIsCompactTable";
 import { usePaginatedRows } from "./usePaginatedRows";
 
 // Mirrors the stored selectionType exactly (mutually exclusive) so the label
@@ -58,8 +60,52 @@ function toPerformanceRow(record: NumerologyPerformanceRecord): PerformanceRow {
   };
 }
 
+const COLUMNS: PerformanceTableColumn<NumerologyPerformanceRecord>[] = [
+  { key: "date", header: "Date", cellClassName: "whitespace-nowrap px-3 py-2 text-slate-500", render: (r) => r.date },
+  {
+    key: "player",
+    header: "Player",
+    headerClassName: STICKY_PLAYER_TH_CLASS,
+    cellClassName: `px-3 py-2 ${stickyPlayerTdClass("group-hover:bg-fuchsia-50")}`,
+    render: (r) => <PlayerCell name={r.player} team={r.team} />,
+  },
+  { key: "opponent", header: "Opponent", cellClassName: "px-3 py-2 text-slate-600", render: (r) => r.opponent },
+  {
+    key: "score",
+    header: "Score",
+    headerClassName: "text-right",
+    cellClassName: "px-3 py-2 text-right font-bold tabular-nums text-slate-900",
+    render: (r) => numOrDash(r.numerologyScore, 1),
+  },
+  { key: "category", header: "Category", cellClassName: "px-3 py-2 text-slate-500", render: (r) => categoryLabel(r) },
+  { key: "result", header: "Result", cellClassName: "px-3 py-2", render: (r) => <ResultBadge kind={classifyResultStatus(r.resultStatus, r.hitHomeRun)} /> },
+  { key: "ab", header: "AB", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.atBats ?? null) },
+  { key: "h", header: "H", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.hits ?? null) },
+  {
+    key: "avg",
+    header: "AVG",
+    headerClassName: "text-right",
+    cellClassName: "px-3 py-2 text-right tabular-nums",
+    render: (r) => average(r.stats?.hits ?? null, r.stats?.atBats ?? null),
+  },
+  { key: "hr", header: "HR", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums font-bold", render: (r) => numOrDash(r.stats?.homeRuns ?? null) },
+  { key: "tb", header: "TB", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.totalBases ?? null) },
+  { key: "rbi", header: "RBI", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.rbi ?? null) },
+  { key: "r", header: "R", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.runs ?? null) },
+  { key: "bb", header: "BB", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.baseOnBalls ?? null) },
+  { key: "k", header: "K", headerClassName: "text-right", cellClassName: "px-3 py-2 text-right tabular-nums", render: (r) => numOrDash(r.stats?.strikeOuts ?? null) },
+];
+
+// Player frozen first, then the model's primary Score and the Result; no Odds column exists on this table.
+const COMPACT_COLUMN_ORDER = [
+  "player", "score", "result",
+  "date", "opponent", "category",
+  "ab", "h", "avg", "hr", "tb", "rbi", "r", "bb", "k",
+];
+
 export default function NumerologyPerformanceTable({ records }: { records: NumerologyPerformanceRecord[] }) {
   const [filter, setFilter] = useState<ResultFilterValue>("all");
+  const isCompact = useIsCompactTable();
 
   const sortedFiltered = useMemo(() => {
     return records
@@ -70,6 +116,7 @@ export default function NumerologyPerformanceTable({ records }: { records: Numer
 
   const { visibleRows, visibleCount, totalCount, hasMore, canShowAll, showMore, showAll } = usePaginatedRows(sortedFiltered);
   const mobileRows = useMemo(() => visibleRows.map(toPerformanceRow), [visibleRows]);
+  const columns = useMemo(() => (isCompact ? reorderColumns(COLUMNS, COMPACT_COLUMN_ORDER) : COLUMNS), [isCompact]);
 
   return (
     <div>
@@ -85,48 +132,25 @@ export default function NumerologyPerformanceTable({ records }: { records: Numer
         <table className="w-full min-w-[900px] text-left text-xs">
           <thead className="bg-slate-900 text-[10px] uppercase tracking-wide text-slate-300">
             <tr>
-              <th className="px-3 py-2">Date</th>
-              <th className="px-3 py-2">Player</th>
-              <th className="px-3 py-2">Opponent</th>
-              <th className="px-3 py-2 text-right">Score</th>
-              <th className="px-3 py-2">Category</th>
-              <th className="px-3 py-2">Result</th>
-              <th className="px-3 py-2 text-right">AB</th>
-              <th className="px-3 py-2 text-right">H</th>
-              <th className="px-3 py-2 text-right">AVG</th>
-              <th className="px-3 py-2 text-right">HR</th>
-              <th className="px-3 py-2 text-right">TB</th>
-              <th className="px-3 py-2 text-right">RBI</th>
-              <th className="px-3 py-2 text-right">R</th>
-              <th className="px-3 py-2 text-right">BB</th>
-              <th className="px-3 py-2 text-right">K</th>
+              {columns.map((column) => (
+                <th key={column.key} className={column.headerClassName ? `px-3 py-2 ${column.headerClassName}` : "px-3 py-2"}>
+                  {column.header}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {visibleRows.map((record) => {
-              const s = record.stats;
-              return (
-                <tr key={record.id} className="hover:bg-fuchsia-50/60">
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-500">{record.date}</td>
-                  <td className="px-3 py-2"><PlayerCell name={record.player} team={record.team} /></td>
-                  <td className="px-3 py-2 text-slate-600">{record.opponent}</td>
-                  <td className="px-3 py-2 text-right font-bold tabular-nums text-slate-900">{numOrDash(record.numerologyScore, 1)}</td>
-                  <td className="px-3 py-2 text-slate-500">{categoryLabel(record)}</td>
-                  <td className="px-3 py-2"><ResultBadge kind={classifyResultStatus(record.resultStatus, record.hitHomeRun)} /></td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.atBats ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.hits ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{average(s?.hits ?? null, s?.atBats ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-bold">{numOrDash(s?.homeRuns ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.totalBases ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.rbi ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.runs ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.baseOnBalls ?? null)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{numOrDash(s?.strikeOuts ?? null)}</td>
-                </tr>
-              );
-            })}
+            {visibleRows.map((record) => (
+              <tr key={record.id} className="group hover:bg-fuchsia-50/60">
+                {columns.map((column) => (
+                  <td key={column.key} className={column.cellClassName}>
+                    {column.render(record)}
+                  </td>
+                ))}
+              </tr>
+            ))}
             {visibleRows.length === 0 && (
-              <tr><td colSpan={15} className="px-3 py-6 text-center text-slate-400">No graded plays match this filter.</td></tr>
+              <tr><td colSpan={columns.length} className="px-3 py-6 text-center text-slate-400">No graded plays match this filter.</td></tr>
             )}
           </tbody>
         </table>
