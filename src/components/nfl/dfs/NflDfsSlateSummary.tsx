@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { DfsEnrichedSlateAnalysis } from "@/lib/nfl/dfs/slateAnalyzer";
 import { NFL_CLASSIC_DST_SCORING, NFL_CLASSIC_OFFENSIVE_SCORING, NFL_CLASSIC_ROSTER, NFL_CLASSIC_SALARY_CAP } from "@/lib/nfl/dfs/nflClassicRules";
+import { FULL_PPR_SCORING } from "@/lib/fantasy/weekly/scoring";
+import { DFS_PROJECTION_SOURCE } from "@/lib/nfl/dfs/slateAnalyzer";
 import { formatDfsPercent, formatDfsTimestamp } from "@/lib/nfl/dfs/presentation";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +19,40 @@ export type NflDfsSlateSummaryProps = {
   week: number;
 };
 
+const signed = (value: number): string => (value > 0 ? `+${value}` : `${value}`);
+
+/**
+ * DraftKings NFL Classic vs JKB Full PPR, both read from the canonical
+ * authorities (nflClassicRules / weekly scoring) -- never hardcoded here.
+ * This exists so the user understands JKB Proj is a Full PPR projection,
+ * NOT a DraftKings-specific fantasy projection.
+ */
+const SCORING_COMPARISON: ReadonlyArray<{ label: string; dk: string; jkb: string }> = [
+  { label: "Passing TD", dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.passing.touchdown), jkb: signed(FULL_PPR_SCORING.passingTouchdown) },
+  { label: "Interception", dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.passing.interception), jkb: signed(FULL_PPR_SCORING.interception) },
+  { label: "Reception", dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.receiving.reception), jkb: signed(FULL_PPR_SCORING.reception) },
+  { label: "Fumble lost", dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.other.fumbleLost), jkb: signed(FULL_PPR_SCORING.fumbleLost) },
+  {
+    label: `${NFL_CLASSIC_OFFENSIVE_SCORING.passing.bonus.yardThreshold} passing-yard bonus`,
+    dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.passing.bonus.points),
+    jkb: FULL_PPR_SCORING.bonuses.length === 0 ? "none" : "yes",
+  },
+  {
+    label: `${NFL_CLASSIC_OFFENSIVE_SCORING.rushing.bonus.yardThreshold} rushing-yard bonus`,
+    dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.rushing.bonus.points),
+    jkb: FULL_PPR_SCORING.bonuses.length === 0 ? "none" : "yes",
+  },
+  {
+    label: `${NFL_CLASSIC_OFFENSIVE_SCORING.receiving.bonus.yardThreshold} receiving-yard bonus`,
+    dk: signed(NFL_CLASSIC_OFFENSIVE_SCORING.receiving.bonus.points),
+    jkb: FULL_PPR_SCORING.bonuses.length === 0 ? "none" : "yes",
+  },
+  { label: "DST projection", dk: "DK scores DST", jkb: "no JKB projection" },
+];
+
 export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSlateSummaryProps) {
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [scoringOpen, setScoringOpen] = useState(false);
   const { summary, compatibility } = analysis;
   const readiness = READINESS_STYLES[summary.readiness];
   const errorIssues = compatibility.issues.filter((issue) => issue.severity === "error");
@@ -90,6 +124,50 @@ export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSla
             {NFL_CLASSIC_SALARY_CAP == null && (
               <p className="italic text-slate-500">Salary cap is not shown -- no verified value is available.</p>
             )}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white">
+        <button
+          type="button"
+          onClick={() => setScoringOpen((open) => !open)}
+          aria-expanded={scoringOpen}
+          className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-bold text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+        >
+          <span>How JKB Proj compares to DraftKings scoring</span>
+          <ChevronDown aria-hidden className={cn("h-4 w-4 transition-transform", scoringOpen && "rotate-180")} />
+        </button>
+        {scoringOpen && (
+          <div className="space-y-2 border-t border-slate-200 px-3 py-2 text-[11px] text-slate-700">
+            <p>
+              <strong className="font-bold text-slate-900">JKB Proj</strong> and <strong className="font-bold text-slate-900">JKB Pts/$1K</strong> are built from
+              the {DFS_PROJECTION_SOURCE} weekly projection &mdash; a full-PPR fantasy projection, <strong className="font-bold text-slate-900">not</strong> a
+              DraftKings-specific fantasy projection. The scoring rules differ:
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-[11px]">
+                <thead>
+                  <tr className="text-left uppercase tracking-wide text-slate-500">
+                    <th scope="col" className="py-1 pr-3 font-black">Rule</th>
+                    <th scope="col" className="py-1 pr-3 font-black">DraftKings</th>
+                    <th scope="col" className="py-1 font-black">{DFS_PROJECTION_SOURCE}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SCORING_COMPARISON.map((row) => (
+                    <tr key={row.label} className="border-t border-slate-100">
+                      <td className="py-1 pr-3 text-slate-600">{row.label}</td>
+                      <td className="py-1 pr-3 font-bold tabular-nums text-slate-900">{row.dk}</td>
+                      <td className="py-1 font-bold tabular-nums text-slate-900">{row.jkb}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-slate-500">
+              DraftKings also awards its own DST points; JKB publishes no DST projection, so DST rows show DraftKings context only.
+            </p>
           </div>
         )}
       </div>

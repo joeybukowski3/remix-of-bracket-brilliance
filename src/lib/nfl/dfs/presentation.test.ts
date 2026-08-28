@@ -175,3 +175,42 @@ describe("sortDfsRows", () => {
     expect(sortDfsRows(rows, "proj").map((r) => r.dkId)).toEqual(["1", "2"]);
   });
 });
+
+// Rank Diff = DK salary rank - JKB slate rank. Positive => JKB ranks the player
+// higher than DK pricing implies (better value); negative => DK prices the
+// player more aggressively than JKB ranks him; zero => agreement. Every
+// presentation surface (tone, formatting, direction filter, sort) must honor
+// this one sign convention.
+describe("Rank Diff sign semantics", () => {
+  it("positive diff (JKB higher than DK price) is a green/positive tone and renders with a leading +", () => {
+    expect(formatDfsRankDiff(6)).toBe("+6");
+    expect(["gold", "dark-green", "green", "light-green"]).toContain(getDfsRankDiffTone(6));
+  });
+  it("negative diff (DK prices more aggressively than JKB) is a red tone and renders with a leading -", () => {
+    expect(formatDfsRankDiff(-6)).toBe("-6");
+    expect(["light-red", "red", "strong-red"]).toContain(getDfsRankDiffTone(-6));
+  });
+  it("zero diff is agreement: neutral tone, rendered as E", () => {
+    expect(formatDfsRankDiff(0)).toBe("E");
+    expect(getDfsRankDiffTone(0)).toBe("neutral");
+  });
+  it("direction filter uses the same sign convention as the tone/format helpers", () => {
+    const rows = [
+      row({ dkId: "1", playerName: "JKB values", position: "QB", posRankDiff: 8 }),
+      row({ dkId: "2", playerName: "DK values", position: "QB", posRankDiff: -8 }),
+      row({ dkId: "3", playerName: "Agree", position: "QB", posRankDiff: 0 }),
+    ];
+    expect(filterDfsRows(rows, { search: "", availableOnly: false, direction: "jkb-higher" }).map((r) => r.dkId)).toEqual(["1"]);
+    expect(filterDfsRows(rows, { search: "", availableOnly: false, direction: "dk-higher" }).map((r) => r.dkId)).toEqual(["2"]);
+    expect(getDfsRankDiffTone(rows[0].posRankDiff)).toMatch(/green/);
+    expect(getDfsRankDiffTone(rows[1].posRankDiff)).toMatch(/red/);
+  });
+  it("sort by rankDiff puts the largest positive (best JKB value) first", () => {
+    const rows = [
+      row({ dkId: "a", playerName: "A", position: "QB", posRankDiff: -3 }),
+      row({ dkId: "b", playerName: "B", position: "QB", posRankDiff: 12 }),
+      row({ dkId: "c", playerName: "C", position: "QB", posRankDiff: 0 }),
+    ];
+    expect(sortDfsRows(rows, "rankDiff").map((r) => r.dkId)).toEqual(["b", "c", "a"]);
+  });
+});

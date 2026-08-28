@@ -247,11 +247,19 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
                       </td>
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 font-bold tabular-nums text-slate-900")}>{formatDfsSalary(row.salary)}</td>
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{formatDfsRank(row.dkPositionSalaryRank)}</td>
-                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{isDst ? "—" : formatDfsRank(row.kind === "offense" ? row.jkbSlatePositionRank : null)}</td>
-                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{isDst ? "—" : formatDfsRank(row.kind === "offense" ? row.jkbWeeklyPositionRank : null)}</td>
-                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}>{isDst ? "—" : <RankDiffCell diff={row.kind === "offense" ? row.posRankDiff : null} />}</td>
-                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{isDst ? "—" : formatDfsProjection(row.kind === "offense" ? row.projectedFantasyPoints : null)}</td>
-                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{isDst ? "—" : formatDfsPointsPer1k(row.kind === "offense" ? row.pointsPer1k : null)}</td>
+                      {isDst ? (
+                        <td colSpan={5} className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 text-[10px] font-semibold italic text-slate-400")}>
+                          No JKB DST projection — DraftKings context only
+                        </td>
+                      ) : (
+                        <>
+                          <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{formatDfsRank(row.kind === "offense" ? row.jkbSlatePositionRank : null)}</td>
+                          <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{formatDfsRank(row.kind === "offense" ? row.jkbWeeklyPositionRank : null)}</td>
+                          <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}><RankDiffCell diff={row.kind === "offense" ? row.posRankDiff : null} /></td>
+                          <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{formatDfsProjection(row.kind === "offense" ? row.projectedFantasyPoints : null)}</td>
+                          <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{formatDfsPointsPer1k(row.kind === "offense" ? row.pointsPer1k : null)}</td>
+                        </>
+                      )}
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}>
                         {row.kind === "offense" && row.research?.matchupGrade ? (
                           <span className={cn("rounded px-1.5 py-0.5 font-bold", matchupGradeHeatClass(row.research.matchupGrade.id))}>{row.research.matchupGrade.label}</span>

@@ -49,4 +49,23 @@ describe("NflDfsSlateSummary", () => {
     expect(screen.getByText(/Full PPR/)).toBeInTheDocument();
     expect(screen.getByText(/salary cap is not shown/i)).toBeInTheDocument();
   });
+
+  it("has a compact, collapsed-by-default DK-vs-JKB scoring disclosure that explains the key differences", () => {
+    render(<NflDfsSlateSummary analysis={buildAnalysis()} season={2026} week={1} />);
+    const toggle = screen.getByText("How JKB Proj compares to DraftKings scoring");
+    // collapsed by default -> comparison rows not rendered
+    expect(screen.queryByText("Interception")).not.toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(screen.getByText(/DraftKings-specific fantasy projection/i)).toBeInTheDocument();
+    // DK INT -1 vs JKB INT -2
+    const intRow = screen.getByText("Interception").closest("tr");
+    expect(intRow).toHaveTextContent("-1");
+    expect(intRow).toHaveTextContent("-2");
+    // DK yardage bonuses exist, JKB has none
+    expect(screen.getByText(/300 passing-yard bonus/).closest("tr")).toHaveTextContent("none");
+    expect(screen.getByText(/100 rushing-yard bonus/).closest("tr")).toHaveTextContent("none");
+    expect(screen.getByText(/100 receiving-yard bonus/).closest("tr")).toHaveTextContent("none");
+    // No JKB DST projection
+    expect(screen.getByText("DST projection").closest("tr")).toHaveTextContent("no JKB projection");
+  });
 });
