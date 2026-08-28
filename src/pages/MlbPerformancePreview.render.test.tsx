@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { HrModelPerformanceSummary, HrPredictionHistoryFile } from "@/types/mlbHrModelPerformance";
 import type { NumerologyPerformanceFile, NumerologyPerformanceSummary } from "@/types/mlbNumerologyPerformance";
 import type { SinCityPerformanceFile, SinCityPerformanceSummaryFile } from "@/types/mlbSinCity";
-import type { TopHrPerformanceFile, TopHrPerformanceSummaryFile } from "@/types/mlbTopHrPerformance";
 import type { TopKPerformanceFile, TopKPerformanceSummaryFile } from "@/types/mlbTopKPerformance";
 
 vi.mock("@/components/layout/SiteShell", () => ({
@@ -27,7 +26,7 @@ const hrBucket = {
 
 function hrSummary(): HrModelPerformanceSummary {
   return {
-    generatedAt: "2026-08-12T00:00:00Z",
+    generatedAt: "2026-08-27T21:00:00Z",
     note: "Empirical outcome rates, not calibrated probability.",
     totalGradedRecords: 10,
     byScoreBand: { "80+": hrBucket, "70-79.9": hrBucket, "60-69.9": hrBucket, "50-59.9": hrBucket, "Below 50": hrBucket },
@@ -42,15 +41,15 @@ function hrSummary(): HrModelPerformanceSummary {
 function hrHistory(): HrPredictionHistoryFile {
   return {
     schemaVersion: 2,
-    lastUpdatedAt: "2026-08-12T00:00:00Z",
+    lastUpdatedAt: "2026-08-27T21:00:00Z",
     recordCount: 1,
     records: [{
-      date: "2026-08-01", generatedAt: "2026-08-01T00:00:00Z", modelVersion: "mlb-hr-quality-v1.1",
+      date: "2026-08-27", generatedAt: "2026-08-27T00:00:00Z", modelVersion: "mlb-hr-quality-v1.1",
       playerId: 1, playerName: "Test Hitter", teamId: 1, team: "NYY", opponentId: 2, opponent: "BOS",
       opposingPitcherId: null, opposingPitcherName: null, lineupStatus: "confirmed", battingOrder: 3,
-      gameId: 100, hrQualityScore: 72, hrRank: 1, hrOddsYes: "+300", hrOddsBook: "book", marketImpliedProbability: 0.2,
+      gameId: 100, hrQualityScore: 85, hrRank: 1, hrOddsYes: "+300", hrOddsBook: "book", marketImpliedProbability: 0.2,
       confidenceLevel: "high",
-      result: { status: "hit", hrCount: 1, plateAppearances: 4, gameFinalStatus: "Final", gradedAt: "2026-08-02T00:00:00Z", resolutionReason: null, attemptCount: 1, battingLine: { atBats: 4, hits: 2, totalBases: 5, rbi: 2, runs: 1, baseOnBalls: 0, strikeOuts: 1 } },
+      result: { status: "hit", hrCount: 1, plateAppearances: 4, gameFinalStatus: "Final", gradedAt: "2026-08-27T00:00:00Z", resolutionReason: null, attemptCount: 1, battingLine: { atBats: 4, hits: 2, totalBases: 5, rbi: 2, runs: 1, baseOnBalls: 0, strikeOuts: 1 } },
     }],
   };
 }
@@ -59,7 +58,7 @@ const numerologyWindow = { totalRecords: 5, finalized: 5, pending: 0, missingOrN
 
 function numerologySummary(): NumerologyPerformanceSummary {
   return {
-    generatedAt: "2026-08-12T00:00:00Z", modelVersion: "mlb-numerology-live-board-v0.2", asOfDate: "2026-08-11",
+    generatedAt: "2026-08-27T21:00:00Z", modelVersion: "mlb-numerology-live-board-v0.2", asOfDate: "2026-08-26",
     allTime: numerologyWindow, last7Days: numerologyWindow, last14Days: numerologyWindow, topPlay: numerologyWindow, over50: numerologyWindow,
     resultBuckets: {
       previousDay: { topPlay: { total: 1, finalized: 1, hasStats: false }, over50: { total: 1, finalized: 1, hasStats: false } },
@@ -70,14 +69,14 @@ function numerologySummary(): NumerologyPerformanceSummary {
 
 function numerologyHistory(): NumerologyPerformanceFile {
   return {
-    generatedAt: "2026-08-12T00:00:00Z", modelVersion: "mlb-numerology-live-board-v0.2",
+    generatedAt: "2026-08-27T21:00:00Z", modelVersion: "mlb-numerology-live-board-v0.2",
     records: [{
-      id: "top-play|2026-08-01|1|2", date: "2026-08-01", generatedAt: "2026-08-01T00:00:00Z", modelVersion: "mlb-numerology-live-board-v0.2",
+      id: "top-play|2026-08-27|1|2", date: "2026-08-27", generatedAt: "2026-08-27T00:00:00Z", modelVersion: "mlb-numerology-live-board-v0.2",
       selectionType: "top-play", isTopPlay: true, qualifiesOver50: false, player: "Numero Player", playerId: 1, team: "NYY", opponent: "BOS",
       gameId: 100, numerologyScore: 61, hrScoreRank: 3, hrOddsYes: "+280", hrOddsBook: "book", resultStatus: "final", hitHomeRun: false,
       numerologySignals: [],
       stats: { atBats: 4, hits: 1, runs: 0, rbi: 0, baseOnBalls: 0, strikeOuts: 2, totalBases: 1, homeRuns: 0, stolenBases: 0 },
-      finalizedAt: "2026-08-02T00:00:00Z", source: "mlb-statsapi",
+      finalizedAt: "2026-08-28T00:00:00Z", source: "mlb-statsapi",
     }],
   };
 }
@@ -86,50 +85,28 @@ const sinCityLevel = { qualifiedPlays: 0, hrHits: 0, hrHitRate: null, averageOdd
 
 function sinCitySummary(): SinCityPerformanceSummaryFile {
   return {
-    generatedAt: "2026-08-12T00:00:00Z", trackingModelVersion: "sin-city-tracking-v1", trackingStartDate: "2026-08-12",
-    totalTrackedDates: 0, mostRecentGradedDate: null, fiveOfFive: sinCityLevel, fourOfFive: sinCityLevel,
+    generatedAt: "2026-08-27T21:00:00Z", trackingModelVersion: "sin-city-tracking-v1", trackingStartDate: "2026-08-12",
+    totalTrackedDates: 1, mostRecentGradedDate: "2026-08-27", fiveOfFive: sinCityLevel, fourOfFive: sinCityLevel,
   };
 }
 
 function sinCityHistory(): SinCityPerformanceFile {
-  return { generatedAt: "2026-08-12T00:00:00Z", trackingModelVersion: "sin-city-tracking-v1", trackingStartDate: "2026-08-12", records: [] };
-}
-
-function topHrSummary(): TopHrPerformanceSummaryFile {
-  return {
-    generatedAt: "2026-08-12T00:00:00Z", trackingModelVersion: "top-hr-tracking-v1", trackingStartDate: "2026-06-30",
-    totalTrackedDates: 1, mostRecentGradedDate: "2026-08-11",
-    overall: { picks: 1, gradedPicks: 1, hrHits: 0, hrHitRate: 0, avgOdds: 300, roiEligiblePicks: 1, oddsCoveragePercent: 100, flatBetRoi: -100 },
-  };
-}
-
-function topHrHistory(): TopHrPerformanceFile {
-  return {
-    generatedAt: "2026-08-12T00:00:00Z", trackingModelVersion: "top-hr-tracking-v1", trackingStartDate: "2026-06-30",
-    records: [{
-      trackingModelVersion: "top-hr-tracking-v1", date: "2026-08-11", persistedAt: "2026-08-11T00:00:00Z",
-      playerId: 1, playerName: "Top Hitter", team: "NYY", teamId: 1, opponent: "BOS", opponentId: 2, gameId: 100,
-      hrQualityScore: 75, rank: 1, slot: 1, odds: "+300", oddsBook: "book", impliedProbability: 0.25,
-      lineupStatus: "confirmed", modelVersion: "mlb-hr-quality-v1.1", resultStatus: "miss",
-      battingLine: { atBats: 4, hits: 1, doubles: 0, homeRuns: 0, totalBases: 1, rbi: 0, runs: 0, baseOnBalls: 0, strikeOuts: 1 },
-      gradedAt: "2026-08-12T00:00:00Z", snapshotBasis: "final-intraday",
-    }],
-  };
+  return { generatedAt: "2026-08-27T21:00:00Z", trackingModelVersion: "sin-city-tracking-v1", trackingStartDate: "2026-08-12", records: [] };
 }
 
 function topKSummary(): TopKPerformanceSummaryFile {
   return {
-    generatedAt: "2026-08-12T00:00:00Z", trackingModelVersion: "top-k-tracking-v1", trackingStartDate: "2026-08-12",
-    totalTrackedDates: 1, mostRecentGradedDate: null,
+    generatedAt: "2026-08-27T21:00:00Z", trackingModelVersion: "top-k-tracking-v1", trackingStartDate: "2026-08-12",
+    totalTrackedDates: 1, mostRecentGradedDate: "2026-08-27",
     overall: { picks: 1, wins: 0, losses: 0, pushes: 0, winRate: null, avgEdge: 1.2, avgKScore: 55, gradedPicks: 0, roiEligiblePicks: 0, oddsCoveragePercent: 0, flatBetRoi: null, actualKTotal: null, avgActualK: null, avgIp: null, kPerNine: null },
   };
 }
 
 function topKHistory(): TopKPerformanceFile {
   return {
-    generatedAt: "2026-08-12T00:00:00Z", trackingModelVersion: "top-k-tracking-v1", trackingStartDate: "2026-08-12",
+    generatedAt: "2026-08-27T21:00:00Z", trackingModelVersion: "top-k-tracking-v1", trackingStartDate: "2026-08-12",
     records: [{
-      trackingModelVersion: "top-k-tracking-v1", date: "2026-08-12", persistedAt: "2026-08-12T00:00:00Z",
+      trackingModelVersion: "top-k-tracking-v1", date: "2026-08-27", persistedAt: "2026-08-27T00:00:00Z",
       pitcherId: 1, pitcherName: "Top Pitcher", team: "NYY", opponent: "BOS", gameId: 100, gameKey: "BOS@NYY",
       side: "over", slot: 1, line: 4.5, odds: "-150", oddsBook: "book", projectedKs: 5.9, projectionEdge: 1.4,
       kScore: 55, valueScore: 60, projectedIP: 5.5, workloadConfidenceGrade: "A", modelVersion: "mlb-k-projection-v2-shadow",
@@ -139,23 +116,19 @@ function topKHistory(): TopKPerformanceFile {
 }
 
 vi.mock("@/hooks/useMlbHrModelPerformance", () => ({
-  useMlbHrModelPerformance: () => ({ summary: hrSummary(), history: hrHistory(), loading: false, error: null }),
+  useMlbHrModelPerformance: () => ({ summary: hrSummary(), history: hrHistory(), loading: false, error: null, summaryError: null, historyError: null }),
 }));
 
 vi.mock("@/hooks/useMlbNumerologyPerformance", () => ({
-  useMlbNumerologyPerformance: () => ({ summary: numerologySummary(), history: numerologyHistory(), loading: false, error: null }),
+  useMlbNumerologyPerformance: () => ({ summary: numerologySummary(), history: numerologyHistory(), loading: false, error: null, summaryError: null, historyError: null }),
 }));
 
 vi.mock("@/hooks/useSinCityPerformance", () => ({
-  useSinCityPerformance: () => ({ summary: sinCitySummary(), history: sinCityHistory(), loading: false, error: null }),
-}));
-
-vi.mock("@/hooks/useTopHrPerformance", () => ({
-  useTopHrPerformance: () => ({ summary: topHrSummary(), history: topHrHistory(), loading: false, error: null }),
+  useSinCityPerformance: () => ({ summary: sinCitySummary(), history: sinCityHistory(), loading: false, error: null, summaryError: null, historyError: null }),
 }));
 
 vi.mock("@/hooks/useTopKPerformance", () => ({
-  useTopKPerformance: () => ({ summary: topKSummary(), history: topKHistory(), loading: false, error: null }),
+  useTopKPerformance: () => ({ summary: topKSummary(), history: topKHistory(), loading: false, error: null, summaryError: null, historyError: null }),
 }));
 
 const { default: MlbPerformancePreview } = await import("./MlbPerformancePreview");
@@ -169,13 +142,21 @@ function renderPage() {
 }
 
 describe("MlbPerformancePreview", () => {
-  it("renders all five section headings from real schema data", () => {
+  it("renders the compact tracker shell instead of stacked sections", () => {
     renderPage();
-    expect(screen.getByText("HR Model Performance")).toBeInTheDocument();
-    expect(screen.getByText("Numerology Performance")).toBeInTheDocument();
-    expect(screen.getByText("Sin City Performance")).toBeInTheDocument();
-    expect(screen.getByText("Top HR Props Performance")).toBeInTheDocument();
-    expect(screen.getByText("Top K Props Performance")).toBeInTheDocument();
+    expect(screen.getByText("MLB Performance Tracker")).toBeInTheDocument();
+    expect(screen.queryByText("HR Model Performance")).not.toBeInTheDocument();
+    expect(screen.queryByText("Numerology Performance")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sin City Performance")).not.toBeInTheDocument();
+  });
+
+  it("renders the four main model tabs and no Top HR tab", () => {
+    renderPage();
+    expect(screen.getByRole("tab", { name: "HR Model" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Numerology" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Sin City" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Top K Prop" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /Top HR/ })).not.toBeInTheDocument();
   });
 
   it("renders a return link to the MLB Hub", () => {
@@ -198,30 +179,18 @@ describe("MlbPerformancePreview", () => {
     expect(screen.getByText("MLB Results Tracker")).toBeInTheDocument();
   });
 
-  it("renders HR summary stat tiles from the summary schema", () => {
+  it("shows the HR Model tab active by default with its score-band category tabs", () => {
     renderPage();
-    expect(screen.getByText("Graded Predictions")).toBeInTheDocument();
-    expect(screen.getByText("Overall HR Rate")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "HR Model", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "80+" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "70-79" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "60-69" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "50-59" })).toBeInTheDocument();
   });
 
-  it("renders numerology summary stat tiles from the summary schema", () => {
+  it("shows a compact summary strip with tracker metrics rather than a stat-card grid", () => {
     renderPage();
-    expect(screen.getByText("Total Finalized")).toBeInTheDocument();
-    expect(screen.getByText("Avg Total Bases")).toBeInTheDocument();
-  });
-
-  it("explains why Sin City has no fabricated historical data", () => {
-    renderPage();
-    expect(screen.getByText(/could not be safely reconstructed/)).toBeInTheDocument();
-  });
-
-  it("discloses that Top HR historical results use the final archived snapshot", () => {
-    renderPage();
-    expect(screen.getByText(/final archived model snapshot/)).toBeInTheDocument();
-  });
-
-  it("shows ROI odds-coverage context wherever ROI is displayed", () => {
-    renderPage();
-    expect(screen.getByText(/1 of 1 graded picks had archived odds/)).toBeInTheDocument();
+    expect(screen.getByText("Plays")).toBeInTheDocument();
+    expect(screen.getByText("HR Rate")).toBeInTheDocument();
   });
 });
