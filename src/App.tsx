@@ -53,6 +53,7 @@ import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import NFLAnalytics from "./pages/NFLAnalytics";
 import NFLYardagePropsReview from "./pages/nfl/NFLYardagePropsReview";
+import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
@@ -165,6 +166,7 @@ const App = () => (
             <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
             <Route path="analytics" element={<NFLAnalytics />} />
             <Route path="yardage-props-review" element={<NFLYardagePropsReview />} />
+            <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
             <Route path="guide" element={<NFLGuide2026 />} />
