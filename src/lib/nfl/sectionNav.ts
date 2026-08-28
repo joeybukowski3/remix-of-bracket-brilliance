@@ -165,6 +165,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         icon: "🧮",
         match: "prefix",
       },
+      {
+        to: "/nfl/dfs",
+        label: "DFS Contest Analyzer",
+        shortLabel: "DFS Analyzer",
+        description: "Upload a DraftKings NFL Classic salary CSV and compare pricing against JKB weekly projections.",
+        icon: "💰",
+        status: "new",
+      },
     ],
   },
 ];

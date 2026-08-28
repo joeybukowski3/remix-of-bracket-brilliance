@@ -11,6 +11,7 @@ export type SeoPage =
   | "pga-best-bets"
   | "pga-model"
   | "nfl"
+  | "nfl-dfs"
   | "fantasy-football"
   | "fantasy-draft-preview"
   | "fantasy-points-allowed"
@@ -99,6 +100,13 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "NFL matchup analytics, efficiency metrics, and betting context. Advanced football models coming soon.",
     path: "/nfl",
+    noindex: true,
+  },
+  "nfl-dfs": {
+    title: "NFL DFS Contest Analyzer | Joe Knows Ball",
+    description:
+      "Upload a DraftKings NFL Classic salary CSV and compare DK pricing against Joe Knows Ball weekly Full PPR projections and research for slate-specific DFS value.",
+    path: "/nfl/dfs",
     noindex: true,
   },
   "fantasy-football": {
