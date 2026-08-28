@@ -1,10 +1,10 @@
 {
   "date": "2026-08-28",
-  "generatedAt": "2026-08-28T19:29:58.396Z",
+  "generatedAt": "2026-08-28T22:30:43.124Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Truist Park and American Family Field play up today with park factors of 1.03 and 1.1, while Nationals Park and Oracle Park suppress power at 0.98 and 0.85. Sugano and Bradford face lineups with elevated barrel rates and hard-hit rates, creating favorable HR environments in Atlanta and Milwaukee.",
-    "modelNote": "The model prioritizes hrScoreRank and opposingPitcherHrVs, elevating Olson and Baldwin due to Sugano's 86.3 HR vulnerability and their top barrel/hard-hit profiles."
+    "slateOverview": "Truist Park and American Family Field stand out with park factors above 1.0, while Sugano and Bradford face lineups with elevated barrel and hard-hit rates. Lefties Kent and Drake create platoon edges for Hernández and Devers, and low opposing-pitcher HR rates for McClanahan and Lowder still yield playable spots due to strong batter profiles.",
+    "modelNote": "The model is prioritizing recent barrel and hard-hit data over raw HR/FB ratios, elevating Olson and Baldwin despite modest pull rates because their exit velocities and park context outweigh the fly-ball suppression."
   },
   "bestBets": [
     {
@@ -18,11 +18,11 @@
         "HH=50.3%"
       ],
       "bullets": [
-        "park=1.03",
-        "hrScore=79.7"
+        "barrel=15.8%",
+        "park=1.03"
       ],
-      "hrOddsYes": "+238",
-      "marketImpliedProbability": 0.2958579881656805,
+      "hrOddsYes": "+260",
+      "marketImpliedProbability": 0.2777777777777778,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,11 +37,11 @@
         "HH=52.1%"
       ],
       "bullets": [
-        "park=1.03",
-        "hrScore=72.1"
+        "HH=52.1%",
+        "park=1.03"
       ],
-      "hrOddsYes": "+294",
-      "marketImpliedProbability": 0.25380710659898476,
+      "hrOddsYes": "+291",
+      "marketImpliedProbability": 0.2557544757033248,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,12 +52,12 @@
       "opposingPitcher": "Jackson Kent",
       "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=73.1",
-        "Hard Hit%=48.3"
+        "barrel=13.1%",
+        "HH=48.3%"
       ],
       "bullets": [
-        "HR score 69.4 (#3)",
-        "Pitcher HR VS 73.1 at park 0.98"
+        "barrel=13.1%",
+        "park=0.98"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -71,12 +71,12 @@
       "opposingPitcher": "Cody Bradford",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=75.3",
+        "Pitcher HR VS=75.2",
         "Hard Hit%=47.7"
       ],
       "bullets": [
-        "HR score 68.7 (#4)",
-        "Pitcher HR VS 75.3 at park 1.10"
+        "HR score 68.9 (#4)",
+        "Pitcher HR VS 75.2 at park 1.10"
       ],
       "hrOddsYes": "+370",
       "marketImpliedProbability": 0.2127659574468085,
@@ -84,45 +84,26 @@
       "hrValueEdge": null
     },
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "CIN",
-      "opposingPitcher": "Rhett Lowder",
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "TEX",
+      "opposingPitcher": "Cody Bradford",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=60.0",
-        "Hard Hit%=48.5"
+        "Pitcher HR VS=75.2",
+        "Hard Hit%=53.0"
       ],
       "bullets": [
-        "HR score 68.1 (#5)",
-        "Pitcher HR VS 60.0 at park 1.00"
-      ],
-      "hrOddsYes": "+535",
-      "marketImpliedProbability": 0.15748031496062992,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Heriberto Hernández",
-      "team": "MIA",
-      "opponent": "WSH",
-      "opposingPitcher": "Jackson Kent",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=13.1%",
-        "HH=48.3%"
-      ],
-      "bullets": [
-        "park=0.98",
-        "hrScore=69.4"
+        "HR score 68.4 (#5)",
+        "Pitcher HR VS 75.2 at park 1.10"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Jackson Chourio",
       "team": "MIL",
@@ -135,10 +116,29 @@
       ],
       "bullets": [
         "park=1.1",
-        "hrScore=68.7"
+        "barrel=13.3%"
       ],
       "hrOddsYes": "+370",
       "marketImpliedProbability": 0.2127659574468085,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "TEX",
+      "opposingPitcher": "Cody Bradford",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=14%",
+        "HH=53%"
+      ],
+      "bullets": [
+        "HH=53%",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,17 +147,17 @@
       "team": "CHC",
       "opponent": "CIN",
       "opposingPitcher": "Rhett Lowder",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=12.3%",
         "HH=48.5%"
       ],
       "bullets": [
-        "park=1",
-        "hrScore=68.1"
+        "barrel=12.3%",
+        "park=1"
       ],
-      "hrOddsYes": "+535",
-      "marketImpliedProbability": 0.15748031496062992,
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -166,36 +166,17 @@
       "team": "SD",
       "opponent": "TB",
       "opposingPitcher": "Shane McClanahan",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=56.3",
+        "Pitcher HR VS=56.8",
         "Hard Hit%=54.2"
       ],
       "bullets": [
-        "HR score 66.9 (#6)",
-        "Pitcher HR VS 56.3 at park 0.98"
+        "HR score 67.1 (#7)",
+        "Pitcher HR VS 56.8 at park 0.98"
       ],
       "hrOddsYes": "+408",
       "marketImpliedProbability": 0.1968503937007874,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Griffin Conine",
-      "team": "MIA",
-      "opponent": "WSH",
-      "opposingPitcher": "Jackson Kent",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=73.1",
-        "Hard Hit%=52.0"
-      ],
-      "bullets": [
-        "HR score 65.8 (#7)",
-        "Pitcher HR VS 73.1 at park 0.98"
-      ],
-      "hrOddsYes": "+460",
-      "marketImpliedProbability": 0.17857142857142858,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -206,12 +187,12 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=86.3",
+        "Pitcher HR VS=86.4",
         "Hard Hit%=48.2"
       ],
       "bullets": [
-        "HR score 65.8 (#8)",
-        "Pitcher HR VS 86.3 at park 1.03"
+        "HR score 65.9 (#8)",
+        "Pitcher HR VS 86.4 at park 1.03"
       ],
       "hrOddsYes": "+375",
       "marketImpliedProbability": 0.21052631578947367,
@@ -221,21 +202,21 @@
   ],
   "longshots": [
     {
-      "player": "Griffin Conine",
-      "team": "MIA",
-      "opponent": "WSH",
-      "opposingPitcher": "Jackson Kent",
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "TB",
+      "opposingPitcher": "Shane McClanahan",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=15.2%",
-        "HH=52%"
+        "barrel=12.5%",
+        "HH=54.2%"
       ],
       "bullets": [
-        "park=0.98",
-        "hrScore=65.8"
+        "HH=54.2%",
+        "park=0.98"
       ],
-      "hrOddsYes": "+460",
-      "marketImpliedProbability": 0.17857142857142858,
+      "hrOddsYes": "+408",
+      "marketImpliedProbability": 0.1968503937007874,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -251,7 +232,7 @@
       ],
       "bullets": [
         "park=1.03",
-        "hrScore=65.8"
+        "barrel=10.8%"
       ],
       "hrOddsYes": "+375",
       "marketImpliedProbability": 0.21052631578947367,
@@ -266,11 +247,11 @@
       "hrScoreRank": 15,
       "topStats": [
         "Hard Hit%=51.2",
-        "Pitcher HR VS=44.5"
+        "Pitcher HR VS=44.4"
       ],
       "bullets": [
-        "HR score 61.0 (#15)",
-        "Pitcher HR VS 44.5 at park 1.00"
+        "HR score 61.1 (#15)",
+        "Pitcher HR VS 44.4 at park 1.00"
       ],
       "hrOddsYes": "+650",
       "marketImpliedProbability": 0.13333333333333333,
@@ -278,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Rafael Devers",
-      "team": "SF",
-      "opponent": "AZ",
-      "opposingPitcher": "Kohl Drake",
-      "hrScoreRank": 9,
+      "player": "Trent Grisham",
+      "team": "NYY",
+      "opponent": "BOS",
+      "opposingPitcher": "Patrick Sandoval",
+      "hrScoreRank": 24,
       "topStats": [
-        "Pitcher HR VS=96.7",
-        "Hard Hit%=50.4"
+        "Hard Hit%=46.4",
+        "Pitcher HR VS=45.7"
       ],
       "bullets": [
-        "HR score 65.8 (#9)",
-        "Pitcher HR VS 96.7 at park 0.85"
+        "HR score 57.6 (#24)",
+        "Pitcher HR VS 45.7 at park 1.18"
       ],
-      "hrOddsYes": "+537",
-      "marketImpliedProbability": 0.15698587127158556,
+      "hrOddsYes": "+575",
+      "marketImpliedProbability": 0.14814814814814814,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
