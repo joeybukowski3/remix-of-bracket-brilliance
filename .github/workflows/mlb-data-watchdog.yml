@@ -1,0 +1,138 @@
+name: MLB Data Watchdog
+
+run-name: MLB Data Watchdog • ${{ github.event_name }}
+
+# Aug 27-28 2026 RCA: GitHub scheduled-workflow delivery for this repo degraded
+# badly and "Generate MLB Data" fired hours late or not at all, leaving
+# yesterday's HR/K board live. This watchdog is an ADDITIONAL internal recovery
+# layer: on its own schedule it checks whether today's canonical MLB artifacts
+# actually belong to today's Eastern slate and, if not, dispatches the canonical
+# "Generate MLB Data" workflow.
+#
+# IMPORTANT: this is NOT full redundancy. It still relies on GitHub delivering
+# THIS workflow's own scheduled events. If the scheduler is fully down, this
+# will be late too. True external redundancy (Vercel Cron / repository_dispatch)
+# is deliberately out of scope for Phase 1.
+
+on:
+  schedule:
+    # A few passes across the MLB morning / pre-first-pitch window, each offset
+    # to land AFTER a "Generate MLB Data" cron mark (3:23 / 8:23 / 10:23 / 11:40).
+    - cron: "5 9 * * *"
+      timezone: "America/New_York" # 9:05 AM ET — after the 8:23 morning refresh
+    - cron: "5 11 * * *"
+      timezone: "America/New_York" # 11:05 AM ET — after the 10:23 refresh
+    - cron: "10 13 * * *"
+      timezone: "America/New_York" # 1:10 PM ET — last catch before most first pitches
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report the freshness decision but never dispatch the generator"
+        type: boolean
+        required: false
+        default: false
+
+# Dedicated group: the watchdog only READS committed artifacts and dispatches
+# another workflow. It must never sit inside the shared main-data-writers lock,
+# or it could block the very "Generate MLB Data" run it just dispatched.
+concurrency:
+  group: mlb-data-watchdog-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write # required for `gh workflow run`
+
+jobs:
+  watchdog:
+    name: Check MLB artifact freshness
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check official MLB slate
+        id: slate
+        run: node scripts/lib/mlb-slate-gate.mjs
+
+      - name: Successful no-op — no games today
+        if: steps.slate.outputs.has_games != 'true'
+        run: |
+          {
+            echo "### MLB Data Watchdog — no-op"
+            echo ""
+            echo "Slate check: \`${{ steps.slate.outputs.reason }}\` for \`${{ steps.slate.outputs.slate_date }}\`."
+            echo "No games today (or schedule unavailable) — nothing to verify, no dispatch."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Inspect canonical artifact freshness
+        id: freshness
+        if: steps.slate.outputs.has_games == 'true'
+        env:
+          MLB_EXPECTED_SLATE_DATE: ${{ steps.slate.outputs.slate_date }}
+        run: node scripts/lib/mlb-data-freshness.mjs --github-summary
+
+      - name: Decide and (idempotently) dispatch the canonical generator
+        if: steps.slate.outputs.has_games == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATUS: ${{ steps.freshness.outputs.status }}
+          EXPECTED_DATE: ${{ steps.freshness.outputs.expected_date }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+
+          echo "Freshness status for ${EXPECTED_DATE}: ${STATUS}"
+
+          if [ "${STATUS}" = "current" ]; then
+            {
+              echo "### MLB Data Watchdog — no-op (artifacts current)"
+              echo ""
+              echo "Canonical MLB artifacts already belong to \`${EXPECTED_DATE}\`. No dispatch."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Idempotency: if a "Generate MLB Data" run is already queued or in
+          # progress, do not stack another dispatch on top of it.
+          IN_FLIGHT="$(gh run list \
+            --workflow generate-mlb-hr-props.yml \
+            --branch main \
+            --json status \
+            --jq '[.[] | select(.status == "queued" or .status == "in_progress")] | length' || echo 0)"
+
+          if [ "${IN_FLIGHT}" != "0" ]; then
+            {
+              echo "### MLB Data Watchdog — dispatch skipped (already running)"
+              echo ""
+              echo "Freshness: \`${STATUS}\` for \`${EXPECTED_DATE}\`, but ${IN_FLIGHT} \"Generate MLB Data\" run(s) already queued/in-progress. Leaving it to finish."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            {
+              echo "### MLB Data Watchdog — DRY RUN"
+              echo ""
+              echo "Would dispatch \`generate-mlb-hr-props.yml\` (freshness \`${STATUS}\` for \`${EXPECTED_DATE}\`). No dispatch performed."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh workflow run generate-mlb-hr-props.yml --ref main
+
+          {
+            echo "### MLB Data Watchdog — dispatched canonical generator"
+            echo ""
+            echo "- Freshness: **${STATUS}** for \`${EXPECTED_DATE}\`"
+            echo "- Action: dispatched \`generate-mlb-hr-props.yml\` on \`main\`"
+            echo "- Freshness re-verification is delegated to that run's own post-publish assertion (this watchdog does not re-check after a bounded wait: a dispatched run can take 10+ minutes, and holding this job open that long adds no safety over the canonical run's own gate)."
+          } >> "$GITHUB_STEP_SUMMARY"

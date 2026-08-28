@@ -405,11 +405,15 @@ jobs:
       - name: Inject batter HR odds (lines + yes price)
         id: inject_hr_odds
         continue-on-error: true
+        env:
+          MLB_EXPECTED_SLATE_DATE: ${{ needs.slate-check.outputs.slate_date }}
         run: node scripts/inject-batter-hr-odds.mjs
 
       - name: Inject pitcher K odds (line + over/under price)
         id: inject_k_odds
         continue-on-error: true
+        env:
+          MLB_EXPECTED_SLATE_DATE: ${{ needs.slate-check.outputs.slate_date }}
         run: node scripts/inject-k-odds.mjs
 
       - name: Validate MLB prop odds enrichment
@@ -534,7 +538,16 @@ jobs:
             echo "::warning::K projection V2 shadow artifact was not refreshed; prior valid artifact is preserved."
           fi
 
+      # Pitcher regression depends on third-party services (Baseball Savant /
+      # Grok). Aug 27-28 RCA: a hard `exit 1` here discarded an ENTIRE run --
+      # including already-correct HR/K props that had been generated and
+      # enriched above -- just because a downstream third party was down. It is
+      # now non-fatal: the script still either succeeds or leaves the previous
+      # pitcher-regression.json untouched (it never fabricates output), and its
+      # failure is surfaced as a degraded flag + warning rather than failing
+      # the job. When the third party is healthy, behaviour is unchanged.
       - name: Generate pitcher regression
+        id: pitcher_regression
         shell: bash
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
@@ -542,12 +555,14 @@ jobs:
           for attempt in 1 2 3; do
             echo "Pitcher regression attempt ${attempt}/3"
             if node scripts/generate-mlb-pitcher-regression.mjs; then
+              echo "status=ok" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             sleep $((attempt * 10))
           done
-          echo "Pitcher regression generation failed after 3 attempts." >&2
-          exit 1
+          echo "status=degraded" >> "$GITHUB_OUTPUT"
+          echo "::warning::Pitcher regression generation failed after 3 attempts (third-party dependency). Prior pitcher-regression.json is preserved; core HR/K props publishing continues."
+          exit 0
 
       - name: Remove timestamp-only data changes
         shell: bash
@@ -679,6 +694,48 @@ jobs:
           fi
 
           echo "MLB data pushed successfully."
+
+      # ── Observability + post-publish freshness safety ─────────────────────
+      # Concise Step Summary of what this run actually produced: expected slate
+      # date, the date stamped on each canonical artifact, per-artifact
+      # current/stale/partial/missing status, the major provider step outcomes,
+      # whether a commit happened, and the resulting HEAD SHA.
+      - name: Report MLB data freshness and provider status
+        if: always() && needs.slate-check.outputs.has_games == 'true'
+        shell: bash
+        env:
+          MLB_EXPECTED_SLATE_DATE: ${{ needs.slate-check.outputs.slate_date }}
+        run: |
+          node scripts/lib/mlb-data-freshness.mjs --github-summary || true
+          COMMIT_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+          {
+            echo ""
+            echo "#### Provider / step outcomes"
+            echo ""
+            echo "| Step | Outcome |"
+            echo "| --- | --- |"
+            echo "| Fetch MLB odds | ${{ steps.fetch_odds.outcome }} |"
+            echo "| Final HR generation | ${{ steps.generate_hr_props.outcome }} |"
+            echo "| Inject HR odds | ${{ steps.inject_hr_odds.outcome }} |"
+            echo "| Inject K odds | ${{ steps.inject_k_odds.outcome }} |"
+            echo "| Validate prop odds | ${{ steps.validate_prop_odds.outcome }} |"
+            echo "| ML picks | ${{ steps.generate_ml_picks.outcome }} |"
+            echo "| Pitcher regression | ${{ steps.pitcher_regression.outputs.status || steps.pitcher_regression.outcome }} |"
+            echo ""
+            echo "- Meaningful data change committed: **${{ steps.changes.outputs.changed }}**"
+            echo "- HEAD after this run: \`${COMMIT_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Post-publish assertion: if games exist today but a HARD-required core
+      # artifact (hr-props-raw.json) is still NOT for today's slate after
+      # generation + injection + commit, fail loudly. Degraded-but-current data
+      # (e.g. an optional provider unavailable) is fine; STALE data is not. A
+      # soft artifact (strikeout-prop-details.json) being stale only warns.
+      - name: Assert core MLB artifacts are for today's slate
+        if: always() && needs.slate-check.outputs.has_games == 'true'
+        env:
+          MLB_EXPECTED_SLATE_DATE: ${{ needs.slate-check.outputs.slate_date }}
+        run: node scripts/lib/mlb-data-freshness.mjs --assert-hard
 
       # Always runs, regardless of any earlier step's outcome, so this
       # summary is available even if a Phase 2 step failed or was
