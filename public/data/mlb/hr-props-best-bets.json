@@ -1,10 +1,10 @@
 {
   "date": "2026-08-28",
-  "generatedAt": "2026-08-28T22:30:43.124Z",
+  "generatedAt": "2026-08-28T23:36:27.211Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Truist Park and American Family Field stand out with park factors above 1.0, while Sugano and Bradford face lineups with elevated barrel and hard-hit rates. Lefties Kent and Drake create platoon edges for Hernández and Devers, and low opposing-pitcher HR rates for McClanahan and Lowder still yield playable spots due to strong batter profiles.",
-    "modelNote": "The model is prioritizing recent barrel and hard-hit data over raw HR/FB ratios, elevating Olson and Baldwin despite modest pull rates because their exit velocities and park context outweigh the fly-ball suppression."
+    "slateOverview": "Truist Park and American Family Field are the clearest HR venues today with 1.03-1.10 park factors, while Sugano and Bradford both carry elevated HR/9 marks against right-handed power bats. The Braves and Brewers stacks benefit from these matchups plus favorable weather windows, and the model is also flagging Wrigley and Progressive as secondary spots where barrel rates and opposing pitcher vulnerabilities align.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over raw ISO, which is why Olson, Baldwin, and Bauers rank highest despite varying recent power spikes."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=15.8%",
         "park=1.03"
       ],
-      "hrOddsYes": "+260",
-      "marketImpliedProbability": 0.2777777777777778,
+      "hrOddsYes": "+238",
+      "marketImpliedProbability": 0.2958579881656805,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -75,7 +75,7 @@
         "Hard Hit%=47.7"
       ],
       "bullets": [
-        "HR score 68.9 (#4)",
+        "HR score 68.8 (#4)",
         "Pitcher HR VS 75.2 at park 1.10"
       ],
       "hrOddsYes": "+370",
@@ -94,7 +94,7 @@
         "Hard Hit%=53.0"
       ],
       "bullets": [
-        "HR score 68.4 (#5)",
+        "HR score 68.3 (#5)",
         "Pitcher HR VS 75.2 at park 1.10"
       ],
       "hrOddsYes": "+350",
@@ -135,7 +135,7 @@
       ],
       "bullets": [
         "HH=53%",
-        "park=1.1"
+        "barrel=14%"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -153,8 +153,8 @@
         "HH=48.5%"
       ],
       "bullets": [
-        "barrel=12.3%",
-        "park=1"
+        "park=1",
+        "barrel=12.3%"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
@@ -168,12 +168,12 @@
       "opposingPitcher": "Shane McClanahan",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=56.8",
+        "Pitcher HR VS=57.1",
         "Hard Hit%=54.2"
       ],
       "bullets": [
         "HR score 67.1 (#7)",
-        "Pitcher HR VS 56.8 at park 0.98"
+        "Pitcher HR VS 57.1 at park 0.98"
       ],
       "hrOddsYes": "+408",
       "marketImpliedProbability": 0.1968503937007874,
@@ -191,7 +191,7 @@
         "Hard Hit%=48.2"
       ],
       "bullets": [
-        "HR score 65.9 (#8)",
+        "HR score 65.8 (#8)",
         "Pitcher HR VS 86.4 at park 1.03"
       ],
       "hrOddsYes": "+375",
@@ -232,7 +232,7 @@
       ],
       "bullets": [
         "park=1.03",
-        "barrel=10.8%"
+        "HH=48.2%"
       ],
       "hrOddsYes": "+375",
       "marketImpliedProbability": 0.21052631578947367,
@@ -244,13 +244,13 @@
       "team": "CIN",
       "opponent": "CHC",
       "opposingPitcher": "David Peterson",
-      "hrScoreRank": 15,
+      "hrScoreRank": 16,
       "topStats": [
         "Hard Hit%=51.2",
         "Pitcher HR VS=44.4"
       ],
       "bullets": [
-        "HR score 61.1 (#15)",
+        "HR score 61.0 (#16)",
         "Pitcher HR VS 44.4 at park 1.00"
       ],
       "hrOddsYes": "+650",
@@ -259,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Trent Grisham",
-      "team": "NYY",
-      "opponent": "BOS",
-      "opposingPitcher": "Patrick Sandoval",
-      "hrScoreRank": 24,
+      "player": "Rafael Devers",
+      "team": "SF",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
+      "hrScoreRank": 9,
       "topStats": [
-        "Hard Hit%=46.4",
-        "Pitcher HR VS=45.7"
+        "Pitcher HR VS=96.7",
+        "Hard Hit%=50.4"
       ],
       "bullets": [
-        "HR score 57.6 (#24)",
-        "Pitcher HR VS 45.7 at park 1.18"
+        "HR score 65.8 (#9)",
+        "Pitcher HR VS 96.7 at park 0.85"
       ],
-      "hrOddsYes": "+575",
-      "marketImpliedProbability": 0.14814814814814814,
+      "hrOddsYes": "+537",
+      "marketImpliedProbability": 0.15698587127158556,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
