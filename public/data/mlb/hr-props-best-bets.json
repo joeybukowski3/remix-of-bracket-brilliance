@@ -1,10 +1,10 @@
 {
   "date": "2026-08-27",
-  "generatedAt": "2026-08-27T22:27:31.197Z",
+  "generatedAt": "2026-08-27T23:51:27.045Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Busch Stadium and Yankee Stadium are the clearest HR venues today, with Graceffo and Wesneski both allowing elevated fly-ball contact and HR/FB rates. Rogers Centre’s 1.08 park factor and Arrighetti’s 55.6 HR/9 mark also create a favorable environment for power, while Oracle Park’s 0.85 factor caps Devers’ upside despite his recent surge.",
-    "modelNote": "The model is prioritizing barrel rate, recent HR volume, and opposing pitcher HR vulnerability over park factor, which is why Alonso (82.1) and Goodman (68.4) sit atop the slate despite sub-1.00 parks."
+    "slateOverview": "Busch Stadium and Yankee Stadium anchor the slate with park factors of 0.92 and 1.18 respectively, while Graceffo and Wesneski face elevated opposing HR rates (75.3 and 48.4). The model highlights Alonso and Encarnacion-Strand in the same BAL-STL game where Graceffo's right-handed delivery meets elevated barrel and hard-hit rates from both sides of the plate.",
+    "modelNote": "The model is prioritizing recent HR volume (Alonso's 3 in 7 days) and opposing pitcher vulnerability over park suppression, with hrScoreRank 1-6 all carrying elevated barrel rates above 12% against right-handed pitching."
   },
   "bestBets": [
     {
@@ -71,15 +71,15 @@
       "opposingPitcher": "Spencer Arrighetti",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=55.6",
+        "Pitcher HR VS=55.0",
         "Hard Hit%=54.6"
       ],
       "bullets": [
-        "HR score 66.4 (#4)",
-        "Pitcher HR VS 55.6 at park 1.08"
+        "HR score 66.3 (#4)",
+        "Pitcher HR VS 55.0 at park 1.08"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -90,15 +90,15 @@
       "opposingPitcher": "Hayden Wesneski",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=47.8",
+        "Pitcher HR VS=48.4",
         "Hard Hit%=46.2"
       ],
       "bullets": [
-        "HR score 64.8 (#5)",
-        "Pitcher HR VS 47.8 at park 1.18"
+        "HR score 64.9 (#5)",
+        "Pitcher HR VS 48.4 at park 1.18"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -115,11 +115,11 @@
         "HH=54.6%"
       ],
       "bullets": [
-        "hrScore=66.4",
+        "hrScore=66.3",
         "park=1.08"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -134,11 +134,11 @@
         "HH=46.2%"
       ],
       "bullets": [
-        "hrScore=64.8",
+        "hrScore=64.9",
         "park=1.18"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -153,7 +153,7 @@
         "HH=43.6%"
       ],
       "bullets": [
-        "hrScore=64.3",
+        "hrScore=64.2",
         "park=0.92"
       ],
       "hrOddsYes": "+525",
@@ -187,12 +187,12 @@
       "opposingPitcher": "Spencer Arrighetti",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=55.6",
+        "Pitcher HR VS=55.0",
         "Hard Hit%=51.2"
       ],
       "bullets": [
-        "HR score 60.9 (#8)",
-        "Pitcher HR VS 55.6 at park 1.08"
+        "HR score 60.8 (#8)",
+        "Pitcher HR VS 55.0 at park 1.08"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -231,11 +231,30 @@
         "HH=51.2%"
       ],
       "bullets": [
-        "hrScore=60.9",
+        "hrScore=60.8",
         "park=1.08"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jonah Cox",
+      "team": "SF",
+      "opponent": "AZ",
+      "opposingPitcher": "Jose Cabrera",
+      "hrScoreRank": 14,
+      "topStats": [
+        "Pitcher HR VS=55.5",
+        "Hard Hit%=50.0"
+      ],
+      "bullets": [
+        "HR score 55.7 (#14)",
+        "Pitcher HR VS 55.5 at park 0.85"
+      ],
+      "hrOddsYes": "+1400",
+      "marketImpliedProbability": 0.06666666666666667,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -255,25 +274,6 @@
       ],
       "hrOddsYes": "+850",
       "marketImpliedProbability": 0.10526315789473684,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jonah Cox",
-      "team": "SF",
-      "opponent": "AZ",
-      "opposingPitcher": "Jose Cabrera",
-      "hrScoreRank": 14,
-      "topStats": [
-        "Pitcher HR VS=55.5",
-        "Hard Hit%=50.0"
-      ],
-      "bullets": [
-        "HR score 55.7 (#14)",
-        "Pitcher HR VS 55.5 at park 0.85"
-      ],
-      "hrOddsYes": "+765",
-      "marketImpliedProbability": 0.11560693641618497,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
