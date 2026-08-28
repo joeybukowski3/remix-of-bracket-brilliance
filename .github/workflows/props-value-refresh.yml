@@ -143,22 +143,51 @@ jobs:
               return;
             }
 
-            // Lines already populated in hr-props-raw.json — nothing to do
+            // Date invariant (Aug 27-28 RCA): only treat "lines already
+            // populated" as a reason to skip when hr-props-raw.json actually
+            // belongs to TODAY's Eastern slate. Stale (yesterday) data that
+            // still has populated HR/K lines must NOT satisfy this gate, or a
+            // scheduler outage silently leaves yesterday's board up all day.
+            const expectedDate = new Intl.DateTimeFormat("en-CA", {
+              timeZone: "America/New_York",
+              year: "numeric", month: "2-digit", day: "2-digit",
+            }).format(new Date());
+
             const rawPath = path.join(process.cwd(), "public/data/mlb/hr-props-raw.json");
-            if (fs.existsSync(rawPath)) {
-              try {
-                const raw      = JSON.parse(fs.readFileSync(rawPath, "utf8"));
-                const hrFilled = (raw.batters  || []).some(b => b.hrOddsYes != null);
-                const kFilled  = (raw.pitchers || []).some(p => p.kLine != null && p.kLine > 0);
-                console.log(`Lines already in file — HR: ${hrFilled}, K: ${kFilled}`);
-                if (hrFilled && kFilled) {
-                  console.log("Both HR and K lines populated — skipping.");
-                  fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
-                  return;
-                }
-              } catch (e) {
-                console.log("Could not read hr-props-raw.json:", e.message);
-              }
+            if (!fs.existsSync(rawPath)) {
+              // (C) raw missing — allow the recovery path to proceed.
+              console.log("hr-props-raw.json missing — proceeding (recovery path).");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=true\n");
+              return;
+            }
+
+            let raw;
+            try {
+              raw = JSON.parse(fs.readFileSync(rawPath, "utf8"));
+            } catch (e) {
+              // (C) raw unreadable — allow the recovery path to proceed.
+              console.log("hr-props-raw.json unreadable — proceeding (recovery path):", e.message);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=true\n");
+              return;
+            }
+
+            const rawDate  = typeof raw.date === "string" ? raw.date : null;
+            const hrFilled = (raw.batters  || []).some(b => b.hrOddsYes != null);
+            const kFilled  = (raw.pitchers || []).some(p => p.kLine != null && p.kLine > 0);
+            console.log(`hr-props-raw.json date=${rawDate || "missing"} expected=${expectedDate} — HR lines: ${hrFilled}, K lines: ${kFilled}`);
+
+            if (rawDate !== expectedDate) {
+              // (B) stale slate — do NOT skip just because old lines exist.
+              console.log("hr-props-raw.json is for a different slate — proceeding despite populated lines.");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=true\n");
+              return;
+            }
+
+            if (hrFilled && kFilled) {
+              // (A) today's slate AND both line types populated — nothing to do.
+              console.log("Today's slate with both HR and K lines populated — skipping.");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
+              return;
             }
 
             console.log(`Within window and lines not yet populated — proceeding.`);
@@ -196,8 +225,25 @@ jobs:
             const odds    = JSON.parse(fs.readFileSync(oddsPath, "utf8"));
             const hrCount = Object.keys(odds.hrOdds || {}).length;
             const kCount  = Object.keys(odds.kOdds  || {}).length;
-            console.log(`ParlayAPI returned ${hrCount} HR lines, ${kCount} K lines.`);
-            hasLines = hrCount > 0 || kCount > 0;
+
+            // Date invariant: mlb-odds.json carries no explicit `date`, so derive
+            // the slate from its fetch timestamp. If the odds fetch above failed,
+            // this file is yesterday's and must not be treated as usable lines —
+            // otherwise stale odds get injected/committed into today's slate.
+            const etDate = (v) => v && new Intl.DateTimeFormat("en-CA", {
+              timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+            }).format(new Date(v));
+            const expectedDate = new Intl.DateTimeFormat("en-CA", {
+              timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+            }).format(new Date());
+            const oddsDate = (typeof odds.date === "string" && odds.date) || etDate(odds.fetchedAt) || etDate(odds.generatedAt);
+            console.log(`ParlayAPI returned ${hrCount} HR lines, ${kCount} K lines; odds slate=${oddsDate || "unknown"} expected=${expectedDate}.`);
+
+            if (oddsDate !== expectedDate) {
+              console.log("mlb-odds.json is not today's slate — refusing to inject stale odds.");
+            } else {
+              hasLines = hrCount > 0 || kCount > 0;
+            }
           } catch (e) {
             console.log("Could not read mlb-odds.json:", e.message);
           }
