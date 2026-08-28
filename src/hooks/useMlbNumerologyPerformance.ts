@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NumerologyPerformanceFile, NumerologyPerformanceSummary } from "@/types/mlbNumerologyPerformance";
 
 function dataUrl(path: string): string {
@@ -11,18 +11,21 @@ interface UseMlbNumerologyPerformanceResult {
   history: NumerologyPerformanceFile | null;
   loading: boolean;
   error: string | null;
+  summaryError: string | null;
+  historyError: string | null;
 }
 
 export function useMlbNumerologyPerformance(): UseMlbNumerologyPerformanceResult {
   const [summary, setSummary] = useState<NumerologyPerformanceSummary | null>(null);
   const [history, setHistory] = useState<NumerologyPerformanceFile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([
+    Promise.allSettled([
       fetch(dataUrl("performance-summary.json"), { cache: "no-store" }).then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status} loading numerology performance-summary.json`);
         return res.json() as Promise<NumerologyPerformanceSummary>;
@@ -31,25 +34,32 @@ export function useMlbNumerologyPerformance(): UseMlbNumerologyPerformanceResult
         if (!res.ok) throw new Error(`HTTP ${res.status} loading numerology performance.json`);
         return res.json() as Promise<NumerologyPerformanceFile>;
       }),
-    ])
-      .then(([summaryData, historyData]) => {
-        if (cancelled) return;
-        setSummary(summaryData);
-        setHistory(historyData);
-        setError(null);
-      })
-      .catch((reason: unknown) => {
-        if (cancelled) return;
+    ]).then(([summaryResult, historyResult]) => {
+      if (cancelled) return;
+
+      if (summaryResult.status === "fulfilled") {
+        setSummary(summaryResult.value);
+        setSummaryError(null);
+      } else {
         setSummary(null);
+        setSummaryError(summaryResult.reason instanceof Error ? summaryResult.reason.message : "Failed to load numerology summary.");
+      }
+
+      if (historyResult.status === "fulfilled") {
+        setHistory(historyResult.value);
+        setHistoryError(null);
+      } else {
         setHistory(null);
-        setError(reason instanceof Error ? reason.message : "Failed to load numerology performance data.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        setHistoryError(historyResult.reason instanceof Error ? historyResult.reason.message : "Failed to load numerology performance history.");
+      }
+
+      setLoading(false);
+    });
 
     return () => { cancelled = true; };
   }, []);
 
-  return { summary, history, loading, error };
+  const error = useMemo(() => historyError ?? summaryError, [historyError, summaryError]);
+
+  return { summary, history, loading, error, summaryError, historyError };
 }
