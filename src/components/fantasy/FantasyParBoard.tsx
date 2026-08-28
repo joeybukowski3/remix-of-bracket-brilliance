@@ -235,7 +235,7 @@ function OverallBoard({ query }: { query: string }) {
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center")}>Rank</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-14 z-30 min-w-64 bg-slate-100 px-3 py-2")}>Player</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Pos Rk</th>
-            <th title="2026 consensus Average Draft Position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>ADP</th>
+            <th title="FantasyPros Real-Time ADP — Redraft PPR, 12-team, Aug. 25, 2026 snapshot" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>ADP</th>
             <th title="Approved projected PAR per game" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>PAR/G</th>
             <th title="FantasyPros projection rank within position" className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Projection Rk</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>AVG Rk</th>
@@ -340,7 +340,7 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
         <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
           <PositionRankBadge position={row.position} positionRank={row.positionRank} />
         </td>
-        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center font-semibold tabular-nums text-slate-500")}>{formatAdp(row.adp)}</td>
+        <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center font-semibold tabular-nums text-slate-500")}>{formatAdp(context.adp)}</td>
         <OverallStatCell tone={tone} value={formatSigned(context.parPerGame, 2)} />
         <OverallStatCell tone={tone} value={formatRank(row.projectionRank)} />
         <OverallStatCell tone={tone} value={formatRank(row.averageRank)} />
@@ -358,7 +358,7 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
         <tr className="bg-slate-50">
           <td colSpan={16} className="border-b border-slate-200 px-4 py-3 text-xs text-slate-600">
             <p>
-              2025 sample: <strong>{context.seasonActual2025 ? `${context.seasonActual2025.gamesPlayed} games` : "N/A"}</strong> · L8 sample: <strong>{context.lastEightRank ? `${context.lastEightRank.sampleSize} game${context.lastEightRank.sampleSize === 1 ? "" : "s"}` : "N/A"}</strong> · L8 total: <strong>{context.lastEightRank ? context.lastEightRank.totalPoints.toFixed(1) : "N/A"}</strong> · ADP source: <strong>not available in repository</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
+              2025 sample: <strong>{context.seasonActual2025 ? `${context.seasonActual2025.gamesPlayed} games` : "N/A"}</strong> · L8 sample: <strong>{context.lastEightRank ? `${context.lastEightRank.sampleSize} game${context.lastEightRank.sampleSize === 1 ? "" : "s"}` : "N/A"}</strong> · L8 total: <strong>{context.lastEightRank ? context.lastEightRank.totalPoints.toFixed(1) : "N/A"}</strong> · ADP source: <strong>{context.adp != null ? "FantasyPros Real-Time ADP, Redraft PPR · 12-team · Aug. 25, 2026" : "no FantasyPros Real-Time ADP match"}</strong> · Projection: <strong>{formatRank(row.projectionRank)}</strong> · SOS: <strong>{formatRank(row.strengthOfSchedule)}</strong> · O-Line: <strong>{formatRank(row.offensiveLineRank)}</strong>
             </p>
             <ModelProvenance model={model} />
           </td>

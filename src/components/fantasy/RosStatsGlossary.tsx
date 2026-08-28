@@ -12,7 +12,7 @@ const DEFINITIONS = [
   ["RANK", "JKB RANK — manual/expert JKB draft-board authority. Overall JKB rest-of-season ranking."],
   ["POS RK", "JKB rank within the player's position."],
   ["POSITIONAL NOTATION", "QB#, RB#, WR# and TE# are position-relative ranks. WR2 means 2nd among wide receivers for that metric; RB4 means 4th among running backs."],
-  ["ADP", "2026 consensus Average Draft Position. N/A when no repository-backed consensus source is available."],
+  ["ADP", "FantasyPros Real-Time Average Draft Position for Redraft PPR, 12-team leagues, using the Aug. 25, 2026 snapshot. Lower means earlier typical draft position. N/A when the player has no match in that source."],
   ["PAR/G", "Projected Points Above Replacement per game from the approved season projection authority."],
   ["PROJECTION RK", "Positional rank from the approved FantasyPros season projection field."],
   ["AVG RK", "Workbook average of the available WAR, late-season, projection and Vegas positional component ranks."],

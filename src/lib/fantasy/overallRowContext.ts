@@ -13,6 +13,7 @@ import { FANTASY_PAR_ROWS, type FantasyParRankingRow } from "@/lib/fantasy/parRa
 import { getParActual2025, type FantasyParActual2025 } from "@/lib/fantasy/parActual2025";
 import { getLastEightRank, type LastEightRank } from "@/lib/fantasy/lastEightRanks2025";
 import { getRosConsensusIdentity } from "@/lib/fantasy/rosPlayerIdentity";
+import { getFantasyProsAdp } from "@/lib/fantasy/adpPlayerIdentity";
 import { FANTASY_RANKINGS, type FantasyRankingRow } from "@/lib/fantasy/rankings";
 import { getSeasonRank2025, type SeasonRank2025 } from "@/lib/fantasy/seasonRanks2025";
 
@@ -27,6 +28,8 @@ export type OverallRowContext = {
   lastEightRank?: LastEightRank;
   /** Stable ROS source key used for the existing PAR-file joins. */
   rosSourceId?: string;
+  /** FantasyPros Real-Time consensus ADP (Redraft PPR, 12-team). Undefined when unresolved. */
+  adp?: number;
 };
 
 export function buildOverallRowContext(
@@ -50,6 +53,7 @@ export function buildOverallRowContext(
       seasonRank2025: getSeasonRank2025(rosSourceId),
       seasonActual2025: getParActual2025(rosSourceId),
       lastEightRank: getLastEightRank(row),
+      adp: getFantasyProsAdp(row)?.adp,
     });
   }
   return index;
