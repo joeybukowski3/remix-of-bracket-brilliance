@@ -112,8 +112,11 @@ describe("NflDfsAnalyzerTable", () => {
     render(<NflDfsAnalyzerTable rows={rows} />);
     fireEvent.click(screen.getByRole("tab", { name: "DST" }));
     const row = screen.getByText("Saints").closest("tr") as HTMLElement;
-    // JKB Slate RK, JKB Week RK, Rank Diff, JKB Proj, JKB Pts/$1K cells all show a dash for DST.
-    expect(within(row).getAllByText("—").length).toBeGreaterThanOrEqual(5);
+    // The JKB Slate RK / Week RK / Rank Diff / Proj / Pts/$1K columns are replaced
+    // by one explicit note for DST -- no fabricated rank or projection numbers.
+    expect(within(row).getByText(/No JKB DST projection/i)).toBeInTheDocument();
+    expect(within(row).queryByText("E")).not.toBeInTheDocument();
+    // DK-sourced context (salary, DK positional salary rank) is still allowed.
   });
 
   it("sorts by Rank Diff", () => {
