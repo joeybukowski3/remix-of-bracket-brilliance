@@ -1,10 +1,10 @@
 {
   "date": "2026-08-27",
-  "generatedAt": "2026-08-27T23:51:27.045Z",
+  "generatedAt": "2026-08-28T00:36:12.296Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Busch Stadium and Yankee Stadium anchor the slate with park factors of 0.92 and 1.18 respectively, while Graceffo and Wesneski face elevated opposing HR rates (75.3 and 48.4). The model highlights Alonso and Encarnacion-Strand in the same BAL-STL game where Graceffo's right-handed delivery meets elevated barrel and hard-hit rates from both sides of the plate.",
-    "modelNote": "The model is prioritizing recent HR volume (Alonso's 3 in 7 days) and opposing pitcher vulnerability over park suppression, with hrScoreRank 1-6 all carrying elevated barrel rates above 12% against right-handed pitching."
+    "slateOverview": "Busch Stadium and Yankee Stadium anchor today's slate with sub-1.00 and 1.18 park factors respectively, while Graceffo and Wesneski each carry opposing-HR rates above 75 and 47. The model flags Alonso and García Jr. as the clearest power beneficiaries of these matchups, with Chourio and Witt Jr. offering secondary leverage against lefty and righty fly-ball tendencies.",
+    "modelNote": "The model is overweighting barrel rate and recent HR volume while discounting park suppression, pushing Alonso to the top despite Busch's 0.92 factor and elevating García Jr. on the strength of Yankee Stadium's 1.18 multiplier and Wesneski's 47.8 HR/9 mark."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "opposingPitcher": "Gordon Graceffo",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=14.1%",
-        "HH=56.8%"
+        "hrScore=81.3",
+        "barrel=14.1%"
       ],
       "bullets": [
-        "hrScore=82.1",
+        "hrScore=81.3",
         "park=0.92"
       ],
       "hrOddsYes": "+400",
@@ -33,11 +33,11 @@
       "opposingPitcher": "Jake Irvin",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=17%",
-        "HH=45.8%"
+        "hrScore=70.1",
+        "barrel=17%"
       ],
       "bullets": [
-        "hrScore=68.4",
+        "hrScore=70.1",
         "park=0.98"
       ],
       "hrOddsYes": null,
@@ -52,7 +52,7 @@
       "opposingPitcher": "Jose Cabrera",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=11.2%",
+        "hrScore=68.1",
         "HH=50.7%"
       ],
       "bullets": [
@@ -65,80 +65,80 @@
       "hrValueEdge": null
     },
     {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "TOR",
-      "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=55.0",
-        "Hard Hit%=54.6"
-      ],
-      "bullets": [
-        "HR score 66.3 (#4)",
-        "Pitcher HR VS 55.0 at park 1.08"
-      ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Luis García Jr.",
       "team": "NYY",
       "opponent": "HOU",
       "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=48.4",
+        "Pitcher HR VS=47.8",
         "Hard Hit%=46.2"
       ],
       "bullets": [
-        "HR score 64.9 (#5)",
-        "Pitcher HR VS 48.4 at park 1.18"
+        "HR score 66.7 (#4)",
+        "Pitcher HR VS 47.8 at park 1.18"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+760",
+      "marketImpliedProbability": 0.11627906976744186,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "TOR",
+      "opposingPitcher": "Spencer Arrighetti",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=55.6",
+        "Hard Hit%=54.6"
+      ],
+      "bullets": [
+        "HR score 66.6 (#5)",
+        "Pitcher HR VS 55.6 at park 1.08"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "TOR",
-      "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=14.3%",
-        "HH=54.6%"
-      ],
-      "bullets": [
-        "hrScore=66.3",
-        "park=1.08"
-      ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Luis García Jr.",
       "team": "NYY",
       "opponent": "HOU",
       "opposingPitcher": "Hayden Wesneski",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=12.4%",
-        "HH=46.2%"
+        "hrScore=66.7",
+        "barrel=12.4%"
       ],
       "bullets": [
-        "hrScore=64.9",
+        "hrScore=66.7",
         "park=1.18"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+760",
+      "marketImpliedProbability": 0.11627906976744186,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "TOR",
+      "opposingPitcher": "Spencer Arrighetti",
+      "hrScoreRank": 5,
+      "topStats": [
+        "hrScore=66.6",
+        "HH=54.6%"
+      ],
+      "bullets": [
+        "hrScore=66.6",
+        "park=1.08"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,11 +149,11 @@
       "opposingPitcher": "Gordon Graceffo",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=16.7%",
-        "HH=43.6%"
+        "hrScore=65.1",
+        "barrel=16.7%"
       ],
       "bullets": [
-        "hrScore=64.2",
+        "hrScore=65.1",
         "park=0.92"
       ],
       "hrOddsYes": "+525",
@@ -175,27 +175,27 @@
         "HR score 62.1 (#7)",
         "Pitcher HR VS 54.6 at park 1.18"
       ],
-      "hrOddsYes": "+223",
-      "marketImpliedProbability": 0.30959752321981426,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "TOR",
-      "opposingPitcher": "Spencer Arrighetti",
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=55.0",
-        "Hard Hit%=51.2"
+        "Pitcher HR VS=67.8",
+        "Hard Hit%=46.8"
       ],
       "bullets": [
-        "HR score 60.8 (#8)",
-        "Pitcher HR VS 55.0 at park 1.08"
+        "HR score 61.7 (#8)",
+        "Pitcher HR VS 67.8 at park 1.06"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -208,34 +208,34 @@
       "opposingPitcher": "Gerrit Cole",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=17.1%",
-        "HH=53.6%"
+        "hrScore=62.1",
+        "barrel=17.1%"
       ],
       "bullets": [
         "hrScore=62.1",
         "park=1.18"
       ],
-      "hrOddsYes": "+223",
-      "marketImpliedProbability": 0.30959752321981426,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "TOR",
-      "opposingPitcher": "Spencer Arrighetti",
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=11.5%",
-        "HH=51.2%"
+        "hrScore=61.7",
+        "HH=46.8%"
       ],
       "bullets": [
-        "hrScore=60.8",
-        "park=1.08"
+        "hrScore=61.7",
+        "park=1.06"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,17 +244,17 @@
       "team": "SF",
       "opponent": "AZ",
       "opposingPitcher": "Jose Cabrera",
-      "hrScoreRank": 14,
+      "hrScoreRank": 12,
       "topStats": [
         "Pitcher HR VS=55.5",
         "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 55.7 (#14)",
+        "HR score 57.4 (#12)",
         "Pitcher HR VS 55.5 at park 0.85"
       ],
-      "hrOddsYes": "+1400",
-      "marketImpliedProbability": 0.06666666666666667,
+      "hrOddsYes": "+1500",
+      "marketImpliedProbability": 0.0625,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,13 +263,13 @@
       "team": "SF",
       "opponent": "AZ",
       "opposingPitcher": "Jose Cabrera",
-      "hrScoreRank": 23,
+      "hrScoreRank": 19,
       "topStats": [
         "Pitcher HR VS=55.5",
         "Hard Hit%=47.4"
       ],
       "bullets": [
-        "HR score 53.3 (#23)",
+        "HR score 54.2 (#19)",
         "Pitcher HR VS 55.5 at park 0.85"
       ],
       "hrOddsYes": "+850",
