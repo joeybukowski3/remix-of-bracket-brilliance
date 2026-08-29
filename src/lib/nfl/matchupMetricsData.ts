@@ -35,7 +35,8 @@ export type MatchupMetricsTeamWindow = {
 };
 
 export type MatchupMetricsWindow = {
-  mode: NflDataWindow;
+  /** Analyzer control-state window ("season"/"last5") or "priorSeasonFull" for the power-ratings 2025 window. */
+  mode: NflDataWindow | "priorSeasonFull";
   includePriorSeason: boolean;
   teams: Record<string, MatchupMetricsTeamWindow>;
 };

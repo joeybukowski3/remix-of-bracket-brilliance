@@ -28,6 +28,7 @@ import {
   LAST5_GAME_COUNT,
   LAST8_GAME_COUNT,
   PERIOD_2025_LAST8,
+  PERIOD_2025_SEASON,
   PERIOD_2026_LAST5,
   PERIOD_2026_SEASON,
   RBSDM_ATTRIBUTION,
@@ -245,6 +246,25 @@ async function main() {
       gamesIncluded: Object.fromEntries(last8.groups.flatMap((g) => g.teams.map((t) => [t, LAST8_GAME_COUNT]))),
       requestLog,
     });
+  }
+
+  // --- 2025 full regular season ------------------------------------------
+  // Single request, weeks 1..last completed week, every prior-season team.
+  // Powers the /nfl/power-ratings "2025" tab; means the whole 2025 season,
+  // never Last 8.
+  const priorSeasonRange = seasonToDateRange(completedByTeam, priorSeason);
+  if (priorSeasonRange) {
+    if (!args.offlineDir) await sleep(REQUEST_SPACING_MS);
+    periods[PERIOD_2025_SEASON] = await buildPeriod({
+      periodKey: PERIOD_2025_SEASON,
+      ranges: [priorSeasonRange],
+      teamMap,
+      offlineDir: args.offlineDir,
+      gamesIncluded: priorCounts,
+      requestLog,
+    });
+  } else {
+    console.log(`[nfl:rbsdm] no completed ${priorSeason} games; full-season period omitted`);
   }
 
   // --- 2026 season to date -------------------------------------------------

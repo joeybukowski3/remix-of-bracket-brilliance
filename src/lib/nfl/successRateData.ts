@@ -13,7 +13,7 @@
  * Attribution: RBSDM / Ben Baldwin (https://rbsdm.com/stats).
  */
 
-export type SuccessPeriodKey = "2025-last8" | "2026-season" | "2026-last5";
+export type SuccessPeriodKey = "2025-season" | "2025-last8" | "2026-season" | "2026-last5";
 
 export type SuccessMetricValue = {
   /** Display percentage, e.g. 50.5. */
@@ -64,6 +64,7 @@ export function isSuccessRateMetric(metricKey: string): boolean {
 export const SUCCESS_TRANSITION_GAME_COUNT = 6;
 
 export const SUCCESS_PERIOD_LABELS: Record<SuccessPeriodKey, { label: string; short: string }> = {
+  "2025-season": { label: "2025 Season", short: "2025 Szn" },
   "2025-last8": { label: "2025 Last 8", short: "2025 L8" },
   "2026-season": { label: "2026 Season", short: "2026 Szn" },
   "2026-last5": { label: "2026 Last 5", short: "2026 L5" },

@@ -26,12 +26,12 @@ import { parseAdvancedTeamStatRows } from "./lib/nfl-advanced-stats.mjs";
 import {
   MATCHUP_METRIC_DEFS,
   MATCHUP_METRIC_KEYS,
+  WINDOW_SPECS,
   aggregateTeamWindow,
   buildCompletedGameIndex,
   computeRanks,
   roundTo,
   selectWindowGames,
-  windowId,
 } from "./lib/nfl-matchup-metrics.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -159,9 +159,8 @@ function main() {
   const windows = {};
   const joinProblems = [];
 
-  for (const mode of ["season", "last5"]) {
-    for (const includePriorSeason of [true, false]) {
-      const id = windowId(mode, includePriorSeason);
+  for (const { id, mode, includePriorSeason } of WINDOW_SPECS) {
+    {
       const perTeam = {};
       const rawByMetric = Object.fromEntries(MATCHUP_METRIC_KEYS.map((k) => [k, {}]));
 
@@ -223,6 +222,7 @@ function main() {
       notes: [
         "Conventional team metrics only. EPA, success rate, first downs, third down, time of possession, line-of-scrimmage win rates, ATS/O-U and injuries are NOT in this artifact.",
         "Regular season only; postseason excluded. Samples are built from completed games, never week numbers, so byes are handled naturally.",
+        "The `prior-season-full` window is every completed prior-season game (the /nfl/power-ratings 2025 tab); it is not a matchup-analyzer control state.",
         "Ratios are recomputed from summed numerators/denominators over the selected games -- never a mean of per-game rates.",
         "Offensive plays = pass attempts + sacks taken + carries. Offensive yards = passing yards + rushing yards (gross of sack yardage, matching the existing v0.2 pipeline).",
         "Defensive values come from the opponent's row in the same games, joined on game_id.",
