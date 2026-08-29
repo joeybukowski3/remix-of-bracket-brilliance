@@ -1,5 +1,26 @@
 # NFL Data Inventory (free-first pipeline foundation)
 
+> **Scope notice (2026-08-29 knowledge audit).** This document is retained but
+> is no longer a complete picture of the NFL system.
+>
+> - **Still current durable reference:** the free-first mandate, the canonical
+>   `teams.json` identity contract and mapping gotchas, the `_meta` /
+>   deterministic-output / fail-on-unknown-team schema conventions, and the
+>   list of hand-curated static inputs — where those statements still match the
+>   code.
+> - **Superseded / historical:** the PR-1 through PR-8 pipeline narrative and
+>   the `nfl-power-v0.1` / `v0.2` model notes below. The active public rating is
+>   `nfl-power-v0.3.1` on nflfastR play-by-play EPA, success rates are
+>   published, and a separate `nfl-spread-v0.1.0` projected spread now exists.
+>   The `power-ratings.json` v0.2 generator described here is orphaned.
+> - **Moving:** current NFL matchup and model methodology (power rating,
+>   projected spread, matchup metrics, yardage props) will be owned by
+>   `docs/models/` and `docs/features/` files in a later documentation pass.
+>   Until then, `docs/nfl-matchup-analyzer-redesign-spec.md`,
+>   `docs/nfl-power-v0.3.1-epa-migration.md`, and `src/lib/nfl/props/README.md`
+>   are the working references. `docs/DATA_SOURCES.md` is the source registry.
+> - This file does not resolve any methodology question.
+
 Status: PR-1 foundation. This document is the single reference for what NFL data
 exists in the repo, what free external sources the pipeline uses, and the
 schema conventions every generated NFL file must follow.
