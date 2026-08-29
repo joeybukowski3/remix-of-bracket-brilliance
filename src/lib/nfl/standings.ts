@@ -172,3 +172,37 @@ export function sortStandings(rows: TeamStanding[]): TeamStanding[] {
 export function formatStandingRecord(row: TeamStanding) {
   return formatRecord(row.wins, row.losses, row.ties);
 }
+
+export type WinLossTie = { wins: number; losses: number; ties: number };
+
+/**
+ * A team's W-L-T across exactly the given completed regular-season game ids.
+ *
+ * Powers the period-aware Record column on /nfl/power-ratings: the caller
+ * passes the game ids that make up the selected period (2025 full season,
+ * completed 2026 games, or the rolling last 8), and this tallies the result of
+ * just those games. Non-final, non-regular-season, or out-of-set rows are
+ * ignored; a game the team did not play in is ignored.
+ */
+export function recordOverGameIds(
+  results: readonly NflResultRecord[],
+  teamAbbr: string,
+  gameIds: readonly string[]
+): WinLossTie {
+  const wanted = new Set(gameIds);
+  const tally: WinLossTie = { wins: 0, losses: 0, ties: 0 };
+  for (const r of results) {
+    if (!r.final || r.seasonType !== "REG" || !wanted.has(r.gameId)) continue;
+    const isHome = r.homeAbbr === teamAbbr;
+    const isAway = r.awayAbbr === teamAbbr;
+    if (!isHome && !isAway) continue;
+    if (r.winner === "TIE") tally.ties += 1;
+    else if (r.winner === teamAbbr) tally.wins += 1;
+    else tally.losses += 1;
+  }
+  return tally;
+}
+
+export function formatWinLossTie(record: WinLossTie): string {
+  return formatRecord(record.wins, record.losses, record.ties);
+}

@@ -1,96 +1,19 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Trophy } from "lucide-react";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { useNflV03PublicPowerRatings } from "@/hooks/useNflV03PublicPowerRatings";
-import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
-import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { getSeoMeta } from "@/lib/seo";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
-import { NFL_V03_PUBLIC_PRESEASON_SEASON } from "@/lib/nfl/publicPowerRatings";
+import { MetricCell, type MetricCellMode } from "@/components/nfl/powerRatings/MetricCell";
+import { useNflPowerRatingsBoard, type PowerRatingsRow } from "@/hooks/useNflPowerRatingsBoard";
+import {
+  POWER_RATINGS_PERIODS,
+  POWER_RATINGS_PERIOD_LABELS,
+  type PowerRatingsPeriod,
+} from "@/lib/nfl/powerRatingsPeriod";
 
-const CURRENT_SEASON = 2026;
-
-type ViewMode = "rankings" | "ratings";
-
-/**
- * Row shape for this page only: universal current OVR/OFF/DEF/rank
- * (authoritative, all from useNflCurrentRating2026 -- the same Current Power
- * Board every other current-rating surface on the site reads) merged with
- * team identity (from the canonical teams.json registry, independent of
- * either rating board) and W-L record (from the existing v0.3.1 public
- * board, which is the only source of that field). Record is optional per row
- * on purpose -- a team missing a record must never block or replace the
- * universal OVR/OFF/DEF for that row.
- */
-type NflPowerPageRow = {
-  abbr: string;
-  name: string;
-  slug: string | null;
-  color: string;
-  rank: number;
-  rating: number;
-  offenseRating: number | null;
-  offRank: number | null;
-  defenseRating: number | null;
-  defRank: number | null;
-  record: string | null;
-};
-
-/** Absolute 1-99 scale heat, centred on 50. The old scale-center-relative display mode is gone. */
-function heatStyle(value: number): { bg: string; fg: string } {
-  const t = Math.max(0, Math.min(1, value / 100));
-  if (t >= 0.5) {
-    const k = (t - 0.5) * 2;
-    return { bg: `rgba(22, 163, 74, ${0.1 + k * 0.32})`, fg: k > 0.55 ? "#0f5132" : "#166534" };
-  }
-  const k = (0.5 - t) * 2;
-  return { bg: `rgba(220, 38, 38, ${0.1 + k * 0.32})`, fg: k > 0.55 ? "#7f1d1d" : "#991b1b" };
-}
-
-function UnitCell({ value, rank }: { value: number | null; rank: number | null }) {
-  if (value === null || rank === null) {
-    return (
-      <td className="nfl-pr-heat">
-        <span className="nfl-pr-heatval nfl-pr-unavailable">—</span>
-      </td>
-    );
-  }
-  const { bg, fg } = heatStyle(value);
-  return (
-    <td style={{ background: bg }} className="nfl-pr-heat">
-      <span className="nfl-pr-heatval" style={{ color: fg }}>
-        {value.toFixed(1)}
-      </span>
-      <span className="nfl-pr-heatrank">#{rank}</span>
-    </td>
-  );
-}
-
-function OvrCell({ rating, mode }: { rating: number; mode: ViewMode }) {
-  const { bg, fg } = heatStyle(rating);
-  return (
-    <td style={{ background: bg }} className="nfl-pr-heat">
-      <span
-        className={`nfl-pr-heatval ${mode === "ratings" ? "nfl-pr-value-primary" : "nfl-pr-value-secondary"}`}
-        style={{ color: fg }}
-      >
-        {rating.toFixed(1)}
-      </span>
-    </td>
-  );
-}
-
-function RankCell({ rank, mode }: { rank: number; mode: ViewMode }) {
-  return (
-    <td className="nfl-pr-rank">
-      <span className={mode === "rankings" ? "nfl-pr-value-primary" : "nfl-pr-value-secondary"}>
-        #{rank}
-      </span>
-    </td>
-  );
-}
+const oneDecimal = (value: number) => value.toFixed(1);
 
 function TeamLogo({ abbr, color }: { abbr: string; color: string }) {
   const [failed, setFailed] = useState(false);
@@ -112,7 +35,7 @@ function TeamLogo({ abbr, color }: { abbr: string; color: string }) {
   );
 }
 
-function TeamCell({ row }: { row: NflPowerPageRow }) {
+function TeamCell({ row }: { row: PowerRatingsRow }) {
   const inner = (
     <>
       <span className="nfl-pr-accent" style={{ background: row.color }} aria-hidden />
@@ -140,6 +63,36 @@ function TeamCell({ row }: { row: NflPowerPageRow }) {
   );
 }
 
+/** SoS is an average opponent rank, not a 1-99 rating — its own cell, no heat. */
+function SosCell({
+  value,
+  rank,
+  mode,
+}: {
+  value: number | null;
+  rank: number | null;
+  mode: MetricCellMode;
+}) {
+  if (value === null || !Number.isFinite(value)) {
+    return (
+      <td className="nfl-pr-heat">
+        <span className="nfl-pr-heatval nfl-pr-unavailable">—</span>
+      </td>
+    );
+  }
+  const avgText = `${value.toFixed(1)} avg`;
+  const rankPrimary = rank !== null ? `#${rank}` : value.toFixed(1);
+  const rankSecondary = rank !== null ? `#${rank} hardest` : null;
+  const primary = mode === "rankings" ? rankPrimary : value.toFixed(1);
+  const secondary = mode === "rankings" ? avgText : rankSecondary;
+  return (
+    <td className="nfl-pr-heat">
+      <span className="nfl-pr-heatval nfl-pr-value-primary">{primary}</span>
+      {secondary && <span className="nfl-pr-heatrank nfl-pr-value-secondary">{secondary}</span>}
+    </td>
+  );
+}
+
 export default function NFLPowerRatings() {
   const seo = getSeoMeta("nfl");
   usePageSeo({
@@ -148,59 +101,11 @@ export default function NFLPowerRatings() {
     path: "/nfl/power-ratings",
     noindex: seo.noindex ?? false,
   });
-  const [mode, setMode] = useState<ViewMode>("rankings");
 
-  const current = useNflCurrentRating2026();
-  const teamsData = useNflSeasonData(CURRENT_SEASON);
-  const offDef = useNflV03PublicPowerRatings(NFL_V03_PUBLIC_PRESEASON_SEASON);
+  const [period, setPeriod] = useState<PowerRatingsPeriod>("2026");
+  const [mode, setMode] = useState<MetricCellMode>("rankings");
 
-  const teamsByAbbr = useMemo(() => {
-    const map = new Map<string, { name: string; slug: string; primaryColor: string }>();
-    for (const team of teamsData.data?.teams ?? []) {
-      map.set(team.abbr, { name: team.name, slug: team.slug, primaryColor: team.primaryColor });
-    }
-    return map;
-  }, [teamsData.data]);
-
-  // Record (W-L) has no equivalent in the Current Power Board -- it is the
-  // one field on this page still sourced from the v0.3.1 public board.
-  const recordByAbbr = useMemo(() => {
-    const map = new Map<string, string | null>();
-    for (const team of offDef.data?.teams ?? []) map.set(team.abbr, team.sourceRecord);
-    return map;
-  }, [offDef.data]);
-
-  const rows = useMemo<NflPowerPageRow[]>(() => {
-    if (!current.data) return [];
-    return current.data.teams.map((team) => {
-      const identity = teamsByAbbr.get(team.abbr) ?? null;
-      return {
-        abbr: team.abbr,
-        rank: team.rank,
-        rating: team.rating,
-        name: identity?.name ?? team.team,
-        slug: identity?.slug ?? null,
-        color: identity?.primaryColor ?? "#334155",
-        offenseRating: team.offenseRating,
-        offRank: team.offenseRank,
-        defenseRating: team.defenseRating,
-        defRank: team.defenseRank,
-        record: recordByAbbr.get(team.abbr) ?? null,
-      };
-    });
-  }, [current.data, teamsByAbbr, recordByAbbr]);
-
-  // Universal OVR/OFF/DEF (+ the canonical team registry it needs to render a
-  // row at all) is authoritative and page-blocking -- all three now come
-  // from the same Current Power Board, so there is no longer a separate
-  // "OFF/DEF supplementary" loading state.
-  const loading = current.loading || teamsData.loading;
-  const error = current.error ?? teamsData.error;
-
-  // OFF/DEF provenance now follows the Current Power Board's own state --
-  // OVR/OFF/DEF flip from preseason to in-season together, on the same
-  // "this team has completed games" signal.
-  const unitProvenanceLabel = current.data?.state === "live" ? "2026 Performance" : "2025 Performance";
+  const { loading, error, board } = useNflPowerRatingsBoard(period);
 
   return (
     <>
@@ -235,34 +140,51 @@ export default function NFLPowerRatings() {
       <div className="nfl-pr-layout">
         <section className="nfl-pr-panel">
           <div className="nfl-pr-controls">
-            <div className="nfl-pr-toggle" role="group" aria-label="Power ratings view">
-              <button
-                type="button"
-                className={mode === "rankings" ? "is-active" : ""}
-                onClick={() => setMode("rankings")}
-                aria-pressed={mode === "rankings"}
-              >
-                Rankings
-              </button>
-              <button
-                type="button"
-                className={mode === "ratings" ? "is-active" : ""}
-                onClick={() => setMode("ratings")}
-                aria-pressed={mode === "ratings"}
-              >
-                Ratings
-              </button>
+            <div className="nfl-pr-controlrow">
+              <div className="nfl-pr-toggle" role="group" aria-label="Period">
+                {POWER_RATINGS_PERIODS.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={period === value ? "is-active" : ""}
+                    onClick={() => setPeriod(value)}
+                    aria-pressed={period === value}
+                  >
+                    {POWER_RATINGS_PERIOD_LABELS[value].tab}
+                  </button>
+                ))}
+              </div>
+              <div className="nfl-pr-toggle" role="group" aria-label="Display">
+                <button
+                  type="button"
+                  className={mode === "rankings" ? "is-active" : ""}
+                  onClick={() => setMode("rankings")}
+                  aria-pressed={mode === "rankings"}
+                >
+                  Rankings
+                </button>
+                <button
+                  type="button"
+                  className={mode === "ratings" ? "is-active" : ""}
+                  onClick={() => setMode("ratings")}
+                  aria-pressed={mode === "ratings"}
+                >
+                  Ratings
+                </button>
+              </div>
             </div>
             <p className="nfl-pr-legend">
+              {POWER_RATINGS_PERIOD_LABELS[period].full}
+              {" · "}
               {mode === "rankings"
-                ? "Teams ordered #1-#32 by current overall rating (OVR shown alongside)."
-                : "Current overall rating (1-99) shown first; league rank shown alongside."}
+                ? "each cell shows league rank first, rating/value second."
+                : "each cell shows the rating/value first, league rank second."}
             </p>
           </div>
 
           {loading && (
             <p className="nfl-pr-status" role="status">
-              Loading 2026 power ratings…
+              Loading power ratings…
             </p>
           )}
           {!loading && error && (
@@ -271,16 +193,27 @@ export default function NFLPowerRatings() {
             </p>
           )}
 
-          {!loading && !error && rows.length > 0 && (
+          {!loading && !error && board && (
             <>
+              {board.notes.length > 0 && (
+                <ul className="nfl-pr-notes">
+                  {board.notes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              )}
               <div className="nfl-pr-scroll" role="region" aria-label="NFL power ratings" tabIndex={0}>
                 <table className="nfl-pr-table">
                   <colgroup>
                     <col className="nfl-pr-col-rank" />
                     <col className="nfl-pr-col-team" />
-                    <col className="nfl-pr-col-rating" />
-                    <col className="nfl-pr-col-rating" />
-                    <col className="nfl-pr-col-rating" />
+                    <col className="nfl-pr-col-metric" />
+                    <col className="nfl-pr-col-metric" />
+                    <col className="nfl-pr-col-metric" />
+                    <col className="nfl-pr-col-metric" />
+                    <col className="nfl-pr-col-metric" />
+                    <col className="nfl-pr-col-metric" />
+                    <col className="nfl-pr-col-metric" />
                     <col className="nfl-pr-col-record" />
                   </colgroup>
                   <thead>
@@ -289,38 +222,57 @@ export default function NFLPowerRatings() {
                       <th scope="col" className="nfl-pr-th-team">
                         Team
                       </th>
-                      <th scope="col">
-                        OFF
-                        <span className="nfl-pr-th-sub">{unitProvenanceLabel}</span>
-                      </th>
-                      <th scope="col">
-                        DEF
-                        <span className="nfl-pr-th-sub">{unitProvenanceLabel}</span>
-                      </th>
+                      <th scope="col">OFF</th>
+                      <th scope="col">DEF</th>
                       <th scope="col">OVR</th>
+                      <th scope="col">YPP</th>
+                      <th scope="col">EPA</th>
+                      <th scope="col">Success</th>
+                      <th scope="col">SoS</th>
                       <th scope="col">Record</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row) => (
+                    {board.rows.map((row) => (
                       <tr key={row.abbr}>
-                        <RankCell rank={row.rank} mode={mode} />
+                        <td className="nfl-pr-rank">
+                          <span className="nfl-pr-value-primary">
+                            {row.rank !== null ? `#${row.rank}` : "—"}
+                          </span>
+                        </td>
                         <TeamCell row={row} />
-                        <UnitCell value={row.offenseRating} rank={row.offRank} />
-                        <UnitCell value={row.defenseRating} rank={row.defRank} />
-                        <OvrCell rating={row.rating} mode={mode} />
+                        <MetricCell value={row.off.value} rank={row.off.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <MetricCell value={row.def.value} rank={row.def.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <MetricCell value={row.ovr.value} rank={row.ovr.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <MetricCell value={row.ypp.value} rank={row.ypp.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <MetricCell value={row.epa.value} rank={row.epa.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <MetricCell value={row.success.value} rank={row.success.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <SosCell value={row.sos.value} rank={row.sos.rank} mode={mode} />
                         <td className="nfl-pr-rec">{row.record ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="nfl-pr-foot">
-                OVR is the current Joe Knows Ball 2026 overall team rating (1-99, higher is better).
-                Preseason OVR begins from the approved 2026 projection; once games are played,
-                current-season performance progressively updates the number. OFF/DEF are objective
-                unit-performance metrics reflecting {unitProvenanceLabel.toLowerCase()}.
-              </p>
+              <div className="nfl-pr-foot">
+                <p>
+                  <strong>OVR / OFF / DEF:</strong> {board.provenance.ovr}.
+                </p>
+                <p>
+                  <strong>EPA / YPP Overall:</strong> {board.provenance.efficiency}. Offense and
+                  defense are each league-normalized, the defensive side inverted, then blended 50/50;
+                  higher is always better. Ranked #1–#32 from the unrounded blend.
+                </p>
+                <p>
+                  <strong>Success Overall:</strong> {board.provenance.success}.
+                </p>
+                <p>
+                  <strong>SoS:</strong> {board.provenance.sos}
+                </p>
+                <p>
+                  <strong>Record:</strong> {board.provenance.record}.
+                </p>
+              </div>
             </>
           )}
         </section>
@@ -329,27 +281,18 @@ export default function NFLPowerRatings() {
   );
 }
 
-/**
- * Page-scoped CSS for the ratings board.
- *
- * The heat cells need per-cell computed backgrounds and the table needs a fixed
- * column layout, neither of which is a good fit for utility classes -- so this
- * table keeps its own stylesheet. The Rankings/Ratings button group reuses the
- * old toggle's chrome styling (it is still exactly a two-option button group),
- * but the modes it switches are entirely new -- the old scale-center-relative
- * display mode and its math are gone, not hidden behind this markup.
- */
 const STYLES = `
   .nfl-pr-promo{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid #1e293b;background:#0f172a;color:#fff;text-decoration:none}
   .nfl-pr-promo:hover{background:#172033}.nfl-pr-promo:focus-visible{outline:2px solid #0ea5e9;outline-offset:2px}
   .nfl-pr-promo-icon{display:flex;height:32px;width:32px;flex-shrink:0;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.1)}
   .nfl-pr-promo-body{min-width:0;flex:1}.nfl-pr-promo-eyebrow{display:block;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#7dd3fc}.nfl-pr-promo-title{display:block;margin-top:1px;font-size:.9rem;font-weight:700}.nfl-pr-promo-desc{display:block;margin-top:2px;font-size:.78rem;line-height:1.4;color:rgba(255,255,255,.7);max-width:44rem}
   .nfl-pr-promo-cta{display:inline-flex;flex-shrink:0;align-items:center;gap:6px;border-radius:6px;background:#fff;color:#0f172a;font-size:.76rem;font-weight:600;padding:6px 12px}
-  .nfl-pr-layout{display:grid;align-items:start}.nfl-pr-panel{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.nfl-pr-controls{padding:12px 14px;border-bottom:1px solid #f1f5f9}.nfl-pr-toggle{display:inline-flex;gap:6px}.nfl-pr-toggle button{appearance:none;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#475569;padding:5px 10px;border-radius:4px;cursor:pointer}.nfl-pr-toggle button:hover{border-color:#94a3b8;color:#0f172a}.nfl-pr-toggle button.is-active{background:#0f172a;border-color:#0f172a;color:#fff}.nfl-pr-toggle button:focus-visible{outline:2px solid #0ea5e9;outline-offset:1px}.nfl-pr-legend{font-size:11.5px;color:#64748b;margin-top:8px}
+  .nfl-pr-layout{display:grid;align-items:start}.nfl-pr-panel{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.nfl-pr-controls{padding:12px 14px;border-bottom:1px solid #f1f5f9}.nfl-pr-controlrow{display:flex;flex-wrap:wrap;gap:16px}.nfl-pr-toggle{display:inline-flex;gap:6px}.nfl-pr-toggle button{appearance:none;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#475569;padding:5px 10px;border-radius:4px;cursor:pointer}.nfl-pr-toggle button:hover{border-color:#94a3b8;color:#0f172a}.nfl-pr-toggle button.is-active{background:#0f172a;border-color:#0f172a;color:#fff}.nfl-pr-toggle button:focus-visible{outline:2px solid #0ea5e9;outline-offset:1px}.nfl-pr-legend{font-size:11.5px;color:#64748b;margin-top:8px}
+  .nfl-pr-notes{margin:0;padding:10px 14px 10px 30px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11.5px;color:#92400e;line-height:1.5}
   .nfl-pr-status{padding:20px 14px;font-size:14px;color:#475569}.nfl-pr-status-error{color:#991b1b}
-  .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.nfl-pr-scroll:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}.nfl-pr-col-rank{width:44px}.nfl-pr-col-team{width:230px}.nfl-pr-col-rating{width:165px}.nfl-pr-col-record{width:76px}.nfl-pr-table thead th{background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px;text-align:center;white-space:nowrap;border-bottom:1px solid #e2e8f0}.nfl-pr-th-team{text-align:left!important}.nfl-pr-th-sub{display:block;font-size:8.5px;font-weight:500;letter-spacing:0;text-transform:none;color:#94a3b8;margin-top:1px}.nfl-pr-table tbody tr{border-bottom:1px solid #f1f5f9}.nfl-pr-table tbody tr:hover{background:#f8fafc}.nfl-pr-rank{text-align:center;font-variant-numeric:tabular-nums;color:#0f172a}
+  .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.nfl-pr-scroll:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:760px}.nfl-pr-col-rank{width:44px}.nfl-pr-col-team{width:200px}.nfl-pr-col-metric{width:74px}.nfl-pr-col-record{width:64px}.nfl-pr-table thead th{background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid #e2e8f0}.nfl-pr-th-team{text-align:left!important}.nfl-pr-table tbody tr{border-bottom:1px solid #f1f5f9}.nfl-pr-table tbody tr:hover{background:#f8fafc}.nfl-pr-rank{text-align:center;font-variant-numeric:tabular-nums;color:#0f172a}
   .nfl-pr-team{padding:0}.nfl-pr-team-link{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;color:inherit;text-decoration:none}.nfl-pr-team-link:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-team-link:hover .nfl-pr-name{text-decoration:underline}.nfl-pr-accent{width:3px;height:24px;border-radius:2px;flex-shrink:0}.nfl-pr-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0}.nfl-pr-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}.nfl-pr-name{font-weight:600;font-size:13px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .nfl-pr-heat{text-align:center;padding:6px}.nfl-pr-heatval{display:block;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}.nfl-pr-heatrank{display:block;font-size:9.5px;color:#94a3b8;font-weight:500;margin-top:1px}.nfl-pr-unavailable{color:#cbd5e1;font-weight:600}.nfl-pr-rec{text-align:center;font-weight:600;font-variant-numeric:tabular-nums;color:#334155}.nfl-pr-foot{font-size:11px;color:#94a3b8;line-height:1.5;padding:12px 14px;border-top:1px solid #f1f5f9}
-  .nfl-pr-value-primary{font-size:15px;font-weight:800}.nfl-pr-value-secondary{font-size:11.5px;font-weight:600;color:#94a3b8}
-  @media(max-width:640px){.nfl-pr-table{min-width:520px;font-size:11px}.nfl-pr-col-rank{width:36px}.nfl-pr-col-team{width:58px}.nfl-pr-col-rating{width:112px}.nfl-pr-col-record{width:54px}.nfl-pr-table thead th{font-size:9px;padding:7px 4px}.nfl-pr-team-link{padding:6px 4px;gap:0;justify-content:center}.nfl-pr-accent,.nfl-pr-name{display:none}.nfl-pr-logo,.nfl-pr-badge{width:24px;height:24px}.nfl-pr-heat{padding:6px 3px}.nfl-pr-heatval{font-size:11px}.nfl-pr-heatrank{font-size:8.5px}.nfl-pr-value-primary{font-size:13px}.nfl-pr-value-secondary{font-size:10px}}
+  .nfl-pr-heat{text-align:center;padding:6px 4px}.nfl-pr-heatval{display:block;font-variant-numeric:tabular-nums}.nfl-pr-heatrank{display:block;margin-top:1px}.nfl-pr-unavailable{color:#cbd5e1;font-weight:600}.nfl-pr-rec{text-align:center;font-weight:600;font-variant-numeric:tabular-nums;color:#334155}.nfl-pr-foot{font-size:11px;color:#94a3b8;line-height:1.5;padding:12px 14px;border-top:1px solid #f1f5f9}.nfl-pr-foot p{margin:0 0 6px}.nfl-pr-foot p:last-child{margin-bottom:0}.nfl-pr-foot strong{color:#64748b}
+  .nfl-pr-value-primary{font-size:14px;font-weight:800;color:#0f172a}.nfl-pr-value-secondary{font-size:10.5px;font-weight:600;color:#94a3b8}
+  @media(max-width:640px){.nfl-pr-table{font-size:11px}.nfl-pr-col-rank{width:34px}.nfl-pr-col-team{width:52px}.nfl-pr-col-metric{width:58px}.nfl-pr-col-record{width:48px}.nfl-pr-table thead th{font-size:9px;padding:7px 3px}.nfl-pr-team-link{padding:6px 4px;gap:0;justify-content:center}.nfl-pr-accent,.nfl-pr-name{display:none}.nfl-pr-logo,.nfl-pr-badge{width:24px;height:24px}.nfl-pr-heat{padding:6px 2px}.nfl-pr-value-primary{font-size:12px}.nfl-pr-value-secondary{font-size:9.5px}}
 `;

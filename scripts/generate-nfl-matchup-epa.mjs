@@ -30,11 +30,11 @@ import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
 import {
   WINDOW_IDS,
+  WINDOW_SPECS,
   buildCompletedGameIndex,
   computeRanks,
   roundTo,
   selectWindowGames,
-  windowId,
 } from "./lib/nfl-matchup-metrics.mjs";
 import {
   COMPACT_COLUMNS,
@@ -149,9 +149,8 @@ function main() {
   const windows = {};
   const coverage = { requested: 0, resolved: 0, teamsSkippedForMissingEpa: [] };
 
-  for (const mode of ["season", "last5"]) {
-    for (const includePriorSeason of [true, false]) {
-      const id = windowId(mode, includePriorSeason);
+  for (const { id, mode, includePriorSeason } of WINDOW_SPECS) {
+    {
       const teams = {};
       const valuesByMetric = Object.fromEntries(EPA_METRIC_KEYS.map((k) => [k, {}]));
 
@@ -246,6 +245,7 @@ function main() {
         "Defensive values are the opponents' offensive production in the same game ids, joined exactly — never inferred from team names or schedule order.",
         "Regular season only; postseason never enters a window and preseason does not exist in this source.",
         "Sample windows, chronological ordering and ranking are shared with the Phase 2 conventional generator, so a control state selects the same games in both artifacts.",
+        "The `prior-season-full` window is every completed prior-season game (the /nfl/power-ratings 2025 tab); it is not a matchup-analyzer control state.",
         "Success Rate remains RBSDM-sourced and is unaffected by this pipeline.",
         "The internal power-rating EPA in scripts/lib/nfl-advanced-stats.mjs uses different stats_team_week semantics and is deliberately NOT changed by this phase.",
         "No EPA edge, matchup score, projected spread, win probability or picked winner is produced.",

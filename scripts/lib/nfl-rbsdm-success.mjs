@@ -47,6 +47,11 @@ export const RBSDM_METRIC_DIRECTION = Object.freeze({
 export const PERIOD_2025_LAST8 = "2025-last8";
 export const PERIOD_2026_SEASON = "2026-season";
 export const PERIOD_2026_LAST5 = "2026-last5";
+/**
+ * Full prior regular season (the /nfl/power-ratings "2025" tab). One request,
+ * weeks 1..maxCompletedWeek, every team. Not shown in the matchup analyzer.
+ */
+export const PERIOD_2025_SEASON = "2025-season";
 
 export const LAST8_GAME_COUNT = 8;
 export const LAST5_GAME_COUNT = 5;
