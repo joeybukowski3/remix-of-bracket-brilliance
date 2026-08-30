@@ -38,10 +38,19 @@ describe("generated artifact", () => {
     expect(JSON.stringify(ARTIFACT._meta)).not.toMatch(/teamrankings/i);
   });
 
-  it("exposes all four control-state windows", () => {
+  it("exposes the four control-state windows plus the power-ratings full-prior-season window", () => {
     expect(Object.keys(ARTIFACT.windows).sort()).toEqual([
-      "last5-blend", "last5-current", "season-blend", "season-current",
+      "last5-blend", "last5-current", "prior-season-full", "season-blend", "season-current",
     ]);
+  });
+
+  it("fills the full-prior-season window with every completed 2025 game for all 32 teams", () => {
+    const win = ARTIFACT.windows["prior-season-full"];
+    expect(Object.keys(win.teams)).toHaveLength(32);
+    for (const [abbr, team] of Object.entries(win.teams)) {
+      expect(team.seasons, abbr).toEqual([2025]);
+      expect(team.gamesIncluded, abbr).toBeGreaterThanOrEqual(16);
+    }
   });
 
   it("covers all 32 teams in the blended windows", () => {

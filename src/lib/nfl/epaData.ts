@@ -64,7 +64,8 @@ export type EpaTeamWindow = {
 };
 
 export type EpaWindow = {
-  mode: "season" | "last5";
+  /** "season" | "last5" for analyzer control states; "priorSeasonFull" for the power-ratings 2025 window. */
+  mode: string;
   includePriorSeason: boolean;
   teams: Record<string, EpaTeamWindow>;
 };
