@@ -6,8 +6,10 @@ import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import {
+  buildLast8FormRatings,
   buildOverallRatings,
   buildSosBoard,
+  type Last8FormMethod,
   type OverallRating,
 } from "@/lib/nfl/powerRatingsEfficiency";
 import {
@@ -16,7 +18,7 @@ import {
   type PowerRatingsPeriod,
 } from "@/lib/nfl/powerRatingsPeriod";
 import { recordOverGameIds, formatWinLossTie } from "@/lib/nfl/standings";
-import type { NflResultRecord } from "@/lib/nfl/standings";
+import type { NflResultRecord, WinLossTie } from "@/lib/nfl/standings";
 
 const SEASON_2025 = 2025 as const;
 const SEASON_2026 = 2026 as const;
@@ -29,7 +31,7 @@ export type PowerRatingsRow = {
   name: string;
   slug: string | null;
   color: string;
-  /** Far-left row rank: OVR rank for 2025/2026, EPA Overall rank for Last 8. */
+  /** Far-left row rank: JKB OVR rank for 2025/2026, Last-8 Form OVR rank for Last 8. */
   rank: number | null;
   off: PowerMetricCell;
   def: PowerMetricCell;
@@ -38,7 +40,10 @@ export type PowerRatingsRow = {
   epa: PowerMetricCell;
   success: PowerMetricCell;
   sos: PowerSosCell;
+  /** Formatted W-L-T for display. */
   record: string | null;
+  /** Underlying W-L-T for the selected period, for sorting. Null = no games. */
+  recordStats: WinLossTie | null;
 };
 
 export type PowerRatingsBoard = {
@@ -46,6 +51,10 @@ export type PowerRatingsBoard = {
   rows: PowerRatingsRow[];
   provenance: { ovr: string; efficiency: string; success: string; sos: string; record: string };
   notes: string[];
+  /** Far-left column heading + supporting title/aria text for the current period. */
+  rankColumn: { label: string; title: string };
+  /** Last-8 Form Rating mode, or null for the 2025 / 2026 periods. */
+  formMethod: Last8FormMethod | null;
 };
 
 type State = { loading: boolean; error: string | null; board: PowerRatingsBoard | null };
@@ -63,6 +72,14 @@ function tupleCell(tuple: [number | null, number | null] | undefined): PowerMetr
 function overallCell(rating: OverallRating | null | undefined): PowerMetricCell {
   if (!rating) return EMPTY_CELL;
   return { value: rating.value, rank: rating.rank };
+}
+
+/** Parse "12-5" or "12-5-1" into a W-L-T; null for anything else. */
+function parseWinLossTie(text: string | null): WinLossTie | null {
+  if (!text) return null;
+  const parts = text.split("-").map((p) => Number.parseInt(p, 10));
+  if (parts.length < 2 || parts.length > 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  return { wins: parts[0], losses: parts[1], ties: parts[2] ?? 0 };
 }
 
 /** gameId → { home, away } across every loaded season's results. */
@@ -207,8 +224,34 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
         });
       }
     }
-    // Last 8: OVR/OFF/DEF deliberately unavailable — no canonical rolling
-    // cross-season JKB rating exists and none is invented here.
+
+    // Last 8: OFF/DEF/OVR come from the Last-8 Form Rating — a recent two-way
+    // efficiency composite, NOT the JKB power formula (which has no rolling
+    // cross-season definition). See powerRatingsEfficiency.buildLast8FormRatings.
+    let formMethod: Last8FormMethod | null = null;
+    if (period === "last8") {
+      const successAvailable = successPeriod != null;
+      const form = buildLast8FormRatings(
+        {
+          offEpaPerPlay: epaOff,
+          defEpaPerPlayAllowed: epaDef,
+          offYardsPerPlay: yppOff,
+          defYardsPerPlayAllowed: yppDef,
+          offSuccessRate: successOff,
+          defSuccessRateAllowed: successDef,
+        },
+        { successAvailable }
+      );
+      formMethod = successAvailable ? "epa-ypp-success" : "epa-ypp";
+      for (const [abbr, rating] of form) {
+        ovrByAbbr.set(abbr, {
+          off: rating.off ? { value: rating.off.rating, rank: rating.off.rank } : EMPTY_CELL,
+          def: rating.def ? { value: rating.def.rating, rank: rating.def.rank } : EMPTY_CELL,
+          ovr: rating.ovr ? { value: rating.ovr.rating, rank: rating.ovr.rank } : EMPTY_CELL,
+          rank: rating.ovr?.rank ?? null,
+        });
+      }
+    }
 
     // --- rows --------------------------------------------------------
     const rows: PowerRatingsRow[] = teams.map((team) => {
@@ -219,16 +262,24 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
 
       const gameIds = epaWindow[abbr]?.gameIds ?? [];
       let record: string | null;
+      let recordStats: WinLossTie | null;
       if (period === "2026" && completed2026Games === 0) {
         record = "0-0";
+        recordStats = { wins: 0, losses: 0, ties: 0 };
       } else if (gameIds.length > 0) {
-        record = formatWinLossTie(recordOverGameIds([...results2025, ...results2026], abbr, gameIds));
+        recordStats = recordOverGameIds([...results2025, ...results2026], abbr, gameIds);
+        record = formatWinLossTie(recordStats);
       } else {
-        record = period === "2025" ? board2025.data?.teams.find((t) => t.abbr === abbr)?.sourceRecord ?? null : null;
+        const sourceRecord =
+          period === "2025"
+            ? board2025.data?.teams.find((t) => t.abbr === abbr)?.sourceRecord ?? null
+            : null;
+        record = sourceRecord;
+        recordStats = parseWinLossTie(sourceRecord);
       }
 
-      const rowRank =
-        period === "last8" ? epaCell.rank : ovrEntry?.rank ?? null;
+      // 2025 / 2026: JKB OVR rank. Last 8: Last-8 Form OVR rank.
+      const rowRank = ovrEntry?.rank ?? null;
 
       return {
         abbr,
@@ -244,6 +295,7 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
         success: overallCell(successOverall.get(abbr)),
         sos: sos ? { value: sos.avgOpponentRank, rank: sos.rank } : EMPTY_CELL,
         record,
+        recordStats,
       };
     });
 
@@ -256,16 +308,17 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
 
     const notes: string[] = [];
     if (period === "last8") {
-      notes.push("Rolling 8-game JKB OVR is not published — OFF, DEF and OVR are unavailable for Last 8.");
+      notes.push(
+        formMethod === "epa-ypp-success"
+          ? "Last 8 Form combines recent EPA, yards/play and success-rate performance across each team's most recent 8 completed regular-season games."
+          : "Last 8 Form combines recent EPA and yards/play across each team's most recent 8 completed regular-season games. Success Rate cannot span the current cross-season Last-8 sample, so Form Rating uses EPA + YPP."
+      );
     }
     if (period === "2026" && completed2026Games === 0) {
       notes.push("No completed 2026 regular-season games yet — period efficiency, SoS and record wait for real results and are never filled from 2025.");
     }
     if (successKey && !successPeriod) {
       notes.push(`Success Rate for this period requires re-running the RBSDM generator (period "${successKey}" not present in the current artifact).`);
-    }
-    if (period === "last8" && successKey === null) {
-      notes.push("Success Rate is unavailable for Last 8 once 2026 games exist (RBSDM has no cross-season last-8 range).");
     }
 
     const efficiencyProvenance =
@@ -286,7 +339,9 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
               ? current.data?.state === "live"
                 ? "Current 2026 JKB board — blended preseason projection + 2026 performance"
                 : "Current 2026 JKB board — preseason projection (no 2026 games played yet)"
-              : "Unavailable — rolling 8-game JKB OVR is not published",
+              : formMethod === "epa-ypp-success"
+                ? "Last 8 Form Rating — recent two-way efficiency composite (EPA .40 / YPP .30 / Success .30 per side, OVR = 50% OFF + 50% DEF). Not the JKB power formula."
+                : "Last 8 Form Rating — recent two-way efficiency composite (EPA .60 / YPP .40 per side; Success unavailable for the cross-season window). Not the JKB power formula.",
         efficiency: efficiencyProvenance,
         success: successPeriod
           ? "RBSDM / Ben Baldwin, published rates consumed verbatim"
@@ -300,6 +355,11 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
               : "Exactly the resolved last-8 games",
       },
       notes,
+      rankColumn:
+        period === "last8"
+          ? { label: "Form Rank", title: "Last 8 Form Rating rank" }
+          : { label: "Rank", title: "JKB Power Rank" },
+      formMethod,
     };
 
     return { loading: false, error: null, board };
