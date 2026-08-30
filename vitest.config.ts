@@ -78,6 +78,9 @@ export default defineConfig({
       "scripts/cfb-build-season-stats.test.ts",
       // NFL Yardage Projection refresh pipeline -- CI artifact validation gate.
       "scripts/validate-nfl-current-week-yardage-projections.test.mjs",
+      // Betting-splits market intelligence WU6 -- SportsDataIO collector/publisher
+      // CLI source guarantees + fail-closed arg/env validation.
+      "scripts/market/collect-betting-splits.test.ts",
     ],
   },
   resolve: {
