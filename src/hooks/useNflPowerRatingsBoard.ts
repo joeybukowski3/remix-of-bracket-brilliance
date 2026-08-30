@@ -51,8 +51,6 @@ export type PowerRatingsBoard = {
   rows: PowerRatingsRow[];
   provenance: { ovr: string; efficiency: string; success: string; sos: string; record: string };
   notes: string[];
-  /** Far-left column heading + supporting title/aria text for the current period. */
-  rankColumn: { label: string; title: string };
   /** Last-8 Form Rating mode, or null for the 2025 / 2026 periods. */
   formMethod: Last8FormMethod | null;
 };
@@ -310,8 +308,8 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
     if (period === "last8") {
       notes.push(
         formMethod === "epa-ypp-success"
-          ? "Last 8 Form combines recent EPA, yards/play and success-rate performance across each team's most recent 8 completed regular-season games."
-          : "Last 8 Form combines recent EPA and yards/play across each team's most recent 8 completed regular-season games. Success Rate cannot span the current cross-season Last-8 sample, so Form Rating uses EPA + YPP."
+          ? "Last 8 ratings combine recent EPA, yards/play and success-rate performance across each team's 8 most recent completed regular-season games."
+          : "Last 8 ratings combine recent EPA and yards/play across each team's 8 most recent completed regular-season games. Success Rate cannot span the current cross-season Last-8 sample, so the Last 8 Form ratings use EPA + YPP."
       );
     }
     if (period === "2026" && completed2026Games === 0) {
@@ -355,10 +353,6 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
               : "Exactly the resolved last-8 games",
       },
       notes,
-      rankColumn:
-        period === "last8"
-          ? { label: "Form Rank", title: "Last 8 Form Rating rank" }
-          : { label: "Rank", title: "JKB Power Rank" },
       formMethod,
     };
 

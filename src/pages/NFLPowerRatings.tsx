@@ -269,7 +269,6 @@ export default function NFLPowerRatings() {
               <div className="nfl-pr-scroll" role="region" aria-label="NFL power ratings" tabIndex={0}>
                 <table className="nfl-pr-table">
                   <colgroup>
-                    <col className="nfl-pr-col-rank" />
                     <col className="nfl-pr-col-team" />
                     <col className="nfl-pr-col-metric" />
                     <col className="nfl-pr-col-metric" />
@@ -282,11 +281,10 @@ export default function NFLPowerRatings() {
                   </colgroup>
                   <thead>
                     <tr>
-                      <SortableTh label={board.rankColumn.label} title={board.rankColumn.title} sortKey="rank" sort={sort} onSort={handleSort} />
                       <SortableTh label="Team" title="team name" sortKey="team" sort={sort} onSort={handleSort} className="nfl-pr-th-team" />
+                      <SortableTh label="OVR" title="overall rating" sortKey="ovr" sort={sort} onSort={handleSort} />
                       <SortableTh label="OFF" title="offensive rating" sortKey="off" sort={sort} onSort={handleSort} />
                       <SortableTh label="DEF" title="defensive rating" sortKey="def" sort={sort} onSort={handleSort} />
-                      <SortableTh label="OVR" title="overall rating" sortKey="ovr" sort={sort} onSort={handleSort} />
                       <SortableTh label="YPP" title="yards per play rating" sortKey="ypp" sort={sort} onSort={handleSort} />
                       <SortableTh label="EPA" title="EPA rating" sortKey="epa" sort={sort} onSort={handleSort} />
                       <SortableTh label="Success" title="success rate rating" sortKey="success" sort={sort} onSort={handleSort} />
@@ -297,15 +295,10 @@ export default function NFLPowerRatings() {
                   <tbody>
                     {sortedRows.map((row) => (
                       <tr key={row.abbr}>
-                        <td className="nfl-pr-rank" title={board.rankColumn.title}>
-                          <span className="nfl-pr-value-primary">
-                            {row.rank !== null ? `#${row.rank}` : "—"}
-                          </span>
-                        </td>
                         <TeamCell row={row} />
+                        <MetricCell value={row.ovr.value} rank={row.ovr.rank} mode={mode} formatValue={oneDecimal} heat />
                         <MetricCell value={row.off.value} rank={row.off.rank} mode={mode} formatValue={oneDecimal} heat />
                         <MetricCell value={row.def.value} rank={row.def.rank} mode={mode} formatValue={oneDecimal} heat />
-                        <MetricCell value={row.ovr.value} rank={row.ovr.rank} mode={mode} formatValue={oneDecimal} heat />
                         <MetricCell value={row.ypp.value} rank={row.ypp.rank} mode={mode} formatValue={oneDecimal} heat />
                         <MetricCell value={row.epa.value} rank={row.epa.rank} mode={mode} formatValue={oneDecimal} heat />
                         <MetricCell value={row.success.value} rank={row.success.rank} mode={mode} formatValue={oneDecimal} heat />
@@ -318,7 +311,7 @@ export default function NFLPowerRatings() {
               </div>
               <div className="nfl-pr-foot">
                 <p>
-                  <strong>{board.period === "last8" ? "Form Rank / OFF / DEF / OVR" : "OVR / OFF / DEF"}:</strong>{" "}
+                  <strong>OVR / OFF / DEF:</strong>{" "}
                   {board.provenance.ovr}
                   {board.period === "last8" ? "" : "."}
                 </p>
@@ -354,10 +347,12 @@ const STYLES = `
   .nfl-pr-layout{display:grid;align-items:start}.nfl-pr-panel{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.nfl-pr-controls{padding:12px 14px;border-bottom:1px solid #f1f5f9}.nfl-pr-controlrow{display:flex;flex-wrap:wrap;gap:16px}.nfl-pr-toggle{display:inline-flex;gap:6px}.nfl-pr-toggle button{appearance:none;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#475569;padding:5px 10px;border-radius:4px;cursor:pointer}.nfl-pr-toggle button:hover{border-color:#94a3b8;color:#0f172a}.nfl-pr-toggle button.is-active{background:#0f172a;border-color:#0f172a;color:#fff}.nfl-pr-toggle button:focus-visible{outline:2px solid #0ea5e9;outline-offset:1px}.nfl-pr-legend{font-size:11.5px;color:#64748b;margin-top:8px}
   .nfl-pr-notes{margin:0;padding:10px 14px 10px 30px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11.5px;color:#92400e;line-height:1.5}
   .nfl-pr-status{padding:20px 14px;font-size:14px;color:#475569}.nfl-pr-status-error{color:#991b1b}
-  .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.nfl-pr-scroll:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:760px}.nfl-pr-col-rank{width:44px}.nfl-pr-col-team{width:200px}.nfl-pr-col-metric{width:74px}.nfl-pr-col-record{width:64px}.nfl-pr-table thead th{background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid #e2e8f0}.nfl-pr-th-team{text-align:left!important}.nfl-pr-table tbody tr{border-bottom:1px solid #f1f5f9}.nfl-pr-table tbody tr:hover{background:#f8fafc}.nfl-pr-rank{text-align:center;font-variant-numeric:tabular-nums;color:#0f172a}
-  .nfl-pr-team{padding:0}.nfl-pr-team-link{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;color:inherit;text-decoration:none}.nfl-pr-team-link:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-team-link:hover .nfl-pr-name{text-decoration:underline}.nfl-pr-accent{width:3px;height:24px;border-radius:2px;flex-shrink:0}.nfl-pr-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0}.nfl-pr-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}.nfl-pr-name{font-weight:600;font-size:13px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.nfl-pr-scroll:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:760px}.nfl-pr-col-team{width:200px}.nfl-pr-col-metric{width:74px}.nfl-pr-col-record{width:64px}.nfl-pr-table thead th{background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid #e2e8f0}.nfl-pr-th-team{text-align:left!important}.nfl-pr-table tbody tr{border-bottom:1px solid #f1f5f9}.nfl-pr-table tbody tr:hover{background:#f8fafc}
+  .nfl-pr-th-team{position:sticky;left:0;z-index:3;background:#f1f5f9;border-right:2px solid #cbd5e1}
+  .nfl-pr-team{position:sticky;left:0;z-index:2;padding:0;background:#fff;border-right:2px solid #cbd5e1;border-bottom:1px solid #f1f5f9}
+  .nfl-pr-table tbody tr:hover .nfl-pr-team{background:#f8fafc}.nfl-pr-team-link{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;color:inherit;text-decoration:none}.nfl-pr-team-link:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-team-link:hover .nfl-pr-name{text-decoration:underline}.nfl-pr-accent{width:3px;height:24px;border-radius:2px;flex-shrink:0}.nfl-pr-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0}.nfl-pr-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}.nfl-pr-name{font-weight:600;font-size:13px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nfl-pr-sortbtn{display:inline-flex;align-items:center;justify-content:center;gap:3px;width:100%;padding:0;margin:0;background:none;border:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer}.nfl-pr-sortbtn:hover,.nfl-pr-sortbtn.is-active{color:#0f172a}.nfl-pr-sortbtn:focus-visible{outline:2px solid #0ea5e9;outline-offset:2px;border-radius:2px}.nfl-pr-th-team .nfl-pr-sortbtn{justify-content:flex-start}.nfl-pr-sortind{font-size:9px;line-height:1}
   .nfl-pr-heat{text-align:center;padding:6px 4px}.nfl-pr-heatval{display:block;font-variant-numeric:tabular-nums}.nfl-pr-heatrank{display:block;margin-top:1px}.nfl-pr-unavailable{color:#cbd5e1;font-weight:600}.nfl-pr-rec{text-align:center;font-weight:600;font-variant-numeric:tabular-nums;color:#334155}.nfl-pr-foot{font-size:11px;color:#94a3b8;line-height:1.5;padding:12px 14px;border-top:1px solid #f1f5f9}.nfl-pr-foot p{margin:0 0 6px}.nfl-pr-foot p:last-child{margin-bottom:0}.nfl-pr-foot strong{color:#64748b}
   .nfl-pr-value-primary{font-size:14px;font-weight:800;color:#0f172a}.nfl-pr-value-secondary{font-size:10.5px;font-weight:600;color:#94a3b8}
-  @media(max-width:640px){.nfl-pr-table{font-size:11px}.nfl-pr-col-rank{width:34px}.nfl-pr-col-team{width:52px}.nfl-pr-col-metric{width:58px}.nfl-pr-col-record{width:48px}.nfl-pr-table thead th{font-size:9px;padding:7px 3px}.nfl-pr-team-link{padding:6px 4px;gap:0;justify-content:center}.nfl-pr-accent,.nfl-pr-name{display:none}.nfl-pr-logo,.nfl-pr-badge{width:24px;height:24px}.nfl-pr-heat{padding:6px 2px}.nfl-pr-value-primary{font-size:12px}.nfl-pr-value-secondary{font-size:9.5px}}
+  @media(max-width:640px){.nfl-pr-table{font-size:10px;min-width:376px}.nfl-pr-col-team{width:40px}.nfl-pr-col-metric{width:42px}.nfl-pr-col-record{width:42px}.nfl-pr-table thead th{font-size:7.5px;letter-spacing:.02em;padding:4px 2px}.nfl-pr-th-team,.nfl-pr-team{border-right-width:1.5px}.nfl-pr-team-link{padding:4px 0;gap:0;justify-content:center}.nfl-pr-accent,.nfl-pr-name{display:none}.nfl-pr-logo,.nfl-pr-badge{width:22px;height:22px}.nfl-pr-heat{padding:3px 2px}.nfl-pr-heatrank{margin-top:0}.nfl-pr-value-primary{font-size:9.5px}.nfl-pr-value-secondary{font-size:7px}.nfl-pr-rec{font-size:9.5px}}
 `;
