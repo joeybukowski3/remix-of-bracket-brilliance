@@ -1,10 +1,10 @@
 {
   "date": "2026-08-30",
-  "generatedAt": "2026-08-30T13:00:10.514Z",
+  "generatedAt": "2026-08-30T16:50:44.703Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Citi Field (1.06) and American Family Field (1.10) are the only true hitter-friendly parks on the slate, while Sutter Health Park (0.96) and Busch Stadium (0.92) suppress power. The top three HR scores all land in favorable venues—Soto vs Pecko at Citi, Alonso vs Springs at Sutter, and Schwarber vs Kikuchi at Angel Stadium—where barrel rates above 14% and opposing-pitcher HR rates above 75 combine for the clearest edges.",
-    "modelNote": "The model is overweighting park-adjusted barrel rate and opposing-pitcher HR vulnerability, which is why Soto, Alvarez, and Schwarber occupy the top four spots despite varying recent HR totals."
+    "slateOverview": "Citi Field and American Family Field both play up today with 1.06-1.10 park factors, while Sutter Health Park and Busch Stadium suppress power. Soto and Alvarez face righty/lefty fly-ball pitchers in the most favorable park, and Schwarber draws a lefty in a neutral Angels park that still allows right-handed pull power.",
+    "modelNote": "The model is prioritizing barrel rate, exit velocity, and park-adjusted hrFBRatio over recent HR volume, which is why Soto leads despite zero homers in the last 30 days while hot hitters like Chourio and Alonso rank just behind."
   },
   "bestBets": [
     {
@@ -19,10 +19,10 @@
       ],
       "bullets": [
         "park=1.06",
-        "hrScore=73.4"
+        "hrScore=72.9"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+285",
+      "marketImpliedProbability": 0.2597402597402597,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -38,7 +38,7 @@
       ],
       "bullets": [
         "park=0.96",
-        "hrScore=70.2"
+        "hrScore=71.3"
       ],
       "hrOddsYes": "+240",
       "marketImpliedProbability": 0.29411764705882354,
@@ -57,7 +57,7 @@
       ],
       "bullets": [
         "park=1.02",
-        "hrScore=68.8"
+        "hrScore=69.3"
       ],
       "hrOddsYes": "+240",
       "marketImpliedProbability": 0.29411764705882354,
@@ -75,11 +75,11 @@
         "Hard Hit%=53.9"
       ],
       "bullets": [
-        "HR score 67.9 (#4)",
+        "HR score 66.7 (#4)",
         "Pitcher HR VS 54.2 at park 1.06"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+301",
+      "marketImpliedProbability": 0.24937655860349128,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -94,7 +94,7 @@
         "Hard Hit%=47.4"
       ],
       "bullets": [
-        "HR score 65.2 (#5)",
+        "HR score 65.3 (#5)",
         "Pitcher HR VS 55.4 at park 1.10"
       ],
       "hrOddsYes": "+400",
@@ -116,10 +116,10 @@
       ],
       "bullets": [
         "park=1.06",
-        "hrScore=67.9"
+        "hrScore=66.7"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+301",
+      "marketImpliedProbability": 0.24937655860349128,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -135,10 +135,29 @@
       ],
       "bullets": [
         "park=1.1",
-        "hrScore=65.2"
+        "hrScore=65.3"
       ],
       "hrOddsYes": "+400",
       "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=14.3%",
+        "HH=46.2%"
+      ],
+      "bullets": [
+        "park=0.97",
+        "hrScore=63.9"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,95 +166,76 @@
       "team": "ATL",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=15.6%",
-        "HH=50%"
+        "Hard Hit%=50.0",
+        "Pitcher HR VS=49.0"
       ],
       "bullets": [
-        "park=1.03",
-        "hrScore=63.3"
+        "HR score 63.4 (#7)",
+        "Pitcher HR VS 49.0 at park 1.03"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+317",
+      "marketImpliedProbability": 0.23980815347721823,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Miguel Vargas",
+      "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "MIN",
       "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=63.8",
-        "Hard Hit%=46.2"
-      ],
-      "bullets": [
-        "HR score 63.3 (#7)",
-        "Pitcher HR VS 63.8 at park 0.97"
-      ],
-      "hrOddsYes": "+425",
-      "marketImpliedProbability": 0.19047619047619047,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "SD",
-      "opposingPitcher": "Robbie Ray",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=56.5",
-        "Hard Hit%=50.4"
+        "Pitcher HR VS=63.8",
+        "Hard Hit%=57.8"
       ],
       "bullets": [
-        "HR score 62.9 (#8)",
-        "Pitcher HR VS 56.5 at park 0.98"
+        "HR score 62.8 (#8)",
+        "Pitcher HR VS 63.8 at park 0.97"
       ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
+      "hrOddsYes": "+279",
+      "marketImpliedProbability": 0.2638522427440633,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "MIN",
-      "opposingPitcher": "Zebby Matthews",
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=14.3%",
-        "HH=46.2%"
+        "barrel=15.6%",
+        "HH=50%"
       ],
       "bullets": [
-        "park=0.97",
-        "hrScore=63.3"
+        "park=1.03",
+        "hrScore=63.4"
       ],
-      "hrOddsYes": "+425",
-      "marketImpliedProbability": 0.19047619047619047,
+      "hrOddsYes": "+317",
+      "marketImpliedProbability": 0.23980815347721823,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "SD",
-      "opposingPitcher": "Robbie Ray",
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=12.9%",
-        "HH=50.4%"
+        "barrel=19.9%",
+        "HH=57.8%"
       ],
       "bullets": [
-        "park=0.98",
-        "hrScore=62.9"
+        "park=0.97",
+        "hrScore=62.8"
       ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
+      "hrOddsYes": "+279",
+      "marketImpliedProbability": 0.2638522427440633,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,17 +244,17 @@
       "team": "NYM",
       "opponent": "HOU",
       "opposingPitcher": "Ethan Pecko",
-      "hrScoreRank": 24,
+      "hrScoreRank": 23,
       "topStats": [
         "Pitcher HR VS=83.0",
         "Hard Hit%=40.4"
       ],
       "bullets": [
-        "HR score 56.4 (#24)",
+        "HR score 56.6 (#23)",
         "Pitcher HR VS 83.0 at park 1.06"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+595",
+      "marketImpliedProbability": 0.14388489208633093,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,13 +263,13 @@
       "team": "PIT",
       "opponent": "STL",
       "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 19,
+      "hrScoreRank": 18,
       "topStats": [
         "Pitcher HR VS=68.6",
         "Hard Hit%=44.0"
       ],
       "bullets": [
-        "HR score 58.6 (#19)",
+        "HR score 59.1 (#18)",
         "Pitcher HR VS 68.6 at park 0.92"
       ],
       "hrOddsYes": "+540",
