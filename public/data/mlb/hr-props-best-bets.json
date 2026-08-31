@@ -1,10 +1,10 @@
 {
   "date": "2026-08-31",
-  "generatedAt": "2026-08-31T14:16:30.967Z",
+  "generatedAt": "2026-08-31T15:11:45.499Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Great American Ball Park (1.25) and Daikin Park (1.04) are the primary power parks in play, with Brady Singer and Anthony Kay both allowing elevated HR rates to opposing lineups. The model is heavily keyed on barrel rate, exit velocity, and park-adjusted pull tendencies, with recent HR form and opposing pitcher HR vulnerability providing secondary boosts.",
-    "modelNote": "The model is prioritizing barrel rate and park-adjusted HR/FB ratios over raw ISO, elevating Yordan Alvarez and Fernando Tatis Jr. to the top two spots due to their combination of elite exit velocity and favorable park/pitcher matchups."
+    "slateOverview": "Great American Ball Park (1.25) and Daikin Park (1.04) are the primary power spots today, with Brady Singer and Anthony Kay both allowing elevated HR rates (68.9 and 59.5) to opposing lineups. The combination of hitter-friendly venues and lefty/righty matchups against fly-ball prone arms creates a concentrated HR environment, especially for the top-ranked bats.",
+    "modelNote": "The model is prioritizing barrel rate, park-adjusted HR/FB ratios, and recent opposing pitcher HR vulnerability over raw ISO, which is why Alvarez and Tatis lead despite varying power profiles."
   },
   "bestBets": [
     {
@@ -37,8 +37,8 @@
         "HH=53.6%"
       ],
       "bullets": [
-        "park=1.25",
-        "HH=53.6%"
+        "HH=53.6%",
+        "park=1.25"
       ],
       "hrOddsYes": "+287",
       "marketImpliedProbability": 0.25839793281653745,
@@ -75,7 +75,7 @@
         "Pitcher HR VS=35.3"
       ],
       "bullets": [
-        "HR score 65.8 (#4)",
+        "HR score 63.7 (#4)",
         "Pitcher HR VS 35.3 at park 1.03"
       ],
       "hrOddsYes": "+305",
@@ -134,8 +134,8 @@
         "HH=46.4%"
       ],
       "bullets": [
-        "park=1.25",
-        "HH=46.4%"
+        "barrel=11.2%",
+        "park=1.25"
       ],
       "hrOddsYes": "+317",
       "marketImpliedProbability": 0.23980815347721823,
@@ -162,70 +162,51 @@
       "hrValueEdge": null
     },
     {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "Anthony Molina",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Hard Hit%=51.8",
-        "Pitcher HR VS=35.3"
-      ],
-      "bullets": [
-        "HR score 60.7 (#7)",
-        "Pitcher HR VS 35.3 at park 1.03"
-      ],
-      "hrOddsYes": "+415",
-      "marketImpliedProbability": 0.1941747572815534,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Kody Clemens",
       "team": "MIN",
       "opponent": "DET",
       "opposingPitcher": "Jackson Jobe",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
         "Pitcher HR VS=59.5",
         "Hard Hit%=46.7"
       ],
       "bullets": [
-        "HR score 60.6 (#8)",
+        "HR score 59.9 (#7)",
         "Pitcher HR VS 59.5 at park 0.97"
       ],
       "hrOddsYes": "+336",
       "marketImpliedProbability": 0.22935779816513763,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
+    },
+    {
+      "player": "Ty France",
+      "team": "SD",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=68.9",
+        "Hard Hit%=48.0"
+      ],
+      "bullets": [
+        "HR score 59.3 (#8)",
+        "Pitcher HR VS 68.9 at park 1.25"
+      ],
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
     }
   ],
   "longshots": [
-    {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "Anthony Molina",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=12.9%",
-        "HH=51.8%"
-      ],
-      "bullets": [
-        "barrel=12.9%",
-        "park=1.03"
-      ],
-      "hrOddsYes": "+415",
-      "marketImpliedProbability": 0.1941747572815534,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Kody Clemens",
       "team": "MIN",
       "opponent": "DET",
       "opposingPitcher": "Jackson Jobe",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
         "barrel=11.9%",
         "HH=46.7%"
@@ -240,40 +221,59 @@
       "hrValueEdge": null
     },
     {
+      "player": "Ty France",
+      "team": "SD",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=9.9%",
+        "HH=48%"
+      ],
+      "bullets": [
+        "barrel=9.9%",
+        "park=1.25"
+      ],
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jonathan Aranda",
+      "team": "TB",
+      "opponent": "NYM",
+      "opposingPitcher": "Robert Stock",
+      "hrScoreRank": 20,
+      "topStats": [
+        "Pitcher HR VS=54.5",
+        "Hard Hit%=45.6"
+      ],
+      "bullets": [
+        "HR score 53.3 (#20)",
+        "Pitcher HR VS 54.5 at park 0.98"
+      ],
+      "hrOddsYes": "+650",
+      "marketImpliedProbability": 0.13333333333333333,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Yandy Díaz",
       "team": "TB",
       "opponent": "NYM",
       "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 17,
+      "hrScoreRank": 13,
       "topStats": [
         "Pitcher HR VS=54.5",
         "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 54.1 (#17)",
+        "HR score 55.3 (#13)",
         "Pitcher HR VS 54.5 at park 0.98"
       ],
       "hrOddsYes": "+630",
       "marketImpliedProbability": 0.136986301369863,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ryan Jeffers",
-      "team": "MIN",
-      "opponent": "DET",
-      "opposingPitcher": "Jackson Jobe",
-      "hrScoreRank": 20,
-      "topStats": [
-        "Pitcher HR VS=59.5",
-        "Hard Hit%=39.6"
-      ],
-      "bullets": [
-        "HR score 53.4 (#20)",
-        "Pitcher HR VS 59.5 at park 0.97"
-      ],
-      "hrOddsYes": "+610",
-      "marketImpliedProbability": 0.14084507042253522,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
