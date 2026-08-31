@@ -1,0 +1,145 @@
+name: NFL Betting Lines Daily
+
+run-name: NFL Betting Lines Daily • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# WU9 — NFL-ONLY free daily betting-lines snapshot.
+#
+# Once per day it resolves the nearest upcoming NFL regular-season / postseason
+# week from the canonical nflverse schedule (public/data/nfl/<season>/games.json)
+# and runs the existing WU8 betting-lines refresh for that week. In the NFL
+# offseason the resolver reports "no active/upcoming NFL slate" and the job is a
+# clean no-op — NO The Odds API request is made, so no credit is spent.
+#
+# Scope: this workflow runs the single npm entry point
+# market:betting-lines:refresh-current and nothing else. No college-football
+# odds job, no alternate paid provider, no public-splits job.
+#
+# Schedule / DST tradeoff (v1, accepted):
+#   GitHub Actions `schedule` cron is UTC-only. This uses a FIXED 10:00 UTC cron
+#   rather than a runtime timezone gate, so the local trigger time shifts by one
+#   hour across the US DST boundary:
+#     10:00 UTC = 06:00 America/New_York during EDT (Mar–Nov)
+#     10:00 UTC = 05:00 America/New_York during EST (Nov–Mar)
+#   Both land in the target early-morning ET window, so the seasonal drift is
+#   acceptable for v1. (If exactness is ever wanted, switch to GitHub Actions'
+#   per-trigger `timezone:` field, already used elsewhere in this repo.)
+#
+# The Odds API cost: ~3 credits per NFL refresh, one refresh/day ⇒ ~90/month
+# against the 500 credits/month free plan.
+on:
+  schedule:
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Call the provider and report, but write/commit nothing"
+        type: boolean
+        required: false
+        default: false
+
+# Share the single lock used by the other automated workflows that commit
+# generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-nfl-betting-lines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Resolves the current NFL week from the canonical schedule and runs the
+      # existing WU8 refresh (NFL only). Preserves the WU8 quota guard: default
+      # floor (50), never the low-quota override. Offseason ⇒ no provider request.
+      # THE_ODDS_API_KEY is read only from secrets, only as an env var here; it
+      # is never echoed, logged, or written to any artifact.
+      - name: Refresh current-week NFL betting lines
+        env:
+          THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npm run market:betting-lines:refresh-current -- --dry-run
+          else
+            npm run market:betting-lines:refresh-current
+          fi
+
+      - name: Detect betting-lines artifact changes
+        id: changes
+        if: github.event.inputs.dry_run != 'true'
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- \
+            'data/market/betting-lines/history/nfl' \
+            'data/market/betting-lines/quota-state.json' \
+            'public/data/market/betting-lines-current.json' \
+            'public/data/market/betting-lines-history/nfl')" ]; then
+            echo "No NFL betting-lines artifact changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "NFL betting-lines artifact changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push refreshed NFL betting lines
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stage ONLY the NFL betting-lines artifacts, by exact path. Nothing
+          # blanket-staged; no source code or unrelated generated data.
+          git add \
+            data/market/betting-lines/history/nfl \
+            data/market/betting-lines/quota-state.json \
+            public/data/market/betting-lines-current.json \
+            public/data/market/betting-lines-history/nfl
+
+          if git diff --cached --quiet; then
+            echo "No staged NFL betting-lines changes — not creating an empty commit."
+            exit 0
+          fi
+
+          git commit -m "chore: refresh NFL betting lines"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — NFL betting lines were not committed." >&2
+            exit 1
+          fi
+
+          echo "NFL betting lines pushed successfully."
