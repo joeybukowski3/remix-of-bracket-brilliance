@@ -6,7 +6,11 @@ import MatchupMarketRow, {
   type MarketPeriodValues,
 } from "@/components/nfl/matchups/MatchupMarketRow";
 import { formatSigned } from "@/lib/nfl/guideData";
-import { MARKET_PROFILE_METRICS, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
+import {
+  MARKET_PROFILE_METRICS,
+  toSideValue,
+  type NflMatchupMetricResolver,
+} from "@/lib/nfl/matchupMetrics";
 import type { MarketCurrentGame, MarketPeriodKey } from "@/lib/nfl/marketData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
@@ -44,9 +48,11 @@ export type MarketProfileState = {
 export default function MatchupMarketProfile({
   matchup,
   market,
+  compact = false,
 }: {
   matchup: NflMatchup;
   market?: MarketProfileState;
+  compact?: boolean;
 }) {
   const seasonRows: {
     key: string;
@@ -89,6 +95,40 @@ export default function MatchupMarketProfile({
   ];
 
   const periods = market?.periods ?? [];
+
+  if (compact) {
+    const latest = periods[periods.length - 1];
+    const resolver = latest ? market?.resolvers[latest] : undefined;
+    return (
+      <MatchupSection
+        id="market"
+        title="Market Profile"
+        eyebrow="What the book says"
+        subtitle={market?.note ?? "Descriptive only — no projected line and no pick."}
+      >
+        <ComparisonHeader matchup={matchup} />
+        {!resolver ? (
+          <p className="py-3 text-center text-[11px] font-semibold text-slate-600">
+            Market profile not connected.
+          </p>
+        ) : (
+          MARKET_PROFILE_METRICS.slice(0, 4).map((metric) => (
+            <MatchupComparisonRow
+              key={metric.key}
+              metricLabel={metric.label}
+              shortLabel={metric.shortLabel}
+              help={metric.help}
+              direction={metric.direction}
+              away={toSideValue(resolver(matchup.away.slug, metric.key))}
+              home={toSideValue(resolver(matchup.home.slug, metric.key))}
+              awayTeamName={matchup.away.teamName}
+              homeTeamName={matchup.home.teamName}
+            />
+          ))
+        )}
+      </MatchupSection>
+    );
+  }
 
   /** Gather one team's value for each visible period. */
   const valuesFor = (teamSlug: string, metricKey: string): MarketPeriodValues => {

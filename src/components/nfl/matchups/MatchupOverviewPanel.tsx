@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import MatchupAdvantages from "@/components/nfl/matchups/MatchupAdvantages";
 import MatchupAngles from "@/components/nfl/matchups/MatchupAngles";
 import MatchupCategoryAdvantage from "@/components/nfl/matchups/MatchupCategoryAdvantage";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import type { CategoryAdvantageResult, MatchupCategoryId } from "@/lib/nfl/matchupCategoryAdvantage";
+import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
+import MatchupComparisonSnapshot from "@/components/nfl/matchups/MatchupComparisonSnapshot";
 import type { MatchupAdvantageNote, MatchupAngle } from "@/lib/nfl/matchupComparison";
 import { formatMarketFavoriteSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
-import { describeSampleRule, type NflMatchupSampleSettings } from "@/lib/nfl/matchupSampleWindow";
+import type { NflMatchupSampleSettings } from "@/lib/nfl/matchupSampleWindow";
 import {
   compareToMarket,
   formatModelVsMarketDifference,
@@ -22,14 +22,16 @@ const NA = "N/A";
 function ProjectionFigure({
   label,
   value,
+  tone,
   dim = false,
 }: {
   label: string;
   value: string;
+  tone: "model" | "market" | "away" | "home" | "neutral";
   dim?: boolean;
 }) {
   return (
-    <div className="min-w-0">
+    <div className={`matchup-projection-tile matchup-projection-tile--${tone}`}>
       <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-600">{label}</div>
       <div
         className={cn(
@@ -63,6 +65,11 @@ function ProjectionCard({
   const comparison = compareToMarket(projection, market);
   const marketDisplay = formatMarketFavoriteSpread(market);
   const difference = formatModelVsMarketDifference(comparison);
+  const differenceTone = comparison?.leansToward === projection?.awayTeam
+    ? "away"
+    : comparison?.leansToward === projection?.homeTeam
+      ? "home"
+      : "neutral";
   const unavailable = !loading && !projection;
 
   return (
@@ -93,13 +100,14 @@ function ProjectionCard({
         </p>
       ) : (
         <>
-          <div className="mt-2 flex flex-wrap gap-x-7 gap-y-2">
+          <div className="matchup-projection-grid mt-2">
             <ProjectionFigure
               label="Projected spread"
               value={formatProjectedSpread(projection)}
+              tone="model"
             />
-            <ProjectionFigure label="Market" value={marketDisplay} dim={marketDisplay === NA} />
-            <ProjectionFigure label="Model vs market" value={difference} dim={difference === NA} />
+            <ProjectionFigure label="Market" value={marketDisplay} tone="market" dim={marketDisplay === NA} />
+            <ProjectionFigure label="Model vs market" value={difference} tone={differenceTone} dim={difference === NA} />
           </div>
           <p className="mt-2.5 text-[11px] leading-4 text-slate-600">
             The model never sees the market line. This difference is a description of the gap, not
@@ -135,8 +143,9 @@ export default function MatchupOverviewPanel({
   projectionLoading,
   advantages,
   angles,
-  sampleLabel,
-  sampleSettings,
+  categoryMetrics,
+  marketProfile,
+  scheduleContext,
 }: {
   matchup: NflMatchup;
   categoryResults: Record<MatchupCategoryId, CategoryAdvantageResult>;
@@ -146,99 +155,66 @@ export default function MatchupOverviewPanel({
   projectionLoading: boolean;
   advantages: MatchupAdvantageNote[];
   angles: MatchupAngle[];
+  /** Retained for caller compatibility; explanatory sample copy now renders at page bottom. */
   sampleLabel?: string;
-  sampleSettings: NflMatchupSampleSettings;
+  sampleSettings?: NflMatchupSampleSettings;
+  categoryMetrics?: Partial<Record<MatchupCategoryId, MatchupDisplayMetric[]>>;
+  marketProfile?: React.ReactNode;
+  scheduleContext?: React.ReactNode;
 }) {
-  const [explainerOpen, setExplainerOpen] = useState(false);
-
   return (
-    <div className="space-y-3">
-      <div className="grid items-start gap-3 lg:grid-cols-2">
-        <MatchupCategoryAdvantage
-          matchup={matchup}
-          results={categoryResults}
-          onOpenCategory={onOpenCategory}
-        />
-        <ProjectionCard
-          projection={projection}
-          market={market}
-          loading={projectionLoading}
-        />
-      </div>
-
-      <div className="grid items-start gap-3 lg:grid-cols-2">
-        <MatchupSection
-          id="advantages"
-          subtitle="Derived from comparison rows — no weighting applied."
-        >
-          <MatchupAdvantages notes={advantages} />
-        </MatchupSection>
-
-        <MatchupSection
-          id="things-to-watch"
-          subtitle="Rules-based, from existing fields only."
-        >
-          <MatchupAngles angles={angles} />
-        </MatchupSection>
-      </div>
-
-      <section
-        aria-labelledby="overview-explainer-heading"
-        className="rounded-lg border border-slate-200 bg-white"
-      >
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 sm:px-4">
-          <h2 id="overview-explainer-heading" className="text-sm font-semibold text-slate-900">
-            What this page is telling you
-          </h2>
-          <button
-            type="button"
-            aria-expanded={explainerOpen}
-            aria-controls="overview-explainer-body"
-            onClick={() => setExplainerOpen((open) => !open)}
-            className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded border border-slate-200 px-3 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:hidden"
-          >
-            {explainerOpen ? "Hide" : "Show"}
-            <ChevronDown
-              aria-hidden
-              className={cn("h-3 w-3 transition-transform", explainerOpen && "rotate-180")}
+    <div className="matchup-overview">
+      <div className="matchup-overview__top">
+        <div className="matchup-overview__left">
+          <div className="matchup-overview__model">
+            <ProjectionCard
+              projection={projection}
+              market={market}
+              loading={projectionLoading}
             />
-          </button>
+          </div>
+          <div className="matchup-overview__advantages">
+            <MatchupSection
+              id="advantages"
+              title="Advantages"
+              subtitle="Derived from comparison rows — no weighting applied."
+            >
+              <MatchupAdvantages notes={advantages} />
+            </MatchupSection>
+          </div>
         </div>
 
-        <div
-          id="overview-explainer-body"
-          className={cn(
-            "space-y-2 px-3 py-3 text-[12px] leading-5 text-slate-600 sm:block sm:px-4",
-            explainerOpen ? "block" : "hidden"
-          )}
-        >
-          <p>
-            Three separate things are shown above, and they are deliberately not combined. The{" "}
-            <span className="font-semibold text-slate-900">category advantage</span> table counts
-            how many individual statistics each team leads within a section — it treats every
-            metric as equally important, which no serious model does. Select a category to open its
-            detailed metrics. The <span className="font-semibold text-slate-900">projection</span>{" "}
-            is the actual model output, built from opponent-adjusted efficiency plus a fixed
-            home-field adjustment. The{" "}
-            <span className="font-semibold text-slate-900">advantages and things to watch</span>{" "}
-            are plain descriptions of the largest gaps in the underlying rows.
-          </p>
-          <p>
-            If you are new to these metrics:{" "}
-            <span className="font-semibold text-slate-900">EPA per play</span> measures how many
-            points an average play is worth from a given situation,{" "}
-            <span className="font-semibold text-slate-900">success rate</span> is the share of
-            plays that keep an offense on schedule, and{" "}
-            <span className="font-semibold text-slate-900">power rating</span> is Joe Knows
-            Ball&apos;s opponent-adjusted measure of team strength.
-          </p>
-          <p className="rounded border border-amber-200 bg-amber-50 px-2.5 py-2 text-amber-900">
-            <span className="font-semibold">Sample in use:</span>{" "}
-            {sampleLabel ? `${sampleLabel}. ` : ""}
-            {describeSampleRule(sampleSettings)}
-          </p>
+        <div className="matchup-overview__center">
+          <div className="matchup-overview__projection">
+            <h2 className="matchup-panel-label">Positional Edge Map</h2>
+            <div className="matchup-overview__panel-body">
+              <MatchupCategoryAdvantage
+                matchup={matchup}
+                results={categoryResults}
+                onOpenCategory={onOpenCategory}
+              />
+            </div>
+          </div>
+          <div className="matchup-overview__watch">
+            <MatchupSection
+              id="things-to-watch"
+              subtitle="Rules-based, from existing fields only."
+            >
+              <MatchupAngles matchup={matchup} angles={angles} />
+            </MatchupSection>
+          </div>
         </div>
-      </section>
+
+        <div className="matchup-overview__right">
+          <div className="matchup-overview__market">{marketProfile}</div>
+          <div className="matchup-overview__schedule">{scheduleContext}</div>
+        </div>
+      </div>
+
+      <div className="matchup-overview__snapshot">
+        <MatchupComparisonSnapshot matchup={matchup} categoryMetrics={categoryMetrics} />
+      </div>
+
     </div>
   );
 }

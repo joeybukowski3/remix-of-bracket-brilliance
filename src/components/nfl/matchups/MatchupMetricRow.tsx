@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import CompactMatchupMetricRow from "@/components/nfl/matchups/CompactMatchupMetricRow";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
 import {
   MATCHUP_METRIC_LABEL,
@@ -15,6 +16,7 @@ import {
   type MatchupDisplaySide,
 } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { METRIC_NA } from "@/lib/nfl/matchupMetrics";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 
 /**
  * One team's rank and value for one metric.
@@ -124,6 +126,7 @@ export default function MatchupMetricRow({
 }) {
   const helpId = useId();
   const [helpOpen, setHelpOpen] = useState(false);
+  const isMobile = useIsCompactLayout("(max-width: 639px)");
   const neutral = metric.direction === "context-only" || metric.direction === "none";
   const advantage = describeMetricAdvantage(metric.comparison, awayAbbr, homeAbbr);
   const advantageTone =
@@ -132,7 +135,27 @@ export default function MatchupMetricRow({
       : "text-slate-600";
 
   return (
-    <div className={`border-b border-slate-100 py-1.5 last:border-0 ${MATCHUP_STAT_ROW_GRID}`}>
+    <div className="border-b border-slate-100 last:border-0">
+      {isMobile ? (
+      <CompactMatchupMetricRow
+        label={metric.shortLabel ?? metric.label}
+        away={{
+          formatted: metric.away.formatted,
+          rank: metric.away.rank,
+          accessibleName: awayTeamName,
+        }}
+        home={{
+          formatted: metric.home.formatted,
+          rank: metric.home.rank,
+          accessibleName: homeTeamName,
+        }}
+        winner={metric.comparison}
+        advantageText={advantage}
+        help={metric.help}
+      />
+      ) : (
+
+      <div className={`grid py-1.5 ${MATCHUP_STAT_ROW_GRID}`}>
       <div className={`min-w-0 px-1 text-center sm:px-4 ${MATCHUP_ROW_LABEL_CELL}`}>
         <div className="flex items-center justify-center gap-1.5">
           {/* Matches the Unit Matchups row label, so the two tables read at the
@@ -196,6 +219,8 @@ export default function MatchupMetricRow({
         >
           {metric.help}
         </div>
+      )}
+      </div>
       )}
     </div>
   );
