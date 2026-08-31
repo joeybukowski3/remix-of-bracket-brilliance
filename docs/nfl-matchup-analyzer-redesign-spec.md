@@ -1,5 +1,16 @@
 # NFL Matchup Analyzer Redesign — Implementation Specification
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL — implemented.** This is the
+> original build specification. The redesign shipped across Phases 1–9 (the
+> Phase 2–5 implementation notes appended below record what actually landed).
+> It is **not** current authority for methodology or product behavior.
+>
+> - Distilled completed-plan record: [plans/completed/nfl-matchup-analyzer-redesign.md](plans/completed/nfl-matchup-analyzer-redesign.md)
+> - Current product behavior (routes, tabs, artifacts, degradation): [features/nfl-matchup-analyzer.md](features/nfl-matchup-analyzer.md)
+> - Current team-strength methodology: [models/nfl-power-rating.md](models/nfl-power-rating.md)
+> - Current margin / projected-spread methodology: [models/nfl-projected-spread.md](models/nfl-projected-spread.md)
+> - Source registry: [DATA_SOURCES.md](DATA_SOURCES.md)
+
 ## Repository / branch
 - Repository: `joeybukowski3/remix-of-bracket-brilliance`
 - Branch: `feat/nfl-matchup-analyzer-redesign`

@@ -1,5 +1,32 @@
 # NFL Data Inventory (free-first pipeline foundation)
 
+> **Scope notice (2026-08-29 knowledge audit).** This document is retained but
+> is no longer a complete picture of the NFL system.
+>
+> - **Still current durable reference:** the free-first mandate, the canonical
+>   `teams.json` identity contract and mapping gotchas, the `_meta` /
+>   deterministic-output / fail-on-unknown-team schema conventions, and the
+>   list of hand-curated static inputs — where those statements still match the
+>   code.
+> - **Superseded / historical:** the PR-1 through PR-8 pipeline narrative and
+>   the `nfl-power-v0.1` / `v0.2` model notes below. The active public rating is
+>   `nfl-power-v0.3.1` on nflfastR play-by-play EPA, success rates are
+>   published, and a separate `nfl-spread-v0.1.0` projected spread now exists.
+>   The `power-ratings.json` v0.2 generator described here is orphaned.
+> - **Now owned elsewhere (2026-08-31 update):** current NFL model methodology
+>   and product behavior are owned by `docs/models/` and `docs/features/`:
+>   [`docs/models/nfl-power-rating.md`](models/nfl-power-rating.md),
+>   [`docs/models/nfl-projected-spread.md`](models/nfl-projected-spread.md),
+>   [`docs/features/nfl-matchup-analyzer.md`](features/nfl-matchup-analyzer.md),
+>   [`docs/features/nfl-yardage-props-review.md`](features/nfl-yardage-props-review.md),
+>   with `src/lib/nfl/props/README.md` still the yardage-prop phase architecture.
+>   `docs/nfl-matchup-analyzer-redesign-spec.md` and
+>   `docs/nfl-power-v0.3.1-epa-migration.md` are now historical.
+>   `docs/DATA_SOURCES.md` is the source registry.
+> - This file is a **data/source inventory and identity/schema reference only**.
+>   It is not, and never was, the reference for NFL model behavior, and it does
+>   not resolve any methodology question.
+
 Status: PR-1 foundation. This document is the single reference for what NFL data
 exists in the repo, what free external sources the pipeline uses, and the
 schema conventions every generated NFL file must follow.

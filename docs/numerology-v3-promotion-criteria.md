@@ -1,5 +1,19 @@
 # MLB Numerology v3 — Promotion Criteria
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL / SUPERSEDED — point-in-time
+> promotion checklist, NOT a live gate.** Numerology v3 (methodology
+> `3.0.0`, hierarchical scoring, `/76` normalization) **has been promoted and is
+> the live engine.** `config/mlb-numerology-methodology.json` `version` reads
+> `"3.0.0"`, `scripts/generate-mlb-numerology.mjs` runs the hierarchical engine,
+> and the browser port mirrors it. The gate list below records how v3 was
+> evaluated before promotion; it does not govern current or future behavior and
+> nothing here is still "awaiting promotion".
+>
+> - Current methodology + reopening rules: [models/numerology-base.md](models/numerology-base.md)
+> - Current product/routing: [features/numerology.md](features/numerology.md)
+> - The legacy v2 module `src/lib/numerology/scoring.ts` (`/60` ceiling) is
+>   superseded and appears referenced only by tests.
+
 Branch: `test/numerology-scoring-hierarchy`  
 Target: merge to `main` and replace live scoring
 

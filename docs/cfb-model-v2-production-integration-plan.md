@@ -2,6 +2,16 @@
 
 Status: **design only — nothing in this document has been implemented.** No production file listed below has been modified as part of writing this plan. This document is the deliverable of CFB Model V2 Phase 10 (branch `feat/cfb-model-v2-research-foundation`), produced after Phase 9 classified the Phase 8 connectivity-aware finalist as **B — GO, ANALYTICS-ONLY CANDIDATE**.
 
+> **Status routing (2026-08-31 knowledge audit): HISTORICAL design plan — not the
+> status document.** Current status, promotion gates, and shadow-only reality are
+> owned by the active plan
+> [plans/active/cfb-model-v2.md](plans/active/cfb-model-v2.md), which supersedes
+> this document for status. Shadow infrastructure has since been built
+> (`CFB_V2_ROLLOUT_STATE = "stage-2-infrastructure-ready"`, no `.tsx` reads it).
+> This file is retained as the detailed integration design.
+> Current CFB model/product authority: [models/cfb-preseason-power.md](models/cfb-preseason-power.md),
+> [features/cfb.md](features/cfb.md). Tracking: BACKLOG [BL-CFB-001](BACKLOG.md), [BL-CFB-002](BACKLOG.md).
+
 ---
 
 ## 1. Current production CFB architecture map

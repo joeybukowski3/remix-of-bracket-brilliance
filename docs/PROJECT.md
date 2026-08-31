@@ -21,11 +21,15 @@ Durable principles:
 
 Current routes and source modules show these major areas:
 
-- MLB: daily game research, HR and strikeout props, batter-versus-pitcher analysis, Sin City, numerology, power rankings, and pitcher vulnerability
+- MLB: daily game research, HR and strikeout props, batter-versus-pitcher analysis, Sin City, numerology, power rankings, and pitcher vulnerability; a moneyline "edge" view with prediction archiving and closing-line tracking; and a performance/results tracker
 - PGA: tournament pages, models, table views, history, custom and DFS tools, picks, rankings, and best bets
-- NFL: weekly dashboard, schedules, standings, matchup analysis, power ratings, team guides, analytics, futures, and award research
-- Fantasy football: weekly rankings and points-allowed research
-- College sports: NCAA basketball schedules, matchups, bracket and betting-edge tools, plus a separate college-football section for rankings, schedules, teams, matchups, and conferences
-- Additional tools: World Cup analysis, public odds tracking, and the 16-0 draft experience
+- NFL: weekly dashboard and command-center schedule surfaces, schedules, standings, power ratings, team guides, analytics, futures, and award research; a redesigned multi-section Matchup Analyzer that adds conventional stats, success rates, trench win rates, injuries, market profile, and EPA comparisons, with a Model Analysis section that shows a JKB projected spread beside the market line; a Yardage Props Review surface for passing, rushing, and receiving yard research; and a DraftKings Classic DFS Contest Analyzer
+- Fantasy football: season-long draft rankings, a Draft Preview board, Weekly Rankings, a weekly projection and research system, Rest-of-Season research, weekly matchup and composite context, and points-allowed research
+- College sports: NCAA basketball schedules, matchups, bracket and betting-edge tools, plus a separate college-football section for rankings (with an independent AP comparison), schedules, teams, matchups with a redesigned detail view, season-stat comparisons, and conferences
+- Additional tools: World Cup analysis, public odds and betting-splits tracking, a Polymarket odds tracker, and the 16-0 draft experience
+
+Some routes (for example an NBA landing page) are deliberate "coming soon" placeholders and are not current product areas.
+
+Several NFL and CFB models now produce forward-looking projections and model-versus-market comparisons rather than only descriptive summaries. This does not make the application a sportsbook: projections are presented as research, framing constraints in `docs/DECISIONS.md` apply, and no surface presents a model output as a guaranteed outcome, edge, or recommendation without an explicitly documented calibration gate.
 
 `AGENTS.md` routes task-specific context; `docs/ARCHITECTURE.md`, `docs/TESTING.md`, and `docs/DECISIONS.md` own their respective technical contracts.

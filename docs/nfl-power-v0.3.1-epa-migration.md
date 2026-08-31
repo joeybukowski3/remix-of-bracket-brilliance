@@ -1,5 +1,12 @@
 # NFL power rating v0.3.0 → v0.3.1 — EPA source migration
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL — completed migration
+> record.** Delivered by Phase 7B of the NFL Matchup Analyzer redesign. This is a
+> point-in-time comparison artifact, **not** current methodology authority.
+>
+> - Distilled completed-plan record: [plans/completed/nfl-power-v0.3.1-migration.md](plans/completed/nfl-power-v0.3.1-migration.md)
+> - Current methodology authority: [models/nfl-power-rating.md](models/nfl-power-rating.md)
+
 Produced by Phase 7B. The model's mathematics are unchanged: 40% opponent-adjusted
 offensive EPA/play + 40% inverted opponent-adjusted defensive EPA/play + 20%
 opponent-adjusted point differential/game, one-pass opponent adjustment, trajectory
