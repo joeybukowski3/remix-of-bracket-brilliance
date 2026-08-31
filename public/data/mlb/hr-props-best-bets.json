@@ -1,47 +1,47 @@
 {
   "date": "2026-08-31",
-  "generatedAt": "2026-08-31T19:11:16.973Z",
+  "generatedAt": "2026-08-31T20:13:50.783Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Great American Ball Park (1.25) and Daikin Park (1.04) are the primary power parks in play, with Brady Singer and Anthony Kay both allowing elevated HR rates to opposing lineups. The model is also keying on lefty-lefty and righty-righty platoon edges plus recent barrel trends for Alvarez, Tatis, and Caminero.",
-    "modelNote": "HR scores are being driven by a blend of park-adjusted barrel rate, opposing pitcher HR/FB, and recent pull-side exit velocity spikes, with the top three names all posting elite hard-hit and barrel marks against today's matchups."
+    "slateOverview": "Coors Field (1.4) and Great American Ball Park (1.25) headline a slate with three elevated park factors, while Tanner Gordon and Brady Singer serve up favorable right-handed matchups against power bats. The combination of thin air in Denver and GABP's short porch creates the clearest HR runway, with Anthony Molina and Anthony Kay also allowing hard contact at elevated rates.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability, which is why Alonso and Alvarez occupy the top two spots despite modest recent volume."
   },
   "bestBets": [
+    {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "COL",
+      "opposingPitcher": "Tanner Gordon",
+      "hrScoreRank": 1,
+      "topStats": [
+        "barrel=13.9%",
+        "HH=57.1%"
+      ],
+      "bullets": [
+        "hrScore=71.5",
+        "park=1.4"
+      ],
+      "hrOddsYes": "+220",
+      "marketImpliedProbability": 0.3125,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "CWS",
       "opposingPitcher": "Anthony Kay",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=16.8%",
-        "HH=53.6%"
-      ],
-      "bullets": [
-        "barrel=16.8%",
-        "park=1.04"
-      ],
-      "hrOddsYes": "+275",
-      "marketImpliedProbability": 0.26666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=12.2%",
+        "barrel=16.8%",
         "HH=53.6%"
       ],
       "bullets": [
-        "park=1.25",
-        "HH=53.6%"
+        "hrScore=69.6",
+        "park=1.04"
       ],
-      "hrOddsYes": "+270",
-      "marketImpliedProbability": 0.2702702702702703,
+      "hrOddsYes": "+271",
+      "marketImpliedProbability": 0.2695417789757412,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -56,11 +56,30 @@
         "HH=50.4%"
       ],
       "bullets": [
-        "barrel=13.1%",
+        "hrScore=67.6",
         "park=0.98"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=66.9",
+        "Hard Hit%=53.6"
+      ],
+      "bullets": [
+        "HR score 67.1 (#4)",
+        "Pitcher HR VS 66.9 at park 1.25"
+      ],
+      "hrOddsYes": "+287",
+      "marketImpliedProbability": 0.25839793281653745,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -69,57 +88,57 @@
       "team": "ATL",
       "opponent": "SF",
       "opposingPitcher": "Anthony Molina",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Hard Hit%=50.5",
-        "Pitcher HR VS=34.7"
-      ],
-      "bullets": [
-        "HR score 63.6 (#4)",
-        "Pitcher HR VS 34.7 at park 1.03"
-      ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Merrill",
-      "team": "SD",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=68.3",
-        "Hard Hit%=46.4"
+        "Hard Hit%=50.5",
+        "Pitcher HR VS=34.2"
       ],
       "bullets": [
-        "HR score 63.1 (#5)",
-        "Pitcher HR VS 68.3 at park 1.25"
+        "HR score 63.4 (#5)",
+        "Pitcher HR VS 34.2 at park 1.03"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+305",
+      "marketImpliedProbability": 0.24691358024691357,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=12.2%",
+        "HH=53.6%"
+      ],
+      "bullets": [
+        "hrScore=67.1",
+        "park=1.25"
+      ],
+      "hrOddsYes": "+287",
+      "marketImpliedProbability": 0.25839793281653745,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Matt Olson",
       "team": "ATL",
       "opponent": "SF",
       "opposingPitcher": "Anthony Molina",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=15.4%",
         "HH=50.5%"
       ],
       "bullets": [
-        "barrel=15.4%",
+        "hrScore=63.4",
         "park=1.03"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
+      "hrOddsYes": "+305",
+      "marketImpliedProbability": 0.24691358024691357,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,17 +147,17 @@
       "team": "SD",
       "opponent": "CIN",
       "opposingPitcher": "Brady Singer",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=11.2%",
         "HH=46.4%"
       ],
       "bullets": [
-        "park=1.25",
-        "barrel=11.2%"
+        "hrScore=62.1",
+        "park=1.25"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+317",
+      "marketImpliedProbability": 0.23980815347721823,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,13 +166,53 @@
       "team": "CHC",
       "opponent": "MIL",
       "opposingPitcher": "Kyle Harrison",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=49.1",
+        "Pitcher HR VS=38.3"
+      ],
+      "bullets": [
+        "HR score 61.6 (#7)",
+        "Pitcher HR VS 38.3 at park 1.00"
+      ],
+      "hrOddsYes": "+287",
+      "marketImpliedProbability": 0.25839793281653745,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Kody Clemens",
+      "team": "MIN",
+      "opponent": "DET",
+      "opposingPitcher": "Jackson Jobe",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=58.0",
+        "Hard Hit%=46.7"
+      ],
+      "bullets": [
+        "HR score 59.7 (#8)",
+        "Pitcher HR VS 58.0 at park 0.97"
+      ],
+      "hrOddsYes": "+336",
+      "marketImpliedProbability": 0.22935779816513763,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "MIL",
+      "opposingPitcher": "Kyle Harrison",
+      "hrScoreRank": 7,
       "topStats": [
         "barrel=13.2%",
         "HH=49.1%"
       ],
       "bullets": [
-        "barrel=13.2%",
+        "hrScore=61.6",
         "park=1"
       ],
       "hrOddsYes": "+287",
@@ -166,111 +225,52 @@
       "team": "MIN",
       "opponent": "DET",
       "opposingPitcher": "Jackson Jobe",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=58.9",
-        "Hard Hit%=46.7"
-      ],
-      "bullets": [
-        "HR score 59.9 (#7)",
-        "Pitcher HR VS 58.9 at park 0.97"
-      ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ty France",
-      "team": "SD",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
       "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=68.3",
-        "Hard Hit%=48.0"
-      ],
-      "bullets": [
-        "HR score 59.3 (#8)",
-        "Pitcher HR VS 68.3 at park 1.25"
-      ],
-      "hrOddsYes": "+460",
-      "marketImpliedProbability": 0.17857142857142858,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Kody Clemens",
-      "team": "MIN",
-      "opponent": "DET",
-      "opposingPitcher": "Jackson Jobe",
-      "hrScoreRank": 7,
       "topStats": [
         "barrel=11.9%",
         "HH=46.7%"
       ],
       "bullets": [
-        "barrel=11.9%",
+        "hrScore=59.7",
         "park=0.97"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+336",
+      "marketImpliedProbability": 0.22935779816513763,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Ty France",
-      "team": "SD",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=9.9%",
-        "HH=48%"
-      ],
-      "bullets": [
-        "park=1.25",
-        "barrel=9.9%"
-      ],
-      "hrOddsYes": "+460",
-      "marketImpliedProbability": 0.17857142857142858,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andrew Pinckney",
-      "team": "WSH",
-      "opponent": "MIA",
-      "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 24,
-      "topStats": [
-        "Pitcher HR VS=60.0",
-        "Hard Hit%=58.3"
-      ],
-      "bullets": [
-        "HR score 52.9 (#24)",
-        "Pitcher HR VS 60.0 at park 0.98"
-      ],
-      "hrOddsYes": "+725",
-      "marketImpliedProbability": 0.12121212121212122,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jonathan Aranda",
+      "player": "Yandy Díaz",
       "team": "TB",
       "opponent": "NYM",
       "opposingPitcher": "Robert Stock",
-      "hrScoreRank": 23,
+      "hrScoreRank": 15,
       "topStats": [
-        "Pitcher HR VS=54.2",
-        "Hard Hit%=45.6"
+        "Pitcher HR VS=53.9",
+        "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 53.3 (#23)",
-        "Pitcher HR VS 54.2 at park 0.98"
+        "HR score 55.4 (#15)",
+        "Pitcher HR VS 53.9 at park 0.98"
+      ],
+      "hrOddsYes": "+700",
+      "marketImpliedProbability": 0.125,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Lars Nootbaar",
+      "team": "AZ",
+      "opponent": "PHI",
+      "opposingPitcher": "Aaron Nola",
+      "hrScoreRank": 16,
+      "topStats": [
+        "Pitcher HR VS=62.0",
+        "Hard Hit%=49.4"
+      ],
+      "bullets": [
+        "HR score 54.7 (#16)",
+        "Pitcher HR VS 62.0 at park 1.01"
       ],
       "hrOddsYes": "+650",
       "marketImpliedProbability": 0.13333333333333333,
