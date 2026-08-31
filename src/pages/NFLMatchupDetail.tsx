@@ -56,6 +56,7 @@ import MatchupComparisonPanel from "@/components/nfl/matchups/MatchupComparisonP
 import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
 import MatchupExplainer from "@/components/nfl/matchups/MatchupExplainer";
 import MatchupIdentityHeader from "@/components/nfl/matchups/MatchupIdentityHeader";
+import MatchupMarketContext from "@/components/nfl/matchups/MatchupMarketContext";
 import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile";
 import MatchupMobileStickyHeader from "@/components/nfl/matchups/MatchupMobileStickyHeader";
 import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
@@ -432,6 +433,8 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         >
+          <MatchupMarketContext matchup={matchup} projection={projection} />
+
           <div className="grid grid-cols-1 items-start gap-2 @[1080px]:grid-cols-2">
             <MatchupTrenches
               matchup={matchup}
@@ -484,6 +487,13 @@ export default function NFLMatchupDetail() {
           sportsbook composition is not disclosed.
         </p>
       )}
+
+      <p className="text-[11px] leading-5 text-slate-400">
+        Betting Market Context (Comparison tab): The Odds API. One designated
+        sportsbook is shown per game, exactly as that book posts it — it is a
+        separate dataset from the nflverse market profile and the two are never
+        merged.
+      </p>
 
       {epaArtifact && (
         <p className="text-[11px] leading-5 text-slate-400">
