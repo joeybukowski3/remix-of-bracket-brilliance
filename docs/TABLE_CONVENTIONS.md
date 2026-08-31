@@ -113,14 +113,17 @@ These thresholds are exactly the `minFavorablePercentile` cutoffs in
 - **`src/lib/mlb/percentileColorScale.ts`** — percentile computation, tier
   resolution (`getPercentileTier`), direction handling, sample-confidence
   gating (`resolvePercentileDisplay`), muted/capped fallbacks, and the legend
-  array (`PERCENTILE_TIER_LEGEND`). This owns the *favorable half* fills
-  (gold → soft green) and the tier math.
+  array (`PERCENTILE_TIER_LEGEND`). This owns **the full goodness ramp** — gold
+  (Elite) → deep/soft emerald → neutral slate → soft/strong **red** (Poor) —
+  and the tier math. There is no blue in the goodness scale (KS-010); the
+  red-hot / blue-cold palette is a separate sanctioned exception, section I.
 - **`WeeklyHeatTone` in
   `src/lib/fantasy/weekly/researchPresentation.ts`** — the canonical
-  ranking-table visual language. It reuses the MLB gold/green favorable fills
-  and defines the **red** unfavorable half (`light-red` / `red` / `strong-red`),
-  plus rank→band mapping (`weeklyRankHeatTone`: explicit 1–32 bands for 32-team
-  pools; 5 / 15 / 30 / 45 / 60 / 75 / 90 percent share cut points otherwise).
+  ranking-table visual language. It is a tone vocabulary over the **same**
+  `PERCENTILE_TIERS` fills (favorable *and* unfavorable — `light-red` / `red` /
+  `strong-red` are `belowAverage` / `weak` / `poor`), plus rank→band mapping
+  (`weeklyRankHeatTone`: explicit 1–32 bands for 32-team pools; 5 / 15 / 30 /
+  45 / 60 / 75 / 90 percent share cut points otherwise).
   `src/lib/nfl/props/review/yardageHeat.ts` consumes it directly and is the
   model for adoption elsewhere.
 
@@ -134,11 +137,9 @@ These currently implement their own scales and should re-express on JKB Heat:
 - `src/lib/pga/rankColors.ts` (`getPercentileColor` / `getRankColor` /
   `RANK_COLOR_LEGEND`, 5 hex bands) — keep the `getPercentileFromRank` utility
 - `src/lib/cfb/sosPresentation.ts` (`getSosHeatClass`, 5 bands, 133-team ranks)
-- `src/pages/MLBPercentileDemo.tsx` (inline `percentileToClass`) — replace with
-  the shared `PercentileCell` component in
-  `src/components/mlb/MlbPercentileScoreCell.tsx` (which already renders through
-  `resolvePercentileDisplay`), or failing that with the shared JKB Heat /
-  percentile presentation API directly — do not add a new component
+- ~~`src/pages/MLBPercentileDemo.tsx` (inline `percentileToClass`)~~ — **done**
+  (Phase 8D): now renders through the shared `PercentileCell` +
+  `PERCENTILE_TIER_LEGEND`.
 - `src/lib/fantasy/rankingPresentation.ts` quantile `RankTone` — align band
   language
 

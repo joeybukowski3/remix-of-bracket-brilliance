@@ -45,9 +45,10 @@ const mlbTier = (id: (typeof PERCENTILE_TIERS)[number]["id"]) =>
   PERCENTILE_TIERS.find((tier) => tier.id === id)!.style;
 
 /**
- * Weekly fantasy reuses the MLB gold/green/neutral fills and borders. The
- * unfavorable half uses the requested JKB red language instead of the MLB
- * batter-table blue counter-scale.
+ * The `WeeklyHeatTone` fills are the MLB `PERCENTILE_TIERS` styles under a
+ * ranking-table tone vocabulary — favorable half (gold → soft green) and
+ * unfavorable half (soft red → strong red) both come from the one scale, so
+ * there is no separate palette to keep in sync (KS-010 / TABLE_CONVENTIONS D).
  */
 const HEAT_STYLES: Record<WeeklyHeatTone, { backgroundColor: string; color: string; border: string }> = {
   missing: { backgroundColor: "#f8fafc", color: "#64748b", border: "1px solid rgba(148, 163, 184, 0.18)" },
@@ -56,9 +57,9 @@ const HEAT_STYLES: Record<WeeklyHeatTone, { backgroundColor: string; color: stri
   green: mlbTier("great"),
   "light-green": mlbTier("aboveAverage"),
   neutral: mlbTier("average"),
-  "light-red": { backgroundColor: "rgba(251, 113, 133, 0.18)", color: "#9f1239", border: "1px solid rgba(244, 63, 94, 0.22)" },
-  red: { backgroundColor: "rgba(239, 68, 68, 0.38)", color: "#7f1d1d", border: "1px solid rgba(220, 38, 38, 0.32)" },
-  "strong-red": { backgroundColor: "#dc2626", color: "#ffffff", border: "1px solid rgba(153, 27, 27, 0.45)" },
+  "light-red": mlbTier("belowAverage"),
+  red: mlbTier("weak"),
+  "strong-red": mlbTier("poor"),
 };
 
 /** Preserve shared heat fills while ensuring small bold labels remain readable. */

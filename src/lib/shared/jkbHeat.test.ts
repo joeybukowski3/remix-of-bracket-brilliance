@@ -162,6 +162,37 @@ describe("JKB Heat — tier <-> WeeklyHeatTone bridge", () => {
   });
 });
 
+describe("JKB Heat — unfavorable half is red, not blue (KS-010)", () => {
+  const channels = (color: string): [number, number, number] => {
+    const hex = color.match(/^#([0-9a-f]{6})$/i);
+    if (hex) {
+      const n = parseInt(hex[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const parts = color.match(/[\d.]+/g)!.map(Number);
+    return [parts[0], parts[1], parts[2]];
+  };
+
+  it.each(["belowAverage", "weak", "poor"] as const)("%s tier fill is red-dominant (r > b)", (id) => {
+    const [r, , b] = channels(PERCENTILE_TIERS.find((t) => t.id === id)!.style.backgroundColor);
+    expect(r).toBeGreaterThan(b);
+  });
+
+  it("WeeklyHeatTone red half is the exact PERCENTILE_TIERS unfavorable fills", () => {
+    const tierBg = (id: string) => PERCENTILE_TIERS.find((t) => t.id === id)!.style.backgroundColor;
+    expect(weeklyHeatStyle("light-red").backgroundColor).toBe(tierBg("belowAverage"));
+    expect(weeklyHeatStyle("red").backgroundColor).toBe(tierBg("weak"));
+    expect(weeklyHeatStyle("strong-red").backgroundColor).toBe(tierBg("poor"));
+  });
+
+  it("no tier still carries the retired blue counter-scale fills", () => {
+    const bgs = PERCENTILE_TIERS.map((t) => t.style.backgroundColor);
+    expect(bgs).not.toContain("#1d4ed8");
+    expect(bgs).not.toContain("rgba(37, 99, 235, 0.42)");
+    expect(bgs).not.toContain("rgba(96, 165, 250, 0.22)");
+  });
+});
+
 describe("JKB Heat — compatibility re-exports", () => {
   it("re-exported WeeklyHeatTone helpers are the identical functions from the source module", () => {
     expect(weeklyHeatClass).toBe(sourceWeeklyHeatClass);

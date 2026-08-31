@@ -7,12 +7,14 @@
  *
  * - `src/lib/mlb/percentileColorScale.ts` — the 8-tier favorable-percentile
  *   scale, tier resolution, sample-confidence gating, muted/capped fallbacks,
- *   and the legend array. Owns the favorable half (gold -> soft green) and the
- *   tier math. Its `computePercentileRanks` is the divide-by-`n` behaviour for
- *   large comparison populations (~100+ rows).
+ *   and the legend array. Owns the full goodness ramp — gold (elite) -> emerald
+ *   -> neutral slate -> red (poor) — and the tier math. Its
+ *   `computePercentileRanks` is the divide-by-`n` behaviour for large
+ *   comparison populations (~100+ rows).
  * - `WeeklyHeatTone` in `src/lib/fantasy/weekly/researchPresentation.ts` — the
- *   canonical ranking-table visual language. Reuses the MLB gold/green favorable
- *   fills and adds the red unfavorable half, plus rank -> band mapping.
+ *   canonical ranking-table visual language. It is a tone vocabulary over the
+ *   same `PERCENTILE_TIERS` fills (favorable and unfavorable both), plus
+ *   rank -> band mapping.
  *
  * Fixed small pools (32-team leagues; ~30-60-row position boards) use the
  * `n - 1` endpoint convention in `computeTeamPercentiles`

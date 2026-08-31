@@ -258,6 +258,139 @@ Progress (2026-08-31, Phase 8C — PGA):
   `.pga-picks-page` / `.pga-section-title` hooks. Heat compatibility coverage
   is in `src/lib/pga/pgaHeatCompatibility.test.ts`.
 4. **MLB**
+
+Progress (2026-08-31, Phase 8D — MLB):
+
+- **Audit outcome:** MLB mixes four color languages — JKB Heat percentile cells
+  (`MlbPercentileScoreCell` / `MlbBatterVsPitcher`, already correct), the
+  sanctioned hot/cold `MlbStatTone` red/blue palette, directional trend palettes
+  (pitcher regression green/blue; "lucky/unlucky" blue/orange), and identity
+  colors (team tints, sportsbook amber pricing tint). Classification:
+  - **Goodness (A):** `MlbLineupMiniStat` favorable AVG/OBP/SLG/K%,
+    `MlbTeamMiniCard` `row.better` record — both were painting *favorable*
+    values with the hot/cold red via `getStatToneClasses("positive")`. Corrected.
+  - **Hot/cold (B) — retained:** `MlbPitcherRegressionTable` regression score
+    (green = ERA likely to fall, blue = likely to rise) and lucky/unlucky stat
+    tints; intent now stated explicitly in a header comment. `MlbStatTone`
+    (`getStatToneClasses`) itself is unchanged — still the sanctioned
+    positive=red / negative=blue palette for genuinely hot/cold views.
+  - **Context / ambiguous (C) — deferred, reported:** `MlbParkContextPanel`
+    run/HR park-factor tone (`getStatToneFromFactor` → factor > 1 = red). A high
+    park factor is not "good" or "bad" without a perspective (favorable for
+    overs, unfavorable for pitching); left unchanged pending a decision.
+    `MlbSummaryCard` uses a constant `getStatToneClasses("positive")` as a
+    static edge-badge tint — decorative, not a goodness/hot-cold signal; left
+    unchanged. `MlbStatComparisonRow` bar coloring already uses the correct
+    favorable direction (green high / red low).
+- **Goodness-color correction (mechanical, thresholds unchanged):**
+  `getGoodnessToneStyle` / `MlbGoodnessTone` in `mlbDisplayHelpers.ts` is a
+  thin semantic adapter — it defines no colors, only a
+  `MlbGoodnessTone → WeeklyHeatTone` map (`favorable → light-green`,
+  `neutral → neutral`, `unfavorable → light-red`) and returns
+  `jkbHeatStyle(...)` from `@/lib/shared/jkbHeat`, so "favorable green" /
+  "unfavorable red" have one source of truth (the JKB Heat above-average /
+  average / below-average bands). `MlbLineupMiniStat` and `MlbTeamMiniCard`
+  apply it as an inline `style` (dropped their `border`+class treatment). No
+  threshold, data, or analytical-interpretation change — only the color
+  direction. `getStatToneClasses` / `getStatToneStyle` (sanctioned hot/cold)
+  untouched.
+- **Shared dense-table migration:** `MlbPitcherRegressionTable` now uses
+  `DenseTableScroller` (adds `role="region"` + `aria-label` + `tabIndex` +
+  focus ring + load-bearing `relative` — the bare `overflow-x-auto` div had
+  none) and `frozenDenseColumn` for its already-frozen Player column (z-30
+  header / z-10 body — byte-identical to the previous hand-rolled values). No
+  sticky header added (would be new behavior); row/header density classes left
+  as-is (shared `DENSE_TABLE_HEAD_ROW`/`DENSE_TABLE_ROW` would have been a
+  visual change, not a mechanical swap). Removed an unused `getMlbTeamColors`
+  import and the now-unused `cn` import.
+- **Percentile demo consolidation:** `MLBPercentileDemo.tsx` drops its bespoke
+  inline `percentileToClass` ramp (rose-high / blue-low / amber — not JKB Heat)
+  and renders every metric through the shared `PercentileCell` +
+  `PERCENTILE_TIER_LEGEND` legend. Direction preserved (K% lower-better, all
+  others higher-better — matches the old `100 - pct` inversion). The static
+  sample carries no sample sizes, so `bypassSampleGate` is passed with a code
+  comment (same pattern `MlbBatterVsPitcher` already uses for model scores);
+  colours intentionally change to the approved scale — exact parity with the
+  old ad-hoc ramp is not a goal.
+- **+EV tables deferred:** `HrPlusEvTable` / `KPlusEvTable` are bespoke
+  `table-fixed` + `colgroup` + per-group semantic tint systems with
+  KS-008-sensitive +EV emphasis; their scroller/sticky migration is not a
+  mechanical swap and needs its own pass with browser sign-off. `+EV`
+  terminology, labels, prices, ranks, model values, sorting, and filtering
+  untouched.
+- **performance-preview/*Table deferred:** `HrPerformanceTable`,
+  `NumerologyPerformanceTable`, `SinCityPerformanceTable`, `Top*PerformanceTable`
+  are a separate table family with their own shell (`tableColumns.ts`,
+  `MobileAccordionRows`) and grading semantics — own audit required.
+- **Tokens:** no token swaps. Team tints, sportsbook amber pricing tints, and
+  the hot/cold/trend palettes are identity/semantic, not generic-brand
+  candidates.
+- **Tests:** `mlbDisplayHelpers.test.ts` proves `getGoodnessToneStyle` is
+  `toEqual` the shared `jkbHeatStyle` bands (not a separate palette) and that
+  the hot/cold API is unchanged; `MlbLineupMiniStat.test.tsx` +
+  `MlbTeamMiniCard.test.tsx` (favorable renders the shared green fill, never
+  red); `MLBPercentileDemo.test.tsx` (shared PercentileCell + legend + K%
+  lower-better parity); shared scroll-region assertion added to
+  `MlbPitcherRegressionTable.test.tsx`. All green (targeted MLB + jkbHeat +
+  dense-table suites, 47 tests in the focused run).
+- **Known pre-existing blocker (reported, not fixed):**
+  `src/lib/mlb/mlbPitcherRegression.ts` has a committed syntax corruption (a
+  duplicated `PitcherRegressionData` member block after the closing `};`, commit
+  `14a05de9`) that makes `tsc -p tsconfig.app.json` bail at parse. `tsc -p
+  tsconfig.app.json` also has dozens of other unrelated errors on this branch.
+  `vite build` and `tsc -p tsconfig.node.json` are clean. Removing the dupe
+  block additionally surfaces a latent `xera`-missing error in
+  `buildPitcherRegressionData` — both are model-file issues outside this pass.
+
+Progress (2026-08-31, Phase 8D-2 — JKB Heat authority reconciliation):
+
+- **Mismatch resolved:** `src/lib/mlb/percentileColorScale.ts` `PERCENTILE_TIERS`
+  rendered the unfavorable half (`belowAverage` / `weak` / `poor`) **blue**,
+  while KS-010, TABLE_CONVENTIONS §D, and `WeeklyHeatTone` all say the
+  unfavorable half is **red**. `PercentileCell` consumed the blue styles
+  directly. The canonical goodness scale is now gold → emerald → neutral slate
+  → **red** end to end.
+- **Consumer audit — every consumer of `PERCENTILE_TIERS` styles /
+  `getPercentileTier` / `resolvePercentileDisplay` / `PERCENTILE_TIER_LEGEND` is
+  goodness/favorability**, none is hot/cold: `PercentileCell`
+  (`MlbBatterVsPitcher`, `MlbHrProps`, `MlbStrikeoutProps`, `MLBPercentileDemo`),
+  `BatterExpandedDetails` (explicit `direction`), `pgaScoreColorScale`
+  (`getPgaScoreTier` → PGA model-score tier), `researchPresentation`
+  `WeeklyHeatTone` favorable half, and the three legends. Nothing needed to be
+  split off. `PgaHub`'s local `PercentileCell` / `getPercentileStyles` and
+  `PgaHistoryModelTable`'s per-cell `percentileHeatClass` are `pgaHeatColors`
+  and untouched (their "Score tiers" legend and `Score` cell go through
+  `PERCENTILE_TIERS` and do pick up the red — see PGA impact).
+- **Core change (styles only — zero threshold / math / gating change):**
+  `PERCENTILE_TIERS[belowAverage|weak|poor].style` set to the exact red values
+  that `WeeklyHeatTone` already used for `light-red` / `red` / `strong-red`.
+  `researchPresentation.ts` now derives those three fills via
+  `mlbTier("belowAverage"/"weak"/"poor")` instead of duplicate literals — so
+  `weeklyHeatStyle` / `weeklyHeatTextClass` / `getGoodnessToneStyle` output is
+  **byte-identical**, and `PERCENTILE_TIERS` is the single source for the whole
+  ramp. `98/95/80/60/40/25/10/0` cutoffs, `computePercentileRanks`,
+  `higherBetter`/`lowerBetter`, `SMALL_SAMPLE_STYLE`, `capTierForSampleUnavailable`,
+  `muteTierStyle`, missing-handling all unchanged.
+- **jkbHeat.ts:** no code change — `TIER_TO_WEEKLY_HEAT_TONE` and
+  `JKB_HEAT_LEGEND` (derived from `PERCENTILE_TIER_LEGEND`) were already correct
+  and now can't disagree with the cells. Header comment updated.
+- **MLB hot/cold exception preserved:** `MlbStatTone` / `getStatToneClasses` /
+  `getStatToneStyle` (positive = red, negative = blue/sky) untouched.
+- **PGA impact:** `pgaScoreColorScale.getPgaScoreTier` feeds
+  `PgaHistoryModelTable`'s `Score` cell (Score view) and the "Score tiers"
+  legend. Model-score percentiles below the 40th now paint **red instead of
+  blue** (below-average rose / weak red / poor `#dc2626`). This is a
+  goodness display (a lower model score is genuinely worse), so it should
+  follow JKB Heat — it is a correction, not a regression. Per-cell
+  `pgaHeatColors` / `rankColors` NOT migrated (explicit out-of-scope).
+- **Docs:** `TABLE_CONVENTIONS.md` §D source-of-truth bullets rewritten (the
+  scale owns the full gold→red ramp; `WeeklyHeatTone` is a vocabulary over it);
+  stale "blue counter-scale" comment removed from `researchPresentation.ts`.
+- **Tests:** boundary + red-not-blue assertions added to
+  `percentileColorScale.test.ts`, `jkbHeat.test.ts`,
+  `MlbPercentileScoreCell.test.tsx`; `researchPresentation.test.ts` gains a
+  full favorable+unfavorable derivation cross-check.
+
 5. **Fantasy**, then any remaining surfaces (Bracket / World Cup / Home / SEO
    pages) as appropriate.
 
@@ -287,7 +420,7 @@ Progress (2026-08-31, Phase 8C — PGA):
 | ~~Dead Vite starter CSS~~ (done: file deleted, no import existed) | `src/App.css` | 4 |
 | Roomy shadcn `ui/table` vs hand-rolled dense tables | `src/components/ui/table.tsx` + per-sport tables | 5 (shared primitive: `ui/dense-table.tsx` done), 8 |
 | Duplicated sticky/frozen logic | multiple table components | 6 (shared helper done; `FantasyPointsAllowed` migrated), 8 |
-| Duplicate percentile/heat implementations | `pga/pgaHeatColors.ts`, `pga/rankColors.ts`, `cfb/sosPresentation.ts`, `MLBPercentileDemo.tsx`, `fantasy/rankingPresentation.ts` | 7 |
+| Duplicate percentile/heat implementations (`MLBPercentileDemo.tsx` done: now uses shared `PercentileCell` + legend, Phase 8D) | `pga/pgaHeatColors.ts`, `pga/rankColors.ts`, `cfb/sosPresentation.ts`, ~~`MLBPercentileDemo.tsx`~~, `fantasy/rankingPresentation.ts` | 7 |
 | Percentile denominator convention undocumented at call sites | `percentileColorScale.ts` vs `teamPercentiles.ts` / `ppgPercentile.ts` | 7 (doc done in Phase 1; enforce in review) |
 | Radius scale bypassed (`rounded-[30px]`, `[24px]`, `12px`, `20px`) | `src/index.css` + components | 3 / 8 (opportunistic) |
 | Dark mode half-wired (`darkMode:["class"]`, no `:root` `.dark` block) | `tailwind.config.ts` / `src/index.css` | out of scope (KS-012) |

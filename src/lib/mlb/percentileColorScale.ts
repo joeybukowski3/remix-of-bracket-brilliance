@@ -1,5 +1,9 @@
 /**
- * Shared 8-tier percentile color scale for comparative MLB table cells.
+ * Shared 8-tier percentile color scale for comparative MLB table cells, and the
+ * site-wide source of truth for JKB Heat goodness fills: gold (elite) → emerald
+ * (favorable) → neutral slate (mid) → red (unfavorable). Direction is always
+ * favorable-percentile based (KS-010); this is not a hot/cold scale — the
+ * sanctioned red-hot / blue-cold palette is `MlbStatTone` in mlbDisplayHelpers.
  * Deterministic pure helpers — no React dependency.
  */
 
@@ -120,9 +124,10 @@ export const PERCENTILE_TIERS: readonly PercentileTier[] = [
     label: "Below Average",
     minFavorablePercentile: 25,
     style: {
-      backgroundColor: "rgba(96, 165, 250, 0.22)",
-      color: "#1e40af",
-      border: "1px solid rgba(59, 130, 246, 0.2)",
+      // Soft red wash — unfavorable is red, not blue (KS-010 / TABLE_CONVENTIONS D)
+      backgroundColor: "rgba(251, 113, 133, 0.18)",
+      color: "#9f1239",
+      border: "1px solid rgba(244, 63, 94, 0.22)",
     },
   },
   {
@@ -130,9 +135,9 @@ export const PERCENTILE_TIERS: readonly PercentileTier[] = [
     label: "Weak",
     minFavorablePercentile: 10,
     style: {
-      backgroundColor: "rgba(37, 99, 235, 0.42)",
-      color: "#1e3a8a",
-      border: "1px solid rgba(37, 99, 235, 0.28)",
+      backgroundColor: "rgba(239, 68, 68, 0.38)",
+      color: "#7f1d1d",
+      border: "1px solid rgba(220, 38, 38, 0.32)",
     },
   },
   {
@@ -140,9 +145,9 @@ export const PERCENTILE_TIERS: readonly PercentileTier[] = [
     label: "Poor",
     minFavorablePercentile: 0,
     style: {
-      backgroundColor: "#1d4ed8",
+      backgroundColor: "#dc2626",
       color: "#ffffff",
-      border: "1px solid rgba(29, 78, 216, 0.35)",
+      border: "1px solid rgba(153, 27, 27, 0.45)",
     },
   },
 ] as const;
