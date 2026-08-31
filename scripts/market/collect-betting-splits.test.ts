@@ -12,9 +12,11 @@ const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
 const VITE_NODE_CLI = resolve(REPO_ROOT, "node_modules", "vite-node", "dist", "cli.mjs");
 const COLLECT = resolve(REPO_ROOT, "scripts", "market", "collect-betting-splits.ts");
 const PUBLISH = resolve(REPO_ROOT, "scripts", "market", "publish-betting-splits.ts");
+const REFRESH = resolve(REPO_ROOT, "scripts", "market", "refresh-betting-splits.ts");
 
 const collectSrc = readFileSync(COLLECT, "utf8");
 const publishSrc = readFileSync(PUBLISH, "utf8");
+const refreshSrc = readFileSync(REFRESH, "utf8");
 
 function run(script: string, args: string[], env: Record<string, string | undefined>) {
   try {
@@ -82,4 +84,54 @@ describe("publish-betting-splits.ts — source guarantees", () => {
   it("never touches the SportsDataIO client or network", () => {
     expect(publishSrc).not.toMatch(/sportsDataIoClient|SPORTSDATAIO_API_KEY|fetch\(/);
   });
+});
+
+describe("refresh-betting-splits.ts — source + CLI guarantees", () => {
+  it("orchestrates the existing modules rather than reimplementing them", () => {
+    expect(refreshSrc).toContain("runBettingSplitsRefresh");
+    expect(refreshSrc).toContain("createSportsDataIoClient");
+    expect(refreshSrc).toContain("createBettingSplitFileStore");
+    expect(refreshSrc).not.toMatch(/decodeSportsDataIoNflSchedule|normalizeSportsDataIoBettingSplits/);
+  });
+
+  it("does not depend on the Scores ScoresByWeek feed", () => {
+    expect(refreshSrc).not.toMatch(/ScoresByWeek|getNflScoresByWeek/);
+    expect(collectSrc).not.toMatch(/ScoresByWeek|getNflScoresByWeek/);
+  });
+
+  it("reads the API key from the environment only and never logs it", () => {
+    expect(refreshSrc).toContain("process.env.SPORTSDATAIO_API_KEY");
+    expect(refreshSrc).not.toMatch(/console\.(log|warn|error)\([^)]*apiKey/i);
+  });
+
+  it("reuses the existing nflverse schedule artifact — no second NFL schedule source", () => {
+    expect(refreshSrc).toContain("public/data/nfl/${season}/games.json");
+    expect(refreshSrc).not.toMatch(/v3\/cfb\//);
+  });
+
+  it("rejects --league cfb without making a request", () => {
+    const result = run(REFRESH, ["--league", "cfb", "--season", "2026", "--week", "1"], {
+      SPORTSDATAIO_API_KEY: "irrelevant",
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toMatch(/only --league nfl is supported/i);
+  }, 20000);
+
+  it("fails closed when SPORTSDATAIO_API_KEY is missing", () => {
+    const result = run(REFRESH, ["--league", "nfl", "--season", "2026", "--week", "1", "--dry-run"], {
+      SPORTSDATAIO_API_KEY: "",
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toMatch(/SPORTSDATAIO_API_KEY is required/);
+  }, 20000);
+
+  it("forwards --season-type and rejects an invalid one", () => {
+    const result = run(
+      REFRESH,
+      ["--league", "nfl", "--season", "2026", "--week", "1", "--season-type", "BOGUS"],
+      { SPORTSDATAIO_API_KEY: "irrelevant" },
+    );
+    expect(result.status).toBe(1);
+    expect(result.stderr).toMatch(/--season-type must be REG, PRE or POST/);
+  }, 20000);
 });
