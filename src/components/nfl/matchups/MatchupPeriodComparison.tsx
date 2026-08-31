@@ -1,10 +1,14 @@
-import { useState } from "react";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
-import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
+import CompactMatchupMetricRow from "@/components/nfl/matchups/CompactMatchupMetricRow";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
+import {
+  describeMetricAdvantage,
+  type MatchupSuccessRateSource,
+} from "@/components/nfl/matchups/matchupDisplayMetrics";
+import { classifyMetricComparison } from "@/lib/nfl/matchupCategoryAdvantage";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup } from "@/lib/nfl/matchups";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   SUCCESS_PERIOD_LABELS,
   SUCCESS_RATE_METRIC_KEYS,
@@ -53,10 +57,9 @@ export default function MatchupPeriodComparison({
   successRate: MatchupSuccessRateSource;
   note: string;
 }) {
+  const isMobile = useIsCompactLayout("(max-width: 639px)");
   const { away, home } = matchup;
   const periods = successRate.periods;
-  const [openMetric, setOpenMetric] = useState<string | null>(SUCCESS_RATE_METRIC_KEYS[0] ?? null);
-
   const rows = SUCCESS_RATE_METRIC_KEYS.map((key) => ({
     key,
     label: getMetricDef(key)?.label ?? key,
@@ -74,8 +77,8 @@ export default function MatchupPeriodComparison({
       bodyClassName="px-0 py-0 sm:px-0"
     >
 
-      {/* Table where the width exists. */}
-      <div className="hidden px-3 py-3 sm:block sm:px-4">
+      {!isMobile ? (
+      <div className="px-3 py-3 sm:px-4">
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">
             Published success rates for {away.teamName} and {home.teamName} across each visible
@@ -122,43 +125,42 @@ export default function MatchupPeriodComparison({
           </tbody>
         </table>
       </div>
+      ) : (<>
 
-      {/* One metric at a time below `sm`, both teams paired under each period. */}
-      <div className="sm:hidden">
-        {rows.map((row) => (
-          <MatchupCollapsibleGroup
-            key={row.key}
-            id={`success-period-${row.key.replace(/\./g, "-")}`}
-            triggerId={`success-period-${row.key.replace(/\./g, "-")}-trigger`}
-            title={row.label}
-            meta={`${periods.length} period${periods.length === 1 ? "" : "s"}`}
-            open={openMetric === row.key}
-            onToggle={() => setOpenMetric((current) => (current === row.key ? null : row.key))}
-          >
-            <div className="space-y-2">
-              {periods.map((period, index) => (
-                <div key={period} className="rounded border border-slate-200 bg-slate-50 px-2.5 py-2">
-                  <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-600">
-                    {SUCCESS_PERIOD_LABELS[period].label}
-                  </div>
-                  <div className="mt-1 flex items-center justify-between gap-2 border-b border-slate-200 pb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                      {away.abbr.toUpperCase()}
-                    </span>
-                    <ValueCell value={row.away[index]} />
-                  </div>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                      {home.abbr.toUpperCase()}
-                    </span>
-                    <ValueCell value={row.home[index]} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </MatchupCollapsibleGroup>
-        ))}
+      {/* Dense phone sheet: one directly comparable row per metric and period. */}
+      <div className="divide-y divide-slate-200">
+        {rows.flatMap((row) => periods.map((period, index) => {
+          const awayValue = row.away[index];
+          const homeValue = row.home[index];
+          const direction = getMetricDef(row.key)?.direction ?? "context-only";
+          const comparison = classifyMetricComparison({
+            key: row.key,
+            direction,
+            awayValue: awayValue?.pct ?? null,
+            homeValue: homeValue?.pct ?? null,
+          });
+          return (
+            <CompactMatchupMetricRow
+              key={`${row.key}-${period}`}
+              label={row.shortLabel ?? row.label}
+              sublabel={SUCCESS_PERIOD_LABELS[period].short}
+              away={{
+                formatted: formatSuccessRate(awayValue),
+                rank: awayValue?.rank ?? null,
+                accessibleName: away.teamName,
+              }}
+              home={{
+                formatted: formatSuccessRate(homeValue),
+                rank: homeValue?.rank ?? null,
+                accessibleName: home.teamName,
+              }}
+              winner={comparison}
+              advantageText={describeMetricAdvantage(comparison, away.abbr, home.abbr)}
+            />
+          );
+        }))}
       </div>
+      </>)}
 
       <p className="border-t border-slate-100 px-3 py-2 text-[11px] leading-4 text-slate-600 sm:px-4">
         Periods switch together for both teams once each has six completed current-season games, so

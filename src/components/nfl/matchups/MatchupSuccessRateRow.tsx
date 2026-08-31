@@ -1,4 +1,5 @@
 import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
+import CompactMatchupMetricRow from "@/components/nfl/matchups/CompactMatchupMetricRow";
 import {
   MATCHUP_METRIC_LABEL,
   MATCHUP_PERIOD_CAPTION,
@@ -13,6 +14,7 @@ import {
   type SuccessMetricValue,
   type SuccessPeriodKey,
 } from "@/lib/nfl/successRateData";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 
 export type SuccessPeriodValues = Partial<Record<SuccessPeriodKey, SuccessMetricValue | null>>;
 
@@ -80,9 +82,10 @@ export default function MatchupSuccessRateRow({
   awayTeamName: string;
   homeTeamName: string;
 }) {
+  const isMobile = useIsCompactLayout("(max-width: 639px)");
   return (
     <div className="border-b border-slate-100 py-1.5 last:border-0">
-      <div className="mb-0.5 text-center" title={help}>
+      {!isMobile && <div className="mb-0.5 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (
           <>
             <span className={`block sm:hidden ${MATCHUP_METRIC_LABEL}`}>
@@ -97,12 +100,30 @@ export default function MatchupSuccessRateRow({
             {metricLabel}
           </span>
         )}
-      </div>
+      </div>}
 
       {periods.map((period) => {
         const labels = SUCCESS_PERIOD_LABELS[period];
         return (
-          <div key={period} className={MATCHUP_UNIT_ROW_GRID}>
+          <div key={period}>
+            {isMobile ? (
+            <CompactMatchupMetricRow
+              label={shortLabel ?? metricLabel}
+              sublabel={labels.short}
+              away={{
+                formatted: formatSuccessRate(awayValues[period] ?? null),
+                rank: awayValues[period]?.rank ?? null,
+                accessibleName: awayTeamName,
+              }}
+              home={{
+                formatted: formatSuccessRate(homeValues[period] ?? null),
+                rank: homeValues[period]?.rank ?? null,
+                accessibleName: homeTeamName,
+              }}
+              help={help}
+            />
+            ) : (
+            <div className={`grid ${MATCHUP_UNIT_ROW_GRID}`}>
             <div className={`px-2 py-2 sm:px-4 ${MATCHUP_ROW_AWAY_CELL}`}>
               <PeriodSide
                 side="away"
@@ -125,6 +146,8 @@ export default function MatchupSuccessRateRow({
                 periodLabel={labels.label}
               />
             </div>
+            </div>
+            )}
           </div>
         );
       })}

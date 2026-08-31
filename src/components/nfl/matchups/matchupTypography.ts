@@ -25,7 +25,7 @@ export const MATCHUP_EYEBROW =
 
 /** Section title. Reference: 22px/800. */
 export const MATCHUP_SECTION_TITLE =
-  "text-[22px] font-extrabold leading-tight tracking-[-0.01em] text-slate-900";
+  "text-[14px] font-extrabold uppercase leading-tight tracking-[0.01em] text-slate-900";
 
 /** Section subtitle beneath the title. Reference: 13px. */
 export const MATCHUP_SECTION_SUB = "text-[13px] leading-5 text-slate-500";
@@ -37,7 +37,7 @@ export const MATCHUP_SECTION_SUB = "text-[13px] leading-5 text-slate-500";
  * its rank figure are the two things a reader compares, and they must be
  * visually identical. Reference: 20px/800.
  */
-export const MATCHUP_PRIMARY_TEXT = "text-[20px]";
+export const MATCHUP_PRIMARY_TEXT = "text-[13px]";
 
 /**
  * The centred metric name — "EPA / Play", "Pass Block vs Pass Rush".
@@ -51,10 +51,10 @@ export const MATCHUP_METRIC_LABEL = `${MATCHUP_PRIMARY_TEXT} font-extrabold lead
  * Reference: 12px/700. It was 9px, far too small against a 20px label.
  */
 export const MATCHUP_PERIOD_CAPTION =
-  "text-[12px] font-bold tracking-[0.04em] text-slate-500";
+  "text-[10px] font-bold tracking-[0.04em] text-slate-500";
 
 /** The raw value beside a rank. Secondary to the rank. Reference: 14px/700. */
-export const MATCHUP_VALUE_TEXT = "text-[14px] font-bold tabular-nums text-slate-600";
+export const MATCHUP_VALUE_TEXT = "text-[11px] font-bold tabular-nums text-slate-600";
 
 /**
  * Unit panel header — team name plus role.
@@ -63,7 +63,7 @@ export const MATCHUP_VALUE_TEXT = "text-[14px] font-bold tabular-nums text-slate
  * shipped page had this inverted, with a 17px header over 22px rows.
  */
 export const MATCHUP_PANEL_TITLE =
-  "text-[22px] font-extrabold leading-tight text-slate-900";
+  "text-[15px] font-extrabold leading-tight text-slate-900";
 
 /** "Attacking" / "Defending" under a panel title. Reference: 12px/800. */
 export const MATCHUP_PANEL_CAPTION =
@@ -71,7 +71,7 @@ export const MATCHUP_PANEL_CAPTION =
 
 /** Group band inside a unit panel. Reference: slate ink, 15px/900, 0.14em. */
 export const MATCHUP_GROUP_BAND =
-  "bg-slate-800 px-4 py-[9px] text-center text-[15px] font-black uppercase tracking-[0.14em] text-slate-50";
+  "bg-slate-800 px-3 py-[7px] text-center text-[12px] font-black uppercase tracking-[0.1em] text-slate-50";
 
 // ---------------------------------------------------------------------------
 // Row geometry
@@ -94,11 +94,11 @@ export const MATCHUP_GROUP_BAND =
  * Side columns narrow below `sm`, where 230px would not fit at all.
  */
 export const MATCHUP_UNIT_ROW_GRID =
-  "mx-auto grid w-full max-w-[1080px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[230px_minmax(0,1fr)_230px] sm:gap-x-0";
+  "mx-auto grid w-full max-w-[1080px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[minmax(72px,0.7fr)_minmax(0,1.25fr)_minmax(72px,0.7fr)] sm:gap-x-0";
 
 /** Statistical Comparison is the narrower of the two. Reference: 780 / 190. */
 export const MATCHUP_STAT_ROW_GRID =
-  "mx-auto grid w-full max-w-[780px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[190px_minmax(0,1fr)_190px] sm:gap-x-0";
+  "mx-auto grid w-full max-w-[780px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[minmax(72px,0.75fr)_minmax(0,1.2fr)_minmax(72px,0.75fr)] sm:gap-x-0";
 
 /**
  * Rank chip geometry at the headline size.
@@ -108,7 +108,7 @@ export const MATCHUP_STAT_ROW_GRID =
  * minWidth 74, radius 10, 2px border.
  */
 export const MATCHUP_PRIMARY_BADGE =
-  "min-w-[74px] rounded-[10px] border-2 px-3.5 py-[5px]";
+  "min-w-[48px] rounded px-2 py-[3px]";
 
 
 /** Label cell: spans the stacked row on mobile, centre column from `sm` up. */

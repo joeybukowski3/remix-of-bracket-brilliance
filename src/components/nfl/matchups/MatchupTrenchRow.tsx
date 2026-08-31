@@ -1,4 +1,5 @@
 import MatchupValuePills from "@/components/nfl/matchups/MatchupValuePills";
+import CompactMatchupMetricRow from "@/components/nfl/matchups/CompactMatchupMetricRow";
 import {
   MATCHUP_METRIC_LABEL,
   MATCHUP_PERIOD_CAPTION,
@@ -15,6 +16,7 @@ import {
   type TrenchMetricsArtifact,
   type TrenchPeriodKey,
 } from "@/lib/nfl/trenchMetricsData";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 
 export type TrenchPeriodValues = Partial<Record<TrenchPeriodKey, TrenchMetricValue | null>>;
 
@@ -93,9 +95,10 @@ export default function MatchupTrenchRow({
   awayTeamName: string;
   homeTeamName: string;
 }) {
+  const isMobile = useIsCompactLayout("(max-width: 639px)");
   return (
     <div className="border-b border-slate-100 py-1.5 last:border-0">
-      {showMetricLabel && (
+      {showMetricLabel && !isMobile && (
       <div className="mb-0.5 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (
           <>
@@ -117,7 +120,25 @@ export default function MatchupTrenchRow({
       {periods.map((period) => {
         const labels = trenchPeriodLabel(artifact, period);
         return (
-          <div key={period} className={MATCHUP_UNIT_ROW_GRID}>
+          <div key={period}>
+            {isMobile ? (
+            <CompactMatchupMetricRow
+              label={shortLabel ?? metricLabel}
+              sublabel={labels.short}
+              away={{
+                formatted: formatTrenchValue(awayValues[period] ?? null),
+                rank: awayValues[period]?.espnRank ?? null,
+                accessibleName: awayTeamName,
+              }}
+              home={{
+                formatted: formatTrenchValue(homeValues[period] ?? null),
+                rank: homeValues[period]?.espnRank ?? null,
+                accessibleName: homeTeamName,
+              }}
+              help={help}
+            />
+            ) : (
+            <div className={`grid ${MATCHUP_UNIT_ROW_GRID}`}>
             <div className={`px-2 py-2 sm:px-4 ${MATCHUP_ROW_AWAY_CELL}`}>
               <TrenchPeriodSide
                 side="away"
@@ -140,6 +161,8 @@ export default function MatchupTrenchRow({
                 periodLabel={labels.label}
               />
             </div>
+            </div>
+            )}
           </div>
         );
       })}
