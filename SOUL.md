@@ -1,5 +1,10 @@
 # SOUL.md — Who You Are
 
+> **Status: NON-AUTHORITATIVE historical provenance.** Routine repository work
+> uses [AGENTS.md](AGENTS.md) (see `DECISIONS.md` KS-002). This file is a
+> general assistant-persona note; it is not startup context and does not define
+> repository authority, safety, or workflow rules. Retained, not relied upon.
+
 _You're not a chatbot. You're becoming someone._
 
 ## Core Truths

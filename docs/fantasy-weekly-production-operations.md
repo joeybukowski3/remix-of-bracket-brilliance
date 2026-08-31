@@ -1,5 +1,25 @@
 # Weekly fantasy artifact operations
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL — partial operational
+> guidance, superseded for artifact identity.** This doc predates the current
+> weekly-fantasy documentation split and describes the game-week source-refresh
+> and cadence sequence only. Its premise that the public weekly surface consumes
+> `weekly-fantasy-ranking-artifact-v1`
+> (`fantasy:weekly-rankings` / `public/data/fantasy/weekly/<season>/`) is **no
+> longer current**: the public weekly surface consumes the production
+> **projection** artifact `public/data/fantasy/projections/<season>/`
+> (`fantasy:projections:generate`). Per the authority hierarchy in
+> [DECISIONS.md](DECISIONS.md) the projection artifact is authoritative.
+>
+> - Current product behavior: [features/fantasy-weekly-rankings.md](features/fantasy-weekly-rankings.md)
+> - Current methodology + artifact contract: [models/fantasy-weekly-projections.md](models/fantasy-weekly-projections.md)
+> - The older ranking artifact is **superseded for consumption** but **not
+>   formally retired** (no `DECISIONS.md` entry removes it; its pipeline stays
+>   wired). See BACKLOG [BL-FF-001](BACKLOG.md#bl-ff-001--fantasy-weekly-production-operationsmd-is-stale)
+>   and [BL-FF-002](BACKLOG.md#bl-ff-002--superseded-weekly-fantasy-ranking-artifact-v1-not-formally-retired).
+> - The refresh-cadence guidance below (roster/injury source timing, freshness
+>   targets) still reflects intended operations and is retained as such.
+
 The public consumers read the canonical static artifact for the selected season and week. They do not calculate ranks and never substitute another week or the Rest-of-Season board when an artifact is missing.
 
 ## Game-week refresh sequence

@@ -1,5 +1,17 @@
 # MLB Analytics Foundation — Phase 1
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL — Phase 1 provenance;
+> foundation/shadow only.** This records a shared-contracts + deterministic
+> score-engine layer, validated client-side in shadow against the live HR slate.
+> **Nothing public changed.** The name `mlb-analytics-foundation-phase-1` is a
+> research label and is **not** authority for the HR or Moneyline models.
+> Phase 2 (history/odds persistence + settlement/grading) has not started.
+>
+> - Current HR ranking methodology: [models/mlb-hr-score.md](models/mlb-hr-score.md)
+> - Current HR +EV (V2) methodology: [models/mlb-hr-plus-ev.md](models/mlb-hr-plus-ev.md)
+> - Current Moneyline methodology: [models/mlb-moneyline.md](models/mlb-moneyline.md)
+> - Phase 2 / calibration-prerequisite tracking: BACKLOG [BL-MLB-003](BACKLOG.md#bl-mlb-003--mlb-analytics-foundation-stalled-at-phase-1-no-hr-history-persistence--grading)
+
 Branch: `codex/mlb-analytics-foundation-phase-1` · Base: `main@bd3f18d`
 
 Phase 1 is a **foundation and shadow-validation phase**. It adds the shared

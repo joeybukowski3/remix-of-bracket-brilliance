@@ -1,5 +1,11 @@
 # USER.md — About Your Human
 
+> **Status: NON-AUTHORITATIVE historical provenance.** Routine repository work
+> uses [AGENTS.md](AGENTS.md) (see `DECISIONS.md` KS-002). Some details here are
+> stale (e.g. repo name, a flat "Deployment: Vercel" claim that `OPEN-001`
+> leaves unresolved). Do not treat this file as current project or deployment
+> authority; `docs/PROJECT.md` and `docs/ARCHITECTURE.md` own that.
+
 ## Basic Info
 - **Name: Joey 
 - **What to call them: Joey

@@ -1,5 +1,15 @@
 # MLB K Projection V2 Shadow UI Validation
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL — validation snapshot
+> (2026-07-23).** Records a browser-check pass of the internal `?debug=k-v2`
+> shadow comparison UI. K Projection V2 (`workload-team-k-v3`) **remains
+> shadow-only** (`kProjectionMode: "shadow"`); promotion criteria are unrecorded.
+> **Not** current authority.
+>
+> - Current K methodology and V2 status: [models/mlb-k-score.md](models/mlb-k-score.md)
+> - Current K-props surface contract: [features/mlb-k.md](features/mlb-k.md)
+> - Promotion-decision gap: BACKLOG [BL-MLB-002](BACKLOG.md)
+
 Date: 2026-07-23
 
 Branch: NewKProp

@@ -1,5 +1,14 @@
 # MLB Strikeout Projection Audit
 
+> **Status (2026-08-31 knowledge audit): HISTORICAL — audit snapshot
+> (2026-07-23).** Point-in-time inventory of the K-props data path and source
+> feasibility. **Not** current methodology or feature authority.
+>
+> - Current K methodology (projectedKs, K Score, K value sort; V2 shadow status;
+>   dormant K +EV V1): [models/mlb-k-score.md](models/mlb-k-score.md)
+> - Current K-props surface contract: [features/mlb-k.md](features/mlb-k.md)
+> - Open items: BACKLOG [BL-MLB-001](BACKLOG.md), [BL-MLB-002](BACKLOG.md)
+
 Date: 2026-07-23
 Branch: NewKProp
 Production base audited: origin/main at f55bd07fc486c46b08c25698a9edfcc980011008
