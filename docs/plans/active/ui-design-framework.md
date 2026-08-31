@@ -140,6 +140,34 @@ Progress (2026-08-31):
 Apply Phases 5–7 primitives per sport, mechanically, in this order:
 
 1. **NFL** (reference implementation — least work)
+
+Progress (2026-08-31, Phase 8A — NFL):
+
+- **Audit outcome:** the primary NFL data tables (`NFLStandings`,
+  `NFLTeamSchedules`, `NflYardageReviewTable`, and the other `pages/NFL*`
+  boards) already consume `NflTableScroller` / `NFL_TABLE_HEAD_ROW` /
+  `NFL_TABLE_ROW`, which since Phase 5 are thin re-exports of the shared
+  `@/components/ui/dense-table` primitives. No behavior duplication remains
+  there, so their import paths were left on the `nfl/ui/NflTable` shim
+  (changing them would be import aesthetics only, explicitly out of scope).
+- **Migrated (mechanical, real behavior gap closed):** the two Yardage Props
+  Review detail-panel history tables —
+  `src/components/nfl/yardage-review/NflYardagePlayerLast10Table.tsx` and
+  `NflYardageOpponentLast10Table.tsx` — were on a bare `overflow-x-auto` div
+  (not keyboard-reachable, not announced, unpositioned ancestor). They now use
+  `DenseTableScroller` (adds `role="region"`, `aria-label`, `tabIndex`,
+  `relative`, focus ring). Column set, order, data, heat, footer, and the
+  `rounded-md border-2 border-slate-300` shell are unchanged; tests added for
+  the scroll-region contract.
+- **Navigation reviewed, no change needed:** `NflSectionSidebar` /
+  `NflMobileMenu` (single nav surface, Radix Sheet, `top-[73px]` below the
+  header, auto-close on route change), `MatchupTabRow` and `MatchupJumpNav`
+  (both `sticky` at `MATCHUP_STICKY_NAV_TOP`, `z-30` below `SiteHeader`
+  `z-[100]`) already match UI_FRAMEWORK.md §E.
+- **Deferred:** `NflDfsAnalyzerTable` (hand-rolled `sticky top-0 z-10` thead +
+  bare `overflow-x-auto` on the `FANTASY_TABLE_SHELL` div) — its table shell is
+  a shared Fantasy primitive, so a clean migration belongs with the Fantasy
+  pass, not NFL. CFB/PGA/MLB/Fantasy per-sport work unstarted.
 2. **CFB**
 3. **PGA** (keep `.pga-*` editorial identity; only heat cells + table shell
    consolidate)

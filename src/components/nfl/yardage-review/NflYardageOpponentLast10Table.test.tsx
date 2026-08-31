@@ -72,4 +72,11 @@ describe("NflYardageOpponentLast10Table column order", () => {
     render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
     expect(screen.getByText("Last 10 Avg")).toBeInTheDocument();
   });
+
+  it("contains horizontal overflow in the shared keyboard-reachable dense-table scroll region", () => {
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
+    const region = screen.getByRole("region", { name: /SEA defense last 1 vs QB/i });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region.className).toContain("overflow-x-auto");
+  });
 });

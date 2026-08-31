@@ -15,6 +15,7 @@ import {
   formatSignedDiff,
 } from "@/lib/nfl/props/review/yardageHistoryView";
 import { historicalDefRankHeatTone } from "@/lib/nfl/props/review/yardageHeat";
+import { DenseTableScroller } from "@/components/ui/dense-table";
 import {
   NflYardageActualYardsCell,
   NflYardageGameScoreCell,
@@ -68,7 +69,10 @@ export default function NflYardagePlayerLast10Table({
         {playerName} — Last {history.games.length} Games
       </h4>
       <NflYardageLast10SummaryStrip summary={summary} />
-      <div className="overflow-x-auto rounded-md border-2 border-slate-300">
+      <DenseTableScroller
+        label={`${playerName} last ${history.games.length} games`}
+        className="rounded-md border-2 border-slate-300"
+      >
         <table className="w-full min-w-[820px] border-collapse text-[11px]">
           <thead>
             <tr className="border-b-2 border-slate-300 bg-slate-200/70 text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
@@ -164,7 +168,7 @@ export default function NflYardagePlayerLast10Table({
             </tr>
           </tfoot>
         </table>
-      </div>
+      </DenseTableScroller>
     </div>
   );
 }
