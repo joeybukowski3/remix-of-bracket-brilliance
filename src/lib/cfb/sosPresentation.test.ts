@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSosBand, getSosHeatClass } from "./sosPresentation";
+import { SOS_HEAT_LEGEND, getSosBand, getSosHeatClass } from "./sosPresentation";
 
 describe("CFB SOS presentation", () => {
   it.each([
@@ -29,5 +29,20 @@ describe("CFB SOS presentation", () => {
   it("keeps null SOS Played neutral with no heatmap background", () => {
     expect(getSosHeatClass(null)).toBe("text-slate-500");
     expect(getSosHeatClass(null)).not.toContain("bg-");
+  });
+
+  it("legend rows are generated from the same band styles the cells use", () => {
+    expect(SOS_HEAT_LEGEND.map((r) => r.band)).toEqual([
+      "strong-difficult",
+      "moderate-difficult",
+      "neutral",
+      "moderate-easy",
+      "strong-easy",
+    ]);
+    for (const row of SOS_HEAT_LEGEND) {
+      // rank at the start of each band must resolve to that band's className
+      const probe = { "strong-difficult": 1, "moderate-difficult": 26, neutral: 51, "moderate-easy": 89, "strong-easy": 114 }[row.band];
+      expect(getSosHeatClass(probe)).toBe(row.className);
+    }
   });
 });

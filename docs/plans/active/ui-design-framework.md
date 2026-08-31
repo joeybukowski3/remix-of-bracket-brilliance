@@ -84,13 +84,50 @@ are in place and internally consistent.**
 
 ### Phase 7 — Heat-scale consolidation
 
+Progress (2026-08-31):
+
+- **Shared entry point created:** `src/lib/shared/jkbHeat.ts` consolidates and
+  re-exports the two source-of-truth modules (no new thresholds or math). It
+  adds the explicit shared vocabulary — `HeatDirection`,
+  `HeatNonScoringState` (`missing` / `small-sample` / `sample-unavailable` /
+  `context-only`), the canonical `TIER_TO_WEEKLY_HEAT_TONE` bridge +
+  `tierToWeeklyHeatTone` / `weeklyHeatToneToTierId` adapters, and
+  `JKB_HEAT_LEGEND` (derived from `PERCENTILE_TIER_LEGEND`, cannot drift). The
+  large-population divide-by-`n` helper and the fixed-small-pool `n − 1`
+  helper (`computeTeamPercentiles`, `computePpgPercentiles`) are re-exported
+  side by side with the denominator rule documented in the module header.
+- **Representative migration (mechanical):** `src/lib/nfl/props/review/yardageHeat.ts`
+  now imports the `WeeklyHeatTone` primitives from `@/lib/shared/jkbHeat`
+  instead of reaching directly into `researchPresentation.ts`. Byte-identical
+  output; all NFL yardage-review consumers unchanged.
+- **CFB SOS (`src/lib/cfb/sosPresentation.ts`):** band→style mapping and the
+  new `SOS_HEAT_LEGEND` are now driven from one `SOS_BAND_STYLES` table, so the
+  legend can no longer drift from the cells. `getSosHeatClass` output is
+  unchanged for every rank (test-verified). SOS stays a rank-band scale; full
+  re-expression onto the shared JKB Heat tones is deferred — it is a visual
+  change across four CFB components that needs browser sign-off, not a
+  mechanical swap.
+- **Tests:** `src/lib/shared/jkbHeat.test.ts` (band boundaries 98/95/80/60/40/
+  25/10, higherBetter/lowerBetter, missing/non-finite, small-sample,
+  sample-unavailable, context-only, legend parity, bridge round-trip,
+  re-export identity) + `SOS_HEAT_LEGEND` parity in `sosPresentation.test.ts`.
+- **Still to do:** `pgaHeatColors.ts` (4→8 band re-expression, visual),
+  `pga/rankColors.ts` (retain `getPercentileFromRank`), `MLBPercentileDemo.tsx`
+  (migrate to the shared `PercentileCell` in
+  `src/components/mlb/MlbPercentileScoreCell.tsx`, or the shared JKB Heat API —
+  no new component),
+  `rankingPresentation.ts` band-language alignment. `MlbStatTone` hot/cold and
+  `parPresentation.ts` gradients confirmed as sanctioned exceptions, untouched.
+
 - Keep `src/lib/mlb/percentileColorScale.ts` and `WeeklyHeatTone`
   (`src/lib/fantasy/weekly/researchPresentation.ts`) as the two source-of-truth
   modules.
 - Migrate onto them: `src/lib/pga/pgaHeatColors.ts`,
   `src/lib/pga/rankColors.ts` (retain `getPercentileFromRank`),
   `src/lib/cfb/sosPresentation.ts`,
-  `src/pages/MLBPercentileDemo.tsx` (use `PercentileCell`), and align
+  `src/pages/MLBPercentileDemo.tsx` (use the shared `PercentileCell` in
+  `src/components/mlb/MlbPercentileScoreCell.tsx`, or the shared JKB Heat API),
+  and align
   `src/lib/fantasy/rankingPresentation.ts` band language.
 - Thresholds and direction rules stay exactly as documented (98/95/80/60/40/25/10
   favorable-percentile cutoffs; explicit direction; documented denominator

@@ -135,7 +135,10 @@ These currently implement their own scales and should re-express on JKB Heat:
   `RANK_COLOR_LEGEND`, 5 hex bands) — keep the `getPercentileFromRank` utility
 - `src/lib/cfb/sosPresentation.ts` (`getSosHeatClass`, 5 bands, 133-team ranks)
 - `src/pages/MLBPercentileDemo.tsx` (inline `percentileToClass`) — replace with
-  `PercentileCell`
+  the shared `PercentileCell` component in
+  `src/components/mlb/MlbPercentileScoreCell.tsx` (which already renders through
+  `resolvePercentileDisplay`), or failing that with the shared JKB Heat /
+  percentile presentation API directly — do not add a new component
 - `src/lib/fantasy/rankingPresentation.ts` quantile `RankTone` — align band
   language
 
