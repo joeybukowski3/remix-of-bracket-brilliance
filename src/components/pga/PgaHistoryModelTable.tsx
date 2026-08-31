@@ -1,10 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW } from "@/components/ui/dense-table";
 import { useJkbTrendRankings, type JkbTrendRanking } from "@/hooks/useJkbTrendRankings";
 import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow } from "@/lib/pga/historyModel";
 import { percentileHeatClass } from "@/lib/pga/pgaHeatColors";
 import { PERCENTILE_TIER_LEGEND } from "@/lib/mlb/percentileColorScale";
 import { buildPgaScorePercentileLookup, getPgaScoreTier } from "@/lib/pga/pgaScoreColorScale";
 import { countryCodeToFlagEmojiUrl, getPgaPlayerNationality } from "@/lib/pga/playerNationality";
+import { cn } from "@/lib/utils";
 
 export type PgaRankMode = "field" | "tour";
 
@@ -67,7 +69,7 @@ export default function PgaHistoryModelTable({
 
       <ScoreColorLegend rankMode={rankMode} />
 
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
+      <DenseTableScroller label="PGA historical model rankings" className="hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
         <table className="w-full min-w-[1180px] table-fixed text-center text-[12px] leading-tight">
           <DesktopColumnWidths isMajor={isMajor} />
           <thead>
@@ -78,7 +80,7 @@ export default function PgaHistoryModelTable({
               <Group count={6}>Player Stats</Group><Group count={2}>Model</Group><Group count={1}>Last 5 Starts</Group>
               {isMajor ? <><Group count={1}>Specific Major</Group><Group count={1}>Last 8 Majors</Group></> : <Group count={1}>{eventLabel} History</Group>}
             </tr>
-            <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-600">
+            <tr className={cn(DENSE_TABLE_HEAD_ROW, "border-b border-slate-200 bg-slate-50 font-black tracking-normal text-slate-600")}>
               {statLabels.map((label, index) => <th key={label} className={`${index === 0 ? "border-l border-slate-200" : ""} px-0.5 py-2`}>{compactStatLabel(label)}</th>)}
               <th className="border-l border-slate-200 px-0.5 py-2">Fit</th><th className="px-0.5 py-2">JKB Trend</th>
               <th className="border-l border-slate-200 px-1 py-2 text-slate-500">Latest → Older</th>
@@ -87,7 +89,7 @@ export default function PgaHistoryModelTable({
           </thead>
           <tbody>{rows.map((row, index) => <DesktopRow key={row.player} row={row} index={index} statView={statView} isMajor={isMajor} rankMode={rankMode} scorePercentile={scorePercentiles.get(row.modelScore) ?? null} trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null} />)}</tbody>
         </table>
-      </div>
+      </DenseTableScroller>
 
       <div className="space-y-2 lg:hidden">
         {rows.map((row) => {
@@ -141,7 +143,7 @@ function PlayerName({ player, mobile = false }: { player: string; mobile?: boole
 function DesktopRow({ row, index, statView, isMajor, rankMode, scorePercentile, trendRanking }: { row: PgaTournamentModelRow; index: number; statView: "percentile" | "raw"; isMajor: boolean; rankMode: PgaRankMode; scorePercentile: number | null; trendRanking: JkbTrendRanking | null; }) {
   const bg = index % 2 ? "bg-slate-50" : "bg-white";
   const rankDisplay = resolveRankDisplay(row, rankMode);
-  return <tr className={`${bg} hover:bg-emerald-50/40`}>
+  return <tr className={cn(DENSE_TABLE_ROW, "border-t-0", bg, "hover:bg-emerald-50/40")}>
     <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] tabular-nums text-slate-500"><span className="block font-bold text-slate-900">{rankDisplay.primaryValue}</span><span className="block text-[9px] font-medium text-slate-400">{rankDisplay.secondary ? `${rankDisplay.secondary.label} #${rankDisplay.secondary.value}` : rankDisplay.primaryLabel}</span></td>
     <td className="min-w-0 border-b border-r border-slate-100 px-2 py-2.5 text-left" title={row.player}><PlayerName player={row.player} /></td>
     <td className="border-b border-r border-slate-100 px-1 py-2.5"><Score value={row.modelScore} percentile={scorePercentile} /></td>

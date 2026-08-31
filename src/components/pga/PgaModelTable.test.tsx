@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { PgaModelControls } from "./PgaModelTable";
+import PgaModelTable, { PgaModelControls } from "./PgaModelTable";
 import {
   PGA_CUSTOM_MODEL_KEY,
   PGA_TOP_20_PROFILE_KEY,
   PGA_TOP_20_PROFILE_WEIGHTS,
   withPermanentPgaPresets,
 } from "@/lib/pga/pgaWeights";
-import type { PgaWeights } from "@/lib/pga/pgaTypes";
+import type { PgaModelTableConfig, PgaWeights, PlayerModelRow } from "@/lib/pga/pgaTypes";
 
 const defaultWeights: PgaWeights = {
   sgApproach: 22,
@@ -120,5 +120,59 @@ describe("PgaModelControls", () => {
     expect(handlers.onLoadTop20).toHaveBeenCalledOnce();
     expect(handlers.onApply).toHaveBeenCalledOnce();
     expect(Object.values(PGA_TOP_20_PROFILE_WEIGHTS).reduce((sum, weight) => sum + weight, 0)).toBe(100);
+  });
+});
+
+describe("PgaModelTable shared table behavior", () => {
+  const tableConfig: PgaModelTableConfig = {
+    title: "Tournament model",
+    subtitle: "Ranked field",
+    historySectionTitle: "History",
+    statsSectionTitle: "Stats",
+    scoreSectionTitle: "Score",
+    statColumns: [{ key: "sgApproachRank", abbr: "APP", tooltip: "Approach rank" }],
+    historyLabels: {
+      trendLabel: "Trend",
+      trendTooltip: "Trend rank",
+      courseRoundsLabel: "Rounds",
+      courseRoundsTooltip: "Course rounds",
+      cutsLabel: "Cuts",
+      cutsTooltip: "Cuts made",
+      courseHistoryScoreLabel: "Course SG",
+      courseHistoryScoreTooltip: "Course strokes gained",
+    },
+    mobileCourseHistoryLabel: "Course history",
+    mobileNoCourseHistoryLabel: "No course history",
+  };
+  const row: PlayerModelRow = {
+    id: "sample-golfer",
+    player: "Sample Golfer",
+    score: 88.5,
+    rank: 1,
+    trendRank: 4,
+    courseHistoryRounds: 8,
+    avgFinish: 12,
+    cutsLastFive: "4/5",
+    recentFinishes: ["T8", "T12"],
+    sgApproachRank: 3,
+    par4Rank: 5,
+    drivingAccuracyRank: 7,
+    bogeyAvoidanceRank: 9,
+    sgAroundGreenRank: 11,
+    birdie125150Rank: 13,
+    sgPuttingRank: 15,
+    birdieUnder125Rank: 17,
+    courseHistoryScore: 1.2,
+  };
+
+  it("uses the shared scroller while preserving labels, data, and frozen columns", () => {
+    render(<PgaModelTable rows={[row]} tableConfig={tableConfig} />);
+
+    const scroller = screen.getByRole("region", { name: "PGA model rankings" });
+    expect(scroller).toHaveAttribute("tabindex", "0");
+    expect(scroller.className).toContain("relative");
+    expect(screen.getByRole("columnheader", { name: "Player" }).className).toContain("z-30");
+    expect(screen.getByRole("cell", { name: "Sample Golfer" }).className).toContain("z-10");
+    expect(screen.getByText("88.50")).toBeInTheDocument();
   });
 });

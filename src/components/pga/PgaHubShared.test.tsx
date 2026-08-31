@@ -135,4 +135,28 @@ describe("PgaHubShared", () => {
 
     expect(screen.getAllByText("99").length).toBeGreaterThan(0);
   });
+
+  it("uses the shared scroller and frozen-column layer ladder", () => {
+    const row = {
+      ...buildPlayer("Ludvig Aberg", 12),
+      rank: 1,
+      score: 99,
+    };
+
+    render(
+      <TooltipProvider>
+        <PgaCompactTable rows={[row]} scoreLabel="Power Score" movementMap={{}} displayMode="raw" />
+      </TooltipProvider>,
+    );
+
+    const scroller = screen.getByRole("region", { name: "PGA compact rankings" });
+    expect(scroller).toHaveAttribute("tabindex", "0");
+    expect(scroller.className).toContain("overflow-x-auto");
+
+    const rankHeader = screen.getByRole("columnheader", { name: "Rank" });
+    const playerHeader = screen.getByRole("columnheader", { name: "Player" });
+    expect(rankHeader.className).toContain("z-30");
+    expect(playerHeader.className).toContain("left-[48px]");
+    expect(screen.getByRole("cell", { name: "1" }).className).toContain("z-10");
+  });
 });

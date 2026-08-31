@@ -215,6 +215,48 @@ Progress (2026-08-31, Phase 8B — CFB):
   SOS/rating heat re-expression onto JKB Heat tones (Phase 7 visual follow-up).
 3. **PGA** (keep `.pga-*` editorial identity; only heat cells + table shell
    consolidate)
+
+Progress (2026-08-31, Phase 8C — PGA):
+
+- **Migrated shared table infrastructure:** `PgaHistoryModelTable`, both views
+  in `PgaModelTable`, `PgaHubShared`'s `PgaCompactTable`, and the live table in
+  `PgaResearchDashboard` now use `DenseTableScroller`; their dense header/body
+  rows use `DENSE_TABLE_HEAD_ROW` / `DENSE_TABLE_ROW` where existing styling
+  maps mechanically. Existing labels, columns, row order, values, density,
+  alternating surfaces, and responsive gates remain intact.
+- **Mobile containment:** the `/pga/custom` content column now has `min-w-0`,
+  allowing `PgaCompactTable`'s shared scroller to contain its 880px table at
+  narrow widths instead of widening the document. The existing stacked mobile
+  composition is otherwise unchanged.
+- **Sticky / frozen behavior:** existing frozen identity columns in
+  `PgaModelTable`, `PgaCompactTable`, and `PgaResearchDashboard` now use
+  `frozenDenseColumn`; the dashboard's existing sticky header uses
+  `stickyDenseHeader`. Opaque PGA row/header surfaces remain in place and the
+  intersection/header/column layers now follow the shared z-30/z-20/z-10
+  ladder. No new frozen columns were introduced.
+- **Editorial identity deliberately preserved:** Playfair-backed
+  `.pga-section-title` / `.pga-hero-title`, `.pga-picks-page` variables, warm
+  accents, bespoke cards, gradients, schedule rail, mobile disclosure cards,
+  and storytelling/flow components were not generalized. `src/index.css`
+  required no Phase 8C edit; the existing in-progress DM Sans body change was
+  left untouched.
+- **Heat audit — deferred visual change:** `pgaScoreColorScale.ts` remains on
+  the shared percentile core. `pgaHeatColors.ts` remains its current four-band
+  treatment (75 / 50 / 25 boundaries), and `rankColors.ts` remains its current
+  five-band 80 / 60 / 40 / 20 palette with `getPercentileFromRank`. Moving
+  either to JKB Heat would introduce gold plus additional deep-green and
+  red-strength bands and would recolor broad percentile ranges; that is not a
+  mechanically equivalent migration. Compatibility tests now lock the current
+  thresholds, hex/classes, legend labels, and rank endpoints pending explicit
+  visual sign-off.
+- **Tokens:** audited table neutrals were retained where semantic tokens are not
+  color-identical, and the dashboard's pale green `#f8fbf7` sticky-header
+  surface remains an intentional opaque PGA editorial tint. No warm or PGA
+  accent was replaced by a generic token.
+- **Tests:** PGA component coverage asserts accessible shared scroll regions,
+  shared frozen/sticky layers, preserved labels/data, and retained
+  `.pga-picks-page` / `.pga-section-title` hooks. Heat compatibility coverage
+  is in `src/lib/pga/pgaHeatCompatibility.test.ts`.
 4. **MLB**
 5. **Fantasy**, then any remaining surfaces (Bracket / World Cup / Home / SEO
    pages) as appropriate.

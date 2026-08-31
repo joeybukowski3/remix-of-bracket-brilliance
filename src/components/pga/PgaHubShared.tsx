@@ -2,6 +2,12 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  DenseTableScroller,
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  frozenDenseColumn,
+} from "@/components/ui/dense-table";
+import {
   Drawer,
   DrawerContent,
   DrawerDescription,
@@ -643,12 +649,12 @@ export function PgaCompactTable({
 
   return (
     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
-      <div className="overflow-x-auto">
+      <DenseTableScroller label="PGA compact rankings">
         <Table className="min-w-[880px] text-xs text-slate-700">
           <TableHeader>
-            <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="sticky left-0 z-30 h-9 min-w-[48px] bg-white px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500">Rank</TableHead>
-              <TableHead className="sticky left-[48px] z-30 h-9 min-w-[160px] bg-white px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">Player</TableHead>
+            <TableRow className={cn(DENSE_TABLE_HEAD_ROW, "border-slate-200 bg-transparent hover:bg-transparent")}>
+              <TableHead className={frozenDenseColumn({ isHeader: true, surface: "bg-white", className: "h-9 min-w-[48px] px-2 py-1 text-center text-[10px] tracking-[0.16em] text-slate-500" })}>Rank</TableHead>
+              <TableHead className={frozenDenseColumn({ isHeader: true, surface: "bg-white", className: "left-[48px] h-9 min-w-[160px] px-2 py-1 text-[10px] tracking-[0.16em] text-slate-500" })}>Player</TableHead>
               <TableHead className="h-9 min-w-[72px] px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500">{scoreLabel}</TableHead>
               {visibleDesktopColumns.map((column) => (
                 <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500 md:table-cell">
@@ -674,14 +680,15 @@ export function PgaCompactTable({
                     key={`${row.player}-${row.rank}`}
                     onClick={() => setExpandedPlayers((current) => ({ ...current, [row.player]: !current[row.player] }))}
                     className={cn(
-                      "cursor-pointer border-slate-100 transition-colors duration-700 hover:bg-slate-50",
+                      DENSE_TABLE_ROW,
+                      "cursor-pointer border-slate-100 duration-700 hover:bg-slate-50",
                       topTen && "bg-emerald-50 hover:bg-emerald-50",
                       movement === "up" && "bg-emerald-100 hover:bg-emerald-100",
                       movement === "down" && "bg-rose-100 hover:bg-rose-100",
                     )}
                   >
-                    <TableCell className="sticky left-0 z-20 bg-inherit px-2 py-1 text-center font-semibold text-slate-700">{row.rank}</TableCell>
-                    <TableCell className="sticky left-[48px] z-20 bg-inherit px-2 py-1 font-medium text-slate-900">
+                    <TableCell className={frozenDenseColumn({ surface: "bg-inherit", className: "px-2 py-1 text-center font-semibold text-slate-700" })}>{row.rank}</TableCell>
+                    <TableCell className={frozenDenseColumn({ surface: "bg-inherit", className: "left-[48px] px-2 py-1 font-medium text-slate-900" })}>
                       <div className="flex items-center gap-2">
                         <span className="truncate">{row.player}</span>
                         <ChevronDown className={cn("h-3 w-3 shrink-0 md:hidden", expanded && "rotate-180")} />
@@ -736,7 +743,7 @@ export function PgaCompactTable({
             })}
           </TableBody>
         </Table>
-      </div>
+      </DenseTableScroller>
     </div>
   );
 }

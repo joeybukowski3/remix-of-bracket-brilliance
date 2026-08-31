@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  DenseTableScroller,
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  frozenDenseColumn,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import { usePgaDashboardUniversePlayers } from "@/hooks/usePgaDashboardUniversePlayers";
 import {
   buildPercentileContextMap,
@@ -21,6 +28,7 @@ import { getPercentileColor } from "@/lib/pga/rankColors";
 import { PGA_TOURNAMENTS } from "@/lib/pga/tournaments";
 import type { PgaHubBoardContext, PgaPlayerInput, PlayerModelRow } from "@/lib/pga/pgaTypes";
 import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
+import { cn } from "@/lib/utils";
 
 type Props = {
   tournament: PgaTournamentConfig;
@@ -568,10 +576,10 @@ export default function PgaResearchDashboard({
 
         {datasetStatus === "ready" && sortedRows.length > 0 ? (
           <div className="mt-4 overflow-hidden rounded-[22px] border border-[color:var(--pga-border)]">
-            <div className="overflow-auto" style={{ maxHeight: "72vh" }}>
+            <DenseTableScroller label="Live PGA trend rankings" className="max-h-[72vh] overflow-auto">
               <table className="w-full min-w-[1250px] border-collapse text-sm">
-                <thead className="sticky top-0 z-20 bg-[#f8fbf7] shadow-[0_1px_0_var(--pga-border)]">
-                  <tr className="border-b border-[color:var(--pga-border)] text-left text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                <thead className={stickyDenseHeader("bg-[#f8fbf7] shadow-[0_1px_0_var(--pga-border)]")}>
+                  <tr className={cn(DENSE_TABLE_HEAD_ROW, "border-b border-[color:var(--pga-border)] bg-transparent text-left text-[11px] tracking-[0.14em] text-muted-foreground")}>
                     <SortableHeader stickyLeft="0px" onClick={() => onSort("favorite")} active={sortKey === "favorite"} direction={sortDirection} align="center">
                       Fav
                     </SortableHeader>
@@ -611,8 +619,8 @@ export default function PgaResearchDashboard({
                     const modelTone = getPercentileColor(metrics?.modelPercentile ?? null);
 
                     return (
-                      <tr key={row.id} className={`${index % 2 !== 0 ? "bg-secondary/18" : "bg-card"} border-b border-[color:var(--pga-border)] transition hover:bg-secondary/35`}>
-                        <td className="sticky left-0 z-10 bg-inherit px-3 py-3 text-center">
+                      <tr key={row.id} className={cn(DENSE_TABLE_ROW, "border-t-0 border-b border-[color:var(--pga-border)]", index % 2 !== 0 ? "bg-secondary/18" : "bg-card", "hover:bg-secondary/35")}>
+                        <td className={frozenDenseColumn({ surface: "bg-inherit", className: "px-3 py-3 text-center" })}>
                           <button
                             type="button"
                             onClick={() => toggleFavorite(row.id)}
@@ -627,7 +635,7 @@ export default function PgaResearchDashboard({
                           </button>
                         </td>
 
-                        <td className="sticky left-[58px] z-10 min-w-[220px] bg-inherit px-4 py-3">
+                        <td className={frozenDenseColumn({ surface: "bg-inherit", className: "left-[58px] min-w-[220px] px-4 py-3" })}>
                           <div className="font-medium text-foreground">{row.player}</div>
                         </td>
 
@@ -680,7 +688,7 @@ export default function PgaResearchDashboard({
                   })}
                 </tbody>
               </table>
-            </div>
+            </DenseTableScroller>
           </div>
         ) : null}
       </section>
@@ -790,7 +798,11 @@ function SortableHeader({
 }) {
   return (
     <th
-      className={`px-3 py-3 ${align === "center" ? "text-center" : "text-left"} ${stickyLeft ? "sticky z-20 bg-[#f8fbf7]" : ""}`}
+      className={cn(
+        "px-3 py-3",
+        align === "center" ? "text-center" : "text-left",
+        stickyLeft && frozenDenseColumn({ isHeader: true, surface: "bg-[#f8fbf7]" }),
+      )}
       style={stickyLeft ? { left: stickyLeft } : undefined}
     >
       <button
