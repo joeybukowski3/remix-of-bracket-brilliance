@@ -44,6 +44,21 @@ describe("KPlusEvTable", () => {
     expect(names[0]).toContain("High EV");
   });
 
+  it("wraps the desktop table in the shared accessible scroll region with a sticky dense header", () => {
+    const row = evaluateKPlusEv(source());
+    const { container } = render(<KPlusEvTable rows={[row]} compact={false} />);
+    const region = screen.getByRole("region", { name: /strikeout \+ev valuations/i });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region.className).toMatch(/relative/);
+    expect(region.className).toMatch(/overflow-x-auto/);
+    expect(region.querySelector("table")).not.toBeNull();
+    const thead = container.querySelector("thead");
+    expect(thead?.className).toMatch(/sticky/);
+    expect(thead?.className).toMatch(/top-0/);
+    // Semantic pricing-group tint preserved.
+    expect(screen.getByRole("button", { name: /^Book Odds/ }).closest("th")?.className).toContain("bg-amber-50");
+  });
+
   it("expands a row to show all seven detail sections", () => {
     const row = evaluateKPlusEv(source());
     render(<KPlusEvTable rows={[row]} compact={false} />);

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { NumerologyPerformanceRecord } from "@/types/mlbNumerologyPerformance";
+import { DenseTableScroller } from "@/components/ui/dense-table";
 import MobileAccordionRows from "./MobileAccordionRows";
 import type { PerformanceRow } from "./PerformanceRow";
 import PlayerCell from "./PlayerCell";
@@ -128,7 +129,10 @@ export default function NumerologyPerformanceTable({ records }: { records: Numer
         <MobileAccordionRows rows={mobileRows} />
       </div>
 
-      <div className="hidden overflow-x-auto rounded-lg border-2 border-slate-300 sm:block">
+      <DenseTableScroller
+        label="Numerology model prediction history"
+        className="hidden rounded-lg border-2 border-slate-300 sm:block"
+      >
         <table className="w-full min-w-[900px] text-left text-xs">
           <thead className="bg-slate-900 text-[10px] uppercase tracking-wide text-slate-300">
             <tr>
@@ -154,7 +158,7 @@ export default function NumerologyPerformanceTable({ records }: { records: Numer
             )}
           </tbody>
         </table>
-      </div>
+      </DenseTableScroller>
       <ShowMoreFooter visibleCount={visibleCount} totalCount={totalCount} hasMore={hasMore} canShowAll={canShowAll} onShowMore={showMore} onShowAll={showAll} />
     </div>
   );

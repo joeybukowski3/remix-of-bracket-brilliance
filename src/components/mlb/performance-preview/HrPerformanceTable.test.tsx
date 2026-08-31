@@ -114,6 +114,24 @@ describe("HrPerformanceTable — desktop table", () => {
     expect(within(table).getByText("UNRESOLVED")).toBeInTheDocument();
   });
 
+  it("wraps the desktop table in the shared accessible scroll region and keeps the frozen Player column + mobile accordion", () => {
+    const records = [record({}, 0)];
+    const { container } = render(<HrPerformanceTable records={records} />);
+    const region = screen.getByRole("region", { name: /hr model prediction history/i });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region.className).toMatch(/relative/);
+    expect(region.className).toMatch(/overflow-x-auto/);
+    // Preserved: responsive desktop gate + border shell.
+    expect(region.className).toMatch(/sm:block/);
+    expect(region.className).toMatch(/border-2/);
+    // Preserved: frozen Player column on the shared layer ladder.
+    const playerTh = within(desktopTable(container)).getByText("Player").closest("th");
+    expect(playerTh?.className).toMatch(/sticky left-0/);
+    expect(playerTh?.className).toMatch(/z-20/);
+    // Preserved: mobile accordion dual layout.
+    expect(mobileList(container)).toBeTruthy();
+  });
+
   it("includes a 2B (doubles) column", () => {
     const records = [record({}, 0)];
     const { container } = render(<HrPerformanceTable records={records} />);

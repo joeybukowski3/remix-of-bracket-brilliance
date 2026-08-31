@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { TopHrPickRecord } from "@/types/mlbTopHrPerformance";
+import { DenseTableScroller } from "@/components/ui/dense-table";
 import MobileAccordionRows from "./MobileAccordionRows";
 import type { PerformanceRow } from "./PerformanceRow";
 import PlayerCell from "./PlayerCell";
@@ -73,7 +74,10 @@ export default function TopHrPerformanceTable({ records }: { records: TopHrPickR
         <MobileAccordionRows rows={mobileRows} />
       </div>
 
-      <div className="hidden overflow-x-auto rounded-lg border border-slate-200 sm:block">
+      <DenseTableScroller
+        label="Top HR picks performance history"
+        className="hidden rounded-lg border border-slate-200 sm:block"
+      >
         <table className="w-full min-w-[980px] text-left text-xs">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-400">
             <tr>
@@ -126,7 +130,7 @@ export default function TopHrPerformanceTable({ records }: { records: TopHrPickR
             )}
           </tbody>
         </table>
-      </div>
+      </DenseTableScroller>
       <ShowMoreFooter visibleCount={visibleCount} totalCount={totalCount} hasMore={hasMore} canShowAll={canShowAll} onShowMore={showMore} onShowAll={showAll} />
     </div>
   );

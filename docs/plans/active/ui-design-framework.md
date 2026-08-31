@@ -506,12 +506,77 @@ Progress (2026-08-31, user-directed final cross-site audit):
   Do not move this plan to `docs/plans/completed/` until that work is resolved;
   perform the move in a separate final documentation pass.
 
+### Phase 9B — MLB table-family migration — **in progress**
+
+Progress (2026-08-31):
+
+- **Classification of the remaining MLB table infrastructure:**
+  - **A (mechanically migratable now):** `HrPlusEvTable`, `KPlusEvTable`
+    (bare `overflow-x-auto` + hand-rolled `sticky top-0 z-20` thead), and the
+    desktop layer of the five `performance-preview` tables (`HrPerformanceTable`,
+    `NumerologyPerformanceTable`, `SinCityPerformanceTable`,
+    `TopHrPerformanceTable`, `TopKPerformanceTable` — bare `overflow-x-auto`
+    shell). All migrated.
+  - **B (shared infra via the column helper):** `performance-preview/tableColumns.ts`
+    frozen Player column — kept its bespoke dark-shell/shadow treatment but its
+    z-index now composes from the shared `TABLE_LAYER` ladder (byte-identical
+    `z-20` header / `z-10` body).
+  - **C (intentionally bespoke, retained):** `MobileAccordionRows` (the
+    performance-preview mobile layout — a deliberate responsive abstraction that
+    beats a generic table on mobile, per TABLE_CONVENTIONS.md §B); the HR/K +EV
+    expanded detail panels (`PlusEvDetails` / `KPlusEvDetails` per-group tinted
+    sections); the +EV `ValueBadge` / `labelTone` / `evTone` / pricing-column
+    amber tint / group-boundary dividers (KS-008-sensitive emphasis, untouched).
+  - **D (deferred — dedicated pass needed):** the inline prop-board tables inside
+    `src/pages/MlbHrProps.tsx` and `src/pages/MlbStrikeoutProps*` (multiple
+    hand-rolled `overflow-x-auto` + `sticky top-0 z-10/z-20` tables with bespoke
+    lg-breakpoint mobile card fallbacks, in ~3.8k-line page files). Not a
+    mechanical swap; each needs its own review with browser sign-off on live
+    slate data. `MlbParkContextPanel` factor palette still blocked on BL-MLB-004.
+- **Scroller adoption:** `HrPlusEvTable`, `KPlusEvTable`, and all five
+  `performance-preview` desktop tables now use `DenseTableScroller`
+  (`role="region"` + `aria-label` + `tabIndex={0}` + focus ring +
+  load-bearing `relative`). Preserved unchanged: `table-fixed` + `<colgroup>`
+  sizing, group headers, the pricing-column tint/weight treatment, the semantic
+  column-group tints (K table), `ValueBadge` grading cells, `evTone` +EV
+  emphasis, the mobile card / accordion fallbacks, `min-w-[...]` desktop widths,
+  and the `hidden … sm:block` responsive gate (moved onto the scroller's
+  `className`).
+- **Sticky / frozen:** `HrPlusEvTable` / `KPlusEvTable` `sticky top-0 z-20`
+  theads now call `stickyDenseHeader()` (identical output). No new sticky
+  headers were added to the performance-preview family (their thead is
+  intentionally non-sticky). The frozen Player column keeps its existing
+  behavior, now expressed through `TABLE_LAYER`.
+- **+EV / heat / colour:** no model, formula, threshold, probability, label, or
+  emphasis change. No JKB Heat, sportsbook, grading, or price/edge colour
+  change. KS-008 language untouched.
+- **Tests:** shared-scroll-region + sticky-header + preserved-emphasis
+  assertions added to `HrPlusEvTable.test.tsx`, `KPlusEvTable.test.tsx`, and
+  `HrPerformanceTable.test.tsx` (representative for the family, also asserts the
+  frozen column + retained mobile accordion). New analytics-safe
+  `tests/mlb-ui-framework-phase9b.spec.ts` checks page-level overflow
+  containment and keyboard-reachable scrollers at 320 / 768 / 1024 / 1440 on
+  `/mlb/hr-props`, `/mlb/strikeout-props`, `/mlb/performance-preview`.
+- **Validation:** targeted MLB + dense-table suites green (94 tests);
+  `tsc -p tsconfig.node.json` clean; `vite build` clean; `git diff --check`
+  clean; lint clean on changed files. `tsc -p tsconfig.app.json` still bails at
+  the pre-existing committed `src/lib/mlb/mlbPitcherRegression.ts(28,1)` syntax
+  corruption (unrelated, documented in Phase 8D). Browser: `/mlb/performance-preview`
+  rendered the migrated "HR model prediction history" scroller with no page
+  overflow at all four widths; `/mlb/hr-props` and `/mlb/strikeout-props`
+  rendered their honest data-unavailable state in the restricted preview
+  environment (no live slate), so the +EV scroller could not be judged live —
+  unit coverage stands in.
+- **Remaining before closure:** the **D** group above (inline `MlbHrProps` /
+  `MlbStrikeoutProps` prop-board tables) still needs a dedicated pass.
+
 ## Remaining work before closure
 
-1. Complete a focused migration/review of the remaining MLB table families:
-   `HrPlusEvTable` / `KPlusEvTable`, `performance-preview`, and the related live
-   prop-board overflow/sticky semantics. Preserve KS-008-sensitive labels and
-   model/data behavior.
+1. Complete the Phase 9B **D** group: a dedicated migration/review of the inline
+   prop-board tables in `src/pages/MlbHrProps.tsx` and `MlbStrikeoutProps*`
+   (bare `overflow-x-auto`, hand-rolled sticky theads, bespoke lg-breakpoint
+   card fallbacks). Preserve KS-008-sensitive labels and model/data behavior;
+   needs browser sign-off on live slate data.
 2. After that work is resolved, perform a separate documentation-only closure
    pass and move this plan to `docs/plans/completed/`.
 3. Retain explicit exceptions/deferred items unless separately approved:
