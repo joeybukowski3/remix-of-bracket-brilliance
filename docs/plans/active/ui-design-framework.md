@@ -37,7 +37,7 @@ this plan, and add the cross-cutting decisions to `docs/DECISIONS.md`. No code,
 CSS, config, component, or test changes. **Complete when the five approved docs
 are in place and internally consistent.**
 
-### Phase 2 — Typography cleanup
+### Phase 2 — Typography cleanup — **done**
 
 - Resolve the Inter-declared-but-not-loaded gap: set the body face to **DM Sans**
   (already loaded) per BRAND.md, or load the intended face explicitly.
@@ -45,7 +45,7 @@ are in place and internally consistent.**
 - Scope: `src/index.css` font stack + the Google Fonts import line. No layout
   changes.
 
-### Phase 3 — Tokenize `SiteHeader` and shared chrome
+### Phase 3 — Tokenize `SiteHeader` and shared chrome — **done**
 
 - Replace hard-coded hex in `src/components/layout/SiteHeader.tsx`
   (`#eeeeee`, `#333333`, `#111111`, `#f0f0f0`, `#1a1a1a`, `bg-white`) with token
@@ -54,25 +54,33 @@ are in place and internally consistent.**
   label divergence for the CFB section.
 - Visual output must be unchanged or a deliberate, reviewed adjustment.
 
-### Phase 4 — Remove obsolete Vite `App.css` scaffold
+### Phase 4 — Remove obsolete Vite `App.css` scaffold — **done**
 
 - `src/App.css` is unmodified Vite starter CSS (`#root { max-width:1280px;
   margin:0 auto; text-align:center }`, spinning-logo keyframes, `.read-the-docs`).
 - Verify nothing depends on it, then remove the file and its import.
 
-### Phase 5 — Shared dense-table primitive
+### Phase 5 — Shared dense-table primitive — **done**
 
-- Promote `NflTableScroller` + `NFL_TABLE_HEAD_ROW` / `NFL_TABLE_ROW` from
-  `src/components/nfl/ui/NflTable.tsx` into a sport-neutral shared module,
-  preserving behavior (contained overflow, `role="region"`, `aria-label`,
-  `tabIndex`, focus ring).
-- Re-point NFL usages; leave other sports for Phase 8.
+- `src/components/ui/dense-table.tsx` now owns `DenseTableScroller`,
+  `DENSE_TABLE_HEAD_ROW`, `DENSE_TABLE_ROW` — promoted verbatim from the NFL
+  pattern (contained overflow, `role="region"`, `aria-label`, `tabIndex`,
+  focus ring preserved).
+- `src/components/nfl/ui/NflTable.tsx` is now a thin re-export/adapter under the
+  historical `NflTableScroller` / `NFL_TABLE_HEAD_ROW` / `NFL_TABLE_ROW` names, so
+  all existing NFL and Fantasy consumers keep working unchanged. Remaining
+  per-sport migration is Phase 8.
 
-### Phase 6 — Shared sticky-header / frozen-column helper
+### Phase 6 — Shared sticky-header / frozen-column helper — **done**
 
-- Extract one helper for in-table sticky header + frozen first column, encoding
-  the TABLE_CONVENTIONS.md z-index ladder.
-- Replace per-table re-implementations opportunistically during Phase 8.
+- `stickyDenseHeader()`, `frozenDenseColumn()` and the `TABLE_LAYER` z-index
+  ladder (`frozen header cell z-30` / `sticky header z-20` / `frozen column
+  z-10`, all below the `z-40` mobile strips and `SiteHeader` `z-[100]`) live in
+  `src/components/ui/dense-table.tsx`, encoding the TABLE_CONVENTIONS.md ladder.
+- `src/pages/FantasyPointsAllowed.tsx` is migrated onto them as the
+  representative sticky-header + frozen-first-column consumer (class output
+  unchanged). Other per-table re-implementations move over opportunistically in
+  Phase 8.
 
 ### Phase 7 — Heat-scale consolidation
 
@@ -122,12 +130,12 @@ Apply Phases 5–7 primitives per sport, mechanically, in this order:
 
 | Target | Where | Phase |
 | --- | --- | --- |
-| `Inter` declared in body stack but never loaded | `src/index.css` | 2 |
-| Hard-coded hex values | `src/components/layout/SiteHeader.tsx` | 3 |
-| Header `/college-football` vs footer `/ncaa` route label | `SiteHeader.tsx` / `SiteFooter.tsx` | 3 |
-| Dead Vite starter CSS | `src/App.css` | 4 |
-| Roomy shadcn `ui/table` vs hand-rolled dense tables | `src/components/ui/table.tsx` + per-sport tables | 5, 8 |
-| Duplicated sticky/frozen logic | multiple table components | 6, 8 |
+| ~~`Inter` declared in body stack but never loaded~~ (done: body now `DM Sans`) | `src/index.css` | 2 |
+| ~~Hard-coded hex values~~ (done: `border`/`card`/`muted`/`foreground` tokens) | `src/components/layout/SiteHeader.tsx` | 3 |
+| ~~Header `/college-football` vs footer `/ncaa` route~~ (done: footer now `/college-football`; label text "NCAA Football" left as-is) | `SiteHeader.tsx` / `SiteFooter.tsx` | 3 |
+| ~~Dead Vite starter CSS~~ (done: file deleted, no import existed) | `src/App.css` | 4 |
+| Roomy shadcn `ui/table` vs hand-rolled dense tables | `src/components/ui/table.tsx` + per-sport tables | 5 (shared primitive: `ui/dense-table.tsx` done), 8 |
+| Duplicated sticky/frozen logic | multiple table components | 6 (shared helper done; `FantasyPointsAllowed` migrated), 8 |
 | Duplicate percentile/heat implementations | `pga/pgaHeatColors.ts`, `pga/rankColors.ts`, `cfb/sosPresentation.ts`, `MLBPercentileDemo.tsx`, `fantasy/rankingPresentation.ts` | 7 |
 | Percentile denominator convention undocumented at call sites | `percentileColorScale.ts` vs `teamPercentiles.ts` / `ppgPercentile.ts` | 7 (doc done in Phase 1; enforce in review) |
 | Radius scale bypassed (`rounded-[30px]`, `[24px]`, `12px`, `20px`) | `src/index.css` + components | 3 / 8 (opportunistic) |
