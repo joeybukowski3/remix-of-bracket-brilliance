@@ -169,6 +169,50 @@ Progress (2026-08-31, Phase 8A — NFL):
   a shared Fantasy primitive, so a clean migration belongs with the Fantasy
   pass, not NFL. CFB/PGA/MLB/Fantasy per-sport work unstarted.
 2. **CFB**
+
+Progress (2026-08-31, Phase 8B — CFB):
+
+- **Audit outcome:** the CFB matchup surfaces (`CollegeFootballPowerComparison`,
+  `CollegeFootballSeasonStatsComparison`, `CollegeFootballModelPanel`,
+  the shared-bar rows) are low-density editorial comparison layouts, not dense
+  data tables — deliberately left alone (KS: "do not convert editorial content
+  into tables"). `CollegeFootballMobileStickyHeader` (`fixed top-[72px] z-40`)
+  already matches the TABLE_CONVENTIONS.md z-index ladder; no hand-rolled
+  in-table sticky/frozen logic exists anywhere in CFB, so `stickyDenseHeader` /
+  `frozenDenseColumn` had nothing mechanical to replace and no frozen column was
+  added just because the helper exists.
+- **Migrated (mechanical, class output preserved):** the three genuine CFB dense
+  data tables now consume the shared `@/components/ui/dense-table` primitives —
+  `DenseTableScroller` + `DENSE_TABLE_HEAD_ROW` + `DENSE_TABLE_ROW`:
+  - `CollegeFootballRankingsTable` — dropped the local `HEAD` constant and the
+    hand-rolled `role="region"` scroll region (both were byte-identical to the
+    shared versions).
+  - `ConferenceStandingsCard` (desktop table) — same swap; scroller keeps its
+    `hidden sm:block` responsive gate via `className`.
+  - `CollegeFootballTeamPage` schedule table — same swap; this one also gains the
+    load-bearing `relative` on the scroll container it was previously missing
+    (the documented page-widening risk from an unpositioned `overflow-x-auto`
+    ancestor). Row `<td>` padding left as-is (`py-2`) — normalizing it to the
+    `py-1.5` rankings density was judged a visual change, not mechanical.
+  - `DENSE_TABLE_ROW` adds only `transition-colors` over the previous row class
+    (sanctioned "restrained hover", TABLE_CONVENTIONS.md §A).
+- **Heat / tokens:** no change. `getSosHeatClass` / `SOS_HEAT_LEGEND`
+  (`sosPresentation.ts`) already single-sourced in Phase 7; SOS thresholds
+  untouched. `CollegeFootballRatingLegend` and `getCfbRatingHeatClass` left as-is
+  — full SOS/rating re-expression onto shared JKB Heat tones stays deferred
+  (visual change across four components, needs browser sign-off).
+- **Navigation:** `CollegeFootballLayout` secondary nav (`CFB_SECTION_NAV`) sits
+  below `SiteShell`'s `SiteHeader`, is not sticky, has no mobile duplicate, and
+  its labels ("Top 25 & Conferences" / "FBS Rankings" / "Schedule") match the
+  live `/college-football` routes. No change needed.
+- **Tests:** added scroll-region + shared head/row assertions to
+  `CollegeFootballRankingsTable.test.tsx`; new `ConferenceStandingsCard.test.tsx`
+  (scroll-region contract + column labels + row-per-team). Existing CFB/TeamPage
+  tests pass unchanged. Pre-existing unrelated failure
+  `CollegeFootballTeamPage.test.tsx > "shows missing market spreads as em
+  dashes"` (spread data, `-47.5` vs `—`) confirmed present before this pass.
+- **Deferred:** matchup editorial comparison components (not tables);
+  SOS/rating heat re-expression onto JKB Heat tones (Phase 7 visual follow-up).
 3. **PGA** (keep `.pga-*` editorial identity; only heat cells + table shell
    consolidate)
 4. **MLB**

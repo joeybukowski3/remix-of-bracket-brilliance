@@ -53,4 +53,23 @@ describe("CollegeFootballRankingsTable presentation", () => {
     expect(container.querySelector("table")).toHaveClass("hidden", "md:table");
     expect(container.querySelector("ul")).toHaveClass("md:hidden");
   });
+
+  it("contains horizontal overflow via the shared dense-table scroll region", () => {
+    const { container } = renderTable(null);
+    const region = container.querySelector('[role="region"][aria-label="College Football rankings"]');
+    expect(region).toBeInTheDocument();
+    // shared DenseTableScroller contract: positioned ancestor + contained x-scroll + keyboard reachable
+    expect(region).toHaveClass("relative", "overflow-x-auto");
+    expect(region).toHaveAttribute("tabindex", "0");
+  });
+
+  it("uses the shared dense-table header and row styling", () => {
+    const { container } = renderTable(null);
+    expect(container.querySelector("thead tr")).toHaveClass(
+      "bg-slate-100",
+      "text-[10px]",
+      "uppercase",
+    );
+    expect(container.querySelector("tbody tr")).toHaveClass("border-t", "hover:bg-slate-50");
+  });
 });
