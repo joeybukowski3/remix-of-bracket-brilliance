@@ -21,6 +21,9 @@ This file records accepted, durable repository-level decisions. It is not a spor
 | KS-007 | 2026-08-29 | Accepted | Model methodology and presentation/comparison layers are distinct; presentation helpers must not silently recompute or redefine model outputs. |
 | KS-008 | 2026-08-29 | Accepted | A model output, or a model-versus-market comparison, is not by itself an edge, +EV claim, best bet, recommendation, or calibrated win probability; those claims require an explicitly documented calibration or validation gate. |
 | KS-009 | 2026-08-29 | Accepted | Independent predictive ratings/models and market-informed composites must stay explicitly distinguishable; market information is never silently fed into an independent model, and a market-informed composite is never relabelled as independent. |
+| KS-010 | 2026-08-31 | Accepted | Analytical heat color encodes goodness percentile: gold/green is favorable, red is unfavorable. Any alternate semantic palette must be explicitly documented as an exception. |
+| KS-011 | 2026-08-31 | Accepted | Percentile computations may use different denominator conventions for large populations versus fixed small pools, but the choice follows the documented `docs/TABLE_CONVENTIONS.md` rule and direction is always explicit at the call site. |
+| KS-012 | 2026-08-31 | Accepted | UI is light-first; new pages and components are not required to implement dark mode until dark mode is explicitly reopened as a dedicated project. |
 
 ## KS-001: authority hierarchy
 
@@ -65,6 +68,41 @@ Independent predictive ratings/models and market-informed composites must remain
 - Market information (odds, spreads, totals, moneylines, market-derived baselines) is never fed into a rating or model that is presented as independent of the market.
 - A composite that blends market information is never relabelled or renamed as an independent model.
 - Field and artifact names should make provenance unambiguous rather than reusing one bare name for both.
+
+## KS-010: analytical heat direction
+
+Analytical table heat represents *how favorable a value is relative to its
+comparison population*, not the raw numeric direction of the metric.
+
+- Gold and green mean favorable; red means unfavorable; neutral slate means
+  genuinely mid-pack.
+- `higherBetter` metrics use the favorable percentile directly; `lowerBetter`
+  metrics invert through the shared direction helper. An inverse palette is
+  never hand-rolled.
+- Identity and context-only metrics receive no heat.
+- Alternate semantic palettes (for example an MLB "hot / cold" red/blue view)
+  are permitted only when explicitly labelled as that semantic and documented as
+  an exception in `docs/TABLE_CONVENTIONS.md`.
+
+`docs/TABLE_CONVENTIONS.md` owns the band thresholds and the source-of-truth
+implementations (`src/lib/mlb/percentileColorScale.ts` and `WeeklyHeatTone`).
+
+## KS-011: percentile computation conventions
+
+Large comparison populations and fixed small pools may use different existing
+percentile denominator conventions (divide-by-`n` for large populations;
+`n − 1` endpoint behaviour for fixed small pools such as 32-team leagues or
+roughly 30–60-row position boards). The selection is not per-caller taste — it
+follows the rule in `docs/TABLE_CONVENTIONS.md`, and the direction argument is
+always explicit at the call site.
+
+## KS-012: light-first UI
+
+The UI framework default is light-first. Dark mode is currently
+incomplete/vestigial (no `:root`-level dark token block; only a PGA-scoped
+override). New pages and components are designed for the light palette and are
+not required to implement dark mode. Dark mode is reopened only as a dedicated,
+explicitly approved project. The existing PGA-scoped dark treatment may remain.
 
 ## Open questions
 
