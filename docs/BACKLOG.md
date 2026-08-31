@@ -137,7 +137,44 @@ cleanly inside a model or feature document unless they require a future action.
 
 ---
 
+## PGA
+
+### BL-PGA-001 — Legacy 4/5-band heat needs visual sign-off
+**Status:** NEEDS DECISION
+
+- **What is needed:** explicit visual sign-off before migrating
+  `src/lib/pga/pgaHeatColors.ts` (4 bands) or
+  `src/lib/pga/rankColors.ts` (5 bands) to the 8-band JKB Heat scale.
+- **Why not now:** the legacy thresholds are compatibility-tested, and a direct
+  conversion would add gold plus additional green/red strengths across broad
+  percentile ranges. That is a material palette change, not a mechanical
+  framework migration.
+- **Do not:** silently convert either palette. Retain the legacy bands as a
+  temporary intentional exception; preserve `getPercentileFromRank` in any
+  future approved migration.
+- **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §D;
+  [plans/active/ui-design-framework.md](plans/active/ui-design-framework.md)
+  Phase 8C / Phase 9.
+
+---
+
 ## MLB
+
+### BL-MLB-004 — Park-factor heat direction is context-dependent
+**Status:** NEEDS DECISION
+
+- **What is needed:** each consuming `MlbParkContextPanel` context must define
+  the comparison perspective before its park-factor tone can use goodness
+  heat. A higher run or HR factor can favor offense/overs while disadvantaging
+  pitching/unders.
+- **Why not now:** the current panel does not encode one universally valid
+  favorable direction, so assigning `higherBetter` or `lowerBetter` would
+  manufacture semantics rather than reconcile presentation.
+- **Do not:** apply JKB Heat to park factors until the consumer explicitly
+  defines direction. Retain the current contextual display during that review.
+- **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §§E–F;
+  [plans/active/ui-design-framework.md](plans/active/ui-design-framework.md)
+  Phase 8D / Phase 9.
 
 ### BL-MLB-001 — K +EV V1: stale-render risk, no scheduled producer
 **Status:** NEEDS DECISION

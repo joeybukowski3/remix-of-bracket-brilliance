@@ -8,9 +8,9 @@ Authority level: project / architecture / brand documentation (tier 6 in
 [DECISIONS.md](DECISIONS.md) KS-001). Where this file and current implementation
 disagree, apply KS-003 — investigate and report, do not silently pick one.
 
-This document is a target-state description backed by the completed UI / Design
-Framework Audit. Some items record a known gap and a direction; the
-`docs/plans/active/ui-design-framework.md` plan owns the code changes.
+This document describes the implemented framework backed by the completed UI /
+Design Framework Audit and the sport migrations through Phase 9. The active
+plan records the remaining focused migration and closure work.
 
 ---
 
@@ -27,7 +27,7 @@ JoeKnowsBall pages are information-dense sports analytics, not marketing pages.
 - Above the fold on a content page should already show real information (a
   ranking, a matchup, a table), not just a title and a call to action.
 
-Existing shared building blocks (in `src/index.css`, `@layer components`):
+Shared building blocks (in `src/index.css`, `@layer components`):
 
 - `.site-container` — centered page column, `max-w-[1440px]`, responsive
   horizontal padding.
@@ -147,8 +147,8 @@ Cards are a grouping tool, not the default container.
   they are looking at. `SiteHeader` is sticky (`z-[100]`); the CFB mobile
   context strip (`CollegeFootballMobileStickyHeader`, `z-40`) is the reference
   pattern. See TABLE_CONVENTIONS.md for the z-index ladder.
-- Known cleanup (plan, not this pass): header uses `/college-football` while
-  `SiteFooter` links `/ncaa` for the same section — reconcile the label/route.
+- `SiteHeader` and `SiteFooter` both route the CFB section through
+  `/college-football`; header chrome uses the shared semantic tokens.
 
 ---
 
@@ -168,13 +168,18 @@ Mobile is a **content reprioritization**, not a scaled-down desktop.
   layouts. The hamburger button and nav links already meet this; keep new
   controls consistent.
 - **Never let the page scroll horizontally.** Horizontal overflow is contained
-  to the element that needs it (see TABLE_CONVENTIONS.md).
+  to the element that needs it (see TABLE_CONVENTIONS.md). The shared
+  `DenseTableScroller` contract has been browser-verified across the NFL, CFB,
+  PGA, MLB, and Fantasy migrations, including 320px viewports.
 - Existing helpers: `src/hooks/use-mobile.tsx`, `src/hooks/useIsCompactLayout.ts`
   for layout-mode decisions; `@tailwindcss/container-queries` for
   width-sensitive components (the MLB matchup grid is the worked example, in
   `src/index.css`).
 - Tables have their own mobile rules in
   [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md).
+- Dense-table stickiness uses the shared `stickyDenseHeader()` and
+  `frozenDenseColumn()` helpers and their `TABLE_LAYER` z-index ladder; new
+  tables do not recreate those layer values locally.
 
 ---
 
@@ -200,27 +205,25 @@ values.**
 
 Rules:
 
-- New components reference tokens. Raw hex belongs only in the analytical heat
-  scale definitions (`src/lib/mlb/percentileColorScale.ts` and the
-  `WeeklyHeatTone` map), which are a deliberate, centralized exception.
-- Known cleanup (plan, not this pass): `SiteHeader.tsx` hard-codes `#eeeeee`,
-  `#333333`, `#111111`, `#f0f0f0`, `#1a1a1a`, `bg-white` instead of tokens.
+- New components reference tokens for neutral chrome and surfaces. Raw color
+  values remain only where a centralized analytical scale, team/position
+  identity, or scoped section identity requires an exact palette.
+- `SiteHeader.tsx` uses `border`, `card`, `muted`, and foreground token
+  utilities; its former hard-coded neutral palette has been removed.
+- The obsolete Vite `src/App.css` scaffold has been removed; global framework
+  styles live in `src/index.css`.
 - Breakpoints: standard Tailwind plus custom `3xl` (1600px) and `4xl` (1800px)
   for ultrawide dashboard expansion; container `2xl` is 1400px.
 
 ---
 
-## H. Typography status (current inconsistency — recorded, not fixed here)
+## H. Typography status
 
-- `src/index.css` sets `body { font-family: 'Inter', system-ui, … }` but **Inter
-  is never loaded.** Only DM Sans and Playfair Display are imported (Google
-  Fonts `@import` at the top of `src/index.css`). Body text currently renders in
-  `system-ui`.
-- **Target direction:** DM Sans is the primary UI/body face (see
-  [BRAND.md](BRAND.md)). Playfair Display remains a scoped editorial accent
-  (PGA `.pga-*`).
-- No code, CSS, or config change in the documentation pass. The typography
-  cleanup is Phase 2 of the active plan.
+- `src/index.css` loads and applies **DM Sans** as the global UI/body face, with
+  system fonts only as runtime fallbacks. Inter is not loaded or declared.
+- Playfair Display remains a scoped editorial accent on PGA
+  `.pga-section-title` / `.pga-hero-title` surfaces; it is not a global heading
+  face.
 
 ---
 

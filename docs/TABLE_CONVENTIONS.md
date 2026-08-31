@@ -5,18 +5,23 @@ heat scale. Pairs with [UI_FRAMEWORK.md](UI_FRAMEWORK.md) (layout, hierarchy,
 mobile) and [BRAND.md](BRAND.md) (color identity).
 
 Authority level: tier 6 documentation in [DECISIONS.md](DECISIONS.md) KS-001.
-Backed by the completed UI / Design Framework Audit. Where a rule records a
-target that current code has not fully adopted, it is marked; the
-`docs/plans/active/ui-design-framework.md` plan owns the code work.
+Backed by the completed UI / Design Framework Audit and the sport migrations
+through Phase 9. The active plan owns the remaining focused migration work and
+explicit exceptions.
 
 ---
 
 ## A. Canonical table density
 
-JoeKnowsBall data tables are **dense comparison tables**, and the dense approach
-already used by the NFL tables is the site standard. The reference implementation
-is `src/components/nfl/ui/NflTable.tsx`
-(`NflTableScroller`, `NFL_TABLE_HEAD_ROW`, `NFL_TABLE_ROW`).
+JoeKnowsBall data tables are **dense comparison tables**. The current shared
+implementation is `src/components/ui/dense-table.tsx`:
+
+- `DenseTableScroller` — accessible, table-local horizontal overflow.
+- `DENSE_TABLE_HEAD_ROW` — compact shared header-row styling.
+- `DENSE_TABLE_ROW` — shared separators and restrained hover styling.
+
+`src/components/nfl/ui/NflTable.tsx` is a compatibility adapter that re-exports
+these primitives under the historical NFL names; it is not a separate standard.
 
 Design intent (values are intent, not brittle contracts):
 
@@ -34,9 +39,9 @@ The shadcn primitive `src/components/ui/table.tsx` is **roomy** (`h-12` header,
 `p-4` cells) and is **not** the standard for data-dense tables. Use it only for
 small, low-density tabular content (a short settings list, a 3-row summary).
 
-Target (plan Phase 5): promote the NFL scroller + head/row style constants to a
-shared, sport-neutral primitive so CFB, PGA, MLB, and Fantasy tables stop
-hand-rolling their own. Until then, new dense tables follow the NFL pattern.
+New dense tables use the shared sport-neutral primitives directly when their
+existing presentation maps cleanly. Specialized or low-density editorial
+content is not forced into them.
 
 ---
 
@@ -55,7 +60,7 @@ comparison. Apply this priority order:
 4. **Contain horizontal overflow to the table, never the page.** The scroll
    region is a positioned (`relative`) container with `overflow-x-auto`, a
    `role="region"`, an `aria-label`, `tabIndex={0}`, and a visible focus ring —
-   exactly what `NflTableScroller` does. A bare `overflow-x-auto` div is not
+   exactly what `DenseTableScroller` does. A bare `overflow-x-auto` div is not
    sufficient (not keyboard reachable, not announced, and an unpositioned
    ancestor lets visually-hidden content escape and widen the page).
 5. **Frozen first column / sticky header** when identity or column meaning would
@@ -68,15 +73,15 @@ comparison. Apply this priority order:
 
 ## C. Frozen column, sticky header, and z-index
 
-Sticky/frozen behavior is currently re-implemented per table. Target (plan
-Phase 6): a shared helper. Until then, follow one consistent convention:
+The shared `stickyDenseHeader()` and `frozenDenseColumn()` helpers in
+`src/components/ui/dense-table.tsx` implement this convention:
 
 - Sticky header row: `position: sticky; top: 0` **within the table's own scroll
   container** (not the viewport), with an opaque background so body rows do not
   bleed through.
 - Frozen first column: `position: sticky; left: 0` with an opaque background and
   a right-edge hairline or shadow to signal the freeze.
-- **z-index ladder** (keep global):
+- **Implemented z-index ladder** (`TABLE_LAYER`, kept below page chrome):
   - `SiteHeader` — `z-[100]` (global, always on top).
   - Mobile context strips (e.g. `CollegeFootballMobileStickyHeader`) — `z-40`,
     positioned below the header (`top-[72px]`).
@@ -129,22 +134,24 @@ These thresholds are exactly the `minFavorablePercentile` cutoffs in
 
 New heat consumers build on these two modules. Do not introduce a third scale.
 
-### Consolidation targets (plan Phase 7 — not this pass)
+### Current adoption and retained exceptions
 
-These currently implement their own scales and should re-express on JKB Heat:
-
-- `src/lib/pga/pgaHeatColors.ts` (`percentileHeatClass`, 4 bands)
-- `src/lib/pga/rankColors.ts` (`getPercentileColor` / `getRankColor` /
-  `RANK_COLOR_LEGEND`, 5 hex bands) — keep the `getPercentileFromRank` utility
-- `src/lib/cfb/sosPresentation.ts` (`getSosHeatClass`, 5 bands, 133-team ranks)
-- ~~`src/pages/MLBPercentileDemo.tsx` (inline `percentileToClass`)~~ — **done**
-  (Phase 8D): now renders through the shared `PercentileCell` +
-  `PERCENTILE_TIER_LEGEND`.
-- `src/lib/fantasy/rankingPresentation.ts` quantile `RankTone` — align band
-  language
-
-`src/lib/pga/pgaScoreColorScale.ts` already builds on
-`percentileColorScale.ts` and is the example to follow.
+- `src/lib/shared/jkbHeat.ts` is the site-level entry point. It re-exports the
+  approved tier, direction, missing/sample, small-pool percentile, rank-tone,
+  and derived legend APIs without introducing new thresholds or math.
+- `src/pages/MLBPercentileDemo.tsx` renders through the shared
+  `PercentileCell` + `PERCENTILE_TIER_LEGEND`.
+- `src/lib/fantasy/rankingPresentation.ts` delegates its existing quantile
+  meanings to shared JKB Heat styles; its cutoffs are unchanged.
+- `src/lib/cfb/sosPresentation.ts` keeps its established 133-team rank bands,
+  with cells and legend driven by one shared local definition. Re-expressing
+  those bands onto JKB Heat is a deferred visual change, not a current default.
+- `src/lib/pga/pgaScoreColorScale.ts` builds on the shared percentile core.
+- PGA's separate 4-band `pgaHeatColors.ts` and 5-band `rankColors.ts` palettes
+  remain a temporary intentional exception. Migration requires explicit visual
+  sign-off because an 8-band conversion would materially recolor PGA surfaces;
+  never convert them silently. This sign-off is tracked in
+  [BACKLOG.md](BACKLOG.md).
 
 ---
 
@@ -241,6 +248,10 @@ A legend that can drift from its cells is a defect.
   where discrete banding would look stepped. Default to the discrete scale so a
   rank column and a percentile column on the same board read identically.
 - **PGA `.pga-*` visual system** (`src/index.css`) is an intentional
-  section-specific editorial identity, not a violation to flatten. Its heat
-  cells still consolidate onto JKB Heat; its typography and surface treatment
-  stay.
+  section-specific editorial identity, not a violation to flatten. Its
+  typography and surface treatment stay. The temporary legacy heat exception
+  above remains until explicit visual sign-off.
+- **MLB park factors** in `MlbParkContextPanel` remain contextual until a
+  consumer explicitly defines perspective: higher favors offense/overs but can
+  disadvantage pitching/unders. Do not assign goodness heat while that
+  direction is unresolved; see [BACKLOG.md](BACKLOG.md) BL-MLB-004.

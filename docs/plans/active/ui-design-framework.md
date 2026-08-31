@@ -30,7 +30,7 @@ consolidation.
 
 ## Phases
 
-### Phase 1 — Documentation authority (this pass)
+### Phase 1 — Documentation authority — **done**
 
 Create `docs/BRAND.md`, `docs/UI_FRAMEWORK.md`, `docs/TABLE_CONVENTIONS.md`,
 this plan, and add the cross-cutting decisions to `docs/DECISIONS.md`. No code,
@@ -39,8 +39,8 @@ are in place and internally consistent.**
 
 ### Phase 2 — Typography cleanup — **done**
 
-- Resolve the Inter-declared-but-not-loaded gap: set the body face to **DM Sans**
-  (already loaded) per BRAND.md, or load the intended face explicitly.
+- `src/index.css` loads and applies **DM Sans** as the global body/UI face per
+  BRAND.md.
 - Confirm Playfair Display stays scoped to PGA `.pga-*`.
 - Scope: `src/index.css` font stack + the Google Fonts import line. No layout
   changes.
@@ -82,7 +82,7 @@ are in place and internally consistent.**
   unchanged). Other per-table re-implementations move over opportunistically in
   Phase 8.
 
-### Phase 7 — Heat-scale consolidation
+### Phase 7 — Heat-scale consolidation — **done with recorded exceptions**
 
 Progress (2026-08-31):
 
@@ -111,31 +111,15 @@ Progress (2026-08-31):
   25/10, higherBetter/lowerBetter, missing/non-finite, small-sample,
   sample-unavailable, context-only, legend parity, bridge round-trip,
   re-export identity) + `SOS_HEAT_LEGEND` parity in `sosPresentation.test.ts`.
-- **Still to do:** `pgaHeatColors.ts` (4→8 band re-expression, visual),
-  `pga/rankColors.ts` (retain `getPercentileFromRank`), `MLBPercentileDemo.tsx`
-  (migrate to the shared `PercentileCell` in
-  `src/components/mlb/MlbPercentileScoreCell.tsx`, or the shared JKB Heat API —
-  no new component),
-  `rankingPresentation.ts` band-language alignment. `MlbStatTone` hot/cold and
-  `parPresentation.ts` gradients confirmed as sanctioned exceptions, untouched.
+- **Closure:** `MLBPercentileDemo.tsx` and Fantasy
+  `rankingPresentation.ts` now consume shared JKB Heat presentation; CFB SOS
+  has a single source for its established cells/legend. PGA's 4/5-band legacy
+  palettes remain a temporary exception pending explicit visual sign-off
+  ([BACKLOG.md](../../BACKLOG.md) BL-PGA-001). `MlbStatTone` hot/cold and
+  Fantasy `parPresentation.ts` continuous gradients remain sanctioned
+  exceptions. Thresholds, direction rules, and percentile math are unchanged.
 
-- Keep `src/lib/mlb/percentileColorScale.ts` and `WeeklyHeatTone`
-  (`src/lib/fantasy/weekly/researchPresentation.ts`) as the two source-of-truth
-  modules.
-- Migrate onto them: `src/lib/pga/pgaHeatColors.ts`,
-  `src/lib/pga/rankColors.ts` (retain `getPercentileFromRank`),
-  `src/lib/cfb/sosPresentation.ts`,
-  `src/pages/MLBPercentileDemo.tsx` (use the shared `PercentileCell` in
-  `src/components/mlb/MlbPercentileScoreCell.tsx`, or the shared JKB Heat API),
-  and align
-  `src/lib/fantasy/rankingPresentation.ts` band language.
-- Thresholds and direction rules stay exactly as documented (98/95/80/60/40/25/10
-  favorable-percentile cutoffs; explicit direction; documented denominator
-  rule).
-- Sanctioned exceptions untouched: `MlbStatTone` hot/cold,
-  `parPresentation.ts` continuous gradients.
-
-### Phase 8 — Per-sport migration order
+### Phase 8 — Per-sport migration order — **done**
 
 Apply Phases 5–7 primitives per sport, mechanically, in this order:
 
@@ -164,10 +148,11 @@ Progress (2026-08-31, Phase 8A — NFL):
   header, auto-close on route change), `MatchupTabRow` and `MatchupJumpNav`
   (both `sticky` at `MATCHUP_STICKY_NAV_TOP`, `z-30` below `SiteHeader`
   `z-[100]`) already match UI_FRAMEWORK.md §E.
-- **Deferred:** `NflDfsAnalyzerTable` (hand-rolled `sticky top-0 z-10` thead +
+- **Deferred to and completed in Phase 8E:** `NflDfsAnalyzerTable` had a
+  hand-rolled `sticky top-0 z-10` thead +
   bare `overflow-x-auto` on the `FANTASY_TABLE_SHELL` div) — its table shell is
-  a shared Fantasy primitive, so a clean migration belongs with the Fantasy
-  pass, not NFL. CFB/PGA/MLB/Fantasy per-sport work unstarted.
+  a shared Fantasy primitive, so its clean migration belonged with the Fantasy
+  pass rather than the NFL pass.
 2. **CFB**
 
 Progress (2026-08-31, Phase 8B — CFB):
@@ -385,7 +370,8 @@ Progress (2026-08-31, Phase 8D-2 — JKB Heat authority reconciliation):
   `pgaHeatColors` / `rankColors` NOT migrated (explicit out-of-scope).
 - **Docs:** `TABLE_CONVENTIONS.md` §D source-of-truth bullets rewritten (the
   scale owns the full gold→red ramp; `WeeklyHeatTone` is a vocabulary over it);
-  stale "blue counter-scale" comment removed from `researchPresentation.ts`.
+  the stale incompatible-palette comment was removed from
+  `researchPresentation.ts`.
 - **Tests:** boundary + red-not-blue assertions added to
   `percentileColorScale.test.ts`, `jkbHeat.test.ts`,
   `MlbPercentileScoreCell.test.tsx`; `researchPresentation.test.ts` gains a
@@ -394,39 +380,150 @@ Progress (2026-08-31, Phase 8D-2 — JKB Heat authority reconciliation):
 5. **Fantasy**, then any remaining surfaces (Bracket / World Cup / Home / SEO
    pages) as appropriate.
 
-### Phase 9 — Responsive / mobile pattern rollout
+Progress (2026-08-31, Phase 8E — Fantasy):
 
-- Apply UI_FRAMEWORK.md sections F and TABLE_CONVENTIONS.md section B to the
-  migrated surfaces: column hide/deprioritize, expandable row detail,
-  collapsible secondary content, no horizontal page scroll.
-- Reuse `use-mobile`, `useIsCompactLayout`, and container queries; do not add new
-  layout-mode mechanisms.
+- **Audit / shared table migration:** `FantasyParBoard` (Overall), both layouts
+  in `PositionParBoard`, both layouts in the temporary `LegacyPositionBoard`,
+  the Draft Preview board plus its Starting Roster / My Draft tables, and the
+  desktop `NflDfsAnalyzerTable` now import `DenseTableScroller` directly rather
+  than the historical NFL compatibility shim or a bare overflow wrapper.
+  Weekly Rankings' custom compact grid now uses `DenseTableScroller` as its
+  keyboard-reachable local overflow region. `FantasyPointsAllowed` was already
+  the Phase 6 representative consumer and remains on the shared helpers.
+  `DENSE_TABLE_HEAD_ROW` / `DENSE_TABLE_ROW` were adopted where the existing
+  dense styling mapped cleanly; Fantasy's bordered cell grid and deliberate
+  column hierarchy remain intact.
+- **Sticky / frozen behavior:** in-container sticky headers on the Overall,
+  position, legacy, DFS, Starting Roster, and My Draft tables now use
+  `stickyDenseHeader` and the shared z-20 layer. Opaque header surfaces remain.
+  No new frozen columns were introduced. Draft Preview's page-sticky
+  `top-[73px]` header cells and its existing Rank + Player pins remain bespoke
+  because `stickyDenseHeader` intentionally targets an in-table `top-0`
+  scroller; Weekly's compact Rank/logo/name micro-columns likewise remain its
+  existing specialized grid. `FantasyPointsAllowed` continues to use
+  `frozenDenseColumn` for its single Team identity column.
+- **Heat:** `rankingPresentation.ts` keeps its existing quartile and fixed SOS
+  cutoffs but mechanically maps favorable / neutral / unfavorable to shared
+  JKB Heat light-green / neutral / light-red styles; missing remains unpainted.
+  `ppgPercentileStyle` keeps the existing per-position `n - 1` percentile math
+  and now delegates styling to the full shared JKB Heat tier definitions, so
+  below-average PPG is red rather than falsely neutral. `teamPercentiles.ts`
+  math is unchanged and regression-tested. Weekly heat already used the shared
+  authority. The sanctioned continuous PAR/rank gradient in
+  `parPresentation.ts` is unchanged.
+- **Hierarchy / tokens:** JKB rank, consensus/ADP, PAR/G, projected points,
+  position badges, matchup heat, and read-only shadow Model Rank retain their
+  distinct treatments. No hard-coded neutral or identity colors were changed;
+  position colors, Draft Preview amber pick/target accents, and PAR treatments
+  remain intentional.
+- **Mobile containment:** Draft Preview's base grid now declares
+  `grid-cols-1`, preventing its implicit grid track from expanding the page to
+  422px at a 320px viewport while preserving the existing `lg` sidebar tracks.
+  Weekly, ROS, Draft Preview, and Points Allowed have no page-level horizontal
+  overflow at 320 / 768 / 1024 / 1440; wide tables scroll only inside their
+  labelled regions.
+- **Tests:** focused Fantasy component/presentation coverage verifies accessible
+  scrollers, shared density/sticky classes, unchanged order/ranks/PAR values,
+  JKB Heat direction, missing handling, and fixed-small-pool percentile
+  endpoints. `tests/fantasy-ui-framework-phase8e.spec.ts` provides permanent
+  analytics-safe browser coverage for Weekly, ROS, Draft Preview, and Points
+  Allowed at 320 / 768 / 1024 / 1440.
+- **Deferred:** Draft Preview's page-sticky two-column corner and Weekly's
+  custom compact frozen identity triplet require a deliberate UX change rather
+  than a mechanical helper swap. The temporary Legacy board retains its second
+  pinned Player column for parity while it remains available for side-by-side
+  review. No projection/model/PAR/ADP/ROS methodology work was performed.
 
-### Phase 10 — Visual-regression validation
+### Phase 9 — Final cross-site visual audit — **audit complete; rollout remains active**
 
-- Representative screenshots / browser checks at **~320, 768, 1024, 1440** for
-  each migrated surface, before and after.
-- Use the repo's analytics-safe Playwright setup (KS-006 — no GA/GTM traffic).
-- A phase is done when its diffs are either visually null or a reviewed,
-  intentional improvement.
+Progress (2026-08-31, user-directed final cross-site audit):
 
-## Known cleanup targets (tracked)
+- **Coverage:** analytics-safe Playwright inspected 28 representative routes
+  across Home, NFL, CFB, PGA, MLB, and Fantasy at 320 / 768 / 1024 / 1440.
+  The matrix recorded document width, route resolution, heading size, body
+  font, accessible table scrollers, tables, sticky/fixed elements, page height,
+  and runtime/error-overlay state. Temporary screenshots stayed in Playwright
+  output and were not committed.
+- **Cross-site result:** DM Sans is the computed body face on every route; PGA's
+  display treatment remains scoped; mobile page titles remain within the
+  framework scale; global and sport navigation remain reachable with no
+  observed sticky overlap. JKB Heat reads consistently gold/green/slate/red on
+  the audited CFB, PGA model-score, MLB percentile, NFL, and Fantasy goodness
+  surfaces. Brand blue remains structural rather than goodness heat.
+- **Category A fix:** `/nfl` widened the document to 392px at a 320px viewport.
+  The mobile weekly game board was a grid item retaining its intrinsic minimum
+  width; `min-w-0` on `GameBoard` now lets it shrink to the available column.
+  The existing analytics-safe NFL browser spec now runs the mobile case at
+  320px and asserts document-level containment. The final 112 route/viewport
+  matrix has no page-level horizontal overflow.
+- **Category B findings (reported, not changed):** several MLB props pages use
+  many equally rounded cards and highly varied tool-chip accents; CFB matchup
+  and PGA Custom communicate their visual identity but do not expose a normal
+  visible `h1`; the full-width Fantasy ROS identity freeze leaves only Rank and
+  Player visible before local scrolling at 320px. These are visible judgment
+  calls, not mechanical fixes.
+- **Category C candidates:** NFL Weekly Matchups is a long repeated-card feed
+  (especially on mobile), and the older MLB HR / K presentation families would
+  benefit from their own hierarchy/card-composition review. No redesign was
+  attempted in this audit.
+- **Intentional exceptions retained:** PGA editorial typography and scoped dark
+  Custom page; PGA legacy 4/5-band heat pending explicit visual sign-off; MLB
+  hot/cold semantics; Fantasy PAR's continuous gradient; Draft Preview's
+  page-sticky Rank + Player corner; Weekly Rankings' compact identity layout;
+  and the NFL `NflTable` compatibility re-export.
+- **Deferred / data-dependent:** `/mlb` rendered its honest `Failed to fetch`
+  state in the restricted preview environment, so the live game-detail body
+  could not be judged. The DFS analyzer had no uploaded slate/table. External
+  logo/data requests rejected by the browser environment were recorded
+  separately from application error overlays.
+- **Remaining focused table debt:** `HrPlusEvTable` / `KPlusEvTable`, the MLB
+  `performance-preview` table family, and additional live MLB prop-board bare
+  overflow wrappers need a dedicated table-semantics/sticky audit; they were
+  not treated as mechanical swaps in this cross-site pass. The ambiguous
+  `MlbParkContextPanel` factor palette still needs an explicit batter/pitcher or
+  over/under perspective before goodness heat is valid.
+- **Documentation drift found and resolved in Phase 9A:** the audit found that
+  BRAND.md / UI_FRAMEWORK.md still described the old typography fallback and that
+  UI_FRAMEWORK.md / TABLE_CONVENTIONS.md described implemented shared
+  primitives as pending work. The focused reconciliation below corrected the
+  authority docs before closure.
+- **Completion verdict:** the audit itself is complete, but the framework
+  rollout is **not ready to move to `docs/plans/completed/`**. Phase 9A resolved
+  the documentation drift; the focused MLB table-family work above remains.
 
-| Target | Where | Phase |
-| --- | --- | --- |
-| ~~`Inter` declared in body stack but never loaded~~ (done: body now `DM Sans`) | `src/index.css` | 2 |
-| ~~Hard-coded hex values~~ (done: `border`/`card`/`muted`/`foreground` tokens) | `src/components/layout/SiteHeader.tsx` | 3 |
-| ~~Header `/college-football` vs footer `/ncaa` route~~ (done: footer now `/college-football`; label text "NCAA Football" left as-is) | `SiteHeader.tsx` / `SiteFooter.tsx` | 3 |
-| ~~Dead Vite starter CSS~~ (done: file deleted, no import existed) | `src/App.css` | 4 |
-| Roomy shadcn `ui/table` vs hand-rolled dense tables | `src/components/ui/table.tsx` + per-sport tables | 5 (shared primitive: `ui/dense-table.tsx` done), 8 |
-| Duplicated sticky/frozen logic | multiple table components | 6 (shared helper done; `FantasyPointsAllowed` migrated), 8 |
-| Duplicate percentile/heat implementations (`MLBPercentileDemo.tsx` done: now uses shared `PercentileCell` + legend, Phase 8D) | `pga/pgaHeatColors.ts`, `pga/rankColors.ts`, `cfb/sosPresentation.ts`, ~~`MLBPercentileDemo.tsx`~~, `fantasy/rankingPresentation.ts` | 7 |
-| Percentile denominator convention undocumented at call sites | `percentileColorScale.ts` vs `teamPercentiles.ts` / `ppgPercentile.ts` | 7 (doc done in Phase 1; enforce in review) |
-| Radius scale bypassed (`rounded-[30px]`, `[24px]`, `12px`, `20px`) | `src/index.css` + components | 3 / 8 (opportunistic) |
-| Dark mode half-wired (`darkMode:["class"]`, no `:root` `.dark` block) | `tailwind.config.ts` / `src/index.css` | out of scope (KS-012) |
+### Phase 9A — Documentation reconciliation and closure decisions — **done**
 
-Explicitly **not** flattened: the PGA `.pga-*` system is an intentional
-section-specific editorial identity and stays.
+- BRAND.md and UI_FRAMEWORK.md now describe implemented DM Sans typography,
+  tokenized global chrome, removed `App.css`, light-first status, and proven
+  mobile overflow containment.
+- TABLE_CONVENTIONS.md now names `DenseTableScroller`, the shared density
+  constants, sticky/frozen helpers, `TABLE_LAYER`, and the full
+  gold→green→slate→red JKB Heat scale as current implementation.
+- PGA legacy heat visual sign-off and context-dependent MLB park-factor tone
+  are recorded as unresolved backlog items rather than accepted decisions:
+  [BACKLOG.md](../../BACKLOG.md) BL-PGA-001 / BL-MLB-004.
+- Final closure remains pending the focused MLB table-family migration/review.
+  Do not move this plan to `docs/plans/completed/` until that work is resolved;
+  perform the move in a separate final documentation pass.
+
+## Remaining work before closure
+
+1. Complete a focused migration/review of the remaining MLB table families:
+   `HrPlusEvTable` / `KPlusEvTable`, `performance-preview`, and the related live
+   prop-board overflow/sticky semantics. Preserve KS-008-sensitive labels and
+   model/data behavior.
+2. After that work is resolved, perform a separate documentation-only closure
+   pass and move this plan to `docs/plans/completed/`.
+3. Retain explicit exceptions/deferred items unless separately approved:
+   PGA's editorial system and legacy 4/5-band heat (BL-PGA-001), contextual
+   `MlbParkContextPanel` color (BL-MLB-004), CFB SOS visual re-expression,
+   MLB hot/cold semantics, Fantasy PAR gradients, and specialized Fantasy
+   sticky/frozen layouts.
+
+Completed cleanup no longer carried as future work: DM Sans typography,
+tokenized SiteHeader / reconciled CFB route, removed `App.css`, shared dense
+table + sticky/frozen primitives, JKB Heat authority, sport migrations through
+Fantasy Phase 8E, Phase 9 audit, and the NFL 320px overflow fix.
 
 ## Validation checklist (per code phase)
 

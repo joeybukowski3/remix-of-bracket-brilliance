@@ -98,12 +98,9 @@ favorable/unfavorable.
 
 ## Typography identity
 
-- **Primary UI / body face: DM Sans.** DM Sans is already loaded by the app and
-  is the recommended primary face for all body text, labels, table content, and
-  navigation. (Current code declares an `Inter` body stack that is never loaded
-  and silently falls back to `system-ui` — see
-  [UI_FRAMEWORK.md](UI_FRAMEWORK.md) "Typography status". The target is DM Sans;
-  code is not changed in the documentation pass.)
+- **Primary UI / body face: DM Sans.** DM Sans is the implemented global face
+  for body text, labels, table content, and navigation. It is loaded in
+  `src/index.css`; Inter is not part of the target or fallback stack.
 - **Editorial / display accent: Playfair Display.** Retained as an *intentional*
   serif display accent for specialized editorial contexts — currently the PGA
   surfaces (`.pga-*` classes). It is a scoped section identity, not a
