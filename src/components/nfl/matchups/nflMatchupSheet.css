@@ -381,6 +381,28 @@
 .matchup-sos-reference dt { color: var(--sheet-muted); font-size: 0.49rem; font-weight: 800; text-transform: uppercase; }
 .matchup-sos-reference dd { color: var(--sheet-text); font-size: 0.78rem; font-weight: 850; }
 
+/* Betting Market Context — sportsbook line-movement sparkline. Inline only:
+   no axis, no container. Stroke stays legible in both themes; the trailing
+   direction is a hue shift only, never the sole signal. */
+.matchup-spark {
+  display: inline-block;
+  width: 52px;
+  height: 16px;
+  vertical-align: middle;
+  color: var(--sheet-muted);
+}
+.matchup-spark polyline { stroke: currentColor; }
+.matchup-spark--up { color: var(--sheet-model); }
+.matchup-spark--down { color: var(--sheet-away); }
+.matchup-spark--flat { color: var(--sheet-muted); }
+.matchup-spark--empty {
+  display: inline-block;
+  width: 52px;
+  color: var(--sheet-faint);
+  text-align: center;
+  font-weight: 800;
+}
+
 .matchup-explainer { border-color: var(--sheet-border) !important; background: var(--sheet-panel) !important; }
 .matchup-explainer summary::-webkit-details-marker { display: none; }
 .matchup-explainer[open] summary svg { transform: rotate(180deg); }
