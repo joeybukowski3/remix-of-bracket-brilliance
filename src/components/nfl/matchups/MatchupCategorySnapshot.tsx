@@ -50,6 +50,7 @@ export default function MatchupCategorySnapshot({
       eyebrow="At a glance"
       title="Category Snapshot"
       titleId="category-snapshot-heading"
+      className="matchup-category-snapshot"
     >
       <ul className="grid grid-cols-1 gap-3 @[560px]:grid-cols-2 @[900px]:grid-cols-3">
         {MATCHUP_CATEGORIES.map((category) => {

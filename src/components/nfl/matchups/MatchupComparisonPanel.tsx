@@ -195,7 +195,7 @@ export default function MatchupComparisonPanel({
   );
 
   return (
-    <div className="@container space-y-2">
+    <div className="matchup-comparison-density @container space-y-2">
       {categorySummary && (
         <p className="px-0.5 text-[12px] leading-5 text-slate-700">{categorySummary}</p>
       )}
@@ -209,8 +209,6 @@ export default function MatchupComparisonPanel({
       )}
 
       {scheduleContext}
-
-      {unitBattles}
 
       <div className="grid grid-cols-1 items-start gap-2 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
         <MatchupSectionCard
@@ -279,6 +277,8 @@ export default function MatchupComparisonPanel({
 
         {periodComparison}
       </div>
+
+      {unitBattles}
 
       {children}
     </div>

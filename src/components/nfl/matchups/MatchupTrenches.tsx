@@ -1,5 +1,6 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
+import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import MatchupTrenchRow, { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
 import { TRENCH_BATTLES, getMetricDef, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import { collectTrenchPeriodValues } from "@/lib/nfl/trenchMetricsData";
@@ -43,12 +44,12 @@ function TrenchBattle({
 
   return (
     <div className="border-t border-slate-100 pt-1.5 first:border-t-0 first:pt-0">
-      <div className="mb-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-600">
+      <div className="mb-0.5 hidden text-center text-[10px] font-bold uppercase tracking-wide text-slate-600 sm:block">
         {label}
       </div>
 
       {/* Which team and metric each side represents. */}
-      <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
+      <div className="hidden grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] items-end gap-2 sm:grid">
         <div
           title={offenseDef?.help}
           className="truncate text-right text-[9px] font-bold uppercase tracking-wide text-slate-600"
@@ -121,12 +122,22 @@ export default function MatchupTrenches({
       id="trenches"
       eyebrow="Line of scrimmage"
       subtitle="Line-of-scrimmage win rates. Context only — not an input to the JKB spread model."
+      bodyClassName="matchup-dense-section-body"
     >
       <div className="space-y-2.5">
         {possessions.map(({ key, offense, defense }) => (
           <div key={key}>
-            <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
-              {offense.teamName} has the ball
+            <h3 className="matchup-trenches__possession mb-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+              <span className="sr-only">{offense.teamName} has the ball</span>
+              <span aria-hidden className="flex items-center gap-1.5">
+                <NflTeamCrest team={offense} side={key === "away" ? "away" : "home"} size={24} />
+                <span><span className="sm:hidden">{offense.abbr.toUpperCase()}</span><span className="hidden sm:inline">{offense.teamName}</span> offense</span>
+              </span>
+              <span aria-hidden className="text-slate-400">vs</span>
+              <span aria-hidden className="flex flex-row-reverse items-center gap-1.5 text-right">
+                <NflTeamCrest team={defense} side={key === "away" ? "home" : "away"} size={24} />
+                <span><span className="sm:hidden">{defense.abbr.toUpperCase()}</span><span className="hidden sm:inline">{defense.teamName}</span> defense</span>
+              </span>
             </h3>
             <div className="grid gap-1.5">
               {TRENCH_BATTLES.map((battle) => (

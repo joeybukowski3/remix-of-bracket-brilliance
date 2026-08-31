@@ -15,7 +15,6 @@ import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
-import { opponentRankSummary } from "@/lib/nfl/opponentRankSummary";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import {
   MATCHUP_CATEGORIES,
@@ -51,19 +50,26 @@ import {
   DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
   type NflMatchupSampleSettings,
 } from "@/lib/nfl/matchupSampleWindow";
+import "@/components/nfl/matchups/nflMatchupSheet.css";
 import MatchupAvailabilityPanel from "@/components/nfl/matchups/MatchupAvailabilityPanel";
 import MatchupComparisonPanel from "@/components/nfl/matchups/MatchupComparisonPanel";
 import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
+import MatchupExplainer from "@/components/nfl/matchups/MatchupExplainer";
 import MatchupIdentityHeader from "@/components/nfl/matchups/MatchupIdentityHeader";
 import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile";
+import MatchupMobileStickyHeader from "@/components/nfl/matchups/MatchupMobileStickyHeader";
 import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
 import MatchupOverviewPanel from "@/components/nfl/matchups/MatchupOverviewPanel";
 import MatchupPeriodComparison from "@/components/nfl/matchups/MatchupPeriodComparison";
 import MatchupScheduleContext from "@/components/nfl/matchups/MatchupScheduleContext";
+import MatchupThemeToggle from "@/components/nfl/matchups/MatchupThemeToggle";
 import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupTabRow from "@/components/nfl/matchups/MatchupTabRow";
 import MatchupTrenches from "@/components/nfl/matchups/MatchupTrenches";
 import MatchupUnitBattles from "@/components/nfl/matchups/MatchupUnitBattles";
+import { buildCompletedSeasonSosReferences } from "@/components/nfl/matchups/completedSeasonSosReference";
+import { useMatchupTheme } from "@/components/nfl/matchups/matchupTheme";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   MATCHUP_TABS,
   matchupPanelId,
@@ -135,11 +141,19 @@ export default function NFLMatchupDetail() {
   // canonical source every current-rating surface on the site reads, so this
   // page can never show a different rating than /nfl or a team dashboard.
   const { data: currentRating } = useNflCurrentRating2026();
+  // Presentation-only completed-season strength-of-schedule reference. Loaded
+  // from the prior season's canonical results/teams, entirely separate from the
+  // 2026 rating and projection inputs — it adjusts nothing on the page.
+  const { data: priorSeasonData } = useNflSeasonData(CURRENT_SEASON - 1);
 
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
   const navigation = useMatchupNavigation();
+  const { theme, setTheme } = useMatchupTheme();
+  // The sticky team-orientation bar exists only at the compact breakpoint; on
+  // desktop the identity header is the single source of team orientation.
+  const isCompactLayout = useIsCompactLayout("(max-width: 639px)");
 
   const matchup = useMemo(
     () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
@@ -259,11 +273,16 @@ export default function NFLMatchupDetail() {
    */
   const scheduleContext = useMemo(() => {
     if (!matchup) return null;
+    const references = buildCompletedSeasonSosReferences(
+      priorSeasonData?.results,
+      priorSeasonData?.teams,
+      CURRENT_SEASON - 1
+    );
     return {
-      away: opponentRankSummary(data?.results, CURRENT_SEASON, matchup.away.abbr, modelRatings),
-      home: opponentRankSummary(data?.results, CURRENT_SEASON, matchup.home.abbr, modelRatings),
+      away: references.get(matchup.away.abbr) ?? null,
+      home: references.get(matchup.home.abbr) ?? null,
     };
-  }, [matchup, data, modelRatings]);
+  }, [matchup, priorSeasonData]);
 
   const { categoryMetrics, categoryResults } = useMemo(() => {
     const metrics = {} as Record<MatchupCategoryId, MatchupDisplayMetric[]>;
@@ -334,10 +353,17 @@ export default function NFLMatchupDetail() {
      * content column so cards keep the width they had before, and stays well
      * inside the layout's column gap at every breakpoint.
      */
-    <div className="-mx-2 space-y-2 rounded-2xl bg-[#eef1f5] px-2 py-2">
-      <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
+    <div className="nfl-matchup-sheet space-y-2" data-theme={theme}>
+      <div className="matchup-utility-row">
+        <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
+        <MatchupThemeToggle theme={theme} onChange={setTheme} />
+      </div>
 
-      <MatchupIdentityHeader matchup={matchup} market={market?.current ?? null} />
+      <MatchupIdentityHeader
+        matchup={matchup}
+        market={market?.current ?? null}
+        projection={projection}
+      />
 
       <MatchupTabRow
         activeTab={navigation.tab}
@@ -345,19 +371,33 @@ export default function NFLMatchupDetail() {
         token={navigation.token}
       />
 
-      <div {...panelProps("overview")}>
+      {isCompactLayout && (
+        <MatchupMobileStickyHeader matchup={matchup} activeTab={navigation.tab} />
+      )}
+
+      <div {...panelProps("overview")} className="space-y-2">
         <MatchupOverviewPanel
           matchup={matchup}
           categoryResults={categoryResults}
+          categoryMetrics={categoryMetrics}
           onOpenCategory={navigation.openCategory}
           projection={projection}
           market={market?.current ?? null}
           projectionLoading={projectionLoading}
           advantages={advantages}
           angles={angles}
-          sampleLabel={sample?.label}
-          sampleSettings={sampleSettings}
+          marketProfile={<MatchupMarketProfile matchup={matchup} market={market} compact />}
+          scheduleContext={
+            scheduleContext && (scheduleContext.away || scheduleContext.home) ? (
+              <MatchupScheduleContext
+                matchup={matchup}
+                awayReference={scheduleContext.away}
+                homeReference={scheduleContext.home}
+              />
+            ) : undefined
+          }
         />
+        <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />
       </div>
 
       <div {...panelProps("comparison")} className="space-y-2">
@@ -374,15 +414,6 @@ export default function NFLMatchupDetail() {
           onOpenCategory={navigation.openCategory}
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
-          scheduleContext={
-            scheduleContext ? (
-              <MatchupScheduleContext
-                matchup={matchup}
-                awaySummary={scheduleContext.away}
-                homeSummary={scheduleContext.home}
-              />
-            ) : undefined
-          }
           unitBattles={
             <MatchupUnitBattles
               matchup={matchup}
