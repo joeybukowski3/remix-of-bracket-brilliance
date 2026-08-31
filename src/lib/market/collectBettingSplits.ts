@@ -7,7 +7,7 @@
  * into {@link runBettingSplitsCollection}.
  *
  * Pipeline:
- *   SportsDataIO ScoresByWeek discovery
+ *   SportsDataIO GameOddsByWeek ("Pre-Game Odds - by Week") discovery
  *     -> candidate provider games (team identity + kickoff window)
  *       -> BettingSplitsByScoreId fetch (candidates only)
  *         -> wire decode (GameBettingSplit -> row DTOs)
@@ -30,10 +30,10 @@ import {
   SportsDataIoWireDecodeError,
 } from "./providers/sportsDataIoBettingSplitsWire";
 import {
-  decodeSportsDataIoNflSchedule,
   selectScheduleCandidates,
   type SportsDataIoScheduleGame,
 } from "./providers/sportsDataIoSchedule";
+import { decodeSportsDataIoNflPreGameOddsDiscovery } from "./providers/sportsDataIoPreGameOdds";
 import type {
   SportsDataIoClient,
   SportsDataIoSeasonType,
@@ -88,6 +88,15 @@ export type BettingSplitsRunReport = {
 
   discoveredGames: number;
   candidateGames: number;
+  /** Canonical slate games with no pre-game-odds provider game (non-fatal). */
+  providerDiscoveryMissing: number;
+  /**
+   * Provider games discovery DID return but whose team identity matched no
+   * canonical slate game (non-fatal). Distinct from
+   * {@link providerDiscoveryMissing}: this counts a provider row we could not
+   * map, that a "missing" count alone would hide.
+   */
+  providerDiscoveredUnmatched: number;
   splitRequests: number;
   providerRows: number;
   normalizedEvents: number;
@@ -140,6 +149,8 @@ function emptyReport(
     finishedAt: startedAt,
     discoveredGames: 0,
     candidateGames: 0,
+    providerDiscoveryMissing: 0,
+    providerDiscoveredUnmatched: 0,
     splitRequests: 0,
     providerRows: 0,
     normalizedEvents: 0,
@@ -179,21 +190,25 @@ export async function runBettingSplitsCollection(
     throw new Error(`capturedAt must be a valid timestamp; received ${input.capturedAt}.`);
   }
 
-  // --- Discovery ------------------------------------------------------------
-  const schedulePayload = await input.client.getNflScoresByWeek(
+  // --- Discovery ----------------------------------------------------------
+  // Pre-Game Odds by Week is the discovery source (not the Scores feed): the
+  // operational account is authorized for the betting subfeed only. Sportsbook
+  // rows are nested inside each GameInfo, so the decoder deduplicates to one
+  // provider game per ScoreId.
+  const schedulePayload = await input.client.getNflPreGameOddsByWeek(
     input.season,
     input.seasonType,
     input.week,
   );
-  const providerGames = decodeSportsDataIoNflSchedule(schedulePayload);
+  const providerGames = decodeSportsDataIoNflPreGameOddsDiscovery(schedulePayload);
   report.discoveredGames = providerGames.length;
-  logger.info(`Discovered ${providerGames.length} provider games.`);
+  logger.info(`Discovered ${providerGames.length} provider games from pre-game odds.`);
 
   const canonicalGamesForWeek = input.canonicalGames.filter(
     (game) => game.season === input.season && game.week === input.week,
   );
 
-  const { candidates } = selectScheduleCandidates(
+  const { candidates, unmatchedProviderGames } = selectScheduleCandidates(
     providerGames,
     canonicalGamesForWeek.map((game) => ({
       league: "nfl" as const,
@@ -231,6 +246,47 @@ export async function runBettingSplitsCollection(
   }
   report.candidateGames = providerGamesToFetch.size;
   logger.info(`Selected ${providerGamesToFetch.size} candidate games for split fetch.`);
+
+  // Provider games discovery returned that we could NOT map to any canonical
+  // game. Reported separately from "canonical game with no provider game" so a
+  // provider-side identity mismatch is never hidden behind a "missing" count.
+  report.providerDiscoveredUnmatched = unmatchedProviderGames.length;
+  for (const providerGame of unmatchedProviderGames) {
+    report.qa.push({
+      providerGameId: providerGame.providerGameId,
+      jkbGameId: null,
+      stage: "candidate",
+      outcome: "provider-discovered-unmatched",
+      detail:
+        `teams ${providerGame.awayTeamKey ?? providerGame.awayTeamProviderId ?? "?"}` +
+        ` @ ${providerGame.homeTeamKey ?? providerGame.homeTeamProviderId ?? "?"}` +
+        ` — no canonical slate game matched`,
+    });
+    logger.warn(
+      `Provider game ${providerGame.providerGameId} matched no canonical slate game (non-fatal).`,
+    );
+  }
+
+  // No-odds edge case: a canonical game may have no pre-game market yet (common
+  // early in the week). Report it and carry on — never invent a ScoreId, never
+  // fail the whole refresh.
+  const canonicalGameIdsWithCandidate = new Set(
+    candidates.map((candidate) => candidate.canonicalGame.jkbGameId),
+  );
+  for (const game of canonicalGamesForWeek) {
+    if (canonicalGameIdsWithCandidate.has(game.gameId)) continue;
+    report.providerDiscoveryMissing += 1;
+    report.qa.push({
+      providerGameId: "(none)",
+      jkbGameId: game.gameId,
+      stage: "candidate",
+      outcome: "provider-discovery-missing",
+      detail: "no pre-game market for this canonical game yet",
+    });
+    logger.warn(
+      `No pre-game odds provider game for canonical ${game.gameId}; skipping (non-fatal).`,
+    );
+  }
 
   const existingCrosswalks = (await input.store.listAllCrosswalks())
     .filter((row) => row.league === "nfl")

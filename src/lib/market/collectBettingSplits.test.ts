@@ -4,10 +4,12 @@ import { createInMemoryBettingSplitPersistence } from "./bettingSplitsPersistenc
 import type { BettingSplitsCollectionStore } from "./collectBettingSplits";
 import type { SportsDataIoClient } from "./providers/sportsDataIoClient";
 import type { NflGameRecord } from "../nfl/standings";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   NFL_GAME_BETTING_SPLIT_18001,
   NFL_GAME_BETTING_SPLIT_18002,
-  NFL_SCORES_BY_WEEK_PAYLOAD,
+  NFL_PRE_GAME_ODDS_BY_WEEK_PAYLOAD,
 } from "./providers/__fixtures__/sportsDataIoWireFixtures";
 
 const CAPTURED_AT = "2026-09-10T16:00:00.000Z";
@@ -53,8 +55,11 @@ function fakeClient(overrides: Partial<Record<string, unknown>> = {}): {
   const state = { scoresCalls: 0, splitCalls: [] as string[] };
   const client: SportsDataIoClient = {
     async getNflScoresByWeek() {
+      throw new Error("ScoresByWeek must not be called by the betting-splits refresh path");
+    },
+    async getNflPreGameOddsByWeek() {
       state.scoresCalls += 1;
-      return (overrides.schedule as unknown) ?? NFL_SCORES_BY_WEEK_PAYLOAD;
+      return (overrides.schedule as unknown) ?? NFL_PRE_GAME_ODDS_BY_WEEK_PAYLOAD;
     },
     async getNflBettingSplitsByScoreId(scoreId: string) {
       state.splitCalls.push(scoreId);
@@ -176,7 +181,10 @@ describe("runBettingSplitsCollection", () => {
     mutated.BettingMarketSplits[0].BettingSplits[0].MoneyPercentage = 71;
     const changedClient: SportsDataIoClient = {
       async getNflScoresByWeek() {
-        return NFL_SCORES_BY_WEEK_PAYLOAD;
+        throw new Error("ScoresByWeek must not be called");
+      },
+      async getNflPreGameOddsByWeek() {
+        return NFL_PRE_GAME_ODDS_BY_WEEK_PAYLOAD;
       },
       async getNflBettingSplitsByScoreId(scoreId: string) {
         return scoreId === "18001" ? mutated : NFL_GAME_BETTING_SPLIT_18002;
@@ -236,7 +244,10 @@ describe("runBettingSplitsCollection", () => {
     const store = collectionStore();
     const flakyClient: SportsDataIoClient = {
       async getNflScoresByWeek() {
-        return NFL_SCORES_BY_WEEK_PAYLOAD;
+        throw new Error("ScoresByWeek must not be called");
+      },
+      async getNflPreGameOddsByWeek() {
+        return NFL_PRE_GAME_ODDS_BY_WEEK_PAYLOAD;
       },
       async getNflBettingSplitsByScoreId(scoreId: string) {
         if (scoreId === "18001") throw new Error("HTTP 500");
@@ -257,6 +268,99 @@ describe("runBettingSplitsCollection", () => {
     expect(report.splitRequests).toBe(2);
     expect(report.matched).toBe(1);
     expect(report.qa.some((q) => q.stage === "fetch-failed")).toBe(true);
+  });
+
+  it("reports a canonical game with no pre-game odds as provider-discovery-missing (non-fatal)", async () => {
+    const store = collectionStore();
+    const withExtraGame: NflGameRecord[] = [
+      ...canonicalSchedule(),
+      {
+        gameId: "2026_01_BUF_MIA",
+        season: 2026,
+        week: 1,
+        seasonType: "REG",
+        dateUtc: "2026-09-13T17:00:00.000Z",
+        homeTeam: "Miami Dolphins",
+        awayTeam: "Buffalo Bills",
+        homeAbbr: "mia",
+        awayAbbr: "buf",
+        status: "scheduled",
+        stadium: "Hard Rock Stadium",
+        neutralSite: false,
+      },
+    ];
+    const report = await runBettingSplitsCollection({
+      league: "nfl",
+      season: 2026,
+      seasonType: "REG",
+      week: 1,
+      dryRun: true,
+      client: fakeClient().client,
+      canonicalGames: withExtraGame,
+      store,
+      capturedAt: CAPTURED_AT,
+    });
+    expect(report.providerDiscoveryMissing).toBe(1);
+    expect(report.matched).toBe(2);
+    expect(
+      report.qa.some(
+        (q) => q.outcome === "provider-discovery-missing" && q.jkbGameId === "2026_01_BUF_MIA",
+      ),
+    ).toBe(true);
+  });
+
+  it("reports a discovered provider game with no canonical match as provider-discovered-unmatched", async () => {
+    // NFL_PRE_GAME_ODDS_BY_WEEK_PAYLOAD carries an off-slate DAL @ NYG (18003).
+    const report = await runBettingSplitsCollection({
+      league: "nfl",
+      season: 2026,
+      seasonType: "REG",
+      week: 1,
+      dryRun: true,
+      client: fakeClient().client,
+      canonicalGames: canonicalSchedule(),
+      store: collectionStore(),
+      capturedAt: CAPTURED_AT,
+    });
+    expect(report.providerDiscoveredUnmatched).toBe(1);
+    expect(report.providerDiscoveryMissing).toBe(0);
+    expect(
+      report.qa.some(
+        (q) => q.outcome === "provider-discovered-unmatched" && q.providerGameId === "18003",
+      ),
+    ).toBe(true);
+  });
+
+  it("discovery never references or calls ScoresByWeek in the refresh path", async () => {
+    const src = readFileSync(
+      resolve(import.meta.dirname, "collectBettingSplits.ts"),
+      "utf8",
+    );
+    expect(src).not.toMatch(/getNflScoresByWeek|ScoresByWeek|decodeSportsDataIoNflSchedule/);
+
+    const throwingClient: SportsDataIoClient = {
+      async getNflScoresByWeek() {
+        throw new Error("ScoresByWeek called");
+      },
+      async getNflPreGameOddsByWeek() {
+        return NFL_PRE_GAME_ODDS_BY_WEEK_PAYLOAD;
+      },
+      async getNflBettingSplitsByScoreId(scoreId: string) {
+        return scoreId === "18001" ? NFL_GAME_BETTING_SPLIT_18001 : NFL_GAME_BETTING_SPLIT_18002;
+      },
+    };
+    const report = await runBettingSplitsCollection({
+      league: "nfl",
+      season: 2026,
+      seasonType: "REG",
+      week: 1,
+      dryRun: true,
+      client: throwingClient,
+      canonicalGames: canonicalSchedule(),
+      store: collectionStore(),
+      capturedAt: CAPTURED_AT,
+    });
+    expect(report.candidateGames).toBe(2);
   });
 
   it("produces a run report with startedAt/finishedAt and stable counters", async () => {
