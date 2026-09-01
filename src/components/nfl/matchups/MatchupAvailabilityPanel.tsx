@@ -142,61 +142,31 @@ function AvailabilityTable({
  */
 function AvailabilityCards({ entries }: { entries: readonly NflInjuryEntry[] }) {
   return (
-    <ul className="space-y-2">
+    <div className="matchup-availability-list">
+      <div className="matchup-availability-list__head" aria-hidden>
+        <span>Player</span><span>Pos</span><span>Status</span>
+      </div>
+      <ul>
       {entries.map((entry) => (
         <li
           key={entry.playerId}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+          className="matchup-availability-list__row"
         >
-          <div className="flex items-start justify-between gap-2">
-            <span className="min-w-0 text-[13px] font-semibold leading-tight text-slate-900">
-              {entry.playerName}
-              <span className="ml-1.5 text-[11px] font-semibold text-slate-600">
-                {entry.depthChartPosition ?? entry.position}
-              </span>
-            </span>
-            <StatusBadge entry={entry} />
-          </div>
-          {entry.injuryDescription && (
-            <p className="mt-0.5 text-[11px] text-slate-600">{entry.injuryDescription}</p>
-          )}
-          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-slate-100 pt-2">
-            <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">
-                Practice
-              </dt>
-              <dd className="text-[12px] font-semibold text-slate-700">
-                {entry.practiceStatus ? PRACTICE_STATUS_LABELS[entry.practiceStatus] : "—"}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">
-                Reserve
-              </dt>
-              <dd className="text-[12px] font-semibold text-slate-700">
-                {entry.reserveStatus === "RESERVE" ? "Yes" : "—"}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">
-                Last Game
-              </dt>
-              <dd className="text-[12px] font-semibold tabular-nums text-slate-700">
-                {formatSnapPct(entry.lastGameSnapPct)}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">
-                Season
-              </dt>
-              <dd className="text-[12px] font-semibold tabular-nums text-slate-700">
-                {formatSnapPct(entry.seasonSnapPct)}
-              </dd>
-            </div>
-          </dl>
+          <span className="matchup-availability-list__player">
+            <b>{entry.playerName}</b>
+            {(entry.injuryDescription || entry.practiceStatus) && (
+              <small>
+                {[entry.injuryDescription, entry.practiceStatus ? `${PRACTICE_STATUS_LABELS[entry.practiceStatus]} practice` : null]
+                  .filter(Boolean).join(" · ")}
+              </small>
+            )}
+          </span>
+          <span className="matchup-availability-list__pos">{entry.depthChartPosition ?? entry.position}</span>
+          <StatusBadge entry={entry} />
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }
 

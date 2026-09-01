@@ -1,12 +1,11 @@
 name: Generate MLB Numerology
 
-# Twice-daily generation:
-#   Phase 1 - Morning:          4:00 AM America/New_York with backup checks
-#   Phase 2 - Lineup-confirmed: first active game - 2 hours
+# Daily generation at 4:00 AM America/New_York calculates the day's
+# numerology numbers and matching players.
 #
-# The 4:00 AM run is the primary daily refresh. Backup candidates at 6:45 AM
-# and 9:45 AM ET allow the 7:00 AM and 10:00 AM email retries to recover when
-# GitHub Actions delays or misses the primary run.
+# Future external scheduler contract:
+# first pitch - 60 min -> dispatch Generate MLB Numerology
+# The external scheduler is intentionally not implemented in this workflow.
 
 on:
   push:
@@ -19,17 +18,8 @@ on:
       - "scripts/generate-mlb-numerology.mjs"
 
   schedule:
-    # Primary 4:00 AM ET refresh, DST-safe.
-    - cron: "0 8 * * *"
-    - cron: "0 9 * * *"
-    # Backup refresh before the 7:00 AM email retry, DST-safe.
-    - cron: "45 10 * * *"
-    - cron: "45 11 * * *"
-    # Backup refresh before the 10:00 AM email retry, DST-safe.
-    - cron: "45 13 * * *"
-    - cron: "45 14 * * *"
-    # Lineup-confirmed polling window.
-    - cron: "0,10,20,30,40,50 12-23 * * *"
+    - cron: "0 4 * * *"
+      timezone: "America/New_York" # 4:00 AM ET daily generation
 
   workflow_dispatch:
     inputs:

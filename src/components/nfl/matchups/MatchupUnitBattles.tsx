@@ -65,7 +65,7 @@ function PossessionTeam({
     <div
       className={`flex min-w-0 items-center gap-2 ${isEnd ? "flex-row-reverse text-right" : ""}`}
     >
-      <NflTeamCrest team={team} side={side} size={44} />
+      <NflTeamCrest team={team} side={side} size={44} className="matchup-unit-battle__crest" />
       <div className="min-w-0">
         <div className={`truncate ${MATCHUP_PANEL_TITLE}`}>
           <span className="sm:hidden">
@@ -130,7 +130,7 @@ function PossessionPanel({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-300">
-      <div className="flex items-center justify-between gap-3 border-b-2 border-slate-300 bg-slate-100 px-3 py-3 sm:px-5 sm:py-4">
+      <div className="matchup-unit-battle__header flex items-center justify-between gap-3 border-b-2 border-slate-300 bg-slate-100 px-3 py-3 sm:px-5 sm:py-4">
         <PossessionTeam team={awayTeam} side="away" unit={awayUnit} align="start" />
         <span className="shrink-0 text-[14px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
           vs
@@ -226,6 +226,7 @@ export default function MatchupUnitBattles({
       id="matchups"
       eyebrow="Unit by unit"
       subtitle="Direct unit comparison. No matchup score or projected advantage is derived."
+      bodyClassName="matchup-dense-section-body"
       headerAside={
         <MatchupSegmentedControl
           options={options}

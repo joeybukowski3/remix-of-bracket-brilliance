@@ -1,10 +1,11 @@
 name: Poll MLB Numerology Delivery
 
+# Future external scheduler contract:
+# first pitch - 45 min -> dispatch Poll MLB Numerology Delivery exactly once
+# The external scheduler is intentionally not implemented in this workflow.
+#
 # Shared first-pitch-relative delivery gate for Numerology email + X (see
-# scripts/lib/mlb-x-slate-timing.mjs's computeNumerologySlateTiming: begin
-# polling 120 minutes before the day's earliest first pitch, deliver
-# whatever is confirmed from 75 minutes before on, stop polling entirely at
-# 30 minutes before -- never a fixed daily clock time). Eligibility is
+# scripts/lib/mlb-x-slate-timing.mjs's computeNumerologySlateTiming). Eligibility is
 # confirmed-lineup-only: a play must be live-confirmed in today's official
 # starting lineup (scripts/lib/mlb-x-confirmation-snapshot.mjs's
 # resolveNumerologyFacts) AND above the qualifying score threshold --
@@ -21,9 +22,6 @@ name: Poll MLB Numerology Delivery
 # independent delivery receipt (a GH Actions cache for X, a committed JSON
 # file for email) and can recover on its own.
 on:
-  schedule:
-    - cron: "*/15 12-23 * * *"
-    - cron: "*/15 0-2 * * *"
   workflow_dispatch: {}
 
 concurrency:

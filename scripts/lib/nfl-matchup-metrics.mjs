@@ -71,18 +71,40 @@ export const MATCHUP_METRIC_DEFS = Object.freeze({
 
 export const MATCHUP_METRIC_KEYS = Object.freeze(Object.keys(MATCHUP_METRIC_DEFS));
 
-/** The four control states the Phase 1 UI can select. */
-export const WINDOW_IDS = Object.freeze([
-  "season-blend",
-  "season-current",
-  "last5-blend",
-  "last5-current",
+/**
+ * Window id for the full prior regular season (currentSeason - 1).
+ *
+ * Added for the /nfl/power-ratings period selector: its "2025" tab means the
+ * whole 2025 regular season, which is neither a rolling-8 blend nor a Last 5.
+ * The matchup analyzer itself does not surface this window; it exists only so
+ * the power-ratings efficiency layer has a real full-season sample to
+ * normalize against rather than approximating one from the rolling blend.
+ */
+export const PRIOR_SEASON_FULL_WINDOW_ID = "prior-season-full";
+
+/**
+ * Every window the EPA and conventional-metrics artifacts precompute.
+ *
+ * The first four are the matchup analyzer's control states; the fifth is the
+ * power-ratings full-prior-season window. `mode` is consumed by
+ * `selectWindowGames`.
+ */
+export const WINDOW_SPECS = Object.freeze([
+  { id: "season-blend", mode: "season", includePriorSeason: true },
+  { id: "season-current", mode: "season", includePriorSeason: false },
+  { id: "last5-blend", mode: "last5", includePriorSeason: true },
+  { id: "last5-current", mode: "last5", includePriorSeason: false },
+  { id: PRIOR_SEASON_FULL_WINDOW_ID, mode: "priorSeasonFull", includePriorSeason: true },
 ]);
+
+/** Every precomputed window id, in artifact order. */
+export const WINDOW_IDS = Object.freeze(WINDOW_SPECS.map((spec) => spec.id));
 
 export const ROLLING_BLEND_GAME_COUNT = 8;
 export const LAST_N_GAME_COUNT = 5;
 
 export function windowId(mode, includePriorSeason) {
+  if (mode === "priorSeasonFull") return PRIOR_SEASON_FULL_WINDOW_ID;
   return `${mode}-${includePriorSeason ? "blend" : "current"}`;
 }
 
@@ -171,10 +193,14 @@ export function buildCompletedGameIndex(seasons) {
  * last5  + blend ON  — five most recent completed games, crossing the season
  *                      boundary while the current season is young.
  * last5  + blend OFF — up to five most recent completed current-season games.
+ * priorSeasonFull    — every completed prior-season game (the /nfl/power-ratings
+ *                      "2025" tab); `includePriorSeason` is ignored.
  */
 export function selectWindowGames(teamGames, { mode, includePriorSeason, currentSeason, priorSeason }) {
   const current = teamGames.filter((g) => g.season === currentSeason);
   const prior = teamGames.filter((g) => g.season === priorSeason);
+
+  if (mode === "priorSeasonFull") return prior.slice();
 
   if (mode === "last5") {
     if (!includePriorSeason) return current.slice(-LAST_N_GAME_COUNT);

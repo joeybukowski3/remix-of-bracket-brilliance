@@ -133,6 +133,22 @@ describe("rolling blend window selection", () => {
   });
 });
 
+describe("prior-season-full window (power-ratings 2025 tab)", () => {
+  it("selects every completed prior-season game and no current-season game", () => {
+    const selected = select(FULL_PRIOR, [1, 2, 3, 4], "priorSeasonFull", true);
+    expect(selected).toHaveLength(FULL_PRIOR.length);
+    expect(selected.every((g) => g.season === PRIOR)).toBe(true);
+  });
+
+  it("is empty when the prior season has no completed games", () => {
+    expect(select([], [1, 2, 3], "priorSeasonFull", true)).toHaveLength(0);
+  });
+
+  it("has a stable window id", () => {
+    expect(windowId("priorSeasonFull", true)).toBe("prior-season-full");
+  });
+});
+
 describe("blend OFF", () => {
   it("uses only current-season games and is uncapped for the season window", () => {
     expect(select(FULL_PRIOR, [], "season", false)).toHaveLength(0);

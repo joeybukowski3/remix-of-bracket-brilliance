@@ -56,7 +56,7 @@ export const NFL_MATCHUP_SECTIONS: readonly NflMatchupSection[] = [
  * rather than easing off at `lg`.
  */
 export const MATCHUP_STICKY_NAV_TOP = "top-[73px]";
-export const MATCHUP_SECTION_SCROLL_MT = "scroll-mt-32";
+export const MATCHUP_SECTION_SCROLL_MT = "scroll-mt-[174px] sm:scroll-mt-32";
 
 export function getMatchupSection(id: NflMatchupSectionId): NflMatchupSection {
   const section = NFL_MATCHUP_SECTIONS.find((entry) => entry.id === id);

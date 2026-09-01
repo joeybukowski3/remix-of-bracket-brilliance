@@ -4,17 +4,13 @@ run-name: NFL Yardage Market • ${{ github.event_name }} • ${{ github.ref_nam
 
 on:
   schedule:
-    # Conservative preseason/Week-1-buildup cadence, NFL season window only
-    # (Sep-Feb): one daily refresh plus a couple of game-day windows. This
-    # is Phase 10C operational coverage tracking, not a betting-lines feed
-    # -- there is no need for hourly polling while book depth is still thin
-    # (see Phase 10B/10C QA: DraftKings-only coverage as of checkpoint).
-    - cron: "15 9 * 1,2,9,10,11,12 *"
-      timezone: "America/New_York" # 9:15 AM ET daily
-    - cron: "0 12 * 1,2,9,10,11,12 *"
-      timezone: "America/New_York" # 12:00 PM ET game-day refresh (Sun/Thu/Mon slates)
-    - cron: "0 16 * 1,2,9,10,11,12 *"
-      timezone: "America/New_York" # 4:00 PM ET game-day refresh
+    # NFL season window only (Sep-Feb); no scheduled run on Monday.
+    - cron: "0 8 * 1,2,9,10,11,12 0,2,3,4,5,6"
+      timezone: "America/New_York" # 8:00 AM ET Tuesday-Sunday
+    - cron: "0 17 * 1,2,9,10,11,12 4"
+      timezone: "America/New_York" # 5:00 PM ET Thursday
+    - cron: "0 10 * 1,2,9,10,11,12 0"
+      timezone: "America/New_York" # 10:00 AM ET Sunday
   workflow_dispatch:
 
 # Share one lock with the other automated workflows that commit generated data to main.
