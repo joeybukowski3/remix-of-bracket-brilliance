@@ -6,6 +6,12 @@ import {
   FantasyExpandControl,
   FantasyPlayerIdentity,
 } from "@/components/fantasy/FantasyTable";
+import {
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  DenseTableScroller,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import useIsCompactLayout from "@/hooks/useIsCompactLayout";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
 import {
@@ -220,10 +226,13 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
       )}
 
       {visibleRows.length > 0 && !compact && (
-        <div className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto")}>
+        <DenseTableScroller
+          label={`${view} DFS analyzer`}
+          className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto")}
+        >
           <table className="w-full min-w-[860px] border-collapse text-[11px]">
-            <thead className="sticky top-0 z-10 bg-slate-50">
-              <tr>
+            <thead className={stickyDenseHeader("bg-slate-50")}>
+              <tr className={DENSE_TABLE_HEAD_ROW}>
                 {["Player", "Team/Opp", "Salary", "DK Pos RK", "JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Matchup", ""].map((label) => (
                   <th key={label} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-left font-black uppercase tracking-wide text-slate-500")}>
                     {label}
@@ -236,7 +245,7 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
                 const expanded = expandedDkId === row.dkId;
                 return (
                   <Fragment key={row.dkId}>
-                    <tr className="group hover:bg-slate-50">
+                    <tr className={cn(DENSE_TABLE_ROW, "group")}>
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}>
                         <FantasyPlayerIdentity player={row.playerName} team={row.team} compact />
                         <StatusBadge status={row.dkStatus} />
@@ -281,7 +290,7 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
               })}
             </tbody>
           </table>
-        </div>
+        </DenseTableScroller>
       )}
 
       {visibleRows.length > 0 && compact && (

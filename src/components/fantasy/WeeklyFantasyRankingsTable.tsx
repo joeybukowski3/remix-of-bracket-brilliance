@@ -8,6 +8,7 @@ import {
   FantasyExpandControl,
   FantasyPlayerIdentity,
 } from "@/components/fantasy/FantasyTable";
+import { DenseTableScroller } from "@/components/ui/dense-table";
 import useIsCompactLayout from "@/hooks/useIsCompactLayout";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import type { WeeklyResearchMetric } from "@/lib/fantasy/weekly/researchContext";
@@ -640,13 +641,18 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
   return (
     <section aria-label={`${position} weekly fantasy research board`} data-display-mode={displayMode} className={cn(FANTASY_TABLE_SHELL, "overflow-visible")}>
       {compact ? (
-        <div data-weekly-mobile-layout data-mobile-table-scroll className="overflow-x-auto overscroll-x-contain">
+        <DenseTableScroller
+          label={`${position} weekly fantasy rankings`}
+          className="overscroll-x-contain"
+          data-weekly-mobile-layout
+          data-mobile-table-scroll
+        >
           <MobileHeader columns={mobileColumns} />
           {presentationRows.map((presentation) => {
             const expanded = expandedPlayerId === presentation.row.playerId;
             return <MobileRow key={presentation.row.playerId} presentation={presentation} displayName={compactNames.get(presentation.row.playerId) ?? mobilePlayerLastName(presentation.row.playerName)} columns={mobileColumns} mode={displayMode} expanded={expanded} onToggle={() => setExpandedPlayerId(expanded ? null : presentation.row.playerId)} />;
           })}
-        </div>
+        </DenseTableScroller>
       ) : (
         <table className="w-full table-fixed border-separate border-spacing-0 text-left text-[10px] text-slate-700">
           <caption className="sr-only">Canonical weekly fantasy projections with display-only research context</caption>

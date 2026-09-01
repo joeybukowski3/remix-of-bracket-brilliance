@@ -47,6 +47,18 @@ describe("DenseTableScroller", () => {
     expect(region.className).toContain("focus-visible:ring-2");
     expect(region.className).toContain("max-h-[72vh]");
   });
+
+  it("forwards consumer data attributes without weakening the region contract", () => {
+    render(
+      <DenseTableScroller label="Mobile rankings" data-mobile-table-scroll>
+        <span>child</span>
+      </DenseTableScroller>,
+    );
+
+    const region = screen.getByRole("region", { name: "Mobile rankings" });
+    expect(region).toHaveAttribute("data-mobile-table-scroll");
+    expect(region).toHaveAttribute("tabindex", "0");
+  });
 });
 
 describe("dense table density classes", () => {

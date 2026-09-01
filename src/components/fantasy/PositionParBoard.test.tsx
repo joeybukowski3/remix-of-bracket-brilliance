@@ -34,6 +34,7 @@ describe.each(PAR_POSITIONS)("%s wide layout", (position) => {
 
   it("renders the sportsbook-style grid with the shared column groups", () => {
     render(<PositionParBoard position={position} query="" />);
+    expect(screen.getByRole("region", { name: `${config.name} research board` })).toHaveClass("overflow-x-auto");
     const table = screen.getByRole("table");
     for (const group of ["Season", "Position evidence", "Team context / playoffs"]) {
       expect(within(table).getByText(group)).toBeTruthy();
@@ -377,6 +378,7 @@ describe.each(PAR_POSITIONS)("%s compact layout", (position) => {
 
   it("stays a dense spreadsheet-style table rather than dropping to cards", () => {
     render(<PositionParBoard position={position} query="" />);
+    expect(screen.getByRole("region", { name: `${POSITION_BOARD_CONFIGS[position].name} research board` })).toHaveAttribute("tabindex", "0");
     const table = screen.getByRole("table");
     expect(table).toBeTruthy();
     // Header row + at least one row per tiered player.

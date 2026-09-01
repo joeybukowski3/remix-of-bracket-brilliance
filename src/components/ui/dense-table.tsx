@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,13 +53,14 @@ export function DenseTableScroller({
   label,
   className = "",
   children,
-}: {
+  ...props
+}: Omit<ComponentPropsWithoutRef<"div">, "aria-label"> & {
   label: string;
-  className?: string;
   children: ReactNode;
 }) {
   return (
     <div
+      {...props}
       role="region"
       aria-label={label}
       tabIndex={0}

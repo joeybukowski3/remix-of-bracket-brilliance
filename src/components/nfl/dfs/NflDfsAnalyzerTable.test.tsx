@@ -75,6 +75,7 @@ describe("NflDfsAnalyzerTable", () => {
       offensiveRow({ dkId: "r1", playerName: "RB Alpha", position: "RB" }),
     ];
     render(<NflDfsAnalyzerTable rows={rows} />);
+    expect(screen.getByRole("region", { name: "VALUE DFS analyzer" })).toHaveClass("overflow-x-auto");
     expect(screen.getByText("QB Alpha")).toBeInTheDocument();
     expect(screen.getByText("RB Alpha")).toBeInTheDocument();
   });

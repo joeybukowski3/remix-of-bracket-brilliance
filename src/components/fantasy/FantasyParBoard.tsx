@@ -9,7 +9,12 @@ import { getPositionTone, POSITION_TONES, POSITION_TONE_NAMES, type PositionTone
 import { getOverallRowContext } from "@/lib/fantasy/overallRowContext";
 import { formatAdp, formatRank, formatSigned } from "@/lib/fantasy/formatBoardValue";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
-import { NflTableScroller } from "@/components/nfl/ui/NflTable";
+import {
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  DenseTableScroller,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import { cn } from "@/lib/utils";
 import {
   FANTASY_TABLE_BODY_CELL,
@@ -228,10 +233,10 @@ function OverallBoard({ query }: { query: string }) {
   if (rows.length === 0) return <EmptyState query={query} />;
 
   return (
-    <NflTableScroller label="Overall fantasy rankings" className="max-h-[72vh]">
+    <DenseTableScroller label="Overall fantasy rankings" className="max-h-[72vh]">
       <table className="w-full min-w-[1420px] border-collapse text-left text-xs">
-        <thead className="sticky top-0 z-20 bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-          <tr>
+        <thead className={stickyDenseHeader("bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600")}>
+          <tr className={DENSE_TABLE_HEAD_ROW}>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-0 z-30 w-14 bg-slate-100 px-3 py-2 text-center")}>Rank</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "sticky left-14 z-30 min-w-64 bg-slate-100 px-3 py-2")}>Player</th>
             <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-3 py-2 text-center")}>Pos Rk</th>
@@ -273,7 +278,7 @@ function OverallBoard({ query }: { query: string }) {
           {rows.map((row) => <OverallRow key={row.overallRank} row={row} />)}
         </tbody>
       </table>
-    </NflTableScroller>
+    </DenseTableScroller>
   );
 }
 
@@ -334,7 +339,7 @@ function OverallRow({ row }: { row: FantasyRankingRow }) {
   const model = getShadowModelRankRow(row.overallRank);
   return (
     <>
-      <tr className="group hover:bg-slate-50">
+      <tr className={cn(DENSE_TABLE_ROW, "group")}>
         <td className={cn(FANTASY_TABLE_BODY_CELL, "sticky left-0 z-10 bg-white px-3 py-2 text-center font-bold tabular-nums text-slate-800 group-hover:bg-slate-50")}>{row.overallRank}</td>
         <td className={cn(FANTASY_TABLE_BODY_CELL, "sticky left-14 z-10 bg-white px-3 py-2 group-hover:bg-slate-50")}><FantasyPlayerIdentity player={row.player} team={row.team} /></td>
         <td className={cn(FANTASY_TABLE_BODY_CELL, "px-3 py-2 text-center")}>
