@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import NFLPowerRatings from "@/pages/NFLPowerRatings";
+import { JKB_HEAT_LEGEND } from "@/lib/shared/jkbHeat";
 
 const ROOT = resolve(__dirname, "../..");
 const NFL_DATA = join(ROOT, "public", "data", "nfl");
@@ -207,6 +208,56 @@ describe("NFLPowerRatings — Rankings/Ratings toggle", () => {
     fireEvent.click(screen.getByRole("button", { name: "Last 8" }));
     expect(screen.getByRole("button", { name: "Ratings" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Last 8" })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("NFLPowerRatings — JKB Heat", () => {
+  const ovrCell = (team: string) =>
+    within(rowFor(team)).getAllByRole("cell")[COL.ovr] as HTMLElement;
+
+  it("renders one legend derived from the shared JKB Heat tier definitions", async () => {
+    await renderPage();
+    const legend = document.querySelector(".nfl-pr-heatlegend") as HTMLElement;
+    expect(legend).toBeTruthy();
+    const labels = [...legend.querySelectorAll(".nfl-pr-heatlegend-name")].map((n) => n.textContent);
+    expect(labels).toEqual(JKB_HEAT_LEGEND.map((entry) => entry.label));
+  });
+
+  it("paints scored cells with the shared scale and leaves SoS / Record / missing unheated", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+
+    const cells = within(rowFor("Buffalo Bills")).getAllByRole("cell") as HTMLElement[];
+    expect(cells[COL.ovr].style.backgroundColor).not.toBe("");
+    expect(cells[COL.ovr].classList.contains("nfl-pr-heat--painted")).toBe(true);
+    // Context-only columns never get a fill.
+    expect(cells[COL.sos].style.backgroundColor).toBe("");
+    expect(cells[COL.record].style.backgroundColor ?? "").toBe("");
+  });
+
+  it("heat is identical across Rankings/Ratings and unaffected by sorting", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+
+    const rankingsBg = ovrCell("Buffalo Bills").style.backgroundColor;
+    expect(rankingsBg).not.toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Ratings" }));
+    expect(ovrCell("Buffalo Bills").style.backgroundColor).toBe(rankingsBg);
+
+    fireEvent.click(screen.getByRole("button", { name: /Sort by team name/i }));
+    expect(ovrCell("Buffalo Bills").style.backgroundColor).toBe(rankingsBg);
+  });
+
+  it("2026: OVR is heated but the not-yet-played efficiency cells stay unheated", async () => {
+    await renderPage();
+    const cells = within(rowFor("Buffalo Bills")).getAllByRole("cell") as HTMLElement[];
+    expect(cells[COL.ovr].style.backgroundColor).not.toBe("");
+    for (const idx of [COL.ypp, COL.epa, COL.success]) {
+      expect(cells[idx].style.backgroundColor, `column ${idx}`).toBe("");
+    }
   });
 });
 

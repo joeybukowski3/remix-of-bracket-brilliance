@@ -3,16 +3,26 @@
  *
  * One contract for every scored column — OFF, DEF, OVR, YPP, EPA, Success — and
  * for SoS. The Rankings/Ratings toggle only decides which of the two lines is
- * primary; it never changes which value drives the heat background.
+ * primary; it never changes the heat background.
  *
  *   Rankings:  primary = #rank        secondary = value
  *   Ratings:   primary = value        secondary = #rank
  *
- * Heat background is always a function of `value` (the underlying rating), never
- * of rank. A `null` value renders a single neutral "—" with no heat.
+ * Heat is resolved upstream by `buildPowerRatingsHeat` against the full team
+ * population using the canonical shared JKB Heat scale (favorable-percentile
+ * bands, gold → green → neutral slate → red). This component only paints the
+ * style it is handed. A `null` value renders a single neutral "—" with no heat;
+ * a missing heat resolution renders the value with no fill.
  */
 
 export type MetricCellMode = "rankings" | "ratings";
+
+/** Canonical shared JKB Heat cell style, from `buildPowerRatingsHeat`. */
+export type MetricCellHeat = {
+  backgroundColor: string;
+  color: string;
+  boxShadow: string;
+};
 
 export type MetricCellProps = {
   value: number | null;
@@ -22,26 +32,12 @@ export type MetricCellProps = {
   formatValue: (value: number) => string;
   /** Format the rank line (default `#{rank}`). */
   formatRank?: (rank: number) => string;
-  /** Paint a green/red heat background from `value`. Off for SoS / rank-only. */
-  heat?: boolean;
   /**
-   * Heat scale bounds. Values are linearly mapped min→red, mid→neutral,
-   * max→green. Defaults to the 1–99 public rating scale centred on 50.
+   * Resolved JKB Heat style for this cell, or `null` / omitted for a
+   * context-only column or a cell whose value is missing from the population.
    */
-  heatMin?: number;
-  heatMax?: number;
+  heat?: MetricCellHeat | null;
 };
-
-function heatStyle(value: number, min: number, max: number): { bg: string; fg: string } {
-  const span = max - min;
-  const t = span <= 0 ? 0.5 : Math.max(0, Math.min(1, (value - min) / span));
-  if (t >= 0.5) {
-    const k = (t - 0.5) * 2;
-    return { bg: `rgba(22, 163, 74, ${0.1 + k * 0.32})`, fg: k > 0.55 ? "#0f5132" : "#166534" };
-  }
-  const k = (0.5 - t) * 2;
-  return { bg: `rgba(220, 38, 38, ${0.1 + k * 0.32})`, fg: k > 0.55 ? "#7f1d1d" : "#991b1b" };
-}
 
 export function MetricCell({
   value,
@@ -49,9 +45,7 @@ export function MetricCell({
   mode,
   formatValue,
   formatRank = (r) => `#${r}`,
-  heat = false,
-  heatMin = 1,
-  heatMax = 99,
+  heat = null,
 }: MetricCellProps) {
   if (value === null || !Number.isFinite(value)) {
     return (
@@ -68,18 +62,19 @@ export function MetricCell({
   const primary = primaryIsRank ? rankText ?? valueText : valueText;
   const secondary = primaryIsRank ? (rankText ? valueText : null) : rankText;
 
-  const style = heat ? (() => {
-    const { bg } = heatStyle(value, heatMin, heatMax);
-    return { background: bg };
-  })() : undefined;
-  const fg = heat ? heatStyle(value, heatMin, heatMax).fg : undefined;
-
   return (
-    <td className="nfl-pr-heat" style={style}>
-      <span className="nfl-pr-heatval nfl-pr-value-primary" style={fg ? { color: fg } : undefined}>
-        {primary}
-      </span>
-      {secondary !== null && <span className="nfl-pr-heatrank nfl-pr-value-secondary">{secondary}</span>}
+    <td
+      className={`nfl-pr-heat${heat ? " nfl-pr-heat--painted" : ""}`}
+      style={
+        heat
+          ? { backgroundColor: heat.backgroundColor, color: heat.color, boxShadow: heat.boxShadow }
+          : undefined
+      }
+    >
+      <span className="nfl-pr-heatval nfl-pr-value-primary">{primary}</span>
+      {secondary !== null && (
+        <span className="nfl-pr-heatrank nfl-pr-value-secondary">{secondary}</span>
+      )}
     </td>
   );
 }
