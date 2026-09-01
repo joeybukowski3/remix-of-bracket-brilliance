@@ -377,3 +377,167 @@ describe("NFLPowerRatings — sortable columns", () => {
     }
   });
 });
+
+describe("NFLPowerRatings — League / Conference / Division views", () => {
+  const tables = () => [...document.querySelectorAll(".nfl-pr-table")];
+  const teamNamesIn = (table: Element) =>
+    [...table.querySelectorAll("tbody tr .nfl-pr-name")].map((n) => n.textContent ?? "");
+  const rankTextIn = (table: Element) =>
+    [...table.querySelectorAll("tbody tr")].map((tr) => {
+      const cell = within(tr as HTMLElement).getAllByRole("cell")[COL.ovr];
+      return cell.querySelector(".nfl-pr-value-primary")?.textContent ?? "";
+    });
+
+  it("defaults to League and renders exactly one table with all 32 teams", async () => {
+    await renderPage();
+    expect(screen.getByRole("button", { name: "League" })).toHaveAttribute("aria-pressed", "true");
+    expect(tables()).toHaveLength(1);
+    expect(teamNamesIn(tables()[0])).toHaveLength(32);
+  });
+
+  it("Conference renders exactly two tables (AFC, NFC), every team once, no cross-conference bleed", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Conference" }));
+
+    const groupNames = [...document.querySelectorAll(".nfl-pr-grouplabel-name")].map((n) => n.textContent);
+    expect(groupNames).toEqual(["AFC", "NFC"]);
+
+    const groupedTables = tables();
+    expect(groupedTables).toHaveLength(2);
+    const allNames = groupedTables.flatMap(teamNamesIn);
+    expect(allNames).toHaveLength(32);
+    expect(new Set(allNames).size).toBe(32);
+
+    // Buffalo Bills (AFC) must be in the first table only.
+    expect(teamNamesIn(groupedTables[0])).toContain("Buffalo Bills");
+    expect(teamNamesIn(groupedTables[1])).not.toContain("Buffalo Bills");
+  });
+
+  it("Division renders exactly 8 groups of 4 teams each, every team exactly once", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+
+    const groupNames = [...document.querySelectorAll(".nfl-pr-grouplabel-name")].map((n) => n.textContent);
+    expect(groupNames).toEqual([
+      "AFC East", "AFC North", "AFC South", "AFC West",
+      "NFC East", "NFC North", "NFC South", "NFC West",
+    ]);
+
+    const groupedTables = tables();
+    expect(groupedTables).toHaveLength(8);
+    for (const table of groupedTables) {
+      expect(teamNamesIn(table)).toHaveLength(4);
+    }
+    const allNames = groupedTables.flatMap(teamNamesIn);
+    expect(new Set(allNames).size).toBe(32);
+  });
+
+  it("league-wide OVR ranks are identical across League, Conference, and Division views", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+
+    const leagueRankByTeam = new Map<string, string>();
+    const leagueTable = tables()[0];
+    [...leagueTable.querySelectorAll("tbody tr")].forEach((tr) => {
+      const name = tr.querySelector(".nfl-pr-name")?.textContent ?? "";
+      const cell = within(tr as HTMLElement).getAllByRole("cell")[COL.ovr];
+      leagueRankByTeam.set(name, cell.querySelector(".nfl-pr-value-primary")?.textContent ?? "");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+    for (const table of tables()) {
+      [...table.querySelectorAll("tbody tr")].forEach((tr) => {
+        const name = tr.querySelector(".nfl-pr-name")?.textContent ?? "";
+        const cell = within(tr as HTMLElement).getAllByRole("cell")[COL.ovr];
+        const rankText = cell.querySelector(".nfl-pr-value-primary")?.textContent ?? "";
+        expect(rankText, name).toBe(leagueRankByTeam.get(name));
+      });
+    }
+  });
+
+  it("JKB Heat colour for a team's OVR cell is identical in League, Conference, and Division views", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+
+    const leagueBg = (
+      within(rowFor("Buffalo Bills")).getAllByRole("cell")[COL.ovr] as HTMLElement
+    ).style.backgroundColor;
+    expect(leagueBg).not.toBe("");
+
+    fireEvent.click(screen.getByRole("button", { name: "Conference" }));
+    const conferenceBg = (
+      within(rowFor("Buffalo Bills")).getAllByRole("cell")[COL.ovr] as HTMLElement
+    ).style.backgroundColor;
+    expect(conferenceBg).toBe(leagueBg);
+
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+    const divisionBg = (
+      within(rowFor("Buffalo Bills")).getAllByRole("cell")[COL.ovr] as HTMLElement
+    ).style.backgroundColor;
+    expect(divisionBg).toBe(leagueBg);
+  });
+
+  it("shared sort state sorts each conference table independently without crossing boundaries", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+    fireEvent.click(screen.getByRole("button", { name: "Conference" }));
+
+    const ovrButtons = screen.getAllByRole("button", { name: /Sort by overall rating/i });
+    fireEvent.click(ovrButtons[0]);
+
+    const groupedTables = tables();
+    for (const table of groupedTables) {
+      const ranks = rankTextIn(table).map((t) => Number.parseInt(t.replace("#", ""), 10));
+      for (let i = 1; i < ranks.length; i += 1) {
+        expect(ranks[i]).toBeGreaterThanOrEqual(ranks[i - 1]);
+      }
+    }
+  });
+
+  it("shared sort state sorts each division table independently without crossing boundaries", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+
+    const ovrButtons = screen.getAllByRole("button", { name: /Sort by overall rating/i });
+    fireEvent.click(ovrButtons[0]);
+
+    for (const table of tables()) {
+      expect(teamNamesIn(table)).toHaveLength(4);
+    }
+  });
+
+  it("Rankings/Ratings and period selection keep working identically in Conference and Division views", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Conference" }));
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    await screen.findByText(/2025 full regular season/i, {}, FIND);
+    expect(screen.getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Ratings" }));
+    const ratingsCell = within(rowFor("Buffalo Bills")).getAllByRole("cell")[COL.ovr];
+    expect(ratingsCell.querySelector(".nfl-pr-value-primary")?.textContent).toMatch(/^\d/);
+
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+    expect(screen.getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Ratings" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("uses the shared per-table header/sticky markup in every group table (no duplicated table framework)", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+    const styleTag = document.querySelector("style")?.textContent ?? "";
+    // Prominent dark header treatment is declared once for the shared `.nfl-pr-table` class.
+    expect(styleTag).toMatch(/\.nfl-pr-table thead th\{[^}]*background:#0f172a/);
+    // Page-scroll sticky clone geometry is declared once and positioned fixed under SiteHeader.
+    expect(styleTag).toMatch(/\.nfl-pr-stickyclone\{[^}]*position:fixed/);
+    expect(styleTag).toMatch(/\.nfl-pr-stickyclone\{[^}]*top:73px/);
+    for (const table of tables()) {
+      expect(table.querySelectorAll("thead th")).toHaveLength(9);
+    }
+  });
+});

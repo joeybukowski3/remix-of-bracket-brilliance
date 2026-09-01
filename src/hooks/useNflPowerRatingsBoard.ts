@@ -31,6 +31,9 @@ export type PowerRatingsRow = {
   name: string;
   slug: string | null;
   color: string;
+  /** Canonical conference/division identity from public/data/nfl/teams.json — display grouping only. */
+  conference: "AFC" | "NFC";
+  division: string;
   /** Far-left row rank: JKB OVR rank for 2025/2026, Last-8 Form OVR rank for Last 8. */
   rank: number | null;
   off: PowerMetricCell;
@@ -284,6 +287,8 @@ export function useNflPowerRatingsBoard(period: PowerRatingsPeriod): State {
         name: team.name,
         slug: team.slug ?? null,
         color: team.primaryColor,
+        conference: team.conference,
+        division: team.division,
         rank: rowRank,
         off: ovrEntry?.off ?? EMPTY_CELL,
         def: ovrEntry?.def ?? EMPTY_CELL,
