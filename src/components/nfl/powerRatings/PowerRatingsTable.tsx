@@ -5,6 +5,10 @@ import { MetricCell, type MetricCellMode } from "@/components/nfl/powerRatings/M
 import type { PowerRatingsRow } from "@/hooks/useNflPowerRatingsBoard";
 import type { PowerRatingsHeat } from "@/lib/nfl/powerRatingsHeat";
 import {
+  readHeaderColumnGeometry,
+  type CloneColumnGeometry,
+} from "@/lib/nfl/powerRatingsTableGeometry";
+import {
   type PowerRatingsSort,
   type PowerRatingsSortKey,
 } from "@/lib/nfl/powerRatingsSort";
@@ -144,9 +148,30 @@ function SosCell({
  */
 const STICKY_TOP = 73;
 
-type CloneGeometry = { active: boolean; left: number; width: number; height: number; scrollLeft: number };
+/** Ordered clone columns: frozen Team, the 7 metric columns, then Record — one entry per real `<th>`. */
+const CLONE_COLUMNS: { key: PowerRatingsSortKey; label: string }[] = [
+  { key: "team", label: "Team" },
+  ...METRIC_COLUMNS.map((col) => ({ key: col.key, label: col.label })),
+  { key: "record", label: "Record" },
+];
 
-const INACTIVE_GEOMETRY: CloneGeometry = { active: false, left: 0, width: 0, height: 0, scrollLeft: 0 };
+type CloneGeometry = {
+  active: boolean;
+  left: number;
+  width: number;
+  height: number;
+  scrollLeft: number;
+  columns: CloneColumnGeometry[];
+};
+
+const INACTIVE_GEOMETRY: CloneGeometry = {
+  active: false,
+  left: 0,
+  width: 0,
+  height: 0,
+  scrollLeft: 0,
+  columns: [],
+};
 
 /**
  * Page-scroll sticky header for one table.
@@ -179,10 +204,25 @@ function useStickyHeaderClone() {
     const wrap = wrapRef.current;
     const scroller = scrollRef.current;
     const thead = theadRef.current;
-    if (!wrap || !scroller || !thead) return;
+    const table = thead?.closest("table") as HTMLElement | null;
+    if (!wrap || !scroller || !thead || !table) return;
 
     let frame = 0;
-    const measure = () => {
+    let columns: CloneColumnGeometry[] = [];
+    let headerHeight = 0;
+
+    // Column widths only change on resize / responsive breakpoints — measured here,
+    // cached, and reused by every reposition until the next resize.
+    const measureColumns = () => {
+      const geo = readHeaderColumnGeometry(thead, table);
+      if (!geo) return;
+      columns = geo.columns;
+      headerHeight = geo.height;
+    };
+
+    // Runs on every scroll frame: decides active/inactive and, when active, only
+    // updates the fixed offset + horizontal translation. Never re-measures widths.
+    const reposition = () => {
       frame = 0;
       const wrapRect = wrap.getBoundingClientRect();
       const theadRect = thead.getBoundingClientRect();
@@ -196,24 +236,39 @@ function useStickyHeaderClone() {
         active: true,
         left: scrollRect.left,
         width: scrollRect.width,
-        height: theadRect.height,
+        height: headerHeight || theadRect.height,
         scrollLeft: scroller.scrollLeft,
+        columns,
       });
     };
-    const scheduleMeasure = () => {
+    const schedule = () => {
       if (frame) return;
-      frame = requestAnimationFrame(measure);
+      frame = requestAnimationFrame(reposition);
+    };
+    const remeasure = () => {
+      measureColumns();
+      schedule();
     };
 
-    measure();
-    window.addEventListener("scroll", scheduleMeasure, { passive: true });
-    window.addEventListener("resize", scheduleMeasure);
-    scroller.addEventListener("scroll", scheduleMeasure, { passive: true });
+    measureColumns();
+    reposition();
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", remeasure);
+    scroller.addEventListener("scroll", schedule, { passive: true });
+
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(remeasure);
+      observer.observe(table);
+    }
+
     return () => {
       if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", scheduleMeasure);
-      window.removeEventListener("resize", scheduleMeasure);
-      scroller.removeEventListener("scroll", scheduleMeasure);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", remeasure);
+      scroller.removeEventListener("scroll", schedule);
+      observer?.disconnect();
     };
   }, []);
 
@@ -229,42 +284,52 @@ function StickyHeaderClone({
   sort: PowerRatingsSort;
   onSort: SortHandler;
 }) {
-  if (!geometry.active) return null;
+  if (!geometry.active || geometry.columns.length === 0) return null;
   const indicator = (key: PowerRatingsSortKey) =>
     sort.key === key ? (sort.direction === "asc" ? "↑" : "↓") : "";
+  const [teamCol, ...metricCols] = geometry.columns;
   return (
     <div
       className="nfl-pr-stickyclone"
       aria-hidden="true"
       style={{ left: geometry.left, width: geometry.width, height: geometry.height }}
     >
-      <div className="nfl-pr-stickyclone-team">
-        Team <span className="nfl-pr-sortind">{indicator("team")}</span>
-      </div>
       <div className="nfl-pr-stickyclone-clip">
         <div
           className="nfl-pr-stickyclone-row"
           style={{ transform: `translateX(${-geometry.scrollLeft}px)` }}
         >
-          {METRIC_COLUMNS.map((col) => (
-            <div
-              key={col.key}
-              className="nfl-pr-stickyclone-cell"
-              onClick={() => onSort(col.key)}
-              style={{ pointerEvents: "auto", cursor: "pointer" }}
-            >
-              {col.label} <span className="nfl-pr-sortind">{indicator(col.key)}</span>
-            </div>
-          ))}
-          <div
-            className="nfl-pr-stickyclone-cell nfl-pr-stickyclone-cell--record"
-            onClick={() => onSort("record")}
-            style={{ pointerEvents: "auto", cursor: "pointer" }}
-          >
-            Record <span className="nfl-pr-sortind">{indicator("record")}</span>
-          </div>
+          {metricCols.map((col, index) => {
+            const meta = CLONE_COLUMNS[index + 1];
+            if (!meta) return null;
+            return (
+              <button
+                key={meta.key}
+                type="button"
+                tabIndex={-1}
+                className="nfl-pr-stickyclone-cell"
+                style={{ left: col.left, width: col.width }}
+                onClick={() => onSort(meta.key)}
+              >
+                <span>{meta.label}</span>
+                <span className="nfl-pr-sortind">{indicator(meta.key)}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
+      {teamCol && (
+        <button
+          type="button"
+          tabIndex={-1}
+          className="nfl-pr-stickyclone-team"
+          style={{ width: teamCol.width }}
+          onClick={() => onSort("team")}
+        >
+          <span>Team</span>
+          <span className="nfl-pr-sortind">{indicator("team")}</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -304,8 +369,16 @@ export function PowerRatingsTable({
 }: PowerRatingsTableProps) {
   const { wrapRef, scrollRef, theadRef, geometry } = useStickyHeaderClone();
 
+  const groupClass = [
+    "nfl-pr-group",
+    groupLabel && "nfl-pr-group--grouped",
+    groupLabel?.eyebrow === "Conference" && "nfl-pr-group--conference",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className="nfl-pr-group">
+    <div className={groupClass}>
       {groupLabel && (
         <div className="nfl-pr-grouplabel">
           <span className="nfl-pr-grouplabel-eyebrow">{groupLabel.eyebrow}</span>
