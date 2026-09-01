@@ -7,6 +7,8 @@ import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { MetricCell, type MetricCellMode } from "@/components/nfl/powerRatings/MetricCell";
 import { useNflPowerRatingsBoard, type PowerRatingsRow } from "@/hooks/useNflPowerRatingsBoard";
+import { buildPowerRatingsHeat } from "@/lib/nfl/powerRatingsHeat";
+import { JKB_HEAT_LEGEND, jkbHeatStyle } from "@/lib/shared/jkbHeat";
 import {
   POWER_RATINGS_PERIODS,
   POWER_RATINGS_PERIOD_LABELS,
@@ -171,6 +173,10 @@ export default function NFLPowerRatings() {
     [board, sort]
   );
 
+  // Heat is computed once per period against the full, UNSORTED team population,
+  // so row sorting and the Rankings/Ratings toggle never change a cell's colour.
+  const heat = useMemo(() => (board ? buildPowerRatingsHeat(board.rows) : null), [board]);
+
   return (
     <>
       <style>{STYLES}</style>
@@ -296,18 +302,37 @@ export default function NFLPowerRatings() {
                     {sortedRows.map((row) => (
                       <tr key={row.abbr}>
                         <TeamCell row={row} />
-                        <MetricCell value={row.ovr.value} rank={row.ovr.rank} mode={mode} formatValue={oneDecimal} heat />
-                        <MetricCell value={row.off.value} rank={row.off.rank} mode={mode} formatValue={oneDecimal} heat />
-                        <MetricCell value={row.def.value} rank={row.def.rank} mode={mode} formatValue={oneDecimal} heat />
-                        <MetricCell value={row.ypp.value} rank={row.ypp.rank} mode={mode} formatValue={oneDecimal} heat />
-                        <MetricCell value={row.epa.value} rank={row.epa.rank} mode={mode} formatValue={oneDecimal} heat />
-                        <MetricCell value={row.success.value} rank={row.success.rank} mode={mode} formatValue={oneDecimal} heat />
+                        <MetricCell value={row.ovr.value} rank={row.ovr.rank} mode={mode} formatValue={oneDecimal} heat={heat?.resolve("ovr", row.abbr)?.style ?? null} />
+                        <MetricCell value={row.off.value} rank={row.off.rank} mode={mode} formatValue={oneDecimal} heat={heat?.resolve("off", row.abbr)?.style ?? null} />
+                        <MetricCell value={row.def.value} rank={row.def.rank} mode={mode} formatValue={oneDecimal} heat={heat?.resolve("def", row.abbr)?.style ?? null} />
+                        <MetricCell value={row.ypp.value} rank={row.ypp.rank} mode={mode} formatValue={oneDecimal} heat={heat?.resolve("ypp", row.abbr)?.style ?? null} />
+                        <MetricCell value={row.epa.value} rank={row.epa.rank} mode={mode} formatValue={oneDecimal} heat={heat?.resolve("epa", row.abbr)?.style ?? null} />
+                        <MetricCell value={row.success.value} rank={row.success.rank} mode={mode} formatValue={oneDecimal} heat={heat?.resolve("success", row.abbr)?.style ?? null} />
                         <SosCell value={row.sos.value} rank={row.sos.rank} mode={mode} />
                         <td className="nfl-pr-rec">{row.record ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+              <div className="nfl-pr-heatlegend">
+                <span className="nfl-pr-heatlegend-label">
+                  JKB Heat · OVR / OFF / DEF / YPP / EPA / Success — favorable percentile vs. the other teams this period
+                </span>
+                <ul>
+                  {JKB_HEAT_LEGEND.map((entry) => {
+                    const s = jkbHeatStyle(entry.tone);
+                    return (
+                      <li
+                        key={entry.id}
+                        style={{ backgroundColor: s.backgroundColor, color: s.color, boxShadow: s.boxShadow }}
+                      >
+                        <span className="nfl-pr-heatlegend-name">{entry.label}</span>
+                        <span className="nfl-pr-heatlegend-range">{entry.percentileRange}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
               <div className="nfl-pr-foot">
                 <p>
@@ -353,6 +378,8 @@ const STYLES = `
   .nfl-pr-table tbody tr:hover .nfl-pr-team{background:#f8fafc}.nfl-pr-team-link{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;color:inherit;text-decoration:none}.nfl-pr-team-link:focus-visible{outline:2px solid #0ea5e9;outline-offset:-2px}.nfl-pr-team-link:hover .nfl-pr-name{text-decoration:underline}.nfl-pr-accent{width:3px;height:24px;border-radius:2px;flex-shrink:0}.nfl-pr-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0}.nfl-pr-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}.nfl-pr-name{font-weight:600;font-size:13px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nfl-pr-sortbtn{display:inline-flex;align-items:center;justify-content:center;gap:3px;width:100%;padding:0;margin:0;background:none;border:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer}.nfl-pr-sortbtn:hover,.nfl-pr-sortbtn.is-active{color:#0f172a}.nfl-pr-sortbtn:focus-visible{outline:2px solid #0ea5e9;outline-offset:2px;border-radius:2px}.nfl-pr-th-team .nfl-pr-sortbtn{justify-content:flex-start}.nfl-pr-sortind{font-size:9px;line-height:1}
   .nfl-pr-heat{text-align:center;padding:6px 4px}.nfl-pr-heatval{display:block;font-variant-numeric:tabular-nums}.nfl-pr-heatrank{display:block;margin-top:1px}.nfl-pr-unavailable{color:#cbd5e1;font-weight:600}.nfl-pr-rec{text-align:center;font-weight:600;font-variant-numeric:tabular-nums;color:#334155}.nfl-pr-foot{font-size:11px;color:#94a3b8;line-height:1.5;padding:12px 14px;border-top:1px solid #f1f5f9}.nfl-pr-foot p{margin:0 0 6px}.nfl-pr-foot p:last-child{margin-bottom:0}.nfl-pr-foot strong{color:#64748b}
+  .nfl-pr-heat--painted .nfl-pr-value-primary{color:inherit}.nfl-pr-heat--painted .nfl-pr-value-secondary{color:inherit;opacity:.72}
+  .nfl-pr-heatlegend{padding:10px 14px;border-top:1px solid #f1f5f9}.nfl-pr-heatlegend-label{display:block;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:6px}.nfl-pr-heatlegend ul{display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:0;list-style:none}.nfl-pr-heatlegend li{display:flex;align-items:baseline;gap:5px;padding:3px 7px;border-radius:4px;font-size:10px;font-variant-numeric:tabular-nums}.nfl-pr-heatlegend-name{font-weight:700}.nfl-pr-heatlegend-range{opacity:.8}
   .nfl-pr-value-primary{font-size:14px;font-weight:800;color:#0f172a}.nfl-pr-value-secondary{font-size:10.5px;font-weight:600;color:#94a3b8}
   @media(max-width:640px){.nfl-pr-table{font-size:10px;min-width:376px}.nfl-pr-col-team{width:40px}.nfl-pr-col-metric{width:42px}.nfl-pr-col-record{width:42px}.nfl-pr-table thead th{font-size:7.5px;letter-spacing:.02em;padding:4px 2px}.nfl-pr-th-team,.nfl-pr-team{border-right-width:1.5px}.nfl-pr-team-link{padding:4px 0;gap:0;justify-content:center}.nfl-pr-accent,.nfl-pr-name{display:none}.nfl-pr-logo,.nfl-pr-badge{width:22px;height:22px}.nfl-pr-heat{padding:3px 2px}.nfl-pr-heatrank{margin-top:0}.nfl-pr-value-primary{font-size:9.5px}.nfl-pr-value-secondary{font-size:7px}.nfl-pr-rec{font-size:9.5px}}
 `;
