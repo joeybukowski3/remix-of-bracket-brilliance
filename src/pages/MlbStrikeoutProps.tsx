@@ -39,6 +39,12 @@ import MlbStrikeoutPropRowDetail, {
 } from "@/components/mlb/MlbStrikeoutPropRowDetail";
 import { compareGameStartTime, formatGameTime } from "@/lib/mlb/mlbGameTime";
 import { formatRankOrdinal, rankHeatValueClass } from "@/lib/mlb/rankPresentation";
+import {
+  DenseTableScroller,
+  TABLE_LAYER,
+  frozenDenseColumn,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 
 const DASH = "—";
 /** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors the Batter View pattern from MlbHrProps.tsx. */
@@ -860,7 +866,7 @@ export default function MlbStrikeoutProps() {
                   </div>
                 ) : (
                   /* Desktop (lg and above): grouped, responsive-density table. */
-                  <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                  <DenseTableScroller label="Strikeout prop board" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-xs">
                     <colgroup>
                       <col className="w-8" /><col className="w-[210px]" /><col className="w-[68px]" />
@@ -869,17 +875,17 @@ export default function MlbStrikeoutProps() {
                       {Array.from({ length: 4 }, (_, index) => <col key={`pitcher-stat-col-${index}`} className="w-[68px]" />)}
                       {Array.from({ length: 5 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[72px]" />)}
                     </colgroup>
-                    <thead className="sticky top-0 z-20">
+                    <thead className={stickyDenseHeader()}>
                     <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
                       <th colSpan={7} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
                       <th colSpan={4} data-table-group="pitcher-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
                       <th colSpan={5} data-table-group="opposing-team-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
                     </tr>
                     <tr className="text-[9px] uppercase tracking-wide text-slate-500">
-                      <th className="sticky left-0 z-30 w-8 border-b border-r border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black text-slate-500">
+                      <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "w-8 border-b border-r border-slate-200 px-1 py-2 text-center align-middle font-black text-slate-500" })}>
                         <button type="button" onClick={() => handleSort("rank")} className="hover:text-slate-900" aria-label="Model Rank. This remains fixed even if you sort by another column." title="Model Rank. This remains fixed even if you sort by another column.">#{makeSortIndicator(sortKey === "rank", sortDir)}</button>
                       </th>
-                      <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left align-middle font-black text-slate-500">
+                      <th className={cn("sticky left-8", TABLE_LAYER.frozenHeaderCell, "border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left align-middle font-black text-slate-500")}>
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
                       <SortTh k="gameStartTime" label="Game Time" />
@@ -914,7 +920,7 @@ export default function MlbStrikeoutProps() {
                         aria-label={rowLabel}
                         className={cn("cursor-pointer transition-colors hover:brightness-[0.98]", getRowTintClass(row, index))}
                       >
-                      <td className={cn("sticky left-0 z-10 border-b border-r border-slate-100 px-1 py-2 text-center align-middle text-[12px] font-black tabular-nums text-slate-600", getStickyRowTintClass(row, index))}>{row.rank}</td><td className={cn("sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-2 text-left align-middle", getStickyRowTintClass(row, index))}>
+                      <td className={frozenDenseColumn({ surface: getStickyRowTintClass(row, index), className: "border-b border-r border-slate-100 px-1 py-2 text-center align-middle text-[12px] font-black tabular-nums text-slate-600" })}>{row.rank}</td><td className={cn("sticky left-8", TABLE_LAYER.frozenColumn, "border-b border-r border-slate-100 px-2 py-2 text-left align-middle", getStickyRowTintClass(row, index))}>
                         <span className="flex min-w-0 items-center gap-2">
                           <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
                           <MlbTeamLogo team={row.team} size={20} />
@@ -975,7 +981,7 @@ export default function MlbStrikeoutProps() {
                       );
                     }) : <tr><td colSpan={16} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
                   </table>
-                  </div>
+                  </DenseTableScroller>
                 )}
               </section>
 
@@ -1084,14 +1090,14 @@ export default function MlbStrikeoutProps() {
                     </div>
                   ) : (
                     /* Desktop (lg and above): compact excluded-row table using the same grouped geometry as the main board. */
-                    <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                    <DenseTableScroller label="Excluded and low-confidence pitchers" style={{ WebkitOverflowScrolling: "touch" }}>
                     <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-xs 2xl:min-w-full">
                       <colgroup>
                         <col className="w-8" /><col className="w-[220px]" /><col className="w-[130px]" /><col className="w-[72px]" /><col className="w-[64px]" />
                         {Array.from({ length: 4 }, (_, index) => <col key={`low-pitcher-stat-col-${index}`} className="w-[68px]" />)}
                         {Array.from({ length: 5 }, (_, index) => <col key={`low-opponent-stat-col-${index}`} className="w-[78px]" />)}
                       </colgroup>
-                      <thead className="sticky top-0 z-20">
+                      <thead className={stickyDenseHeader()}>
                       <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
                         <th colSpan={5} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
                         <th colSpan={4} className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
@@ -1164,7 +1170,7 @@ export default function MlbStrikeoutProps() {
                         );
                       })}</tbody>
                     </table>
-                    </div>
+                    </DenseTableScroller>
                   )}
                 </details>
               )}

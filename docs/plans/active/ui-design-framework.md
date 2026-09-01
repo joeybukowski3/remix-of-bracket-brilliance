@@ -506,7 +506,7 @@ Progress (2026-08-31, user-directed final cross-site audit):
   Do not move this plan to `docs/plans/completed/` until that work is resolved;
   perform the move in a separate final documentation pass.
 
-### Phase 9B — MLB table-family migration — **in progress**
+### Phase 9B — MLB table-family migration — **done** (D group closed by Phase 9C)
 
 Progress (2026-08-31):
 
@@ -567,19 +567,85 @@ Progress (2026-08-31):
   rendered their honest data-unavailable state in the restricted preview
   environment (no live slate), so the +EV scroller could not be judged live —
   unit coverage stands in.
-- **Remaining before closure:** the **D** group above (inline `MlbHrProps` /
-  `MlbStrikeoutProps` prop-board tables) still needs a dedicated pass.
+- **Remaining before closure:** the **D** group above — completed in Phase 9C.
+
+### Phase 9C — MLB inline prop-board table migration — **done**
+
+Progress (2026-08-31):
+
+- **Inventory (`src/pages/MlbHrProps.tsx`, `src/pages/MlbStrikeoutProps.tsx`):**
+  - **A (mechanical, migrated):** HR detail-panel handedness-splits table
+    (bare `overflow-x-auto rounded-lg border`, no sticky); HR "Overdue Batters"
+    and "Biggest Mismatches" lens tables (bare `overflow-x-auto`, `isCompactLayout`
+    stacked-card fallback); HR "Matchup Lenses" table and the unreachable
+    (`activeTab === "pitchers"`) "Pitcher View" table (bare `overflow-x-auto` +
+    hand-rolled `sticky top-0 z-10 bg-white` thead); K "excluded / low-confidence"
+    table (bare `overflow-x-auto` + `sticky top-0 z-20` thead, no frozen column).
+  - **B (shared helper composition, migrated):** the HR batter board and the K
+    strikeout board — bare `overflow-x-auto` + hand-rolled `sticky top-0 z-20`
+    thead + two frozen identity columns (`left-0` rank + `left-6 sm:left-8` /
+    `left-8` name). Scroller → `DenseTableScroller`; thead → `stickyDenseHeader()`
+    (byte-identical `sticky top-0 z-20`); first frozen column → `frozenDenseColumn`
+    (byte-identical `sticky left-0 z-30` header / `z-10` body); the **second**
+    frozen column keeps its bespoke non-`left-0` offset and now composes its
+    z-index from the shared `TABLE_LAYER` ladder (`frozenHeaderCell` z-30 /
+    `frozenColumn` z-10 — unchanged values).
+  - **C (intentionally bespoke, retained):** the `isCompactLayout` mobile
+    card / expandable-row fallbacks on every board (primary mobile UX, not
+    converted to tables); the second frozen identity column's `left-6 sm:left-8`
+    contract; the `+EV` view (`HrPlusEvTable` / `KPlusEvTable`) already covered
+    in Phase 9B; all per-cell `+EV` / edge / heat / sportsbook / pricing tints.
+  - **D (deferred):** none — this closes the Phase 9B **D** group.
+- **Scroller adoption:** all eight tables above now render inside
+  `DenseTableScroller` (`role="region"` + `aria-label` + `tabIndex={0}` +
+  focus ring + load-bearing `relative`). Preserved exactly: `table-fixed` +
+  `<colgroup>` sizing, `min-w-[…]` widths, `border-separate border-spacing-0`,
+  grouped `colSpan` header rows + `border-l-2` group dividers, `WebkitOverflowScrolling`
+  touch hint (passed through as `style`), sort controls, filters, badges,
+  `PercentileCell` / heat classes, row tint helpers, row order, labels, values.
+- **Sticky / frozen:** the two boards' `sticky top-0 z-20` theads call
+  `stickyDenseHeader()`; the HR/K tables that had `sticky top-0 z-10 bg-white`
+  are normalized onto `stickyDenseHeader()` + retained `bg-white` (z-10 → the
+  documented z-20; no frozen column on those tables to conflict). Opaque
+  `bg-slate-50` / `bg-slate-100/90` header-cell surfaces and row-tint sticky
+  backgrounds unchanged.
+- **Responsive contract:** the existing `isCompactLayout` (`lg`) split between
+  desktop board table and mobile card / accordion fallback is unchanged. No
+  duplicate content, no missing content, no page-level horizontal overflow at
+  320 / 768 / 1024 / 1440 (browser-verified against the committed slate
+  artifact — data was available, not an empty state).
+- **Analytics safety:** zero change to HR Score, K Score, `+EV` math, fair
+  value, market price, edge, sportsbook labels, selection logic, sort order,
+  filters, model status, or recommendation language. KS-008 language untouched.
+  No heat threshold or colour-semantic change.
+- **Tests:** `src/pages/MlbHrProps.phase9c.test.tsx` and
+  `src/pages/MlbStrikeoutProps.phase9c.test.tsx` (accessible scroll region,
+  sticky-header + frozen-column `TABLE_LAYER` parity, preserved header labels
+  and row order, HR mobile card fallback still replaces the board table below
+  `lg`). New analytics-safe `tests/mlb-ui-framework-phase9c.spec.ts` (overflow
+  containment + keyboard-reachable scrollers at 320/768/1024/1440; desktop
+  board table absent at 320).
+- **Validation:** new Phase 9C component tests green (6); shared
+  `jkbHeat` + `dense-table` suites green (39); targeted HR/K prop suites show
+  only the 4 pre-existing unrelated failures (verified identical with the
+  files reverted): `MlbStrikeoutProps.sorting` "missing-line/odds messages",
+  `MlbHrProps.freshness` #33 / #40 park-factor layout, `MlbStrikeoutProps.freshness`
+  #7. `tsc -p tsconfig.node.json` clean; `vite build` clean; `git diff --check`
+  clean; lint on the two pages shows only pre-existing warnings and 3
+  pre-existing `no-explicit-any` errors at `MlbHrProps.tsx:2162-2164`
+  (outside the changed regions). `tsc -p tsconfig.app.json` still bails at the
+  pre-existing `src/lib/mlb/mlbPitcherRegression.ts` syntax corruption (Phase 8D).
+- **Browser:** `/mlb/hr-props` and `/mlb/strikeout-props` rendered the migrated
+  boards with populated committed-slate data at all four widths — frozen
+  rank + name columns, sticky grouped headers, group dividers, edge pills, and
+  JKB Heat all intact; document-level horizontal overflow ≤ 1px everywhere;
+  the mobile card fallback is the only board UI at 320px.
 
 ## Remaining work before closure
 
-1. Complete the Phase 9B **D** group: a dedicated migration/review of the inline
-   prop-board tables in `src/pages/MlbHrProps.tsx` and `MlbStrikeoutProps*`
-   (bare `overflow-x-auto`, hand-rolled sticky theads, bespoke lg-breakpoint
-   card fallbacks). Preserve KS-008-sensitive labels and model/data behavior;
-   needs browser sign-off on live slate data.
-2. After that work is resolved, perform a separate documentation-only closure
-   pass and move this plan to `docs/plans/completed/`.
-3. Retain explicit exceptions/deferred items unless separately approved:
+1. Perform a separate documentation-only closure pass and move this plan to
+   `docs/plans/completed/` (Phase 9B **D** / Phase 9C is now resolved).
+2. Retain explicit exceptions/deferred items unless separately approved:
    PGA's editorial system and legacy 4/5-band heat (BL-PGA-001), contextual
    `MlbParkContextPanel` color (BL-MLB-004), CFB SOS visual re-expression,
    MLB hot/cold semantics, Fantasy PAR gradients, and specialized Fantasy

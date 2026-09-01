@@ -22,6 +22,12 @@ import {
 } from "@/components/mlb/BatterExpandedDetails";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
+import {
+  DenseTableScroller,
+  TABLE_LAYER,
+  frozenDenseColumn,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
 import { compareGameStartTime, formatGameTime } from "@/lib/mlb/mlbGameTime";
 import type { KPropStatus } from "@/lib/mlb/kPropStatus";
@@ -1807,7 +1813,7 @@ export function HandednessSplitsTable({
         <div className="text-[10px] font-black uppercase tracking-wide text-slate-400">Season vs LHP / RHP</div>
         <div className="text-[9px] text-slate-400">Current season · StatsAPI</div>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <DenseTableScroller label="Season vs LHP / RHP splits" className="rounded-lg border border-slate-200 bg-white">
         <table className="w-full min-w-[32rem] border-collapse text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50 text-[9px] font-black uppercase tracking-wide text-slate-400">
@@ -1920,7 +1926,7 @@ export function HandednessSplitsTable({
             })}
           </tbody>
         </table>
-      </div>
+      </DenseTableScroller>
       {!splits ? (
         <p className="mt-1 text-[9px] text-slate-400">
           Dual-hand splits not on this payload yet. They appear after the next HR props generation with hand-split cache data.
@@ -2423,9 +2429,9 @@ export default function MlbHrProps() {
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <DenseTableScroller label="Pitcher view" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
-                            <thead className="sticky top-0 z-10 bg-white">
+                            <thead className={cn(stickyDenseHeader(), "bg-white")}>
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
                                 {[
                                   ["pitcher", "Pitcher"],
@@ -2495,7 +2501,7 @@ export default function MlbHrProps() {
                               )}
                             </tbody>
                           </table>
-                        </div>
+                        </DenseTableScroller>
                       </section>
                     ) : null}
 
@@ -2575,7 +2581,7 @@ export default function MlbHrProps() {
                                     </div>
                                   ) : (
                                     /* Desktop (lg and above): existing table, unchanged. */
-                                    <div className="overflow-x-auto">
+                                    <DenseTableScroller label="Overdue batters">
                                       <table className="w-full min-w-[400px] text-xs">
                                         <thead>
                                           <tr className="text-[10px] font-bold uppercase tracking-wide text-amber-700 border-b border-amber-200">
@@ -2608,7 +2614,7 @@ export default function MlbHrProps() {
                                           ))}
                                         </tbody>
                                       </table>
-                                    </div>
+                                    </DenseTableScroller>
                                   )}
                                 </div>
                               )}
@@ -2659,7 +2665,7 @@ export default function MlbHrProps() {
                                     </div>
                                   ) : (
                                     /* Desktop (lg and above): existing table, unchanged. */
-                                    <div className="overflow-x-auto">
+                                    <DenseTableScroller label="Biggest mismatches">
                                       <table className="w-full min-w-[400px] text-xs">
                                         <thead>
                                           <tr className="text-[10px] font-bold uppercase tracking-wide text-red-700 border-b border-red-200">
@@ -2696,7 +2702,7 @@ export default function MlbHrProps() {
                                           ))}
                                         </tbody>
                                       </table>
-                                    </div>
+                                    </DenseTableScroller>
                                   )}
                                 </div>
                               )}
@@ -2918,18 +2924,18 @@ export default function MlbHrProps() {
                           </div>
                           ) : (
                           /* Desktop (lg and above): existing table, unchanged. */
-                          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                          <DenseTableScroller label="Batter HR prop board" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-xs">
-                            <thead className="sticky top-0 z-20">
+                            <thead className={stickyDenseHeader()}>
                               <tr className="text-[9px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.12em] text-slate-500">
                                 {/* Sticky: Rank */}
-                                <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold w-6 sm:w-8">
+                                <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "border-b border-r border-slate-200 px-1 sm:px-2 py-1.5 text-left font-bold w-6 sm:w-8" })}>
                                   <button type="button" onClick={() => handleBatterSort("hrScoreRank")} className="hover:text-slate-900">
                                     #{makeSortIndicator(batterSortKey === "hrScoreRank", batterSortDirection)}
                                   </button>
                                 </th>
-                                {/* Sticky: Name */}
-                                <th className="sticky left-6 sm:left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-1.5 sm:px-2 py-1.5 text-left font-bold min-w-[110px] sm:min-w-[130px]">
+                                {/* Sticky: Name — second frozen column keeps its bespoke left offset; z-index composed from the shared TABLE_LAYER ladder */}
+                                <th className={cn("sticky left-6 sm:left-8", TABLE_LAYER.frozenHeaderCell, "border-b border-r border-slate-200 bg-slate-50 px-1.5 sm:px-2 py-1.5 text-left font-bold min-w-[110px] sm:min-w-[130px]")}>
                                   <button type="button" onClick={() => handleBatterSort("player")} className="hover:text-slate-900">
                                     Batter{makeSortIndicator(batterSortKey === "player", batterSortDirection)}
                                   </button>
@@ -3002,11 +3008,11 @@ export default function MlbHrProps() {
                                     className={cn(rowBg, "cursor-pointer transition-colors hover:brightness-[0.98]")}
                                   >
                                     {/* Sticky rank — shows current sort position, not raw model rank */}
-                                    <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-black text-slate-400 ${stickyBg}`}>
+                                    <td className={frozenDenseColumn({ surface: stickyBg, className: "border-b border-r border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-black text-slate-400" })}>
                                       {i + 1}
                                     </td>
-                                    {/* Sticky name */}
-                                    <td className={`sticky left-6 sm:left-8 z-10 border-b border-r border-slate-100 px-1.5 sm:px-2 py-0.5 sm:py-1 ${stickyBg}`}>
+                                    {/* Sticky name — second frozen column, bespoke left offset, TABLE_LAYER z-index */}
+                                    <td className={cn("sticky left-6 sm:left-8", TABLE_LAYER.frozenColumn, "border-b border-r border-slate-100 px-1.5 sm:px-2 py-0.5 sm:py-1", stickyBg)}>
                                       <div className="flex items-center gap-1">
                                         <span aria-hidden="true" className={cn("shrink-0 text-[8px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
                                         <TeamLogoBadge team={row.team} size={13} showLabel={false} />
@@ -3147,7 +3153,7 @@ export default function MlbHrProps() {
                               )}
                             </tbody>
                           </table>
-                          </div>
+                          </DenseTableScroller>
                           )}
                         </div>
                         {filteredBatters.length > 0 && (
@@ -3517,9 +3523,9 @@ export default function MlbHrProps() {
                           </div>
                           ) : (
                           /* Desktop (lg and above): existing table, unchanged. */
-                          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                          <DenseTableScroller label="Matchup lenses" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
-                            <thead className="sticky top-0 z-10 bg-white">
+                            <thead className={cn(stickyDenseHeader(), "bg-white")}>
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
                                 {(
                                   activeMatchupLens === "best"
@@ -3739,7 +3745,7 @@ export default function MlbHrProps() {
                               )}
                             </tbody>
                           </table>
-                          </div>
+                          </DenseTableScroller>
                           )}
                         </div>
                       </section>
