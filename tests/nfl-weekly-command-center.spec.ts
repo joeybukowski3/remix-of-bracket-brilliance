@@ -15,7 +15,7 @@ test("NFL Weekly Command Center desktop board renders the canonical Week 1 slate
 });
 
 test("NFL Weekly Command Center mobile board is compact and selector-driven", async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 320, height: 844 });
   await page.goto(`${baseUrl}/nfl?week=1`);
   const board = page.getByTestId("mobile-game-board");
   await expect(board).toBeVisible();
@@ -25,6 +25,9 @@ test("NFL Weekly Command Center mobile board is compact and selector-driven", as
   await expect(page.getByRole("button", { name: "WR", exact: true })).toHaveAttribute("aria-pressed", "true");
   const overflow = await board.evaluate((element) => element.scrollWidth - element.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+  await expect.poll(() => page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )).toBeLessThanOrEqual(1);
   await expect(page.locator(".vite-error-overlay")).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath("nfl-weekly-mobile.png"), fullPage: true });
 });

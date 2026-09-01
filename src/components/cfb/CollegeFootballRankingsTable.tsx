@@ -7,10 +7,12 @@ import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
 import { Link } from "react-router-dom";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "./CollegeFootballRatingCell";
+import {
+  DenseTableScroller,
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+} from "@/components/ui/dense-table";
 import { cn } from "@/lib/utils";
-
-const HEAD =
-  "bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600";
 
 type Props = {
   teams: CfbTeam[];
@@ -60,16 +62,14 @@ export default function CollegeFootballRankingsTable({
   }
 
   return (
-    <div
-      role="region"
-      aria-label="College Football rankings"
-      tabIndex={0}
-      className="relative overflow-x-auto rounded-lg border border-slate-200 bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
+    <DenseTableScroller
+      label="College Football rankings"
+      className="rounded-lg border border-slate-200 bg-white"
     >
       {/* Desktop / tablet table */}
       <table className="hidden w-full min-w-[640px] text-xs md:table">
         <thead>
-          <tr className={HEAD}>
+          <tr className={DENSE_TABLE_HEAD_ROW}>
             <th scope="col" className="px-2 py-2 text-center">
               <SortButton label="Rank" active={sortKey === "jkbRank"} onClick={onSort ? () => onSort("jkbRank") : undefined} />
             </th>
@@ -100,7 +100,7 @@ export default function CollegeFootballRankingsTable({
           {teams.map((team) => {
             const conf = getConferenceMeta(team.conference);
             return (
-              <tr key={team.id} className="border-t border-slate-100 hover:bg-slate-50">
+              <tr key={team.id} className={DENSE_TABLE_ROW}>
                 <td className="px-2 py-1.5 text-center font-semibold tabular-nums">
                   {team.ratings.jkbRank ?? "—"}
                 </td>
@@ -199,6 +199,6 @@ export default function CollegeFootballRankingsTable({
           );
         })}
       </ul>
-    </div>
+    </DenseTableScroller>
   );
 }

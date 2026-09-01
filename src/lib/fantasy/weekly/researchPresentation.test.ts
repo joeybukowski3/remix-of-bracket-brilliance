@@ -83,13 +83,16 @@ describe("weekly fantasy research heat presentation", () => {
     expect(weeklyRankHeatTone(40, 188)).not.toBe(weeklyRankHeatTone(13, 188));
   });
 
-  it("reuses the MLB elite, green, and neutral visual tokens", () => {
+  it("draws every fill (favorable and unfavorable) from the MLB PERCENTILE_TIERS", () => {
     const tier = (id: (typeof PERCENTILE_TIERS)[number]["id"]) => PERCENTILE_TIERS.find((entry) => entry.id === id)!.style;
     expect(weeklyHeatStyle("gold").backgroundColor).toBe(tier("elite").backgroundColor);
     expect(weeklyHeatStyle("dark-green").backgroundColor).toBe(tier("excellent").backgroundColor);
     expect(weeklyHeatStyle("green").backgroundColor).toBe(tier("great").backgroundColor);
     expect(weeklyHeatStyle("light-green").backgroundColor).toBe(tier("aboveAverage").backgroundColor);
     expect(weeklyHeatStyle("neutral").backgroundColor).toBe(tier("average").backgroundColor);
+    expect(weeklyHeatStyle("light-red").backgroundColor).toBe(tier("belowAverage").backgroundColor);
+    expect(weeklyHeatStyle("red").backgroundColor).toBe(tier("weak").backgroundColor);
+    expect(weeklyHeatStyle("strong-red").backgroundColor).toBe(tier("poor").backgroundColor);
   });
 
   it("keeps representative heat foregrounds readable without changing their fills", () => {

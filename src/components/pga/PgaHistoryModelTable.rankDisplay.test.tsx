@@ -41,7 +41,7 @@ function row(overrides: Partial<PgaTournamentModelRow> = {}): PgaTournamentModel
 
 function renderTable(rows: PgaTournamentModelRow[], rankMode: "field" | "tour") {
   return render(
-    <PgaHistoryModelTable rows={rows} statView="percentile" isMajor={false} eventLabel="Rocket Classic" rankMode={rankMode} />,
+    <PgaHistoryModelTable rows={rows} scoreComparisonRows={rows} statView="percentile" isMajor={false} eventLabel="Rocket Classic" rankMode={rankMode} />,
   );
 }
 

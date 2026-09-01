@@ -55,7 +55,7 @@ function row(overrides: Partial<PgaTournamentModelRow> = {}): PgaTournamentModel
 }
 
 function renderTable(rows: PgaTournamentModelRow[] = [row()], isMajor = false) {
-  return render(<PgaHistoryModelTable rows={rows} statView="percentile" isMajor={isMajor} eventLabel="3M Open" />);
+  return render(<PgaHistoryModelTable rows={rows} scoreComparisonRows={rows} statView="percentile" isMajor={isMajor} eventLabel="3M Open" />);
 }
 
 function desktopTable(container: HTMLElement) {
@@ -65,6 +65,15 @@ function desktopTable(container: HTMLElement) {
 }
 
 describe("PgaHistoryModelTable readability", () => {
+  it("contains desktop overflow in the shared accessible table region", () => {
+    renderTable();
+    const scroller = screen.getByRole("region", { name: "PGA historical model rankings" });
+
+    expect(scroller).toHaveAttribute("tabindex", "0");
+    expect(scroller.className).toContain("relative");
+    expect(scroller.className).toContain("overflow-x-auto");
+  });
+
   it("preserves every existing column header", () => {
     const { container } = renderTable();
     const headers = Array.from(desktopTable(container).querySelectorAll("thead th")).map((th) => th.textContent?.trim());
@@ -116,14 +125,15 @@ describe("PgaHistoryModelTable readability", () => {
     expect(desktopTable(container).querySelectorAll("tbody tr")).toHaveLength(1);
   });
 
-  it("uses full one-line player names without truncation", () => {
+  it("keeps full player names available while constraining the desktop identity column", () => {
     const { container } = renderTable([row({ player: "Sudarshan Yellamaraju" })]);
     const playerCell = desktopTable(container).querySelector("tbody tr td:nth-child(2)");
+    const playerName = playerCell?.querySelector("span.whitespace-nowrap");
 
-    expect(playerCell?.textContent).toBe("Sudarshan Yellamaraju");
-    expect(playerCell?.className).toContain("whitespace-nowrap");
-    expect(playerCell?.className).not.toContain("truncate");
-    expect(playerCell?.className).not.toContain("text-ellipsis");
+    expect(playerCell).toHaveAttribute("title", "Sudarshan Yellamaraju");
+    expect(playerName).toHaveTextContent("Sudarshan Yellamaraju");
+    expect(playerName?.className).toContain("truncate");
+    expect(playerName?.className).toContain("whitespace-nowrap");
   });
 
   it("gives the desktop player column a content-friendly minimum width", () => {
@@ -139,10 +149,11 @@ describe("PgaHistoryModelTable readability", () => {
     const { container } = renderTable();
     const table = desktopTable(container);
     const playerCell = table.querySelector("tbody tr td:nth-child(2)");
+    const playerName = playerCell?.querySelector("span.whitespace-nowrap");
     const rankCell = table.querySelector("tbody tr td:nth-child(1)");
 
-    expect(playerCell?.className).toContain("text-[13px]");
-    expect(playerCell?.className).toContain("font-black");
+    expect(playerName?.className).toContain("text-[12px]");
+    expect(playerName?.className).toContain("font-medium");
     expect(rankCell?.className).toContain("text-[11px]");
     expect(rankCell?.className).toContain("tabular-nums");
   });

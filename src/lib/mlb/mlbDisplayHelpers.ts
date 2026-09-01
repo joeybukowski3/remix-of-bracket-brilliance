@@ -1,3 +1,5 @@
+import { jkbHeatStyle, type WeeklyHeatTone } from "@/lib/shared/jkbHeat";
+
 export type MlbStatTone = "positive" | "neutral" | "negative";
 
 export function getWeatherIndicators(weather?: string | null) {
@@ -44,6 +46,33 @@ export function getStatToneClasses(tone: MlbStatTone) {
     return "border-sky-200 bg-sky-50 text-sky-800";
   }
   return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+/**
+ * Goodness / favorability tone. Distinct question from {@link MlbStatTone}
+ * ("is this bat hot right now?" — sanctioned red-hot / blue-cold): this asks
+ * "is this value good?" and follows JKB Heat direction (docs/DECISIONS.md
+ * KS-010) — favorable is green, unfavorable is red, genuinely mid is slate.
+ * Used for the lineup / team-form mini displays where a better AVG or a better
+ * record is favorable, not "hot".
+ *
+ * This is a thin semantic adapter: it does NOT define any colors of its own.
+ * Each tone maps to a band of the shared JKB Heat scale and the actual fill is
+ * produced by `jkbHeatStyle` (`src/lib/shared/jkbHeat.ts`), so there is one
+ * source of truth for what "favorable green" / "unfavorable red" look like.
+ */
+export type MlbGoodnessTone = "favorable" | "neutral" | "unfavorable";
+
+/** Semantic map onto the shared JKB Heat vocabulary — no local palette. */
+const GOODNESS_TONE_TO_HEAT: Record<MlbGoodnessTone, WeeklyHeatTone> = {
+  favorable: "light-green", // JKB Heat "Above Average" band
+  neutral: "neutral", //       JKB Heat "Average" band
+  unfavorable: "light-red", // JKB Heat "Below Average" band
+};
+
+/** Inline style for a goodness badge, derived entirely from shared JKB Heat. */
+export function getGoodnessToneStyle(tone: MlbGoodnessTone) {
+  return jkbHeatStyle(GOODNESS_TONE_TO_HEAT[tone]);
 }
 
 export function getStatToneStyle(tone: MlbStatTone) {

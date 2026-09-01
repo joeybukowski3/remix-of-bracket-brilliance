@@ -57,6 +57,16 @@ describe("MlbPitcherRegressionTable — column order", () => {
   });
 });
 
+describe("MlbPitcherRegressionTable — shared dense-table scroll region", () => {
+  it("contains horizontal overflow in an accessible, keyboard-reachable region", () => {
+    render(<MlbPitcherRegressionTable pitchers={pitchers} />);
+    const region = screen.getByRole("region", { name: /pitcher regression/i });
+    expect(region.className).toMatch(/overflow-x-auto/);
+    expect(region.className).toMatch(/relative/);
+    expect(region).toHaveAttribute("tabindex", "0");
+  });
+});
+
 describe("MlbPitcherRegressionTable — sticky Player column", () => {
   it("marks the Player header cell as sticky with a left offset and border", () => {
     render(<MlbPitcherRegressionTable pitchers={pitchers} />);

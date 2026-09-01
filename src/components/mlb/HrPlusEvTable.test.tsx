@@ -195,6 +195,21 @@ describe("HrPlusEvTable", () => {
     ]);
   });
 
+  it("wraps the desktop table in the shared accessible scroll region with a sticky dense header", () => {
+    const row = evaluateHrPlusEv(source());
+    const { container } = render(<HrPlusEvTable rows={[row]} compact={false} />);
+    const region = screen.getByRole("region", { name: /home run \+ev valuations/i });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region.className).toMatch(/relative/);
+    expect(region.className).toMatch(/overflow-x-auto/);
+    expect(region.querySelector("table")).not.toBeNull();
+    const thead = container.querySelector("thead");
+    expect(thead?.className).toMatch(/sticky/);
+    expect(thead?.className).toMatch(/top-0/);
+    // Column set / +EV emphasis unchanged.
+    expect(screen.getByRole("button", { name: /^\+EV/i })).toBeInTheDocument();
+  });
+
   it("renders UNAVAILABLE when valuation cannot be calculated", () => {
     const row = evaluateHrPlusEv(source({ hrOddsYes: null, seasonHomeRuns: null, seasonPlateAppearances: null, handednessSplits: null }));
     render(<HrPlusEvTable rows={[row]} compact={false} />);

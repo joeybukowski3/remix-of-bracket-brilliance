@@ -1,8 +1,15 @@
 import { useState } from "react";
+import {
+  DenseTableScroller,
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  frozenDenseColumn,
+} from "@/components/ui/dense-table";
 import { areWeightsEqual, getWeightTotal } from "@/lib/pga/modelEngine";
 import { getRankColor } from "@/lib/pga/rankColors";
 import { PGA_CUSTOM_MODEL_KEY, PGA_TOP_20_PROFILE_KEY, PGA_WEIGHT_DEFINITIONS } from "@/lib/pga/pgaWeights";
 import type { PgaModelTableConfig, PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
+import { cn } from "@/lib/utils";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -326,15 +333,15 @@ export default function PgaModelTable({
 
       {/* ── Compact table (all screen sizes) ── */}
       {rows.length > 0 && (
-        <div className="overflow-x-auto">
+        <DenseTableScroller label={`PGA ${view === "model" ? "model rankings" : "course history"}`}>
 
           {/* MODEL VIEW */}
           {view === "model" && (
             <table className="w-full text-left text-[12px]">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <th className="sticky left-0 z-30 bg-slate-50 px-2 py-2 w-8">#</th>
-                  <th className="sticky left-8 z-30 bg-slate-50 px-2 py-2 min-w-[130px] border-r border-slate-200">Player</th>
+                <tr className={cn(DENSE_TABLE_HEAD_ROW, "border-b border-slate-200 bg-slate-50 font-black tracking-widest text-slate-400")}>
+                  <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "w-8 px-2 py-2" })}>#</th>
+                  <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "left-8 min-w-[130px] border-r border-slate-200 px-2 py-2" })}>Player</th>
                   {visibleCols.map((col) => (
                     <th key={col.key} title={col.tooltip} className="px-2 py-2 whitespace-nowrap text-center cursor-help">{col.abbr}</th>
                   ))}
@@ -345,16 +352,16 @@ export default function PgaModelTable({
                 {rows.map((row, i) => {
                   const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
                   return (
-                    <tr key={row.id} className={`${sbg} hover:bg-emerald-50/30`}>
+                    <tr key={row.id} className={cn(DENSE_TABLE_ROW, "border-t-0", sbg, "hover:bg-emerald-50/30")}>
                       {/* Rank */}
-                      <td className={`sticky left-0 z-20 border-b border-slate-100 px-2 py-1.5 ${sbg}`}>
+                      <td className={frozenDenseColumn({ surface: sbg, className: "border-b border-slate-100 px-2 py-1.5" })}>
                         <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold
                           ${row.rank <= 5 ? "bg-emerald-600 text-white" : row.rank <= 10 ? "bg-primary/15 text-primary" : "text-slate-400"}`}>
                           {row.rank}
                         </span>
                       </td>
                       {/* Player */}
-                      <td className={`sticky left-8 z-20 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>
+                      <td className={frozenDenseColumn({ surface: sbg, className: "left-8 whitespace-nowrap border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900" })}>
                         {row.player}
                       </td>
                       {/* Stat rank cols */}
@@ -381,9 +388,9 @@ export default function PgaModelTable({
           {view === "history" && (
             <table className="w-full text-left text-[12px]">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <th className="sticky left-0 z-30 bg-slate-50 px-2 py-2 w-8">#</th>
-                  <th className="sticky left-8 z-30 bg-slate-50 px-2 py-2 min-w-[130px] border-r border-slate-200">Player</th>
+                <tr className={cn(DENSE_TABLE_HEAD_ROW, "border-b border-slate-200 bg-slate-50 font-black tracking-widest text-slate-400")}>
+                  <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "w-8 px-2 py-2" })}>#</th>
+                  <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "left-8 min-w-[130px] border-r border-slate-200 px-2 py-2" })}>Player</th>
                   {historyYears.map((y) => (
                     <th key={y} className="px-2 py-2 text-center whitespace-nowrap">{y}</th>
                   ))}
@@ -397,9 +404,9 @@ export default function PgaModelTable({
                 {courseHistoryRows.map((row, i) => {
                   const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
                   return (
-                    <tr key={row.id} className={`${sbg} hover:bg-emerald-50/30`}>
-                      <td className={`sticky left-0 z-20 border-b border-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-400 ${sbg}`}>{i + 1}</td>
-                      <td className={`sticky left-8 z-20 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>{row.player}</td>
+                    <tr key={row.id} className={cn(DENSE_TABLE_ROW, "border-t-0", sbg, "hover:bg-emerald-50/30")}>
+                      <td className={frozenDenseColumn({ surface: sbg, className: "border-b border-slate-100 px-2 py-1.5 text-[10px] font-bold text-slate-400" })}>{i + 1}</td>
+                      <td className={frozenDenseColumn({ surface: sbg, className: "left-8 whitespace-nowrap border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900" })}>{row.player}</td>
                       {historyYears.map((_, yi) => {
                         const v = row.recentFinishes[yi];
                         return (
@@ -426,7 +433,7 @@ export default function PgaModelTable({
             </table>
           )}
 
-        </div>
+        </DenseTableScroller>
       )}
     </section>
   );

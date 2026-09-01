@@ -1,6 +1,6 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import MlbTeamBadge from "@/components/mlb/MlbTeamBadge";
-import { getStatToneClasses } from "@/lib/mlb/mlbDisplayHelpers";
+import { getGoodnessToneStyle } from "@/lib/mlb/mlbDisplayHelpers";
 import { getMlbTeamColors, getTrendArrow } from "@/lib/mlbTeamColors";
 import type { MlbScheduleGame, MlbTeamContext } from "@/lib/mlb/mlbTypes";
 
@@ -47,7 +47,8 @@ export default function MlbTeamMiniCard({
           <div key={row.label} className="flex items-center justify-between gap-3">
             <dt className="text-muted-foreground">{row.label}</dt>
             <dd
-              className={`rounded-full border px-2 py-0.5 font-medium ${row.better ? getStatToneClasses("positive") : "border-transparent text-foreground"}`}
+              className={`rounded-full px-2 py-0.5 font-medium ${row.better ? "" : "border border-transparent text-foreground"}`}
+              style={row.better ? getGoodnessToneStyle("favorable") : undefined}
             >
               {row.label === "Last 5" && trend === "up" ? <TrendingUp className="mr-1 inline h-3 w-3" /> : null}
               {row.label === "Last 5" && trend === "down" ? <TrendingDown className="mr-1 inline h-3 w-3" /> : null}

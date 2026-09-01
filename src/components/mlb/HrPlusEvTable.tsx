@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
+import { DenseTableScroller, stickyDenseHeader } from "@/components/ui/dense-table";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { cn } from "@/lib/utils";
 import {
@@ -561,14 +562,14 @@ export default function HrPlusEvTable({
     <div data-plus-ev-table="desktop">
       {toolbar}
       {sorted.length ? (
-      <div className="overflow-x-auto">
+      <DenseTableScroller label="Home run +EV valuations">
       <table className="w-full table-fixed border-separate border-spacing-0 text-xs">
         <colgroup>
           {PLUS_EV_COLUMNS.map((column) => (
             <col key={column.key} style={{ width: column.width }} />
           ))}
         </colgroup>
-        <thead className="sticky top-0 z-20">
+        <thead className={stickyDenseHeader()}>
           <tr className="text-[10px] uppercase tracking-[0.08em]">
             {PLUS_EV_COLUMNS.map((column, index) => (
               <th
@@ -663,7 +664,7 @@ export default function HrPlusEvTable({
           })}
         </tbody>
       </table>
-      </div>
+      </DenseTableScroller>
       ) : (
         <div data-plus-ev-empty="true" className="px-3 py-6 text-center text-sm text-slate-500">{emptyMessage}</div>
       )}

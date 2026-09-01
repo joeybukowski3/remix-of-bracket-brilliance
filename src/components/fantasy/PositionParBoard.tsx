@@ -1,6 +1,11 @@
 import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { NflTableScroller } from "@/components/nfl/ui/NflTable";
+import {
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  DenseTableScroller,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { PAR_POSITION_LIMITS } from "@/lib/fantasy/parRankings";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
@@ -134,10 +139,10 @@ export default function PositionParBoard({
       </div>
 
       {isCompact ? (
-        <NflTableScroller label={`${config.name} research board`}>
+        <DenseTableScroller label={`${config.name} research board`}>
           <table className="w-full min-w-[300px] border-collapse text-left text-[11px]">
             <thead>
-              <tr className="bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
+              <tr className={cn(DENSE_TABLE_HEAD_ROW, "text-[9px]")}>
                 <th scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "w-7 px-1.5 py-1.5 text-center")}>
                   Tier
                 </th>
@@ -177,9 +182,9 @@ export default function PositionParBoard({
               )}
             </tbody>
           </table>
-        </NflTableScroller>
+        </DenseTableScroller>
       ) : (
-        <NflTableScroller label={`${config.name} research board`} className="max-h-[72vh]">
+        <DenseTableScroller label={`${config.name} research board`} className="max-h-[72vh]">
           <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-xs">
             <TableHeader config={config} />
             <tbody>
@@ -213,7 +218,7 @@ export default function PositionParBoard({
               )}
             </tbody>
           </table>
-        </NflTableScroller>
+        </DenseTableScroller>
       )}
     </section>
   );
@@ -249,7 +254,7 @@ function TierBreakRow({ tier, rows }: { tier?: number; rows: readonly PositionBo
 
 function TableHeader({ config }: { config: PositionBoardConfig }) {
   return (
-    <thead className="sticky top-0 z-30 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+    <thead className={stickyDenseHeader("text-[10px] font-semibold uppercase tracking-wider text-slate-600")}>
       <tr className="bg-slate-200">
         <th colSpan={5} className="border-b border-r border-slate-300 px-2 py-1 text-left">
           <span className="sr-only">Primary</span>
@@ -342,7 +347,7 @@ function TableRow({
           if (isTextSelection(event)) return;
           toggle();
         }}
-        className={cn("group cursor-pointer hover:bg-slate-50", tierEdge)}
+        className={cn(DENSE_TABLE_ROW, "group cursor-pointer", tierEdge)}
       >
         <td className={cn(BODY_CELL_BORDER, "px-2 py-1.5 text-center")}>
           <TierBadge tier={row.tier} />
@@ -429,7 +434,8 @@ function CompactRow({
           toggle();
         }}
         className={cn(
-          "group cursor-pointer hover:bg-slate-50",
+          DENSE_TABLE_ROW,
+          "group cursor-pointer",
           isTierStart && "[&>td]:border-t-2 [&>td]:border-t-slate-300",
         )}
       >

@@ -22,6 +22,11 @@ import CollegeFootballTeamLogo from "@/components/cfb/CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "@/components/cfb/CollegeFootballRatingCell";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
 import CollegeFootballSitePill from "@/components/cfb/CollegeFootballSitePill";
+import {
+  DenseTableScroller,
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+} from "@/components/ui/dense-table";
 
 function StatCell({
   label,
@@ -207,15 +212,13 @@ export default function CollegeFootballTeamPage() {
             No scheduled games are available for this team.
           </p>
         ) : (
-          <div
-            role="region"
-            aria-label={`${team.name} schedule`}
-            tabIndex={0}
-            className="overflow-x-auto rounded-lg border border-slate-200 bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
+          <DenseTableScroller
+            label={`${team.name} schedule`}
+            className="rounded-lg border border-slate-200 bg-white"
           >
             <table className="w-full min-w-[760px] text-xs">
               <thead>
-                <tr className="bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                <tr className={DENSE_TABLE_HEAD_ROW}>
                   <th scope="col" className="px-2 py-2 text-left">Date</th>
                   <th scope="col" className="px-2 py-2 text-left">Opponent</th>
                   <th scope="col" className="px-2 py-2 text-center">Opp Record</th>
@@ -247,7 +250,7 @@ export default function CollegeFootballTeamPage() {
                       : "—";
                   const spread = formatSpread(getTeamPerspectiveSpread(game, team.id));
                   return (
-                    <tr key={game.id} className="border-t border-slate-100 hover:bg-slate-50">
+                    <tr key={game.id} className={DENSE_TABLE_ROW}>
                       <td className="whitespace-nowrap px-2 py-2 tabular-nums text-slate-600">
                         {formatCfbScheduleDateTime(game.date, game.time)}
                       </td>
@@ -287,7 +290,7 @@ export default function CollegeFootballTeamPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </DenseTableScroller>
         )}
       </section>
     </div>

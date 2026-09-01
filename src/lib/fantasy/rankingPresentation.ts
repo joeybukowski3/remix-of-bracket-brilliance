@@ -1,3 +1,8 @@
+import {
+  jkbHeatStyle,
+  type WeeklyHeatTone,
+} from "@/lib/shared/jkbHeat";
+
 export type RankTone = "favorable" | "neutral" | "unfavorable" | "missing";
 
 export type RankQuantileThresholds = {
@@ -40,5 +45,21 @@ export function getSosRankTone(value: number | undefined): RankTone {
   if (value! <= 10) return "favorable";
   if (value! >= 23) return "unfavorable";
   return "neutral";
+}
+
+const RANK_TONE_TO_JKB_HEAT: Record<RankTone, WeeklyHeatTone> = {
+  favorable: "light-green",
+  neutral: "neutral",
+  unfavorable: "light-red",
+  missing: "missing",
+};
+
+/**
+ * Maps the existing three-band rank vocabulary onto JKB Heat without changing
+ * the quantile/SOS cutoffs that assign a band. Missing ranks remain unpainted.
+ */
+export function rankToneStyle(tone: RankTone): ReturnType<typeof jkbHeatStyle> | undefined {
+  if (tone === "missing") return undefined;
+  return jkbHeatStyle(RANK_TONE_TO_JKB_HEAT[tone]);
 }
 

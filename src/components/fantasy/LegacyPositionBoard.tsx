@@ -11,7 +11,12 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
-import { NflTableScroller } from "@/components/nfl/ui/NflTable";
+import {
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  DenseTableScroller,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { cn } from "@/lib/utils";
@@ -30,6 +35,7 @@ import {
   getQuantileRankTone,
   getRankQuantileThresholds,
   getSosRankTone,
+  rankToneStyle,
   type RankQuantileThresholds,
   type RankTone,
 } from "@/lib/fantasy/rankingPresentation";
@@ -91,7 +97,7 @@ export default function PositionBoard({ position, query, mobileGroup }: { positi
           outsideRows={outsideRows}
         />
       ) : (
-      <NflTableScroller label={`${POSITION_NAMES[position]} research board`} className="max-h-[72vh]">
+      <DenseTableScroller label={`${POSITION_NAMES[position]} research board`} className="max-h-[72vh]">
         <table className="w-full min-w-[620px] border-separate border-spacing-0 text-left text-xs md:min-w-[1320px]">
           <PositionTableHeader position={position} mobileGroup={mobileGroup} hasVegas={hasVegas} />
           <tbody>
@@ -119,7 +125,7 @@ export default function PositionBoard({ position, query, mobileGroup }: { positi
             )}
           </tbody>
         </table>
-      </NflTableScroller>
+      </DenseTableScroller>
       )}
     </section>
   );
@@ -135,10 +141,10 @@ function LegacyCompactTable({
   outsideRows: readonly FantasyResearchBoardRow[];
 }) {
   return (
-    <NflTableScroller label={`${POSITION_NAMES[position]} legacy research board`}>
+    <DenseTableScroller label={`${POSITION_NAMES[position]} legacy research board`}>
       <table className="w-full table-fixed border-collapse text-left text-[11px]">
         <thead>
-          <tr className="bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
+          <tr className={cn(DENSE_TABLE_HEAD_ROW, "text-[9px]")}>
             <th scope="col" className="w-8 px-1 py-1.5 text-center">Rk</th>
             <th scope="col" className="px-1 py-1.5">Player</th>
             <th scope="col" title="Projection rank" className="w-10 px-1 py-1.5 text-center">Proj</th>
@@ -162,7 +168,7 @@ function LegacyCompactTable({
           )}
         </tbody>
       </table>
-    </NflTableScroller>
+    </DenseTableScroller>
   );
 }
 
@@ -229,7 +235,7 @@ function LegacyCompactRow({ row, position }: { row: FantasyResearchBoardRow; pos
 function PositionTableHeader({ position, mobileGroup, hasVegas }: { position: FantasyPosition; mobileGroup: MobileGroup; hasVegas: boolean }) {
   const metricLabels = METRIC_LABELS[position];
   return (
-    <thead className="sticky top-0 z-30 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+    <thead className={stickyDenseHeader("text-[10px] font-semibold uppercase tracking-wider text-slate-600")}>
       <tr className="bg-slate-200">
         <th rowSpan={2} className="sticky left-0 z-40 w-14 border-b border-r border-slate-300 bg-slate-200 px-2 py-2 text-center">JKB Rk</th>
         <th rowSpan={2} className="sticky left-14 z-40 min-w-64 border-b border-r border-slate-300 bg-slate-200 px-3 py-2">Player</th>
@@ -285,7 +291,7 @@ function ResearchRow({ row, position, mobileGroup, thresholds, hasVegas }: { row
   const metrics = jkb ? getFantasyMetricValues(jkb) : [undefined, undefined, undefined];
   return (
     <>
-      <tr className="group border-b border-slate-100 hover:bg-slate-50">
+      <tr className={cn(DENSE_TABLE_ROW, "group")}>
         <td className="sticky left-0 z-10 w-14 border-b border-r border-slate-100 bg-white px-2 py-2 text-center font-bold tabular-nums text-slate-700 group-hover:bg-slate-50">{formatRank(jkb?.positionRank)}</td>
         <td className="sticky left-14 z-10 min-w-64 border-b border-r border-slate-100 bg-white px-3 py-2 group-hover:bg-slate-50">
           <div className="flex items-center gap-2">
@@ -360,7 +366,11 @@ function MobileDetail({ label, value }: { label: string; value: string }) {
 
 function RankCell({ value, tone, group, active, emphasis = false }: { value?: number; tone: RankTone; group: MobileGroup | "always"; active: MobileGroup; emphasis?: boolean }) {
   return (
-    <td className={cn("border-b border-r border-slate-100 px-2 py-2 text-center font-semibold tabular-nums", toneClass(tone), group !== "always" && group !== active && "max-md:hidden", emphasis && "font-bold ring-1 ring-inset ring-slate-200/70")}>
+    <td
+      data-rank-tone={tone}
+      style={rankToneStyle(tone)}
+      className={cn("border-b border-r border-slate-100 px-2 py-2 text-center font-semibold tabular-nums", tone === "missing" && "bg-white text-slate-400", group !== "always" && group !== active && "max-md:hidden", emphasis && "font-bold ring-1 ring-inset ring-slate-200/70")}
+    >
       {formatRank(value)}
     </td>
   );
@@ -391,13 +401,6 @@ function buildThresholds(rows: readonly FantasyRankingRow[]): Record<RankColumnK
 
 function matchesQuery(player: string, team: string | undefined, query: string): boolean {
   return !query || player.toLowerCase().includes(query) || team?.toLowerCase().includes(query) === true;
-}
-
-function toneClass(tone: RankTone): string {
-  if (tone === "favorable") return "bg-emerald-50 text-emerald-900";
-  if (tone === "unfavorable") return "bg-rose-50 text-rose-900";
-  if (tone === "neutral") return "bg-slate-50/70 text-slate-700";
-  return "bg-white text-slate-400";
 }
 
 function formatRank(value: number | undefined): string {

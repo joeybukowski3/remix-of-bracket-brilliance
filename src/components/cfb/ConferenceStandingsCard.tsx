@@ -7,6 +7,11 @@ import { getSosHeatClass } from "@/lib/cfb/sosPresentation";
 import { cn } from "@/lib/utils";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
 import CollegeFootballRatingCell from "./CollegeFootballRatingCell";
+import {
+  DenseTableScroller,
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+} from "@/components/ui/dense-table";
 
 type Props = {
   conference: CfbConferenceMeta;
@@ -31,15 +36,13 @@ export default function ConferenceStandingsCard({ conference, teams }: Props) {
       </div>
 
       {/* Desktop table */}
-      <div
-        role="region"
-        aria-label={`${conference.name} standings`}
-        tabIndex={0}
-        className="relative hidden overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 sm:block"
+      <DenseTableScroller
+        label={`${conference.name} standings`}
+        className="hidden sm:block"
       >
         <table className="w-full min-w-[420px] text-xs">
           <thead>
-            <tr className="bg-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            <tr className={DENSE_TABLE_HEAD_ROW}>
               <th scope="col" className="px-2 py-2 text-left">Team</th>
               <th scope="col" className="px-1 py-2 text-center">Conf</th>
               <th scope="col" className="px-1 py-2 text-center">Overall</th>
@@ -61,7 +64,7 @@ export default function ConferenceStandingsCard({ conference, teams }: Props) {
                 team.record.ties,
               );
               return (
-                <tr key={team.id} className="border-t border-slate-100 hover:bg-slate-50">
+                <tr key={team.id} className={DENSE_TABLE_ROW}>
                   <td className="p-0">
                     <Link
                       to={getCfbTeamPath(team.slug)}
@@ -101,7 +104,7 @@ export default function ConferenceStandingsCard({ conference, teams }: Props) {
             })}
           </tbody>
         </table>
-      </div>
+      </DenseTableScroller>
 
       {/* Mobile compact list */}
       <ul className="divide-y divide-slate-100 sm:hidden">

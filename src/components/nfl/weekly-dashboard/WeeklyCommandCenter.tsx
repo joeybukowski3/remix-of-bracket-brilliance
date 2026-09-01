@@ -347,7 +347,7 @@ function MobileGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
 
 function GameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white" aria-labelledby="weekly-game-board-title">
+    <section className="min-w-0 rounded-lg border border-slate-200 bg-white" aria-labelledby="weekly-game-board-title">
       <ModuleHeader title="Weekly Game Board" detail="Market totals are reference only · spread comparison is descriptive" action={<Link to="/nfl/matchups" className="text-[10px] font-bold text-sky-700 hover:underline">All matchups</Link>} />
       <span id="weekly-game-board-title" className="sr-only">Weekly Game Board</span>
       {games.length === 0 ? <p className="px-4 py-8 text-center text-sm text-slate-500">No regular-season games are available for this week.</p> : <><DesktopGameBoard games={games} /><MobileGameBoard games={games} /></>}

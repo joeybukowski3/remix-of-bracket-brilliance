@@ -4,7 +4,12 @@ import { ChevronDown, ChevronUp, Minus, Plus, Search, Star } from "lucide-react"
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
-import { NflTableScroller } from "@/components/nfl/ui/NflTable";
+import {
+  DENSE_TABLE_HEAD_ROW,
+  DENSE_TABLE_ROW,
+  DenseTableScroller,
+  stickyDenseHeader,
+} from "@/components/ui/dense-table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -209,7 +214,7 @@ export default function FantasyDraftPreview() {
         description="The Sleeper 2026 draft board, compared against Joe Knows Ball rest-of-season projections, PAR/G and Model Rank. Sleeper Rank is the fixed default order and is never recomputed on this page."
       />
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start xl:grid-cols-[minmax(0,1fr)_380px]">
         {/*
           `overflow-visible` deliberately overrides `FANTASY_TABLE_SHELL`'s
           `overflow-hidden` (rounded-corner clipping) for this section only.
@@ -528,7 +533,7 @@ function DraftPreviewTable({
   onToggleTargetRound: (sleeperRank: number, round: number) => void;
 }) {
   return (
-    <NflTableScroller label="Draft preview board" className="overflow-y-visible">
+    <DenseTableScroller label="Draft preview board" className="overflow-y-visible">
       {/*
         `border-separate` (never `border-collapse`) is load-bearing: collapsed
         table borders merge every cell's border into one shared line owned by
@@ -599,7 +604,7 @@ function DraftPreviewTable({
           })}
         </tbody>
       </table>
-    </NflTableScroller>
+    </DenseTableScroller>
   );
 }
 
@@ -678,7 +683,8 @@ function DraftPreviewTableRow({
       data-focus-state={focusState}
       data-targeted={isTargeted}
       className={cn(
-        "group hover:bg-slate-50",
+        DENSE_TABLE_ROW,
+        "group",
         selected && "bg-emerald-50/60",
         !selected && isTargeted && "outline outline-1 -outline-offset-1 outline-amber-300",
         focusState === "match" && "bg-sky-50/70 ring-1 ring-inset ring-sky-200",
@@ -1197,10 +1203,10 @@ function MyDraftSidebar({
             No players drafted yet. Use Add to team on the board.
           </div>
         ) : (
-          <NflTableScroller label="My draft roster" className="max-h-[45vh]">
+          <DenseTableScroller label="My draft roster" className="max-h-[45vh]">
             <table className="w-full min-w-[420px] border-collapse text-left text-[11px]">
-              <thead className="sticky top-0 z-10 bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
-                <tr>
+              <thead className={stickyDenseHeader("bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600")}>
+                <tr className={DENSE_TABLE_HEAD_ROW}>
                   <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-center")}>Rd</th>
                   <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5")}>Player</th>
                   <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-center")}>Pos</th>
@@ -1212,7 +1218,7 @@ function MyDraftSidebar({
               </thead>
               <tbody>
                 {draftedEntries.map(({ round, row, overallPick }) => (
-                  <tr key={round} className="hover:bg-slate-50">
+                  <tr key={round} className={DENSE_TABLE_ROW}>
                     <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 text-center")}>
                       <div className="font-bold tabular-nums text-slate-800">R{round}</div>
                       <div className="text-[9px] tabular-nums text-slate-400">#{overallPick}</div>
@@ -1235,7 +1241,7 @@ function MyDraftSidebar({
                 ))}
               </tbody>
             </table>
-          </NflTableScroller>
+          </DenseTableScroller>
         )}
       </section>
     </aside>
@@ -1253,10 +1259,10 @@ function StartingRosterTable({ roster }: { roster: readonly RosterSlotAssignment
       <div className="bg-slate-50 px-4 py-2">
         <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Starting roster</div>
       </div>
-      <NflTableScroller label="Starting roster" className="max-h-[50vh]">
+      <DenseTableScroller label="Starting roster" className="max-h-[50vh]">
         <table className="w-full min-w-[420px] border-collapse text-left text-[11px]">
-          <thead className="sticky top-0 z-10 bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600">
-            <tr>
+          <thead className={stickyDenseHeader("bg-slate-100 text-[9px] font-semibold uppercase tracking-wider text-slate-600")}>
+            <tr className={DENSE_TABLE_HEAD_ROW}>
               <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-center")}>Slot</th>
               <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5")}>Player</th>
               <th className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-center")}>Pos</th>
@@ -1266,7 +1272,7 @@ function StartingRosterTable({ roster }: { roster: readonly RosterSlotAssignment
           </thead>
           <tbody>
             {roster.map(({ slot, row }) => (
-              <tr key={slot} className={cn("hover:bg-slate-50", slot.startsWith("BENCH") && "bg-slate-50/60")}>
+              <tr key={slot} className={cn(DENSE_TABLE_ROW, slot.startsWith("BENCH") && "bg-slate-50/60")}>
                 <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 text-center font-bold tabular-nums text-slate-800")}>
                   {STARTING_SLOT_LABELS[slot]}
                 </td>
@@ -1286,7 +1292,7 @@ function StartingRosterTable({ roster }: { roster: readonly RosterSlotAssignment
             ))}
           </tbody>
         </table>
-      </NflTableScroller>
+      </DenseTableScroller>
     </div>
   );
 }

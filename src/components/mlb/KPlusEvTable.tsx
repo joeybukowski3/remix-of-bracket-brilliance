@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
+import { DenseTableScroller, stickyDenseHeader } from "@/components/ui/dense-table";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { cn } from "@/lib/utils";
 import {
@@ -405,9 +406,9 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
     <div data-k-plus-ev-table="desktop">
       {toolbar}
       {sorted.length ? (
-        <div className="overflow-x-auto">
+        <DenseTableScroller label="Strikeout +EV valuations">
           <table className="w-full table-fixed border-separate border-spacing-0 text-xs">
-            <thead className="sticky top-0 z-20">
+            <thead className={stickyDenseHeader()}>
               <tr className="text-[10px] uppercase tracking-[0.08em] text-slate-500">
                 {(DESKTOP_COLUMNS.map(([key, label], index) => {
                   const group = COLUMN_GROUPS[key];
@@ -492,7 +493,7 @@ export default function KPlusEvTable({ rows, compact }: { rows: KPlusEvValuation
               })}
             </tbody>
           </table>
-        </div>
+        </DenseTableScroller>
       ) : (
         <div data-k-plus-ev-empty="true" className="px-3 py-6 text-center text-sm text-slate-500">{emptyMessage}</div>
       )}

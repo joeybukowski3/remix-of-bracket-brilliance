@@ -137,7 +137,44 @@ cleanly inside a model or feature document unless they require a future action.
 
 ---
 
+## PGA
+
+### BL-PGA-001 — Legacy 4/5-band heat needs visual sign-off
+**Status:** NEEDS DECISION
+
+- **What is needed:** explicit visual sign-off before migrating
+  `src/lib/pga/pgaHeatColors.ts` (4 bands) or
+  `src/lib/pga/rankColors.ts` (5 bands) to the 8-band JKB Heat scale.
+- **Why not now:** the legacy thresholds are compatibility-tested, and a direct
+  conversion would add gold plus additional green/red strengths across broad
+  percentile ranges. That is a material palette change, not a mechanical
+  framework migration.
+- **Do not:** silently convert either palette. Retain the legacy bands as a
+  temporary intentional exception; preserve `getPercentileFromRank` in any
+  future approved migration.
+- **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §D;
+  [plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
+  Phase 8C / Phase 9.
+
+---
+
 ## MLB
+
+### BL-MLB-004 — Park-factor heat direction is context-dependent
+**Status:** NEEDS DECISION
+
+- **What is needed:** each consuming `MlbParkContextPanel` context must define
+  the comparison perspective before its park-factor tone can use goodness
+  heat. A higher run or HR factor can favor offense/overs while disadvantaging
+  pitching/unders.
+- **Why not now:** the current panel does not encode one universally valid
+  favorable direction, so assigning `higherBetter` or `lowerBetter` would
+  manufacture semantics rather than reconcile presentation.
+- **Do not:** apply JKB Heat to park factors until the consumer explicitly
+  defines direction. Retain the current contextual display during that review.
+- **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §§E–F;
+  [plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
+  Phase 8D / Phase 9.
 
 ### BL-MLB-001 — K +EV V1: stale-render risk, no scheduled producer
 **Status:** NEEDS DECISION
@@ -226,6 +263,24 @@ cleanly inside a model or feature document unless they require a future action.
 - **Evidence:** [models/cfb-preseason-power.md](models/cfb-preseason-power.md)
   "Naming debt"; [plans/active/cfb-model-v2.md](plans/active/cfb-model-v2.md)
   "IPR / MIC boundary".
+
+### BL-CFB-003 — CFB SOS / rating heat not re-expressed onto JKB Heat
+**Status:** DEFERRED
+
+- **What is needed:** re-express `src/lib/cfb/sosPresentation.ts` rank bands and
+  the `CollegeFootballRatingLegend` / `getCfbRatingHeatClass` treatment onto the
+  shared 8-band JKB Heat tones (gold → green → slate → red), with the legend
+  driven from the same definitions the cells use, plus browser sign-off across
+  the affected CFB rating components.
+- **Why not now:** the UI / Design Framework rollout single-sourced the existing
+  bands (cells and legend cannot drift) but deliberately kept the current
+  rank-band palette. Converting to JKB Heat tones recolors broad rank ranges —
+  a visual change needing sign-off, not a mechanical swap.
+- **Do not:** silently convert the palette; SOS/rating thresholds and the
+  established rank endpoints must be preserved in any approved migration.
+- **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §D;
+  [plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
+  Phase 7 / Phase 8B / Phase 9.
 
 ---
 

@@ -1,9 +1,13 @@
-import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
-import { cn } from "@/lib/utils";
+import { DenseTableScroller, frozenDenseColumn } from "@/components/ui/dense-table";
 
 /**
+ * Regression direction, not JKB goodness heat: this is a "which way is ERA
+ * likely to move" read, sanctioned as a directional/trend semantic (its
+ * meaning is spelled out in the table footer), so the green/blue palette is
+ * retained rather than remapped to favorable/unfavorable.
+ *
  * score < 0 = overperforming (ERA likely to rise) → blue shades
  * score > 0 = underperforming (ERA likely to fall) → green shades
  * -0.5 to 0.5 = neutral → gray
@@ -31,11 +35,14 @@ export default function MlbPitcherRegressionTable({ pitchers }: { pitchers: Pitc
   const sorted = [...pitchers].sort((a, b) => Math.abs(b.regressionScore) - Math.abs(a.regressionScore));
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+    <DenseTableScroller
+      label="MLB pitcher regression candidates"
+      className="rounded-xl border border-slate-200 bg-white shadow-sm"
+    >
       <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
         <thead className="border-b border-slate-200 bg-slate-50">
           <tr>
-            <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">Pitcher</th>
+            <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "border-b border-r border-slate-200 px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500" })}>Pitcher</th>
             <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500">Regr Score</th>
             <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500">ERA</th>
             <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500">xFIP</th>
@@ -53,7 +60,7 @@ export default function MlbPitcherRegressionTable({ pitchers }: { pitchers: Pitc
 
             return (
               <tr key={pitcher.pitcherId ?? i} className={i % 2 === 1 ? "bg-slate-50/40" : ""}>
-                <td className={cn("sticky left-0 z-10 border-r border-slate-100 px-3 py-2", i % 2 === 1 ? "bg-slate-50/40" : "bg-white")}>
+                <td className={frozenDenseColumn({ surface: i % 2 === 1 ? "bg-slate-50/40" : "bg-white", className: "border-r border-slate-100 px-3 py-2" })}>
                   <div className="flex items-center gap-2">
                     <MlbTeamLogo team={pitcher.team} size={22} />
                     <span className="font-semibold text-slate-900 text-[12px]">{pitcher.name}</span>
@@ -113,6 +120,6 @@ export default function MlbPitcherRegressionTable({ pitchers }: { pitchers: Pitc
           </tr>
         </tfoot>
       </table>
-    </div>
+    </DenseTableScroller>
   );
 }

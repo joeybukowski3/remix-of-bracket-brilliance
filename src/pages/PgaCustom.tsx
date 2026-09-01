@@ -179,7 +179,7 @@ export default function PgaCustom() {
               onSelect={setSelectedScheduleId}
             />
 
-            <section className="space-y-3">
+            <section className="min-w-0 space-y-3">
               <div className="rounded-[22px] border border-white/8 bg-[#06100c] p-3 text-sm leading-6 text-emerald-50/76 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 Adjust the sliders to weight each strokes gained category based on what you think matters most for this week&apos;s course. Rankings update in real time. Save your model as a preset to reuse it each week.
               </div>

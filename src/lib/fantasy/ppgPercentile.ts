@@ -16,23 +16,12 @@
  * order.
  */
 
+import { getPercentileTier } from "@/lib/mlb/percentileColorScale";
+
 export type PpgColorStyle = {
   backgroundColor: string;
   color: string;
 };
-
-const NEUTRAL_STYLE: PpgColorStyle = { backgroundColor: "rgba(148, 163, 184, 0.16)", color: "#475569" };
-const STRONG_STYLE: PpgColorStyle = { backgroundColor: "rgba(34, 197, 94, 0.22)", color: "#166534" };
-const VERY_STRONG_STYLE: PpgColorStyle = { backgroundColor: "#10b981", color: "#ffffff" };
-const ELITE_STYLE: PpgColorStyle = { backgroundColor: "#e8d5a8", color: "#5c3d0e" };
-
-/** Ordered high -> low, first match wins. */
-const TIERS: readonly { minPercentile: number; style: PpgColorStyle }[] = [
-  { minPercentile: 95, style: ELITE_STYLE },
-  { minPercentile: 80, style: VERY_STRONG_STYLE },
-  { minPercentile: 60, style: STRONG_STYLE },
-  { minPercentile: 0, style: NEUTRAL_STYLE },
-];
 
 /**
  * Percentiles for one position's projected PPG population. Rows keep their
@@ -73,8 +62,5 @@ export function computePpgPercentiles(
 export function ppgPercentileStyle(percentile: number | null | undefined): PpgColorStyle | null {
   if (percentile == null || !Number.isFinite(percentile)) return null;
   const clamped = Math.min(100, Math.max(0, percentile));
-  for (const tier of TIERS) {
-    if (clamped >= tier.minPercentile) return tier.style;
-  }
-  return NEUTRAL_STYLE;
+  return getPercentileTier(clamped).style;
 }

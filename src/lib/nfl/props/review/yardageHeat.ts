@@ -1,12 +1,12 @@
 /**
  * Presentation-only stat/ranking heat treatment for the Yardage Props Review
- * table. Reuses the existing site-wide `WeeklyHeatTone` scale
- * (src/lib/fantasy/weekly/researchPresentation.ts, itself built on the MLB
- * percentile color scale in src/lib/mlb/percentileColorScale.ts) instead of
- * inventing a yardage-specific heat system. Every function here is a pure
- * mapping from an already-computed rank/band/score value to a visual tone --
- * no projection, rank, EPA, success, edge, or matchup-score value is
- * recomputed or altered.
+ * table. Reuses the site-wide JKB Heat scale via the shared entry point
+ * (src/lib/shared/jkbHeat.ts), which consolidates the `WeeklyHeatTone` scale
+ * (src/lib/fantasy/weekly/researchPresentation.ts) and the MLB percentile color
+ * scale (src/lib/mlb/percentileColorScale.ts) instead of inventing a
+ * yardage-specific heat system. Every function here is a pure mapping from an
+ * already-computed rank/band/score value to a visual tone -- no projection,
+ * rank, EPA, success, edge, or matchup-score value is recomputed or altered.
  */
 import {
   weeklyHeatClass,
@@ -16,7 +16,7 @@ import {
   weeklyMatchupDifferenceHeatTone,
   weeklyRankHeatTone,
   type WeeklyHeatTone,
-} from "@/lib/fantasy/weekly/researchPresentation";
+} from "@/lib/shared/jkbHeat";
 import type {
   ProductionAllowedArtifact,
   ProductionAllowedMarket,

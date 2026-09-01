@@ -128,4 +128,11 @@ describe("NflYardagePlayerLast10Table column order", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
     expect(screen.getByText("Last 10 Avg")).toBeInTheDocument();
   });
+
+  it("contains horizontal overflow in the shared keyboard-reachable dense-table scroll region", () => {
+    render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
+    const region = screen.getByRole("region", { name: /Drake Maye last 1 game/i });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region.className).toContain("overflow-x-auto");
+  });
 });

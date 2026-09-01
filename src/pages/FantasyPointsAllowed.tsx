@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import TeamLogo from "@/components/TeamLogo";
-import { NflTableScroller } from "@/components/nfl/ui/NflTable";
+import { DenseTableScroller, frozenDenseColumn, stickyDenseHeader } from "@/components/ui/dense-table";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -136,11 +136,11 @@ export default function FantasyPointsAllowed() {
           </div>
 
           {teams ? (
-            <NflTableScroller label={`${season} fantasy points allowed by position`} className="max-h-[72vh]">
+            <DenseTableScroller label={`${season} fantasy points allowed by position`} className="max-h-[72vh]">
               <table className="w-full min-w-[820px] border-separate border-spacing-0 text-left text-xs">
-                <thead className="sticky top-0 z-20 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                <thead className={stickyDenseHeader("text-[10px] font-semibold uppercase tracking-wider text-slate-600")}>
                   <tr className="bg-slate-200">
-                    <th className="sticky left-0 z-30 min-w-52 border-b border-r border-slate-300 bg-slate-200 px-3 py-1.5">
+                    <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-200", className: "min-w-52 border-b border-r border-slate-300 px-3 py-1.5" })}>
                       Team
                     </th>
                     {POINTS_ALLOWED_POSITIONS.map((position) => (
@@ -154,7 +154,7 @@ export default function FantasyPointsAllowed() {
                     ))}
                   </tr>
                   <tr className="bg-slate-100">
-                    <th className="sticky left-0 z-30 border-b border-r border-slate-300 bg-slate-100 px-3 py-1.5">
+                    <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-100", className: "border-b border-r border-slate-300 px-3 py-1.5" })}>
                       <span className="text-[9px] font-medium normal-case text-slate-500">
                         {season} season · pts allowed per game
                       </span>
@@ -167,7 +167,7 @@ export default function FantasyPointsAllowed() {
                 <tbody>
                   {sorted.map((team) => (
                     <tr key={team.abbr} className="hover:bg-slate-50">
-                      <td className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-3 py-1.5">
+                      <td className={frozenDenseColumn({ surface: "bg-white", className: "border-b border-r border-slate-200 px-3 py-1.5" })}>
                         <div className="flex min-w-0 items-center gap-2">
                           <TeamLogo name={team.abbr.toUpperCase()} logo={nflLogoUrl(team.abbr)} className="h-5 w-5" />
                           <span className="truncate text-[12px] font-bold text-slate-950">{team.name}</span>
@@ -196,7 +196,7 @@ export default function FantasyPointsAllowed() {
                   ))}
                 </tbody>
               </table>
-            </NflTableScroller>
+            </DenseTableScroller>
           ) : (
             <NoSeasonData season={season} />
           )}
