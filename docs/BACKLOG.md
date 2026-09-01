@@ -153,7 +153,7 @@ cleanly inside a model or feature document unless they require a future action.
   temporary intentional exception; preserve `getPercentileFromRank` in any
   future approved migration.
 - **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §D;
-  [plans/active/ui-design-framework.md](plans/active/ui-design-framework.md)
+  [plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
   Phase 8C / Phase 9.
 
 ---
@@ -173,7 +173,7 @@ cleanly inside a model or feature document unless they require a future action.
 - **Do not:** apply JKB Heat to park factors until the consumer explicitly
   defines direction. Retain the current contextual display during that review.
 - **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §§E–F;
-  [plans/active/ui-design-framework.md](plans/active/ui-design-framework.md)
+  [plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
   Phase 8D / Phase 9.
 
 ### BL-MLB-001 — K +EV V1: stale-render risk, no scheduled producer
@@ -263,6 +263,24 @@ cleanly inside a model or feature document unless they require a future action.
 - **Evidence:** [models/cfb-preseason-power.md](models/cfb-preseason-power.md)
   "Naming debt"; [plans/active/cfb-model-v2.md](plans/active/cfb-model-v2.md)
   "IPR / MIC boundary".
+
+### BL-CFB-003 — CFB SOS / rating heat not re-expressed onto JKB Heat
+**Status:** DEFERRED
+
+- **What is needed:** re-express `src/lib/cfb/sosPresentation.ts` rank bands and
+  the `CollegeFootballRatingLegend` / `getCfbRatingHeatClass` treatment onto the
+  shared 8-band JKB Heat tones (gold → green → slate → red), with the legend
+  driven from the same definitions the cells use, plus browser sign-off across
+  the affected CFB rating components.
+- **Why not now:** the UI / Design Framework rollout single-sourced the existing
+  bands (cells and legend cannot drift) but deliberately kept the current
+  rank-band palette. Converting to JKB Heat tones recolors broad rank ranges —
+  a visual change needing sign-off, not a mechanical swap.
+- **Do not:** silently convert the palette; SOS/rating thresholds and the
+  established rank endpoints must be preserved in any approved migration.
+- **Evidence:** [TABLE_CONVENTIONS.md](TABLE_CONVENTIONS.md) §D;
+  [plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
+  Phase 7 / Phase 8B / Phase 9.
 
 ---
 

@@ -6,8 +6,12 @@ mobile) and [BRAND.md](BRAND.md) (color identity).
 
 Authority level: tier 6 documentation in [DECISIONS.md](DECISIONS.md) KS-001.
 Backed by the completed UI / Design Framework Audit and the sport migrations
-through Phase 9. The active plan owns the remaining focused migration work and
-explicit exceptions.
+through Phase 9C. This file is the ongoing current authority; the completed
+rollout record lives at
+[plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
+for historical context. Retained exceptions are listed there and, where a future
+action is intended, tracked in [BACKLOG.md](BACKLOG.md) (BL-PGA-001, BL-MLB-004,
+BL-CFB-003).
 
 ---
 
@@ -145,7 +149,8 @@ New heat consumers build on these two modules. Do not introduce a third scale.
   meanings to shared JKB Heat styles; its cutoffs are unchanged.
 - `src/lib/cfb/sosPresentation.ts` keeps its established 133-team rank bands,
   with cells and legend driven by one shared local definition. Re-expressing
-  those bands onto JKB Heat is a deferred visual change, not a current default.
+  those bands onto JKB Heat is a deferred visual change, not a current default
+  ([BACKLOG.md](BACKLOG.md) BL-CFB-003).
 - `src/lib/pga/pgaScoreColorScale.ts` builds on the shared percentile core.
 - PGA's separate 4-band `pgaHeatColors.ts` and 5-band `rankColors.ts` palettes
   remain a temporary intentional exception. Migration requires explicit visual

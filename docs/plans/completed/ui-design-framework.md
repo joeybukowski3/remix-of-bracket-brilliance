@@ -1,12 +1,75 @@
-# Active plan: UI / Design Framework
+# Completed plan — UI / Design Framework
 
-Status: **Active** — approved.
-Owner authority: this plan is tier 2 in [../../DECISIONS.md](../../DECISIONS.md)
-KS-001 while active.
+**Status: COMPLETE (historical provenance).** The rollout shipped across
+Phases 1–9C. This document is a distilled record of what was delivered; it is
+not ongoing authority. While this plan was active it held tier-2 authority in
+[../../DECISIONS.md](../../DECISIONS.md) KS-001 — that authority has now lapsed.
 
-Backed by the completed UI / Design Framework Audit. The authority documents are
+The ongoing current authority for JoeKnowsBall UI work is
 [../../BRAND.md](../../BRAND.md), [../../UI_FRAMEWORK.md](../../UI_FRAMEWORK.md),
-and [../../TABLE_CONVENTIONS.md](../../TABLE_CONVENTIONS.md).
+and [../../TABLE_CONVENTIONS.md](../../TABLE_CONVENTIONS.md). This plan is backed
+by the completed UI / Design Framework Audit.
+
+## Framework completion statement
+
+The shared UI / design framework is now the **default authority** for new
+JoeKnowsBall UI work. New work defaults to:
+
+- [../../BRAND.md](../../BRAND.md) for visual identity and intent.
+- [../../UI_FRAMEWORK.md](../../UI_FRAMEWORK.md) for layout, hierarchy, tokens,
+  navigation, and mobile behavior.
+- [../../TABLE_CONVENTIONS.md](../../TABLE_CONVENTIONS.md) for data tables and
+  the analytical heat scale.
+- The shared `src/components/ui/dense-table.tsx` primitives
+  (`DenseTableScroller`, `DENSE_TABLE_HEAD_ROW`, `DENSE_TABLE_ROW`,
+  `stickyDenseHeader()`, `frozenDenseColumn()`, `TABLE_LAYER`).
+- Shared JKB Heat (`src/lib/shared/jkbHeat.ts` /
+  `src/lib/mlb/percentileColorScale.ts` / `WeeklyHeatTone`) for goodness heat —
+  gold → green → neutral slate → red, direction always explicit at the call site.
+- Semantic design tokens for neutral chrome and surfaces, not hard-coded hex.
+- Table-local horizontal overflow; the page never scrolls horizontally.
+- A compact, responsive content hierarchy — real information above the fold,
+  no oversized mobile typography, no generic AI-dashboard composition.
+
+Any deviation from these defaults requires documented justification (a recorded
+decision, an approved plan, or an entry in the retained-exceptions list below or
+in [../../BACKLOG.md](../../BACKLOG.md)).
+
+## Retained exceptions (intentional / deferred — not blockers)
+
+These were deliberately left in place and are not outstanding framework debt:
+
+- **PGA legacy 4/5-band heat** (`pgaHeatColors.ts`, `rankColors.ts`) — pending
+  explicit visual sign-off before any 8-band conversion. Tracked as
+  [../../BACKLOG.md](../../BACKLOG.md) BL-PGA-001.
+- **`MlbParkContextPanel` park-factor tone** — context-dependent direction; no
+  goodness heat until a consumer defines perspective. Tracked as
+  [../../BACKLOG.md](../../BACKLOG.md) BL-MLB-004.
+- **CFB SOS / rating visual re-expression** onto JKB Heat tones — a deferred
+  visual change across the CFB rating components, not a mechanical swap. Tracked
+  as [../../BACKLOG.md](../../BACKLOG.md) BL-CFB-003.
+- **MLB hot / cold semantic palettes** (`MlbStatTone`: positive = red,
+  negative = blue) — a sanctioned exception for explicitly hot/cold views
+  (TABLE_CONVENTIONS.md §I, KS-010).
+- **Fantasy PAR continuous gradient** (`getRankGradientColor` /
+  `getPercentileGradientColor` in `parPresentation.ts`) — a sanctioned smooth
+  ramp for dense ordinal rank columns (TABLE_CONVENTIONS.md §I). Stable; no
+  future work intended.
+- **Draft Preview specialized sticky/frozen layout** — page-sticky
+  `top-[73px]` header with pinned Rank + Player corner; a deliberate UX choice,
+  not the in-table `stickyDenseHeader()` contract.
+- **Weekly Rankings specialized compact layout** — its custom compact
+  Rank/logo/name identity grid is intentionally not the generic frozen-column
+  helper.
+- **NFL `NflTable` compatibility re-export** (`src/components/nfl/ui/NflTable.tsx`)
+  — a thin adapter over the shared primitives kept so existing NFL/Fantasy
+  imports work unchanged; not a separate standard.
+- **PGA `.pga-*` editorial typography / visual system** (Playfair Display,
+  bespoke cards, warm accents, scoped `.dark .pga-picks-page`) — an intentional
+  section-specific identity (TABLE_CONVENTIONS.md §I).
+- **Light-first status / dark-mode vestiges** — no `:root`-level dark token
+  block; only the PGA-scoped override remains. Per KS-012 new UI is not required
+  to implement dark mode until it is reopened as a dedicated project.
 
 ## Goal
 
@@ -641,20 +704,29 @@ Progress (2026-08-31):
   JKB Heat all intact; document-level horizontal overflow ≤ 1px everywhere;
   the mobile card fallback is the only board UI at 320px.
 
-## Remaining work before closure
+## Closure (Phase 10 — final documentation-only pass)
 
-1. Perform a separate documentation-only closure pass and move this plan to
-   `docs/plans/completed/` (Phase 9B **D** / Phase 9C is now resolved).
-2. Retain explicit exceptions/deferred items unless separately approved:
-   PGA's editorial system and legacy 4/5-band heat (BL-PGA-001), contextual
-   `MlbParkContextPanel` color (BL-MLB-004), CFB SOS visual re-expression,
-   MLB hot/cold semantics, Fantasy PAR gradients, and specialized Fantasy
-   sticky/frozen layouts.
+The rollout is complete. This documentation-only pass:
 
-Completed cleanup no longer carried as future work: DM Sans typography,
-tokenized SiteHeader / reconciled CFB route, removed `App.css`, shared dense
-table + sticky/frozen primitives, JKB Heat authority, sport migrations through
-Fantasy Phase 8E, Phase 9 audit, and the NFL 320px overflow fix.
+- Confirmed the completion status recorded across Phases 1–9C: documentation
+  authority established; DM Sans implemented; `SiteHeader` tokenized; obsolete
+  `App.css` removed; shared `DenseTableScroller` and sticky/frozen helpers
+  implemented; shared JKB Heat reconciled (gold→green→slate→red, KS-010); NFL,
+  CFB, PGA infrastructure, MLB (including +EV / performance-preview / inline
+  prop-board families), and Fantasy migrations complete; cross-site responsive
+  audit complete with zero measured document-level horizontal overflow after
+  fixes; documentation reconciliation (Phase 9A) complete.
+- Recorded the framework completion statement and the retained-exceptions list
+  at the top of this document.
+- Moved this plan from `docs/plans/active/` to `docs/plans/completed/` and
+  updated the references in `docs/BACKLOG.md`, `docs/UI_FRAMEWORK.md`, and
+  `docs/TABLE_CONVENTIONS.md`.
+- Added `docs/BACKLOG.md` BL-CFB-003 for the deferred CFB SOS / rating heat
+  re-expression.
+
+No source code, CSS, config, or test changes were made in this pass. The
+retained exceptions above are intentional or separately tracked, not
+unresolved framework debt.
 
 ## Validation checklist (per code phase)
 

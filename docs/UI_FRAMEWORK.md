@@ -9,8 +9,11 @@ Authority level: project / architecture / brand documentation (tier 6 in
 disagree, apply KS-003 — investigate and report, do not silently pick one.
 
 This document describes the implemented framework backed by the completed UI /
-Design Framework Audit and the sport migrations through Phase 9. The active
-plan records the remaining focused migration and closure work.
+Design Framework Audit and the sport migrations through Phase 9C. It is the
+ongoing current authority for JoeKnowsBall UI work; the completed rollout record
+lives at
+[plans/completed/ui-design-framework.md](plans/completed/ui-design-framework.md)
+for historical context only.
 
 ---
 
