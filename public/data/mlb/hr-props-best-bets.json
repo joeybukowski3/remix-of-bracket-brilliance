@@ -1,10 +1,10 @@
 {
   "date": "2026-09-01",
-  "generatedAt": "2026-09-01T17:54:20.897Z",
+  "generatedAt": "2026-09-01T18:48:57.899Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Great American Ball Park (1.25) and Dodger Stadium (1.1) are the primary power parks today, while Nationals Park (0.98) and Tropicana Field (0.98) suppress. Lodolo and Vásquez both carry elevated HR/FB rates against righties, setting up Tatis and the CIN stack, while Irvin’s 76.9 HR/9 vs righties boosts Olson and Baldwin in the ATL/WSH game.",
-    "modelNote": "The model is overweighting parkFactor and opposingPitcherHrVs, pushing Tatis to the top despite a 0 last-7 HR streak, while still crediting recent power (last30HR) for Crow-Armstrong and Caminero."
+    "slateOverview": "Great American Ball Park leads the slate with a 1.25 park factor and Randy Vásquez on the mound, setting up Fernando Tatis Jr. and Elly De La Cruz for elevated power odds. Nationals Park and Angel Stadium sit near neutral, but Jake Irvin and Grayson Rodriguez both carry elevated HR/FB rates that boost Matt Olson and Ben Rice. Light winds and warm temps are expected across the early slate, keeping fly-ball carry consistent.",
+    "modelNote": "The model is overweighting barrel rate and park-adjusted opposing pitcher HR/FB, which is why Tatis ranks first despite a zero in the last seven days while Rice and Olson climb on the strength of their 15-plus barrel marks against fly-ball prone arms."
   },
   "bestBets": [
     {
@@ -84,21 +84,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Sal Stewart",
-      "team": "CIN",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=76.2",
-        "Hard Hit%=38.7"
+        "Pitcher HR VS=72.4",
+        "Hard Hit%=46.6"
       ],
       "bullets": [
         "HR score 68.2 (#5)",
-        "Pitcher HR VS 76.2 at park 1.25"
+        "Pitcher HR VS 72.4 at park 1.02"
       ],
-      "hrOddsYes": "+367",
-      "marketImpliedProbability": 0.21413276231263384,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -124,11 +124,30 @@
       "hrValueEdge": null
     },
     {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=12.3%",
+        "HH=46.6%"
+      ],
+      "bullets": [
+        "park=1.02",
+        "hrScore=68.2"
+      ],
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Sal Stewart",
       "team": "CIN",
       "opponent": "SD",
       "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=13.6%",
         "HH=38.7%"
@@ -136,25 +155,6 @@
       "bullets": [
         "park=1.25",
         "hrScore=68.2"
-      ],
-      "hrOddsYes": "+367",
-      "marketImpliedProbability": 0.21413276231263384,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Luis García Jr.",
-      "team": "NYY",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=12.3%",
-        "HH=46.6%"
-      ],
-      "bullets": [
-        "park=1.02",
-        "hrScore=68.1"
       ],
       "hrOddsYes": "+400",
       "marketImpliedProbability": 0.2,
@@ -175,8 +175,8 @@
         "HR score 67.8 (#7)",
         "Pitcher HR VS 66.4 at park 1.10"
       ],
-      "hrOddsYes": "+275",
-      "marketImpliedProbability": 0.26666666666666666,
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -191,7 +191,7 @@
         "Hard Hit%=50.5"
       ],
       "bullets": [
-        "HR score 66.6 (#8)",
+        "HR score 66.5 (#8)",
         "Pitcher HR VS 67.1 at park 0.98"
       ],
       "hrOddsYes": "+282",
@@ -215,8 +215,8 @@
         "park=1.1",
         "hrScore=67.8"
       ],
-      "hrOddsYes": "+275",
-      "marketImpliedProbability": 0.26666666666666666,
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -232,7 +232,7 @@
       ],
       "bullets": [
         "park=0.98",
-        "hrScore=66.6"
+        "hrScore=66.5"
       ],
       "hrOddsYes": "+282",
       "marketImpliedProbability": 0.2617801047120419,
@@ -244,36 +244,36 @@
       "team": "SEA",
       "opponent": "BOS",
       "opposingPitcher": "Jedixson Paez",
-      "hrScoreRank": 20,
+      "hrScoreRank": 19,
       "topStats": [
         "Pitcher HR VS=74.8",
         "Hard Hit%=44.6"
       ],
       "bullets": [
-        "HR score 60.8 (#20)",
+        "HR score 60.8 (#19)",
         "Pitcher HR VS 74.8 at park 0.95"
       ],
-      "hrOddsYes": "+580",
-      "marketImpliedProbability": 0.14705882352941177,
+      "hrOddsYes": "+650",
+      "marketImpliedProbability": 0.13333333333333333,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Ty France",
+      "player": "Jackson Merrill",
       "team": "SD",
       "opponent": "CIN",
       "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 24,
+      "hrScoreRank": 18,
       "topStats": [
         "Pitcher HR VS=72.5",
-        "Hard Hit%=48.2"
+        "Hard Hit%=46.6"
       ],
       "bullets": [
-        "HR score 59.4 (#24)",
+        "HR score 62.2 (#18)",
         "Pitcher HR VS 72.5 at park 1.25"
       ],
-      "hrOddsYes": "+497",
-      "marketImpliedProbability": 0.16750418760469013,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
