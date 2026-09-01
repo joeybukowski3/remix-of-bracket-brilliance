@@ -49,6 +49,12 @@ data/cfb/research/derived/
 # Reproducible NFL performance-model backtest caches (analysis-only, non-production)
 data/nfl/backtest-2026/
 
+# Reproducible MLB Projected K research inputs and daily workflow snapshots.
+# Daily snapshots are uploaded as compressed workflow artifacts; raw StatsAPI
+# history is reacquirable and manifest/hash verified. Neither belongs in Git.
+data/mlb/k-history/daily/
+data/mlb/k-history/raw/
+
 # Generated fantasy weekly research output (never public/data/fantasy/weekly)
 data/fantasy/weekly/
 data/fantasy/backtests/
