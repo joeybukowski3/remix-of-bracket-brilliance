@@ -30,6 +30,18 @@ describe("PercentileCell", () => {
     expect(cell.style.color).toBe(hexToRgb(ELITE_STYLE.color));
   });
 
+  it.each([
+    [30, "belowAverage"],
+    [15, "weak"],
+    [5, "poor"],
+  ])("paints unfavorable percentile %i (%s) red, not blue", (percentile, tierId) => {
+    render(<PercentileCell value={5} display={`u${percentile}`} percentile={percentile} bypassSampleGate />);
+    const cell = screen.getByText(`u${percentile}`);
+    expect(cell).toHaveAttribute("data-percentile-tier", tierId);
+    const [r, , b] = cell.style.backgroundColor.match(/\d+/g)!.map(Number);
+    expect(r).toBeGreaterThan(b);
+  });
+
   it("resolves boundary values consistently at the exact tier thresholds", () => {
     render(<PercentileCell value={1} display="a" percentile={98} bypassSampleGate />);
     expect(screen.getByText("a")).toHaveAttribute("data-percentile-tier", "elite");
