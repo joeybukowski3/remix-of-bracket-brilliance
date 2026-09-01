@@ -527,6 +527,46 @@ describe("NFLPowerRatings — League / Conference / Division views", () => {
     expect(screen.getByRole("button", { name: "Ratings" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("gives grouped views a strong full-width separator band; League view gets none", async () => {
+    await renderPage();
+    const styleTag = document.querySelector("style")?.textContent ?? "";
+    // Band: tinted background + thick navy top border + bottom hairline.
+    expect(styleTag).toMatch(/\.nfl-pr-grouplabel\{[^}]*background:#f1f5f9/);
+    expect(styleTag).toMatch(/\.nfl-pr-grouplabel\{[^}]*border-top:3px solid #0f172a/);
+    expect(styleTag).toMatch(/\.nfl-pr-grouplabel\{[^}]*border-bottom:1px/);
+    // First group has no extra top gap; only *subsequent* grouped tables do.
+    expect(styleTag).toMatch(/\.nfl-pr-group--grouped \+ \.nfl-pr-group--grouped\{margin-top:\d/);
+    expect(styleTag).toMatch(/\.nfl-pr-group--conference \+ \.nfl-pr-group--conference\{margin-top:\d/);
+
+    // League (default) renders no band at all.
+    expect(document.querySelectorAll(".nfl-pr-grouplabel")).toHaveLength(0);
+    expect(document.querySelectorAll(".nfl-pr-group--grouped")).toHaveLength(0);
+  });
+
+  it("Conference view: two AFC/NFC bands, each flagged as a conference group", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Conference" }));
+
+    const bands = [...document.querySelectorAll(".nfl-pr-grouplabel")];
+    expect(bands).toHaveLength(2);
+    expect(bands.map((b) => b.querySelector(".nfl-pr-grouplabel-name")?.textContent)).toEqual(["AFC", "NFC"]);
+    expect(bands.every((b) => b.querySelector(".nfl-pr-grouplabel-eyebrow")?.textContent === "Conference")).toBe(true);
+    expect(document.querySelectorAll(".nfl-pr-group--conference")).toHaveLength(2);
+  });
+
+  it("Division view: eight bands for all eight divisions, none flagged as a conference group", async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Division" }));
+
+    const names = [...document.querySelectorAll(".nfl-pr-grouplabel-name")].map((n) => n.textContent);
+    expect(names).toEqual([
+      "AFC East", "AFC North", "AFC South", "AFC West",
+      "NFC East", "NFC North", "NFC South", "NFC West",
+    ]);
+    expect(document.querySelectorAll(".nfl-pr-group--grouped")).toHaveLength(8);
+    expect(document.querySelectorAll(".nfl-pr-group--conference")).toHaveLength(0);
+  });
+
   it("uses the shared per-table header/sticky markup in every group table (no duplicated table framework)", async () => {
     await renderPage();
     fireEvent.click(screen.getByRole("button", { name: "Division" }));
