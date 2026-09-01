@@ -28,6 +28,11 @@ on:
         type: boolean
         required: true
         default: false
+      replace_k_history_snapshot:
+        description: "Explicitly replace a conflicting run/content K-history snapshot"
+        type: boolean
+        required: true
+        default: false
   # Also validates the workflow immediately whenever this file itself changes.
   push:
     branches:
@@ -145,12 +150,16 @@ jobs:
           THERUNDOWNAPI: ${{ secrets.THERUNDOWNAPI }}
 
       - name: Fetch team wRC+ data
-        run: node scripts/fetch-team-wrc-plus.mjs || true
+        id: fetch_team_wrc
+        continue-on-error: true
+        run: node scripts/fetch-team-wrc-plus.mjs
 
       - name: Generate K workload shadow
+        id: generate_k_workload_shadow
         run: node scripts/generate-mlb-k-workload-shadow.mjs
 
       - name: Validate K workload shadow
+        id: validate_k_workload_shadow
         env:
           MLB_K_PROJECTION_MODE: shadow
         run: node scripts/test-k-workload.mjs --fixture
@@ -472,6 +481,7 @@ jobs:
       # rows. Reads the now-finalized hr-props-raw.json; fails softly per
       # pitcher (never blocks the core HR/K props pipeline above).
       - name: Generate strikeout prop row details
+        id: generate_k_details
         continue-on-error: true
         run: node scripts/generate-mlb-strikeout-prop-details.mjs
 
@@ -494,7 +504,48 @@ jobs:
       # or schema-invalid, so a hard failure here means the public payload
       # itself is unusable and must not be published.
       - name: Resolve production K projection
+        id: resolve_k_projection
         run: npm run mlb:k-production-projection
+
+      - name: Preserve date-keyed Projected K inputs and outputs
+        id: archive_k_history
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--date="${{ needs.slate-check.outputs.slate_date }}")
+          args+=(--generation-time="$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+          args+=(--workflow-run-id="${{ github.run_id }}")
+          args+=(--workflow-run-attempt="${{ github.run_attempt }}")
+          args+=(--source=hr-props-raw.json)
+          if [ "${{ steps.generate_k_workload_shadow.outcome }}" = "success" ] && [ "${{ steps.validate_k_workload_shadow.outcome }}" = "success" ]; then
+            args+=(--source=k-workload-shadow.json)
+          fi
+          if [ "${{ steps.generate_k_details.outcome }}" = "success" ]; then
+            args+=(--source=strikeout-prop-details.json)
+          fi
+          if [ "${{ steps.fetch_odds.outcome }}" = "success" ] && [ "${{ steps.validate_prop_odds.outcome }}" = "success" ]; then
+            args+=(--source=mlb-odds.json)
+          fi
+          if [ "${{ steps.fetch_team_wrc.outcome }}" = "success" ]; then
+            args+=(--source=team-wrc-plus.json)
+          fi
+          if [ "${{ steps.generate_k_props_v2_shadow.outcome }}" = "success" ] && [ "${{ steps.validate_k_props_v2_shadow.outcome }}" = "success" ]; then
+            args+=(--source=k-props-v2-shadow.json)
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.replace_k_history_snapshot }}" = "true" ]; then
+            args+=(--replace)
+          fi
+          node scripts/archive-mlb-k-daily-snapshot.mjs "${args[@]}"
+
+      - name: Upload compressed Projected K daily snapshot
+        if: steps.archive_k_history.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-k-history-${{ needs.slate-check.outputs.slate_date }}-${{ steps.archive_k_history.outputs.snapshot_id }}
+          path: data/mlb/k-history/daily/${{ needs.slate-check.outputs.slate_date }}/
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 90
 
       # Pregame snapshot for the hidden /mlb/performance-preview "Top K
       # Props Performance" section: persists the exact pitchers shown under
