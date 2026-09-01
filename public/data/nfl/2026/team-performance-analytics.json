@@ -2,7 +2,7 @@
   "schemaVersion": "nfl-performance-v1",
   "_meta": {
     "season": 2026,
-    "generatedAt": "2026-08-18T17:08:52.782Z",
+    "generatedAt": "2026-09-01T15:36:53.824Z",
     "source": "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives) + public/data/nfl results.json",
     "ratingFormula": "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.40*DEF + 0.20*z(opponent-adjusted Point Differential/Game); opponent adjustment applied only at the fullSeason window (v0.3.1-style: raw - (opponentMean - leagueMean)); scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
     "scaleDivisors": {
