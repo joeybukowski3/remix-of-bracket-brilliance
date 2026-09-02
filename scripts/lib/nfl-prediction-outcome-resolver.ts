@@ -437,6 +437,15 @@ export function resolvePredictionOutcome(
     };
   }
 
+  // A weekly nflverse file may be published incrementally. Roster evidence is
+  // safe for a zero/inactive decision only after this exact game's box-score
+  // rows are present; otherwise an ACT player could be turned into a false zero.
+  const gameStatsPublished = sources.playerStats.some((row) => row.game_id === prediction.game_id);
+  if (!gameStatsPublished) {
+    return unresolvedDraft(prediction, "pending_player_stats", sources, "final", { game, result, stats_row: null, game_stats_published: false }, playerArtifacts,
+      { method: "unresolved", actual_team: null, actual_opponent: null, team_match: null, roster_status: null, zero_source: null }, recordedAt);
+  }
+
   if (!sources.rosters) {
     return unresolvedDraft(prediction, "pending_player_stats", sources, "final", { game, result, stats_row: null, roster_source: null }, playerArtifacts,
       { method: "unresolved", actual_team: null, actual_opponent: null, team_match: null, roster_status: null, zero_source: null }, recordedAt);
@@ -581,8 +590,9 @@ function jsonSourceUpdatedAt(text: string): string | null {
 
 function manifestSourceUpdatedAt(path: string, season: number): string | null {
   if (!existsSync(path)) return null;
-  const manifest = JSON.parse(readFileSync(path, "utf8")) as { files?: { season?: number; retrievedDateUtc?: string }[] };
-  return manifest.files?.find((file) => file.season === season)?.retrievedDateUtc ?? null;
+  const manifest = JSON.parse(readFileSync(path, "utf8")) as { files?: { season?: number; retrievedAtUtc?: string; retrievedDateUtc?: string }[] };
+  const entry = manifest.files?.find((file) => file.season === season);
+  return entry?.retrievedAtUtc ?? entry?.retrievedDateUtc ?? null;
 }
 
 function readArtifact(options: {

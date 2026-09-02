@@ -87,6 +87,10 @@ function statRow(overrides: Record<string, string> = {}): Record<string, string>
   };
 }
 
+function gameCoverageRow(): Record<string, string> {
+  return statRow({ player_id: "00-other" });
+}
+
 function rosterRow(status: string, overrides: Record<string, string> = {}): Record<string, string> {
   return { season: "2025", week: "1", gsis_id: "00-001", team: "LA", status, ...overrides };
 }
@@ -193,25 +197,35 @@ describe("identity, aliases, and DNP semantics", () => {
     expect(resolvePredictionOutcome(prediction("rushing"), sources({ stats: [statRow({ team: "BUF", opponent_team: "MIA" })] })).resolution_status).toBe("identity_unresolved");
   });
 
-  it("treats ACT-with-no-stats as an explicitly sourced true zero", () => {
-    const event = resolvePredictionOutcome(prediction("passing"), sources({ stats: [], rosters: [rosterRow("ACT")] }));
+  it("treats ACT-with-no-stats as an explicitly sourced true zero after that game's stats publish", () => {
+    const event = resolvePredictionOutcome(prediction("passing"), sources({ stats: [gameCoverageRow()], rosters: [rosterRow("ACT")] }));
     expect(event.resolution_status).toBe("resolved");
     expect(event.actual).toMatchObject({ attempts: 0, yards: 0, yards_per_attempt: null });
     expect(event.identity_resolution.zero_source).toBe("active_roster_confirmed");
   });
 
   it("marks INA-with-no-stats inactive rather than zero", () => {
-    const event = resolvePredictionOutcome(prediction("rushing"), sources({ stats: [], rosters: [rosterRow("INA")] }));
+    const event = resolvePredictionOutcome(prediction("rushing"), sources({ stats: [gameCoverageRow()], rosters: [rosterRow("INA")] }));
     expect(event.resolution_status).toBe("inactive");
     expect(event.actual).toBeNull();
   });
 
   it("marks non-game roster states not applicable", () => {
-    expect(resolvePredictionOutcome(prediction("receiving"), sources({ stats: [], rosters: [rosterRow("RES")] })).resolution_status).toBe("not_applicable");
+    expect(resolvePredictionOutcome(prediction("receiving"), sources({ stats: [gameCoverageRow()], rosters: [rosterRow("RES")] })).resolution_status).toBe("not_applicable");
   });
 
   it("leaves an absent player unresolved instead of converting missing to zero", () => {
     expect(resolvePredictionOutcome(prediction("receiving"), sources({ stats: [], rosters: [] })).resolution_status).toBe("pending_player_stats");
+  });
+
+  it("leaves ACT players pending until that exact game's stats are published", () => {
+    const event = resolvePredictionOutcome(prediction("receiving"), sources({ stats: [], rosters: [rosterRow("ACT")] }));
+    expect(event.resolution_status).toBe("pending_player_stats");
+    expect(event.actual).toBeNull();
+  });
+
+  it("still resolves spread while player statistics are unavailable", () => {
+    expect(resolvePredictionOutcome(prediction("spread"), sources({ stats: null })).resolution_status).toBe("resolved");
   });
 
   it("reports a missing player source explicitly", () => {
@@ -270,7 +284,7 @@ describe("append-only idempotency and revisions", () => {
     const drafts = [
       resolvePredictionOutcome(prediction("spread"), sources()),
       resolvePredictionOutcome(prediction("passing"), sources({ stats: [statRow()] })),
-      resolvePredictionOutcome(prediction("rushing"), sources({ stats: [], rosters: [rosterRow("INA")] })),
+      resolvePredictionOutcome(prediction("rushing"), sources({ stats: [gameCoverageRow()], rosters: [rosterRow("INA")] })),
       resolvePredictionOutcome(prediction("receiving"), sources({ final: false })),
     ];
     const write = appendOutcomeDrafts({ rootDir: tempRoot(), drafts, dryRun: true });
@@ -281,11 +295,13 @@ describe("append-only idempotency and revisions", () => {
 describe("manual resolver entrypoint", () => {
   it("validates the small season/week/dry-run CLI surface", () => {
     const args = parseResolverArgs(["--season=2025", "--week=1", "--dry-run", "--recorded-at=2025-09-08T12:00:00.000Z"]);
-    expect(args).toMatchObject({ season: 2025, week: 1, dryRun: true });
+    expect(args).toMatchObject({ season: 2025, week: 1, dryRun: true, predictionTypes: null });
+    expect(parseResolverArgs(["--season=2025", "--prediction-types=spread"]).predictionTypes).toEqual(["spread"]);
+    expect(() => parseResolverArgs(["--season=2025", "--prediction-types=total"])).toThrow(/prediction-types/);
     expect(() => parseResolverArgs(["--week=1"])).toThrow(/requires --season/);
   });
 
-  it("runs a controlled four-model fixture and reruns idempotently", () => {
+  it("runs a controlled four-model fixture, reruns idempotently, and appends one corrected revision", () => {
     const repoRoot = tempRoot();
     const predictionRoot = join(repoRoot, "data", "nfl", "predictions");
     const outcomeRoot = join(repoRoot, "data", "nfl", "prediction-outcomes");
@@ -315,10 +331,18 @@ describe("manual resolver entrypoint", () => {
     writeFileSync(join(statsDir, "manifest.json"), JSON.stringify({ files: [{ season: 2025, retrievedDateUtc: "2025-09-08" }] }));
     writeFileSync(join(rosterDir, "roster_weekly_2025.csv"), "season,week,gsis_id,team,status\n2025,1,00-004,LA,INA\n");
     writeFileSync(join(rosterDir, "manifest.json"), JSON.stringify({ files: [{ season: 2025, retrievedDateUtc: "2025-09-08" }] }));
-    const args = { season: 2025, week: 1, dryRun: false, predictionRoot, outcomeRoot, repoRoot, recordedAt: "2025-09-08T12:00:00.000Z" };
+    const args = { season: 2025, week: 1, dryRun: false, predictionRoot, outcomeRoot, repoRoot, recordedAt: "2025-09-08T12:00:00.000Z", predictionTypes: null };
     const first = runResolver(args);
     expect(first.summary).toMatchObject({ spread_resolved: 1, passing_resolved: 1, rushing_resolved: 1, receiving_resolved: 1, inactive: 1, appended: 5, already_resolved: 0 });
     const retry = runResolver({ ...args, recordedAt: "2025-09-08T13:00:00.000Z" });
     expect(retry.summary).toMatchObject({ appended: 0, already_resolved: 5, corrections: 0 });
+
+    writeFileSync(join(statsDir, "stats_player_week_2025.csv"), `${header}${stats.replace(",240,", ",241,")}\n`);
+    const correction = runResolver({ ...args, recordedAt: "2025-09-09T12:00:00.000Z" });
+    expect(correction.summary).toMatchObject({ appended: 1, already_resolved: 4, corrections: 1 });
+    const passingEvents = readFileSync(join(outcomeRoot, "2025", "01", "passing.jsonl"), "utf8")
+      .trim().split("\n").map((line) => JSON.parse(line));
+    expect(passingEvents.map((event) => [event.outcome_revision, event.actual.yards])).toEqual([[1, 240], [2, 241]]);
+    expect(passingEvents[1].supersedes_outcome_id).toBe(passingEvents[0].outcome_id);
   });
 });
