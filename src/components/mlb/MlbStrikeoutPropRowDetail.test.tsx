@@ -31,7 +31,7 @@ const shadowRow: KPropsV2ShadowRow = {
   market: { kLine: 4.5, oddsOver: "+121", oddsUnder: "-155", book: "draftkings", slateDate: "2026-07-23" },
   legacy: { projectedIP: 4.7, projectedK9: 7.2, projectedKs: 3.8, projectionSource: "legacy", projectionFallbackReason: "MODE_SHADOW_COMPARISON" },
   v2: {
-    modelVersion: "mlb-k-projection-v2-shadow",
+    modelVersion: "mlb-k-projection-v2-production",
     projectedStrikeouts: 4,
     projectedKRate: 0.1768,
     projectedBattersFaced: 22.626,
@@ -87,7 +87,7 @@ const artifact: KPropsV2ShadowArtifact = {
   slateDate: "2026-07-23",
   generatedAt: "2026-07-23T13:17:06.284Z",
   sourceDates: { "hr-props-raw.json": "2026-07-23", "mlb-odds.json": "NO_TRUSTWORTHY_DATE" },
-  modelVersion: "mlb-k-projection-v2-shadow",
+  modelVersion: "mlb-k-projection-v2-production",
   projectionMode: "shadow",
   rows: [shadowRow],
   diagnostics: { totalRows: 1, v2ComputedRows: 1, legacyOnlyRows: 0, warnings: ["mlb-odds.json has no trustworthy date field."] },

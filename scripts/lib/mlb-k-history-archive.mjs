@@ -69,6 +69,10 @@ function schemaInformation(payload) {
     "projectionMode",
     "kProjectionMode",
     "kProjectionModelVersion",
+    "kProjectionResolver",
+    "kProjectionLegacyRole",
+    "kWorkloadProjectionMode",
+    "kWorkloadProjectionModelVersion",
   ];
   return Object.fromEntries(keys
     .filter((key) => payload?.[key] !== undefined && payload?.[key] !== null)

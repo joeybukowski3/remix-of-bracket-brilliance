@@ -109,7 +109,7 @@ function topKHistory(): TopKPerformanceFile {
       trackingModelVersion: "top-k-tracking-v1", date: "2026-08-27", persistedAt: "2026-08-27T00:00:00Z",
       pitcherId: 1, pitcherName: "Top Pitcher", team: "NYY", opponent: "BOS", gameId: 100, gameKey: "BOS@NYY",
       side: "over", slot: 1, line: 4.5, odds: "-150", oddsBook: "book", projectedKs: 5.9, projectionEdge: 1.4,
-      kScore: 55, valueScore: 60, projectedIP: 5.5, workloadConfidenceGrade: "A", modelVersion: "mlb-k-projection-v2-shadow",
+      kScore: 55, valueScore: 60, projectedIP: 5.5, workloadConfidenceGrade: "A", modelVersion: "mlb-k-projection-v2-production",
       resultStatus: "pending", actualStrikeOuts: null, actualInningsPitched: null, battersFaced: null, result: null, gradedAt: null,
     }],
   };

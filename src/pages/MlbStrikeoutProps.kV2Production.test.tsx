@@ -81,7 +81,7 @@ const v2Row: PitcherStrikeoutTeamRow = {
   projectionSource: "v2",
   projectionFallbackReason: null,
   v2Confidence: "high",
-  v2ModelVersion: "mlb-k-projection-v2-shadow",
+  v2ModelVersion: "mlb-k-projection-v2-production",
 };
 
 /** V2 refused (low confidence); the legacy projection is the published value. */
@@ -100,7 +100,7 @@ const fallbackRow: PitcherStrikeoutTeamRow = {
   projectionSource: "legacy-fallback",
   projectionFallbackReason: "low-v2-confidence",
   v2Confidence: "low",
-  v2ModelVersion: "mlb-k-projection-v2-shadow",
+  v2ModelVersion: "mlb-k-projection-v2-production",
 };
 
 /** V2 promoted, and the resolved number is the largest projection on the board. */
@@ -119,7 +119,7 @@ const highKsRow: PitcherStrikeoutTeamRow = {
   projectionSource: "v2",
   projectionFallbackReason: null,
   v2Confidence: "medium",
-  v2ModelVersion: "mlb-k-projection-v2-shadow",
+  v2ModelVersion: "mlb-k-projection-v2-production",
 };
 
 const dashboardFixture = { date: SLATE, generatedAt: `${SLATE}T12:00:00.000Z`, games: [], pitchers: [], batters: [] };

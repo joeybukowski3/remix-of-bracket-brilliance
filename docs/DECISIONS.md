@@ -24,6 +24,7 @@ This file records accepted, durable repository-level decisions. It is not a spor
 | KS-010 | 2026-08-31 | Accepted | Analytical heat color encodes goodness percentile: gold/green is favorable, red is unfavorable. Any alternate semantic palette must be explicitly documented as an exception. |
 | KS-011 | 2026-08-31 | Accepted | Percentile computations may use different denominator conventions for large populations versus fixed small pools, but the choice follows the documented `docs/TABLE_CONVENTIONS.md` rule and direction is always explicit at the call site. |
 | KS-012 | 2026-08-31 | Accepted | UI is light-first; new pages and components are not required to implement dark mode until dark mode is explicitly reopened as a dedicated project. |
+| KS-013 | 2026-09-02 | Accepted | K Projection V2.2 (`projectStrikeoutsV2`, artifact/field model version `mlb-k-projection-v2-production`) is the production Projected K, resolved into `hr-props-raw.json` `pitchers[].projectedKs` by `mlb-k-production-projection-v1`; the legacy `IP × K9 / 9` projection is a per-row fail-safe fallback only. Calibration: pitcher-skill shrinkage α = 0.55, opponent matchup multiplier = 0.75, matchup clamp = ±0.035. |
 
 ## KS-001: authority hierarchy
 
@@ -103,6 +104,46 @@ incomplete/vestigial (no `:root`-level dark token block; only a PGA-scoped
 override). New pages and components are designed for the light palette and are
 not required to implement dark mode. Dark mode is reopened only as a dedicated,
 explicitly approved project. The existing PGA-scoped dark treatment may remain.
+
+## KS-013: K Projection V2.2 is the production Projected K
+
+The displayed `Proj K` on `/mlb/strikeout-props` — and every value derived from
+it (projection-vs-line edge, OVER/UNDER lean, board sorting, Best Value / Best
+Bets cards and their reason text, `kAdjustment`, the canonical X K-candidate
+pool, and the top-K pregame snapshot) — is the resolved output of
+`projectStrikeoutsV2` (`src/lib/mlb/kProjectionV2.ts`), model version
+`mlb-k-projection-v2-production`.
+
+- `scripts/resolve-mlb-k-production-projection.mjs` →
+  `scripts/lib/mlb-k-production-projection.mjs` (`mlb-k-production-projection-v1`)
+  is the one place the production projection is chosen. It writes V2 into
+  `pitchers[].projectedKs` whenever a V2 row matches through stable identity
+  with `confidence ∈ {high, medium}` and `projectedStrikeouts > 0`; otherwise
+  the stored legacy `IP × K9 / 9` projection is the deterministic per-row
+  fallback, and when that is also unusable the row is `unavailable` (never `0`).
+  The two are never blended.
+- **Calibration gate (KS-008):** the 2023-2024 development / 2025 holdout
+  historical backtest calibration study — pitcher-skill shrinkage α = **0.55**
+  ([mlb-k-calibration-experiment-1.md](mlb-k-calibration-experiment-1.md)),
+  opponent matchup multiplier = **0.75**
+  ([mlb-k-calibration-experiment-2.md](mlb-k-calibration-experiment-2.md)),
+  matchup clamp = **±0.035** (unchanged). Experiments 3 and 4
+  ([mlb-k-calibration-experiment-3.md](mlb-k-calibration-experiment-3.md),
+  [mlb-k-calibration-experiment-4.md](mlb-k-calibration-experiment-4.md)) tested
+  contextual / pitcher-baseline workload alternatives and were rejected as
+  negative results; the V2.2 workload logic is unchanged.
+- This still does not license an edge, +EV, best-bet, or calibrated-probability
+  claim (KS-008); the projection and any projection-vs-line gap remain
+  descriptive.
+- The older `workload-team-k-v3` workload/team-rate projection is a separate
+  model and remains a shadow comparison feed only
+  (`kWorkloadProjectionMode: "shadow"`); it is not promoted, and further broad
+  workload calibration is not being pursued.
+- Confidence eligibility for Best Value / Best Bets still keys on the
+  `workload-team-k-v3` workload confidence grade, not `v2Confidence`. Aligning
+  that gate is separate future methodology work (BL-MLB-002) and is not part of
+  this decision.
+- Full methodology contract: [models/mlb-k-score.md](models/mlb-k-score.md).
 
 ## Open questions
 

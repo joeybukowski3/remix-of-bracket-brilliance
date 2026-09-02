@@ -13,17 +13,17 @@ weighting can be diagnosed before any formula change is proposed.
 
 ## Production model under test (as-built, 2026-09-01)
 
-`docs/models/mlb-k-score.md` still describes the legacy `IP × K9 / 9` formula as
-live with V2 "riding shadow". **The committed resolver and the live payload
-disagree:** `scripts/resolve-mlb-k-production-projection.mjs` →
-`scripts/lib/mlb-k-production-projection.mjs` promotes **V2
-(`mlb-k-projection-v2-shadow`, `src/lib/mlb/kProjectionV2.ts`)** into
+`scripts/resolve-mlb-k-production-projection.mjs` →
+`scripts/lib/mlb-k-production-projection.mjs` promotes **V2.2
+(`mlb-k-projection-v2-production`, `src/lib/mlb/kProjectionV2.ts`)** into
 `projectedKs` whenever a V2 row matches with `confidence ∈ {high, medium}` and
-`projectedStrikeouts > 0`; the legacy projection is the deterministic fallback
-only. On the 2026-09-01 slate 29 / 30 rows were V2-served. This backtest treats
-**V2 as the production model** and legacy as the fallback, and reports three
-views (see below). The doc conflict is logged for separate resolution; this
-document does not resolve it.
+`projectedStrikeouts > 0`; the legacy `IP × K9 / 9` projection is the
+deterministic per-row fallback only. On the 2026-09-01 slate 29 / 30 rows were
+V2-served. This backtest treats **V2 as the production model** and legacy as the
+fallback, and reports three views (see below). The doc conflict this backtest
+originally flagged (`KS-003`) was resolved on 2026-09-02: `KS-013` records the
+V2.2 promotion and [models/mlb-k-score.md](models/mlb-k-score.md) now describes
+V2.2 as live (was: model version string `mlb-k-projection-v2-shadow`).
 
 ## Three reported views
 

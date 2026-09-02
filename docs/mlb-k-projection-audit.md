@@ -4,9 +4,18 @@
 > (2026-07-23).** Point-in-time inventory of the K-props data path and source
 > feasibility. **Not** current methodology or feature authority.
 >
-> - Current K methodology (projectedKs, K Score, K value sort; V2 shadow status;
->   dormant K +EV V1): [models/mlb-k-score.md](models/mlb-k-score.md)
+> **Superseded on the core question:** this audit describes `projectedKs` as the
+> legacy `IP × K9 / 9` projection with V2 "riding shadow". As of `KS-013`
+> (2026-09-02) the live `projectedKs` is **K Projection V2.2**
+> (`mlb-k-projection-v2-production`), resolved per row by
+> `mlb-k-production-projection-v1` with the legacy formula as a per-row fail-safe
+> fallback. The "Required Field Audit" / "Missing Data" / split-feasibility
+> inventory below remains useful provenance for the input landscape only.
+>
+> - Current K methodology (V2.2 formula + constants, legacy fallback, K Score, K
+>   value sort; dormant K +EV V1): [models/mlb-k-score.md](models/mlb-k-score.md)
 > - Current K-props surface contract: [features/mlb-k.md](features/mlb-k.md)
+> - Promotion decision: [DECISIONS.md](DECISIONS.md) `KS-013`
 > - Open items: BACKLOG [BL-MLB-001](BACKLOG.md), [BL-MLB-002](BACKLOG.md)
 
 Date: 2026-07-23

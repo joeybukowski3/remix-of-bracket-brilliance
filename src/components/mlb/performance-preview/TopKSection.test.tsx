@@ -18,7 +18,7 @@ function record(overrides: Partial<TopKPickRecord> = {}, index = 0): TopKPickRec
     trackingModelVersion: "top-k-tracking-v1", date: "2026-08-11", persistedAt: "2026-08-11T00:00:00Z",
     pitcherId: 6000 + index, pitcherName: `Ace ${index}`, team: "NYY", opponent: "BOS", gameId: 900 + index, gameKey: "BOS@NYY",
     side: "over", slot: 1, line: 4.5, odds: "-150", oddsBook: "book", projectedKs: 6.2, projectionEdge: 1.7,
-    kScore: 58, valueScore: 62, projectedIP: 5.6, workloadConfidenceGrade: "A", modelVersion: "mlb-k-projection-v2-shadow",
+    kScore: 58, valueScore: 62, projectedIP: 5.6, workloadConfidenceGrade: "A", modelVersion: "mlb-k-projection-v2-production",
     resultStatus: "final", actualStrikeOuts: 6, actualInningsPitched: "5.2", battersFaced: 24, result: "WIN", gradedAt: "2026-08-12T00:00:00Z",
     ...overrides,
   };
