@@ -27,6 +27,8 @@ import type { NflReceivingOutcome } from "../src/lib/nfl/props/types/receivingOu
 import { buildActivityLogFromUniverse, type NflCurrentWeekRosterSourceRow } from "../src/lib/nfl/props/currentWeekRosterUniverse";
 import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/playerGameUniverse";
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
+import { fitReceivingShareModel } from "../src/lib/nfl/props/roleAllocation/receivingProduction";
+import type { NflRoleAllocationDataset } from "../src/lib/nfl/props/roleAllocation/types";
 import type { NflCurrentWeekProjectionRow } from "../src/lib/nfl/props/types/currentWeekProjection";
 import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
 import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow, type NflDepthChartIndex } from "../src/lib/nfl/props/currentWeekDepthChart";
@@ -342,6 +344,29 @@ function main(): void {
     passing: { selectedDefinition: NflFrozenScoreDefinition }; rushing: { selectedDefinition: NflFrozenScoreDefinition }; receiving: { selectedDefinition: NflFrozenScoreDefinition };
   };
 
+  // WU4B S6: receiving v2 (finite targetable-pass pool allocation). NOT
+  // fail-closed -- a missing role-allocation dataset or a WU4A
+  // team-opportunity artifact for a different week leaves receiving on v1,
+  // disclosed via `artifact.modelVersions.receiving`. Rushing/passing/QB
+  // rushing are untouched.
+  let receivingShareModel: ReturnType<typeof fitReceivingShareModel> | undefined;
+  let teamOpportunityDropbacksByTeam: Map<string, number> | undefined;
+  try {
+    const roleDataset = JSON.parse(readSource(join(DATA_DIR, "role-allocation-dataset-2022-2025.json"))) as NflRoleAllocationDataset;
+    const teamOppPath = join(ROOT, "public", "data", "nfl", String(args.season), "team-opportunity.json");
+    const teamOpp = JSON.parse(readSource(teamOppPath)) as { week: number; rows: { team: string; week: number; projectedPassAttempts: number }[] };
+    const teamRows = teamOpp.rows.filter((r) => r.week === args.week);
+    if (teamRows.length > 0) {
+      teamOpportunityDropbacksByTeam = new Map(teamRows.map((r) => [r.team, r.projectedPassAttempts]));
+      receivingShareModel = fitReceivingShareModel(roleDataset);
+      console.log(`[nfl:current-week-projections] receiving v2: ${teamOpportunityDropbacksByTeam.size} teams from WU4A team-opportunity`);
+    } else {
+      console.log(`[nfl:current-week-projections] receiving stays v1: WU4A team-opportunity has no week-${args.week} rows`);
+    }
+  } catch (err) {
+    console.log(`[nfl:current-week-projections] receiving stays v1: ${(err as Error).message}`);
+  }
+
   const archiveCaptures: ArchiveCapture[] = [];
   let fittedModels: { passing: NflFittedPassingModel; rushing: NflFittedRushingModel; receiving: NflFittedReceivingModel } | null = null;
   const sources: NflCurrentWeekSources = {
@@ -351,6 +376,8 @@ function main(): void {
     rushActivityLog, targetActivityLog, attemptActivityLog,
     historicalPassingRows, historicalRushingRows, historicalReceivingRows,
     depthChartIndex,
+    receivingShareModel,
+    teamOpportunityDropbacksByTeam,
     scoreDefinitions: { passing: scoreResearch.passing.selectedDefinition, rushing: scoreResearch.rushing.selectedDefinition, receiving: scoreResearch.receiving.selectedDefinition },
     archiveObserver: {
       onFittedModels: (models) => { fittedModels = models; },
@@ -406,7 +433,7 @@ function main(): void {
       workflow_name: process.env.GITHUB_WORKFLOW ?? null, workflow_run_id: process.env.GITHUB_RUN_ID ?? null,
       cutoff_policy: "slate_before_first_kickoff", status: row.status === "eligibleInsufficientHistory" ? "eligible_insufficient_history" : row.status === "notEligible" ? "not_eligible" : row.status === "dataUnresolved" ? "unavailable" : "projected",
       projection, feature_snapshot: {
-        values: asJson({ model_features: capture.featureValues, production_feature_snapshot: row.featureSnapshot, estimated_range: row.estimatedRange, matchup_score: row.matchupScore, hard_case_flags: row.hardCaseFlags, role: { fallback_provenance: row.fallbackProvenance, role_source: row.roleSource, role_source_updated_at: row.roleSourceUpdatedAt, depth_rank: row.depthRank, starter_flag: row.starterFlag, role_confidence: row.roleConfidence, history_status: row.historyStatus }, diagnostics: row.diagnostics }) as Record<string, JsonValue>,
+        values: asJson({ model_features: capture.featureValues, production_feature_snapshot: row.featureSnapshot, estimated_range: row.estimatedRange, matchup_score: row.matchupScore, hard_case_flags: row.hardCaseFlags, role: { fallback_provenance: row.fallbackProvenance, role_source: row.roleSource, role_source_updated_at: row.roleSourceUpdatedAt, depth_rank: row.depthRank, starter_flag: row.starterFlag, role_confidence: row.roleConfidence, history_status: row.historyStatus }, diagnostics: row.diagnostics, allocation_diagnostics: (row as { allocationDiagnostics?: unknown }).allocationDiagnostics ?? null }) as Record<string, JsonValue>,
         ...(capture.orderedVector ? { ordered_vector: capture.orderedVector } : {}), ...(capture.imputationFlags ? { imputation_flags: capture.imputationFlags } : {}),
         source_manifest_hashes: { yardage_run: sourceManifest.hash }, fitted_model_hash: model.hash,
       },

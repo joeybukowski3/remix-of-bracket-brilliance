@@ -179,6 +179,15 @@ absolute errors are the absolute value. `bias` is `mean(projection - actual)`
 Every row also carries `feature_snapshot_values` (the archived compact
 feature subset, verbatim) for feature-conditioned research.
 
+WU4B (2026-09-02) is additive here: `nfl-receiving-share-x-efficiency-v2.0.0`
+predictions are joined and evaluated exactly like v1 receiving rows, and
+appear as a distinct `model_version` grouping alongside v1. Their
+`feature_snapshot_values.allocation_diagnostics` block (targetable pool,
+opportunity share, prior share, role-evidence vector, fallback reason,
+residual) flows through verbatim for cohort research — no new required
+column, no schema-version bump, and no historical evaluation row is
+rewritten. v1 receiving rows keep `allocation_diagnostics: null`.
+
 ## Market edge conventions
 
 - Spread: `jkb_vs_market_edge = projected_home_margin -
