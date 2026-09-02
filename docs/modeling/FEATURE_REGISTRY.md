@@ -48,6 +48,22 @@ All windows use the compact play-volume cache via `teamPlayVolume.ts` selectors,
 
 Team plays: walk-forward showed no candidate beats the training league mean, so the projection stays near league-average by evidence. The pass/rush split is where the ridge earns its keep (dropback-rate correlation ~0.25-0.38 across folds, beating every history-only baseline). Prior team rush/pass attempts per game are also recorded in the feature snapshot for diagnostics but are not ridge columns.
 
+## Receiving allocation features (WU4B, `nfl-receiving-share-x-efficiency-v2.0.0`)
+
+Fitted deterministically from `data/nfl/props/role-allocation-dataset-2022-2025.json` (per player-game receiving share observations + per team-game targetable-pass pools, 2,142 / 2,174 REG team-games; 2023-2025 weekly-roster coverage, 2022 gap documented in the dataset). All windows are strictly-prior-game by kickoff.
+
+| Feature | Definition | Availability timing | Models | Leakage risk | Status |
+| --- | --- | --- | --- | --- | --- |
+| Targetable-pass ratio | Point-in-time team (-> training league) `attempts / dropbacks`, shrunk to league (6-game prior), clamped `[0.5, 1.0]` | Postgame (`stats_team_week`), prior games only | Receiving v2 | Target-game inclusion (guarded); upstream stat revisions | production input |
+| Prior player target share | Point-in-time mean `player targets / team pass attempts`, `seasonPrior -> priorSeason` coalesce | Postgame, prior games only | Receiving v2 | Same | production input |
+| Fitted depth-rank prior | Training-set mean realised within-pool target share by `<position>:<depth-rank>` bucket | Fit-time constant (2022-2025) | Receiving v2 | Rank pre-2025 is usage-derived; live 2026 rank is sourced | production input |
+| Depth rank / sourced flag | From the live ESPN depth chart (`roleConfidence === "sourced"`) | Latest pregame snapshot | Receiving v2 | Latest-snapshot-only; staleness gate applies | production input (role weight) |
+| teamChanged | Player's target-week team differs from their most recent prior-season team | Pregame roster | Receiving v2 | Roster publication timing | diagnostic + evidence vector |
+| Roster competition count | Same-team same-position eligible receivers this week | Pregame roster | Receiving v2 | Roster timing | diagnostic + evidence vector |
+| WU4A projected dropbacks | `team_opportunity.projected_pass_attempts` for the target week | Pregame (WU4A run) | Receiving v2 | Inherits WU4A leakage profile | production input (pool size) |
+
+Coherence is a hard accounting constraint, not evidence of predictiveness: player target shares are clipped `>= 0` and renormalised to sum to 1 within a team-game, so allocated targets sum exactly to the targetable pool. `E[sacks] + E[scrambles]` subtraction (`scrambles = dropbacks - team_pass_attempts - sacks_suffered`) was tested against the calibrated ratio and is downstream-identical on player target projections. The receiving efficiency (yards/target) leg is unchanged from v1.
+
 ## Implemented eligibility, provenance and diagnostic features
 
 | Feature | Definition/source | Timing/window | Models | Risk/status |

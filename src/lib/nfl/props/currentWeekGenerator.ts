@@ -22,6 +22,12 @@ import { computeDepthChartStaleness, fallbackRoleEvidence, type NflDepthChartInd
 import { buildQbPassingFeatureRowForTarget, type NflQbStatGameLogEntry } from "./qbPassingFeatures";
 import { buildRushingFeatureRowForTarget, type NflPlayerRushingStatLogEntry } from "./rushingFeatures";
 import { buildReceivingFeatureRowForTarget, type NflPlayerReceivingStatLogEntry } from "./receivingFeatures";
+import {
+  allocateReceivingTargetsForTeam,
+  NFL_RECEIVING_V2_MODEL_VERSION,
+  type NflReceivingAllocationCandidate,
+  type NflReceivingShareModel,
+} from "./roleAllocation/receivingProduction";
 import type { NflQbPassingFeatureRow } from "./types/qbPassingFeatures";
 import type { NflRushingFeatureRow } from "./types/rushingFeatures";
 import type { NflReceivingFeatureRow } from "./types/receivingFeatures";
@@ -75,6 +81,17 @@ export type NflCurrentWeekSources = {
   generationMode?: "currentWeek" | "historicalReplay";
   /** Phase 9.2: null when the depth-chart source is unavailable this run -- generation still succeeds via Phase 9.1 fallback behavior (see `depthChartSource` on the returned artifact). */
   depthChartIndex: NflDepthChartIndex | null;
+  /**
+   * WU4B S6: when present, the receiving VOLUME leg is produced by
+   * `nfl-receiving-share-x-efficiency-v2.0.0` (finite targetable-pass pool
+   * allocation) instead of the v1 per-player projection. The v1 YPT
+   * efficiency leg is unchanged. Absent => v1 receiving behaviour
+   * (backwards compatible). QB rushing and the rushing model are untouched
+   * by S6.
+   */
+  receivingShareModel?: NflReceivingShareModel;
+  /** WU4B S6: WU4A `projected_pass_attempts` (dropbacks) per team for the target week. A team missing here falls back to v1 for its receivers. */
+  teamOpportunityDropbacksByTeam?: ReadonlyMap<string, number>;
   /** Optional infrastructure-only observer. It receives the exact fitted states and live feature rows used during generation without changing the browser artifact. */
   archiveObserver?: {
     onFittedModels(models: { passing: ReturnType<typeof fitPassingModel>; rushing: ReturnType<typeof fitRushingModel>; receiving: ReturnType<typeof fitReceivingModel> }): void;
@@ -363,6 +380,22 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
   }
 
   // --- Receiving ---
+  // WU4B S6: when `sources.receivingShareModel` is present the target-VOLUME
+  // leg is produced by a finite targetable-pass pool allocation per
+  // team-game (`nfl-receiving-share-x-efficiency-v2.0.0`); the v1 YPT
+  // efficiency leg is unchanged. Absent => exact v1 behaviour.
+  type ReceivingUnit = {
+    c: (typeof candidates)[number];
+    liveRow: ReturnType<typeof buildReceivingFeatureRowForTarget>;
+    historyStatus: NflCurrentWeekHistoryStatus;
+    status: "projected" | "eligibleInsufficientHistory";
+    prediction: ReturnType<typeof predictReceiving>;
+    priorTeam: string | null;
+    flags: NflCurrentWeekHardCaseFlags;
+    matchup: ReturnType<typeof scoreLiveRowGrouped>;
+    receivingRoleEvidence: ReturnType<typeof fallbackRoleEvidence>;
+  };
+  const receivingUnits: ReceivingUnit[] = [];
   for (const c of candidates) {
     if (!c.receivingEligiblePregame || c.position === "QB") continue;
     const liveRow = buildReceivingFeatureRowForTarget(
@@ -372,7 +405,6 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     const historyStatus = historyStatusFor(liveRow.diagnostics.gamesWithTargetsPriorThisSeason, liveRow.diagnostics.hasPriorSeasonTargets);
     const status = historyStatus === "noHistory" ? "eligibleInsufficientHistory" : "projected";
     const prediction = predictReceiving(receivingModel, liveRow);
-    const interval = applyInterval(prediction.predicted, receivingIntervalQ);
     const priorTeam = mostRecentTeam(sources.playerReceivingStatLog, c.playerId, c.gameDateUtc);
     const rollingTargets = liveRow.features.playerUsage.targetsPerGame.seasonPrior ?? liveRow.features.playerUsage.targetsPerGame.priorSeason;
     const flags: NflCurrentWeekHardCaseFlags = {
@@ -385,15 +417,88 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
     if (c.receivingFallbackProvenance === "depthChart") bump("receiving_sourcedDepthChart");
     const matchup = scoreLiveRowGrouped(liveRow, RECEIVING_DIMENSIONS, receivingReference, c.position, sources.scoreDefinitions.receiving);
     const receivingRoleEvidence = c.receivingRoleEvidence ?? fallbackRoleEvidence("unavailable", "No eligibility evidence recorded (unexpected).");
+    receivingUnits.push({ c, liveRow, historyStatus, status, prediction, priorTeam, flags, matchup, receivingRoleEvidence });
+  }
+
+  // Phase 2: per-team share allocation (v2) or empty map (v1).
+  const shareModel: NflReceivingShareModel | undefined = sources.receivingShareModel;
+  const allocatedByPlayerGame = new Map<string, { targets: number; yards: number; share: number; priorShare: number | null; fallback: "none" | "noTeamOpportunity" | "equalSplit"; targetablePool: number | null; impliedRatio: number | null; teamResidual: number | null; dropbacks: number | null; rosterCompetitionCount: number | null }>();
+  if (shareModel) {
+    const byTeamGame = new Map<string, ReceivingUnit[]>();
+    for (const u of receivingUnits) (byTeamGame.get(`${u.c.gameId}|${u.c.team}`) ?? byTeamGame.set(`${u.c.gameId}|${u.c.team}`, []).get(`${u.c.gameId}|${u.c.team}`)!).push(u);
+    for (const [key, units] of byTeamGame) {
+      const team = units[0].c.team;
+      const dropbacks = sources.teamOpportunityDropbacksByTeam?.get(team) ?? null;
+      const posCount = new Map<string, number>();
+      for (const u of units) posCount.set(u.c.position, (posCount.get(u.c.position) ?? 0) + 1);
+      const candidatesForTeam: NflReceivingAllocationCandidate[] = units.map((u) => {
+        const tp = u.liveRow.features.playerUsage.targetShare;
+        const conc = u.liveRow.features.targetConcentration.recentTeamTopTargetShareConcentration;
+        return {
+          playerId: u.c.playerId,
+          playerName: u.c.playerName,
+          position: u.c.position as "RB" | "WR" | "TE",
+          depthRank: u.receivingRoleEvidence.depthRank,
+          roleSourced: u.receivingRoleEvidence.roleConfidence === "sourced",
+          priorTargetShare: tp.seasonPrior ?? tp.priorSeason ?? null,
+          priorGamesPlayed: u.liveRow.diagnostics.gamesWithTargetsPriorThisSeason + (u.liveRow.diagnostics.hasPriorSeasonTargets ? 1 : 0),
+          noHistory: u.historyStatus === "noHistory",
+          limitedHistory: u.historyStatus === "limitedHistory",
+          teamChanged: u.priorTeam != null ? u.priorTeam !== team : null,
+          rosterCompetitionCount: posCount.get(u.c.position) ?? null,
+          concentration: conc.seasonPrior ?? conc.priorSeason ?? null,
+          v1YardsPerTarget: u.prediction.projectedYpt,
+          v1ProjectedTargets: u.prediction.projectedTargets,
+        };
+      });
+      const teamAlloc = allocateReceivingTargetsForTeam({
+        team,
+        gameId: units[0].c.gameId,
+        season,
+        week,
+        kickoffUtc: units[0].c.gameDateUtc,
+        projectedDropbacks: dropbacks,
+        candidates: candidatesForTeam,
+        model: shareModel,
+      });
+      if (teamAlloc.usedV1Fallback) bump("receiving_v2NoTeamOpportunityFallback");
+      if (!teamAlloc.coherenceOk) bump("receiving_v2CoherenceViolation");
+      for (let i = 0; i < teamAlloc.players.length; i += 1) {
+        const p = teamAlloc.players[i];
+        allocatedByPlayerGame.set(`${key}|${p.playerId}`, {
+          targets: p.projectedTargets,
+          yards: p.projectedYards,
+          share: p.opportunityShare,
+          priorShare: p.priorOpportunityShare,
+          fallback: p.allocationFallbackReason,
+          targetablePool: teamAlloc.projectedTargetablePool,
+          impliedRatio: teamAlloc.impliedTargetableRatio,
+          teamResidual: teamAlloc.residualUnallocated,
+          dropbacks: teamAlloc.projectedDropbacks,
+          rosterCompetitionCount: candidatesForTeam[i].rosterCompetitionCount,
+        });
+      }
+    }
+  }
+
+  // Phase 3: emit.
+  for (const u of receivingUnits) {
+    const { c, liveRow, historyStatus, status, prediction, matchup, flags, receivingRoleEvidence } = u;
+    const alloc = allocatedByPlayerGame.get(`${c.gameId}|${c.team}|${c.playerId}`);
+    const useV2 = !!shareModel && !!alloc;
+    const projectedTargets = useV2 ? alloc!.targets : prediction.projectedTargets;
+    const projectedYards = useV2 ? alloc!.yards : prediction.predicted;
+    const interval = applyInterval(projectedYards, receivingIntervalQ);
     const receivingRow: NflCurrentWeekReceivingRow = {
       schemaVersion: NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION, season, week, gameId: c.gameId, kickoff: c.gameDateUtc,
       playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, homeAway: c.homeAway, position: c.position,
-      market: "receiving", status, historyStatus, generatedAt: sources.generatedAt, modelVersion: MODEL_VERSIONS.receiving,
+      market: "receiving", status, historyStatus, generatedAt: sources.generatedAt,
+      modelVersion: useV2 ? NFL_RECEIVING_V2_MODEL_VERSION : MODEL_VERSIONS.receiving,
       fallbackProvenance: c.receivingFallbackProvenance ?? "historicalVolume",
       roleSource: receivingRoleEvidence.roleSource, roleSourceUpdatedAt: receivingRoleEvidence.roleSourceUpdatedAt,
       depthRank: receivingRoleEvidence.depthRank, starterFlag: receivingRoleEvidence.starterFlag, roleConfidence: receivingRoleEvidence.roleConfidence,
       positionSegment: c.position as "RB" | "WR" | "TE",
-      projectedTargets: prediction.projectedTargets, projectedYardsPerTarget: prediction.projectedYpt, projectedYards: prediction.predicted,
+      projectedTargets, projectedYardsPerTarget: prediction.projectedYpt, projectedYards,
       estimatedRange: { estimatedLow: interval.low, estimatedHigh: interval.high, nominalLevel: receivingIntervalQ.nominalLevel, intervalVersion: INTERVAL_VERSION },
       matchupScore: toScoreObject("receiving", { season, week, gameId: c.gameId, playerId: c.playerId, playerName: c.playerName, team: c.team, opponent: c.opponent, generatedAt: sources.generatedAt }, matchup, c.position as "RB" | "WR" | "TE"),
       hardCaseFlags: flags,
@@ -409,6 +514,30 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
         market: { spread: liveRow.features.market.spread, total: liveRow.features.market.total, impliedTeamTotal: liveRow.features.market.impliedTeamTotal, isDome: liveRow.features.market.isDome },
       },
       diagnostics: { gamesWithTargetsPriorThisSeason: liveRow.diagnostics.gamesWithTargetsPriorThisSeason },
+      ...(useV2 && alloc
+        ? {
+            allocationDiagnostics: {
+              allocationModelVersion: shareModel!.allocationModelVersion,
+              projectedTeamOpportunity: alloc.dropbacks,
+              projectedTargetablePool: alloc.targetablePool,
+              impliedTargetableRatio: alloc.impliedRatio,
+              projectedOpportunityShare: alloc.share,
+              priorOpportunityShare: alloc.priorShare,
+              priorTeam: u.priorTeam,
+              roleConfidenceEvidence: {
+                depthRank: receivingRoleEvidence.depthRank,
+                roleSourced: receivingRoleEvidence.roleConfidence === "sourced",
+                teamChanged: u.priorTeam != null ? u.priorTeam !== c.team : null,
+                noHistory: historyStatus === "noHistory",
+                limitedHistory: historyStatus === "limitedHistory",
+                priorGamesPlayed: liveRow.diagnostics.gamesWithTargetsPriorThisSeason + (liveRow.diagnostics.hasPriorSeasonTargets ? 1 : 0),
+                rosterCompetitionCount: alloc.rosterCompetitionCount,
+              },
+              allocationFallbackReason: alloc.fallback,
+              teamResidualUnallocated: alloc.teamResidual,
+            },
+          }
+        : {}),
     };
     rows.push(receivingRow);
     sources.archiveObserver?.onPrediction({ row: receivingRow, featureValues: liveRow.features });
@@ -473,7 +602,11 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
   return {
     schemaVersion: NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION, season, week, generatedAt: sources.generatedAt,
     generationMode: sources.generationMode ?? "currentWeek", temporalContract: NFL_CURRENT_WEEK_TEMPORAL_CONTRACT,
-    modelVersions: { passing: MODEL_VERSIONS.passing, rushing: MODEL_VERSIONS.rushing, receiving: MODEL_VERSIONS.receiving },
+    modelVersions: {
+      passing: MODEL_VERSIONS.passing,
+      rushing: MODEL_VERSIONS.rushing,
+      receiving: sources.receivingShareModel ? NFL_RECEIVING_V2_MODEL_VERSION : MODEL_VERSIONS.receiving,
+    },
     scoreVersions: { scoreVersion: NFL_YARDAGE_MATCHUP_SCORE_VERSION, referenceDistributionVersion: NFL_YARDAGE_MATCHUP_REFERENCE_VERSION },
     sourceVersions: {
       trainingSeasons: PRODUCTION_TRAIN_SEASONS, rosterSnapshotSeason: season, rosterSnapshotWeek: week,
