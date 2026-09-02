@@ -1,5 +1,73 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchLeagueReferencePlateAppearances, fetchTeamReferencePlateAppearances } from "./mlb-strikeout-reference-context.mjs";
+import {
+  buildLeagueReferenceContext,
+  fetchLeagueReferencePlateAppearances,
+  fetchTeamReferencePlateAppearances,
+} from "./mlb-strikeout-reference-context.mjs";
+
+function paRow(team, date, gamePk, { strikeout = 0, woba = 0.320, hand = "R", site = "home" } = {}) {
+  return {
+    date,
+    gamePk: String(gamePk),
+    team,
+    site,
+    pitcherHand: hand,
+    strikeout,
+    wobaValue: woba,
+    wobaDenom: 1,
+    runsScored: null,
+  };
+}
+
+/** N teams, each with a distinct season-long wOBA/K profile so ranks are total. */
+function leagueRows(teamCount, { skipTeams = [] } = {}) {
+  const rowsByTeam = new Map();
+  for (let index = 0; index < teamCount; index += 1) {
+    const team = `T${String(index).padStart(2, "0")}`;
+    if (skipTeams.includes(team)) {
+      rowsByTeam.set(team, []);
+      continue;
+    }
+    const rows = [];
+    for (let day = 1; day <= 12; day += 1) {
+      rows.push(paRow(team, `2026-07-${String(day).padStart(2, "0")}`, `${index}${day}`, {
+        strikeout: day <= index % 6 ? 1 : 0,
+        woba: 0.280 + index * 0.004,
+      }));
+    }
+    rowsByTeam.set(team, rows);
+  }
+  return rowsByTeam;
+}
+
+describe("buildLeagueReferenceContext rank resilience", () => {
+  it("ranks every team 1..N when the whole league reported", () => {
+    const context = buildLeagueReferenceContext(leagueRows(10), "2026-07-20", "R", { expectedTeamCount: 10 });
+    const wrcRanks = [...context.values()].map((entry) => entry.opponentWrcPlusRankL30);
+    expect(wrcRanks.filter((rank) => rank != null)).toHaveLength(10);
+    expect(new Set(wrcRanks)).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+  });
+
+  it("keeps ranking the reporting teams when one feed fails (no wholesale blanking)", () => {
+    const context = buildLeagueReferenceContext(leagueRows(10, { skipTeams: ["T03"] }), "2026-07-20", "R", { expectedTeamCount: 10 });
+    expect(context.get("T03").opponentWrcPlusRankL30).toBeNull();
+    expect(context.get("T03").opponentKRateRankL30).toBeNull();
+    const populated = [...context.values()].filter((entry) => entry.opponentWrcPlusRankL30 != null);
+    expect(populated).toHaveLength(9);
+    expect([...context.values()].map((entry) => entry.opponentWrcPlusRankL30).filter(Boolean).sort((a, b) => a - b))
+      .toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+
+  it("emits no ranks when a source outage drops most of the league", () => {
+    const context = buildLeagueReferenceContext(
+      leagueRows(10, { skipTeams: ["T02", "T03", "T04", "T05", "T06"] }),
+      "2026-07-20",
+      "R",
+      { expectedTeamCount: 10 },
+    );
+    expect([...context.values()].every((entry) => entry.opponentWrcPlusRankL30 == null)).toBe(true);
+  });
+});
 
 function textResponse(text, status = 200) {
   return new Response(text, { status, headers: { "content-type": "text/plain" } });
