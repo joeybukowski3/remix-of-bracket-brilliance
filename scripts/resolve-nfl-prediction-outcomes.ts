@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validatePredictionSnapshot, type PredictionSnapshotV1 } from "./lib/nfl-production-prediction-archive";
+import { validatePredictionSnapshot, type PredictionSnapshotV1, type PredictionType } from "./lib/nfl-production-prediction-archive";
 import {
   appendOutcomeDrafts,
   loadResolverSeasonSources,
@@ -19,6 +19,7 @@ export type ResolverCliArgs = {
   outcomeRoot: string;
   repoRoot: string;
   recordedAt: string;
+  predictionTypes: PredictionType[] | null;
 };
 
 export function parseResolverArgs(argv: string[]): ResolverCliArgs {
@@ -26,10 +27,16 @@ export function parseResolverArgs(argv: string[]): ResolverCliArgs {
     season: null, week: null, dryRun: false,
     predictionRoot: join(ROOT, "data", "nfl", "predictions"),
     outcomeRoot: join(ROOT, "data", "nfl", "prediction-outcomes"), repoRoot: ROOT,
-    recordedAt: new Date().toISOString(),
+    recordedAt: new Date().toISOString(), predictionTypes: null,
   };
   for (const raw of argv) {
     if (raw === "--dry-run") args.dryRun = true;
+    else if (raw.startsWith("--prediction-types=")) {
+      const types = raw.slice(19).split(",").filter(Boolean) as PredictionType[];
+      const supported = new Set<PredictionType>(["spread", "passing", "rushing", "receiving"]);
+      if (!types.length || types.some((type) => !supported.has(type))) throw new Error("--prediction-types must contain spread, passing, rushing, and/or receiving");
+      args.predictionTypes = [...new Set(types)];
+    }
     else if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
     else if (raw.startsWith("--week=")) args.week = Number(raw.slice(7));
     else if (raw.startsWith("--prediction-root=")) args.predictionRoot = resolve(raw.slice(18));
@@ -73,7 +80,8 @@ export function loadArchivedPredictions(root: string, season: number | null, wee
 }
 
 export function runResolver(args: ResolverCliArgs) {
-  const predictions = loadArchivedPredictions(args.predictionRoot, args.season, args.week);
+  const predictions = loadArchivedPredictions(args.predictionRoot, args.season, args.week)
+    .filter((prediction) => args.predictionTypes == null || args.predictionTypes.includes(prediction.prediction_type));
   const sourceBySeason = new Map<number, ReturnType<typeof loadResolverSeasonSources>>();
   const drafts = predictions.map((prediction) => {
     let sources = sourceBySeason.get(prediction.season);

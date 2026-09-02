@@ -53,12 +53,31 @@ jobs:
           echo "NFL schedules generation failed after 3 attempts." >&2
           exit 1
 
+      - name: Refresh authoritative 2026 player-week stats
+        id: player-stats
+        continue-on-error: true
+        shell: bash
+        run: |
+          npm run nfl:player-week-stats-cache -- \
+            --seasons=2026 \
+            --partial-season=2026
+
+      - name: Resolve archived 2026 production predictions
+        shell: bash
+        run: |
+          resolver_args=(--season=2026)
+          if [ "${{ steps.player-stats.outcome }}" != "success" ]; then
+            echo "::warning::Player-week refresh failed; resolving spreads only and leaving player predictions pending."
+            resolver_args+=(--prediction-types=spread)
+          fi
+          npm run resolve:nfl-prediction-outcomes -- "${resolver_args[@]}"
+
       - name: Detect meaningful data changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json')" ]; then
-            echo "No NFL schedule/result changes."
+          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/prediction-outcomes')" ]; then
+            echo "No NFL source or prediction-outcome changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "NFL schedule/result changes detected."
@@ -92,12 +111,30 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/nfl/*/games.json public/data/nfl/*/results.json
 
+          while IFS= read -r status_line; do
+            cache_path="${status_line:3}"
+            if [[ ! "$cache_path" =~ ^data/nfl/nflverse/player-week-stats/(stats_player_week_2026\.csv|manifest\.json)$ ]]; then
+              echo "Refusing unexpected player-week cache path: $cache_path" >&2
+              exit 1
+            fi
+            git add -- "$cache_path"
+          done < <(git status --porcelain --untracked-files=all -- data/nfl/nflverse/player-week-stats)
+
+          while IFS= read -r status_line; do
+            outcome_path="${status_line:3}"
+            if [[ ! "$outcome_path" =~ ^data/nfl/prediction-outcomes/2026/[0-9]{2}/(spread|passing|rushing|receiving)\.jsonl$ ]]; then
+              echo "Refusing unexpected prediction outcome path: $outcome_path" >&2
+              exit 1
+            fi
+            git add -- "$outcome_path"
+          done < <(git status --porcelain --untracked-files=all -- data/nfl/prediction-outcomes)
+
           if git diff --cached --quiet; then
-            echo "No staged NFL data changes."
+            echo "No staged NFL source or prediction-outcome changes."
             exit 0
           fi
 
-          git commit -m "data(nfl): refresh schedules and results"
+          git commit -m "data(nfl): refresh results and prediction outcomes"
 
           pushed=false
           for attempt in 1 2 3 4 5; do

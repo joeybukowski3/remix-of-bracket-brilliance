@@ -1,6 +1,6 @@
 # Prediction Archive Schema
 
-Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2 (2026-09-02). Evaluation materialization remains unimplemented.
+Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2 and automated 2026 postgame refresh/persistence implemented in WU2.5 (2026-09-02). Evaluation materialization remains unimplemented.
 
 ## Design choice for this repository
 
@@ -219,10 +219,12 @@ type PredictionOutcomeV1 = {
 The source-state hash uses only the relevant schedule/result/player/roster evidence, so an unrelated correction elsewhere in a season file does not revise every prediction. Whole source artifact hashes remain on each event for later verification. Current authoritative sources are:
 
 - Games and completion: `public/data/nfl/<season>/games.json` plus `results.json`, produced by the existing nflverse `nfldata games.csv` schedule/results workflow. A game resolves only when the schedule row says `final` and the matching result says `final: true` with both scores.
-- Player outcomes: `data/nfl/nflverse/player-week-stats/stats_player_week_<season>.csv`, provider `nflverse/nflverse-data stats_player`, joined by `gsis:<player_id>` and exact `game_id`. Current cache coverage is 2022-2025.
+- Player outcomes: `data/nfl/nflverse/player-week-stats/stats_player_week_<season>.csv`, provider `nflverse/nflverse-data stats_player`, joined by `gsis:<player_id>` and exact `game_id`. `npm run nfl:player-week-stats-cache -- --seasons=2026 --partial-season=2026` refreshes the 2026 projection from `https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_2026.csv`, preserving IDs, game/team/opponent fields, zeroes, upstream hashes, retrieval timestamps, and coverage metadata.
 - DNP evidence: `data/nfl/nflverse/weekly-rosters/roster_weekly_<season>.csv`, provider `nflverse/nflverse-data weekly_rosters`, joined by GSIS ID, season/week, and one of the completed game's teams. Current cache coverage is 2023-2026; it cannot create a resolved player outcome unless game results are final.
 
 Upstream refreshes replace these canonical source artifacts. The resolver detects relevant corrected content and appends a revision; it never rewrites an outcome or prediction.
+
+The current-season release may update game by game. An absent player row can use weekly-roster evidence only after at least one player-stat row establishes that the exact game is present in the refreshed release. Until then player predictions remain `pending_player_stats`; finalized spread predictions still resolve from schedules/results. If the player-stat refresh itself fails, automation invokes the resolver with `--prediction-types=spread`, so an older player cache cannot create new or regressed player outcomes.
 
 ### Outcome values and error signs
 
@@ -265,4 +267,15 @@ Both production generators build, validate, and persist the archive before atomi
 
 The existing matchup-projection and yardage-projection GitHub workflows persist these outputs under their shared `main-data-writers` concurrency lock and existing fetch/rebase/push retry sequence. Each commit step discovers changed paths only beneath `data/nfl/predictions`, validates every path against its workflow-specific model-partition and 64-character manifest-hash allowlist, and stages each accepted filename explicitly. Unexpected archive paths fail the job; no blanket archive-directory staging is used. Existing live artifacts and their established commit behavior remain in the same commits.
 
-WU2 does not modify a workflow. Automatic outcome persistence should be added only after governance approval, most naturally after the existing daily schedule/results refresh and after a current-season player-stats cache refresh exists. Until then the supported resolver is manual and safe to dry-run.
+WU2.5 makes `.github/workflows/nfl-schedules-results.yml` the outcome owner. Its order is schedules/results refresh -> authoritative 2026 player-week refresh -> resolver -> strict persistence. The original daily NFL-season schedule, shared `main-data-writers` lock, and five-attempt fetch/rebase/push sequence remain intact. The commit step stages schedules/results, only `stats_player_week_2026.csv` plus its manifest, and only 2026 `spread|passing|rushing|receiving` outcome partitions; any unexpected path under either WU2 root fails closed. Exact reruns stage no duplicate outcome data. Upstream corrections refresh the source and append a linked outcome revision.
+
+Emergency/debug sequence:
+
+```sh
+npm run nfl:schedules
+npm run nfl:player-week-stats-cache -- --seasons=2026 --partial-season=2026
+npm run resolve:nfl-prediction-outcomes -- --season=2026 --dry-run
+npm run resolve:nfl-prediction-outcomes -- --season=2026
+```
+
+`--week=<week>` may narrow either resolver command. `--prediction-types=spread` is the automation/debug safety valve when a verified player-stat refresh is unavailable: spreads may resolve while player outcomes remain untouched and pending for a later successful source refresh.
