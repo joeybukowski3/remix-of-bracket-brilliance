@@ -25,8 +25,9 @@ run-name: NFL Yardage Projections • ${{ github.event_name }} • ${{ github.re
 # provenance-only commit even when projected yard values are unchanged. That
 # is acceptable and intentional, not a bug to suppress -- the Yardage Props
 # Review page's freshness UI reads these timestamps, and the daily run
-# itself is a new verified projection snapshot even when it reproduces the
-# same numbers. Given this, the "Detect meaningful data changes" step below
+# itself is a new verified live-artifact refresh even when it reproduces the
+# same numbers. The WU1 immutable archive separately deduplicates an exact
+# material-state rerun. Given this, the "Detect meaningful data changes" step below
 # is a defense-in-depth sanity check, not a no-op/commit-skip mechanism: in
 # real operation, a successful run is expected to always have something
 # staged to commit.
@@ -143,7 +144,10 @@ jobs:
             'data/nfl/nflverse/depth-charts/depth_charts_2026.csv' \
             'data/nfl/nflverse/depth-charts/manifest.json' \
             'public/data/nfl/matchup-market.json' \
-            'public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json')" ]; then
+            'public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json' \
+            ':(glob)data/nfl/predictions/${{ steps.current-week.outputs.season }}/[0-9][0-9]/nfl-*.jsonl' \
+            ':(glob)data/nfl/predictions/manifests/sources/[0-9a-f]*.json' \
+            ':(glob)data/nfl/predictions/manifests/fitted-models/[0-9a-f]*.json')" ]; then
             echo "No NFL yardage-projection input/output changes (unexpected on a successful run -- see the provenance-only-commit note above)."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -172,6 +176,21 @@ jobs:
             data/nfl/nflverse/depth-charts/manifest.json \
             public/data/nfl/matchup-market.json \
             public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json
+
+          # Stage only WU1 yardage partitions and their content-addressed
+          # source/fitted-model manifests. Every path is discovered from the
+          # clean workflow checkout and regex-validated before staging.
+          archive_season='${{ steps.current-week.outputs.season }}'
+          while IFS= read -r -d '' entry; do
+            archive_path="${entry:3}"
+            if [[ "$archive_path" =~ ^data/nfl/predictions/${archive_season}/[0-9]{2}/nfl-(passing-direct-ridge|rushing-carries-x-shrunk-ypc|receiving-targets-x-shrunk-ypt)\.jsonl$ ]] || \
+               [[ "$archive_path" =~ ^data/nfl/predictions/manifests/(sources|fitted-models)/[0-9a-f]{64}\.json$ ]]; then
+              git add -- "$archive_path"
+            else
+              echo "ERROR: Refusing unexpected prediction archive path: $archive_path" >&2
+              exit 1
+            fi
+          done < <(git status --porcelain=v1 -z --untracked-files=all -- data/nfl/predictions)
 
           if git diff --cached --quiet; then
             echo "No staged NFL yardage-projection changes."
