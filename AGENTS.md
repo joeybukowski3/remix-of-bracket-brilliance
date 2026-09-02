@@ -43,6 +43,7 @@ Normal startup does not require reading `SOUL.md`, `USER.md`, or daily files in 
 - For implementation, make the smallest scoped change that satisfies the approved goal.
 - Treat ambiguity that would materially change the result as a reason to stop and ask.
 - Do not change sports-model methodology, weights, formulas, thresholds, or interpretation unless explicitly authorized. Read the relevant model documentation first.
+- Before changing any JKB football model, feature, projection output, prediction schema, market integration, archive, outcome resolver, or evaluation methodology, read `docs/modeling/JKB_MODELING_MASTER_SPEC.md` and its linked specifications. Update the affected modeling documentation in the same PR as any behavior, schema, or evaluation-method change.
 - Do not perform unrelated cleanup or rewrite historical documentation to make it appear current.
 
 ## Git safety

@@ -1,0 +1,16 @@
+# Football Model Changelog
+
+This changelog records supported model stages, not every repository commit. Dates below are reconstructed from current code comments, artifact timestamps and path-specific Git history; they are not claims about undocumented decisions.
+
+| Date | Model | Version/stage | Change | Reason/evaluation impact | Files/artifacts | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-08-03 | Spread research | `nfl-spread-v0.1.0` | Market-free adjusted EPA/point-differential margin model and walk-forward backtest | Established a model-specific spread baseline | `scripts/lib/nfl-spread-model.mjs`, `nfl-spread-dataset.mjs` | Later retired from public generation; retained under legacy analysis |
+| 2026-08-19 | Public spread | `jkb-power-number-v1.0.0` | Current OVR converted to points at 0.24 plus fixed 2.0 HFA; replaces v0.1.0 public artifact | Current-OVR calibration reported pooled 2024-2025 MAE about 10.26; market MAE about 9.67 | `src/lib/nfl/jkbPowerNumber2026.ts`, `scripts/generate-nfl-matchup-projections.mts`, `public/data/nfl/matchup-projections.json` | No immutable prediction archive |
+| Reconstructed phase 4 | Passing | direct ridge, alpha 10 | Direct yards selected over attempts x YPA | Dev MAE 55.81; 2025 benchmark MAE 55.81, bias +12.53 | `qbPassing*`, passing competition artifact/doc | 2025 is retrospective benchmark, not pristine holdout |
+| Reconstructed phase 5.5 | Rushing | carries x shrunk YPC | Corrected universe added eligible zero-carry games; decomposition remained winner | Corrected dev MAE 12.48; 2025 MAE 11.84 | `playerGameUniverse*`, `rushing*`, v2 outcome/competition artifacts | Legacy pre-correction rushing artifact remains |
+| Reconstructed phase 6 | Receiving | targets x shrunk YPT | Two-leg decomposition selected over direct and three-leg models | Dev MAE 16.64; 2025 MAE 16.39 | `receiving*`, receiving competition artifact/doc | RB/WR/TE universe; QB excluded |
+| 2026-08-26 | Player yardage | three Phase 9 production-candidate versions | Scheduled current-week generation, model/status/feature/interval output, depth/roster role evidence | Converts research winners into live weekly candidates without declaring full production readiness | `currentWeekYardageModel.ts`, `currentWeekGenerator.ts`, `yardage-projections.json`, workflow | Final fits include 2022-2025; coefficients are recomputed, not serialized |
+| 2026-08-26 | Player market | `nfl-yardage-market-v1` / Phase 10B | Adds canonical current player lines and append-only change archive | Enables future real market comparison; coverage/readiness remains operational constraint | `fetch-nfl-yardage-market.mjs`, `data/nfl/props/market-archive/` | No automatic outcome attachment or explicit closing record |
+| 2026-09-02 | Governance | initial master specification | Adds governing archive, version, feature and evaluation contracts | Documentation-only; no model/evaluation numbers changed | `docs/modeling/*`, `AGENTS.md` | Audit reconstructed at HEAD shown above |
+
+Future entries must include the effective production timestamp, approval evidence and whether archived output behavior changed. Do not backfill unsupported historical versions or dates.
