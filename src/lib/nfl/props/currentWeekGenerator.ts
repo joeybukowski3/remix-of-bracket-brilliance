@@ -25,6 +25,7 @@ import { buildReceivingFeatureRowForTarget, type NflPlayerReceivingStatLogEntry 
 import type { NflQbPassingFeatureRow } from "./types/qbPassingFeatures";
 import type { NflRushingFeatureRow } from "./types/rushingFeatures";
 import type { NflReceivingFeatureRow } from "./types/receivingFeatures";
+import { encodePassingFeatureRow, extractRawPassingFeatureValues, PASSING_FEATURE_KEYS } from "./qbPassingEncoding";
 import {
   PRODUCTION_TRAIN_SEASONS, MODEL_VERSIONS, INTERVAL_VERSION,
   fitPassingModel, fitRushingModel, fitReceivingModel,
@@ -74,6 +75,11 @@ export type NflCurrentWeekSources = {
   generationMode?: "currentWeek" | "historicalReplay";
   /** Phase 9.2: null when the depth-chart source is unavailable this run -- generation still succeeds via Phase 9.1 fallback behavior (see `depthChartSource` on the returned artifact). */
   depthChartIndex: NflDepthChartIndex | null;
+  /** Optional infrastructure-only observer. It receives the exact fitted states and live feature rows used during generation without changing the browser artifact. */
+  archiveObserver?: {
+    onFittedModels(models: { passing: ReturnType<typeof fitPassingModel>; rushing: ReturnType<typeof fitRushingModel>; receiving: ReturnType<typeof fitReceivingModel> }): void;
+    onPrediction(input: { row: NflCurrentWeekProjectionRow; featureValues: unknown; orderedVector?: number[]; imputationFlags?: Record<string, string> }): void;
+  };
 };
 
 function historyStatusFor(gamesPriorThisSeason: number, hasPriorSeason: boolean): NflCurrentWeekHistoryStatus {
@@ -214,6 +220,7 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
   const passingModel = fitPassingModel(passingTrain);
   const rushingModel = fitRushingModel(rushingTrain);
   const receivingModel = fitReceivingModel(receivingTrain);
+  sources.archiveObserver?.onFittedModels({ passing: passingModel, rushing: rushingModel, receiving: receivingModel });
 
   const passingIntervalQ = buildPassingResidualQuantiles(historicalPassingRows);
   const rushingIntervalQ = buildRushingResidualQuantiles(historicalRushingRows);
@@ -293,6 +300,13 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       },
     };
     rows.push(passingRow);
+    const passingRawValues = extractRawPassingFeatureValues(liveRow as unknown as NflQbPassingFeatureRow);
+    sources.archiveObserver?.onPrediction({
+      row: passingRow,
+      featureValues: liveRow.features,
+      orderedVector: encodePassingFeatureRow(liveRow as unknown as NflQbPassingFeatureRow, passingModel.fallbacks),
+      imputationFlags: Object.fromEntries(PASSING_FEATURE_KEYS.flatMap((feature, index) => passingRawValues[index] == null ? [[feature.key, "training_mean"]] : [])),
+    });
   }
   const teamsWithoutActQb = new Set(candidates.map((c) => c.team)).size > 0
     ? [...new Set(candidates.map((c) => c.team))].filter((t) => !teamsWithAnActQb.has(t))
@@ -345,6 +359,7 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       diagnostics: { gamesWithCarriesPriorThisSeason: liveRow.diagnostics.gamesWithCarriesPriorThisSeason, recentTeamTopCarryShareConcentration: concentration },
     };
     rows.push(rushingRow);
+    sources.archiveObserver?.onPrediction({ row: rushingRow, featureValues: liveRow.features });
   }
 
   // --- Receiving ---
@@ -396,6 +411,7 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
       diagnostics: { gamesWithTargetsPriorThisSeason: liveRow.diagnostics.gamesWithTargetsPriorThisSeason },
     };
     rows.push(receivingRow);
+    sources.archiveObserver?.onPrediction({ row: receivingRow, featureValues: liveRow.features });
   }
 
   // --- QA ---

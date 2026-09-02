@@ -27,10 +27,22 @@ import type { NflReceivingOutcome } from "../src/lib/nfl/props/types/receivingOu
 import { buildActivityLogFromUniverse, type NflCurrentWeekRosterSourceRow } from "../src/lib/nfl/props/currentWeekRosterUniverse";
 import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/playerGameUniverse";
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
+import type { NflCurrentWeekProjectionRow } from "../src/lib/nfl/props/types/currentWeekProjection";
 import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
 import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow, type NflDepthChartIndex } from "../src/lib/nfl/props/currentWeekDepthChart";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+import { PASSING_FEATURE_KEYS } from "../src/lib/nfl/props/qbPassingEncoding";
+import { PASSING_RIDGE_ALPHA, PRODUCTION_TRAIN_SEASONS, type NflFittedPassingModel, type NflFittedReceivingModel, type NflFittedRushingModel } from "../src/lib/nfl/props/currentWeekYardageModel";
+import { YPC_SHRINKAGE_PRIOR_STRENGTH_GAMES } from "../src/lib/nfl/props/rushingBaselines";
+import { RECEIVING_EFFICIENCY_SHRINKAGE_PRIOR_STRENGTH_GAMES } from "../src/lib/nfl/props/receivingBaselines";
+import { NFL_QB_PASSING_FEATURE_ROW_SCHEMA_VERSION } from "../src/lib/nfl/props/types/qbPassingFeatures";
+import { NFL_RUSHING_FEATURE_ROW_SCHEMA_VERSION } from "../src/lib/nfl/props/types/rushingFeatures";
+import { NFL_RECEIVING_FEATURE_ROW_SCHEMA_VERSION } from "../src/lib/nfl/props/types/receivingFeatures";
+import {
+  archiveProductionPredictions, buildFittedModelManifest, buildSourceManifest, contentHash,
+  finalizePredictionSnapshot, type JsonValue, type MarketSnapshotReference, type PredictionSnapshotDraft,
+} from "./lib/nfl-production-prediction-archive";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "data", "nfl", "props");
@@ -40,34 +52,46 @@ const STATS_CACHE_DIR = "data/nfl/nflverse/stats-player-week";
 const ROSTER_CACHE_DIR = "data/nfl/nflverse/weekly-rosters";
 const DEPTH_CHART_CACHE_DIR = "data/nfl/nflverse/depth-charts";
 const HISTORICAL_SEASONS = [2022, 2023, 2024, 2025] as const;
+const ARCHIVE_ROOT = join(ROOT, "data", "nfl", "predictions");
+const ARCHIVE_PIPELINE_VERSION = "nfl-production-prediction-archive-v1";
+const consumedSources = new Map<string, { logicalName: string; content: string }>();
 
 type CsvRow = Record<string, string>;
 type CacheEntry = { season: number | null; filename: string; [key: string]: unknown };
 type CacheManifest = { files?: CacheEntry[] };
 
+function readSource(path: string, logicalName = path.slice(ROOT.length + 1)): string {
+  const content = readFileSync(path, "utf8");
+  consumedSources.set(path, { logicalName, content });
+  return content;
+}
+
 function parseArgs(argv: string[]) {
-  const args = { season: 0, week: 0, dryRun: false, output: null as string | null, generatedAt: new Date().toISOString() };
+  const args = { season: 0, week: 0, dryRun: false, output: null as string | null, archiveRoot: ARCHIVE_ROOT, generatedAt: new Date().toISOString() };
   for (const raw of argv.slice(2)) {
     if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
     else if (raw.startsWith("--week=")) args.week = Number(raw.slice(7));
     else if (raw === "--dry-run") args.dryRun = true;
     else if (raw.startsWith("--output=")) args.output = resolve(ROOT, raw.slice(9));
+    else if (raw.startsWith("--archive-root=")) args.archiveRoot = resolve(ROOT, raw.slice(15));
     else if (raw.startsWith("--generated-at=")) args.generatedAt = raw.slice(15);
     else throw new Error(`Unknown argument: ${raw}`);
   }
   if (!Number.isInteger(args.season) || !Number.isInteger(args.week) || args.week < 1) {
-    throw new Error("Usage: --season=YYYY --week=N [--dry-run] [--output=path] [--generated-at=iso]");
+    throw new Error("Usage: --season=YYYY --week=N [--dry-run] [--output=path] [--archive-root=path] [--generated-at=iso]");
   }
   return args;
 }
 
 function readManifest(dir: string): CacheManifest {
-  return JSON.parse(readFileSync(join(ROOT, dir, "manifest.json"), "utf8"));
+  const path = join(ROOT, dir, "manifest.json");
+  return JSON.parse(readSource(path));
 }
 function verifiedCsvRows(dir: string, manifest: CacheManifest, season: number): CsvRow[] {
   const entry = manifest.files?.find((c) => c.season === season);
   if (!entry) throw new Error(`No cached ${dir} source for ${season}.`);
-  const text = readFileSync(join(ROOT, dir, entry.filename), "utf8");
+  const sourcePath = join(ROOT, dir, entry.filename);
+  const text = readSource(sourcePath);
   const problems = verifyCacheEntry(entry as never, text);
   if (problems.length > 0) throw new Error(problems.join("\n"));
   return parseCsv(text) as CsvRow[];
@@ -96,7 +120,7 @@ function toEpaRecord(row: CsvRow, playType: "pass" | "rush"): NflTeamEpaGameReco
 function readSeasonGames(season: number): (NflPropRawGameRecord & { isDome?: boolean })[] {
   const path = join(ROOT, "public", "data", "nfl", String(season), "games.json");
   if (!existsSync(path)) return [];
-  const artifact = JSON.parse(readFileSync(path, "utf8")) as { games?: (NflPropRawGameRecord & { isDome?: boolean })[] };
+  const artifact = JSON.parse(readSource(path)) as { games?: (NflPropRawGameRecord & { isDome?: boolean })[] };
   return artifact.games ?? [];
 }
 function writeAtomic(path: string, text: string): void {
@@ -104,6 +128,86 @@ function writeAtomic(path: string, text: string): void {
   const temporary = `${path}.tmp`;
   try { writeFileSync(temporary, text, "utf8"); renameSync(temporary, path); }
   catch (error) { if (existsSync(temporary)) unlinkSync(temporary); throw error; }
+}
+
+type ArchiveCapture = {
+  row: NflCurrentWeekProjectionRow;
+  featureValues: unknown;
+  orderedVector?: number[];
+  imputationFlags?: Record<string, string>;
+};
+
+type YardageMarketObservation = {
+  observedAt: string;
+  canonicalMarket: "passingYards" | "rushingYards" | "receivingYards";
+  playerId: string;
+  gameId: string;
+  bookmaker: string;
+  point: number;
+  overPrice: number | null;
+  underPrice: number | null;
+};
+
+function asJson(value: unknown): JsonValue {
+  return JSON.parse(JSON.stringify(value)) as JsonValue;
+}
+
+function latestPlayerMarketReferences(row: NflCurrentWeekProjectionRow, observations: readonly YardageMarketObservation[]): MarketSnapshotReference[] {
+  const canonicalMarket = row.market === "passing" ? "passingYards" : row.market === "rushing" ? "rushingYards" : "receivingYards";
+  const predictionTime = Date.parse(row.generatedAt);
+  const latestByBook = new Map<string, YardageMarketObservation>();
+  for (const observation of observations) {
+    if (observation.canonicalMarket !== canonicalMarket || observation.playerId !== row.playerId || observation.gameId !== row.gameId) continue;
+    const observed = Date.parse(observation.observedAt);
+    if (!Number.isFinite(observed) || observed > predictionTime) continue;
+    const previous = latestByBook.get(observation.bookmaker);
+    if (!previous || Date.parse(previous.observedAt) < observed) latestByBook.set(observation.bookmaker, observation);
+  }
+  return [...latestByBook.values()].sort((a, b) => a.bookmaker.localeCompare(b.bookmaker)).map((observation) => {
+    const hash = contentHash(asJson(observation));
+    return {
+      purpose: "comparison", market_type: row.market === "passing" ? "passing_yards" : row.market === "rushing" ? "rushing_yards" : "receiving_yards",
+      market_observation_id: `yardage_${hash}`, content_hash: hash, provider: "the-odds-api", sportsbook: observation.bookmaker,
+      observed_at: observation.observedAt, provider_updated_at: null, line: observation.point,
+      over_price: observation.overPrice, under_price: observation.underPrice, side_prices: null, designation: "available_at_prediction",
+    };
+  });
+}
+
+function passingModelInputReferences(capture: ArchiveCapture, liveMarketObservedAt: string | null, liveMarketHash: string | null): MarketSnapshotReference[] {
+  if (capture.row.market !== "passing" || liveMarketObservedAt == null) return [];
+  const market = (capture.featureValues as { market?: { spread?: number | null; total?: number | null } }).market;
+  if (market?.spread == null || market.total == null) return [];
+  const base = { purpose: "model_input" as const, market_observation_id: null, content_hash: liveMarketHash, provider: "nflverse/nfldata", sportsbook: "undisclosed", observed_at: liveMarketObservedAt, provider_updated_at: null, over_price: null, under_price: null, side_prices: null, designation: "available_at_prediction" as const };
+  return [
+    { ...base, market_type: "spread", line: market.spread },
+    { ...base, market_type: "total", line: market.total },
+  ];
+}
+
+function buildYardageFittedManifests(models: { passing: NflFittedPassingModel; rushing: NflFittedRushingModel; receiving: NflFittedReceivingModel }, versions: Record<"passing" | "rushing" | "receiving", string>) {
+  return {
+    passing: buildFittedModelManifest({
+      model_name: "nfl-passing-direct-ridge", model_version: versions.passing, training_seasons: [...PRODUCTION_TRAIN_SEASONS],
+      feature_schema_version: NFL_QB_PASSING_FEATURE_ROW_SCHEMA_VERSION, feature_order: PASSING_FEATURE_KEYS.map((feature) => feature.key),
+      parameters: { ridge_alpha: PASSING_RIDGE_ALPHA }, fitted_state: asJson(models.passing),
+    }),
+    rushing: buildFittedModelManifest({
+      model_name: "nfl-rushing-carries-x-shrunk-ypc", model_version: versions.rushing, training_seasons: [...PRODUCTION_TRAIN_SEASONS],
+      feature_schema_version: NFL_RUSHING_FEATURE_ROW_SCHEMA_VERSION, feature_order: ["playerUsage.carriesPerGame", "playerEfficiency.yardsPerCarry"],
+      parameters: { ypc_shrinkage_prior_strength_games: YPC_SHRINKAGE_PRIOR_STRENGTH_GAMES }, fitted_state: asJson(models.rushing),
+    }),
+    receiving: buildFittedModelManifest({
+      model_name: "nfl-receiving-targets-x-shrunk-ypt", model_version: versions.receiving, training_seasons: [...PRODUCTION_TRAIN_SEASONS],
+      feature_schema_version: NFL_RECEIVING_FEATURE_ROW_SCHEMA_VERSION, feature_order: ["playerUsage.targetsPerGame", "playerEfficiency.yardsPerTarget"],
+      parameters: { ypt_shrinkage_prior_strength_games: RECEIVING_EFFICIENCY_SHRINKAGE_PRIOR_STRENGTH_GAMES },
+      fitted_state: asJson({
+        leagueMeanReceivingYards: models.receiving.constants.leagueMeanReceivingYards,
+        leagueMeanYardsPerTarget: models.receiving.constants.leagueMeanYardsPerTarget,
+        fallbackTargets: models.receiving.fallbackTargets,
+      }),
+    }),
+  };
 }
 
 function main(): void {
@@ -140,15 +244,21 @@ function main(): void {
   }
 
   // Historical market context (2022-2025, for training/reference rows) + live current-week market (target season only).
-  const historicalMarketArtifact = JSON.parse(readFileSync(join(DATA_DIR, "historical-market-context-2022-2025.json"), "utf8")) as { rows: NflHistoricalMarketRow[] };
+  const historicalMarketArtifact = JSON.parse(readSource(join(DATA_DIR, "historical-market-context-2022-2025.json"))) as { rows: NflHistoricalMarketRow[] };
   const marketByKey = new Map(historicalMarketArtifact.rows.map((row) => [marketKey(row.season, row.week, row.team), row]));
   let marketAvailable = false;
+  let liveMarketObservedAt: string | null = null;
+  let liveMarketHash: string | null = null;
   const liveMarketPath = join(ROOT, "public", "data", "nfl", "matchup-market.json");
   if (existsSync(liveMarketPath)) {
-    const liveMarket = JSON.parse(readFileSync(liveMarketPath, "utf8")) as {
+    const liveMarketText = readSource(liveMarketPath);
+    liveMarketHash = contentHash(liveMarketText);
+    const liveMarket = JSON.parse(liveMarketText) as {
+      _meta?: { generatedAt?: string };
       currentSeason: number;
       currentMarket: Record<string, { gameId: string; season: number; week: number; homeAbbr: string; awayAbbr: string; spread: { home: number; away: number } | null; total: number | null }>;
     };
+    liveMarketObservedAt = typeof liveMarket._meta?.generatedAt === "string" ? liveMarket._meta.generatedAt : null;
     if (liveMarket.currentSeason === args.season) {
       for (const g of Object.values(liveMarket.currentMarket ?? {})) {
         if (g.season !== args.season || g.spread == null || g.total == null) continue;
@@ -162,16 +272,16 @@ function main(): void {
   }
 
   // Historical outcome-derived feature rows (2022-2025) -- reused verbatim for model fit, score reference, and interval construction.
-  const passingOutcomes = (JSON.parse(readFileSync(join(DATA_DIR, "qb-passing-outcomes-2022-2025.json"), "utf8")) as { rows: NflQbPassingOutcome[] }).rows;
+  const passingOutcomes = (JSON.parse(readSource(join(DATA_DIR, "qb-passing-outcomes-2022-2025.json"))) as { rows: NflQbPassingOutcome[] }).rows;
   const qbStatGameLog = buildQbStatGameLog(passingOutcomes, gameJoinIndex);
   const historicalPassingRows = passingOutcomes.map((outcome) => buildQbPassingFeatureRow(outcome, { gameJoinIndex, teamPregameFeaturesByKey, fullTeamGameLog, epaGameLog: passEpaGameLog, marketByKey, domeByGameId, qbStatGameLog }));
 
-  const rushingOutcomes = (JSON.parse(readFileSync(join(DATA_DIR, "rushing-outcomes-v2-2022-2025.json"), "utf8")) as { rows: NflRushingOutcome[] }).rows;
+  const rushingOutcomes = (JSON.parse(readSource(join(DATA_DIR, "rushing-outcomes-v2-2022-2025.json"))) as { rows: NflRushingOutcome[] }).rows;
   const playerRushingStatLog = buildPlayerRushingStatLog(rushingOutcomes, gameJoinIndex);
   const teamTopRbCarryShareByGameTeam = buildTeamTopRbCarryShareByGameTeam(rushingOutcomes);
   const historicalRushingRows = rushingOutcomes.map((outcome) => buildRushingFeatureRow(outcome, { gameJoinIndex, teamPregameFeaturesByKey, fullTeamGameLog, rushEpaGameLog, marketByKey, domeByGameId, playerRushingStatLog, teamTopRbCarryShareByGameTeam }));
 
-  const receivingOutcomes = (JSON.parse(readFileSync(join(DATA_DIR, "receiving-outcomes-2022-2025.json"), "utf8")) as { rows: NflReceivingOutcome[] }).rows;
+  const receivingOutcomes = (JSON.parse(readSource(join(DATA_DIR, "receiving-outcomes-2022-2025.json"))) as { rows: NflReceivingOutcome[] }).rows;
   const airYardsByPlayerWeek = new Map<string, NflAirYardsSupplement>();
   const statsManifest = readManifest(STATS_CACHE_DIR);
   for (const season of trainingSeasons) {
@@ -186,7 +296,7 @@ function main(): void {
   const historicalReceivingRows = receivingOutcomes.map((outcome) => buildReceivingFeatureRow(outcome, { gameJoinIndex, teamPregameFeaturesByKey, fullTeamGameLog, passEpaGameLog, marketByKey, domeByGameId, playerReceivingStatLog, teamTopTargetShareByGameTeam }));
 
   // Eligibility activity logs (2022-2025 canonical universe -- the ONLY source, never the target week itself).
-  const universe = (JSON.parse(readFileSync(join(DATA_DIR, "player-game-universe-2022-2025.json"), "utf8")) as { rows: NflPlayerGameUniverseRow[] }).rows;
+  const universe = (JSON.parse(readSource(join(DATA_DIR, "player-game-universe-2022-2025.json"))) as { rows: NflPlayerGameUniverseRow[] }).rows;
   const rushActivityLog = buildActivityLogFromUniverse(universe, "carries");
   const targetActivityLog = buildActivityLogFromUniverse(universe, "targets");
   const attemptActivityLog = buildActivityLogFromUniverse(universe, "passAttempts");
@@ -228,10 +338,12 @@ function main(): void {
   }
 
   // Frozen Matchup Score weight definitions (Phase 8 research artifact).
-  const scoreResearch = JSON.parse(readFileSync(join(DATA_DIR, "matchup-score-research.json"), "utf8")) as {
+  const scoreResearch = JSON.parse(readSource(join(DATA_DIR, "matchup-score-research.json"))) as {
     passing: { selectedDefinition: NflFrozenScoreDefinition }; rushing: { selectedDefinition: NflFrozenScoreDefinition }; receiving: { selectedDefinition: NflFrozenScoreDefinition };
   };
 
+  const archiveCaptures: ArchiveCapture[] = [];
+  let fittedModels: { passing: NflFittedPassingModel; rushing: NflFittedRushingModel; receiving: NflFittedReceivingModel } | null = null;
   const sources: NflCurrentWeekSources = {
     season: args.season, week: args.week, generatedAt: args.generatedAt,
     rosterRows, games, gameJoinIndex, fullTeamGameLog, passEpaGameLog, rushEpaGameLog, marketByKey, marketAvailable, domeByGameId,
@@ -240,6 +352,10 @@ function main(): void {
     historicalPassingRows, historicalRushingRows, historicalReceivingRows,
     depthChartIndex,
     scoreDefinitions: { passing: scoreResearch.passing.selectedDefinition, rushing: scoreResearch.rushing.selectedDefinition, receiving: scoreResearch.receiving.selectedDefinition },
+    archiveObserver: {
+      onFittedModels: (models) => { fittedModels = models; },
+      onPrediction: (capture) => { archiveCaptures.push(capture); },
+    },
   };
 
   const artifact = generateCurrentWeekYardageProjections(sources);
@@ -255,6 +371,60 @@ function main(): void {
     console.log("[nfl:current-week-projections] --dry-run: not writing artifact.");
     return;
   }
+
+  if (fittedModels == null) throw new Error("Archive integration did not capture fitted model states.");
+  const propMarketPath = join(DATA_DIR, "market-archive", "nfl-yardage-market-archive.jsonl");
+  const propMarketObservations: YardageMarketObservation[] = existsSync(propMarketPath)
+    ? readFileSync(propMarketPath, "utf8").split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as YardageMarketObservation)
+    : [];
+  const sourceManifest = buildSourceManifest("nfl-current-week-yardage-production-inputs", [...consumedSources.entries()].map(([path, source]) => ({ logicalName: source.logicalName, path: path.slice(ROOT.length + 1), content: source.content })));
+  const fittedManifests = buildYardageFittedManifests(fittedModels, artifact.modelVersions);
+  const fittedByMarket = { passing: fittedManifests.passing, rushing: fittedManifests.rushing, receiving: fittedManifests.receiving };
+  const gameById = new Map(games.map((game) => [game.gameId, game]));
+  const archiveCreatedAt = new Date().toISOString();
+  const runId = process.env.GITHUB_RUN_ID ? `github:${process.env.GITHUB_RUN_ID}` : `local:${artifact.generatedAt}`;
+  const records = archiveCaptures.map((capture) => {
+    const row = capture.row;
+    if (row.projectedYards == null) throw new Error(`Cannot archive non-numeric production row ${row.market}/${row.playerId}`);
+    const model = fittedByMarket[row.market];
+    const inputRefs = passingModelInputReferences(capture, liveMarketObservedAt, liveMarketHash);
+    const comparisonRefs = latestPlayerMarketReferences(row, propMarketObservations);
+    const marketRefs = [...inputRefs, ...comparisonRefs];
+    const game = gameById.get(row.gameId);
+    const projection = row.market === "passing"
+      ? { type: "passing" as const, projected_attempts: null, projected_ypa: null, projected_passing_yards: row.projectedYards, direct_model_prediction: row.directModelPrediction ?? row.projectedYards }
+      : row.market === "rushing"
+        ? { type: "rushing" as const, projected_carries: row.projectedCarries!, projected_ypc: row.projectedYardsPerCarry!, projected_rushing_yards: row.projectedYards }
+        : { type: "receiving" as const, projected_targets: row.projectedTargets!, projected_receptions: null, projected_yards_per_reception: null, projected_yards_per_target: row.projectedYardsPerTarget!, projected_receiving_yards: row.projectedYards };
+    const draft: PredictionSnapshotDraft = {
+      schema_version: "jkb-football-prediction-v1", snapshot_label: null, prediction_timestamp: row.generatedAt, created_at: archiveCreatedAt, mode: "production",
+      sport: "football", league: "nfl", season: row.season, week: row.week, slate_date: row.kickoff.slice(0, 10), game_id: row.gameId, kickoff_utc: row.kickoff,
+      player_id: row.playerId, player_name_at_prediction: row.playerName, team: row.team, opponent: row.opponent, home_away: row.homeAway,
+      neutral_site: (game as { neutralSite?: boolean } | undefined)?.neutralSite === true, position: row.position, prediction_type: row.market,
+      model_name: model.manifest.model_name, model_version: row.modelVersion, feature_schema_version: model.manifest.feature_schema_version,
+      pipeline_version: ARCHIVE_PIPELINE_VERSION, code_revision: process.env.GITHUB_SHA ?? null, run_id: runId,
+      workflow_name: process.env.GITHUB_WORKFLOW ?? null, workflow_run_id: process.env.GITHUB_RUN_ID ?? null,
+      cutoff_policy: "slate_before_first_kickoff", status: row.status === "eligibleInsufficientHistory" ? "eligible_insufficient_history" : row.status === "notEligible" ? "not_eligible" : row.status === "dataUnresolved" ? "unavailable" : "projected",
+      projection, feature_snapshot: {
+        values: asJson({ model_features: capture.featureValues, production_feature_snapshot: row.featureSnapshot, estimated_range: row.estimatedRange, matchup_score: row.matchupScore, hard_case_flags: row.hardCaseFlags, role: { fallback_provenance: row.fallbackProvenance, role_source: row.roleSource, role_source_updated_at: row.roleSourceUpdatedAt, depth_rank: row.depthRank, starter_flag: row.starterFlag, role_confidence: row.roleConfidence, history_status: row.historyStatus }, diagnostics: row.diagnostics }) as Record<string, JsonValue>,
+        ...(capture.orderedVector ? { ordered_vector: capture.orderedVector } : {}), ...(capture.imputationFlags ? { imputation_flags: capture.imputationFlags } : {}),
+        source_manifest_hashes: { yardage_run: sourceManifest.hash }, fitted_model_hash: model.hash,
+      },
+      market_reference_status: marketRefs.length > 0 ? "available" : "missing", market_snapshot_refs: marketRefs,
+      provenance: [
+        { kind: "source_manifest", logical_name: sourceManifest.manifest.logical_name, content_hash: sourceManifest.hash },
+        { kind: "fitted_model_manifest", logical_name: model.manifest.model_name, content_hash: model.hash },
+      ],
+    };
+    return finalizePredictionSnapshot(draft);
+  });
+
+  // Fail closed: validation and durable archive publication complete before the browser-facing artifact is replaced.
+  const archiveResult = archiveProductionPredictions({
+    rootDir: args.archiveRoot, records,
+    sourceManifests: [sourceManifest], fittedModelManifests: Object.values(fittedManifests),
+  });
+  console.log(`[nfl:current-week-projections] archive appended=${archiveResult.appended} duplicates=${archiveResult.duplicates}`);
 
   const outPath = args.output ?? join(ROOT, "public", "data", "nfl", String(args.season), "yardage-projections.json");
   // Compact (no pretty-print indentation) -- this is the browser-facing

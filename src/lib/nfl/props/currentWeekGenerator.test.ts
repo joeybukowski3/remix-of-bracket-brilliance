@@ -159,6 +159,40 @@ describe("generateCurrentWeekYardageProjections", () => {
     expect(second).toEqual(first);
   });
 
+  it("exposes archive-only fitted state and exact prediction inputs without changing any projection legs", () => {
+    const { sources } = buildLeague(2025, 1);
+    const captures: Parameters<NonNullable<NflCurrentWeekSources["archiveObserver"]>["onPrediction"]>[0][] = [];
+    let fitted: unknown = null;
+    const artifact = generateCurrentWeekYardageProjections({
+      ...sources,
+      archiveObserver: {
+        onFittedModels: (models) => { fitted = models; },
+        onPrediction: (capture) => captures.push(capture),
+      },
+    });
+    expect(fitted).not.toBeNull();
+    expect(captures.map((capture) => capture.row)).toEqual(artifact.rows);
+
+    const passing = captures.find((capture) => capture.row.market === "passing")!;
+    if (passing.row.market !== "passing") throw new Error("expected passing capture");
+    expect(passing.orderedVector).toHaveLength(16);
+    expect(passing.row.projectedYards).toBe(passing.row.directModelPrediction);
+    expect((passing.featureValues as { market: unknown }).market).toEqual(expect.objectContaining({ spread: null, total: null, impliedTeamTotal: null }));
+
+    const rushing = captures.find((capture) => capture.row.market === "rushing")!;
+    expect(rushing.row.market).toBe("rushing");
+    if (rushing.row.market !== "rushing") throw new Error("expected rushing capture");
+    expect(rushing.row.projectedYards).toBe(rushing.row.projectedCarries! * rushing.row.projectedYardsPerCarry!);
+    expect(rushing.row.featureSnapshot.carriesPerGame).toEqual((rushing.featureValues as { playerUsage: { carriesPerGame: unknown } }).playerUsage.carriesPerGame);
+
+    const receiving = captures.find((capture) => capture.row.market === "receiving")!;
+    expect(receiving.row.market).toBe("receiving");
+    if (receiving.row.market !== "receiving") throw new Error("expected receiving capture");
+    expect(receiving.row.projectedYards).toBe(receiving.row.projectedTargets! * receiving.row.projectedYardsPerTarget!);
+    expect(receiving.row.featureSnapshot.targetsPerGame).toEqual((receiving.featureValues as { playerUsage: { targetsPerGame: unknown } }).playerUsage.targetsPerGame);
+    expect(receiving.row).toEqual(expect.objectContaining({ roleSource: expect.any(String), historyStatus: expect.any(String) }));
+  });
+
   it("never lets a target-week outcome mutation change that week's own projection (adversarial leakage test)", () => {
     // Replay 2024 week 2 itself as the "current" week -- 2024 is inside
     // PRODUCTION_TRAIN_SEASONS's neighborhood conceptually (the generator's

@@ -55,17 +55,23 @@ raw/provider data
   -> production
 ```
 
-The current repository implements many individual boxes but not the unified immutable chain.
+WU1 implements the immutable production-prediction step for spread and player yardage. Outcome attachment, evaluation materialization, and the total model remain absent, so the full chain is not yet complete.
+
+### WU1 production archive implementation
+
+Forward production records use `jkb-football-prediction-v1` and partition under `data/nfl/predictions/<season>/<week>/<model-name>.jsonl`. Shared source and fitted-model manifests are content-addressed under the adjacent `manifests/` directories. `scripts/lib/nfl-production-prediction-archive.ts` is the only writer/validator; generators do not implement local append rules. Material-state SHA-256 identities make exact reruns idempotent and preserve changed same-game/player states. Archive persistence is fail-closed before live artifact replacement. See [Prediction Archive Schema](PREDICTION_ARCHIVE_SCHEMA.md) for the exact identity, manifest, market-cutoff, and storage contracts.
+
+The two production workflows persist only regex-validated WU1 partition and manifest filenames alongside their existing live artifacts. They retain the shared generated-data concurrency lock and established commit/rebase/push retry behavior; an unexpected path under the archive root fails closed instead of being staged.
 
 ## Current model status
 
 | Model | Current implementation | Primary output | Status |
 | --- | --- | --- | --- |
-| Spread | `scripts/generate-nfl-matchup-projections.mts` -> `src/lib/nfl/currentRating2026.ts` -> `src/lib/nfl/jkbPowerNumber2026.ts` | Home-team projected margin and formatted sportsbook-style spread in `public/data/nfl/matchup-projections.json` | Public/current production output; no immutable prediction archive; historical calibration exists |
+| Spread | `scripts/generate-nfl-matchup-projections.mts` -> `src/lib/nfl/currentRating2026.ts` -> `src/lib/nfl/jkbPowerNumber2026.ts` | Home-team projected margin and formatted sportsbook-style spread in `public/data/nfl/matchup-projections.json` | Public/current production output plus forward append-only prediction archive; historical calibration exists |
 | Total | No NFL JKB total calculation found | None | Not implemented; descriptive market totals and reusable scoring/pace inputs exist |
-| Passing | `scripts/generate-nfl-current-week-yardage-projections.ts` and `currentWeekYardageModel.ts` | Direct ridge projected passing yards plus interval/status/features in `public/data/nfl/<season>/yardage-projections.json` | Scheduled production-candidate; no prediction archive or automatic outcomes; known calibration/role risk |
-| Rushing | Same current-week pipeline | Projected carries x shrunk YPC = projected rushing yards | Scheduled production-candidate; no prediction archive or automatic outcomes |
-| Receiving | Same current-week pipeline | Projected targets x shrunk yards/target = projected receiving yards | Scheduled production-candidate; no prediction archive or automatic outcomes |
+| Passing | `scripts/generate-nfl-current-week-yardage-projections.ts` and `currentWeekYardageModel.ts` | Direct ridge projected passing yards plus interval/status/features in `public/data/nfl/<season>/yardage-projections.json` | Scheduled production-candidate plus forward append-only prediction/fitted-state archive; automatic outcomes not implemented; known calibration/role risk |
+| Rushing | Same current-week pipeline | Projected carries x shrunk YPC = projected rushing yards | Scheduled production-candidate plus forward append-only prediction/fitted-state archive; automatic outcomes not implemented |
+| Receiving | Same current-week pipeline | Projected targets x shrunk yards/target = projected receiving yards | Scheduled production-candidate plus forward append-only prediction/fitted-state archive; automatic outcomes not implemented |
 
 ## Current-state audit
 
@@ -87,7 +93,7 @@ Schedule context is limited to neutral-site status and the team-specific blend r
 
 There is no training fit in the live Power Number module. The 0.24 conversion and 2.0 HFA were selected from the walk-forward Current-OVR calibration in `scripts/analysis/nfl-current-ovr-spread-calibration/`: reconstructable seasons 2023-2025, out-of-sample tests for 2024 and 2025, 544 pooled games. At HFA 1.5 the reported pooled OVR result was MAE 10.26, RMSE 13.15, correlation 0.396, winner accuracy 65.56%; the approved production HFA is 2.0, whose grid result was MAE 10.26, RMSE 13.14, correlation 0.396, winner accuracy 65.01%. The market benchmark was stronger (MAE 9.67; model ATS accuracy 50.46% on 539 non-push games). The older `nfl-spread-v0.1.0` (45% adjusted offense EPA, 35% inverted adjusted defense EPA, 20% adjusted point differential, K=2 prior, fitted beta, 2-point HFA) is retired to research under `scripts/analysis/nfl-spread-v0.1.0-legacy/`.
 
-Formula-level historical calibration enforces prior-game cutoffs. The public production path is not fully point-in-time auditable: it reads mutable aggregate artifacts, carries no feature/input hashes, applies no target-kickoff cutoff itself, and overwrites one season-wide file. Therefore a present run can be pregame-safe when its upstream artifacts are correctly refreshed, but the repository cannot prove or reproduce every historical production run from the artifact alone.
+Formula-level historical calibration enforces prior-game cutoffs. Before WU1, the public production path was not fully point-in-time auditable: it read mutable aggregate artifacts, carried no feature/input hashes, applied no target-kickoff cutoff itself, and overwrote one season-wide file. WU1 does not rewrite that live artifact, but now adds pre-kickoff archive validation, hashed source/feature provenance, timestamp-valid market references, and immutable forward snapshots. Runs predating WU1 remain unreconstructable as true production forecasts.
 
 ### JKB total
 

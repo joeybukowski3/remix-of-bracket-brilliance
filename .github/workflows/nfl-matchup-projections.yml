@@ -53,7 +53,10 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- 'public/data/nfl/matchup-projections.json')" ]; then
+          if [ -z "$(git status --porcelain -- \
+            'public/data/nfl/matchup-projections.json' \
+            ':(glob)data/nfl/predictions/2026/[0-9][0-9]/jkb-power-number.jsonl' \
+            ':(glob)data/nfl/predictions/manifests/sources/[0-9a-f]*.json')" ]; then
             echo "No NFL matchup projection changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -89,6 +92,21 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/nfl/matchup-projections.json
+
+          # Stage only WU1 spread partitions and their content-addressed
+          # source manifests. The generator may touch multiple future-week
+          # partitions in one run; every discovered path is regex-validated
+          # before staging so unrelated files can never enter this commit.
+          while IFS= read -r -d '' entry; do
+            archive_path="${entry:3}"
+            if [[ "$archive_path" =~ ^data/nfl/predictions/2026/[0-9]{2}/jkb-power-number\.jsonl$ ]] || \
+               [[ "$archive_path" =~ ^data/nfl/predictions/manifests/sources/[0-9a-f]{64}\.json$ ]]; then
+              git add -- "$archive_path"
+            else
+              echo "ERROR: Refusing unexpected prediction archive path: $archive_path" >&2
+              exit 1
+            fi
+          done < <(git status --porcelain=v1 -z --untracked-files=all -- data/nfl/predictions)
 
           if git diff --cached --quiet; then
             echo "No staged NFL matchup projection changes."

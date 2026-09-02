@@ -1,6 +1,6 @@
 # Prediction Archive Schema
 
-Status: design contract only. It does not authorize implementation or migration.
+Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1 (2026-09-02). Outcome resolution remains unimplemented.
 
 ## Design choice for this repository
 
@@ -10,6 +10,8 @@ Recommended partitions:
 
 ```text
 data/nfl/predictions/<season>/<week>/<model-name>.jsonl
+data/nfl/predictions/manifests/sources/<sha256>.json
+data/nfl/predictions/manifests/fitted-models/<sha256>.json
 data/nfl/prediction-outcomes/<season>/<week>.jsonl
 data/nfl/prediction-evaluations/<evaluation-version>/<season>/<week>.jsonl
 ```
@@ -44,6 +46,7 @@ type PredictionSnapshotV1 = {
   home_away: "home" | "away";
   neutral_site: boolean;
   position: "QB" | "RB" | "WR" | "TE" | null;
+  prediction_type: "spread" | "passing" | "rushing" | "receiving";
 
   model_name: string;
   model_version: string;
@@ -58,12 +61,15 @@ type PredictionSnapshotV1 = {
   status: "projected" | "eligible_insufficient_history" | "not_eligible" | "unavailable";
   projection: SpreadProjection | TotalProjection | PassingProjection | RushingProjection | ReceivingProjection;
   feature_snapshot: FeatureSnapshotReference;
+  market_reference_status: "available" | "missing" | "not_applicable";
   market_snapshot_refs: MarketSnapshotReference[];
   provenance: ProvenanceReference[];
 };
 ```
 
-`snapshot_key` should include league, game, optional player, model, version, market/output type, and prediction timestamp or run ID. Re-running at a new legitimate timestamp creates a new record, even if values are identical. Retrying the same run should be idempotent by `prediction_id`/`snapshot_key`.
+The implemented `snapshot_key` is the stable logical entity key: league, season, week, game, optional player, prediction type, model name, and model version. `prediction_id` is `pred_` plus SHA-256 of that key and the material state: mode, projection payload, feature payload hash, source-manifest hashes, fitted-model hash, and ordered market references. Operational timestamps, labels, and run IDs are provenance and do not force duplicates. Thus a retry or later run over byte-equivalent logical state is idempotent, while a changed projection, actual feature value/vector, fitted state, source content, or market state creates a new immutable snapshot. This is the concrete WU1 interpretation of a “legitimate new timestamp”: time alone is not a material model state change.
+
+`created_at`, `prediction_timestamp`, and `run_id` from the first persisted occurrence remain authoritative when an identical state is retried. SHA-256 collisions are guarded by comparing the identity-bearing state before treating an existing ID as a duplicate.
 
 ## Projection payloads
 
@@ -134,6 +140,8 @@ type MarketSnapshotReference = {
 
 The prediction snapshot must capture or reference the exact market state used. `firstObservedAt` is not automatically an opening line. `final_pre_kickoff` may be assigned only by a deterministic postgame selection over observations strictly before kickoff. Market edge is derived (`projection - comparable line`) and should not be the only preserved value.
 
+WU1 links each row only to observations at or before `prediction_timestamp`. Game markets select the latest eligible observation per sportsbook from `data/market/betting-lines/history/`; player comparisons select the latest eligible observation per sportsbook from `data/nfl/props/market-archive/`. Passing additionally records the exact nflverse spread and total used in its fitted vector with `purpose: model_input`, provider `nflverse/nfldata`, and sportsbook `undisclosed`. Rushing/receiving game-market fields remain archived feature context but are not mislabeled as model inputs. An empty reference list requires `market_reference_status: missing`; zero is never used as a missing sentinel. No WU1 reference is designated as closing.
+
 ## Feature snapshot
 
 The existing yardage artifact already embeds a compact human-readable subset. Preserve that for diagnostics, but do not duplicate entire raw caches per prediction.
@@ -150,6 +158,8 @@ type FeatureSnapshotReference = {
 ```
 
 For the passing ridge, store the ordered 16-value post-imputation vector, fallback vector, and fitted coefficient/model hash or an immutable fitted-model artifact reference. For rushing/receiving, store the selected raw window values, training constants, fallback volume, shrinkage constant, and calculated legs. For spread, store both Current OVR rows, blend weights, Power Numbers, input artifact hashes, coefficient and HFA. Large raw datasets remain in versioned/hash-verified caches.
+
+WU1 source manifests are shared, canonical JSON documents containing logical name, repository-relative path, SHA-256 content hash, and document generation/schema metadata when available. Fitted-model manifests similarly hash the semantic model identity, training seasons, ordered feature schema, hyperparameters/shrinkage constants, fallbacks, standardization state, and coefficients/constants. Prediction rows carry only the manifest hashes, avoiding repeated source metadata across hundreds of rows.
 
 ## Outcome events
 
@@ -195,3 +205,11 @@ Support any number of legitimate same-game snapshots. Use timestamp plus a stabl
 - Model, feature schema and pipeline versions are non-null.
 - Market input references must be at or before the prediction timestamp.
 - Duplicate logical rows fail validation; unresolved canonical identities do not enter production.
+
+## Writer and integration behavior
+
+`scripts/lib/nfl-production-prediction-archive.ts` owns canonical serialization, hashing, runtime validation, content-addressed manifest publication, partition selection, idempotency, and safe writes for every supported prediction type. It validates all rows before persistence and rewrites each affected JSONL partition through a same-directory temporary file plus atomic rename. Existing rows are replayed and validated before additions; malformed existing partitions fail closed.
+
+Both production generators build, validate, and persist the archive before atomically replacing their existing browser artifact. Dry runs write neither output. A production row at or after kickoff is rejected; the season-wide spread generator archives only games still pre-kickoff while leaving its established live artifact schema and game coverage unchanged. This is single-writer workflow storage; concurrent multi-process locking is deferred unless production scheduling introduces overlapping writers.
+
+The existing matchup-projection and yardage-projection GitHub workflows persist these outputs under their shared `main-data-writers` concurrency lock and existing fetch/rebase/push retry sequence. Each commit step discovers changed paths only beneath `data/nfl/predictions`, validates every path against its workflow-specific model-partition and 64-character manifest-hash allowlist, and stages each accepted filename explicitly. Unexpected archive paths fail the job; no blanket archive-directory staging is used. Existing live artifacts and their established commit behavior remain in the same commits.
