@@ -121,6 +121,14 @@ const MIN_K_RATE = 0.1;
 const MAX_K_RATE = 0.4;
 const MAX_MATCHUP_ADJUSTMENT = 0.035;
 /**
+ * V2.2 (Experiment 2): opponent-environment influence on the matchup
+ * adjustment. Raised from 0.45 to 0.75 from the 2023-2024 development /
+ * 2025 holdout backtest calibration study
+ * (docs/mlb-k-calibration-experiment-2.md). The matchup clamp
+ * (MAX_MATCHUP_ADJUSTMENT) is unchanged.
+ */
+const OPPONENT_MATCHUP_MULTIPLIER = 0.75;
+/**
  * V2.1 (Experiment 1): shrink the pitcher K-skill rate toward the
  * contemporaneous league K rate before the matchup adjustment and clamp.
  * alpha < 1 narrows the pitcher-skill spread. Locked at 0.55 from the
@@ -407,7 +415,11 @@ function calculateMatchupAdjustment(
     return null;
   }
 
-  return clamp((opponentEnvironmentRate - leagueKRate) * 0.45, -MAX_MATCHUP_ADJUSTMENT, MAX_MATCHUP_ADJUSTMENT);
+  return clamp(
+    (opponentEnvironmentRate - leagueKRate) * OPPONENT_MATCHUP_MULTIPLIER,
+    -MAX_MATCHUP_ADJUSTMENT,
+    MAX_MATCHUP_ADJUSTMENT,
+  );
 }
 
 function blendRates(

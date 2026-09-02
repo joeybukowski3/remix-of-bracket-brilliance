@@ -560,3 +560,76 @@ describe("projectStrikeoutsV2 — V2.1 pitcher-skill shrinkage (alpha 0.55)", ()
     expect(pitcherContribution).toBeCloseTo(result.pitcherSkillRate ?? 0, 10);
   });
 });
+
+describe("projectStrikeoutsV2 — V2.2 opponent-environment matchup multiplier (0.75)", () => {
+  const MULT = 0.75;
+  const CLAMP = 0.035;
+
+  // opponentEnvironmentRate is a weighted average of the opponent components;
+  // with only opponent.seasonKRate supplied it equals that single rate exactly.
+  function oppOnlyInput(opponentSeasonKRatePercent: number, leagueKRatePercent = 22.5): KProjectionInput {
+    return {
+      pitcher: {
+        seasonKRate: 25,
+        projectedBattersFaced: 24,
+        averageBattersFacedPerInning: 4,
+      },
+      opponent: { seasonKRate: opponentSeasonKRatePercent },
+      context: { pitcherIsHome: true, leagueAverageKRate: leagueKRatePercent, leagueAverageWhiffRate: 25 },
+    };
+  }
+
+  it("uses a matchup multiplier of exactly 0.75", () => {
+    const result = projectStrikeoutsV2(oppOnlyInput(26, 22.5));
+    expect(result.opponentEnvironmentRate).toBeCloseTo(0.26, 10);
+    // (0.26 - 0.225) * 0.75 = 0.02625, inside the clamp
+    expect(result.matchupAdjustment).toBeCloseTo((0.26 - 0.225) * MULT, 12);
+  });
+
+  it("scales a positive matchup adjustment correctly and stays under the clamp", () => {
+    const result = projectStrikeoutsV2(oppOnlyInput(28, 22.5));
+    const expected = (0.28 - 0.225) * MULT; // 0.04125 -> clamped to 0.035
+    expect(result.matchupAdjustment).toBeCloseTo(Math.min(expected, CLAMP), 12);
+    expect(result.matchupAdjustment).toBe(CLAMP);
+  });
+
+  it("scales a negative matchup adjustment correctly", () => {
+    const result = projectStrikeoutsV2(oppOnlyInput(20, 22.5));
+    // (0.20 - 0.225) * 0.75 = -0.01875, inside the clamp
+    expect(result.matchupAdjustment).toBeCloseTo((0.2 - 0.225) * MULT, 12);
+    expect(result.matchupAdjustment).toBeGreaterThan(-CLAMP);
+  });
+
+  it("clamp still binds symmetrically at +/- 0.035", () => {
+    const hi = projectStrikeoutsV2(oppOnlyInput(34, 22.5));
+    const lo = projectStrikeoutsV2(oppOnlyInput(11, 22.5));
+    expect(hi.matchupAdjustment).toBe(CLAMP);
+    expect(lo.matchupAdjustment).toBe(-CLAMP);
+  });
+
+  it("linear scaling: doubling (oppEnv - league) doubles the pre-clamp adjustment", () => {
+    const near = projectStrikeoutsV2(oppOnlyInput(23.5, 22.5)); // delta 0.01
+    const far = projectStrikeoutsV2(oppOnlyInput(24.5, 22.5)); // delta 0.02
+    expect(far.matchupAdjustment ?? 0).toBeCloseTo(2 * (near.matchupAdjustment ?? 0), 12);
+  });
+
+  it("no-opponent / null opponent environment leaves the matchup adjustment null", () => {
+    const result = projectStrikeoutsV2({
+      pitcher: { seasonKRate: 25, projectedBattersFaced: 24, averageBattersFacedPerInning: 4 },
+      opponent: {},
+      context: { pitcherIsHome: true, leagueAverageKRate: 22.5, leagueAverageWhiffRate: 25 },
+    });
+    expect(result.opponentEnvironmentRate).toBeNull();
+    expect(result.matchupAdjustment).toBeNull();
+    expect(result.projectedKRate).toBeCloseTo(result.pitcherSkillRateShrunk ?? 0, 10);
+  });
+
+  it("V2.1 pitcher shrinkage (alpha 0.55) is unchanged by the multiplier bump", () => {
+    const result = projectStrikeoutsV2(oppOnlyInput(26, 22.5));
+    const raw = result.pitcherSkillRate ?? 0;
+    const league = 0.225;
+    expect(result.pitcherSkillRateShrunk).toBeCloseTo(league + 0.55 * (raw - league), 12);
+    // projectedKRate is shrunk skill + the (now 0.75x) matchup adjustment
+    expect(result.projectedKRate).toBeCloseTo((result.pitcherSkillRateShrunk ?? 0) + (result.matchupAdjustment ?? 0), 10);
+  });
+});

@@ -174,6 +174,57 @@ without disturbing V2.1's overall calibration. Rejecting is also defensible if
 the bar is "material aggregate error improvement only" — but the opponent-bucket
 repair plus rising correlation argues for adoption.
 
+## Production implementation (V2.2)
+
+Applied in `src/lib/mlb/kProjectionV2.ts` — one change:
+
+```
+// V2.1
+return clamp((opponentEnvironmentRate - leagueKRate) * 0.45, -0.035, +0.035)
+
+// V2.2
+return clamp((opponentEnvironmentRate - leagueKRate) * OPPONENT_MATCHUP_MULTIPLIER, -0.035, +0.035)
+// OPPONENT_MATCHUP_MULTIPLIER = 0.75
+```
+
+`MAX_MATCHUP_ADJUSTMENT` (±0.035) unchanged. V2.1 pitcher-skill shrinkage
+(`PITCHER_SKILL_SHRINKAGE_ALPHA = 0.55`) unchanged. Nothing else touched:
+pitcher weights, recent-form regression, workload, home/away, lineup, whiff,
+confidence rules, V2→legacy fallback, production resolver.
+
+### Production-path backtest replay (updated V2.2 code, full rebuild)
+
+| view | metric | V2.1 baseline | V2.2 (0.75 / ±0.035) | Δ |
+| --- | --- | --- | --- | --- |
+| V2-only full 2023–2025 | MAE | 1.8424 | 1.8362 | −0.0062 |
+| | RMSE | 2.3070 | 2.3000 | −0.0070 |
+| | correlation | 0.3756 | 0.3828 | +0.0072 |
+| | bias | −0.0482 | −0.0466 | +0.0016 |
+| | calibration slope | 0.949 | 0.934 | −0.015 |
+| | projection SD | 0.985 | 1.020 | +0.035 |
+| V2-only 2025 holdout | MAE | 1.8307 | 1.8273 | −0.0034 |
+| | RMSE | 2.3018 | 2.2961 | −0.0057 |
+| | calibration slope | 0.926 | 0.914 | −0.012 |
+| production-resolved full | MAE | 1.8422 | 1.8366 | −0.0056 |
+| | RMSE | 2.3069 | 2.3004 | −0.0065 |
+
+Routing counters unchanged (v2ProductionEligible 13906, sourceLegacy 52).
+
+### Replay vs analysis-only experiment
+
+Exact agreement — full/dev/holdout MAE, RMSE, correlation and calibration slope
+match the experiment transform to ≤ 0.0001 (rounding). No disagreement.
+
+### Opponent-K bucket bias & clamp-hit rate
+
+| | V2.1 | V2.2 |
+| --- | --- | --- |
+| low-K opponent bias (full) | −0.231 | −0.081 |
+| mid-K opponent bias (full) | −0.009 | −0.027 |
+| high-K opponent bias (full) | +0.120 | −0.041 |
+| matchup clamp-hit rate | 0.5% | 4.99% |
+| mean \|matchupAdjustment\| | 0.0084 | 0.0136 |
+
 ## Not done here
 
-Analysis only. `src/lib/mlb/kProjectionV2.ts` unchanged; no commit.
+`src/lib/mlb/kProjectionV2.ts` V2.2 change staged locally, not committed.
