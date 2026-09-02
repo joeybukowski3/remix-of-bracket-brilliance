@@ -181,6 +181,10 @@ export function buildBacktestRow({ identity, pitcherAsOf, opponentAsOf, leagueAs
       leagueAverageWhiffRate: null, // Statcast whiff not reconstructed
     },
   };
+  // Experiment 3 (workload calibration): retain the exact V2 input surface so an
+  // analysis pass can re-run the real production model with a recalibrated
+  // projected workload. Analysis-only; ignored by every other consumer.
+  const _v2Input = v2Input;
   const v2Raw = projectStrikeoutsV2(v2Input);
   const v2ProjectedStrikeouts = Number.isFinite(v2Raw.projectedStrikeouts) ? v2Raw.projectedStrikeouts : null;
   const v2Positive = v2ProjectedStrikeouts != null && v2ProjectedStrikeouts > 0;
@@ -263,6 +267,7 @@ export function buildBacktestRow({ identity, pitcherAsOf, opponentAsOf, leagueAs
 
   return {
     schemaVersion: 1,
+    _v2Input,
     season: identity.season,
     date: identity.date,
     gameId: identity.gameId,

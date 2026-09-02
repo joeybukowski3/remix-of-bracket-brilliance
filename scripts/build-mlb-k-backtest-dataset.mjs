@@ -32,6 +32,8 @@ import {
 } from "./lib/mlb-k-backtest-asof.mjs";
 import { buildBacktestRow } from "./lib/mlb-k-backtest-dataset.mjs";
 import { loadProjectStrikeoutsV2 } from "./lib/mlb-k-backtest-v2-loader.mjs";
+import { decomposeWorkload } from "./lib/mlb-k-workload-experiment.mjs";
+import { buildV4Inputs } from "./lib/mlb-k-workload-experiment-4.mjs";
 
 const ROOT = process.cwd();
 const STATS_API_ROOT = path.join(ROOT, "data", "mlb", "k-history", "raw", "statsapi");
@@ -221,6 +223,23 @@ export async function buildDataset({ label, seasons, log = (message) => console.
         },
         deps,
       });
+
+      // Experiment 3 (workload calibration) — analysis-only instrumented
+      // decomposition of the production workload projection. Additive; the
+      // production model output already lives in row.inputs.workload.
+      row.workloadDecomp = decomposeWorkload({
+        workloadData: workloadDataShape,
+        opponent: {
+          seasonPitchesPerPA: opponentAsOf.seasonPitchesPerPA,
+          recent14PitchesPerPA: opponentAsOf.recent14PitchesPerPA,
+        },
+        league: leagueAsOf,
+        context: { listedProbableStarter: true },
+      }).decomp;
+
+      // Experiment 4 (contextual starter workload) — analysis-only as-of pitcher
+      // per-start workload numbers (season-to-date + last 5). Additive.
+      row.workload4Inputs = buildV4Inputs(pitcherAsOf, workloadDataShape);
 
       stream.push(JSON.stringify(row));
       counters.rowsBuilt += 1;
