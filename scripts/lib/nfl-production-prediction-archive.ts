@@ -7,7 +7,7 @@ export const PREDICTION_ARCHIVE_SCHEMA_VERSION = "jkb-football-prediction-v1" as
 type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
-export type PredictionType = "spread" | "passing" | "rushing" | "receiving";
+export type PredictionType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
 
 export type MarketSnapshotReference = {
   purpose: "model_input" | "comparison" | "evaluation";
@@ -29,7 +29,8 @@ export type ProjectionPayload =
   | { type: "spread"; projected_home_margin: number; projected_spread_team: string | null; projected_spread_line: number; market_spread: number | null; edge: number | null; formatted_jkb_spread?: string; home_power_number?: number; away_power_number?: number; home_field_adjustment?: number }
   | { type: "passing"; projected_attempts: number | null; projected_ypa: number | null; projected_passing_yards: number; direct_model_prediction: number }
   | { type: "rushing"; projected_carries: number; projected_ypc: number; projected_rushing_yards: number }
-  | { type: "receiving"; projected_targets: number; projected_receptions: number | null; projected_yards_per_reception: number | null; projected_yards_per_target: number; projected_receiving_yards: number };
+  | { type: "receiving"; projected_targets: number; projected_receptions: number | null; projected_yards_per_reception: number | null; projected_yards_per_target: number; projected_receiving_yards: number }
+  | { type: "team_opportunity"; projected_team_plays: number; projected_dropback_rate: number; projected_pass_attempts: number; projected_rush_attempts: number };
 
 export type PredictionSnapshotV1 = {
   schema_version: typeof PREDICTION_ARCHIVE_SCHEMA_VERSION;
@@ -173,13 +174,14 @@ export function validatePredictionSnapshot(record: PredictionSnapshotV1): void {
   if (!["projected", "eligible_insufficient_history", "not_eligible", "unavailable"].includes(record.status)) throw new Error("unsupported status");
   if (!["slate_before_first_kickoff", "game_before_kickoff"].includes(record.cutoff_policy)) throw new Error("unsupported cutoff_policy");
   if (!["available", "missing", "not_applicable"].includes(record.market_reference_status)) throw new Error("unsupported market_reference_status");
-  if (record.prediction_type !== record.projection.type || !["spread", "passing", "rushing", "receiving"].includes(record.prediction_type)) throw new Error("prediction_type must match projection.type");
+  if (record.prediction_type !== record.projection.type || !["spread", "passing", "rushing", "receiving", "team_opportunity"].includes(record.prediction_type)) throw new Error("prediction_type must match projection.type");
   const predictionTime = isoMillis(record.prediction_timestamp, "prediction_timestamp");
   isoMillis(record.created_at, "created_at");
   const kickoff = isoMillis(record.kickoff_utc, "kickoff_utc");
   if (record.mode === "production" && predictionTime >= kickoff) throw new Error("production prediction_timestamp must precede kickoff_utc");
-  if (record.prediction_type !== "spread" && !record.player_id) throw new Error("player_id is required for player predictions");
-  if (record.prediction_type !== "spread" && !record.feature_snapshot.fitted_model_hash) throw new Error("player predictions require fitted_model_hash");
+  if (record.prediction_type !== "spread" && record.prediction_type !== "team_opportunity" && !record.player_id) throw new Error("player_id is required for player predictions");
+  if (record.prediction_type === "team_opportunity" && record.player_id) throw new Error("team_opportunity predictions must not carry a player_id");
+  if (record.prediction_type !== "spread" && !record.feature_snapshot.fitted_model_hash) throw new Error("player and team_opportunity predictions require fitted_model_hash");
   requiredString(record.feature_snapshot.feature_payload_hash, "feature_payload_hash");
   const expectedFeatureHash = contentHash({ values: record.feature_snapshot.values, ordered_vector: record.feature_snapshot.ordered_vector ?? null, imputation_flags: record.feature_snapshot.imputation_flags ?? null } as JsonValue);
   if (record.feature_snapshot.feature_payload_hash !== expectedFeatureHash) throw new Error("feature_payload_hash mismatch");
@@ -200,6 +202,11 @@ export function validatePredictionSnapshot(record: PredictionSnapshotV1): void {
     for (const n of [record.projection.projected_passing_yards, record.projection.direct_model_prediction]) if (!Number.isFinite(n)) throw new Error("passing projection fields must be finite");
   } else if (record.projection.type === "rushing") {
     for (const n of [record.projection.projected_carries, record.projection.projected_ypc, record.projection.projected_rushing_yards]) if (!Number.isFinite(n)) throw new Error("rushing projection fields must be finite");
+  } else if (record.projection.type === "team_opportunity") {
+    const p = record.projection;
+    for (const n of [p.projected_team_plays, p.projected_dropback_rate, p.projected_pass_attempts, p.projected_rush_attempts]) if (!Number.isFinite(n) || n < 0) throw new Error("team_opportunity projection fields must be finite and non-negative");
+    if (p.projected_dropback_rate > 1) throw new Error("team_opportunity projected_dropback_rate must not exceed 1");
+    if (Math.abs(p.projected_pass_attempts + p.projected_rush_attempts - p.projected_team_plays) > 1e-6) throw new Error("team_opportunity pass + rush attempts must reconstitute projected_team_plays");
   } else {
     for (const n of [record.projection.projected_targets, record.projection.projected_yards_per_target, record.projection.projected_receiving_yards]) if (!Number.isFinite(n)) throw new Error("receiving projection fields must be finite");
   }
@@ -224,7 +231,12 @@ function identityState(record: PredictionSnapshotV1 | (PredictionSnapshotDraft &
 
 export function finalizePredictionSnapshot(draft: PredictionSnapshotDraft): PredictionSnapshotV1 {
   const featurePayloadHash = contentHash({ values: draft.feature_snapshot.values, ordered_vector: draft.feature_snapshot.ordered_vector ?? null, imputation_flags: draft.feature_snapshot.imputation_flags ?? null } as JsonValue);
-  const snapshotKey = [draft.league, draft.season, draft.week, draft.game_id, draft.player_id ?? "game", draft.prediction_type, draft.model_name, draft.model_version].join("|");
+  // team_opportunity has two rows per game (home + away) with no player_id;
+  // its logical entity key must include `team` so the sibling rows do not
+  // collide. Every other prediction type keeps its historical key shape
+  // exactly (unchanged prediction_ids).
+  const entityKey = draft.player_id ?? (draft.prediction_type === "team_opportunity" ? `team:${draft.team}` : "game");
+  const snapshotKey = [draft.league, draft.season, draft.week, draft.game_id, entityKey, draft.prediction_type, draft.model_name, draft.model_version].join("|");
   const state = identityState({ ...draft, snapshot_key: snapshotKey, feature_snapshot: { ...draft.feature_snapshot, feature_payload_hash: featurePayloadHash } });
   const record: PredictionSnapshotV1 = {
     ...draft,

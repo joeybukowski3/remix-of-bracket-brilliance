@@ -1,6 +1,10 @@
 # Prediction Archive Schema
 
-Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2, automated 2026 postgame refresh/persistence implemented in WU2.5, and the deterministic evaluation materializer implemented in Work Unit 3 (2026-09-02, see [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md)).
+Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2, automated 2026 postgame refresh/persistence implemented in WU2.5, and the deterministic evaluation materializer implemented in Work Unit 3 (2026-09-02, see [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md)). WU4A (2026-09-02) adds a backwards-compatible `team_opportunity` prediction type (one row per team per game: projected plays, dropback rate, pass attempts, rush attempts). WU4A wires only the WU1 writer path for `team_opportunity`; its WU2 outcome resolver and WU3 materializer are documented follow-ups.
+
+### Deferred `team_opportunity` outcome/evaluation follow-up
+
+A later WU2 extension can resolve `team_opportunity` from the same `data/nfl/nflverse/play-volume-team-game/` cache the features use: `actual_team_plays = eligible_plays`, `actual_pass_attempts = pass_plays`, `actual_rush_attempts = rush_plays`, `actual_dropback_rate = pass_plays / eligible_plays`, joined by `game_id` + canonical team, resolvable once the game is `final`. Error signs follow the repository `projection - actual` convention. A WU3 extension would add a `team_opportunity` family to `jkb-football-evaluation-v1` with plays / dropback-rate / pass-attempts / rush-attempts error blocks and prediction-time cohorts (favorite/underdog, dome, week band). Neither is implemented in WU4A.
 
 ## Design choice for this repository
 
@@ -69,7 +73,9 @@ type PredictionSnapshotV1 = {
 };
 ```
 
-The implemented `snapshot_key` is the stable logical entity key: league, season, week, game, optional player, prediction type, model name, and model version. `prediction_id` is `pred_` plus SHA-256 of that key and the material state: mode, projection payload, feature payload hash, source-manifest hashes, fitted-model hash, and ordered market references. Operational timestamps, labels, and run IDs are provenance and do not force duplicates. Thus a retry or later run over byte-equivalent logical state is idempotent, while a changed projection, actual feature value/vector, fitted state, source content, or market state creates a new immutable snapshot. This is the concrete WU1 interpretation of a “legitimate new timestamp”: time alone is not a material model state change.
+The implemented `snapshot_key` is the stable logical entity key: league, season, week, game, entity, prediction type, model name, and model version. The `entity` segment is the `player_id` for player predictions, the literal `game` for `spread`, and `team:<team>` for `team_opportunity` (which has a home row and an away row per game and no player). `spread` and the player types keep their exact historical key shape and `prediction_id`s — the `team:<team>` form applies only to `team_opportunity`.
+
+WU4A relaxes two validation rules for `team_opportunity` only: `player_id` must be absent (not present), and the finite/non-negative projection check is replaced by the team-opportunity coherence check (`pass + rush == plays`, `dropback_rate <= 1`). `fitted_model_hash` is still required (the model is a refit ridge). No existing prediction type's validation changes. `prediction_id` is `pred_` plus SHA-256 of that key and the material state: mode, projection payload, feature payload hash, source-manifest hashes, fitted-model hash, and ordered market references. Operational timestamps, labels, and run IDs are provenance and do not force duplicates. Thus a retry or later run over byte-equivalent logical state is idempotent, while a changed projection, actual feature value/vector, fitted state, source content, or market state creates a new immutable snapshot. This is the concrete WU1 interpretation of a “legitimate new timestamp”: time alone is not a material model state change.
 
 `created_at`, `prediction_timestamp`, and `run_id` from the first persisted occurrence remain authoritative when an identical state is retried. SHA-256 collisions are guarded by comparing the identity-bearing state before treating an existing ID as a duplicate.
 
@@ -106,6 +112,17 @@ type RushingProjection = {
   projected_carries: number;
   projected_ypc: number;
   projected_rushing_yards: number;
+};
+
+// WU4A backwards-compatible extension. One row per team per game.
+type TeamOpportunityProjection = {
+  type: "team_opportunity";
+  projected_team_plays: number;       // eligible rush + pass plays
+  projected_dropback_rate: number;    // 0..1
+  projected_pass_attempts: number;    // dropbacks
+  projected_rush_attempts: number;    // designed rushes
+  // Invariant enforced by validation: pass + rush == plays (within 1e-6),
+  // all finite and non-negative, dropback_rate <= 1.
 };
 
 type ReceivingProjection = {

@@ -105,3 +105,55 @@ describe("append-only filesystem behavior", () => {
     expect(records.map((record) => record.projection.projected_home_margin)).toEqual([4.25, 5]);
   });
 });
+
+describe("team_opportunity prediction type (WU4A extension)", () => {
+  function teamOppDraft(overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
+    return draft({
+      prediction_type: "team_opportunity",
+      player_id: null,
+      position: null,
+      model_name: "nfl-team-opportunity",
+      model_version: "nfl-team-opportunity-ridge-market-v1.0.0",
+      feature_schema_version: "nfl-team-opportunity-feature-row-v1",
+      projection: { type: "team_opportunity", projected_team_plays: 64, projected_dropback_rate: 0.6, projected_pass_attempts: 38.4, projected_rush_attempts: 25.6 },
+      feature_snapshot: { values: { spread: -3 }, source_manifest_hashes: { run: "source-hash" }, fitted_model_hash: "fitted-hash" },
+      ...overrides,
+    });
+  }
+
+  it("accepts a coherent team_opportunity snapshot", () => {
+    expect(() => validatePredictionSnapshot(finalizePredictionSnapshot(teamOppDraft()))).not.toThrow();
+  });
+
+  it("requires a fitted_model_hash", () => {
+    expect(() => finalizePredictionSnapshot(teamOppDraft({ feature_snapshot: { values: {}, source_manifest_hashes: { run: "h" }, fitted_model_hash: null } }))).toThrow(/fitted_model_hash/);
+  });
+
+  it("rejects a carried player_id", () => {
+    expect(() => finalizePredictionSnapshot(teamOppDraft({ player_id: "gsis:1" }))).toThrow(/must not carry a player_id/);
+  });
+
+  it("rejects an incoherent pass/rush split", () => {
+    expect(() => finalizePredictionSnapshot(teamOppDraft({ projection: { type: "team_opportunity", projected_team_plays: 64, projected_dropback_rate: 0.6, projected_pass_attempts: 30, projected_rush_attempts: 20 } }))).toThrow(/reconstitute/);
+  });
+
+  it("rejects a dropback rate above 1 and negative attempts", () => {
+    expect(() => finalizePredictionSnapshot(teamOppDraft({ projection: { type: "team_opportunity", projected_team_plays: 64, projected_dropback_rate: 1.4, projected_pass_attempts: 89.6, projected_rush_attempts: -25.6 } }))).toThrow();
+  });
+
+  it("gives the home and away team rows of one game distinct prediction ids and files idempotently", () => {
+    const root = tempRoot();
+    const home = finalizePredictionSnapshot(teamOppDraft({ team: "aaa", opponent: "bbb", home_away: "home" }));
+    const away = finalizePredictionSnapshot(teamOppDraft({ team: "bbb", opponent: "aaa", home_away: "away", projection: { type: "team_opportunity", projected_team_plays: 62, projected_dropback_rate: 0.55, projected_pass_attempts: 34.1, projected_rush_attempts: 27.9 } }));
+    expect(home.prediction_id).not.toBe(away.prediction_id);
+    expect(home.snapshot_key).toContain("team:aaa");
+    expect(away.snapshot_key).toContain("team:bbb");
+    expect(archiveProductionPredictions({ rootDir: root, records: [home, away] })).toMatchObject({ appended: 2, duplicates: 0 });
+    expect(archiveProductionPredictions({ rootDir: root, records: [home, away] })).toMatchObject({ appended: 0, duplicates: 2 });
+  });
+
+  it("does not change the spread snapshot_key shape", () => {
+    const spread = finalizePredictionSnapshot(draft());
+    expect(spread.snapshot_key).toBe("nfl|2026|1|2026_01_ARI_LAC|game|spread|jkb-power-number|jkb-power-number-v1.0.0");
+  });
+});

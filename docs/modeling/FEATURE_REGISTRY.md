@@ -30,6 +30,24 @@ Status values: **production input**, **research/diagnostic**, **eligibility/prov
 | Targets/game | Player targets per prior qualifying game | player-week stats/universe | Postgame | season-prior -> prior season -> training fallback | Receiving | Zero/missing population semantics | production input |
 | Yards/target | Receiving yards / targets | player-week stats | Postgame | coalesced, four-game shrinkage to training mean | Receiving | Small samples and role changes | production input |
 
+## Team opportunity model features (WU4A, `nfl-team-opportunity-ridge-market-v1.0.0`)
+
+All windows use the compact play-volume cache via `teamPlayVolume.ts` selectors, `seasonPrior -> priorSeason` coalesce, strictly-prior kickoffs. Opponent-allowed windows read the opponent field of the same records. Target quantities: `eligible_plays` and `pass_plays / eligible_plays` for the same team-game.
+
+| Feature | Definition | Availability timing | Models | Leakage risk | Status |
+| --- | --- | --- | --- | --- | --- |
+| Prior team offensive plays/game | Team `eligible_plays`/game, prior windows | Postgame, prior games only | Team opportunity | Target-game inclusion (guarded) | production input |
+| Prior team dropback rate | `pass_plays / eligible_plays`, prior windows | Postgame | Team opportunity | Same | production input |
+| Prior team PROE | Mean `pass_oe`, prior windows | Postgame | Team opportunity | Upstream xpass revisions | production input |
+| Prior team early-down neutral pass rate | Neutral-situation pass rate, prior windows | Postgame | Team opportunity | nflfastR WP known after play; target game forbidden | production input |
+| Opponent plays/game allowed | Opponent-facing `eligible_plays`/game, prior windows | Postgame | Team opportunity | Opponent orientation/alias | production input |
+| Opponent dropback rate allowed | Opponent-facing `pass_plays / eligible_plays`, prior windows | Postgame | Team opportunity | Same | production input |
+| Game spread / total / implied team total | Historical settled nflverse line or live consensus feed | Pregame; exact historical timestamp often unknown | Team opportunity | Closing information can leak into early-week simulations | production input; explicitly market-informed |
+| Home indicator | Team side in schedule | Pregame | Team opportunity | Join orientation | production input |
+| Neutral-site indicator | Schedule neutral-site flag | Pregame | Team opportunity | Schedule corrections | diagnostic (recorded, not a ridge column) |
+
+Team plays: walk-forward showed no candidate beats the training league mean, so the projection stays near league-average by evidence. The pass/rush split is where the ridge earns its keep (dropback-rate correlation ~0.25-0.38 across folds, beating every history-only baseline). Prior team rush/pass attempts per game are also recorded in the feature snapshot for diagnostics but are not ridge columns.
+
 ## Implemented eligibility, provenance and diagnostic features
 
 | Feature | Definition/source | Timing/window | Models | Risk/status |

@@ -56,7 +56,20 @@ raw/provider data
   -> production
 ```
 
-WU1 implements immutable production predictions for spread and player yardage. WU2 implements separate append-only outcome attachment. WU3 implements the deterministic evaluation materializer and diagnostic research dataset over those two stores. The NFL total model remains absent, so the full chain is not yet complete.
+WU1 implements immutable production predictions for spread and player yardage. WU2 implements separate append-only outcome attachment. WU3 implements the deterministic evaluation materializer and diagnostic research dataset over those two stores. WU4A adds the team opportunity foundation. The NFL total model remains absent, so the full chain is not yet complete.
+
+### Target player-projection architecture (WU4)
+
+```text
+Coach / offensive-system prior   — future, no reliable structured dataset in-repo yet
+        -> Team Opportunity            — WU4A (implemented): expected plays, dropback rate, pass/rush attempts
+        -> Role / share allocation     — WU4B (not implemented): allocate the team pool to offensive roles/players
+        -> Matchup / game-flow effects — WU4C (not implemented)
+        -> Player efficiency           — existing (rushing YPC / receiving YPT shrinkage; passing direct ridge)
+        -> Final player projection
+```
+
+The WU4 audit (2026-09-02) established that current rushing/receiving player volume has no coherent team budget: each player's carries/targets are projected independently from that player's own historical per-game usage, implied team totals can be implausible, and depth-chart role does not affect projected opportunity. WU4A builds the finite team opportunity pool; it does not change any player model. WU4B will consume the pool.
 
 ### WU1 production archive implementation
 
@@ -72,11 +85,33 @@ The two production workflows persist only regex-validated WU1 partition and mani
 
 `jkb-football-evaluation-v1` rows partition under `data/nfl/prediction-evaluations/jkb-football-evaluation-v1/<family>/<season>.jsonl`, alongside a `resolution-status/<season>.jsonl` coverage ledger and a `summary/<season>.json` machine-readable artifact. `scripts/lib/nfl-evaluation-*.ts` join each immutable `mode: production` prediction to the latest valid resolved outcome revision (`max(outcome_revision)`, full chronology and superseded IDs preserved), flatten projection/actual/error/market/feature-snapshot state, derive prediction-time-only diagnostic cohorts and edge buckets, and compute sample-size-guarded metrics grouped by prediction type, model version, fitted-model hash, season, and cohort. Non-resolved predictions appear only in the ledger with an explicit status; each point-in-time snapshot is evaluated independently. Output is deterministic (canonical JSON, sorted rows, no generated timestamps): an exact rerun over unchanged inputs is byte-identical. The materializer reads only the WU1/WU2 stores and never writes to them. `npm run materialize:nfl-evaluation -- --season=<year> [--week] [--prediction-type] [--dry-run]` is the entry point. This is forward-production research infrastructure only; it is distinct from and additive to the Phase 11A historical / live-paper-trading research join, changes no model or record, and promotes nothing. See [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md).
 
+### WU4A team opportunity implementation
+
+`nfl-team-opportunity-ridge-market-v1.0.0` produces two rows per game (home and away). It models two quantities and derives the rest by exact accounting:
+
+```text
+projected_team_plays      = ridge(prior team plays, opponent plays allowed, prior dropback rate, PROE,
+                                  early-down neutral pass rate, opponent dropback rate allowed,
+                                  spread, total, implied team total, home)          [clamped 40..82]
+projected_dropback_rate   = ridge(same feature vector)                              [clamped 0.30..0.82]
+projected_pass_attempts   = projected_team_plays * projected_dropback_rate
+projected_rush_attempts   = projected_team_plays - projected_pass_attempts
+```
+
+"Plays" are nflfastR eligible rush+pass plays (`eligible_plays == pass_plays + rush_plays`; excludes kneels, spikes, two-point attempts, penalty-nullified plays). "Pass attempts" are dropbacks (`pass_plays`: attempts + sacks + scrambles). "Rush attempts" are designed rushes (`rush_plays`). By this accounting `pass + rush == plays` exactly, with no hidden sack/kneel/scramble residual. The generator asserts this coherence invariant per row and fails closed on any violation, on a non-32-team-agnostic missing team, on a duplicate team row, or on a malformed play-volume record.
+
+Feature windows (`seasonPrior -> priorSeason` coalesce, `last3` diagnostic only) reuse `teamPlayVolume.ts` selectors; opponent-allowed windows are read off the opponent field of the same compact play-volume records. The ridge is refit at run time on 2022-2025 point-in-time team-game feature rows; WU1 archives a fitted-model hash. Market context is the historical settled nflverse line for history rows and the live `matchup-market.json` consensus feed for the current week.
+
+Walk-forward validation (`scripts/analysis/nfl-team-opportunity-calibration/evaluate.ts`, folds train 2022->2023, train 2022-2023->2024, train 2022-2024->2025) established: team plays are only weakly predictable and no candidate beat the training league mean on single-game MAE/RMSE, so projected plays stay close to league-average by evidence, not assumption; the pass/rush split is predictable and the market-aware ridge beat the league-mean, prior-team, and history+opponent baselines on dropback-rate MAE, RMSE, and correlation in all three folds and produced the lowest derived pass-attempts MAE in every fold. No directional football relationship ("favorites run more", "high totals raise volume") is hard-coded; the ridge learns whatever sign the folds support.
+
+The `team_opportunity` prediction type is a backwards-compatible extension of `jkb-football-prediction-v1` (see [Prediction Archive Schema](PREDICTION_ARCHIVE_SCHEMA.md)). It carries no `player_id`, uses a per-team `snapshot_key` so the two rows of one game do not collide, and requires a `fitted_model_hash`. Every other prediction type keeps its exact historical key shape and `prediction_id`s. Outcome resolution and evaluation materialization for `team_opportunity` are documented follow-ups, not implemented in WU4A.
+
 ## Current model status
 
 | Model | Current implementation | Primary output | Status |
 | --- | --- | --- | --- |
 | Spread | `scripts/generate-nfl-matchup-projections.mts` -> `src/lib/nfl/currentRating2026.ts` -> `src/lib/nfl/jkbPowerNumber2026.ts` | Home-team projected margin and formatted sportsbook-style spread in `public/data/nfl/matchup-projections.json` | Public/current production output plus forward append-only prediction and automatically persisted outcome archives; historical calibration exists |
+| Team opportunity | `scripts/generate-nfl-team-opportunity.ts` -> `src/lib/nfl/props/teamOpportunity{Features,Model,Generator}.ts` | One row per team per game: `projected_team_plays`, `projected_dropback_rate`, `projected_pass_attempts`, `projected_rush_attempts` in `public/data/nfl/<season>/team-opportunity.json` | WU4A research/production-candidate; walk-forward validated; forward append-only `team_opportunity` prediction archive; no outcome resolver or evaluation materializer yet; not consumed by any player model yet (WU4B) |
 | Total | No NFL JKB total calculation found | None | Not implemented; descriptive market totals and reusable scoring/pace inputs exist |
 | Passing | `scripts/generate-nfl-current-week-yardage-projections.ts` and `currentWeekYardageModel.ts` | Direct ridge projected passing yards plus interval/status/features in `public/data/nfl/<season>/yardage-projections.json` | Scheduled production-candidate plus forward append-only prediction/fitted-state/outcome archives with automatic postgame persistence; known calibration/role risk |
 | Rushing | Same current-week pipeline | Projected carries x shrunk YPC = projected rushing yards | Scheduled production-candidate plus forward append-only prediction/fitted-state/outcome archives with automatic postgame persistence |
