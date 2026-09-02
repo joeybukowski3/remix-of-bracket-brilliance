@@ -196,6 +196,7 @@ export function buildBacktestRow({ identity, pitcherAsOf, opponentAsOf, leagueAs
     projectedBattersFaced: round(v2Raw.projectedBattersFaced),
     projectedInnings: round(v2Raw.projectedInnings),
     pitcherSkillRate: round(v2Raw.pitcherSkillRate),
+    pitcherSkillRateShrunk: round(v2Raw.pitcherSkillRateShrunk),
     opponentEnvironmentRate: round(v2Raw.opponentEnvironmentRate),
     matchupAdjustment: round(v2Raw.matchupAdjustment, 5),
     confidence: v2Raw.confidence,

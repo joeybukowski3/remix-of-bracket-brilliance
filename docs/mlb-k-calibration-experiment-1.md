@@ -167,7 +167,53 @@ regularising a noisy skill estimate.
 6. Shrinkage materially improves calibration without destroying discrimination:
    **yes.**
 
-Next: a production change would apply the shrink inside
-`kProjectionV2.ts` between `pitcherSkillRate` and the `projectedKRate` clamp,
-using `leagueKRate` (already in scope) — but that is Experiment 1's *result*,
-not this step. Nothing is committed to production here.
+## Production implementation (V2.1)
+
+Applied in `src/lib/mlb/kProjectionV2.ts`:
+
+```
+// before
+projectedKRate = clamp(pitcherSkillRate + matchupAdjustment, 0.10, 0.40)
+
+// after (V2.1)
+pitcherSkillRateShrunk = leagueKRate + 0.55 * (pitcherSkillRate - leagueKRate)
+projectedKRate         = clamp(pitcherSkillRateShrunk + matchupAdjustment, 0.10, 0.40)
+```
+
+- `PITCHER_SKILL_SHRINKAGE_ALPHA = 0.55` (module constant).
+- `pitcherSkillRate` (raw blend) is unchanged and still returned; a new
+  `pitcherSkillRateShrunk` field is added to `KProjectionResult` for audit.
+- `matchupAdjustment` still receives the raw `pitcherSkillRate` (its only use of
+  that argument is a null guard), so the matchup term and its clamp are
+  byte-for-byte unchanged.
+- Nothing else touched: season/recent blend, recent-form regression, opponent
+  environment weights, matchup clamp, workload, home/away, lineup, whiff,
+  confidence rules, V2→legacy fallback, production resolver.
+
+### Production-path backtest replay (updated V2 code, full rebuild)
+
+| view | metric | baseline (V2) | V2.1 (alpha 0.55) | Δ |
+| --- | --- | --- | --- | --- |
+| V2-only full 2023–2025 | MAE | 1.8850 | 1.8424 | −0.0426 |
+| | RMSE | 2.3711 | 2.3070 | −0.0641 |
+| | correlation | 0.3653 | 0.3756 | +0.0103 |
+| | bias | −0.0339 | −0.0482 | −0.0143 |
+| | calibration slope | 0.642 | 0.949 | +0.307 |
+| | projection SD | 1.415 | 0.985 | −0.430 |
+| V2-only 2025 holdout | MAE | 1.8752 | 1.8307 | −0.0445 |
+| | RMSE | 2.3667 | 2.3018 | −0.0649 |
+| | calibration slope | 0.614 | 0.926 | +0.312 |
+| production-resolved full | MAE | 1.8854 | 1.8422 | −0.0432 |
+| | RMSE | 2.3717 | 2.3069 | −0.0648 |
+| | calibration slope | 0.638 | 0.933 | +0.295 |
+
+The production replay reproduces the analysis-only experiment transform to
+**±0.0000 on MAE / RMSE / correlation** at every split — expected, since the
+shrink is exactly linear and the experiment's alpha=1.0 reconstruction was
+faithful to 0.0014 K. No disagreement to investigate.
+
+Segmented (V2-only, full): the low-projection bucket bias goes +0.474 → −0.039,
+high bucket −0.573 → −0.030; high-K pitchers −0.60 → −0.02, low-K +0.48 → −0.07.
+Every season phase and data-quality tier improves on MAE/RMSE. Discrimination
+holds: correlation up, projected-K spread still substantial (SD 0.98, and
+high-K vs low-K projection means stay clearly separated).

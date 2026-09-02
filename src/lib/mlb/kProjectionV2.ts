@@ -84,7 +84,14 @@ export type KProjectionResult = {
   projectedKRate: number | null;
   projectedBattersFaced: number | null;
   projectedInnings: number | null;
+  /** Raw blended pitcher K-skill rate, before league shrinkage. Kept for observability. */
   pitcherSkillRate: number | null;
+  /**
+   * Pitcher K-skill rate after shrinkage toward the contemporaneous league K
+   * rate (V2.1, Experiment 1): leagueKRate + alpha * (pitcherSkillRate - leagueKRate).
+   * This is the value actually carried into projectedKRate.
+   */
+  pitcherSkillRateShrunk: number | null;
   opponentEnvironmentRate: number | null;
   matchupAdjustment: number | null;
   confidence: "high" | "medium" | "low" | "insufficient";
@@ -113,6 +120,18 @@ const DEFAULT_BF_PER_INNING = 4.25;
 const MIN_K_RATE = 0.1;
 const MAX_K_RATE = 0.4;
 const MAX_MATCHUP_ADJUSTMENT = 0.035;
+/**
+ * V2.1 (Experiment 1): shrink the pitcher K-skill rate toward the
+ * contemporaneous league K rate before the matchup adjustment and clamp.
+ * alpha < 1 narrows the pitcher-skill spread. Locked at 0.55 from the
+ * 2023-2024 development / 2025 holdout backtest calibration study
+ * (docs/mlb-k-calibration-experiment-1.md).
+ */
+const PITCHER_SKILL_SHRINKAGE_ALPHA = 0.55;
+
+function shrinkPitcherSkillToLeague(pitcherSkillRate: number, leagueKRate: number): number {
+  return leagueKRate + PITCHER_SKILL_SHRINKAGE_ALPHA * (pitcherSkillRate - leagueKRate);
+}
 
 export function projectStrikeoutsV2(input: KProjectionInput): KProjectionResult {
   const fallbacks: KProjectionFallback[] = [];
@@ -306,9 +325,14 @@ export function projectStrikeoutsV2(input: KProjectionInput): KProjectionResult 
     components,
   );
 
+  const pitcherSkillRateShrunk =
+    pitcherSkillRate == null ? null : shrinkPitcherSkillToLeague(pitcherSkillRate, leagueKRate);
+
   const matchupAdjustment = calculateMatchupAdjustment(pitcherSkillRate, opponentEnvironmentRate, leagueKRate);
   const projectedKRate =
-    pitcherSkillRate == null ? null : clamp(pitcherSkillRate + (matchupAdjustment ?? 0), MIN_K_RATE, MAX_K_RATE);
+    pitcherSkillRateShrunk == null
+      ? null
+      : clamp(pitcherSkillRateShrunk + (matchupAdjustment ?? 0), MIN_K_RATE, MAX_K_RATE);
 
   if (pitcherSkillRate == null) {
     pushUnique(warnings, "Pitcher strikeout skill unavailable.");
@@ -324,6 +348,7 @@ export function projectStrikeoutsV2(input: KProjectionInput): KProjectionResult 
     projectedBattersFaced: finiteOrNull(projectedBattersFaced),
     projectedInnings: finiteOrNull(projectedInnings),
     pitcherSkillRate: finiteOrNull(pitcherSkillRate),
+    pitcherSkillRateShrunk: finiteOrNull(pitcherSkillRateShrunk),
     opponentEnvironmentRate: finiteOrNull(opponentEnvironmentRate),
     matchupAdjustment: finiteOrNull(matchupAdjustment),
     confidence: resolveConfidence(projectedStrikeouts, components, fallbacks, warnings),
