@@ -8,6 +8,7 @@ This document is the required entry point for work on JKB NFL spreads, totals, p
 - [Model Versioning Guide](MODEL_VERSIONING_GUIDE.md)
 - [Feature Registry](FEATURE_REGISTRY.md)
 - [Evaluation Standards](EVALUATION_STANDARDS.md)
+- [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md)
 - [Model Changelog](MODEL_CHANGELOG.md)
 
 Earlier NFL reports remain evidence and provenance. When they describe an earlier phase, this specification and current code own current status.
@@ -55,7 +56,7 @@ raw/provider data
   -> production
 ```
 
-WU1 implements immutable production predictions for spread and player yardage. WU2 implements separate append-only outcome attachment. Evaluation materialization and the total model remain absent, so the full chain is not yet complete.
+WU1 implements immutable production predictions for spread and player yardage. WU2 implements separate append-only outcome attachment. WU3 implements the deterministic evaluation materializer and diagnostic research dataset over those two stores. The NFL total model remains absent, so the full chain is not yet complete.
 
 ### WU1 production archive implementation
 
@@ -66,6 +67,10 @@ The two production workflows persist only regex-validated WU1 partition and mani
 ### WU2 outcome resolver implementation
 
 `jkb-football-prediction-outcome-v1` events partition under `data/nfl/prediction-outcomes/<season>/<week>/<prediction-type>.jsonl`. `scripts/lib/nfl-prediction-outcome-resolver.ts` resolves immutable prediction IDs from canonical nflverse-derived game results and player-week data, with weekly-roster evidence limited to explicit inactive/not-applicable or ACT-with-no-stats zero semantics after the exact game's stats are published. Relevant source-state SHA-256 identities make exact reruns idempotent; corrections append a numbered revision linked to the prior outcome event. Every attempted unresolved prediction receives an explicit status. The manual command supports season, week, dry-run, and prediction-type filters. WU2.5 extends the daily schedules/results workflow to refresh the canonical 2026 player-week cache, resolve predictions, and strictly persist allowed outcome partitions after source refresh.
+
+### WU3 evaluation materializer implementation
+
+`jkb-football-evaluation-v1` rows partition under `data/nfl/prediction-evaluations/jkb-football-evaluation-v1/<family>/<season>.jsonl`, alongside a `resolution-status/<season>.jsonl` coverage ledger and a `summary/<season>.json` machine-readable artifact. `scripts/lib/nfl-evaluation-*.ts` join each immutable `mode: production` prediction to the latest valid resolved outcome revision (`max(outcome_revision)`, full chronology and superseded IDs preserved), flatten projection/actual/error/market/feature-snapshot state, derive prediction-time-only diagnostic cohorts and edge buckets, and compute sample-size-guarded metrics grouped by prediction type, model version, fitted-model hash, season, and cohort. Non-resolved predictions appear only in the ledger with an explicit status; each point-in-time snapshot is evaluated independently. Output is deterministic (canonical JSON, sorted rows, no generated timestamps): an exact rerun over unchanged inputs is byte-identical. The materializer reads only the WU1/WU2 stores and never writes to them. `npm run materialize:nfl-evaluation -- --season=<year> [--week] [--prediction-type] [--dry-run]` is the entry point. This is forward-production research infrastructure only; it is distinct from and additive to the Phase 11A historical / live-paper-trading research join, changes no model or record, and promotes nothing. See [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md).
 
 ## Current model status
 
@@ -204,6 +209,8 @@ Final team scores and player stats exist, and historical outcome builders exist.
 ### Phase G — Evaluation/diagnostics
 
 Reuse spread calibration/backtests, player temporal folds, metrics, feature ablations, intervals, and research joins. Add evaluation against archived production snapshots, valid market timestamps/prices, closing designation, cohort definitions, and live drift/coverage monitoring.
+
+WU3 delivers the core of this phase: a deterministic materializer over the WU1/WU2 stores producing `jkb-football-evaluation-v1` row datasets, a resolution-status coverage ledger, and a machine-readable summary, reusing the Phase 11A metric primitives and market/bucket helpers. Still outstanding in Phase G: proven closing-line designation, live drift/coverage monitoring on a running cadence, and a larger forward production sample. See [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md).
 
 ### Phase H — Research/candidate framework
 

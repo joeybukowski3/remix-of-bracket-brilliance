@@ -1,6 +1,6 @@
 # Prediction Archive Schema
 
-Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2 and automated 2026 postgame refresh/persistence implemented in WU2.5 (2026-09-02). Evaluation materialization remains unimplemented.
+Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2, automated 2026 postgame refresh/persistence implemented in WU2.5, and the deterministic evaluation materializer implemented in Work Unit 3 (2026-09-02, see [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md)).
 
 ## Design choice for this repository
 
@@ -13,8 +13,10 @@ data/nfl/predictions/<season>/<week>/<model-name>.jsonl
 data/nfl/predictions/manifests/sources/<sha256>.json
 data/nfl/predictions/manifests/fitted-models/<sha256>.json
 data/nfl/prediction-outcomes/<season>/<week>/<prediction-type>.jsonl
-data/nfl/prediction-evaluations/<evaluation-version>/<season>/<week>.jsonl
+data/nfl/prediction-evaluations/<evaluation-version>/<family>/<season>.jsonl
 ```
+
+WU3 refined the evaluation partitioning to one file per model family per season, plus a `resolution-status/<season>.jsonl` ledger and a `summary/<season>.json` artifact; see [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md).
 
 Existing `data/market/betting-lines/history/` and `data/nfl/props/market-archive/` remain market stores; prediction records reference selected observation IDs/hashes rather than copy or mutate those sources.
 

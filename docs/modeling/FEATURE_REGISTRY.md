@@ -72,6 +72,8 @@ Status values: **production input**, **research/diagnostic**, **eligibility/prov
 
 These are inventory items, not approved features: normalized weather (wind, temperature, precipitation), game-day roof state, surface, seconds/play pace, rest, travel/time-zone distance, current archived injury/availability, offensive-line/trench and defensive-front history, routes and route participation, snap-share projections, red-zone/goal-line role, air-yards share, player-prop closing designation, and consensus market construction. Their existence in raw PBP or display artifacts does not make them point-in-time model features.
 
+The WU3 evaluation dataset (`jkb-football-evaluation-v1`) exposes the archived feature snapshot (`feature_snapshot_values`, and the passing `ordered_vector`) read-only for feature-conditioned research, and surfaces a subset of these candidate items as `candidate__<key>` cohort fields **only when a snapshot already contains them**. This changes no feature definition, status, or model input; it is diagnostic exposure of what WU1 already archived.
+
 ## Identity/data-quality warnings
 
 - Canonical team aliases must cover JAC/JAX, LA/LAR, WAS/WSH and AZ/ARI. Do not add a local alias without updating/testing the canonical layer.
