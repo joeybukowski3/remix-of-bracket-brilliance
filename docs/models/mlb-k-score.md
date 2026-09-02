@@ -11,9 +11,13 @@ This document is the current methodology and contract authority for the three
    the canonical X K-candidate pool.
 
 Subject to the authority hierarchy in [../DECISIONS.md](../DECISIONS.md).
-`KS-007` / `KS-008` are binding: a projection, a projection-vs-line gap, a K
-Score, or a `valueScore` is **not** an edge, +EV claim, best bet, pick, or
-calibrated probability without a documented calibration gate — none exists.
+`KS-013` records that **K Projection V2.2 (`mlb-k-projection-v2-production`) is
+the production `projectedKs`**, resolved by `mlb-k-production-projection-v1`
+with the legacy `IP × K9 / 9` projection as a per-row fail-safe fallback.
+`KS-007` / `KS-008` are still binding: a projection, a projection-vs-line gap, a
+K Score, or a `valueScore` is **not** an edge, +EV claim, best bet, pick, or
+calibrated probability. The V2.2 calibration gate (`KS-013`) covers the
+projection formula only; the K Score and the value sort remain uncalibrated.
 Surface routing, distinct-number list, and artifacts:
 [../features/mlb-k.md](../features/mlb-k.md). Two systems on the same page are
 explicitly **out of scope** here — see "Not this".
@@ -22,7 +26,7 @@ explicitly **out of scope** here — see "Not this".
 
 | Output | Status | Version id |
 | --- | --- | --- |
-| `projectedKs` (live) | current production, user-facing | resolve step `mlb-k-production-projection-v1`; committed payload `kProjectionMode: "shadow"`, `kProjectionModelVersion: "workload-team-k-v3"` — i.e. the **legacy** formula is live and V2 rides shadow |
+| `projectedKs` (live) | current production, user-facing | K Projection **V2.2**, model version `mlb-k-projection-v2-production` (`src/lib/mlb/kProjectionV2.ts`), chosen per row by resolve step `mlb-k-production-projection-v1`; legacy `IP × K9 / 9` is a per-row fail-safe fallback only. Resolved payload: top-level `kProjectionMode: "v2-production"`, `kProjectionModelVersion: "mlb-k-projection-v2-production"`, `kProjectionLegacyRole: "per-row-fallback"`; the separate `workload-team-k-v3` layer stays shadow under `kWorkloadProjectionMode`. |
 | K Score (`strikeoutMatchupScore`) | current production, user-facing (client-only display score) | unversioned; moves with `src/lib/mlb/mlbSocialSelection.ts` |
 | Best K Prop Bets value sort | current production, user-facing; feeds canonical social K pool | unversioned; moves with `src/lib/mlb/kPropBestBets.ts` |
 
@@ -34,18 +38,50 @@ descriptive, none calibrated.
 
 ## Current inputs
 
-### `projectedKs` (live / legacy path)
+### `projectedKs` (live: V2.2, with legacy fail-safe)
 
 `scripts/resolve-mlb-k-production-projection.mjs`
 ([`npm run mlb:k-production-projection`](../../scripts/resolve-mlb-k-production-projection.mjs))
-is the **one** place a production projection is chosen. It writes `projectedKs`
-into `hr-props-raw.json` after the V2 shadow artifact is generated and
-schema-validated. With `kProjectionMode: "shadow"` it serializes the **stored
-legacy projection** for every normal row:
+→ `scripts/lib/mlb-k-production-projection.mjs` (`mlb-k-production-projection-v1`)
+is the **one** place a production projection is chosen. It runs after the V2
+artifact (`k-props-v2-shadow.json`, produced by `projectStrikeoutsV2`) is
+generated and schema-validated, and writes `projectedKs` into `hr-props-raw.json`.
+
+Per row, it uses **K Projection V2.2** (`mlb-k-projection-v2-production`) whenever
+_all_ hold: the artifact is structurally usable, its slate matches the payload
+slate, a V2 row matches through stable identity
+(`slateDate+gamePk+pitcherId`, then `slateDate+pitcherId+team+opponent`, then a
+re-verified name key), `projectedStrikeouts` is finite and `> 0`, and
+`confidence ∈ {high, medium}`. Otherwise it serializes the **stored legacy
+projection** as a deterministic fail-safe; when that too is unusable the row is
+`unavailable` (`null`, never `0`). V2 and legacy are **never blended** — a
+resolved row is fully one or the other. `legacyProjectedKs`, `v2ProjectedKs`,
+`projectionSource` (`v2` / `legacy-fallback` / `unavailable`),
+`projectionFallbackReason`, and `v2Confidence` are all preserved on the row.
+
+**V2.2 (`projectStrikeoutsV2`)** — calibration locked by `KS-013` /
+[../mlb-k-calibration-experiment-1.md](../mlb-k-calibration-experiment-1.md) /
+[../mlb-k-calibration-experiment-2.md](../mlb-k-calibration-experiment-2.md):
 
 ```
-projectedKs = calculateProjectedKs(projectedIP, projectedK9)
-            = round1( (projectedIP × projectedK9) / 9 )      // null if either input null
+pitcherSkillRateShrunk = leagueKRate + 0.55 × (pitcherSkillRate − leagueKRate)      # α = 0.55
+matchupAdjustment      = clamp( (opponentEnvironmentRate − leagueKRate) × 0.75,      # opp mult = 0.75
+                                −0.035, +0.035 )                                    # matchup clamp = ±0.035
+projectedKRate         = clamp( pitcherSkillRateShrunk + matchupAdjustment, 0.10, 0.40 )
+projectedStrikeouts    = projectedKRate × projectedBattersFaced
+```
+
+`pitcherSkillRate` and `opponentEnvironmentRate` are renormalizing weighted
+blends of the pitcher's season/recent K-skill, whiff-supported K%, location K%,
+and the opponent's season/recent/location/handedness/lineup K% and
+whiff-supported K% (weights fixed in `src/lib/mlb/kProjectionV2.ts`). Workload
+(`projectedInnings` / `projectedBattersFaced`) is unchanged — Experiments 3 and 4
+tested contextual and pitcher-baseline workload alternatives and rejected both.
+
+**Legacy fallback** — `calculateProjectedKs(projectedIP, projectedK9)`:
+
+```
+projectedKs = round1( (projectedIP × projectedK9) / 9 )      // null if either input null
 ```
 
 - `projectedK9 = calculateProjectedK9(pitcher)`:
@@ -57,7 +93,8 @@ projectedKs = calculateProjectedKs(projectedIP, projectedK9)
   [`scripts/lib/mlb-projected-innings.mjs`](../../scripts/lib/mlb-projected-innings.mjs)
   (`classifyPitcherRole` / `calculateProjectedInnings`; role-aware; shared with
   the Moneyline projected-IP shadow). Its internals are cited from that module,
-  not re-derived here.
+  not re-derived here. `projectedIP` / `projectedK9` also remain on the row for
+  display even when V2.2 supplies `projectedKs`.
 
 ### K Score — `strikeoutMatchupScore`
 
@@ -108,27 +145,37 @@ disagree.
   a non-null projection; otherwise `Proj K` renders unavailable.
 - **Best Bets / social / exports:** `resolveKPropStatus` must return `VALID` —
   a real two-sided market line, `kLine ≥ MIN_ELIGIBLE_K_LINE (3.5)`,
-  workload-confident projection (not grade C/D, no critical workload flags),
-  coherent odds (combined implied ≥ `0.85`), an allowed book (not `underdog` /
-  `prizepicks` / `sleeper`), and legacy-vs-candidate divergence `≤ 2.5` K.
+  workload-confident projection (not grade C/D, no critical workload flags —
+  this still reads the `workload-team-k-v3` confidence grade, **not**
+  `v2Confidence`; see BL-MLB-002), coherent odds (combined implied ≥ `0.85`),
+  and an allowed book (not `underdog` / `prizepicks` / `sleeper`).
   `LOW_CONFIDENCE`, `INSUFFICIENT_DATA`, `INVALID_ODDS`, `INVALID_WORKLOAD` are
-  excluded; `NO_MARKET` rows stay on the board but out of Best Bets.
+  excluded; `NO_MARKET` rows stay on the board but out of Best Bets. (The
+  legacy-vs-candidate `> 2.5` K divergence check → `INVALID_WORKLOAD` only fires
+  for `projectionSource === "legacy"`, which the resolver no longer emits — it
+  now writes `v2` / `legacy-fallback` / `unavailable` — so that check is
+  currently inert; retiring or re-pointing it is BL-MLB-002 scope.)
 
 ## Formula / weights
 
-See "Current inputs". The legacy `IP×K9/9`, the K9 clamps (`[1,15]` real,
-`[3,15]` estimated), the K Score term list / weights / `normalizeRange` bands,
-the `±0.4` edge thresholds, the `valueScore` coefficients, `priceBonus`
-breakpoints, and `maxPerSide = 3` are the methodology and are fixed here.
+See "Current inputs". The V2.2 constants (α = 0.55, opponent multiplier = 0.75,
+matchup clamp = ±0.035, K-rate clamp `[0.10, 0.40]`) and its blend weights, the
+legacy fallback `IP×K9/9` with its K9 clamps (`[1,15]` real, `[3,15]`
+estimated), the K Score term list / weights / `normalizeRange` bands, the `±0.4`
+edge thresholds, the `valueScore` coefficients, `priceBonus` breakpoints, and
+`maxPerSide = 3` are the methodology and are fixed here.
 
 ## Fallbacks
 
-- V2 artifact missing, stale, or schema-invalid → every row falls back to its
-  stored legacy projection; the resolve step still succeeds (it exits nonzero
-  only on a structurally broken public payload). Mixed or stale projections are
-  never published.
-- `projectedK9` unresolvable → `projectedKs` is `null` (propagated as "no
-  projection"), never `0`.
+- V2 artifact missing, stale, schema-invalid, unmatched, `projectedStrikeouts`
+  ≤ 0, or `confidence ∈ {low, insufficient}` → that row falls back to its stored
+  legacy projection; the resolve step still succeeds (it exits nonzero only on a
+  structurally broken public payload). Mixed or stale projections are never
+  published.
+- Both V2 and the legacy fallback unusable → `projectedKs` is `null`
+  (`projectionSource: "unavailable"`, propagated as "no projection"), never `0`.
+- Legacy fallback path: `projectedK9` unresolvable → legacy `projectedKs` is
+  `null`.
 - K Score: any missing term is dropped and weights renormalize;
   `pitcherKSkillScore` falls back to `kVs`-only then `0`; opponent xBA term uses
   a `50` neutral when absent.
@@ -156,11 +203,22 @@ K +EV V1's Poisson math is a **separate, non-live** module (see "Not this").
 
 ## Calibration / validation status
 
-**None** for any of the three. `top-k-performance*.json`
-(`scripts/persist-top-k-picks.ts` + `scripts/grade-top-k-picks.mjs`, workflow
-`grade-mlb-hr-results.yml`) records **empirical** graded outcome rates for the
-daily "top K" picks only — descriptive history, not a `KS-008` gate. The
-projection formula and K Score have never been fit to outcomes.
+**`projectedKs` (V2.2):** calibrated against the 2023-2024 development / 2025
+holdout historical backtest (`KS-013`;
+[../mlb-k-backtest-v1.md](../mlb-k-backtest-v1.md),
+[../mlb-k-calibration-experiment-1.md](../mlb-k-calibration-experiment-1.md),
+[../mlb-k-calibration-experiment-2.md](../mlb-k-calibration-experiment-2.md)) —
+α = 0.55 and opponent multiplier = 0.75 were selected there; the workload term
+was tested and left unchanged (Experiments 3/4). This is a projection-accuracy
+calibration, **not** a `KS-008` win-probability / EV gate — it does not license
+an edge, +EV, or best-bet claim.
+
+**K Score and the "Best K Prop Bets" value sort:** **no calibration.** Their
+term lists, weights, and coefficients are hand-tuned and have never been fit to
+outcomes. `top-k-performance*.json` (`scripts/persist-top-k-picks.ts` +
+`scripts/grade-top-k-picks.mjs`, workflow `grade-mlb-hr-results.yml`) records
+**empirical** graded outcome rates for the daily "top K" picks only —
+descriptive history, not a `KS-008` gate.
 
 ## Artifacts / producers
 
@@ -168,7 +226,7 @@ projection formula and K Score have never been fit to outcomes.
 | --- | --- | --- |
 | `public/data/mlb/hr-props-raw.json` (K rows + resolved `projectedKs`) | `generate-mlb-hr-props.mjs` → `generate-mlb-hr-props-with-k-shadow.mjs` → `resolve-mlb-k-production-projection.mjs` | `generate-mlb-hr-props.yml` |
 | `public/data/mlb/strikeout-prop-details.json` | `generate-mlb-strikeout-prop-details.mjs` | `generate-mlb-hr-props.yml` |
-| `public/data/mlb/k-props-v2-shadow.json` (shadow only) | `generate-mlb-k-props-v2-shadow.mjs` (+ `:validate`) | `generate-mlb-hr-props.yml`, `test-mlb-k-shadow.yml` |
+| `public/data/mlb/k-props-v2-shadow.json` (V2.2 production projection feed; filename retains the historical `-shadow` name) | `generate-mlb-k-props-v2-shadow.mjs` (+ `:validate`) → consumed by `resolve-mlb-k-production-projection.mjs` | `generate-mlb-hr-props.yml`, `test-mlb-k-shadow.yml` |
 | `public/data/mlb/k-workload-shadow.json` (shadow inputs) | `generate-mlb-k-workload-shadow.mjs` | `generate-mlb-hr-props.yml` |
 | `artifacts/mlb-x-canonical/k-production-candidates.json` | `generate-mlb-k-production-candidates.ts` | `mlb-x-canonical.yml` |
 | `public/data/mlb/top-k-performance*.json` | `persist-top-k-picks.ts`, `grade-top-k-picks.mjs` | `generate-mlb-hr-props.yml` / `grade-mlb-hr-results.yml` |
@@ -196,12 +254,13 @@ social table and `x-export` route.
 
 ## Not this
 
-- **Not K Projection V2 / `workload-team-k-v3`.** That is **current
-  research/shadow**: `kProjectionMode: "shadow"`, comparison fields attached,
-  `projectionSource: "legacy"` for normal rows, debug-only UI at `?debug=k-v2`,
-  artifact `k-props-v2-shadow.json`. It does not drive any live number and must
-  not be promoted silently — a promotion is a methodology change that reopens
-  this contract.
+- **Not the `workload-team-k-v3` workload/team-rate projection.** That is a
+  **separate model** and remains **research/shadow**:
+  `kWorkloadProjectionMode: "shadow"`, comparison fields attached, debug-only UI
+  at `?debug=k-v2`. It does not drive any live number and must not be promoted
+  silently — a promotion is a methodology change that reopens this contract. (Do
+  not confuse it with `projectStrikeoutsV2` / `mlb-k-projection-v2-production`,
+  which **is** the live `projectedKs` per `KS-013`.)
 - **Not K +EV V1** (`src/lib/mlb/kPlusEvModel.ts`, `k-plus-ev.json`,
   `mlb-k-plus-ev-v1`, `mlb-k-plus-ev-generator-v1`). It is **stale / dormant**:
   `scripts/generate-mlb-k-plus-ev.mjs` is wired to **no workflow**, and the
@@ -215,27 +274,33 @@ social table and `x-export` route.
 
 ## Limitations
 
-- The live projection is a two-factor product (`projectedIP × projectedK9`);
-  it carries no game-state, batting-order-turn, or bullpen-timing modelling and
-  no uncertainty band.
+- The live V2.2 projection carries no game-state, batting-order-turn, or
+  bullpen-timing modelling and no uncertainty band; its workload term
+  (`projectedInnings` / `projectedBattersFaced`) is the same role-aware estimate
+  the legacy path uses.
 - K Score's opponent terms are flat hitter averages, not lineup-weighted true
   team rates.
 - `valueScore` coefficients are hand-tuned, never fit; the `±0.4` K threshold is
   a fixed heuristic.
-- The estimated-K9 path can float a projection for a pitcher with no real
-  season IP.
-- V2 has been validated in shadow but its promotion criteria are not recorded in
-  a decision; treat any "V2 is live" claim as false until `kProjectionMode`
-  changes in committed data.
+- The legacy fallback's estimated-K9 path can float a projection for a pitcher
+  with no real season IP.
+- Best Value / Best Bets eligibility still keys on the `workload-team-k-v3`
+  workload confidence grade, not `v2Confidence` (BL-MLB-002); a pitcher can be
+  V2 `high` yet excluded on workload grade, or vice-versa.
 
 ## Version / reopening criteria
 
-Reopen this contract before: changing the legacy `IP×K9/9` formula, the K9
-clamps, or `calculateProjectedK9`'s fallback; promoting K Projection V2 or
-changing `kProjectionMode`; changing any K Score term, weight, or
-`normalizeRange` band; changing the `±0.4` edge threshold, the `valueScore`
-coefficients, `priceBonus`, or `maxPerSide`; changing `resolveKPropStatus`
-thresholds (`MIN_ELIGIBLE_K_LINE`, divergence, book allowlist, implied-prob
-floor); wiring `generate-mlb-k-plus-ev.mjs` into a workflow or otherwise
-reviving K +EV V1; or introducing any calibrated probability / edge / EV output
-(which additionally requires a documented `KS-008` gate).
+Reopen this contract before: changing any V2.2 constant (α, opponent
+multiplier, matchup clamp, K-rate clamp) or blend weight in
+`src/lib/mlb/kProjectionV2.ts`; changing the V2 model version string; changing
+the resolver's V2-vs-legacy selection rule (identity match, `> 0`,
+`confidence ∈ {high, medium}`) in `mlb-k-production-projection.mjs`; changing the
+legacy fallback `IP×K9/9` formula, the K9 clamps, or `calculateProjectedK9`'s
+fallback; promoting the `workload-team-k-v3` layer; changing any K Score term,
+weight, or `normalizeRange` band; changing the `±0.4` edge threshold, the
+`valueScore` coefficients, `priceBonus`, or `maxPerSide`; changing
+`resolveKPropStatus` thresholds (`MIN_ELIGIBLE_K_LINE`, divergence, book
+allowlist, implied-prob floor) or its confidence-source (BL-MLB-002); wiring
+`generate-mlb-k-plus-ev.mjs` into a workflow or otherwise reviving K +EV V1; or
+introducing any calibrated probability / edge / EV output (which additionally
+requires a documented `KS-008` gate).

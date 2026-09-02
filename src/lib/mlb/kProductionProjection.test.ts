@@ -28,7 +28,7 @@ function v2Row(overrides: AnyRecord = {}): AnyRecord {
     market: { kLine: 5.5, oddsOver: "-115", oddsUnder: "-105", book: "dk", slateDate: SLATE },
     legacy: { projectedIP: 5.5, projectedK9: 8.2, projectedKs: 5.0, projectionSource: "legacy", projectionFallbackReason: null },
     v2: {
-      modelVersion: "mlb-k-projection-v2-shadow",
+      modelVersion: "mlb-k-projection-v2-production",
       projectedStrikeouts: 6.4,
       projectedKRate: 0.26,
       projectedBattersFaced: 24,
@@ -52,7 +52,7 @@ function artifactWith(rows: AnyRecord[], slateDate = SLATE): AnyRecord {
     schemaVersion: 1,
     slateDate,
     generatedAt: `${slateDate}T12:00:00.000Z`,
-    modelVersion: "mlb-k-projection-v2-shadow",
+    modelVersion: "mlb-k-projection-v2-production",
     projectionMode: "shadow",
     rows,
     diagnostics: {},
@@ -85,7 +85,7 @@ describe("resolveKProjection", () => {
     expect(resolved.effectiveProjectedKs).toBe(6.4);
     expect(resolved.fallbackReason).toBeNull();
     expect(resolved.confidence).toBe("high");
-    expect(resolved.modelVersion).toBe("mlb-k-projection-v2-shadow");
+    expect(resolved.modelVersion).toBe("mlb-k-projection-v2-production");
   });
 
   it("uses V2 when confidence is medium", () => {

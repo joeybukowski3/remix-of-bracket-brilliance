@@ -75,12 +75,40 @@ export function resolveProductionProjection({ rawPath = RAW_PATH, v2Path = V2_PA
     artifactValid,
   });
 
+  // The generator (generate-mlb-hr-props-with-k-shadow.mjs) stamps the payload
+  // with generically named `kProjectionMode` / `kProjectionModelVersion` that
+  // actually describe only the older `workload-team-k-v3` comparison layer,
+  // which remains shadow. Read at the top level they falsely imply the
+  // *displayed* Proj K is shadow-only. This step is the authority on the
+  // displayed projection, so it rewrites the top-level fields to the truthful
+  // production values and preserves the workload-layer values under their own
+  // explicit names. Per-row V2/legacy resolution is unchanged.
+  const {
+    kProjectionMode: workloadProjectionMode = null,
+    kProjectionModelVersion: workloadProjectionModelVersion = null,
+    ...payloadRest
+  } = payload;
+
+  const v2ModelVersion = artifact?.modelVersion ?? null;
+
   const updated = {
-    ...payload,
+    ...payloadRest,
     pitchers,
+    // Truthful top-level description of the value in `pitchers[].projectedKs`.
+    kProjectionMode: "v2-production",
+    kProjectionModelVersion: v2ModelVersion ?? K_PRODUCTION_PROJECTION_MODEL,
+    kProjectionResolver: K_PRODUCTION_PROJECTION_MODEL,
+    kProjectionLegacyRole: "per-row-fallback",
+    // The workload-team-k-v3 layer stays a shadow comparison feed only.
+    kWorkloadProjectionMode: workloadProjectionMode,
+    kWorkloadProjectionModelVersion: workloadProjectionModelVersion,
     kProductionProjection: {
       model: K_PRODUCTION_PROJECTION_MODEL,
-      v2ModelVersion: artifact?.modelVersion ?? null,
+      displayedProjection: "v2-production",
+      displayedProjectionSummary:
+        "hr-props-raw.json pitchers[].projectedKs is the resolved K Projection V2.2 " +
+        "(mlb-k-projection-v2-production); the legacy IP x K9 / 9 projection is a per-row fail-safe fallback only.",
+      v2ModelVersion,
       v2SlateDate: artifact?.slateDate ?? null,
       v2GeneratedAt: artifact?.generatedAt ?? null,
       v2ArtifactUsable: artifactValid,

@@ -26,7 +26,7 @@ function record(overrides: Partial<TopKPickRecord> = {}): TopKPickRecord {
     valueScore: 60,
     projectedIP: 5.5,
     workloadConfidenceGrade: "A",
-    modelVersion: "mlb-k-projection-v2-shadow",
+    modelVersion: "mlb-k-projection-v2-production",
     resultStatus: "final",
     actualStrikeOuts: 7,
     actualInningsPitched: "6.0",

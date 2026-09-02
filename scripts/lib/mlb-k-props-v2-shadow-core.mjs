@@ -413,7 +413,7 @@ export function buildKPropsShadowArtifact({
     slateDate,
     generatedAt,
     sourceDates: sourceIntegrity?.sourceDates ?? null,
-    modelVersion: rows.find((row) => row.v2.modelVersion)?.v2.modelVersion ?? "mlb-k-projection-v2-shadow",
+    modelVersion: rows.find((row) => row.v2.modelVersion)?.v2.modelVersion ?? "mlb-k-projection-v2-production",
     projectionMode: K_PROPS_V2_SHADOW_MODE,
     rows,
     diagnostics,

@@ -79,7 +79,7 @@ export type KProjectionFallback = {
 };
 
 export type KProjectionResult = {
-  modelVersion: "mlb-k-projection-v2-shadow";
+  modelVersion: "mlb-k-projection-v2-production";
   projectedStrikeouts: number | null;
   projectedKRate: number | null;
   projectedBattersFaced: number | null;
@@ -113,7 +113,15 @@ type SanitizeContext = {
   warnings: string[];
 };
 
-const MODEL_VERSION = "mlb-k-projection-v2-shadow" as const;
+/**
+ * V2.2 is the production Projected K (resolved into `hr-props-raw.json` by
+ * `scripts/resolve-mlb-k-production-projection.mjs`, with the legacy
+ * `IP x K9 / 9` projection kept as a per-row fail-safe fallback). The name was
+ * `mlb-k-projection-v2-shadow` while the model rode shadow; it is production
+ * now. Calibration (see docs/models/mlb-k-score.md): pitcher-skill shrinkage
+ * alpha 0.55, opponent matchup multiplier 0.75, matchup clamp +/-0.035.
+ */
+const MODEL_VERSION = "mlb-k-projection-v2-production" as const;
 const DEFAULT_LEAGUE_K_RATE = 0.225;
 const DEFAULT_LEAGUE_WHIFF_RATE = 0.25;
 const DEFAULT_BF_PER_INNING = 4.25;

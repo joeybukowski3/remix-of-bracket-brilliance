@@ -85,7 +85,7 @@ describe("projectStrikeoutsV2", () => {
     const result = projectStrikeoutsV2(input);
 
     expect(input).toEqual(before);
-    expect(result.modelVersion).toBe("mlb-k-projection-v2-shadow");
+    expect(result.modelVersion).toBe("mlb-k-projection-v2-production");
     expect(result.projectedStrikeouts).toBeGreaterThan(6);
     expect(result.confidence).toBe("high");
     expect(result.components.map((entry) => entry.key)).toEqual(

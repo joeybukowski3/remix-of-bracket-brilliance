@@ -191,18 +191,28 @@ cleanly inside a model or feature document unless they require a future action.
   "Calibration / validation status"; [features/mlb-k.md](features/mlb-k.md)
   "Flag".
 
-### BL-MLB-002 — K Projection V2 (`workload-team-k-v3`) promotion criteria unrecorded
-**Status:** NEEDS DECISION
+### BL-MLB-002 — K Projection V2 promotion / confidence-gate alignment
+**Status:** PARTIALLY RESOLVED — `KS-013` (2026-09-02)
 
-- **What is needed:** documented promotion criteria for V2 and a decision;
-  promotion is a methodology change that reopens the K contract.
-- **Why not now:** V2 rides shadow (`kProjectionMode: "shadow"`); it has been
-  validated in shadow but no `DECISIONS.md` entry or model-doc gate records
-  when it may go live.
-- **Do not:** promote V2 silently by changing `kProjectionMode`; treat any "V2
-  is live" claim as false until committed data changes.
-- **Evidence:** [models/mlb-k-score.md](models/mlb-k-score.md) "Not this",
-  "Limitations", "Version / reopening criteria".
+- **Resolved:** the `projectStrikeoutsV2` model (V2.2,
+  `mlb-k-projection-v2-production`) promotion to the production Projected K is
+  now recorded in `KS-013` with its calibration gate (α = 0.55, opponent
+  multiplier = 0.75, matchup clamp = ±0.035; Experiments 3/4 rejected). The
+  resolver (`mlb-k-production-projection-v1`), not `kProjectionMode`, is the
+  promotion mechanism; legacy is a per-row fail-safe.
+- **Still open:** Best Value / Best Bets and social eligibility
+  (`resolveKPropStatus`) still gate on the older `workload-team-k-v3` workload
+  confidence grade, not `v2Confidence`. Decide whether V2 confidence should
+  drive or co-gate K-prop recommendation eligibility — a methodology change
+  that reopens the K contract.
+- **Also open / not pursued:** the `workload-team-k-v3` workload/team-rate
+  projection itself remains an unpromoted shadow comparison
+  (`kWorkloadProjectionMode: "shadow"`); further broad workload calibration is
+  not being pursued (Experiments 3/4).
+- **Do not:** relabel a `workload-team-k-v3` promotion or a confidence-gate
+  change as covered by `KS-013`; those need their own decision.
+- **Evidence:** [../DECISIONS.md](../DECISIONS.md) `KS-013`;
+  [models/mlb-k-score.md](models/mlb-k-score.md) "Eligibility", "Not this".
 
 ### BL-MLB-003 — MLB Analytics Foundation stalled at Phase 1 (no HR history persistence / grading)
 **Status:** DEFERRED

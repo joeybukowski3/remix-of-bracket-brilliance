@@ -5,18 +5,17 @@ the distinct K numbers shown, which are production vs shadow/research, the
 artifacts and producers, and the social-publishing relationship. This is a
 **feature/automation** document; it does not own projection methodology.
 
-Subject to `KS-007` / `KS-008` in [../DECISIONS.md](../DECISIONS.md): a
-projection or a projection-vs-line gap is **not** an edge, +EV claim, or pick
-without a documented calibration gate. Surface overview: [mlb.md](mlb.md).
-Social publishing: [social-publishing.md](social-publishing.md).
+Subject to `KS-007` / `KS-008` / `KS-013` in [../DECISIONS.md](../DECISIONS.md):
+`projectedKs` is K Projection **V2.2** (`mlb-k-projection-v2-production`), but a
+projection or a projection-vs-line gap is still **not** an edge, +EV claim, or
+pick. Surface overview: [mlb.md](mlb.md). Social publishing:
+[social-publishing.md](social-publishing.md).
+
+Methodology contract: [../models/mlb-k-score.md](../models/mlb-k-score.md).
 
 Point-in-time evidence, **not** current authority (`KS-004`) — see "Conflicts":
 [../mlb-k-projection-audit.md](../mlb-k-projection-audit.md) (2026-07-23),
 [../mlb-k-v2-shadow-ui-validation.md](../mlb-k-v2-shadow-ui-validation.md).
-
-There is no dedicated K **model** doc yet. Where methodology detail is needed
-below it is cited from code; a future `docs/models/mlb-k-*.md` is warranted (see
-"Flag").
 
 ## Route / page
 
@@ -42,16 +41,29 @@ The single `projectedKs` field written into `hr-props-raw.json` by
 projection is chosen. Every consumer (table, sorting, best-bet cards, social
 graphic data attributes, frozen plan, caption) reads that field.
 
-- **Current committed state:** `kProjectionMode: "shadow"`,
-  `kProjectionModelVersion: "workload-team-k-v3"` — i.e. `projectedKs` is the
-  **legacy** projection: `round1((projectedIP × projectedK9) / 9)` from
-  `scripts/generate-mlb-hr-props.mjs` (`calculateProjectedKs`), wrapped by
-  `scripts/generate-mlb-hr-props-with-k-shadow.mjs`. `projectedIP` from
-  `scripts/lib/mlb-projected-innings.mjs`; `projectedK9` from
-  `calculateProjectedK9`.
-- A missing / stale / schema-invalid V2 artifact degrades to the stored legacy
-  projection rather than erroring — the resolve step never publishes mixed or
-  stale projections.
+- **Current state (`KS-013`):** `projectedKs` is **K Projection V2.2**
+  (`projectStrikeoutsV2`, model version `mlb-k-projection-v2-production`,
+  `src/lib/mlb/kProjectionV2.ts`; α = 0.55, opponent multiplier = 0.75, matchup
+  clamp = ±0.035). The resolve step (`mlb-k-production-projection-v1`) picks V2
+  per row when a V2 row matches through stable identity with
+  `confidence ∈ {high, medium}` and `projectedStrikeouts > 0`. Resolved payload
+  metadata: top-level `kProjectionMode: "v2-production"`,
+  `kProjectionModelVersion: "mlb-k-projection-v2-production"`,
+  `kProjectionLegacyRole: "per-row-fallback"`; per row `projectionSource`
+  (`v2` / `legacy-fallback` / `unavailable`), `v2ProjectedKs`,
+  `legacyProjectedKs`, `v2Confidence`.
+- **Legacy fail-safe:** each row falls back to the stored legacy projection
+  `round1((projectedIP × projectedK9) / 9)` (`calculateProjectedKs` in
+  `scripts/generate-mlb-hr-props.mjs`, wrapped by
+  `scripts/generate-mlb-hr-props-with-k-shadow.mjs`; `projectedIP` from
+  `scripts/lib/mlb-projected-innings.mjs`, `projectedK9` from
+  `calculateProjectedK9`) when its V2 row is missing / stale / schema-invalid /
+  unmatched / low-confidence / non-positive. If the legacy value is also
+  unusable the row is `unavailable` (`null`). V2 and legacy are never blended;
+  the resolve step never publishes mixed or stale projections.
+- The older `workload-team-k-v3` workload/team-rate projection is a **separate**
+  model that stays shadow (`kWorkloadProjectionMode: "shadow"`,
+  `kWorkloadProjectionModelVersion: "workload-team-k-v3"`).
 
 ### 2. K Score — `strikeoutMatchupScore`
 
@@ -100,12 +112,13 @@ publishing contract: [social-publishing.md](social-publishing.md).
 
 | Component | Status |
 | --- | --- |
-| `projectedKs` (legacy formula) | **Production** — the live `Proj K`. |
+| `projectedKs` — K Projection **V2.2** (`mlb-k-projection-v2-production`) | **Production** — the live `Proj K` (`KS-013`), resolved per row by `mlb-k-production-projection-v1`. |
+| `projectedKs` — legacy `IP × K9 / 9` | **Production fail-safe** — per-row fallback only, used when a row's V2 projection is unusable. |
 | `strikeoutMatchupScore` / K Score | Production display score (client-only, uncalibrated). |
 | "Best K Prop Bets" value sort | Production surface (uncalibrated value sort, `KS-008`). |
 | K +EV V1 (`k-plus-ev.json`) | Production **surface**, but see "Flag" — no scheduled producer. |
-| **K Projection V2 / workload-team-k-v3** | **Shadow.** `kProjectionMode: "shadow"`; comparison fields attached, `projectionSource: "legacy"` for normal rows. Debug-only UI at `?debug=k-v2`. Artifact `mlb-k-props-v2-shadow.json`. Do not promote silently. |
-| K workload shadow (`k-workload-shadow.json`) | Shadow inputs for V2. |
+| **`workload-team-k-v3`** workload/team-rate projection | **Shadow.** `kWorkloadProjectionMode: "shadow"`; comparison fields attached. Debug-only UI at `?debug=k-v2`. A *separate* model from V2.2 — do not promote silently. |
+| K workload shadow (`k-workload-shadow.json`) | Shadow inputs for the `workload-team-k-v3` layer and for V2.2's recent-form inputs. |
 
 ## Artifacts / producers
 
@@ -121,6 +134,14 @@ publishing contract: [social-publishing.md](social-publishing.md).
 
 ## Model / audit docs
 
+- [../models/mlb-k-score.md](../models/mlb-k-score.md) — **current methodology
+  contract** (V2.2 formula + constants, legacy fallback, K Score, value sort).
+- [../mlb-k-backtest-v1.md](../mlb-k-backtest-v1.md) — historical backtest
+  harness and the V2.2 calibration measurement basis.
+- [../mlb-k-calibration-experiment-1.md](../mlb-k-calibration-experiment-1.md) /
+  [-2](../mlb-k-calibration-experiment-2.md) — α = 0.55, opponent multiplier =
+  0.75 selection. [-3](../mlb-k-calibration-experiment-3.md) /
+  [-4](../mlb-k-calibration-experiment-4.md) — rejected workload alternatives.
 - [../mlb-k-projection-audit.md](../mlb-k-projection-audit.md) — 2026-07-23
   branch audit of the projection pipeline and social path. Point-in-time.
 - [../mlb-k-v2-shadow-ui-validation.md](../mlb-k-v2-shadow-ui-validation.md) —
@@ -137,23 +158,29 @@ publishing contract: [social-publishing.md](social-publishing.md).
 
 ## Conflicts
 
-`docs/mlb-k-projection-audit.md` states "no dedicated server-side K props
-artifact exists" and that social K selection "scrapes the live page". Current
-committed code has **superseded the scrape**: the canonical publisher builds
-`k-production-candidates.json` from the raw payload via
-`buildCanonicalKCandidatePool` (no HTML scrape). The audit's core finding — K
-table rows are still assembled **client-side** and `projectedKs` remains the
-legacy projection (`kProjectionMode: "shadow"`) — is still accurate as of this
-writing. Where the audit and current code disagree, current committed code wins;
-the audit is provenance for the July 2026 state only.
+`docs/mlb-k-projection-audit.md` (2026-07-23) states "no dedicated server-side K
+props artifact exists", that social K selection "scrapes the live page", and
+that `projectedKs` is the legacy projection with V2 "riding shadow". All three
+are **superseded**:
+
+- The canonical publisher builds `k-production-candidates.json` from the raw
+  payload via `buildCanonicalKCandidatePool` (no HTML scrape).
+- `projectedKs` is **K Projection V2.2** (`mlb-k-projection-v2-production`) per
+  `KS-013`; legacy is a per-row fail-safe. `k-props-v2-shadow.json` is a real
+  server-side projection feed (its filename keeps the historical `-shadow`
+  name).
+
+Still accurate from the audit: K **table rows** are assembled **client-side**
+from the raw payload. Where the audit and current code disagree, current
+committed code + `KS-013` win; the audit is provenance for the July 2026 state
+only.
 
 ## Flag: future model doc + producer gap
 
-- The K projection (legacy formula + V2 workload shadow + promotion criteria),
-  the K Score composition, and the "Best K Prop Bets" value sort each warrant a
-  dedicated `docs/models/mlb-k-*.md` methodology contract. Until it exists, this
-  feature doc plus the point-in-time audits are the only reference and are
-  **not** current methodology authority.
+- The K projection methodology contract is
+  [../models/mlb-k-score.md](../models/mlb-k-score.md) (V2.2 formula + constants,
+  legacy fallback, K Score, value sort). This feature doc owns surface routing
+  and artifacts, not methodology.
 - `scripts/generate-mlb-k-plus-ev.mjs` is wired to no workflow; the committed
   `k-plus-ev.json` can go stale (observed `date` predates the current slate).
   Whether K +EV V1 is intended to be live is **unverified** — treat the K +EV

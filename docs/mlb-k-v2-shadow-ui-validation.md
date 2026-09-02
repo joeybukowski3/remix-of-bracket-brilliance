@@ -2,13 +2,18 @@
 
 > **Status (2026-08-31 knowledge audit): HISTORICAL — validation snapshot
 > (2026-07-23).** Records a browser-check pass of the internal `?debug=k-v2`
-> shadow comparison UI. K Projection V2 (`workload-team-k-v3`) **remains
-> shadow-only** (`kProjectionMode: "shadow"`); promotion criteria are unrecorded.
-> **Not** current authority.
+> comparison UI. **Not** current authority.
+>
+> **Superseded:** as of `KS-013` (2026-09-02) the live `projectedKs` is **K
+> Projection V2.2** (`mlb-k-projection-v2-production`, `projectStrikeoutsV2`),
+> resolved by `mlb-k-production-projection-v1` with legacy as a per-row
+> fail-safe. The separate `workload-team-k-v3` workload/team-rate projection
+> still rides shadow (`kWorkloadProjectionMode: "shadow"`).
 >
 > - Current K methodology and V2 status: [models/mlb-k-score.md](models/mlb-k-score.md)
 > - Current K-props surface contract: [features/mlb-k.md](features/mlb-k.md)
-> - Promotion-decision gap: BACKLOG [BL-MLB-002](BACKLOG.md)
+> - Promotion decision: [DECISIONS.md](DECISIONS.md) `KS-013`; residual open
+>   items in BACKLOG [BL-MLB-002](BACKLOG.md)
 
 Date: 2026-07-23
 
