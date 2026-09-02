@@ -138,10 +138,17 @@ function approximateWrcPlusForSamples(samples, statKey) {
   }));
 }
 
+// A single slow/rate-limited Savant team feed must not blank every team's rank.
+// As long as most of the league reported, rank the teams that did (against that
+// still-MLB-wide population) and leave only the genuinely-missing teams null.
+// Below this coverage the metric reflects a source outage, not real standings,
+// so it is emitted as entirely absent rather than a misleading partial ladder.
+const MIN_RANK_COVERAGE_RATIO = 0.8;
+
 function rankDescending(entries, expectedTeamCount) {
-  if (entries.length !== expectedTeamCount) return new Map();
   const eligible = entries.filter((entry) => entry.value != null && Number.isFinite(entry.value));
-  if (eligible.length !== expectedTeamCount) return new Map();
+  const minCovered = Math.max(2, Math.ceil(expectedTeamCount * MIN_RANK_COVERAGE_RATIO));
+  if (eligible.length < minCovered) return new Map();
   eligible.sort((a, b) => b.value - a.value || a.team.localeCompare(b.team));
   return new Map(eligible.map((entry, index) => [entry.team, index + 1]));
 }

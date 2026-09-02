@@ -46,6 +46,19 @@ const totals = {
   opponentVenueKGamePresent: 0,
   opponentVenueXbaPresent: 0,
   opponentLast10XbaPresent: 0,
+  // Current-day opponent visual-reference ranks the strikeout table renders.
+  opponentReferencePresent: 0,
+  opponentKRateRankL30Present: 0,
+  opponentKRateRankL30VsHandPresent: 0,
+  opponentWrcPlusRankL30Present: 0,
+  opponentWrcPlusRankL30VsHandPresent: 0,
+  opponentWrcPlusRankL30AtSitePresent: 0,
+  opponentWrcPlusRankL10Present: 0,
+  // Point-in-time opponent ranks on each historical Recent Performance row.
+  historicalStartRows: 0,
+  historicalOpponentKRateRankL30Present: 0,
+  historicalOpponentKRateRankL30VsHandPresent: 0,
+  historicalOpponentWrcPlusRankL30Present: 0,
 };
 
 const nullCounts = {
@@ -77,8 +90,33 @@ for (const detail of details) {
   if (opponentContext?.last10?.xba != null) totals.opponentLast10XbaPresent += 1;
   for (const warning of opponentContext?.warnings ?? []) addOpponentWarning(warning);
 
+  const reference = detail.opponentReference;
+  if (reference) totals.opponentReferencePresent += 1;
+  else addReason("opponentReference: object absent");
+  const referenceAtSite = reference
+    ? (detail.pitcherHand != null && reference.opponentWrcPlusRankL30Home != null && reference.opponentWrcPlusRankL30Away != null
+      ? reference.opponentWrcPlusRankL30Home
+      : reference.opponentWrcPlusRankL30Home ?? reference.opponentWrcPlusRankL30Away)
+    : null;
+  const referenceChecks = [
+    ["opponentKRateRankL30Present", reference?.opponentKRateRankL30, "opp K% rank L30"],
+    ["opponentKRateRankL30VsHandPresent", reference?.opponentKRateRankL30VsHand, "opp K% rank L30 vs hand"],
+    ["opponentWrcPlusRankL30Present", reference?.opponentWrcPlusRankL30, "opp wRC+ rank L30"],
+    ["opponentWrcPlusRankL30VsHandPresent", reference?.opponentWrcPlusRankL30VsHand, "opp wRC+ rank L30 vs hand"],
+    ["opponentWrcPlusRankL30AtSitePresent", referenceAtSite, "opp wRC+ rank L30 at site"],
+    ["opponentWrcPlusRankL10Present", reference?.opponentWrcPlusRankL10, "opp wRC+ rank L10"],
+  ];
+  for (const [key, value, label] of referenceChecks) {
+    if (value != null) totals[key] += 1;
+    else addReason(`${label}: reference rank absent`);
+  }
+
   const starts = detail.pitcherRecentStarts ?? detail.pitcherLastFiveStarts ?? [];
   totals.startsFound += starts.length;
+  totals.historicalStartRows += starts.length;
+  totals.historicalOpponentKRateRankL30Present += starts.filter((row) => row.opponentKRateRankL30 != null).length;
+  totals.historicalOpponentKRateRankL30VsHandPresent += starts.filter((row) => row.opponentKRateRankL30VsHand != null).length;
+  totals.historicalOpponentWrcPlusRankL30Present += starts.filter((row) => row.opponentWrcPlusRankL30 != null).length;
   totals.rowsWithHitsAllowed += starts.filter((row) => row.hitsAllowed != null).length;
   totals.rowsWithPitchCount += starts.filter((row) => row.pitchCount != null).length;
   totals.rowsWithSite += starts.filter((row) => row.site != null).length;
@@ -183,13 +221,26 @@ for (const detail of details) {
 
 totals.stableKeyCollisions = Array.from(stableKeyCounts.values()).filter((count) => count > 1).length;
 totals.ambiguousLegacyKeys = Array.from(legacyKeyCounts.values()).filter((count) => count > 1).length;
+// A wholesale-outage guard for opponent visual-reference ranks: individual
+// ranks can be legitimately null (unresolved venue, no vs-hand sample), but a
+// whole column collapsing to N/A across the slate is the regression this audit
+// exists to catch, so require most records/rows to carry them.
+const rankFloor = Math.ceil(details.length * 0.8);
+const historicalRankFloor = Math.ceil(totals.historicalStartRows * 0.8);
+const opponentRankRegression =
+  totals.opponentReferencePresent < details.length
+  || totals.opponentWrcPlusRankL30Present < rankFloor
+  || totals.opponentKRateRankL30Present < rankFloor
+  || totals.opponentWrcPlusRankL10Present < rankFloor
+  || (totals.historicalStartRows > 0 && totals.historicalOpponentWrcPlusRankL30Present < historicalRankFloor);
 const passed = details.length > 0
   && totals.staleRecords === 0
   && totals.statsApiFailures === 0
   && totals.sameDayOrFutureStarts === 0
   && totals.duplicateRecentStarts === 0
   && totals.stableKeyCollisions === 0
-  && totals.recordsWithBothStableKeys === details.length;
+  && totals.recordsWithBothStableKeys === details.length
+  && !opponentRankRegression;
 const opponentContextExamples = details.slice(0, 4).map((detail) => ({
   pitcher: detail.pitcher,
   opponent: detail.opponent,
@@ -201,5 +252,5 @@ const opponentContextExamples = details.slice(0, 4).map((detail) => ({
   warnings: detail.opponentContext?.warnings ?? [],
 }));
 
-console.log(JSON.stringify({ passed, schemaVersion: payload.schemaVersion ?? null, date: payload.date ?? null, generatedAt: payload.generatedAt ?? null, totals, opponentWarningCounts, opponentContextExamples, nullCounts, missingDataReasons: reasons }, null, 2));
+console.log(JSON.stringify({ passed, opponentRankRegression, schemaVersion: payload.schemaVersion ?? null, date: payload.date ?? null, generatedAt: payload.generatedAt ?? null, totals, opponentWarningCounts, opponentContextExamples, nullCounts, missingDataReasons: reasons }, null, 2));
 if (!passed) process.exitCode = 1;

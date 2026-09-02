@@ -227,6 +227,28 @@ async function main() {
     else partialCount += 1;
   }
 
+  const rankFieldCoverage = (records, read) => records.reduce((count, record) => count + (read(record) != null ? 1 : 0), 0);
+  const historicalStarts = details.flatMap((detail) => detail.pitcherRecentStarts ?? []);
+  const referenceRankDiagnostics = {
+    records: details.length,
+    opponentReferencePresent: details.filter((detail) => detail.opponentReference != null).length,
+    currentDay: {
+      opponentKRateRankL30: rankFieldCoverage(details, (d) => d.opponentReference?.opponentKRateRankL30),
+      opponentKRateRankL30VsHand: rankFieldCoverage(details, (d) => d.opponentReference?.opponentKRateRankL30VsHand),
+      opponentWrcPlusRankL30: rankFieldCoverage(details, (d) => d.opponentReference?.opponentWrcPlusRankL30),
+      opponentWrcPlusRankL30VsHand: rankFieldCoverage(details, (d) => d.opponentReference?.opponentWrcPlusRankL30VsHand),
+      opponentWrcPlusRankL10: rankFieldCoverage(details, (d) => d.opponentReference?.opponentWrcPlusRankL10),
+    },
+    historicalStartRows: historicalStarts.length,
+    historicalOpponentWrcPlusRankL30: rankFieldCoverage(historicalStarts, (s) => s.opponentWrcPlusRankL30),
+    leagueReferenceFeedErrors: leagueReference.errors,
+  };
+  const referenceRanksDegraded = referenceRankDiagnostics.currentDay.opponentWrcPlusRankL30 === 0
+    && details.length > 0;
+  if (referenceRanksDegraded) {
+    warnings.push("opponent visual-reference ranks are entirely absent for this slate (Savant plate-appearance feed likely degraded)");
+  }
+
   const payload = {
     schemaVersion: 4,
     generatedAt: new Date().toISOString(),
@@ -237,6 +259,11 @@ async function main() {
       visualReferenceRanks: "Baseball Savant Statcast plate appearances (strict pregame cutoffs)",
     },
     date: slateDate,
+    diagnostics: {
+      referenceRanks: referenceRankDiagnostics,
+      referenceRanksDegraded,
+      warnings,
+    },
     details,
   };
 
