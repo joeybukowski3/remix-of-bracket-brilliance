@@ -55,7 +55,7 @@ raw/provider data
   -> production
 ```
 
-WU1 implements the immutable production-prediction step for spread and player yardage. Outcome attachment, evaluation materialization, and the total model remain absent, so the full chain is not yet complete.
+WU1 implements immutable production predictions for spread and player yardage. WU2 implements separate append-only outcome attachment. Evaluation materialization and the total model remain absent, so the full chain is not yet complete.
 
 ### WU1 production archive implementation
 
@@ -63,15 +63,19 @@ Forward production records use `jkb-football-prediction-v1` and partition under 
 
 The two production workflows persist only regex-validated WU1 partition and manifest filenames alongside their existing live artifacts. They retain the shared generated-data concurrency lock and established commit/rebase/push retry behavior; an unexpected path under the archive root fails closed instead of being staged.
 
+### WU2 outcome resolver implementation
+
+`jkb-football-prediction-outcome-v1` events partition under `data/nfl/prediction-outcomes/<season>/<week>/<prediction-type>.jsonl`. `scripts/lib/nfl-prediction-outcome-resolver.ts` resolves immutable prediction IDs from canonical nflverse-derived game results and player-week data, with weekly-roster evidence limited to explicit inactive/not-applicable or ACT-with-no-stats zero semantics. Relevant source-state SHA-256 identities make exact reruns idempotent; corrections append a numbered revision linked to the prior outcome event. Every unresolved prediction receives an explicit status. The manual command supports season, week, and dry-run filters. No workflow is modified in WU2 pending production-sensitive governance approval.
+
 ## Current model status
 
 | Model | Current implementation | Primary output | Status |
 | --- | --- | --- | --- |
-| Spread | `scripts/generate-nfl-matchup-projections.mts` -> `src/lib/nfl/currentRating2026.ts` -> `src/lib/nfl/jkbPowerNumber2026.ts` | Home-team projected margin and formatted sportsbook-style spread in `public/data/nfl/matchup-projections.json` | Public/current production output plus forward append-only prediction archive; historical calibration exists |
+| Spread | `scripts/generate-nfl-matchup-projections.mts` -> `src/lib/nfl/currentRating2026.ts` -> `src/lib/nfl/jkbPowerNumber2026.ts` | Home-team projected margin and formatted sportsbook-style spread in `public/data/nfl/matchup-projections.json` | Public/current production output plus forward append-only prediction and outcome archives; historical calibration exists |
 | Total | No NFL JKB total calculation found | None | Not implemented; descriptive market totals and reusable scoring/pace inputs exist |
-| Passing | `scripts/generate-nfl-current-week-yardage-projections.ts` and `currentWeekYardageModel.ts` | Direct ridge projected passing yards plus interval/status/features in `public/data/nfl/<season>/yardage-projections.json` | Scheduled production-candidate plus forward append-only prediction/fitted-state archive; automatic outcomes not implemented; known calibration/role risk |
-| Rushing | Same current-week pipeline | Projected carries x shrunk YPC = projected rushing yards | Scheduled production-candidate plus forward append-only prediction/fitted-state archive; automatic outcomes not implemented |
-| Receiving | Same current-week pipeline | Projected targets x shrunk yards/target = projected receiving yards | Scheduled production-candidate plus forward append-only prediction/fitted-state archive; automatic outcomes not implemented |
+| Passing | `scripts/generate-nfl-current-week-yardage-projections.ts` and `currentWeekYardageModel.ts` | Direct ridge projected passing yards plus interval/status/features in `public/data/nfl/<season>/yardage-projections.json` | Scheduled production-candidate plus forward append-only prediction/fitted-state/outcome archives; automatic persistence not yet scheduled; known calibration/role risk |
+| Rushing | Same current-week pipeline | Projected carries x shrunk YPC = projected rushing yards | Scheduled production-candidate plus forward append-only prediction/fitted-state/outcome archives; automatic persistence not yet scheduled |
+| Receiving | Same current-week pipeline | Projected targets x shrunk yards/target = projected receiving yards | Scheduled production-candidate plus forward append-only prediction/fitted-state/outcome archives; automatic persistence not yet scheduled |
 
 ## Current-state audit
 

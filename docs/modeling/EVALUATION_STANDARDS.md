@@ -4,6 +4,8 @@
 
 Every report must name model/version, fitted-model hash or reproducible manifest, target population, feature schema, train seasons, validation folds, untouched holdout/benchmark status, prediction cutoff, market selection rule, exclusions, sample sizes, metrics and known data gaps. Backtests and real production forecasts must be reported separately.
 
+Evaluation materialization from `jkb-football-prediction-outcome-v1` must select the highest valid `outcome_revision` for each prediction ID as of the evaluation cutoff. A later correction supersedes, but never deletes, the prior event. Only `resolution_status: resolved` events enter numerical error metrics; inactive, not-applicable, pending, identity-unresolved, and source-missing counts remain visible as coverage/exclusion diagnostics. This rule defines later WU3 selection semantics only; it does not implement an evaluation dataset.
+
 The current player development standard is rolling origin: train 2022 -> validate 2023; train 2022-2023 -> validate 2024. From Phase 4 onward, 2025 is a fixed retrospective benchmark, not a pristine holdout, because it was inspected during earlier development. Current 2026 live outcomes should be preserved as the next genuine production/forward sample rather than repeatedly tuned. The Current-OVR spread calibration reconstructs 2023-2025 and evaluates 2024/2025 using strictly earlier fit information. Preserve these records; do not relabel inspected data as unseen.
 
 ## Spread

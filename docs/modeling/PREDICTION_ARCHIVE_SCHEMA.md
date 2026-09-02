@@ -1,6 +1,6 @@
 # Prediction Archive Schema
 
-Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1 (2026-09-02). Outcome resolution remains unimplemented.
+Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2 (2026-09-02). Evaluation materialization remains unimplemented.
 
 ## Design choice for this repository
 
@@ -12,7 +12,7 @@ Recommended partitions:
 data/nfl/predictions/<season>/<week>/<model-name>.jsonl
 data/nfl/predictions/manifests/sources/<sha256>.json
 data/nfl/predictions/manifests/fitted-models/<sha256>.json
-data/nfl/prediction-outcomes/<season>/<week>.jsonl
+data/nfl/prediction-outcomes/<season>/<week>/<prediction-type>.jsonl
 data/nfl/prediction-evaluations/<evaluation-version>/<season>/<week>.jsonl
 ```
 
@@ -163,32 +163,83 @@ WU1 source manifests are shared, canonical JSON documents containing logical nam
 
 ## Outcome events
 
-Outcomes append after the game and never alter prediction lines.
+Outcomes append after the game and never alter prediction lines. `scripts/lib/nfl-prediction-outcome-resolver.ts` is the sole outcome validator/writer, and `npm run resolve:nfl-prediction-outcomes -- --season=<year> --week=<week> [--dry-run]` is the manual entrypoint. The implemented resolver version is `nfl-prediction-outcome-resolver-v1`.
 
 ```ts
 type PredictionOutcomeV1 = {
   schema_version: "jkb-football-prediction-outcome-v1";
-  outcome_event_id: string;
+  outcome_id: string;
   prediction_id: string;
-  resolved_at: string;
-  outcome_source: string;
-  outcome_source_hash: string | null;
-  status: "final" | "corrected" | "void" | "unresolved";
-  final_home_score: number | null;
-  final_away_score: number | null;
-  actual_home_margin: number | null;
-  actual_total: number | null;
-  actual_attempts: number | null;
-  actual_passing_yards: number | null;
-  actual_carries: number | null;
-  actual_rushing_yards: number | null;
-  actual_targets: number | null;
-  actual_receptions: number | null;
-  actual_receiving_yards: number | null;
+  snapshot_key: string;
+  outcome_revision: number;
+  supersedes_outcome_id: string | null;
+  prediction_type: "spread" | "passing" | "rushing" | "receiving";
+  season: number;
+  week: number;
+  game_id: string;
+  player_id: string | null;
+  team: string;
+  opponent: string;
+  recorded_at: string;
+  resolved_at: string | null;
+  resolution_status:
+    | "resolved"
+    | "pending_game"
+    | "pending_player_stats"
+    | "inactive"
+    | "not_applicable"
+    | "identity_unresolved"
+    | "source_missing";
+  game_completion_status: "final" | "not_final" | "missing";
+  resolver_version: "nfl-prediction-outcome-resolver-v1";
+  provider: "nflverse";
+  source_artifacts: {
+    logical_name: string;
+    path: string;
+    provider: string;
+    content_hash: string;
+    source_updated_at: string | null;
+  }[];
+  source_state_hash: string;
+  identity_resolution: {
+    method: "game_id" | "canonical_player_id_and_game_id" | "canonical_player_id_and_roster" | "unresolved";
+    actual_team: string | null;
+    actual_opponent: string | null;
+    team_match: boolean | null;
+    roster_status: string | null;
+    zero_source: "stats_table" | "active_roster_confirmed" | null;
+  };
+  actual: SpreadActual | PassingActual | RushingActual | ReceivingActual | null;
+  derived: SpreadDerived | PassingDerived | RushingDerived | ReceivingDerived | null;
 };
 ```
 
-Corrections append a new event referencing the prior outcome event. An evaluation materializer derives projection error, directional winner, over/under/push, ATS result, market result and edge bucket under its own `evaluation_version`; those are not facts to bake into the immutable prediction.
+`outcome_id` is `outcome_` plus SHA-256 over prediction ID, revision number, resolution status, game completion status, the relevant source-state hash, identity evidence, actual values, and deterministic derived values. Operational timestamps and whole-artifact hashes are provenance and do not create revisions by themselves. An exact rerun of the latest relevant source/outcome state appends nothing and is reported as `already_resolved`. A changed relevant game, player-stat, or roster state appends the next `outcome_revision`, links `supersedes_outcome_id`, and preserves every prior event. A source reversion to an older value is still a new revision because it differs from the latest state. Pending and terminal non-resolved states are also explicit append-only events; this prevents silent skips.
+
+The source-state hash uses only the relevant schedule/result/player/roster evidence, so an unrelated correction elsewhere in a season file does not revise every prediction. Whole source artifact hashes remain on each event for later verification. Current authoritative sources are:
+
+- Games and completion: `public/data/nfl/<season>/games.json` plus `results.json`, produced by the existing nflverse `nfldata games.csv` schedule/results workflow. A game resolves only when the schedule row says `final` and the matching result says `final: true` with both scores.
+- Player outcomes: `data/nfl/nflverse/player-week-stats/stats_player_week_<season>.csv`, provider `nflverse/nflverse-data stats_player`, joined by `gsis:<player_id>` and exact `game_id`. Current cache coverage is 2022-2025.
+- DNP evidence: `data/nfl/nflverse/weekly-rosters/roster_weekly_<season>.csv`, provider `nflverse/nflverse-data weekly_rosters`, joined by GSIS ID, season/week, and one of the completed game's teams. Current cache coverage is 2023-2026; it cannot create a resolved player outcome unless game results are final.
+
+Upstream refreshes replace these canonical source artifacts. The resolver detects relevant corrected content and appends a revision; it never rewrites an outcome or prediction.
+
+### Outcome values and error signs
+
+Spread actual margin is `final home score - final away score`, matching positive `projected_home_margin` as a home-team advantage. All error fields use the repository metric convention `projection - actual`; absolute errors are their absolute value. Factual game total may be retained, but no NFL total prediction or total error is created.
+
+Passing resolves attempts, completions when present, yards, and YPA only for attempts greater than zero. Rushing resolves carries, yards, and YPC only for carries greater than zero. Receiving resolves targets, receptions, yards, YPT only for targets greater than zero, and YPR only for receptions greater than zero. A zero denominator produces `null`, never infinity or a fabricated rate. Component errors remain `null` when the archived prediction did not emit that component.
+
+Spread market results are an array keyed by the archived comparison observation. Each entry uses that observation's home spread, provider, book, and timestamp. JKB side is determined by projected home margin versus the market-implied home margin; ATS win/loss/push is then deterministic from final home margin. An equal model/market direction is `not_applicable`. No observation is reclassified as closing.
+
+### Zero, inactive, and missing rules
+
+- A present stats-table row preserves its reported zeros as real outcomes.
+- With no stats row, an exact weekly-roster `ACT` row on a team in the completed game establishes a true all-zero offensive outcome (`active_roster_confirmed`). This includes a dressed player with no carries/targets and a backup quarterback who never enters.
+- An exact `INA` row is `inactive` with null actuals, never zero.
+- Other exact roster states such as reserve/developmental are `not_applicable` with null actuals.
+- No stats row and no decisive roster evidence is `pending_player_stats`; a missing player artifact is `source_missing`.
+- A canonical player found in the same game on the other team can resolve with `team_match: false` (trade/team mismatch). Evidence attached to neither game team, duplicate matches, or ambiguous roster matches is `identity_unresolved`.
 
 ## Multiple timestamps
 
@@ -213,3 +264,5 @@ Support any number of legitimate same-game snapshots. Use timestamp plus a stabl
 Both production generators build, validate, and persist the archive before atomically replacing their existing browser artifact. Dry runs write neither output. A production row at or after kickoff is rejected; the season-wide spread generator archives only games still pre-kickoff while leaving its established live artifact schema and game coverage unchanged. This is single-writer workflow storage; concurrent multi-process locking is deferred unless production scheduling introduces overlapping writers.
 
 The existing matchup-projection and yardage-projection GitHub workflows persist these outputs under their shared `main-data-writers` concurrency lock and existing fetch/rebase/push retry sequence. Each commit step discovers changed paths only beneath `data/nfl/predictions`, validates every path against its workflow-specific model-partition and 64-character manifest-hash allowlist, and stages each accepted filename explicitly. Unexpected archive paths fail the job; no blanket archive-directory staging is used. Existing live artifacts and their established commit behavior remain in the same commits.
+
+WU2 does not modify a workflow. Automatic outcome persistence should be added only after governance approval, most naturally after the existing daily schedule/results refresh and after a current-season player-stats cache refresh exists. Until then the supported resolver is manual and safe to dry-run.
