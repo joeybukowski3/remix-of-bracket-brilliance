@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-02T16:30:55.394Z",
+    "generatedAt": "2026-09-03T16:21:28.871Z",
     "source": "src/lib/nfl/currentRating2026.ts + jkbPowerNumber2026.ts (canonical Current OVR board)",
     "season": 2026,
     "week": null,
@@ -12,7 +12,7 @@
       "Home-field advantage is a fixed 2 points, 0.0 at neutral sites, and is never fitted. No intercept.",
       "neutralSite comes from nflverse's own `location` column (\"Home\"/\"Neutral\") at the schedule layer — never inferred from stadium name.",
       "Positive projectedHomeMargin means the home team is favoured by that many points.",
-      "NO MARKET DATA IS READ HERE. Market comparison happens only in the consumer layer (src/lib/nfl/projectionData.ts), strictly after this projection already exists.",
+      "NO MARKET DATA ENTERS THE MODEL. Consumer display and the WU1 archive attach market comparison only after this projection already exists.",
       "REPLACES nfl-spread-v0.1.0 as the authoritative public JKB spread. That model's code and backtest remain available for historical/model comparison but no longer generate this artifact."
     ]
   },
@@ -4655,7 +4655,7 @@
     }
   },
   "provenance": {
-    "generatedAt": "2026-09-02T16:30:55.395Z",
+    "generatedAt": "2026-09-03T16:21:28.848Z",
     "gamesProjected": 272,
     "inputs": {
       "preseasonV03": "public/data/nfl/2026/preseason-power-ratings.json",
