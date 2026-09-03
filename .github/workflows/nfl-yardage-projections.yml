@@ -49,9 +49,11 @@ on:
       timezone: "America/New_York"
   workflow_dispatch:
 
-# Share one lock with the other automated workflows that commit generated data to main.
+# Scoped per-branch (not just per-repository): a workflow_dispatch run
+# against a feature branch must never share a concurrency slot with -- or
+# block on -- the scheduled production run against main, and vice versa.
 concurrency:
-  group: main-data-writers-${{ github.repository }}
+  group: main-data-writers-${{ github.repository }}-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
@@ -63,12 +65,68 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # Root-cause fix: the checkout step below used to hard-code `ref: main`,
+      # so a workflow_dispatch run launched against a feature branch would
+      # silently check out (and later push to) main regardless of the branch
+      # selected in the GitHub UI. This step resolves the correct target
+      # branch BEFORE checkout (no repository files exist on the runner yet,
+      # so it cannot shell out to a repo script) using logic that
+      # deliberately mirrors -- and is kept in sync with -- the pure,
+      # unit-tested resolveTargetBranch() in scripts/lib/ci-branch-resolution.mjs
+      # (see ci-branch-resolution.test.mjs for the covered cases):
+      #   - workflow_dispatch -> github.ref_name (exactly what was selected)
+      #   - schedule          -> "main", explicitly, never inferred
+      - name: Resolve target branch
+        id: target-branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          event_name="${{ github.event_name }}"
+          ref_name="${{ github.ref_name }}"
+          if [ "$event_name" = "workflow_dispatch" ]; then
+            if [ -z "$ref_name" ]; then
+              echo "ERROR: workflow_dispatch run has no github.ref_name -- refusing to guess a branch." >&2
+              exit 1
+            fi
+            branch="$ref_name"
+          elif [ "$event_name" = "schedule" ]; then
+            branch="main"
+          else
+            echo "ERROR: unsupported event_name '$event_name' -- refusing to guess a branch." >&2
+            exit 1
+          fi
+          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ steps.target-branch.outputs.branch }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Fail closed if the checkout above did not land on the branch we just
+      # resolved (e.g. a future edit to actions/checkout's `ref:` input, or a
+      # tag/detached-HEAD edge case) -- never silently proceed on the wrong
+      # branch. Also prints the full audit trail this checkpoint requires.
+      - name: Verify checkout branch and log run context
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_branch="${{ steps.target-branch.outputs.branch }}"
+          actual_branch="$(git branch --show-current)"
+          head_sha="$(git rev-parse HEAD)"
+
+          echo "github.event_name        = ${{ github.event_name }}"
+          echo "github.ref                = ${{ github.ref }}"
+          echo "github.ref_name            = ${{ github.ref_name }}"
+          echo "resolved target branch    = ${expected_branch}"
+          echo "checked-out HEAD SHA      = ${head_sha}"
+          echo "checked-out current branch = ${actual_branch}"
+
+          if [ "$actual_branch" != "$expected_branch" ]; then
+            echo "ERROR: checked-out branch '${actual_branch}' does not match resolved dispatch/schedule branch '${expected_branch}'." >&2
+            exit 1
+          fi
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -193,6 +251,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Push target is always the branch this run checked out -- resolved
+          # once in "Resolve target branch" above, never re-derived or
+          # hard-coded here. Fail closed if a future edit ever lets these
+          # diverge during a workflow_dispatch run: a feature-branch dispatch
+          # must never be able to push generated data to main.
+          target_branch="${{ steps.target-branch.outputs.branch }}"
+          checked_out_branch="$(git branch --show-current)"
+          echo "push target branch = ${target_branch}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "$target_branch" != "$checked_out_branch" ]; then
+            echo "ERROR: push target '${target_branch}' differs from checked-out branch '${checked_out_branch}' during workflow_dispatch -- refusing to push." >&2
+            exit 1
+          fi
+
           git add \
             data/nfl/nflverse/weekly-rosters/roster_weekly_2026.csv \
             data/nfl/nflverse/weekly-rosters/manifest.json \
@@ -224,12 +295,12 @@ jobs:
 
           pushed=false
           for attempt in 1 2 3 4 5; do
-            echo "Push attempt ${attempt}/5"
-            git fetch origin main
-            if ! git rebase origin/main; then
+            echo "Push attempt ${attempt}/5 -> ${target_branch}"
+            git fetch origin "$target_branch"
+            if ! git rebase "origin/$target_branch"; then
               echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
               git rebase --abort || true
-            elif git push origin HEAD:main; then
+            elif git push origin "HEAD:$target_branch"; then
               pushed=true
               break
             fi
@@ -237,8 +308,8 @@ jobs:
           done
 
           if [ "$pushed" != "true" ]; then
-            echo "ERROR: All push attempts failed — NFL yardage projections were not committed." >&2
+            echo "ERROR: All push attempts failed — NFL yardage projections were not committed to ${target_branch}." >&2
             exit 1
           fi
 
-          echo "NFL yardage projections pushed successfully."
+          echo "NFL yardage projections pushed successfully to ${target_branch}."

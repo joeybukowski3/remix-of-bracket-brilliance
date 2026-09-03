@@ -83,6 +83,9 @@ export default defineConfig({
       // Betting-splits market intelligence WU6 -- SportsDataIO collector/publisher
       // CLI source guarantees + fail-closed arg/env validation.
       "scripts/market/collect-betting-splits.test.ts",
+      // CI branch-aware checkout/push resolution -- shared by data-writing
+      // workflows so a workflow_dispatch run never silently reads/writes main.
+      "scripts/lib/ci-branch-resolution.test.mjs",
     ],
   },
   resolve: {
