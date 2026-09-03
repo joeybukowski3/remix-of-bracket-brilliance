@@ -14,16 +14,16 @@ run-name: MLB Data Watchdog • ${{ github.event_name }}
 # will be late too. True external redundancy (Vercel Cron / repository_dispatch)
 # is deliberately out of scope for Phase 1.
 
+# Sep 3 2026 RCA: this workflow's own scheduled ticks were themselves
+# degraded/delayed by the same GitHub Actions scheduling pressure it exists
+# to guard against (its 9:05/11:05 AM ET ticks didn't fire at all on Sep 2 or
+# Sep 3), so it could not reliably backstop "Generate MLB Data" in time for
+# the pregame window anyway. mlb-x-canonical.yml now performs this same
+# freshness-check-and-dispatch logic itself, inline, on every one of its own
+# (now 9/10/11/12 AM ET) scheduled ticks -- see its "Ensure today's production
+# data is fresh" step. This workflow's schedule trigger is retired; its
+# workflow_dispatch mode remains as a manual diagnostic/recovery path.
 on:
-  schedule:
-    # A few passes across the MLB morning / pre-first-pitch window, each offset
-    # to land AFTER a "Generate MLB Data" cron mark (3:23 / 8:23 / 10:23 / 11:40).
-    - cron: "5 9 * * *"
-      timezone: "America/New_York" # 9:05 AM ET — after the 8:23 morning refresh
-    - cron: "5 11 * * *"
-      timezone: "America/New_York" # 11:05 AM ET — after the 10:23 refresh
-    - cron: "10 13 * * *"
-      timezone: "America/New_York" # 1:10 PM ET — last catch before most first pitches
   workflow_dispatch:
     inputs:
       dry_run:

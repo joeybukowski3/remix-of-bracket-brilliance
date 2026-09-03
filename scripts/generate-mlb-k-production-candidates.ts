@@ -33,6 +33,7 @@
 import path from "node:path";
 import process from "node:process";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { getEasternDate } from "./generate-mlb-hr-props.mjs";
 import { buildTbdGameKeySet } from "@/lib/mlb/mlbSocialSelection";
 import { buildCanonicalKCandidatePool } from "@/lib/mlb/kPropCanonicalCandidates";
@@ -54,6 +55,21 @@ function parseArgs(argv: string[]): CliArgs {
 function isStarterPlaceholder(value: unknown): boolean {
   const normalized = (typeof value === "string" ? value.trim() : "").toUpperCase();
   return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
+}
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Phase 1 stale-data guard. hr-props-raw.json's own stamped top-level `date`
+ * must equal the requested --slate-date before any K candidates are derived
+ * from it -- a scheduler delay that leaves yesterday's rows in this file (see
+ * the Sep 2/Sep 3 2026 RCA) must never silently produce K candidates for the
+ * wrong day. Pure and exported for testing.
+ */
+export function checkProductionDateFreshness(rawDate: unknown, slateDate: string): { fresh: boolean; dataDate: string | null; staleReason: string | null } {
+  const normalized = typeof rawDate === "string" && DATE_PATTERN.test(rawDate.trim()) ? rawDate.trim() : null;
+  if (normalized === slateDate) return { fresh: true, dataDate: normalized, staleReason: null };
+  return { fresh: false, dataDate: normalized, staleReason: normalized ? "PRODUCTION_DATE_MISMATCH" : "PRODUCTION_DATE_MISSING" };
 }
 
 /** Same TBD-game / placeholder-starter exclusion useMlbPropsData() and generate-social-card-live.ts apply before any HR/K selection runs. */
@@ -82,6 +98,33 @@ function main() {
 
   if (!existsSync(rawPath)) throw new Error(`Production K candidate generation requires ${rawPath}, which does not exist.`);
   const raw = JSON.parse(readFileSync(rawPath, "utf8"));
+
+  // Phase 1 stale-data guard, checked BEFORE any selection/filtering runs --
+  // see checkProductionDateFreshness above. A mismatch/missing/invalid date
+  // fails closed: no candidates are derived from the stale artifact, and this
+  // writes an explicit staleData sentinel (never a thrown error, so the
+  // canonical workflow that already dispatched a "Generate MLB Data" rerun
+  // stays a clean no-op) instead of the normal candidatePool.
+  const freshness = checkProductionDateFreshness(raw?.date, slateDate);
+  if (!freshness.fresh) {
+    const stalePayload = {
+      slateDate,
+      generatedAt: new Date().toISOString(),
+      sourceSummary: [`production hr-props-raw.json (generatedAt=${raw?.generatedAt ?? "unknown"}, date=${freshness.dataDate ?? "missing"})`],
+      staleData: true,
+      dataDate: freshness.dataDate,
+      requestedSlateDate: slateDate,
+      staleReason: freshness.staleReason,
+      candidatePool: [],
+    };
+    mkdirSync(path.dirname(outputPath), { recursive: true });
+    const staleTempPath = `${outputPath}.tmp`;
+    writeFileSync(staleTempPath, `${JSON.stringify(stalePayload, null, 2)}\n`, "utf8");
+    renameSync(staleTempPath, outputPath);
+    console.log(`[generate-mlb-k-production-candidates] STALE production data: dataDate=${freshness.dataDate ?? "missing"} requestedSlateDate=${slateDate} reason=${freshness.staleReason} -> wrote empty candidatePool to ${outputPath}`);
+    return;
+  }
+
   const { games, pitchers, batters } = filterActiveSlate(raw);
 
   const candidatePool = buildCanonicalKCandidatePool(batters, games, pitchers);
@@ -90,6 +133,7 @@ function main() {
     slateDate,
     generatedAt: new Date().toISOString(),
     sourceSummary: [`production hr-props-raw.json (generatedAt=${raw?.generatedAt ?? "unknown"})`],
+    dataDate: freshness.dataDate,
     candidatePool,
   };
 
@@ -101,4 +145,8 @@ function main() {
   console.log(`[generate-mlb-k-production-candidates] slateDate=${slateDate} candidates=${candidatePool.length} (overs=${candidatePool.filter((c) => c.direction === "OVER").length}, unders=${candidatePool.filter((c) => c.direction === "UNDER").length}) -> ${outputPath}`);
 }
 
-main();
+// Guarded (rather than an unconditional call) so this module can be imported
+// by a test for checkProductionDateFreshness without executing the CLI --
+// same pattern as generate-nfl-team-performance-analytics.mts.
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+if (isMain) main();

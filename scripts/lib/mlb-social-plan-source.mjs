@@ -119,6 +119,55 @@ export function loadLocalHrCandidatePool(root = process.cwd()) {
   return getHrCandidatePoolWithPendingConfirmation({ batters, isGameStarted: () => false, liveConfirm: () => true });
 }
 
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Phase 1 stale-data guard for --source=production HR. Reads
+ * public/data/mlb/hr-props-raw.json's own stamped top-level `date` and
+ * requires it to equal the requested slateDate BEFORE any candidate rows are
+ * composed from it -- a scheduler delay that leaves yesterday's rows sitting
+ * in this file (see the Sep 2/Sep 3 2026 RCA) must never be silently read as
+ * "today's data with an already-started game," which is what a pure
+ * timing-based readiness check would otherwise conclude.
+ *
+ * Deliberately NOT applied to --source=local: that path is a manual/dev
+ * preview tool (dry-run-mlb-social-post-plan.mjs and similar), and its
+ * existing behavior against whatever hr-props-raw.json happens to be on disk
+ * must be preserved unchanged.
+ *
+ * @param {string} root
+ * @param {string} slateDate
+ * @returns {{candidatePool: Array<object>, pendingConfirmationCount: number, staleData: false, dataDate: string, requestedSlateDate: string, staleReason: null}
+ *          | {candidatePool: [], pendingConfirmationCount: 0, staleData: true, dataDate: (string|null), requestedSlateDate: string, staleReason: string}}
+ */
+export function loadProductionHrCandidatePool(root, slateDate) {
+  const rawPath = path.join(root, "public", "data", "mlb", "hr-props-raw.json");
+  if (!existsSync(rawPath)) throw new Error(`--source=production requires ${rawPath}, which does not exist.`);
+
+  let raw;
+  try {
+    raw = JSON.parse(readFileSync(rawPath, "utf8"));
+  } catch (error) {
+    throw new Error(`hr-props-raw.json is not valid JSON (${rawPath}): ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  const dataDate = typeof raw?.date === "string" && DATE_PATTERN.test(raw.date.trim()) ? raw.date.trim() : null;
+
+  if (dataDate !== slateDate) {
+    return {
+      candidatePool: [],
+      pendingConfirmationCount: 0,
+      staleData: true,
+      dataDate,
+      requestedSlateDate: slateDate,
+      staleReason: dataDate ? "PRODUCTION_DATE_MISMATCH" : "PRODUCTION_DATE_MISSING",
+    };
+  }
+
+  const { candidatePool, pendingConfirmationCount } = loadLocalHrCandidatePool(root);
+  return { candidatePool, pendingConfirmationCount, staleData: false, dataDate, requestedSlateDate: slateDate, staleReason: null };
+}
+
 /**
  * Builds a SocialPostPlan for one product from fixture or local data,
  * alongside the pendingConfirmationCount canonical readiness needs (see
@@ -135,7 +184,8 @@ export function loadLocalHrCandidatePool(root = process.cwd()) {
  * @param {string} [params.root]
  * @param {(message: string) => void} [params.warn]
  * @param {string|null} [params.productionKCandidatesPath]  required when productKey==="k" and source==="production"
- * @returns {{ plan: import("./mlb-social-post-plan.mjs").SocialPostPlan|null, pendingConfirmationCount: number }}
+ * @returns {{ plan: import("./mlb-social-post-plan.mjs").SocialPostPlan|null, pendingConfirmationCount: number,
+ *             staleData: boolean, dataDate: (string|null), requestedSlateDate: (string|null), staleReason: (string|null) }}
  */
 export function buildPlanFromSource(productKey, { source, slateDate, rows = null, root = process.cwd(), warn = console.warn, productionKCandidatesPath = null }) {
   const isK = productKey === "k";
@@ -146,16 +196,38 @@ export function buildPlanFromSource(productKey, { source, slateDate, rows = null
   let candidatePool;
   let pendingConfirmationCount;
   let sourceLabel;
+  let dataDate = null;
 
   if (isK && source === "production") {
-    // Fails closed (throws) rather than falling back to fixture -- see the
-    // module doc above. A scheduled live run must never silently post
-    // placeholder data.
-    ({ candidatePool, pendingConfirmationCount } = loadProductionKCandidatePool({ path: productionKCandidatesPath }));
+    // Fails closed (throws on missing/malformed artifact, never falls back to
+    // fixture -- see the module doc above) but resolves to an explicit
+    // staleData result rather than throwing when the artifact is well-formed
+    // but dated for the wrong slate -- see loadProductionKCandidatePool's
+    // staleData passthrough (mlb-k-production-candidates.mjs).
+    const result = loadProductionKCandidatePool({ path: productionKCandidatesPath });
+    if (result.staleData) {
+      return {
+        plan: null, pendingConfirmationCount: 0, staleData: true,
+        dataDate: result.dataDate ?? null, requestedSlateDate: slateDate, staleReason: result.staleReason,
+      };
+    }
+    ({ candidatePool, pendingConfirmationCount } = result);
+    dataDate = result.dataDate ?? null;
     sourceLabel = "production (Top Over/Under Plays)";
-  } else if (!isK && (source === "local" || source === "production")) {
+  } else if (!isK && source === "production") {
+    const result = loadProductionHrCandidatePool(root, slateDate);
+    if (result.staleData) {
+      return {
+        plan: null, pendingConfirmationCount: 0, staleData: true,
+        dataDate: result.dataDate, requestedSlateDate: result.requestedSlateDate, staleReason: result.staleReason,
+      };
+    }
+    ({ candidatePool, pendingConfirmationCount } = result);
+    dataDate = result.dataDate;
+    sourceLabel = "production hr-props-raw.json";
+  } else if (!isK && source === "local") {
     ({ candidatePool, pendingConfirmationCount } = loadLocalHrCandidatePool(root));
-    sourceLabel = source === "production" ? "production hr-props-raw.json" : "local hr-props-raw.json";
+    sourceLabel = "local hr-props-raw.json";
   } else {
     candidatePool = slicePool(isK ? kFixturePool() : hrFixturePool(), rows);
     pendingConfirmationCount = 0;
@@ -171,5 +243,5 @@ export function buildPlanFromSource(productKey, { source, slateDate, rows = null
     sourceSummary: [sourceLabel],
   });
 
-  return { plan, pendingConfirmationCount };
+  return { plan, pendingConfirmationCount, staleData: false, dataDate, requestedSlateDate: slateDate, staleReason: null };
 }

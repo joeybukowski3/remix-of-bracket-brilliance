@@ -7,6 +7,12 @@
  *                                may still resolve (more confirmations may
  *                                land, a currently-unsafe row may drop out
  *                                of a later plan) -- never a give-up signal
+ *   WAITING_FOR_TODAYS_DATA   -- Phase 1 safety: the raw production artifact's
+ *                                own stamped date doesn't match the requested
+ *                                slate (e.g. yesterday's rows, generation
+ *                                hasn't run yet today) -- non-terminal, never
+ *                                calls X, and a later run with fresh data can
+ *                                still reach READY_TO_PUBLISH
  *   READY_TO_PUBLISH          -- publish this exact frozen plan now
  *   ALREADY_PUBLISHED         -- receipt says done (or primary posted, reply
  *                                pending recovery-only); never post again
@@ -44,6 +50,7 @@ import { FINAL_CUTOFF_MINUTES } from "./mlb-x-slate-timing.mjs";
 
 export const CanonicalReadinessStatus = Object.freeze({
   NO_POST_YET: "NO_POST_YET",
+  WAITING_FOR_TODAYS_DATA: "WAITING_FOR_TODAYS_DATA",
   READY_TO_PUBLISH: "READY_TO_PUBLISH",
   ALREADY_PUBLISHED: "ALREADY_PUBLISHED",
   NO_POST_FOR_SLATE: "NO_POST_FOR_SLATE",
@@ -235,6 +242,15 @@ const baseResult = ({
  *        deriveConfirmationCompleteness. null/undefined means unknown, never
  *        treated as zero.
  * @param {object|null} [params.slateTiming]  result of computeSlateTiming/fetchSlateTiming (mlb-x-slate-timing.mjs)
+ * @param {{dataDate: (string|null), requestedSlateDate: string, staleReason: string}|null} [params.staleData]
+ *        non-null when the caller's production data source (see
+ *        mlb-social-plan-source.mjs's loadProductionHrCandidatePool /
+ *        mlb-k-production-candidates.mjs's staleData passthrough) determined
+ *        the raw production artifact's own stamped date does not match the
+ *        requested slateDate -- e.g. yesterday's rows still sitting in
+ *        hr-props-raw.json because "Generate MLB Data" hasn't run yet today.
+ *        Never derived from plan/timing; the caller computes this BEFORE
+ *        composing any candidate rows from that stale artifact.
  * @param {Date|number} [params.now]
  */
 export function evaluateCanonicalPublication({
@@ -244,6 +260,7 @@ export function evaluateCanonicalPublication({
   plan = null,
   pendingConfirmationCount = null,
   slateTiming = null,
+  staleData = null,
   now = new Date(),
 }) {
   // ── 1. Receipt-first. No plan/timing inspection at all once published -- ──
@@ -290,6 +307,28 @@ export function evaluateCanonicalPublication({
       product, slateDate, receiptState,
       reason: "SLATE_TERMINALLY_EXPIRED",
       qualifiedRowCount, earliestIncludedGameStart: earliest, publicationCutoff: cutoff,
+    });
+  }
+
+  // ── 2.5. Stale production data (Phase 1 safety). Checked after the terminal
+  // slate-expiry backstop (a genuinely closed slate stays closed regardless of
+  // data freshness) but before the generic "no plan" / row-timing checks --
+  // `plan` is always null when staleData is set (the caller never composes
+  // candidate rows from a raw artifact whose date doesn't match slateDate), so
+  // without this check it would otherwise fall through to the same
+  // NO_POST_YET/NO_QUALIFIED_PLAN the ordinary "not enough real candidates
+  // yet" case produces. WAITING_FOR_TODAYS_DATA is a distinct, non-terminal
+  // status specifically for "the data itself belongs to the wrong day" so a
+  // later run with fresh data can still reach READY_TO_PUBLISH -- see
+  // loadProductionHrCandidatePool (mlb-social-plan-source.mjs) and
+  // loadProductionKCandidatePool's staleData passthrough
+  // (mlb-k-production-candidates.mjs).
+  if (staleData) {
+    return baseResult({
+      status: CanonicalReadinessStatus.WAITING_FOR_TODAYS_DATA,
+      product, slateDate, receiptState,
+      reason: staleData.staleReason ?? "PRODUCTION_DATA_NOT_FOR_SLATE",
+      qualifiedRowCount: 0, earliestIncludedGameStart: null, publicationCutoff: cutoff,
     });
   }
 

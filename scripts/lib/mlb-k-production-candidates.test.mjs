@@ -71,4 +71,40 @@ describe("loadProductionKCandidatePool", () => {
       assert.deepEqual(result.sourceSummary, ["production hr-props-raw.json"]);
     });
   });
+
+  describe("Phase 1 stale-data guard -- staleData sentinel passthrough", () => {
+    it("staleData:true sentinel -> passed through as an explicit result, never throws", () => {
+      withTempFile(JSON.stringify({
+        slateDate: "2026-09-03", generatedAt: "2026-09-03T12:00:00.000Z",
+        sourceSummary: ["production hr-props-raw.json (date=2026-09-02)"],
+        staleData: true, dataDate: "2026-09-02", requestedSlateDate: "2026-09-03",
+        staleReason: "PRODUCTION_DATE_MISMATCH", candidatePool: [],
+      }), (file) => {
+        const result = loadProductionKCandidatePool({ path: file });
+        assert.equal(result.staleData, true);
+        assert.equal(result.dataDate, "2026-09-02");
+        assert.equal(result.requestedSlateDate, "2026-09-03");
+        assert.equal(result.staleReason, "PRODUCTION_DATE_MISMATCH");
+        assert.deepEqual(result.candidatePool, []);
+        assert.equal(result.pendingConfirmationCount, 0);
+      });
+    });
+
+    it("staleData:true with missing dataDate -> defaults preserved, still never throws", () => {
+      withTempFile(JSON.stringify({ staleData: true, candidatePool: [] }), (file) => {
+        const result = loadProductionKCandidatePool({ path: file });
+        assert.equal(result.staleData, true);
+        assert.equal(result.dataDate, null);
+        assert.equal(result.requestedSlateDate, null);
+        assert.equal(result.staleReason, "PRODUCTION_DATE_MISMATCH");
+      });
+    });
+
+    it("a fresh (non-stale) payload never carries staleData", () => {
+      withTempFile(JSON.stringify({ candidatePool: [VALID_CANDIDATE] }), (file) => {
+        const result = loadProductionKCandidatePool({ path: file });
+        assert.equal(result.staleData, undefined);
+      });
+    });
+  });
 });

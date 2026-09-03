@@ -381,6 +381,74 @@ describe("evaluateCanonicalPublication -- product/date independence and identity
   });
 });
 
+describe("evaluateCanonicalPublication -- Phase 1 stale-data guard (WAITING_FOR_TODAYS_DATA)", () => {
+  it("staleData set, no plan -> WAITING_FOR_TODAYS_DATA, non-terminal, never calls X", () => {
+    const result = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, existingReceipt: null, plan: null, pendingConfirmationCount: null,
+      slateTiming: safeTiming(), staleData: { dataDate: "2026-08-18", requestedSlateDate: SLATE, staleReason: "PRODUCTION_DATE_MISMATCH" }, now: NOW,
+    });
+    assert.equal(result.status, CanonicalReadinessStatus.WAITING_FOR_TODAYS_DATA);
+    assert.equal(result.reason, "PRODUCTION_DATE_MISMATCH");
+    assert.equal(result.shouldCallX, false);
+    assert.equal(result.shouldBuildPlan, false);
+    assert.notEqual(result.status, CanonicalReadinessStatus.NO_POST_FOR_SLATE);
+  });
+
+  it("stale rows never reach the row-timing / GAME_ALREADY_STARTED check even when a plan happens to be supplied", () => {
+    // A plan should never actually be built alongside staleData by the real
+    // caller (see loadProductionHrCandidatePool), but this proves the
+    // ordering: staleData short-circuits BEFORE evaluateRowTimingSafety would
+    // ever inspect a stale row's already-past gameStartTime.
+    const plan = hrPlan(5, { gameStartTime: "2026-08-19T10:00:00.000Z" }); // already started relative to NOW
+    const result = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, plan, pendingConfirmationCount: 0, slateTiming: safeTiming(),
+      staleData: { dataDate: "2026-08-18", requestedSlateDate: SLATE, staleReason: "PRODUCTION_DATE_MISMATCH" }, now: NOW,
+    });
+    assert.equal(result.status, CanonicalReadinessStatus.WAITING_FOR_TODAYS_DATA);
+    assert.notEqual(result.reason, "GAME_ALREADY_STARTED");
+  });
+
+  it("later evaluation with fresh (non-stale) data can still reach READY_TO_PUBLISH", () => {
+    const stale = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, plan: null, pendingConfirmationCount: null, slateTiming: safeTiming(),
+      staleData: { dataDate: "2026-08-18", requestedSlateDate: SLATE, staleReason: "PRODUCTION_DATE_MISMATCH" }, now: NOW,
+    });
+    assert.equal(stale.status, CanonicalReadinessStatus.WAITING_FOR_TODAYS_DATA);
+
+    const fresh = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, plan: hrPlan(5), pendingConfirmationCount: 0, slateTiming: safeTiming(),
+      staleData: null, now: NOW,
+    });
+    assert.equal(fresh.status, CanonicalReadinessStatus.READY_TO_PUBLISH);
+  });
+
+  it("a receipt already FULLY_PUBLISHED still short-circuits before staleData is ever consulted", () => {
+    const result = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, existingReceipt: fullPrimaryReceipt(), plan: null, slateTiming: safeTiming(),
+      staleData: { dataDate: "2026-08-18", requestedSlateDate: SLATE, staleReason: "PRODUCTION_DATE_MISMATCH" }, now: NOW,
+    });
+    assert.equal(result.status, CanonicalReadinessStatus.ALREADY_PUBLISHED);
+  });
+
+  it("a genuinely terminally-expired slate still wins over staleData (no future run can help either way)", () => {
+    const result = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, plan: null, pendingConfirmationCount: null,
+      slateTiming: safeTiming({ isExpired: true }),
+      staleData: { dataDate: "2026-08-18", requestedSlateDate: SLATE, staleReason: "PRODUCTION_DATE_MISMATCH" }, now: NOW,
+    });
+    assert.equal(result.status, CanonicalReadinessStatus.NO_POST_FOR_SLATE);
+  });
+
+  it("missing raw date (never stamped) reports PRODUCTION_DATE_MISSING", () => {
+    const result = evaluateCanonicalPublication({
+      product: SOCIAL_PRODUCT.HR, slateDate: SLATE, plan: null, pendingConfirmationCount: null, slateTiming: safeTiming(),
+      staleData: { dataDate: null, requestedSlateDate: SLATE, staleReason: "PRODUCTION_DATE_MISSING" }, now: NOW,
+    });
+    assert.equal(result.status, CanonicalReadinessStatus.WAITING_FOR_TODAYS_DATA);
+    assert.equal(result.reason, "PRODUCTION_DATE_MISSING");
+  });
+});
+
 describe("isBeforeCanonicalCutover -- Phase 7 same-day cutover guard (applied by the caller, not evaluateCanonicalPublication itself)", () => {
   it("A. 2026-08-19 ET (the day the cutover PR merges) is blocked", () => {
     assert.equal(isBeforeCanonicalCutover("2026-08-19"), true);

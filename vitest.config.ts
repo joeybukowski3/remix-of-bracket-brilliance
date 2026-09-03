@@ -50,6 +50,9 @@ export default defineConfig({
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
+      // MLB X Sep 3 2026 fix -- Phase 1 stale-data guard for the K production
+      // candidate generator.
+      "scripts/generate-mlb-k-production-candidates.test.ts",
       // CFB Model V2 WU5 -- production /plays fetch client batching.
       "scripts/lib/cfb-cfbd-plays-client.test.ts",
       // CFB Model V2 WU5 checkpoint -- required-input fail-closed behavior.
