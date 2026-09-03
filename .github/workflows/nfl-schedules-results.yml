@@ -53,12 +53,66 @@ jobs:
           echo "NFL schedules generation failed after 3 attempts." >&2
           exit 1
 
+      - name: Refresh authoritative 2026 player-week stats
+        id: player-stats
+        continue-on-error: true
+        shell: bash
+        run: |
+          npm run nfl:player-week-stats-cache -- \
+            --seasons=2026 \
+            --partial-season=2026
+
+      # WU4C.1: team_opportunity resolution needs the same play-volume-team-game
+      # cache WU4A trains against (see nfl-prediction-outcome-resolver.ts).
+      # continue-on-error, same as the player-stats step above -- a failure
+      # here must never block spread/player resolution; it only leaves
+      # team_opportunity predictions "pending_team_stats" until it next
+      # succeeds (Part 10: team-level grading is never gated on player data,
+      # but it IS gated on this cache, which is its own, non-player, source).
+      - name: Refresh 2026 play-volume-team-game cache
+        id: play-volume
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:play-volume-cache -- --seasons=2026
+
+      - name: Resolve archived 2026 production predictions
+        shell: bash
+        run: |
+          resolver_args=(--season=2026)
+          if [ "${{ steps.player-stats.outcome }}" != "success" ]; then
+            echo "::warning::Player-week refresh failed; resolving spreads and team_opportunity only and leaving player predictions pending."
+            resolver_args+=(--prediction-types=spread,team_opportunity)
+          fi
+          if [ "${{ steps.play-volume.outcome }}" != "success" ]; then
+            echo "::warning::Play-volume cache refresh failed; team_opportunity predictions will resolve as pending_team_stats this run."
+          fi
+          npm run resolve:nfl-prediction-outcomes -- "${resolver_args[@]}"
+
+      # WU4C.1 Part 13: resolver counts (resolved/pending by type) are already
+      # printed by resolve-nfl-prediction-outcomes.ts's own JSON log line
+      # above -- this just labels it clearly for a scan of the job log.
+      - name: Log resolution summary
+        shell: bash
+        run: echo "[nfl:resolve-outcomes] see the JSON summary logged by the previous step for resolved/pending counts by prediction_type."
+
+      # WU4C.1 Part 11: WU3 materialization, wired directly after resolution.
+      # Derived-only (reads WU1 predictions + WU2 outcomes, never mutates
+      # either), deterministic (byte-identical on an unchanged rerun), and
+      # atomic (nfl-evaluation-materializer.ts writes via temp-file+rename).
+      # continue-on-error: a materializer bug must never block the far more
+      # load-bearing games/results/outcome commit above it in this same job.
+      - name: Materialize WU3 evaluations
+        id: materialize
+        continue-on-error: true
+        shell: bash
+        run: npm run materialize:nfl-evaluation -- --season=2026
+
       - name: Detect meaningful data changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json')" ]; then
-            echo "No NFL schedule/result changes."
+          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations')" ]; then
+            echo "No NFL source or prediction-outcome changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "NFL schedule/result changes detected."
@@ -83,6 +137,9 @@ jobs:
             console.log('All generated NFL JSON files are valid.');
           "
 
+      # WU4C.1: outcome and evaluation path validation is delegated to
+      # scripts/lib/nfl-prediction-archive-allowlist.mjs (single source of
+      # truth, unit-tested) rather than a regex duplicated inline here.
       - name: Commit and push refreshed data
         if: steps.changes.outputs.changed == 'true'
         shell: bash
@@ -92,12 +149,51 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/nfl/*/games.json public/data/nfl/*/results.json
 
+          while IFS= read -r status_line; do
+            cache_path="${status_line:3}"
+            if [[ ! "$cache_path" =~ ^data/nfl/nflverse/player-week-stats/(stats_player_week_2026\.csv|manifest\.json)$ ]]; then
+              echo "Refusing unexpected player-week cache path: $cache_path" >&2
+              exit 1
+            fi
+            git add -- "$cache_path"
+          done < <(git status --porcelain --untracked-files=all -- data/nfl/nflverse/player-week-stats)
+
+          # WU4C.1: 2026 play-volume-team-game cache (feeds team_opportunity
+          # resolution). Refreshed by the "Refresh 2026 play-volume-team-game
+          # cache" step above; absent entirely if that step failed.
+          while IFS= read -r status_line; do
+            cache_path="${status_line:3}"
+            if [[ ! "$cache_path" =~ ^data/nfl/nflverse/play-volume-team-game/(play_volume_team_game_2026\.csv|manifest\.json)$ ]]; then
+              echo "Refusing unexpected play-volume cache path: $cache_path" >&2
+              exit 1
+            fi
+            git add -- "$cache_path"
+          done < <(git status --porcelain --untracked-files=all -- data/nfl/nflverse/play-volume-team-game)
+
+          while IFS= read -r status_line; do
+            outcome_path="${status_line:3}"
+            node scripts/lib/nfl-prediction-archive-allowlist.mjs outcomes 2026 "$outcome_path"
+            git add -- "$outcome_path"
+          done < <(git status --porcelain --untracked-files=all -- data/nfl/prediction-outcomes)
+
+          # WU4C.1 Part 11: WU3 derived evaluation datasets, staged only when
+          # the materializer step above actually ran successfully.
+          if [ "${{ steps.materialize.outcome }}" = "success" ]; then
+            while IFS= read -r status_line; do
+              evaluation_path="${status_line:3}"
+              node scripts/lib/nfl-prediction-archive-allowlist.mjs evaluations 2026 "$evaluation_path"
+              git add -- "$evaluation_path"
+            done < <(git status --porcelain --untracked-files=all -- data/nfl/prediction-evaluations)
+          else
+            echo "::warning::WU3 materialization failed or was skipped; not staging data/nfl/prediction-evaluations this run."
+          fi
+
           if git diff --cached --quiet; then
-            echo "No staged NFL data changes."
+            echo "No staged NFL source or prediction-outcome changes."
             exit 0
           fi
 
-          git commit -m "data(nfl): refresh schedules and results"
+          git commit -m "data(nfl): refresh results and prediction outcomes"
 
           pushed=false
           for attempt in 1 2 3 4 5; do

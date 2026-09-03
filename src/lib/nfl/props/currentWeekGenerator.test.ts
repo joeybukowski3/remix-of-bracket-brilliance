@@ -8,6 +8,8 @@ import { buildQbPassingFeatureRow, buildQbStatGameLog, type NflQbStatGameLogEntr
 import { buildPlayerRushingStatLog, buildRushingFeatureRow, buildTeamTopRbCarryShareByGameTeam } from "./rushingFeatures";
 import { buildPlayerReceivingStatLog, buildReceivingFeatureRow, buildTeamTopTargetShareByGameTeam } from "./receivingFeatures";
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "./currentWeekGenerator";
+import { fitReceivingShareModel } from "./roleAllocation/receivingProduction";
+import type { NflRoleAllocationDataset, NflTeamPositionalPoolRow } from "./roleAllocation/types";
 import type { NflCurrentWeekRosterSourceRow } from "./currentWeekRosterUniverse";
 import type { NflQbPassingOutcome } from "./types/qbPassing";
 import type { NflRushingOutcome } from "./types/rushingOutcome";
@@ -157,6 +159,40 @@ describe("generateCurrentWeekYardageProjections", () => {
     const first = generateCurrentWeekYardageProjections(sources);
     const second = generateCurrentWeekYardageProjections(sources);
     expect(second).toEqual(first);
+  });
+
+  it("exposes archive-only fitted state and exact prediction inputs without changing any projection legs", () => {
+    const { sources } = buildLeague(2025, 1);
+    const captures: Parameters<NonNullable<NflCurrentWeekSources["archiveObserver"]>["onPrediction"]>[0][] = [];
+    let fitted: unknown = null;
+    const artifact = generateCurrentWeekYardageProjections({
+      ...sources,
+      archiveObserver: {
+        onFittedModels: (models) => { fitted = models; },
+        onPrediction: (capture) => captures.push(capture),
+      },
+    });
+    expect(fitted).not.toBeNull();
+    expect(captures.map((capture) => capture.row)).toEqual(artifact.rows);
+
+    const passing = captures.find((capture) => capture.row.market === "passing")!;
+    if (passing.row.market !== "passing") throw new Error("expected passing capture");
+    expect(passing.orderedVector).toHaveLength(16);
+    expect(passing.row.projectedYards).toBe(passing.row.directModelPrediction);
+    expect((passing.featureValues as { market: unknown }).market).toEqual(expect.objectContaining({ spread: null, total: null, impliedTeamTotal: null }));
+
+    const rushing = captures.find((capture) => capture.row.market === "rushing")!;
+    expect(rushing.row.market).toBe("rushing");
+    if (rushing.row.market !== "rushing") throw new Error("expected rushing capture");
+    expect(rushing.row.projectedYards).toBe(rushing.row.projectedCarries! * rushing.row.projectedYardsPerCarry!);
+    expect(rushing.row.featureSnapshot.carriesPerGame).toEqual((rushing.featureValues as { playerUsage: { carriesPerGame: unknown } }).playerUsage.carriesPerGame);
+
+    const receiving = captures.find((capture) => capture.row.market === "receiving")!;
+    expect(receiving.row.market).toBe("receiving");
+    if (receiving.row.market !== "receiving") throw new Error("expected receiving capture");
+    expect(receiving.row.projectedYards).toBe(receiving.row.projectedTargets! * receiving.row.projectedYardsPerTarget!);
+    expect(receiving.row.featureSnapshot.targetsPerGame).toEqual((receiving.featureValues as { playerUsage: { targetsPerGame: unknown } }).playerUsage.targetsPerGame);
+    expect(receiving.row).toEqual(expect.objectContaining({ roleSource: expect.any(String), historyStatus: expect.any(String) }));
   });
 
   it("never lets a target-week outcome mutation change that week's own projection (adversarial leakage test)", () => {
@@ -441,5 +477,97 @@ describe("Phase 9.2 depth-chart role integration", () => {
     const first = generateCurrentWeekYardageProjections(sources);
     const second = generateCurrentWeekYardageProjections(sources);
     expect(second).toEqual(first);
+  });
+});
+
+describe("WU4B S6 — receiving v2 (finite targetable-pass pool allocation)", () => {
+  function tinyReceivingShareModel() {
+    const poolRow = (season: number, week: number, team: string): NflTeamPositionalPoolRow => ({
+      schemaVersion: "nfl-role-allocation-dataset-v1",
+      season, week, gameId: `${season}_${String(week).padStart(2, "0")}_X_${team}`, team, opponent: "z",
+      gameDateUtc: `${season}-09-1${week}T17:00:00.000Z`,
+      designedRushes: 25, dropbacks: 35, teamPassAttempts: 30, sacks: 3, scrambles: 2, teamTargets: 29,
+      rawCarries: { qb: 3, rb: 21, wrTe: 1 }, qbDesignedRushes: 3, rushPools: { qb: 3, rb: 21, wrTe: 1 },
+      poolCoverageRatio: 1, residualDesignedRushes: 0, rushPoolShares: { qb: 0.12, rb: 0.84, wrTe: 0.04 },
+      targetable: { ratioActual: 30 / 35, sackRateActual: 3 / 35, scrambleRateActual: 2 / 35 },
+    });
+    const recShare = (season: number, week: number, pid: string, pos: "WR" | "TE" | "RB", rank: number, targets: number) => ({
+      schemaVersion: "nfl-role-allocation-dataset-v1" as const,
+      season, week, gameId: `${season}_${String(week).padStart(2, "0")}_X_aaa`, team: "aaa", opponent: "z",
+      playerId: pid, playerName: pid, gameDateUtc: `${season}-09-1${week}T17:00:00.000Z`,
+      targets, receivingYards: targets * 9, priorYardsPerTarget: 9, shareOfTargetable: targets / 30, shareOfDropbacks: targets / 35,
+      role: {
+        depthRankProxy: rank, isProjectedStarter: rank === 1, position: pos, currentTeam: "aaa", priorTeam: "aaa", teamChanged: false,
+        priorGamesPlayed: week, noHistory: false, limitedHistory: false, priorTargetShare: targets / 30, priorTargetsPerGame: targets,
+        rosterCompetitionCount: 4, concentration: 0.3,
+      },
+    });
+    const dataset: NflRoleAllocationDataset = {
+      schemaVersion: "nfl-role-allocation-dataset-v1", generatedAt: "2026-01-01T00:00:00.000Z", seasons: [2024],
+      teamPositionalPools: [poolRow(2024, 1, "aaa"), poolRow(2024, 2, "aaa"), poolRow(2024, 1, "bbb"), poolRow(2024, 2, "bbb")],
+      rushShares: [],
+      receivingShares: [1, 2].flatMap((w) => [
+        recShare(2024, w, "WR_aaa", "WR", 1, 11),
+        recShare(2024, w, "WR2_aaa", "WR", 2, 7),
+        recShare(2024, w, "TE_aaa", "TE", 1, 6),
+        recShare(2024, w, "RB_aaa", "RB", 1, 4),
+      ]),
+      qa: {} as never,
+    };
+    return fitReceivingShareModel(dataset);
+  }
+
+  it("emits v2 model version + allocation diagnostics and allocates the team targetable pool exactly", () => {
+    const { sources } = buildLeague(2025, 1);
+    const v1 = generateCurrentWeekYardageProjections(sources);
+    const v2 = generateCurrentWeekYardageProjections({
+      ...sources,
+      receivingShareModel: tinyReceivingShareModel(),
+      teamOpportunityDropbacksByTeam: new Map([["aaa", 36], ["bbb", 33]]),
+    });
+    expect(v2.modelVersions.receiving).toBe("nfl-receiving-share-x-efficiency-v2.0.0");
+    const v2Receiving = v2.rows.filter((r) => r.market === "receiving") as Extract<(typeof v2.rows)[number], { market: "receiving" }>[];
+    expect(v2Receiving.length).toBeGreaterThan(0);
+    expect(v2Receiving.every((r) => r.modelVersion === "nfl-receiving-share-x-efficiency-v2.0.0")).toBe(true);
+    expect(v2Receiving.every((r) => r.allocationDiagnostics != null)).toBe(true);
+
+    for (const team of ["aaa", "bbb"] as const) {
+      const teamRows = v2Receiving.filter((r) => r.team === team);
+      if (teamRows.length === 0) continue;
+      const pool = teamRows[0].allocationDiagnostics!.projectedTargetablePool!;
+      const sum = teamRows.reduce((s, r) => s + (r.projectedTargets ?? 0), 0);
+      expect(sum).toBeCloseTo(pool, 4); // player targets sum EXACTLY to the finite targetable pool
+      expect(sum).toBeLessThan(teamRows[0].allocationDiagnostics!.projectedTeamOpportunity!); // below the dropback count
+    }
+
+    // efficiency leg unchanged: v2 YPT equals v1 YPT for the same player
+    const v1Receiving = v1.rows.filter((r) => r.market === "receiving");
+    for (const r2 of v2Receiving) {
+      const r1 = v1Receiving.find((x) => x.playerId === r2.playerId);
+      if (r1 && r1.market === "receiving") expect(r2.projectedYardsPerTarget).toBeCloseTo(r1.projectedYardsPerTarget ?? 0, 9);
+      expect(r2.projectedYards).toBeCloseTo((r2.projectedTargets ?? 0) * (r2.projectedYardsPerTarget ?? 0), 6);
+    }
+  });
+
+  it("falls back to v1 per-team when that team has no WU4A opportunity row", () => {
+    const { sources } = buildLeague(2025, 1);
+    const v2 = generateCurrentWeekYardageProjections({
+      ...sources,
+      receivingShareModel: tinyReceivingShareModel(),
+      teamOpportunityDropbacksByTeam: new Map([["aaa", 36]]), // bbb missing
+    });
+    const bbb = (v2.rows.filter((r) => r.market === "receiving") as Extract<(typeof v2.rows)[number], { market: "receiving" }>[]).filter((r) => r.team === "bbb");
+    for (const r of bbb) {
+      expect(r.allocationDiagnostics?.allocationFallbackReason).toBe("noTeamOpportunity");
+      expect(r.allocationDiagnostics?.projectedTargetablePool).toBeNull();
+    }
+  });
+
+  it("v1 behaviour is byte-identical when no share model is supplied", () => {
+    const { sources } = buildLeague(2025, 1);
+    const a = generateCurrentWeekYardageProjections(sources);
+    const b = generateCurrentWeekYardageProjections({ ...sources });
+    expect(b).toEqual(a);
+    expect(a.modelVersions.receiving).toBe("nfl-receiving-targets-x-shrunk-ypt-production-2022-2025-v1");
   });
 });

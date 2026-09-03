@@ -203,6 +203,45 @@ export type NflCurrentWeekRushingRow = NflCurrentWeekRowIdentity & {
   diagnostics: { gamesWithCarriesPriorThisSeason: number; recentTeamTopCarryShareConcentration: number | null };
 };
 
+/**
+ * WU4B S6 diagnostics — present only when the receiving row was produced by
+ * `nfl-receiving-share-x-efficiency-v2.0.0` (finite targetable-pass pool
+ * allocation). Absent on v1 rows. Additive: no existing field changes
+ * meaning, and every archived v1 receiving prediction stays valid under v1.
+ */
+export type NflReceivingAllocationDiagnostics = {
+  allocationModelVersion: string;
+  /** WU4B S6 production packaging: the committed fitted artifact's contentHash, null when the model wasn't loaded from an artifact (e.g. built directly from the research dataset in tests). */
+  fittedArtifactHash: string | null;
+  /** Last season represented in the artifact's fitted state, null when unknown. */
+  trainedThroughSeason: number | null;
+  /** WU4A projected dropbacks for this player's team, or null when the pool was unavailable (v1 fallback). */
+  projectedTeamOpportunity: number | null;
+  /** dropbacks reduced by the calibrated targetable ratio. */
+  projectedTargetablePool: number | null;
+  impliedTargetableRatio: number | null;
+  /** this player's normalised share of the targetable pool. */
+  projectedOpportunityShare: number | null;
+  /** the player's point-in-time prior target share fed into the model. */
+  priorOpportunityShare: number | null;
+  /** the player's most recent prior-season team (null if none). */
+  priorTeam: string | null;
+  /** evidence vector used for the share allocation (deterministic, diagnostic). */
+  roleConfidenceEvidence: {
+    depthRank: number | null;
+    roleSourced: boolean;
+    teamChanged: boolean | null;
+    noHistory: boolean;
+    limitedHistory: boolean;
+    priorGamesPlayed: number;
+    rosterCompetitionCount: number | null;
+  };
+  /** "none" | "noTeamOpportunity" (v1 fallback for the whole team) | "equalSplit" (no usable history for any receiver). */
+  allocationFallbackReason: "none" | "noTeamOpportunity" | "equalSplit";
+  /** team-level residual = targetable pool − sum(allocated targets); ~0 by construction, surfaced not hidden. */
+  teamResidualUnallocated: number | null;
+};
+
 export type NflCurrentWeekReceivingRow = NflCurrentWeekRowIdentity & {
   market: "receiving";
   positionSegment: "RB" | "WR" | "TE";
@@ -214,6 +253,8 @@ export type NflCurrentWeekReceivingRow = NflCurrentWeekRowIdentity & {
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
   featureSnapshot: NflCurrentWeekReceivingFeatureSnapshot;
   diagnostics: { gamesWithTargetsPriorThisSeason: number };
+  /** WU4B S6: present only for `nfl-receiving-share-x-efficiency-v2.0.0` rows. */
+  allocationDiagnostics?: NflReceivingAllocationDiagnostics;
 };
 
 export type NflCurrentWeekProjectionRow = NflCurrentWeekPassingRow | NflCurrentWeekRushingRow | NflCurrentWeekReceivingRow;

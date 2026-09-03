@@ -76,6 +76,7 @@
     "nfl:injury-cache": "node scripts/refresh-nfl-injury-source-cache.mjs",
     "nfl:depth-chart-cache": "node scripts/refresh-nfl-depth-chart-source-cache.mjs",
     "nfl:weekly-roster-cache": "node scripts/refresh-nfl-weekly-roster-cache.mjs",
+    "nfl:player-week-stats-cache": "node scripts/refresh-fantasy-player-week-source-cache.mjs --output-dir=data/nfl/nflverse/player-week-stats",
     "nfl:matchup-injuries": "node scripts/generate-nfl-matchup-injuries.mjs",
     "nfl:matchup-market": "node scripts/generate-nfl-matchup-market.mjs",
     "nfl:epa-cache": "node scripts/refresh-nfl-epa-source-cache.mjs",
@@ -102,6 +103,9 @@
     "nfl:receiving-baseline-competition": "tsx scripts/run-nfl-receiving-baseline-competition.ts",
     "nfl:matchup-score-research": "tsx scripts/run-nfl-matchup-score-research.ts",
     "nfl:current-week-projections": "tsx scripts/generate-nfl-current-week-yardage-projections.ts",
+    "nfl:fit-receiving-production-model": "tsx scripts/analysis/nfl-role-allocation/fit-receiving-production-model.ts",
+    "nfl:team-opportunity": "tsx scripts/generate-nfl-team-opportunity.ts",
+    "nfl:team-opportunity-calibration": "tsx scripts/analysis/nfl-team-opportunity-calibration/evaluate.ts",
     "nfl:resolve-current-week": "node scripts/resolve-nfl-current-week.mjs",
     "nfl:validate-current-week-projections": "node scripts/validate-nfl-current-week-yardage-projections.mjs",
     "market:betting-lines:refresh": "tsx scripts/market/refresh-betting-lines.ts",
@@ -160,7 +164,9 @@
     "cfb:research:phase8": "vite-node scripts/cfb-research-phase8-run.ts",
     "cfb:research:phase9": "vite-node scripts/cfb-research-phase9-run.ts",
     "sixteen-zero:stats": "vite-node scripts/audit-sixteen-zero-statistics.ts --seasons 10000 --drafts 120",
-    "sixteen-zero:browser": "node scripts/audit/sixteen-zero-browser-check.mjs"
+    "sixteen-zero:browser": "node scripts/audit/sixteen-zero-browser-check.mjs",
+    "resolve:nfl-prediction-outcomes": "tsx scripts/resolve-nfl-prediction-outcomes.ts",
+    "materialize:nfl-evaluation": "tsx scripts/materialize-nfl-evaluation.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
