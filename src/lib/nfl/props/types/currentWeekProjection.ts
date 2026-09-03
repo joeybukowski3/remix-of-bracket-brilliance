@@ -211,6 +211,10 @@ export type NflCurrentWeekRushingRow = NflCurrentWeekRowIdentity & {
  */
 export type NflReceivingAllocationDiagnostics = {
   allocationModelVersion: string;
+  /** WU4B S6 production packaging: the committed fitted artifact's contentHash, null when the model wasn't loaded from an artifact (e.g. built directly from the research dataset in tests). */
+  fittedArtifactHash: string | null;
+  /** Last season represented in the artifact's fitted state, null when unknown. */
+  trainedThroughSeason: number | null;
   /** WU4A projected dropbacks for this player's team, or null when the pool was unavailable (v1 fallback). */
   projectedTeamOpportunity: number | null;
   /** dropbacks reduced by the calibrated targetable ratio. */

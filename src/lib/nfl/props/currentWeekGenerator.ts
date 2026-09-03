@@ -518,6 +518,8 @@ export function generateCurrentWeekYardageProjections(sources: NflCurrentWeekSou
         ? {
             allocationDiagnostics: {
               allocationModelVersion: shareModel!.allocationModelVersion,
+              fittedArtifactHash: shareModel!.fittedArtifactHash ?? null,
+              trainedThroughSeason: shareModel!.trainedThroughSeason ?? null,
               projectedTeamOpportunity: alloc.dropbacks,
               projectedTargetablePool: alloc.targetablePool,
               impliedTargetableRatio: alloc.impliedRatio,

@@ -22,10 +22,10 @@ import {
   computePoolLeagueConstants,
   projectTargetablePass,
   type NflPoolLeagueConstants,
+  type NflTeamPoolTendencySourceRow,
 } from "./poolModels";
 import { fitShareModel, predictRawShare, type NflShareModelFit, type NflShareObservation } from "./shareModels";
 import { allocatePool } from "./allocate";
-import type { NflTeamPositionalPoolRow } from "./types";
 
 export const NFL_RECEIVING_V2_MODEL_VERSION = "nfl-receiving-share-x-efficiency-v2.0.0" as const;
 export const NFL_RECEIVING_V2_ALLOCATION_MODEL = "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0" as const;
@@ -36,8 +36,11 @@ export type NflReceivingShareModel = {
   fit: NflShareModelFit;
   league: NflPoolLeagueConstants;
   leagueYardsPerTarget: number;
-  poolRows: NflTeamPositionalPoolRow[];
+  poolRows: NflTeamPoolTendencySourceRow[];
   datasetSeasons: number[];
+  /** Present only when the model was loaded from a committed production artifact (see `productionArtifact.ts`). */
+  fittedArtifactHash?: string;
+  trainedThroughSeason?: number;
 };
 
 /** Fit the receiving share model from the committed role-allocation research dataset. Deterministic. */
