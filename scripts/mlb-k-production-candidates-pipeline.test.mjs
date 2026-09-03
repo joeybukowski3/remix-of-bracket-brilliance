@@ -43,6 +43,10 @@ function pitcher({ gameKey, gameId, pitcher, pitcherId, team, opponent, kLine, p
 // well below kLine), each in its own distinct game -- 6 qualified candidates
 // total, matching buildKPropBestBets(rows, 3)'s per-side cap exactly.
 const FIXTURE_RAW = {
+  // Phase 1 stale-data guard (generate-mlb-k-production-candidates.ts):
+  // this must match the --slate-date passed below, or the generator now
+  // fails closed with an empty candidatePool instead of deriving candidates.
+  date: "2026-08-22",
   generatedAt: "2026-08-21T12:00:00.000Z",
   games: [
     game("AAA@BBB", "2026-08-22T00:00:00Z"), game("CCC@DDD", "2026-08-22T00:00:00Z"), game("EEE@FFF", "2026-08-22T00:00:00Z"),
@@ -114,6 +118,22 @@ describe("K production pipeline (tsx generator -> .mjs loader -> composeSocialPo
       for (const row of plan.rows) {
         assert.ok(candidatePitchers.has(row.playerName), `composed row "${row.playerName}" was not present in the candidate pool -- composition must never fabricate a candidate`);
       }
+    });
+  });
+
+  it("Phase 1 stale-data guard: raw.date for a different day than --slate-date -> empty candidatePool, staleData surfaced, no fabricated candidates", () => {
+    withFixtureDir(({ rawPath, outputPath }) => {
+      const staleRaw = { ...FIXTURE_RAW, date: "2026-08-21" }; // one day off from --slate-date below
+      writeFileSync(rawPath, JSON.stringify(staleRaw), "utf8");
+
+      const TSX_CLI = path.join(ROOT, "node_modules", "tsx", "dist", "cli.mjs");
+      execFileSync(process.execPath, [TSX_CLI, "scripts/generate-mlb-k-production-candidates.ts", `--raw=${rawPath}`, `--output=${outputPath}`, "--slate-date=2026-08-22"], { cwd: ROOT, encoding: "utf8" });
+
+      const result = loadProductionKCandidatePool({ path: outputPath });
+      assert.equal(result.staleData, true);
+      assert.equal(result.dataDate, "2026-08-21");
+      assert.equal(result.requestedSlateDate, "2026-08-22");
+      assert.deepEqual(result.candidatePool, []);
     });
   });
 });

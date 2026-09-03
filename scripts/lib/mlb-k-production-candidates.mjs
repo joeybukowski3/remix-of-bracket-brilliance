@@ -32,7 +32,8 @@ function validateCandidate(candidate, index) {
 /**
  * @param {object} params
  * @param {string} params.path  path to the JSON artifact written by generate-mlb-k-production-candidates.ts
- * @returns {{ candidatePool: Array<object>, pendingConfirmationCount: number, generatedAt: string|null, sourceSummary: string[] }}
+ * @returns {{ candidatePool: Array<object>, pendingConfirmationCount: number, generatedAt: string|null, sourceSummary: string[],
+ *             staleData?: true, dataDate?: (string|null), requestedSlateDate?: (string|null), staleReason?: string }}
  */
 export function loadProductionKCandidatePool({ path: candidatesPath }) {
   if (!candidatesPath) {
@@ -47,6 +48,26 @@ export function loadProductionKCandidatePool({ path: candidatesPath }) {
     payload = JSON.parse(readFileSync(candidatesPath, "utf8"));
   } catch (error) {
     throw new Error(`K production candidates file is not valid JSON (${candidatesPath}): ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  // Phase 1 stale-data guard: generate-mlb-k-production-candidates.ts writes
+  // this sentinel (empty candidatePool, staleData: true) instead of throwing
+  // when the underlying hr-props-raw.json's own stamped date doesn't match
+  // the requested slate -- passed through here as an explicit result rather
+  // than a thrown error so the caller can report the non-terminal
+  // WAITING_FOR_TODAYS_DATA readiness status (see mlb-x-canonical-readiness.mjs)
+  // instead of failing the workflow run.
+  if (payload?.staleData === true) {
+    return {
+      candidatePool: [],
+      pendingConfirmationCount: 0,
+      generatedAt: payload.generatedAt ?? null,
+      sourceSummary: Array.isArray(payload.sourceSummary) ? payload.sourceSummary : [],
+      staleData: true,
+      dataDate: payload.dataDate ?? null,
+      requestedSlateDate: payload.requestedSlateDate ?? null,
+      staleReason: payload.staleReason ?? "PRODUCTION_DATE_MISMATCH",
+    };
   }
 
   if (!Array.isArray(payload?.candidatePool)) {
@@ -64,5 +85,6 @@ export function loadProductionKCandidatePool({ path: candidatesPath }) {
     pendingConfirmationCount: 0,
     generatedAt: payload.generatedAt ?? null,
     sourceSummary: Array.isArray(payload.sourceSummary) ? payload.sourceSummary : [],
+    dataDate: payload.dataDate ?? null,
   };
 }

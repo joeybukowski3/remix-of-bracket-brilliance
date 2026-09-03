@@ -41,9 +41,23 @@ on:
       - .github/workflows/generate-mlb-hr-props.yml
       - scripts/lib/mlb-slate-gate.mjs
 
-# Share one lock with the other automated workflows that commit generated data to main.
+# Sep 3 2026 RCA: this workflow shared main-data-writers with 18 unrelated
+# workflows (NFL, PGA, CFB, grading, numerology, etc.), so ad-hoc
+# workflow_dispatch runs of e.g. nfl-yardage-projections.yml could -- and did
+# -- queue ahead of time-sensitive MLB HR/K data generation, delaying it by
+# hours and causing mlb-x-canonical.yml to evaluate stale/late data.
+#
+# Dedicated lock, shared ONLY with props-value-refresh.yml: that workflow
+# reads AND writes this same public/data/mlb/hr-props-raw.json (injecting
+# odds into the file this workflow regenerates from scratch), so it is a
+# direct same-file writer, not an unrelated workflow -- removing
+# synchronization between the two would let a concurrent odds-injection run
+# either clobber a fresh generation or inject odds into a stale local
+# checkout that then overwrites the newly generated file. Every other
+# main-data-writers member (NFL/PGA/CFB/grading/numerology/etc.) never
+# touches this file and stays on the shared lock unchanged.
 concurrency:
-  group: main-data-writers-${{ github.repository }}
+  group: mlb-production-data-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:

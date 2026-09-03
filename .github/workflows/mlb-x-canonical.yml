@@ -7,12 +7,6 @@ name: MLB X Canonical Publisher
 # rescue gated behind an explicit typed confirmation). No interval exists
 # where both an old and the new system can publish the same product/date.
 #
-# Cadence: reuses poll-mlb-x-posts.yml's exact pregame cron window (every 15
-# minutes, roughly 8am-10pm ET across both DST offsets) rather than inventing
-# a new one -- canonical readiness (mlb-x-canonical-readiness.mjs) decides
-# per firing whether there is anything to do; most firings outside an actual
-# ready window are a routine, cheap NO_POST_YET.
-#
 # HR and K are fully independent jobs with independent concurrency groups --
 # one product's failure (transient X API error, image render failure,
 # missing production data) can never block, delay, or duplicate the other's
@@ -21,10 +15,38 @@ name: MLB X Canonical Publisher
 # the concurrency groups below only prevent two overlapping scheduled runs
 # for the SAME product from racing each other before that lease/receipt
 # becomes visible.
+#
+# Sep 3 2026 RCA / fix: the old every-15-minutes cron was itself degraded by
+# GitHub Actions scheduling pressure (ticks fired hours apart or not at all),
+# and even when it did fire it only ever evaluated whatever production data
+# happened to already be committed -- it never tried to get fresher data. This
+# workflow now (1) runs on a small, fixed 9/10/11/12 AM ET schedule instead of
+# relying on a high-frequency cron GitHub does not reliably deliver, and (2)
+# a single upstream `ensure-data` job checks committed production-data
+# freshness for today's ET slate and, if stale, dispatches (or reuses an
+# already-running) "Generate MLB Data" run and does a bounded recheck BEFORE
+# either publish job evaluates readiness -- see the ensure-data job below.
+# This absorbs mlb-data-watchdog.yml's freshness-check-and-dispatch
+# responsibility directly into the one publisher, rather than depending on a
+# second workflow's own (equally degradable) schedule to land in time.
+#
+# ensure-data is the ONLY place in this workflow (and the only scheduled
+# workflow anywhere) that dispatches generate-mlb-hr-props.yml -- publish-hr
+# and publish-k never independently check freshness or dispatch the
+# generator; they only consume ensure-data's data_ready output. This avoids
+# duplicating the freshness/dispatch logic (and its idempotency check)
+# across two jobs, and guarantees at most one dispatch per canonical run
+# regardless of how many products need fresh data.
 on:
   schedule:
-    - cron: "*/15 12-23 * * *"
-    - cron: "*/15 0-2 * * *"
+    - cron: "0 9 * * *"
+      timezone: "America/New_York" # 9:00 AM ET
+    - cron: "0 10 * * *"
+      timezone: "America/New_York" # 10:00 AM ET
+    - cron: "0 11 * * *"
+      timezone: "America/New_York" # 11:00 AM ET
+    - cron: "0 12 * * *"
+      timezone: "America/New_York" # 12:00 PM ET
   workflow_dispatch: {}
 
 permissions:
@@ -35,7 +57,117 @@ env:
   MLB_X_STATE_BRANCH: automation/mlb-x-state
 
 jobs:
+  # Single upstream freshness/dispatch authority. slate/date -> ensure-data ->
+  # {publish-hr, publish-k}. Neither publish job may independently check
+  # freshness or dispatch generate-mlb-hr-props.yml -- see the module-level
+  # comment above.
+  ensure-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write # required for `gh run list` / `gh workflow run`
+    outputs:
+      slate_date: ${{ steps.et_date.outputs.date }}
+      initial_data_date: ${{ steps.ensure_fresh.outputs.initial_data_date }}
+      initial_fresh: ${{ steps.ensure_fresh.outputs.initial_fresh }}
+      generator_active: ${{ steps.ensure_fresh.outputs.generator_active }}
+      generator_dispatched: ${{ steps.ensure_fresh.outputs.generator_dispatched }}
+      final_data_date: ${{ steps.ensure_fresh.outputs.final_data_date }}
+      data_ready: ${{ steps.ensure_fresh.outputs.data_ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+
+      # Same ET-slate-date derivation already used by poll-mlb-x-posts.yml's
+      # plan job and mlb-x-editions.yml's audit-eod job -- never the runner's
+      # raw UTC date, which would misidentify the slate around midnight ET.
+      - name: Compute ET slate date
+        id: et_date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # Sep 3 2026 fix. Checks whether the committed production artifact
+      # (public/data/mlb/hr-props-raw.json, via the existing
+      # mlb-data-freshness.mjs -- the same freshness layer
+      # mlb-data-watchdog.yml already used) belongs to today's ET slate. If
+      # not: reuses the watchdog's own idempotency check (an in-flight
+      # generate-mlb-hr-props.yml run is never double-dispatched) before
+      # dispatching it -- exactly ONE dispatch per canonical run, here and
+      # nowhere else -- then does a bounded recheck against the freshly
+      # fetched origin/main copy of the file, never trusting the dispatched
+      # run's own success alone. Never fails the job: if data is still stale
+      # after the bounded wait, data_ready=false and both publish jobs below
+      # cleanly no-op as WAITING_FOR_TODAYS_DATA without ever calling X.
+      - name: Ensure today's production data is fresh
+        id: ensure_fresh
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLATE_DATE: ${{ steps.et_date.outputs.date }}
+        run: |
+          set -uo pipefail
+
+          INITIAL_JSON="$(node scripts/lib/mlb-data-freshness.mjs --date="$SLATE_DATE" --json)"
+          INITIAL_STATUS="$(echo "$INITIAL_JSON" | jq -r '.status')"
+          INITIAL_DATE="$(echo "$INITIAL_JSON" | jq -r '.artifacts.hrProps.artifactDate // "unknown"')"
+          INITIAL_FRESH="false"
+          [ "$INITIAL_STATUS" = "current" ] && INITIAL_FRESH="true"
+          echo "initial_data_date=$INITIAL_DATE" >> "$GITHUB_OUTPUT"
+          echo "initial_fresh=$INITIAL_FRESH" >> "$GITHUB_OUTPUT"
+          echo "[ensure_fresh] initial: status=$INITIAL_STATUS (fresh=$INITIAL_FRESH) date=$INITIAL_DATE expected=$SLATE_DATE"
+
+          if [ "$INITIAL_FRESH" = "true" ]; then
+            echo "generator_active=false" >> "$GITHUB_OUTPUT"
+            echo "generator_dispatched=false" >> "$GITHUB_OUTPUT"
+            echo "final_data_date=$INITIAL_DATE" >> "$GITHUB_OUTPUT"
+            echo "data_ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Idempotency: the exact same "already queued/in-progress" check
+          # mlb-data-watchdog.yml's own dispatch step uses, so this can never
+          # stack a second dispatch on top of one the watchdog or a person
+          # already started.
+          IN_FLIGHT="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow generate-mlb-hr-props.yml --branch main --json status --jq '[.[] | select(.status == "queued" or .status == "in_progress")] | length' 2>/dev/null || echo 0)"
+
+          if [ "$IN_FLIGHT" != "0" ]; then
+            echo "[ensure_fresh] generate-mlb-hr-props.yml already in flight ($IN_FLIGHT run(s)) -- reusing, not re-dispatching."
+            echo "generator_active=true" >> "$GITHUB_OUTPUT"
+            echo "generator_dispatched=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "[ensure_fresh] dispatching generate-mlb-hr-props.yml on main (the only dispatch in this workflow)."
+            gh workflow run generate-mlb-hr-props.yml --repo "$GITHUB_REPOSITORY" --ref main
+            echo "generator_active=false" >> "$GITHUB_OUTPUT"
+            echo "generator_dispatched=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Bounded wait/recheck. Never trusts the dispatched run's workflow
+          # success alone -- each attempt re-fetches origin/main's actual
+          # committed file and re-derives its raw production date via the
+          # same mlb-data-freshness.mjs check used above.
+          FINAL_STATUS="$INITIAL_STATUS"
+          FINAL_DATE="$INITIAL_DATE"
+          ATTEMPTS=8
+          for i in $(seq 1 $ATTEMPTS); do
+            sleep 45
+            git fetch origin main --quiet
+            git checkout origin/main -- public/data/mlb/hr-props-raw.json
+            RECHECK_JSON="$(node scripts/lib/mlb-data-freshness.mjs --date="$SLATE_DATE" --json)"
+            FINAL_STATUS="$(echo "$RECHECK_JSON" | jq -r '.status')"
+            FINAL_DATE="$(echo "$RECHECK_JSON" | jq -r '.artifacts.hrProps.artifactDate // "unknown"')"
+            echo "[ensure_fresh] recheck $i/$ATTEMPTS: status=$FINAL_STATUS date=$FINAL_DATE"
+            if [ "$FINAL_STATUS" = "current" ]; then break; fi
+          done
+
+          FINAL_READY="false"
+          [ "$FINAL_STATUS" = "current" ] && FINAL_READY="true"
+          echo "final_data_date=$FINAL_DATE" >> "$GITHUB_OUTPUT"
+          echo "data_ready=$FINAL_READY" >> "$GITHUB_OUTPUT"
+
   publish-hr:
+    needs: ensure-data
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -47,24 +179,42 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
 
-      # Same ET-slate-date derivation already used by poll-mlb-x-posts.yml's
-      # plan job and mlb-x-editions.yml's audit-eod job -- never the runner's
-      # raw UTC date, which would misidentify the slate around midnight ET.
-      - name: Compute ET slate date
-        id: et_date
+      - name: No-op -- waiting for today's data
+        if: needs.ensure-data.outputs.data_ready != 'true'
         shell: bash
-        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo "### MLB X Canonical -- HR (${{ needs.ensure-data.outputs.slate_date }})"
+            echo ""
+            echo "**WAITING_FOR_TODAYS_DATA** -- production data for today's ET slate was not ready after ensure-data's bounded wait. No plan was built, no X call was made. Clean no-op; a later scheduled run will re-check."
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Slate date | ${{ needs.ensure-data.outputs.slate_date }} |"
+            echo "| Initial production data date | ${{ needs.ensure-data.outputs.initial_data_date }} |"
+            echo "| Initial fresh? | ${{ needs.ensure-data.outputs.initial_fresh }} |"
+            echo "| Generator already active? | ${{ needs.ensure-data.outputs.generator_active }} |"
+            echo "| Generator dispatched? | ${{ needs.ensure-data.outputs.generator_dispatched }} |"
+            echo "| Final production data date | ${{ needs.ensure-data.outputs.final_data_date }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Playwright
+        if: needs.ensure-data.outputs.data_ready == 'true'
+        run: npx playwright install --with-deps chromium
 
       - name: Evaluate and publish canonical HR
+        id: publish_hr
+        if: needs.ensure-data.outputs.data_ready == 'true'
+        shell: bash
         run: |
           node scripts/post-mlb-social-canonical.mjs \
-            --product=hr --slate-date="${{ steps.et_date.outputs.date }}" \
+            --product=hr --slate-date="${{ needs.ensure-data.outputs.slate_date }}" \
             --source=production --live \
             --image-directory=artifacts/mlb-x-canonical-images \
             --lease-directory=artifacts/mlb-x-canonical-leases \
-            --state-work-dir=.mlb-x-canonical-state-work-hr
+            --state-work-dir=.mlb-x-canonical-state-work-hr \
+            | tee /tmp/canonical-hr-output.log
         env:
           # Separate clone from the checked-out repo, same rationale as every
           # other MLB X poster's MLB_X_STATE_REMOTE_URL -- never echo this URL.
@@ -79,7 +229,38 @@ jobs:
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
+      - name: Write HR step summary
+        if: needs.ensure-data.outputs.data_ready == 'true' && always()
+        shell: bash
+        run: |
+          extract() {
+            grep -m1 "\"$1\":" /tmp/canonical-hr-output.log 2>/dev/null \
+              | sed -E "s/^[[:space:]]*\"$1\":[[:space:]]*\"?([^\",]*)\"?,?[[:space:]]*\$/\1/"
+          }
+          {
+            echo "### MLB X Canonical -- HR (${{ needs.ensure-data.outputs.slate_date }})"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Slate date | ${{ needs.ensure-data.outputs.slate_date }} |"
+            echo "| Initial production data date | ${{ needs.ensure-data.outputs.initial_data_date }} |"
+            echo "| Initial fresh? | ${{ needs.ensure-data.outputs.initial_fresh }} |"
+            echo "| Generator already active? | ${{ needs.ensure-data.outputs.generator_active }} |"
+            echo "| Generator dispatched? | ${{ needs.ensure-data.outputs.generator_dispatched }} |"
+            echo "| Final production data date | ${{ needs.ensure-data.outputs.final_data_date }} |"
+            echo "| data_ready | ${{ needs.ensure-data.outputs.data_ready }} |"
+            echo "| HR readiness status | $(extract readinessStatus) |"
+            echo "| HR readiness reason | $(extract reason) |"
+            echo "| HR receipt state | $(extract receiptState) |"
+            echo "| HR wouldCallX | $(extract wouldCallX) |"
+            echo "| Publication cutoff | $(extract publicationCutoff) |"
+            echo "| Earliest included game start | $(extract earliestIncludedGameStart) |"
+            echo ""
+            echo "_A NO_POST_YET / WAITING_FOR_TODAYS_DATA / NO_POST_FOR_SLATE readiness status above is an expected, successful no-op, not a failure -- see the reason field for why nothing was posted this run._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   publish-k:
+    needs: ensure-data
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,33 +272,60 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
 
-      - name: Compute ET slate date
-        id: et_date
+      - name: No-op -- waiting for today's data
+        if: needs.ensure-data.outputs.data_ready != 'true'
         shell: bash
-        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo "### MLB X Canonical -- K (${{ needs.ensure-data.outputs.slate_date }})"
+            echo ""
+            echo "**WAITING_FOR_TODAYS_DATA** -- production data for today's ET slate was not ready after ensure-data's bounded wait. K candidates were never generated, no plan was built, no X call was made. Clean no-op; a later scheduled run will re-check."
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Slate date | ${{ needs.ensure-data.outputs.slate_date }} |"
+            echo "| Initial production data date | ${{ needs.ensure-data.outputs.initial_data_date }} |"
+            echo "| Initial fresh? | ${{ needs.ensure-data.outputs.initial_fresh }} |"
+            echo "| Generator already active? | ${{ needs.ensure-data.outputs.generator_active }} |"
+            echo "| Generator dispatched? | ${{ needs.ensure-data.outputs.generator_dispatched }} |"
+            echo "| Final production data date | ${{ needs.ensure-data.outputs.final_data_date }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Playwright
+        if: needs.ensure-data.outputs.data_ready == 'true'
+        run: npx playwright install --with-deps chromium
 
       # Reuses the SAME source-of-truth selection the Strikeout Props page's
       # Top Over Plays / Top Under Plays section renders
       # (buildPitcherStrikeoutRows -> buildKPropBestBets, via
       # buildCanonicalKCandidatePool) -- never a separate/independent K
       # model. Writes candidatePool JSON only; no X call, no receipt, no
-      # state-branch write.
+      # state-branch write. Only runs once ensure-data has confirmed (or
+      # settled for) production-data readiness -- its own Phase 1
+      # raw.date-vs-slate-date guard (checkProductionDateFreshness) is a
+      # second, independent line of defense that writes an explicit
+      # staleData sentinel instead of candidates if the data is somehow still
+      # stale despite data_ready=true.
       - name: Generate canonical K production candidates
+        if: needs.ensure-data.outputs.data_ready == 'true'
         run: |
           npx tsx scripts/generate-mlb-k-production-candidates.ts \
-            --slate-date="${{ steps.et_date.outputs.date }}" \
+            --slate-date="${{ needs.ensure-data.outputs.slate_date }}" \
             --output=artifacts/mlb-x-canonical/k-production-candidates.json
 
       - name: Evaluate and publish canonical K
+        id: publish_k
+        if: needs.ensure-data.outputs.data_ready == 'true'
+        shell: bash
         run: |
           node scripts/post-mlb-social-canonical.mjs \
-            --product=k --slate-date="${{ steps.et_date.outputs.date }}" \
+            --product=k --slate-date="${{ needs.ensure-data.outputs.slate_date }}" \
             --source=production --candidates-file=artifacts/mlb-x-canonical/k-production-candidates.json --live \
             --image-directory=artifacts/mlb-x-canonical-images \
             --lease-directory=artifacts/mlb-x-canonical-leases \
-            --state-work-dir=.mlb-x-canonical-state-work-k
+            --state-work-dir=.mlb-x-canonical-state-work-k \
+            | tee /tmp/canonical-k-output.log
         env:
           MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
@@ -126,3 +334,33 @@ jobs:
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+      - name: Write K step summary
+        if: needs.ensure-data.outputs.data_ready == 'true' && always()
+        shell: bash
+        run: |
+          extract() {
+            grep -m1 "\"$1\":" /tmp/canonical-k-output.log 2>/dev/null \
+              | sed -E "s/^[[:space:]]*\"$1\":[[:space:]]*\"?([^\",]*)\"?,?[[:space:]]*\$/\1/"
+          }
+          {
+            echo "### MLB X Canonical -- K (${{ needs.ensure-data.outputs.slate_date }})"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Slate date | ${{ needs.ensure-data.outputs.slate_date }} |"
+            echo "| Initial production data date | ${{ needs.ensure-data.outputs.initial_data_date }} |"
+            echo "| Initial fresh? | ${{ needs.ensure-data.outputs.initial_fresh }} |"
+            echo "| Generator already active? | ${{ needs.ensure-data.outputs.generator_active }} |"
+            echo "| Generator dispatched? | ${{ needs.ensure-data.outputs.generator_dispatched }} |"
+            echo "| Final production data date | ${{ needs.ensure-data.outputs.final_data_date }} |"
+            echo "| data_ready | ${{ needs.ensure-data.outputs.data_ready }} |"
+            echo "| K readiness status | $(extract readinessStatus) |"
+            echo "| K readiness reason | $(extract reason) |"
+            echo "| K receipt state | $(extract receiptState) |"
+            echo "| K wouldCallX | $(extract wouldCallX) |"
+            echo "| Publication cutoff | $(extract publicationCutoff) |"
+            echo "| Earliest included game start | $(extract earliestIncludedGameStart) |"
+            echo ""
+            echo "_A NO_POST_YET / WAITING_FOR_TODAYS_DATA / NO_POST_FOR_SLATE readiness status above is an expected, successful no-op, not a failure -- see the reason field for why nothing was posted this run._"
+          } >> "$GITHUB_STEP_SUMMARY"

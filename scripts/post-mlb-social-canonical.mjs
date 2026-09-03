@@ -218,12 +218,13 @@ async function main() {
   // CONTENT itself comes from the persisted receipt -- see
   // mlb-social-canonical-publisher.mjs -- never from this freshly-built
   // plan). ───────────────────────────────────────────────────────────────
-  const { plan, pendingConfirmationCount } = buildPlanFromSource(product, {
+  const { plan, pendingConfirmationCount, staleData, dataDate, requestedSlateDate, staleReason } = buildPlanFromSource(product, {
     source: args.source, slateDate, rows: args.rows, root: ROOT,
     warn: (m) => console.warn(`[post-mlb-social-canonical:${product}] ${m}`),
     productionKCandidatesPath: args.candidatesFile ?? null,
   });
   if (plan) log(product, `plan built: rows=${plan.rows.length} rowFingerprint=${plan.rowFingerprint} receiptKey=${plan.receiptKey} pendingConfirmationCount=${pendingConfirmationCount}`);
+  if (staleData) log(product, `STALE production data: dataDate=${dataDate ?? "missing"} requestedSlateDate=${requestedSlateDate} reason=${staleReason}`);
 
   let slateTiming = null;
   if (!args.offline) {
@@ -234,13 +235,18 @@ async function main() {
     }
   }
 
-  const readiness = evaluateCanonicalPublication({ product: productKey, slateDate, existingReceipt, plan, pendingConfirmationCount, slateTiming });
+  const readiness = evaluateCanonicalPublication({
+    product: productKey, slateDate, existingReceipt, plan, pendingConfirmationCount, slateTiming,
+    staleData: staleData ? { dataDate, requestedSlateDate, staleReason } : null,
+  });
   console.log(JSON.stringify({
     readinessStatus: readiness.status,
     reason: readiness.reason,
     receiptState: readiness.receiptState,
     qualifiedRowCount: readiness.qualifiedRowCount,
     pendingConfirmationCount,
+    dataDate: dataDate ?? null,
+    requestedSlateDate: requestedSlateDate ?? null,
     earliestIncludedGameStart: readiness.earliestIncludedGameStart,
     publicationCutoff: readiness.publicationCutoff,
     planBuilt: Boolean(plan),
