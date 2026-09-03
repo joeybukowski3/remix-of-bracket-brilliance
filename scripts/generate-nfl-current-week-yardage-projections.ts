@@ -27,8 +27,8 @@ import type { NflReceivingOutcome } from "../src/lib/nfl/props/types/receivingOu
 import { buildActivityLogFromUniverse, type NflCurrentWeekRosterSourceRow } from "../src/lib/nfl/props/currentWeekRosterUniverse";
 import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/playerGameUniverse";
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
-import { fitReceivingShareModel } from "../src/lib/nfl/props/roleAllocation/receivingProduction";
-import type { NflRoleAllocationDataset } from "../src/lib/nfl/props/roleAllocation/types";
+import { resolveReceivingV2ProductionModel } from "../src/lib/nfl/props/roleAllocation/resolveProductionModel";
+import type { NflReceivingShareModel } from "../src/lib/nfl/props/roleAllocation/receivingProduction";
 import type { NflCurrentWeekProjectionRow } from "../src/lib/nfl/props/types/currentWeekProjection";
 import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
 import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow, type NflDepthChartIndex } from "../src/lib/nfl/props/currentWeekDepthChart";
@@ -48,6 +48,7 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "data", "nfl", "props");
+const RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH = join(ROOT, "data", "nfl", "models", "receiving-role-allocation-v2.json");
 const PLAY_VOLUME_CACHE_DIR = "data/nfl/nflverse/play-volume-team-game";
 const EPA_CACHE_DIR = "data/nfl/nflverse/epa-team-game";
 const STATS_CACHE_DIR = "data/nfl/nflverse/stats-player-week";
@@ -69,7 +70,10 @@ function readSource(path: string, logicalName = path.slice(ROOT.length + 1)): st
 }
 
 function parseArgs(argv: string[]) {
-  const args = { season: 0, week: 0, dryRun: false, output: null as string | null, archiveRoot: ARCHIVE_ROOT, generatedAt: new Date().toISOString() };
+  const args = {
+    season: 0, week: 0, dryRun: false, output: null as string | null, archiveRoot: ARCHIVE_ROOT, generatedAt: new Date().toISOString(),
+    allowReceivingV1Fallback: false,
+  };
   for (const raw of argv.slice(2)) {
     if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
     else if (raw.startsWith("--week=")) args.week = Number(raw.slice(7));
@@ -77,10 +81,13 @@ function parseArgs(argv: string[]) {
     else if (raw.startsWith("--output=")) args.output = resolve(ROOT, raw.slice(9));
     else if (raw.startsWith("--archive-root=")) args.archiveRoot = resolve(ROOT, raw.slice(15));
     else if (raw.startsWith("--generated-at=")) args.generatedAt = raw.slice(15);
+    else if (raw === "--allow-receiving-v1-fallback") args.allowReceivingV1Fallback = true;
     else throw new Error(`Unknown argument: ${raw}`);
   }
   if (!Number.isInteger(args.season) || !Number.isInteger(args.week) || args.week < 1) {
-    throw new Error("Usage: --season=YYYY --week=N [--dry-run] [--output=path] [--archive-root=path] [--generated-at=iso]");
+    throw new Error(
+      "Usage: --season=YYYY --week=N [--dry-run] [--output=path] [--archive-root=path] [--generated-at=iso] [--allow-receiving-v1-fallback]",
+    );
   }
   return args;
 }
@@ -344,27 +351,55 @@ function main(): void {
     passing: { selectedDefinition: NflFrozenScoreDefinition }; rushing: { selectedDefinition: NflFrozenScoreDefinition }; receiving: { selectedDefinition: NflFrozenScoreDefinition };
   };
 
-  // WU4B S6: receiving v2 (finite targetable-pass pool allocation). NOT
-  // fail-closed -- a missing role-allocation dataset or a WU4A
-  // team-opportunity artifact for a different week leaves receiving on v1,
-  // disclosed via `artifact.modelVersions.receiving`. Rushing/passing/QB
-  // rushing are untouched.
-  let receivingShareModel: ReturnType<typeof fitReceivingShareModel> | undefined;
+  // WU4B S6: receiving v2 (finite targetable-pass pool allocation). Loads
+  // the compact, committed, hash-verified fitted artifact -- NOT the
+  // gitignored player-level research dataset (see productionArtifact.ts for
+  // why that split is safe). FAIL CLOSED by default: if receiving v2 is the
+  // declared production model and either the fitted artifact or this week's
+  // WU4A team-opportunity rows can't be loaded, this run ABORTS rather than
+  // silently shipping v1 predictions under a v2-capable pipeline. Passing
+  // --allow-receiving-v1-fallback explicitly opts into the old permissive
+  // (now loudly logged) behavior. Rushing/passing/QB rushing are untouched.
+  let receivingShareModel: NflReceivingShareModel | undefined;
   let teamOpportunityDropbacksByTeam: Map<string, number> | undefined;
-  try {
-    const roleDataset = JSON.parse(readSource(join(DATA_DIR, "role-allocation-dataset-2022-2025.json"))) as NflRoleAllocationDataset;
+  {
     const teamOppPath = join(ROOT, "public", "data", "nfl", String(args.season), "team-opportunity.json");
-    const teamOpp = JSON.parse(readSource(teamOppPath)) as { week: number; rows: { team: string; week: number; projectedPassAttempts: number }[] };
-    const teamRows = teamOpp.rows.filter((r) => r.week === args.week);
-    if (teamRows.length > 0) {
-      teamOpportunityDropbacksByTeam = new Map(teamRows.map((r) => [r.team, r.projectedPassAttempts]));
-      receivingShareModel = fitReceivingShareModel(roleDataset);
+    const resolution: ReturnType<typeof resolveReceivingV2ProductionModel> = (() => {
+      if (!existsSync(RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH)) {
+        return { ok: false, reason: `Fitted artifact not found at ${RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH}.` };
+      }
+      if (!existsSync(teamOppPath)) {
+        return { ok: false, reason: `WU4A team-opportunity artifact not found at ${teamOppPath}.` };
+      }
+      let artifactJson: unknown;
+      try {
+        artifactJson = JSON.parse(readSource(RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH));
+      } catch (err) {
+        return { ok: false, reason: `Fitted artifact at ${RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH} is not valid JSON: ${(err as Error).message}` };
+      }
+      const teamOpportunityRows = (JSON.parse(readSource(teamOppPath)) as { rows: { team: string; week: number; projectedPassAttempts: number }[] }).rows ?? [];
+      return resolveReceivingV2ProductionModel({ artifactJson, teamOpportunityRows, week: args.week });
+    })();
+
+    if (resolution.ok) {
+      receivingShareModel = resolution.model;
+      teamOpportunityDropbacksByTeam = resolution.teamOpportunityDropbacksByTeam;
+      console.log(
+        `[nfl:current-week-projections] receiving v2 fitted artifact: trainedThroughSeason=${resolution.model.trainedThroughSeason} ` +
+          `datasetSeasons=${JSON.stringify(resolution.model.datasetSeasons)} contentHash=${resolution.model.fittedArtifactHash}`,
+      );
       console.log(`[nfl:current-week-projections] receiving v2: ${teamOpportunityDropbacksByTeam.size} teams from WU4A team-opportunity`);
+    } else if (!args.allowReceivingV1Fallback) {
+      throw new Error(
+        `Receiving v2 is the declared production model but its fitted artifact / WU4A dependency could not be loaded -- FAILING CLOSED ` +
+          `(scheduled production must not silently ship v1 under a v2 label). Reason: ${resolution.reason}. ` +
+          `Pass --allow-receiving-v1-fallback to explicitly permit a v1 fallback for this run.`,
+      );
     } else {
-      console.log(`[nfl:current-week-projections] receiving stays v1: WU4A team-opportunity has no week-${args.week} rows`);
+      console.error(
+        `[nfl:current-week-projections] RECEIVING V2 UNAVAILABLE -- explicitly falling back to v1 because --allow-receiving-v1-fallback was set. Reason: ${resolution.reason}`,
+      );
     }
-  } catch (err) {
-    console.log(`[nfl:current-week-projections] receiving stays v1: ${(err as Error).message}`);
   }
 
   const archiveCaptures: ArchiveCapture[] = [];

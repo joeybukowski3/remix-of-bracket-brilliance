@@ -18,6 +18,18 @@ import type { NflTeamPositionalPoolRow } from "./types";
 
 export const POOL_SHRINKAGE_PRIOR_GAMES = 6;
 
+/**
+ * The exact fields `buildTeamPriorPoolTendency` / `computePoolLeagueConstants`
+ * read off a team-game pool row. Deliberately narrower than
+ * `NflTeamPositionalPoolRow` (which also carries player-share-fitting-only
+ * fields) so a compact production artifact can serialize just this slice —
+ * see `roleAllocation/productionArtifact.ts`.
+ */
+export type NflTeamPoolTendencySourceRow = Pick<
+  NflTeamPositionalPoolRow,
+  "team" | "season" | "week" | "gameId" | "gameDateUtc" | "dropbacks" | "teamPassAttempts" | "sacks" | "scrambles" | "rushPools"
+>;
+
 export type NflTeamPriorPoolTendency = {
   team: string;
   season: number;
@@ -45,7 +57,7 @@ function sum(values: readonly number[]): number {
 }
 
 /** League means over a set of realised team-game pool rows (training only). */
-export function computePoolLeagueConstants(trainRows: readonly NflTeamPositionalPoolRow[]): NflPoolLeagueConstants {
+export function computePoolLeagueConstants(trainRows: readonly NflTeamPoolTendencySourceRow[]): NflPoolLeagueConstants {
   const qb = sum(trainRows.map((r) => r.rushPools.qb));
   const rb = sum(trainRows.map((r) => r.rushPools.rb));
   const wrTe = sum(trainRows.map((r) => r.rushPools.wrTe));
@@ -65,7 +77,7 @@ export function computePoolLeagueConstants(trainRows: readonly NflTeamPositional
  * enter, this-season first, else prior season.
  */
 export function buildTeamPriorPoolTendency(
-  allRows: readonly NflTeamPositionalPoolRow[],
+  allRows: readonly NflTeamPoolTendencySourceRow[],
   team: string,
   season: number,
   week: number,
