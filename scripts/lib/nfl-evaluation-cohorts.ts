@@ -93,6 +93,16 @@ export const CANDIDATE_COHORT_FEATURE_KEYS = Object.freeze([
   "ol_run_block_win_rate",
   "opponent_run_defense_rank",
   "opponent_pass_defense_rank",
+  // WU4D.2: role-transition evaluation cohorts. Mirror flat top-level keys
+  // of the same values the current-week generator already nests under
+  // `hard_case_flags`/`role` in feature_snapshot.values -- see that
+  // generator's archive-draft construction for where these are populated.
+  "team_changed",
+  "no_history",
+  "limited_history",
+  "role_sourced",
+  // WU4D.4: rushing shadow allocator's role-conflict flag.
+  "role_conflict",
 ]);
 
 function conditionalCandidateCohorts(values: Record<string, JsonValue>): Record<string, JsonValue> {
