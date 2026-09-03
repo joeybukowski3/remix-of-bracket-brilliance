@@ -68,6 +68,8 @@ export default defineConfig({
       "scripts/generate-nfl-yardage-outcomes.test.ts",
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
+      // WU4C.1 -- scheduled-workflow commit-path allowlist (predictions/outcomes/evaluations).
+      "scripts/lib/nfl-prediction-archive-allowlist.test.mjs",
       // NFL Yardage Props Review -- shared opponent-production-allowed artifact.
       "scripts/lib/nfl-production-allowed-core.test.mjs",
       "scripts/generate-nfl-team-pregame-features.test.ts",

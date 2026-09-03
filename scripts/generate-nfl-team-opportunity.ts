@@ -163,6 +163,7 @@ function main(): void {
 
   const artifact = generateTeamOpportunityArtifact(sources);
   console.log(`[nfl:team-opportunity] season=${args.season} week=${args.week} games=${artifact.qa.gamesExpected} teamRows=${artifact.qa.teamRowsEmitted}`);
+  console.log(`[nfl:team-opportunity] model version=${artifact.modelVersion}`);
   console.log(`[nfl:team-opportunity] plays min/mean/max=${artifact.qa.playsRange.min.toFixed(1)}/${artifact.qa.playsRange.mean.toFixed(1)}/${artifact.qa.playsRange.max.toFixed(1)}`);
   console.log(`[nfl:team-opportunity] passAtt min/mean/max=${artifact.qa.passAttemptsRange.min.toFixed(1)}/${artifact.qa.passAttemptsRange.mean.toFixed(1)}/${artifact.qa.passAttemptsRange.max.toFixed(1)}`);
   console.log(`[nfl:team-opportunity] rushAtt min/mean/max=${artifact.qa.rushAttemptsRange.min.toFixed(1)}/${artifact.qa.rushAttemptsRange.mean.toFixed(1)}/${artifact.qa.rushAttemptsRange.max.toFixed(1)}`);

@@ -28,13 +28,16 @@ function tempRoot(): string {
   return root;
 }
 
-function draft(type: "spread" | "passing" | "rushing" | "receiving", overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
-  const isPlayer = type !== "spread";
+type FixtureType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
+
+function draft(type: FixtureType, overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
+  const isPlayer = type !== "spread" && type !== "team_opportunity";
   const projections = {
     spread: { type: "spread" as const, projected_home_margin: 4, projected_spread_team: "lar", projected_spread_line: -4, market_spread: null, edge: null },
     passing: { type: "passing" as const, projected_attempts: null, projected_ypa: null, projected_passing_yards: 250, direct_model_prediction: 250 },
     rushing: { type: "rushing" as const, projected_carries: 12, projected_ypc: 4.5, projected_rushing_yards: 54 },
     receiving: { type: "receiving" as const, projected_targets: 8, projected_receptions: null, projected_yards_per_reception: null, projected_yards_per_target: 9, projected_receiving_yards: 72 },
+    team_opportunity: { type: "team_opportunity" as const, projected_team_plays: 62, projected_dropback_rate: 0.58, projected_pass_attempts: 35.96, projected_rush_attempts: 26.04 },
   };
   return {
     schema_version: "jkb-football-prediction-v1", snapshot_label: null,
@@ -46,13 +49,13 @@ function draft(type: "spread" | "passing" | "rushing" | "receiving", overrides: 
     prediction_type: type, model_name: `nfl-${type}`, model_version: `${type}-v1`, feature_schema_version: `${type}-features-v1`,
     pipeline_version: "archive-v1", code_revision: "abc", run_id: "run-1", workflow_name: null, workflow_run_id: null,
     cutoff_policy: "game_before_kickoff", status: "projected", projection: projections[type],
-    feature_snapshot: { values: { x: 1 }, source_manifest_hashes: { run: "source" }, fitted_model_hash: isPlayer ? "fitted" : null },
+    feature_snapshot: { values: { x: 1 }, source_manifest_hashes: { run: "source" }, fitted_model_hash: type === "spread" ? null : "fitted" },
     market_reference_status: "missing", market_snapshot_refs: [], provenance: [{ kind: "source_manifest", logical_name: "inputs", content_hash: "source" }],
     ...overrides,
   };
 }
 
-function prediction(type: "spread" | "passing" | "rushing" | "receiving", overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotV1 {
+function prediction(type: FixtureType, overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotV1 {
   return finalizePredictionSnapshot(draft(type, overrides));
 }
 
@@ -62,6 +65,7 @@ function sources(options: {
   awayScore?: number;
   stats?: Record<string, string>[] | null;
   rosters?: Record<string, string>[] | null;
+  teamPlayVolume?: ResolverSeasonSources["teamPlayVolume"];
 } = {}): ResolverSeasonSources {
   const final = options.final ?? true;
   return {
@@ -70,11 +74,13 @@ function sources(options: {
     results: final ? [{ gameId: "2025_01_ARI_LA", season: 2025, week: 1, homeAbbr: "LA", awayAbbr: "AZ", homeScore: options.homeScore ?? 24, awayScore: options.awayScore ?? 17, final: true }] : [],
     playerStats: options.stats === undefined ? [] : options.stats,
     rosters: options.rosters === undefined ? [] : options.rosters,
+    teamPlayVolume: options.teamPlayVolume === undefined ? [] : options.teamPlayVolume,
     artifacts: {
       nfl_game_schedule: { logical_name: "nfl_game_schedule", path: "games.json", provider: "nflverse/nfldata games.csv", content_hash: "games-hash", source_updated_at: "2025-09-08T10:00:00.000Z" },
       nfl_game_results: { logical_name: "nfl_game_results", path: "results.json", provider: "nflverse/nfldata games.csv", content_hash: "results-hash", source_updated_at: "2025-09-08T10:00:00.000Z" },
       nfl_player_week_stats: { logical_name: "nfl_player_week_stats", path: "stats.csv", provider: "nflverse/nflverse-data stats_player", content_hash: "stats-hash", source_updated_at: "2025-09-08" },
       nfl_weekly_roster: { logical_name: "nfl_weekly_roster", path: "roster.csv", provider: "nflverse/nflverse-data weekly_rosters", content_hash: "roster-hash", source_updated_at: "2025-09-08" },
+      nfl_team_play_volume: { logical_name: "nfl_team_play_volume", path: "play_volume_team_game_2025.csv", provider: "nflverse (play-by-play, nflfastR)", content_hash: "play-volume-hash", source_updated_at: "2025-09-08" },
     },
   };
 }
@@ -292,6 +298,62 @@ describe("append-only idempotency and revisions", () => {
   });
 });
 
+function teamPlayVolumeRow(overrides: Partial<{ gameId: string; team: string; opponent: string; eligiblePlays: number; passPlays: number; rushPlays: number }> = {}) {
+  return {
+    gameId: "2025_01_ARI_LA", season: 2025, week: 1, team: "LA", opponent: "AZ",
+    eligiblePlays: 60, passPlays: 33, rushPlays: 27,
+    ...overrides,
+  };
+}
+
+describe("team_opportunity outcomes (WU4C.1)", () => {
+  it("resolves team plays/dropback-rate/rush-attempts against the play-volume-team-game cache, independent of player stats or rosters", () => {
+    const event = resolvePredictionOutcome(
+      prediction("team_opportunity"),
+      sources({ stats: null, rosters: null, teamPlayVolume: [teamPlayVolumeRow()] }),
+    );
+    expect(event.resolution_status).toBe("resolved");
+    expect(event.player_id).toBeNull();
+    expect(event.actual).toMatchObject({ type: "team_opportunity", team_plays: 60, dropbacks: 33, dropback_rate: 0.55, designed_rush_attempts: 27, pass_attempts: null });
+  });
+
+  it("uses the projection-minus-actual convention, comparing projected_pass_attempts (a dropback count per WU4A's training target) against actual dropbacks", () => {
+    const event = resolvePredictionOutcome(
+      prediction("team_opportunity"),
+      sources({ teamPlayVolume: [teamPlayVolumeRow()] }),
+    );
+    // projected_team_plays=62, projected_pass_attempts=35.96, projected_rush_attempts=26.04 (see fixture)
+    expect(event.derived?.type).toBe("team_opportunity");
+    const derived = event.derived as { team_plays_error: number; dropbacks_error: number; designed_rush_attempts_error: number };
+    expect(derived.team_plays_error).toBeCloseTo(2, 6);
+    expect(derived.dropbacks_error).toBeCloseTo(2.96, 6);
+    expect(derived.designed_rush_attempts_error).toBeCloseTo(-0.96, 6);
+  });
+
+  it("opportunistically fills the diagnostic actual_pass_attempts from player-week stats when available, without requiring them", () => {
+    const event = resolvePredictionOutcome(
+      prediction("team_opportunity"),
+      sources({ stats: [statRow({ attempts: "20" }), statRow({ player_id: "00-other", attempts: "15" })], teamPlayVolume: [teamPlayVolumeRow()] }),
+    );
+    expect(event.actual).toMatchObject({ pass_attempts: 35 });
+  });
+
+  it("stays pending_team_stats when the play-volume cache has no row for this game/team yet (post-game, before the cache refreshes)", () => {
+    const event = resolvePredictionOutcome(prediction("team_opportunity"), sources({ teamPlayVolume: [] }));
+    expect(event.resolution_status).toBe("pending_team_stats");
+    expect(event.actual).toBeNull();
+  });
+
+  it("reports source_missing when the play-volume cache was never loaded for this season", () => {
+    const event = resolvePredictionOutcome(prediction("team_opportunity"), sources({ teamPlayVolume: null }));
+    expect(event.resolution_status).toBe("source_missing");
+  });
+
+  it("keeps a not-yet-final game pending, same as every other prediction type", () => {
+    expect(resolvePredictionOutcome(prediction("team_opportunity"), sources({ final: false, teamPlayVolume: [teamPlayVolumeRow()] })).resolution_status).toBe("pending_game");
+  });
+});
+
 describe("manual resolver entrypoint", () => {
   it("validates the small season/week/dry-run CLI surface", () => {
     const args = parseResolverArgs(["--season=2025", "--week=1", "--dry-run", "--recorded-at=2025-09-08T12:00:00.000Z"]);
@@ -344,5 +406,42 @@ describe("manual resolver entrypoint", () => {
       .trim().split("\n").map((line) => JSON.parse(line));
     expect(passingEvents.map((event) => [event.outcome_revision, event.actual.yards])).toEqual([[1, 240], [2, 241]]);
     expect(passingEvents[1].supersedes_outcome_id).toBe(passingEvents[0].outcome_id);
+  });
+
+  it("resolves team_opportunity in a mixed archive even when player-week stats are unavailable, without crashing player resolution", () => {
+    const repoRoot = tempRoot();
+    const predictionRoot = join(repoRoot, "data", "nfl", "predictions");
+    const outcomeRoot = join(repoRoot, "data", "nfl", "prediction-outcomes");
+    const records = [
+      prediction("spread"),
+      prediction("passing", { player_id: "gsis:00-001", player_name_at_prediction: "Passer" }),
+      prediction("team_opportunity", { team: "lar", opponent: "ari" }),
+      prediction("team_opportunity", { team: "ari", opponent: "lar", home_away: "away" }),
+    ];
+    archiveProductionPredictions({ rootDir: predictionRoot, records });
+    const publicSeason = join(repoRoot, "public", "data", "nfl", "2025");
+    const playVolumeDir = join(repoRoot, "data", "nfl", "nflverse", "play-volume-team-game");
+    mkdirSync(publicSeason, { recursive: true });
+    mkdirSync(playVolumeDir, { recursive: true });
+    writeFileSync(join(publicSeason, "games.json"), JSON.stringify({ _meta: { generatedAt: "2025-09-08T10:00:00.000Z" }, games: sources().games }));
+    writeFileSync(join(publicSeason, "results.json"), JSON.stringify({ _meta: { generatedAt: "2025-09-08T10:00:00.000Z" }, results: sources().results }));
+    const playVolumeHeader = "game_id,season,week,team,opponent,eligible_plays,pass_plays,rush_plays,neutral_eligible_plays,neutral_pass_plays,pass_oe_sum,pass_oe_count\n";
+    const playVolumeRows = [
+      "2025_01_ARI_LA,2025,1,LA,AZ,60,33,27,30,15,0,0",
+      "2025_01_ARI_LA,2025,1,AZ,LA,58,31,27,29,14,0,0",
+    ].join("\n");
+    writeFileSync(join(playVolumeDir, "play_volume_team_game_2025.csv"), `${playVolumeHeader}${playVolumeRows}\n`);
+    writeFileSync(join(playVolumeDir, "manifest.json"), JSON.stringify({ files: [{ season: 2025, retrievedAtUtc: "2025-09-08T09:00:00.000Z" }] }));
+    // No player-week-stats or weekly-rosters directories at all -- simulates a
+    // publication delay/failure. team_opportunity and spread must still resolve.
+    const args = { season: 2025, week: 1, dryRun: false, predictionRoot, outcomeRoot, repoRoot, recordedAt: "2025-09-08T12:00:00.000Z", predictionTypes: null };
+    const result = runResolver(args);
+    expect(result.summary.spread_resolved).toBe(1);
+    expect(result.summary.team_opportunity_resolved).toBe(2);
+    expect(result.summary.source_missing).toBe(1); // the passing prediction, correctly blocked (no player-week-stats source at all)
+    const teamOppEvents = readFileSync(join(outcomeRoot, "2025", "01", "team_opportunity.jsonl"), "utf8")
+      .trim().split("\n").map((line) => JSON.parse(line));
+    expect(teamOppEvents).toHaveLength(2);
+    expect(teamOppEvents.every((event: { resolution_status: string; player_id: string | null }) => event.resolution_status === "resolved" && event.player_id === null)).toBe(true);
   });
 });

@@ -387,6 +387,12 @@ function main(): void {
 
   const artifact = generateCurrentWeekYardageProjections(sources);
 
+  // WU4C.1 Part 13: concise production log line -- model versions in one
+  // place, plus the receiving-v2-vs-v1 team count so a run's log alone
+  // answers "did WU4A actually feed receiving this run" without opening the
+  // artifact.
+  console.log(`[nfl:current-week-projections] model versions passing=${artifact.modelVersions.passing} rushing=${artifact.modelVersions.rushing} receiving=${artifact.modelVersions.receiving}`);
+  console.log(`[nfl:current-week-projections] receiving v2 teams=${teamOpportunityDropbacksByTeam?.size ?? 0} (0 means receiving stayed on v1 this run -- see the reason logged above)`);
   console.log(`[nfl:current-week-projections] season=${args.season} week=${args.week} games=${artifact.qa.gamesExpected} playersEvaluated=${artifact.qa.playersEvaluated}`);
   console.log(`[nfl:current-week-projections] emitted passing=${artifact.qa.projectionsEmittedByMarket.passing} rushing=${artifact.qa.projectionsEmittedByMarket.rushing} receiving=${artifact.qa.projectionsEmittedByMarket.receiving}`);
   console.log(`[nfl:current-week-projections] depth chart source: available=${artifact.depthChartSource.available} stale=${artifact.depthChartSource.stale} snapshotAt=${artifact.depthChartSource.snapshotAt}`);
