@@ -55,6 +55,9 @@ function projActualPairs(rows: readonly EvaluationRowV1[]): ProjActual[] {
     if (row.prediction_type === "rushing") {
       return { projection: row.outcome.projection.projected_rushing_yards, actual: row.outcome.actual.yards };
     }
+    if (row.prediction_type === "team_opportunity") {
+      return { projection: row.outcome.projection.projected_team_plays, actual: row.outcome.actual.team_plays };
+    }
     return { projection: row.outcome.projection.projected_receiving_yards, actual: row.outcome.actual.yards };
   });
 }
@@ -183,10 +186,39 @@ function playerExtras(predictionType: Exclude<EvaluationPredictionType, "spread"
   };
 }
 
+type TeamOpportunityRow = Extract<EvaluationRowV1, { prediction_type: "team_opportunity" }>;
+
+/**
+ * team_opportunity diagnostics (Part 9): the top-level core block already
+ * carries plays MAE/bias (see projActualPairs above); this adds
+ * dropbacks/dropback-rate/designed-rush-attempts MAE + bias, using the same
+ * honest naming as TeamOpportunityDerived (see
+ * nfl-prediction-outcome-resolver.ts's doc comment for why "dropbacks", not
+ * "pass_attempts", is the correct comparison for WU4A's trained target).
+ */
+function teamOpportunityExtras(rows: readonly EvaluationRowV1[]): Record<string, JsonValue> {
+  const teamRows = rows.filter((row): row is TeamOpportunityRow => row.prediction_type === "team_opportunity");
+  const dropbackErrors = teamRows.map((row) => row.outcome.error.dropbacks_error);
+  const dropbackRateErrors = teamRows.map((row) => row.outcome.error.dropback_rate_error);
+  const designedRushErrors = teamRows.map((row) => row.outcome.error.designed_rush_attempts_error);
+  return {
+    component: {
+      dropbacks_mae: mean(dropbackErrors.map(Math.abs)),
+      dropbacks_bias: mean(dropbackErrors),
+      dropback_rate_mae: mean(dropbackRateErrors.map(Math.abs)),
+      dropback_rate_bias: mean(dropbackRateErrors),
+      designed_rush_attempts_mae: mean(designedRushErrors.map(Math.abs)),
+      designed_rush_attempts_bias: mean(designedRushErrors),
+    },
+  };
+}
+
 export function computeMetricBlock(predictionType: EvaluationPredictionType, rows: readonly EvaluationRowV1[]): Record<string, JsonValue> {
   const typed = rows.filter((row) => row.prediction_type === predictionType);
   const core = coreErrorBlock(typed);
-  const extras = predictionType === "spread" ? spreadExtras(typed) : playerExtras(predictionType, typed);
+  const extras = predictionType === "spread" ? spreadExtras(typed)
+    : predictionType === "team_opportunity" ? teamOpportunityExtras(typed)
+    : playerExtras(predictionType, typed);
   return {
     ...core,
     ...extras,
@@ -208,7 +240,7 @@ function sortedEntries<T>(map: Map<string, T>): [string, T][] {
   return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 }
 
-const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving"];
+const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving", "team_opportunity"];
 
 export type LedgerStatusCounts = Record<string, number>;
 

@@ -37,15 +37,16 @@ function tempRoot(prefix: string): string {
   return root;
 }
 
-type Type = "spread" | "passing" | "rushing" | "receiving";
+type Type = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
 
 function draft(type: Type, overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
-  const isPlayer = type !== "spread";
+  const isPlayer = type !== "spread" && type !== "team_opportunity";
   const projections = {
     spread: { type: "spread" as const, projected_home_margin: 4, projected_spread_team: "lar", projected_spread_line: -4, market_spread: -3.5, edge: 0.5, home_power_number: 6, away_power_number: 2 },
     passing: { type: "passing" as const, projected_attempts: null, projected_ypa: null, projected_passing_yards: 250, direct_model_prediction: 250 },
     rushing: { type: "rushing" as const, projected_carries: 12, projected_ypc: 4.5, projected_rushing_yards: 54 },
     receiving: { type: "receiving" as const, projected_targets: 8, projected_receptions: null, projected_yards_per_reception: null, projected_yards_per_target: 9, projected_receiving_yards: 72 },
+    team_opportunity: { type: "team_opportunity" as const, projected_team_plays: 62, projected_dropback_rate: 0.58, projected_pass_attempts: 35.96, projected_rush_attempts: 26.04 },
   };
   return {
     schema_version: "jkb-football-prediction-v1", snapshot_label: null,
@@ -57,7 +58,10 @@ function draft(type: Type, overrides: Partial<PredictionSnapshotDraft> = {}): Pr
     prediction_type: type, model_name: `nfl-${type}`, model_version: `${type}-v1`, feature_schema_version: `${type}-features-v1`,
     pipeline_version: "archive-v1", code_revision: "abc", run_id: "run-1", workflow_name: null, workflow_run_id: null,
     cutoff_policy: "game_before_kickoff", status: "projected", projection: projections[type],
-    feature_snapshot: { values: { spread_input: -3.5, role_certainty: "high" }, source_manifest_hashes: { run: "source" }, fitted_model_hash: isPlayer ? "fitted-a" : null },
+    feature_snapshot: {
+      values: type === "team_opportunity" ? { feature_snapshot: { market: { spread: -3.5, total: 44.5 } } } : { spread_input: -3.5, role_certainty: "high" },
+      source_manifest_hashes: { run: "source" }, fitted_model_hash: type === "spread" ? null : "fitted-a",
+    },
     market_reference_status: "missing", market_snapshot_refs: [], provenance: [{ kind: "source_manifest", logical_name: "inputs", content_hash: "source" }],
     ...overrides,
   };
@@ -74,7 +78,7 @@ function statRow(overrides: Record<string, string> = {}): Record<string, string>
   };
 }
 
-function sources(options: { homeScore?: number; awayScore?: number; stats?: Record<string, string>[] | null; final?: boolean } = {}): ResolverSeasonSources {
+function sources(options: { homeScore?: number; awayScore?: number; stats?: Record<string, string>[] | null; final?: boolean; teamPlayVolume?: ResolverSeasonSources["teamPlayVolume"] } = {}): ResolverSeasonSources {
   const final = options.final ?? true;
   return {
     season: 2025,
@@ -82,6 +86,7 @@ function sources(options: { homeScore?: number; awayScore?: number; stats?: Reco
     results: final ? [{ gameId: "2025_01_ARI_LA", season: 2025, week: 1, homeAbbr: "LA", awayAbbr: "AZ", homeScore: options.homeScore ?? 24, awayScore: options.awayScore ?? 17, final: true }] : [],
     playerStats: options.stats === undefined ? [] : options.stats,
     rosters: [],
+    teamPlayVolume: options.teamPlayVolume === undefined ? [] : options.teamPlayVolume,
     artifacts: {
       nfl_game_schedule: { logical_name: "nfl_game_schedule", path: "games.json", provider: "p", content_hash: "games-hash", source_updated_at: null },
       nfl_game_results: { logical_name: "nfl_game_results", path: "results.json", provider: "p", content_hash: "results-hash", source_updated_at: null },
@@ -426,6 +431,64 @@ describe("controlled multi-model fixture (WU3 Part 20)", () => {
     const ledgerRows = readFileSync(result.files_written.find((f) => f.includes("resolution-status"))!, "utf8").trim().split("\n").map((l) => JSON.parse(l));
     expect(ledgerRows.find((r) => r.player_id === "gsis:00-003").ledger_status).toBe("pending_player_stats");
     expect(ledgerRows.filter((r) => r.evaluable)).toHaveLength(7);
+
+    const firstBytes = result.files_written.map((f) => readFileSync(f, "utf8"));
+    const rerun = materializeEvaluation(o);
+    expect(rerun.files_written.map((f) => readFileSync(f, "utf8"))).toEqual(firstBytes);
+  });
+});
+
+describe("team_opportunity evaluation rows (WU4C.1)", () => {
+  it("builds an evaluable row with honest dropback/designed-rush naming and no player market field", () => {
+    const teamOpp = prediction("team_opportunity", { team: "lar", opponent: "ari" });
+    const src = sources({ teamPlayVolume: [{ gameId: "2025_01_ARI_LA", season: 2025, week: 1, team: "LA", opponent: "AZ", eligiblePlays: 60, passPlays: 33, rushPlays: 27 }] });
+    const draft = resolvePredictionOutcome(teamOpp, src, "2025-09-08T10:00:00.000Z");
+    expect(draft.resolution_status).toBe("resolved");
+    const { events } = appendOutcomeDrafts({ rootDir: tempRoot("jkb-teamopp-out-"), drafts: [draft] });
+    const built = buildEvaluationRow(teamOpp, events, { divisionGame: null });
+    expect(built.row).not.toBeNull();
+    const row = built.row!;
+    expect(row.prediction_type).toBe("team_opportunity");
+    expect("market" in row.outcome).toBe(false);
+    expect(row.outcome).toMatchObject({
+      actual: { team_plays: 60, dropbacks: 33, dropback_rate: 0.55, designed_rush_attempts: 27 },
+      projection: { projected_team_plays: 62, projected_dropback_rate: 0.58 },
+    });
+    expect(row.cohorts).toMatchObject({ home_away: "home", favorite_underdog: "favorite" });
+    expect(row.cohorts.spread_bucket_abs).toBe("3-4");
+    expect(row.cohorts.total_bucket).toBe("44-51");
+    validateEvaluationRow(row);
+  });
+
+  it("keeps a game with no play-volume row yet in the ledger as pending_team_stats, not evaluable", () => {
+    const teamOpp = prediction("team_opportunity", { team: "lar", opponent: "ari" });
+    const draft = resolvePredictionOutcome(teamOpp, sources({ teamPlayVolume: [] }), "2025-09-08T10:00:00.000Z");
+    expect(draft.resolution_status).toBe("pending_team_stats");
+    const { events } = appendOutcomeDrafts({ rootDir: tempRoot("jkb-teamopp-out-"), drafts: [draft] });
+    const built = buildEvaluationRow(teamOpp, events, { divisionGame: null });
+    expect(built.row).toBeNull();
+    expect(built.ledger.ledger_status).toBe("pending_team_stats");
+    expect(built.ledger.evaluable).toBe(false);
+  });
+
+  it("materializes team_opportunity end to end, independent of a player-stat outage, with a stable rerun", () => {
+    const home = prediction("team_opportunity", { team: "lar", opponent: "ari", home_away: "home" });
+    const away = prediction("team_opportunity", { team: "ari", opponent: "lar", home_away: "away", run_id: "run-away" });
+    const predRoot = predictionRootFor([home, away]);
+    const src = sources({
+      stats: null, // player-week stats entirely unavailable this run
+      teamPlayVolume: [
+        { gameId: "2025_01_ARI_LA", season: 2025, week: 1, team: "LA", opponent: "AZ", eligiblePlays: 60, passPlays: 33, rushPlays: 27 },
+        { gameId: "2025_01_ARI_LA", season: 2025, week: 1, team: "AZ", opponent: "LA", eligiblePlays: 58, passPlays: 31, rushPlays: 27 },
+      ],
+    });
+    const outRoot = outcomeRootFor([home, away], src);
+    const o = opts(predRoot, outRoot);
+    const result = materializeEvaluation(o);
+    expect(result.evaluable_by_type.team_opportunity).toBe(2);
+    const rows = readFileSync(result.files_written.find((f) => f.includes("team_opportunity"))!, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.prediction_type === "team_opportunity" && r.player_id === null)).toBe(true);
 
     const firstBytes = result.files_written.map((f) => readFileSync(f, "utf8"));
     const rerun = materializeEvaluation(o);

@@ -32,7 +32,7 @@ export const EVALUATION_MATERIALIZER_VERSION = "nfl-evaluation-materializer-v1" 
 
 export type EvaluationMode = "production";
 
-export type EvaluationPredictionType = "spread" | "passing" | "rushing" | "receiving";
+export type EvaluationPredictionType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
 
 /** Datasets the materializer writes. `resolution-status` is the coverage/exclusion ledger. */
 export type EvaluationDataset = EvaluationPredictionType | "resolution-status";
@@ -302,11 +302,51 @@ export type ReceivingEvaluationRow = EvaluationRowIdentity & {
   cohorts: Record<string, JsonValue>;
 };
 
+/**
+ * Team-level evaluation row for `prediction_type: "team_opportunity"`. No
+ * `volume`/`market` fields -- there is no player prop line to compare
+ * against a team's plays/dropback-rate targets, unlike the player families.
+ * `dropbacks`/`designed_rush_attempts` naming matches
+ * TeamOpportunityActual/Derived (see nfl-prediction-outcome-resolver.ts) --
+ * an honest label for what the projection's legacy `projected_pass_attempts`
+ * / `projected_rush_attempts` fields are actually trained against.
+ */
+export type TeamOpportunityEvaluationRow = EvaluationRowIdentity & {
+  prediction_type: "team_opportunity";
+  outcome: EvaluationOutcomeProvenance & {
+    projection: {
+      projected_team_plays: number;
+      projected_dropback_rate: number;
+      projected_pass_attempts: number;
+      projected_rush_attempts: number;
+    };
+    actual: {
+      team_plays: number;
+      dropbacks: number;
+      dropback_rate: number;
+      designed_rush_attempts: number;
+      pass_attempts: number | null;
+    };
+    error: {
+      team_plays_error: number;
+      absolute_team_plays_error: number;
+      dropbacks_error: number;
+      absolute_dropbacks_error: number;
+      dropback_rate_error: number;
+      designed_rush_attempts_error: number;
+      pass_attempts_error: number | null;
+    };
+  };
+  feature_snapshot_values: Record<string, JsonValue>;
+  cohorts: Record<string, JsonValue>;
+};
+
 export type EvaluationRowV1 =
   | SpreadEvaluationRow
   | PassingEvaluationRow
   | RushingEvaluationRow
-  | ReceivingEvaluationRow;
+  | ReceivingEvaluationRow
+  | TeamOpportunityEvaluationRow;
 
 export type ResolutionStatusRow = {
   schema_version: typeof EVALUATION_DATASET_SCHEMA_VERSION;
@@ -354,6 +394,7 @@ const NUMERIC_ERROR_FIELDS: Record<EvaluationPredictionType, string[]> = {
   passing: ["yards_error", "absolute_yards_error"],
   rushing: ["yards_error", "absolute_yards_error", "carries_error"],
   receiving: ["yards_error", "absolute_yards_error", "targets_error"],
+  team_opportunity: ["team_plays_error", "absolute_team_plays_error", "dropbacks_error", "absolute_dropbacks_error", "dropback_rate_error", "designed_rush_attempts_error"],
 };
 
 /**
@@ -378,7 +419,7 @@ export function validateEvaluationRow(row: EvaluationRowV1): void {
   for (const field of NUMERIC_ERROR_FIELDS[row.prediction_type]) {
     if (!Number.isFinite(errorPayload[field] as number)) throw new Error(`${row.prediction_type}.${field} must be finite`);
   }
-  if (row.prediction_type !== "spread") {
+  if (row.prediction_type !== "spread" && row.prediction_type !== "team_opportunity") {
     const market = (row.outcome as { market: PlayerMarketEvaluation | null }).market;
     if (market && !Number.isFinite(market.jkb_vs_market_edge)) throw new Error("player market edge must be finite when present");
   }

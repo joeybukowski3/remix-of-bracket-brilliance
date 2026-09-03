@@ -151,6 +151,43 @@ export function deriveSpreadCohorts(input: {
   };
 }
 
+/** Total-point bucket boundaries for team_opportunity cohorts (Part 9). */
+export const TOTAL_BUCKET_BOUNDARIES = Object.freeze([37, 44, 51]);
+
+export function totalBucket(value: number | null, boundaries: readonly number[] = TOTAL_BUCKET_BOUNDARIES): string | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  for (let index = 0; index < boundaries.length; index += 1) {
+    if (value < boundaries[index]) return index === 0 ? `<${boundaries[0]}` : `${boundaries[index - 1]}-${boundaries[index]}`;
+  }
+  return `${boundaries[boundaries.length - 1]}+`;
+}
+
+/**
+ * team_opportunity cohorts (Part 9): home/away, favorite/underdog, spread
+ * bucket, total bucket, model version. Uses the prediction-time market
+ * snapshot only -- never a postgame value.
+ */
+export function deriveTeamOpportunityCohorts(input: {
+  context: CohortContext;
+  homeAway: "home" | "away";
+  modelVersion: string;
+  marketSpread: number | null;
+  marketTotal: number | null;
+  featureValues: Record<string, JsonValue>;
+}): Record<string, JsonValue> {
+  return {
+    week_band: weekBand(input.context.week),
+    home_away: input.homeAway,
+    neutral_site: input.context.neutral_site,
+    division_game: input.context.division_game,
+    model_version: input.modelVersion,
+    favorite_underdog: input.marketSpread == null ? null : input.marketSpread < 0 ? "favorite" : input.marketSpread > 0 ? "underdog" : "pick",
+    spread_bucket_abs: absPointBucket(input.marketSpread),
+    total_bucket: totalBucket(input.marketTotal),
+    ...conditionalCandidateCohorts(input.featureValues),
+  };
+}
+
 export function derivePlayerCohorts(input: {
   predictionType: Exclude<EvaluationPredictionType, "spread">;
   context: CohortContext;

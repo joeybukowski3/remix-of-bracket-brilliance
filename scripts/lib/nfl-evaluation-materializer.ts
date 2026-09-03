@@ -28,7 +28,7 @@ import {
 import { buildEvaluationRow, type EvaluationRowBuildContext } from "./nfl-evaluation-rows";
 import { loadArchivedPredictions } from "../resolve-nfl-prediction-outcomes";
 
-const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving"];
+const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving", "team_opportunity"];
 
 export type MaterializerOptions = {
   predictionRoot: string;
@@ -161,7 +161,7 @@ export function materializeEvaluation(options: MaterializerOptions): Materialize
   const evaluableRows: EvaluationRowV1[] = [];
   const ledgerRows: ResolutionStatusRow[] = [];
   const ledgerByStatus: Record<string, number> = {};
-  const evaluableByType: Record<string, number> = { spread: 0, passing: 0, rushing: 0, receiving: 0 };
+  const evaluableByType: Record<string, number> = { spread: 0, passing: 0, rushing: 0, receiving: 0, team_opportunity: 0 };
 
   for (const prediction of production) {
     const ctx: EvaluationRowBuildContext = {

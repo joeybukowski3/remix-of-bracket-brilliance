@@ -29,12 +29,14 @@ import {
   type RushingEvaluationRow,
   type SpreadEvaluationRow,
   type SpreadMarketObservationEvaluation,
+  type TeamOpportunityEvaluationRow,
   EVALUATION_DATASET_SCHEMA_VERSION,
   EVALUATION_MATERIALIZER_VERSION,
 } from "./nfl-evaluation-dataset";
 import {
   derivePlayerCohorts,
   deriveSpreadCohorts,
+  deriveTeamOpportunityCohorts,
   type CohortContext,
 } from "./nfl-evaluation-cohorts";
 
@@ -415,6 +417,60 @@ function buildReceivingRow(
   };
 }
 
+function nestedMarketNumber(values: Record<string, JsonValue>, field: "spread" | "total"): number | null {
+  const snapshot = values.feature_snapshot as { market?: Record<string, unknown> } | undefined;
+  const value = snapshot?.market?.[field];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function buildTeamOpportunityRow(
+  prediction: PredictionSnapshotV1,
+  selected: PredictionOutcomeEventV1,
+  selection: ReturnType<typeof selectLatestOutcome>,
+  ctx: EvaluationRowBuildContext,
+): TeamOpportunityEvaluationRow {
+  if (prediction.projection.type !== "team_opportunity" || selected.actual?.type !== "team_opportunity" || selected.derived?.type !== "team_opportunity") {
+    throw new Error(`team_opportunity row type mismatch for ${prediction.prediction_id}`);
+  }
+  const projection = prediction.projection;
+  const actual = selected.actual;
+  const derived = selected.derived;
+  const provenance = outcomeProvenance(selected, selection);
+  const featureValues = prediction.feature_snapshot.values;
+  return {
+    ...identity(prediction, provenance),
+    prediction_type: "team_opportunity",
+    outcome: {
+      ...provenance,
+      projection: {
+        projected_team_plays: projection.projected_team_plays,
+        projected_dropback_rate: projection.projected_dropback_rate,
+        projected_pass_attempts: projection.projected_pass_attempts,
+        projected_rush_attempts: projection.projected_rush_attempts,
+      },
+      actual: {
+        team_plays: actual.team_plays, dropbacks: actual.dropbacks, dropback_rate: actual.dropback_rate,
+        designed_rush_attempts: actual.designed_rush_attempts, pass_attempts: actual.pass_attempts,
+      },
+      error: {
+        team_plays_error: derived.team_plays_error, absolute_team_plays_error: derived.absolute_team_plays_error,
+        dropbacks_error: derived.dropbacks_error, absolute_dropbacks_error: derived.absolute_dropbacks_error,
+        dropback_rate_error: derived.dropback_rate_error, designed_rush_attempts_error: derived.designed_rush_attempts_error,
+        pass_attempts_error: derived.pass_attempts_error,
+      },
+    },
+    feature_snapshot_values: featureValues,
+    cohorts: deriveTeamOpportunityCohorts({
+      context: cohortContext(prediction, ctx),
+      homeAway: prediction.home_away,
+      modelVersion: prediction.model_version,
+      marketSpread: nestedMarketNumber(featureValues, "spread"),
+      marketTotal: nestedMarketNumber(featureValues, "total"),
+      featureValues,
+    }),
+  };
+}
+
 function ledgerRow(
   prediction: PredictionSnapshotV1,
   selection: ReturnType<typeof selectLatestOutcome>,
@@ -475,6 +531,7 @@ export function buildEvaluationRow(
     passing: buildPassingRow,
     rushing: buildRushingRow,
     receiving: buildReceivingRow,
+    team_opportunity: buildTeamOpportunityRow,
   } as const;
   const row = builders[prediction.prediction_type](prediction, selected, selection, ctx);
   return { row, ledger };

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
 import { dirname, join } from "node:path";
 import { canonicalPlayerId, normalizeNflTeamAbbr } from "../../src/lib/nfl/identity/identity";
 import { parseCsv } from "./nfl-schedules-results-core.mjs";
+import { parsePlayVolumeCompactRow } from "./nfl-play-volume-core.mjs";
 import {
   canonicalJson,
   contentHash,
@@ -18,13 +19,14 @@ export type ResolutionStatus =
   | "resolved"
   | "pending_game"
   | "pending_player_stats"
+  | "pending_team_stats"
   | "inactive"
   | "not_applicable"
   | "identity_unresolved"
   | "source_missing";
 
 export type SourceArtifact = {
-  logical_name: "nfl_game_schedule" | "nfl_game_results" | "nfl_player_week_stats" | "nfl_weekly_roster";
+  logical_name: "nfl_game_schedule" | "nfl_game_results" | "nfl_player_week_stats" | "nfl_weekly_roster" | "nfl_team_play_volume";
   path: string;
   provider: string;
   content_hash: string;
@@ -66,7 +68,31 @@ export type ReceivingActual = {
   yards_per_reception: number | null;
 };
 
-export type ActualOutcome = SpreadActual | PassingActual | RushingActual | ReceivingActual | null;
+/**
+ * Team-level actual for `prediction_type: "team_opportunity"`.
+ *
+ * Field naming is deliberately honest about what WU4A actually trains and
+ * predicts (see teamOpportunityFeatures.ts: `passAttempts: actual.passPlays`
+ * where `passPlays` is nfl-epa-core.mjs's `classifyPlay` pass=1 count --
+ * sacks and QB scrambles included, i.e. a true dropback count, NOT the
+ * official box-score "attempts" column). `dropbacks`/`designed_rush_attempts`
+ * here are that same PBP-derived definition, sourced from the identical
+ * play-volume-team-game cache WU4A trains against, so grading compares like
+ * with like. `pass_attempts` is a SEPARATE, optional diagnostic: the official
+ * summed player-week passing-attempts stat for the team in this game, which
+ * excludes sacks/scrambles. It is null whenever player-week stats are not
+ * yet published -- team_opportunity resolution never blocks on it.
+ */
+export type TeamOpportunityActual = {
+  type: "team_opportunity";
+  team_plays: number;
+  dropbacks: number;
+  dropback_rate: number;
+  designed_rush_attempts: number;
+  pass_attempts: number | null;
+};
+
+export type ActualOutcome = SpreadActual | PassingActual | RushingActual | ReceivingActual | TeamOpportunityActual | null;
 
 export type SpreadDerived = {
   type: "spread";
@@ -111,7 +137,25 @@ export type ReceivingDerived = {
   yards_per_reception_error: number | null;
 };
 
-export type DerivedOutcome = SpreadDerived | PassingDerived | RushingDerived | ReceivingDerived | null;
+/**
+ * Error convention matches every other family: `projection - actual`.
+ * `dropbacks_error` compares the projection's `projected_pass_attempts`
+ * field against actual dropbacks -- see TeamOpportunityActual's doc comment
+ * for why that is the correct (like-for-like) comparison despite the
+ * projection field's legacy name.
+ */
+export type TeamOpportunityDerived = {
+  type: "team_opportunity";
+  team_plays_error: number;
+  absolute_team_plays_error: number;
+  dropbacks_error: number;
+  absolute_dropbacks_error: number;
+  dropback_rate_error: number;
+  designed_rush_attempts_error: number;
+  pass_attempts_error: number | null;
+};
+
+export type DerivedOutcome = SpreadDerived | PassingDerived | RushingDerived | ReceivingDerived | TeamOpportunityDerived | null;
 
 export type PredictionOutcomeEventV1 = {
   schema_version: typeof OUTCOME_SCHEMA_VERSION;
@@ -171,12 +215,24 @@ type RawResult = {
 
 type CsvRow = Record<string, string>;
 
+export type TeamPlayVolumeRow = {
+  gameId: string;
+  season: number;
+  week: number;
+  team: string;
+  opponent: string;
+  eligiblePlays: number;
+  passPlays: number;
+  rushPlays: number;
+};
+
 export type ResolverSeasonSources = {
   season: number;
   games: RawGame[] | null;
   results: RawResult[] | null;
   playerStats: CsvRow[] | null;
   rosters: CsvRow[] | null;
+  teamPlayVolume: TeamPlayVolumeRow[] | null;
   artifacts: Partial<Record<SourceArtifact["logical_name"], SourceArtifact>>;
 };
 
@@ -185,14 +241,15 @@ export type ResolutionSummary = Record<ResolutionStatus | "already_resolved" | "
   passing_resolved: number;
   rushing_resolved: number;
   receiving_resolved: number;
+  team_opportunity_resolved: number;
   appended: number;
 };
 
 function emptySummary(): ResolutionSummary {
   return {
-    resolved: 0, pending_game: 0, pending_player_stats: 0, inactive: 0, not_applicable: 0,
+    resolved: 0, pending_game: 0, pending_player_stats: 0, pending_team_stats: 0, inactive: 0, not_applicable: 0,
     identity_unresolved: 0, source_missing: 0, already_resolved: 0, corrections: 0,
-    spread_resolved: 0, passing_resolved: 0, rushing_resolved: 0, receiving_resolved: 0, appended: 0,
+    spread_resolved: 0, passing_resolved: 0, rushing_resolved: 0, receiving_resolved: 0, team_opportunity_resolved: 0, appended: 0,
   };
 }
 
@@ -274,6 +331,38 @@ function playerDerived(prediction: PredictionSnapshotV1, actual: PassingActual |
     };
   }
   throw new Error(`Prediction/actual type mismatch for ${prediction.prediction_id}`);
+}
+
+function teamOpportunityDerived(prediction: PredictionSnapshotV1, actual: TeamOpportunityActual): TeamOpportunityDerived {
+  if (prediction.projection.type !== "team_opportunity") throw new Error("team_opportunity projection mismatch");
+  const projection = prediction.projection;
+  const teamPlaysError = projection.projected_team_plays - actual.team_plays;
+  const dropbacksError = projection.projected_pass_attempts - actual.dropbacks;
+  return {
+    type: "team_opportunity",
+    team_plays_error: teamPlaysError, absolute_team_plays_error: Math.abs(teamPlaysError),
+    dropbacks_error: dropbacksError, absolute_dropbacks_error: Math.abs(dropbacksError),
+    dropback_rate_error: projection.projected_dropback_rate - actual.dropback_rate,
+    designed_rush_attempts_error: projection.projected_rush_attempts - actual.designed_rush_attempts,
+    pass_attempts_error: actual.pass_attempts == null ? null : projection.projected_pass_attempts - actual.pass_attempts,
+  };
+}
+
+function actualPassAttemptsForTeam(prediction: PredictionSnapshotV1, playerStats: CsvRow[] | null): number | null {
+  if (!playerStats) return null;
+  const rows = playerStats.filter(
+    (row) => row.game_id === prediction.game_id && normalizeNflTeamAbbr(row.team) === prediction.team,
+  );
+  if (rows.length === 0) return null;
+  let total = 0;
+  let sawAny = false;
+  for (const row of rows) {
+    const attempts = nullableNumber(row, "attempts");
+    if (attempts == null) continue;
+    total += attempts;
+    sawAny = true;
+  }
+  return sawAny ? total : null;
 }
 
 function artifactList(sources: ResolverSeasonSources, names: SourceArtifact["logical_name"][]): SourceArtifact[] {
@@ -384,6 +473,48 @@ export function resolvePredictionOutcome(
   }
   const homeScore = requiredInteger(result.homeScore, "homeScore");
   const awayScore = requiredInteger(result.awayScore, "awayScore");
+
+  if (prediction.prediction_type === "team_opportunity") {
+    // Team-level grade: only games + the play-volume-team-game cache are
+    // required. Deliberately does NOT gate on player-week stats or rosters
+    // (Part 10) -- a delayed player-stat publication must never block
+    // grading WU4A's team-level plays/dropback-rate/rush-attempts targets.
+    const teamOppArtifacts = artifactList(sources, ["nfl_game_schedule", "nfl_game_results", "nfl_team_play_volume"]);
+    if (prediction.team !== teams.home && prediction.team !== teams.away) {
+      return unresolvedDraft(prediction, "identity_unresolved", sources, "final", { game, result }, teamOppArtifacts,
+        { method: "game_id", actual_team: null, actual_opponent: null, team_match: false, roster_status: null, zero_source: null }, recordedAt);
+    }
+    if (!sources.teamPlayVolume) {
+      return unresolvedDraft(prediction, "source_missing", sources, "final", { game, result, team_play_volume: null }, teamOppArtifacts,
+        { method: "unresolved", actual_team: null, actual_opponent: null, team_match: null, roster_status: null, zero_source: null }, recordedAt);
+    }
+    const volumeRow = sources.teamPlayVolume.find(
+      (row) => row.gameId === prediction.game_id && normalizeNflTeamAbbr(row.team) === prediction.team,
+    );
+    if (!volumeRow) {
+      return unresolvedDraft(prediction, "pending_team_stats", sources, "final", { game, result, team_play_volume: null }, teamOppArtifacts,
+        { method: "game_id", actual_team: prediction.team, actual_opponent: prediction.opponent, team_match: true, roster_status: null, zero_source: null }, recordedAt);
+    }
+    if (volumeRow.eligiblePlays <= 0) {
+      return unresolvedDraft(prediction, "identity_unresolved", sources, "final", { game, result, team_play_volume: volumeRow }, teamOppArtifacts,
+        { method: "game_id", actual_team: prediction.team, actual_opponent: prediction.opponent, team_match: true, roster_status: null, zero_source: null }, recordedAt);
+    }
+    const actual: TeamOpportunityActual = {
+      type: "team_opportunity", team_plays: volumeRow.eligiblePlays, dropbacks: volumeRow.passPlays,
+      dropback_rate: volumeRow.passPlays / volumeRow.eligiblePlays, designed_rush_attempts: volumeRow.rushPlays,
+      pass_attempts: actualPassAttemptsForTeam(prediction, sources.playerStats),
+    };
+    return {
+      schema_version: OUTCOME_SCHEMA_VERSION, prediction_id: prediction.prediction_id, snapshot_key: prediction.snapshot_key,
+      prediction_type: "team_opportunity", season: prediction.season, week: prediction.week, game_id: prediction.game_id,
+      player_id: null, team: prediction.team, opponent: prediction.opponent, recorded_at: recordedAt, resolved_at: recordedAt,
+      resolution_status: "resolved", game_completion_status: "final", resolver_version: OUTCOME_RESOLVER_VERSION,
+      provider: "nflverse", source_artifacts: teamOppArtifacts, source_state_hash: contentHash({ game, result, team_play_volume: volumeRow } as unknown as JsonValue),
+      identity_resolution: { method: "game_id", actual_team: prediction.team, actual_opponent: prediction.opponent, team_match: true, roster_status: null, zero_source: null },
+      actual, derived: teamOpportunityDerived(prediction, actual),
+    };
+  }
+
   if (prediction.prediction_type === "spread") {
     if (prediction.team !== teams.home || prediction.opponent !== teams.away || prediction.home_away !== "home") {
       return unresolvedDraft(prediction, "identity_unresolved", sources, "final", { game, result }, gamesArtifacts,
@@ -633,14 +764,23 @@ export function loadResolverSeasonSources(rootDir: string, season: number): Reso
     rootDir, relativePath: `data/nfl/nflverse/weekly-rosters/roster_weekly_${season}.csv`, logicalName: "nfl_weekly_roster",
     provider: "nflverse/nflverse-data weekly_rosters", sourceUpdatedAt: () => manifestSourceUpdatedAt(rosterManifestPath, season),
   });
+  const playVolumeManifestPath = join(rootDir, "data", "nfl", "nflverse", "play-volume-team-game", "manifest.json");
+  const playVolume = readArtifact({
+    rootDir, relativePath: `data/nfl/nflverse/play-volume-team-game/play_volume_team_game_${season}.csv`, logicalName: "nfl_team_play_volume",
+    provider: "nflverse (play-by-play, nflfastR)", sourceUpdatedAt: () => manifestSourceUpdatedAt(playVolumeManifestPath, season),
+  });
   const gamesPayload = schedule ? JSON.parse(schedule.text) as { games?: RawGame[] } : null;
   const resultsPayload = results ? JSON.parse(results.text) as { results?: RawResult[] } : null;
+  const teamPlayVolume: TeamPlayVolumeRow[] | null = playVolume
+    ? (parseCsv(playVolume.text) as CsvRow[]).map((row) => parsePlayVolumeCompactRow(row) as TeamPlayVolumeRow)
+    : null;
   return {
     season,
     games: gamesPayload?.games ?? null,
     results: resultsPayload?.results ?? null,
     playerStats: stats ? parseCsv(stats.text) as CsvRow[] : null,
     rosters: rosters ? parseCsv(rosters.text) as CsvRow[] : null,
-    artifacts: Object.fromEntries([schedule, results, stats, rosters].filter((item) => item != null).map((item) => [item.artifact.logical_name, item.artifact])),
+    teamPlayVolume,
+    artifacts: Object.fromEntries([schedule, results, stats, rosters, playVolume].filter((item) => item != null).map((item) => [item.artifact.logical_name, item.artifact])),
   };
 }

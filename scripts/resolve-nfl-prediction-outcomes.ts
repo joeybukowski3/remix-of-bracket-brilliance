@@ -33,8 +33,8 @@ export function parseResolverArgs(argv: string[]): ResolverCliArgs {
     if (raw === "--dry-run") args.dryRun = true;
     else if (raw.startsWith("--prediction-types=")) {
       const types = raw.slice(19).split(",").filter(Boolean) as PredictionType[];
-      const supported = new Set<PredictionType>(["spread", "passing", "rushing", "receiving"]);
-      if (!types.length || types.some((type) => !supported.has(type))) throw new Error("--prediction-types must contain spread, passing, rushing, and/or receiving");
+      const supported = new Set<PredictionType>(["spread", "passing", "rushing", "receiving", "team_opportunity"]);
+      if (!types.length || types.some((type) => !supported.has(type))) throw new Error("--prediction-types must contain spread, passing, rushing, receiving, and/or team_opportunity");
       args.predictionTypes = [...new Set(types)];
     }
     else if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));

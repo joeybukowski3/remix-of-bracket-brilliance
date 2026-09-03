@@ -6,6 +6,11 @@ into analysis-ready research datasets. It changes no model, projection,
 prediction record, or outcome record. It is research/diagnostic
 infrastructure only.
 
+WU4C.1 (2026-09-02, operational) wires this into the scheduled
+`nfl-schedules-results.yml` workflow -- it now runs automatically after WU2
+resolution, on the same run, rather than by manual invocation only. It also
+adds the `team_opportunity` family (see below).
+
 ## Scope and non-goals
 
 WU3 builds a trustworthy research layer. It does **not** change spread,
@@ -22,7 +27,7 @@ Cohort patterns it surfaces are diagnostic, never causal claims.
   serialization, latest-outcome selection), with
   `nfl-evaluation-rows.ts`, `nfl-evaluation-cohorts.ts`,
   `nfl-evaluation-metrics.ts`, `nfl-evaluation-materializer.ts`.
-- Entry point: `npm run materialize:nfl-evaluation -- --season=<year> [--week=<week>] [--prediction-type=spread|passing|rushing|receiving] [--dry-run]`
+- Entry point: `npm run materialize:nfl-evaluation -- --season=<year> [--week=<week>] [--prediction-type=spread|passing|rushing|receiving|team_opportunity] [--dry-run]`
 
 ## Storage layout
 
@@ -175,6 +180,39 @@ absolute errors are the absolute value. `bias` is `mean(projection - actual)`
   denominator non-zero).
 - Volume: `zero_volume`, `actual_volume` (targets).
 - Market: same nullable shape as passing.
+
+### Team opportunity (WU4C.1, 2026-09-02)
+
+- Projection: `projected_team_plays`, `projected_dropback_rate`,
+  `projected_pass_attempts`, `projected_rush_attempts` (as archived by
+  WU4A).
+- Actual: `team_plays`, `dropbacks`, `dropback_rate`,
+  `designed_rush_attempts`, `pass_attempts` (nullable diagnostic).
+  `dropbacks`/`designed_rush_attempts` come from the same
+  `data/nfl/nflverse/play-volume-team-game/` cache WU4A trains against
+  (sacks and QB scrambles counted as dropbacks, matching
+  `nfl-epa-core.mjs`'s `classifyPlay`) -- **not** the official box-score
+  attempts/carries columns, which is why they are not named
+  `pass_attempts`/`rush_attempts` here despite WU4A's own projection fields
+  using that (pre-existing, undocumented-until-now) naming. `pass_attempts`
+  is a separate, opportunistic sum of official player-week passing attempts
+  for the team, populated only when player-week stats are published; it is
+  never required for resolution.
+- Error: `team_plays_error`, `absolute_team_plays_error`,
+  `dropbacks_error`, `absolute_dropbacks_error`, `dropback_rate_error`,
+  `designed_rush_attempts_error`, `pass_attempts_error` (nullable).
+  `dropbacks_error` compares the projection's `projected_pass_attempts`
+  against `actual.dropbacks` -- the like-for-like comparison given the
+  naming note above.
+- No `volume`/`market` block: there is no player-prop line on a team's
+  play count, unlike the player families.
+- Cohorts: `home_away`, `favorite_underdog` (from the prediction-time
+  market spread sign), `spread_bucket_abs`, `total_bucket`, `week_band`,
+  `model_version`.
+- Resolution is **team-level**: it never reads `data/nfl/nflverse/
+  player-week-stats/` or `weekly-rosters/` for its primary grade, and so is
+  never blocked by a delayed player-stat publication (see
+  `pending_team_stats` in [Prediction Archive Schema](PREDICTION_ARCHIVE_SCHEMA.md)).
 
 Every row also carries `feature_snapshot_values` (the archived compact
 feature subset, verbatim) for feature-conditioned research.
