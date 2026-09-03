@@ -285,6 +285,45 @@ describe("passing / rushing / receiving evaluation rows", () => {
     expect(row.feature_snapshot_values).toEqual({ spread_input: -3.5, role_certainty: "high" });
   });
 
+  it("WU4D.2: role-transition candidate cohorts (team_changed/no_history/limited_history/role_sourced/depth_chart_rank/starter_flag) surface as candidate__* when present in feature_snapshot.values", () => {
+    const p = prediction("rushing", {
+      feature_snapshot: {
+        values: { spread_input: -3.5, role_certainty: "high", team_changed: true, no_history: false, limited_history: false, role_sourced: true, depth_chart_rank: 1, starter_flag: true },
+        source_manifest_hashes: { run: "source" }, fitted_model_hash: "fitted-a",
+      },
+    });
+    const root = tempRoot("jkb-ru-cohort-");
+    appendOutcomeDrafts({ rootDir: root, drafts: [resolvePredictionOutcome(p, sources({ stats: [statRow()] }))] });
+    const events = readFileSync(join(root, "2025", "01", "rushing.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const row = buildEvaluationRow(p, events, { divisionGame: null }).row!;
+    expect(row.cohorts.candidate__team_changed).toBe(true);
+    expect(row.cohorts.candidate__no_history).toBe(false);
+    expect(row.cohorts.candidate__limited_history).toBe(false);
+    expect(row.cohorts.candidate__role_sourced).toBe(true);
+    expect(row.cohorts.candidate__depth_chart_rank).toBe(1);
+    expect(row.cohorts.candidate__starter_flag).toBe(true);
+  });
+
+  it("WU4D.4: rushing shadow allocator's role_conflict flag surfaces as candidate__role_conflict, and the full allocation_diagnostics object is preserved raw in feature_snapshot_values", () => {
+    const shadowDiagnostics = {
+      allocationModelVersion: "nfl-rushing-role-allocation-shadow-v1.0.0", historicalSharePrior: 0.55, roleSharePrior: 0.28,
+      finalProjectedShare: 0.2, projectedCarries: 4.6, roleConflictScore: 0.27, roleConflictFlag: true, teamChangeCalibrationApplied: true,
+      roleConfidenceEvidence: { depthRank: 2, roleSourced: true, teamChanged: true, noHistory: false, limitedHistory: false, priorGamesPlayed: 0, rosterCompetitionCount: null },
+    };
+    const p = prediction("rushing", {
+      feature_snapshot: {
+        values: { spread_input: -3.5, role_certainty: "high", role_conflict: true, allocation_diagnostics: shadowDiagnostics },
+        source_manifest_hashes: { run: "source" }, fitted_model_hash: "fitted-a",
+      },
+    });
+    const root = tempRoot("jkb-ru-conflict-");
+    appendOutcomeDrafts({ rootDir: root, drafts: [resolvePredictionOutcome(p, sources({ stats: [statRow()] }))] });
+    const events = readFileSync(join(root, "2025", "01", "rushing.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const row = buildEvaluationRow(p, events, { divisionGame: null }).row!;
+    expect(row.cohorts.candidate__role_conflict).toBe(true);
+    expect(row.feature_snapshot_values.allocation_diagnostics).toEqual(shadowDiagnostics);
+  });
+
   it("receiving: targets/ypt/yards error, zero-target behavior, missing projected receptions handled", () => {
     const p = prediction("receiving");
     const root = tempRoot("jkb-re-");

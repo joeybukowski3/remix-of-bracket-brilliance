@@ -29,7 +29,9 @@ import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/player
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
 import { resolveReceivingV2ProductionModel } from "../src/lib/nfl/props/roleAllocation/resolveProductionModel";
 import type { NflReceivingShareModel } from "../src/lib/nfl/props/roleAllocation/receivingProduction";
-import type { NflCurrentWeekProjectionRow } from "../src/lib/nfl/props/types/currentWeekProjection";
+import { resolveRushingShadowModel } from "../src/lib/nfl/props/roleAllocation/resolveRushingShadowModel";
+import { computeShadowRushingAllocationForTeam, type NflLiveRbRoleEvidence } from "../src/lib/nfl/props/roleAllocation/rushingShadowAllocation";
+import type { NflCurrentWeekProjectionRow, NflRushingAllocationDiagnostics } from "../src/lib/nfl/props/types/currentWeekProjection";
 import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
 import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow, type NflDepthChartIndex } from "../src/lib/nfl/props/currentWeekDepthChart";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
@@ -49,6 +51,7 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "data", "nfl", "props");
 const RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH = join(ROOT, "data", "nfl", "models", "receiving-role-allocation-v2.json");
+const RUSHING_SHADOW_ARTIFACT_PATH = join(ROOT, "data", "nfl", "models", "rushing-shadow-allocation-v1.json");
 const PLAY_VOLUME_CACHE_DIR = "data/nfl/nflverse/play-volume-team-game";
 const EPA_CACHE_DIR = "data/nfl/nflverse/epa-team-game";
 const STATS_CACHE_DIR = "data/nfl/nflverse/stats-player-week";
@@ -402,6 +405,55 @@ function main(): void {
     }
   }
 
+  // WU4D.3/4: rushing-v2 SHADOW role allocation. DIAGNOSTIC ONLY -- never
+  // alters production rushing's projectedCarries/projectedYardsPerCarry/
+  // projectedYards (those remain the simple carries x shrunk YPC model,
+  // computed entirely inside generateCurrentWeekYardageProjections below,
+  // untouched by anything in this block). Loads the compact, committed,
+  // hash-verified artifact (rushingShadowArtifact.ts) -- NEVER the
+  // gitignored 34MB player-level research dataset. FAILS OPEN by design
+  // (WU4D.3 §10 recommendation B): if the artifact or this week's WU4A
+  // team-opportunity rows are unavailable, production rushing generation
+  // proceeds completely unaffected and every rushing row simply carries no
+  // `allocationDiagnostics` -- this is instrumentation, not the model
+  // itself, so it must never be able to block or alter a production run.
+  let rushingShadowPending: { model: import("../src/lib/nfl/props/roleAllocation/rushingShadowArtifact").NflRushingShadowModel; teamOppRows: { team: string; week: number; gameId: string; kickoff: string; projectedRushAttempts: number }[] } | null = null;
+  {
+    const teamOppPath = join(ROOT, "public", "data", "nfl", String(args.season), "team-opportunity.json");
+    const resolution = (() => {
+      if (!existsSync(RUSHING_SHADOW_ARTIFACT_PATH)) {
+        return { ok: false as const, reason: `Rushing shadow artifact not found at ${RUSHING_SHADOW_ARTIFACT_PATH}.` };
+      }
+      if (!existsSync(teamOppPath)) {
+        return { ok: false as const, reason: `WU4A team-opportunity artifact not found at ${teamOppPath}.` };
+      }
+      let artifactJson: unknown;
+      try {
+        artifactJson = JSON.parse(readSource(RUSHING_SHADOW_ARTIFACT_PATH));
+      } catch (err) {
+        return { ok: false as const, reason: `Rushing shadow artifact at ${RUSHING_SHADOW_ARTIFACT_PATH} is not valid JSON: ${(err as Error).message}` };
+      }
+      const modelResolution = resolveRushingShadowModel(artifactJson);
+      if (!modelResolution.ok) return { ok: false as const, reason: modelResolution.reason };
+      const teamOppRows = (JSON.parse(readSource(teamOppPath)) as { rows: { team: string; week: number; gameId: string; kickoff: string; projectedRushAttempts: number }[] }).rows ?? [];
+      return { ok: true as const, model: modelResolution.model, teamOppRows: teamOppRows.filter((r) => r.week === args.week) };
+    })();
+
+    if (!resolution.ok) {
+      console.error(`[nfl:current-week-projections] rushing shadow diagnostics: unavailable -- ${resolution.reason}`);
+    } else if (resolution.teamOppRows.length === 0) {
+      console.error(`[nfl:current-week-projections] rushing shadow diagnostics: unavailable -- WU4A team-opportunity artifact has no week-${args.week} rows.`);
+    } else {
+      console.log(
+        `[nfl:current-week-projections] rushing shadow diagnostics: loaded (trainedThroughSeason=${resolution.model.trainedThroughSeason} ` +
+          `datasetSeasons=${JSON.stringify(resolution.model.datasetSeasons)} contentHash=${resolution.model.fittedArtifactHash})`,
+      );
+      // Deferred: built from artifact.rows once generation completes (rows carry
+      // the already-computed live feature snapshot this needs) -- see below.
+      rushingShadowPending = { model: resolution.model, teamOppRows: resolution.teamOppRows };
+    }
+  }
+
   const archiveCaptures: ArchiveCapture[] = [];
   let fittedModels: { passing: NflFittedPassingModel; rushing: NflFittedRushingModel; receiving: NflFittedReceivingModel } | null = null;
   const sources: NflCurrentWeekSources = {
@@ -420,7 +472,72 @@ function main(): void {
     },
   };
 
-  const artifact = generateCurrentWeekYardageProjections(sources);
+  let artifact = generateCurrentWeekYardageProjections(sources);
+
+  // WU4D.3/4: compute rushing shadow diagnostics from the ALREADY-BUILT
+  // rushing rows' own live feature snapshot (no second dataset, no
+  // independent WU4A recomputation -- `projectedRushAttempts` below is
+  // read verbatim off the WU4A team-opportunity rows resolved earlier).
+  // POST-PROCESSING BY DESIGN: unlike receiving v2 (wired inside
+  // currentWeekGenerator.ts), this stays entirely outside that function so
+  // the row-construction code that computes production
+  // projectedCarries/projectedYardsPerCarry/projectedYards is never
+  // touched by this change -- see WU4D.4 checkpoint for the rationale.
+  // `rushingShadowDiagnosticsByPlayerId` is consulted below both when
+  // rewriting `artifact.rows` (so the public artifact discloses shadow
+  // diagnostics too) and when building the archive `feature_snapshot`.
+  const rushingShadowDiagnosticsByPlayerId = new Map<string, NflRushingAllocationDiagnostics>();
+  if (rushingShadowPending) {
+    const { model, teamOppRows } = rushingShadowPending;
+    const teamOppByTeam = new Map(teamOppRows.map((r) => [r.team, r]));
+    const RUSH_POOL_OF: Record<string, "qb" | "rb" | "wrTe"> = { QB: "qb", RB: "rb", WR: "wrTe", TE: "wrTe" };
+    const rushingRows = artifact.rows.filter((r): r is Extract<NflCurrentWeekProjectionRow, { market: "rushing" }> => r.market === "rushing");
+    const byTeam = new Map<string, typeof rushingRows>();
+    for (const r of rushingRows) (byTeam.get(r.team) ?? byTeam.set(r.team, []).get(r.team)!).push(r);
+
+    let coherenceFailures = 0;
+    for (const [team, rows] of byTeam) {
+      const to = teamOppByTeam.get(team);
+      if (!to) continue; // this team's game not in this week's WU4A rows -- shadow stays unavailable for it, production unaffected
+      const liveEvidence: NflLiveRbRoleEvidence[] = rows.map((r) => ({
+        playerId: r.playerId, playerName: r.playerName, team: r.team, gameId: r.gameId, gameDateUtc: to.kickoff,
+        poolKey: RUSH_POOL_OF[r.position] ?? "wrTe", depthRankProxy: r.depthRank, isProjectedStarter: r.starterFlag === true,
+        priorShare: r.featureSnapshot.carryShare.priorSeason ?? r.featureSnapshot.carryShare.seasonPrior ?? null,
+        priorGamesPlayed: r.diagnostics.gamesWithCarriesPriorThisSeason, noHistory: r.hardCaseFlags.noHistory, limitedHistory: r.hardCaseFlags.limitedHistory,
+        teamChanged: r.hardCaseFlags.teamChanged, roleSourced: r.roleConfidence === "sourced",
+        concentration: r.diagnostics.recentTeamTopCarryShareConcentration, rosterCompetitionCount: null,
+      }));
+      try {
+        const result = computeShadowRushingAllocationForTeam({
+          team, season: args.season, week: args.week, gameDateUtc: to.kickoff, projectedDesignedRushes: to.projectedRushAttempts, liveEvidence, model,
+        });
+        for (const p of result.players) rushingShadowDiagnosticsByPlayerId.set(p.playerId, p.diagnostics);
+        for (const poolKey of ["qb", "rb", "wrTe"] as const) {
+          const poolPlayers = result.players.filter((p) => p.poolKey === poolKey);
+          if (poolPlayers.length === 0) continue;
+          const sum = poolPlayers.reduce((s, p) => s + (p.diagnostics.projectedCarries ?? 0), 0);
+          if (Math.abs(sum - result.poolSizes[poolKey]) > 1e-6) coherenceFailures += 1;
+        }
+      } catch (err) {
+        // One team's shadow allocation failing must never affect production
+        // rushing rows (for this team or any other) -- log and continue.
+        console.error(`[nfl:current-week-projections] rushing shadow diagnostics: team ${team} allocation failed -- ${(err as Error).message}`);
+      }
+    }
+    console.log(
+      `[nfl:current-week-projections] rushing shadow diagnostics: attached to ${rushingShadowDiagnosticsByPlayerId.size}/${rushingRows.length} rushing rows, pool coherence failures=${coherenceFailures}`,
+    );
+    if (rushingShadowDiagnosticsByPlayerId.size > 0) {
+      artifact = {
+        ...artifact,
+        rows: artifact.rows.map((r) =>
+          r.market === "rushing" && rushingShadowDiagnosticsByPlayerId.has(r.playerId)
+            ? { ...r, allocationDiagnostics: rushingShadowDiagnosticsByPlayerId.get(r.playerId)! }
+            : r,
+        ),
+      };
+    }
+  }
 
   // WU4C.1 Part 13: concise production log line -- model versions in one
   // place, plus the receiving-v2-vs-v1 team count so a run's log alone
@@ -474,7 +591,31 @@ function main(): void {
       workflow_name: process.env.GITHUB_WORKFLOW ?? null, workflow_run_id: process.env.GITHUB_RUN_ID ?? null,
       cutoff_policy: "slate_before_first_kickoff", status: row.status === "eligibleInsufficientHistory" ? "eligible_insufficient_history" : row.status === "notEligible" ? "not_eligible" : row.status === "dataUnresolved" ? "unavailable" : "projected",
       projection, feature_snapshot: {
-        values: asJson({ model_features: capture.featureValues, production_feature_snapshot: row.featureSnapshot, estimated_range: row.estimatedRange, matchup_score: row.matchupScore, hard_case_flags: row.hardCaseFlags, role: { fallback_provenance: row.fallbackProvenance, role_source: row.roleSource, role_source_updated_at: row.roleSourceUpdatedAt, depth_rank: row.depthRank, starter_flag: row.starterFlag, role_confidence: row.roleConfidence, history_status: row.historyStatus }, diagnostics: row.diagnostics, allocation_diagnostics: (row as { allocationDiagnostics?: unknown }).allocationDiagnostics ?? null }) as Record<string, JsonValue>,
+        values: asJson({
+          model_features: capture.featureValues, production_feature_snapshot: row.featureSnapshot, estimated_range: row.estimatedRange, matchup_score: row.matchupScore,
+          hard_case_flags: row.hardCaseFlags, role: { fallback_provenance: row.fallbackProvenance, role_source: row.roleSource, role_source_updated_at: row.roleSourceUpdatedAt, depth_rank: row.depthRank, starter_flag: row.starterFlag, role_confidence: row.roleConfidence, history_status: row.historyStatus }, diagnostics: row.diagnostics,
+          // WU4D.4: `capture.row` was captured DURING generation (via the
+          // archiveObserver callback), before rushing shadow diagnostics
+          // are computed as a post-processing step below -- so rushing
+          // rows look up their diagnostics from `rushingShadowDiagnosticsByPlayerId`
+          // by playerId rather than reading `row.allocationDiagnostics`
+          // (receiving v2's diagnostics ARE set inside the generator, so
+          // `row.allocationDiagnostics` remains correct for receiving).
+          allocation_diagnostics: row.market === "rushing"
+            ? rushingShadowDiagnosticsByPlayerId.get(row.playerId) ?? null
+            : (row as { allocationDiagnostics?: unknown }).allocationDiagnostics ?? null,
+          // WU4D.2: flat top-level mirrors of the nested values above, so
+          // nfl-evaluation-cohorts.ts's CANDIDATE_COHORT_FEATURE_KEYS
+          // allowlist (a flat top-level lookup) can actually surface them
+          // as queryable `candidate__*` cohorts in evaluation rows -- the
+          // nested forms above are kept unchanged for existing consumers.
+          team_changed: row.hardCaseFlags.teamChanged, no_history: row.hardCaseFlags.noHistory, limited_history: row.hardCaseFlags.limitedHistory,
+          role_sourced: row.roleConfidence === "sourced", depth_chart_rank: row.depthRank, starter_flag: row.starterFlag,
+          // WU4D.4: flat mirror of the rushing shadow allocator's role-conflict
+          // flag (null for every non-rushing row, and for rushing rows the
+          // shadow allocator couldn't cover this run).
+          role_conflict: row.market === "rushing" ? rushingShadowDiagnosticsByPlayerId.get(row.playerId)?.roleConflictFlag ?? null : null,
+        }) as Record<string, JsonValue>,
         ...(capture.orderedVector ? { ordered_vector: capture.orderedVector } : {}), ...(capture.imputationFlags ? { imputation_flags: capture.imputationFlags } : {}),
         source_manifest_hashes: { yardage_run: sourceManifest.hash }, fitted_model_hash: model.hash,
       },

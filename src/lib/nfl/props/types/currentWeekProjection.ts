@@ -191,6 +191,47 @@ export type NflCurrentWeekPassingRow = NflCurrentWeekRowIdentity & {
   };
 };
 
+/**
+ * WU4D.2 — role-transition diagnostic snapshot for rushing. UNLIKE
+ * `NflReceivingAllocationDiagnostics`, this is NOT wired into any
+ * production pipeline: production rushing (`nfl-rushing-carries-x-shrunk-
+ * ypc-production-2022-2025-v1`, see currentWeekYardageModel.ts) is the
+ * simple carries×YPC model and never runs the `roleAllocation/` finite-pool
+ * share machinery, so nothing currently populates this field on a live
+ * row. It exists so a FUTURE pass can wire it in (shadow-compute only,
+ * never altering `projectedCarries`/`projectedYardsPerCarry`/
+ * `projectedYards`) without a second schema change -- see
+ * `src/lib/nfl/research/rushingRoleTransitionSnapshot.ts` for the pure
+ * builder function this type is shaped for, itself also unwired.
+ * Optional/additive: old archived rows without this field remain valid
+ * (see `NflCurrentWeekRushingRow.allocationDiagnostics?`).
+ */
+export type NflRushingAllocationDiagnostics = {
+  /** e.g. "nfl-rushing-role-transition-shadow-v1" once wired; null until then. */
+  allocationModelVersion: string | null;
+  /** the player's point-in-time prior within-pool RB share (research layer's `priorShare`). */
+  historicalSharePrior: number | null;
+  /** the fitted depth-rank-bucket prior share (research layer's `rankPrior`) -- the "current role" prior. */
+  roleSharePrior: number | null;
+  /** the shrinkage-blended share the research allocator would project, before pool renormalization. */
+  finalProjectedShare: number | null;
+  projectedCarries: number | null;
+  /** abs(historicalSharePrior - roleSharePrior); null when either input is null. */
+  roleConflictScore: number | null;
+  roleConflictFlag: boolean;
+  /** whether a team-change calibration (S5E-style carryover discount) was applied to this player's historicalSharePrior. */
+  teamChangeCalibrationApplied: boolean;
+  roleConfidenceEvidence: {
+    depthRank: number | null;
+    roleSourced: boolean;
+    teamChanged: boolean | null;
+    noHistory: boolean;
+    limitedHistory: boolean;
+    priorGamesPlayed: number;
+    rosterCompetitionCount: number | null;
+  };
+};
+
 export type NflCurrentWeekRushingRow = NflCurrentWeekRowIdentity & {
   market: "rushing";
   projectedCarries: number | null;
@@ -201,6 +242,8 @@ export type NflCurrentWeekRushingRow = NflCurrentWeekRowIdentity & {
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
   featureSnapshot: NflCurrentWeekRushingFeatureSnapshot;
   diagnostics: { gamesWithCarriesPriorThisSeason: number; recentTeamTopCarryShareConcentration: number | null };
+  /** WU4D.2: present only once a future pass wires in the shadow role-allocation compute -- see `NflRushingAllocationDiagnostics`. Absent (not merely null) on every row produced this pass. */
+  allocationDiagnostics?: NflRushingAllocationDiagnostics;
 };
 
 /**
