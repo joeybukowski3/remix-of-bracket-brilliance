@@ -80,6 +80,8 @@ export default defineConfig({
       "scripts/cfb-build-season-stats.test.ts",
       // NFL Yardage Projection refresh pipeline -- CI artifact validation gate.
       "scripts/validate-nfl-current-week-yardage-projections.test.mjs",
+      // NFL yardage workflow -- branch-aware CI ref resolution.
+      "scripts/lib/ci-branch-resolution.test.mjs",
     ],
   },
   resolve: {
