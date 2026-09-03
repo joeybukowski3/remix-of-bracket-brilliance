@@ -1,10 +1,10 @@
 {
   "date": "2026-09-03",
-  "generatedAt": "2026-09-03T12:09:35.870Z",
+  "generatedAt": "2026-09-03T16:35:01.730Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Daikin Park (1.04) and Camden Yards (1.10) are the only true hitter-friendly parks on the slate, while Wrigley and Globe Life sit neutral. The top two HR scores both land in Houston against Luis Castillo, whose 71.8 HR/9 allowed dwarfs the rest of the slate, and Jake Bennett’s 35.3 HR/9 in Camden gives Alonso a secondary boost.",
-    "modelNote": "The model is heavily weighting opposing pitcher HR vulnerability and park factor, which is why Alvarez and Velázquez occupy the top four spots despite Caminero’s recent power surge."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Camden Yards (1.10) and Dodger Stadium (1.10) leading the way, while Wrigley Field and Globe Life Field sit at neutral. The top two HR targets face right-handers in Luis Castillo and Logan Henderson, both allowing elevated HR/FB rates, and several lefty-lefty or lefty-righty matchups (Alonso vs Bennett, Ohtani vs Mathews) add platoon edges.",
+    "modelNote": "The model is overweighting barrel and hard-hit rates in elevated parks while giving extra credit to recent power spikes (Crow-Armstrong’s 5 HR in 7 days) and pitcher vulnerabilities (Castillo’s 71.8 HR/600 PA allowed)."
   },
   "bestBets": [
     {
@@ -21,27 +21,8 @@
         "barrel=16.5%",
         "park=1.04"
       ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "TEX",
-      "opposingPitcher": "Cal Quantrill",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=12.8%",
-        "HH=49.9%"
-      ],
-      "bullets": [
-        "barrel=12.8%",
-        "park=0.99"
-      ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+229",
+      "marketImpliedProbability": 0.303951367781155,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,7 +31,7 @@
       "team": "CHC",
       "opponent": "MIL",
       "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 3,
+      "hrScoreRank": 2,
       "topStats": [
         "barrel=13%",
         "HH=48.7%"
@@ -65,22 +46,22 @@
       "hrValueEdge": null
     },
     {
-      "player": "Nelson Velázquez",
-      "team": "HOU",
-      "opponent": "CWS",
-      "opposingPitcher": "Luis Castillo",
-      "hrScoreRank": 4,
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "TEX",
+      "opposingPitcher": "Cal Quantrill",
+      "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=71.8",
-        "Hard Hit%=63.3"
+        "barrel=12.8%",
+        "HH=49.9%"
       ],
       "bullets": [
-        "HR score 57.2 (#4)",
-        "Pitcher HR VS 71.8 at park 1.04"
+        "barrel=12.8%",
+        "park=0.99"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -88,47 +69,47 @@
       "team": "MIL",
       "opponent": "CHC",
       "opposingPitcher": "Kevin Gausman",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "Pitcher HR VS=48.0",
         "Hard Hit%=47.7"
       ],
       "bullets": [
-        "HR score 55.3 (#5)",
+        "HR score 55.8 (#4)",
         "Pitcher HR VS 48.0 at park 1.00"
       ],
       "hrOddsYes": "+400",
       "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
+    },
+    {
+      "player": "Rafael Devers",
+      "team": "SF",
+      "opponent": "PIT",
+      "opposingPitcher": "Lake Bachar",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=50.8",
+        "Pitcher HR VS=44.4"
+      ],
+      "bullets": [
+        "HR score 55.8 (#5)",
+        "Pitcher HR VS 44.4 at park 0.90"
+      ],
+      "hrOddsYes": "+326",
+      "marketImpliedProbability": 0.2347417840375587,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
     }
   ],
   "valueBets": [
-    {
-      "player": "Nelson Velázquez",
-      "team": "HOU",
-      "opponent": "CWS",
-      "opposingPitcher": "Luis Castillo",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=13.3%",
-        "HH=63.3%"
-      ],
-      "bullets": [
-        "HH=63.3%",
-        "park=1.04"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
     {
       "player": "Jackson Chourio",
       "team": "MIL",
       "opponent": "CHC",
       "opposingPitcher": "Kevin Gausman",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=13%",
         "HH=47.7%"
@@ -143,40 +124,59 @@
       "hrValueEdge": null
     },
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "BOS",
-      "opposingPitcher": "Jake Bennett",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=13.6%",
-        "HH=56.9%"
-      ],
-      "bullets": [
-        "barrel=13.6%",
-        "park=1.1"
-      ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Rafael Devers",
       "team": "SF",
       "opponent": "PIT",
       "opposingPitcher": "Lake Bachar",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=11.6%",
+        "HH=50.8%"
+      ],
+      "bullets": [
+        "barrel=11.6%",
+        "park=0.9"
+      ],
+      "hrOddsYes": "+326",
+      "marketImpliedProbability": 0.2347417840375587,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Dominic Canzone",
+      "team": "SEA",
+      "opponent": "ATH",
+      "opposingPitcher": "Jack Perkins",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=12.5%",
+        "HH=44.9%"
+      ],
+      "bullets": [
+        "barrel=12.5%",
+        "park=0.93"
+      ],
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "BOS",
+      "opposingPitcher": "Jake Bennett",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=50.8",
-        "Pitcher HR VS=44.4"
+        "Hard Hit%=56.9",
+        "Pitcher HR VS=35.3"
       ],
       "bullets": [
         "HR score 54.8 (#7)",
-        "Pitcher HR VS 44.4 at park 0.90"
+        "Pitcher HR VS 35.3 at park 1.10"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+305",
+      "marketImpliedProbability": 0.24691358024691357,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -191,32 +191,32 @@
         "Hard Hit%=37.7"
       ],
       "bullets": [
-        "HR score 54.6 (#8)",
+        "HR score 54.4 (#8)",
         "Pitcher HR VS 50.7 at park 1.10"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+559",
+      "marketImpliedProbability": 0.15174506828528073,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Rafael Devers",
-      "team": "SF",
-      "opponent": "PIT",
-      "opposingPitcher": "Lake Bachar",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "BOS",
+      "opposingPitcher": "Jake Bennett",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=11.6%",
-        "HH=50.8%"
+        "barrel=13.6%",
+        "HH=56.9%"
       ],
       "bullets": [
-        "barrel=11.6%",
-        "park=0.9"
+        "barrel=13.6%",
+        "park=1.1"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+305",
+      "marketImpliedProbability": 0.24691358024691357,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -234,8 +234,8 @@
         "barrel=9.8%",
         "park=1.1"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+559",
+      "marketImpliedProbability": 0.15174506828528073,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,36 +244,36 @@
       "team": "TEX",
       "opponent": "TB",
       "opposingPitcher": "Shane McClanahan",
-      "hrScoreRank": 15,
+      "hrScoreRank": 16,
       "topStats": [
         "Pitcher HR VS=58.6",
         "Hard Hit%=40.4"
       ],
       "bullets": [
-        "HR score 52.5 (#15)",
+        "HR score 51.9 (#16)",
         "Pitcher HR VS 58.6 at park 0.99"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+770",
+      "marketImpliedProbability": 0.11494252873563218,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Brandon Nimmo",
-      "team": "TEX",
-      "opponent": "TB",
-      "opposingPitcher": "Shane McClanahan",
-      "hrScoreRank": 9,
+      "player": "Rafael Flores Jr.",
+      "team": "PIT",
+      "opponent": "SF",
+      "opposingPitcher": "Blade Tidwell",
+      "hrScoreRank": 23,
       "topStats": [
-        "Pitcher HR VS=58.6",
-        "Hard Hit%=50.8"
+        "Pitcher HR VS=54.3",
+        "Hard Hit%=44.6"
       ],
       "bullets": [
-        "HR score 54.1 (#9)",
-        "Pitcher HR VS 58.6 at park 0.99"
+        "HR score 50.3 (#23)",
+        "Pitcher HR VS 54.3 at park 0.90"
       ],
-      "hrOddsYes": "+625",
-      "marketImpliedProbability": 0.13793103448275862,
+      "hrOddsYes": "+720",
+      "marketImpliedProbability": 0.12195121951219512,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
