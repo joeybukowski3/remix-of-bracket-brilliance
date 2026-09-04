@@ -31,6 +31,7 @@ import { resolveReceivingV2ProductionModel } from "../src/lib/nfl/props/roleAllo
 import type { NflReceivingShareModel } from "../src/lib/nfl/props/roleAllocation/receivingProduction";
 import { resolveRushingShadowModel } from "../src/lib/nfl/props/roleAllocation/resolveRushingShadowModel";
 import { computeShadowRushingAllocationForTeam, type NflLiveRbRoleEvidence } from "../src/lib/nfl/props/roleAllocation/rushingShadowAllocation";
+import { shadowAvailable, shadowUnavailable, type NflShadowAvailability } from "../src/lib/nfl/props/roleAllocation/shadowAvailability";
 import type { NflCurrentWeekProjectionRow, NflRushingAllocationDiagnostics } from "../src/lib/nfl/props/types/currentWeekProjection";
 import type { NflFrozenScoreDefinition } from "../src/lib/nfl/props/currentWeekMatchupScore";
 import { buildDepthChartIndex, parseDepthChartRows, type NflDepthChartCsvRow, type NflDepthChartIndex } from "../src/lib/nfl/props/currentWeekDepthChart";
@@ -418,31 +419,40 @@ function main(): void {
   // `allocationDiagnostics` -- this is instrumentation, not the model
   // itself, so it must never be able to block or alter a production run.
   let rushingShadowPending: { model: import("../src/lib/nfl/props/roleAllocation/rushingShadowArtifact").NflRushingShadowModel; teamOppRows: { team: string; week: number; gameId: string; kickoff: string; projectedRushAttempts: number }[] } | null = null;
+  // WU4F.1 §4: every rushing row must end up with an EXPLICIT shadow
+  // availability fact -- never a silent null. `rushingShadowGlobalUnavailable`
+  // covers a failure that applies to the whole run (no artifact, no WU4A at
+  // all); the per-team loop below can additionally mark individual teams
+  // unavailable (missing_team_row / allocation_failure) even when the run
+  // overall is healthy.
+  let rushingShadowGlobalUnavailable: NflShadowAvailability | null = null;
   {
     const teamOppPath = join(ROOT, "public", "data", "nfl", String(args.season), "team-opportunity.json");
     const resolution = (() => {
       if (!existsSync(RUSHING_SHADOW_ARTIFACT_PATH)) {
-        return { ok: false as const, reason: `Rushing shadow artifact not found at ${RUSHING_SHADOW_ARTIFACT_PATH}.` };
+        return { ok: false as const, reason: `Rushing shadow artifact not found at ${RUSHING_SHADOW_ARTIFACT_PATH}.`, unavailable: shadowUnavailable("missing_shadow_artifact") };
       }
       if (!existsSync(teamOppPath)) {
-        return { ok: false as const, reason: `WU4A team-opportunity artifact not found at ${teamOppPath}.` };
+        return { ok: false as const, reason: `WU4A team-opportunity artifact not found at ${teamOppPath}.`, unavailable: shadowUnavailable("missing_team_opportunity") };
       }
       let artifactJson: unknown;
       try {
         artifactJson = JSON.parse(readSource(RUSHING_SHADOW_ARTIFACT_PATH));
       } catch (err) {
-        return { ok: false as const, reason: `Rushing shadow artifact at ${RUSHING_SHADOW_ARTIFACT_PATH} is not valid JSON: ${(err as Error).message}` };
+        return { ok: false as const, reason: `Rushing shadow artifact at ${RUSHING_SHADOW_ARTIFACT_PATH} is not valid JSON: ${(err as Error).message}`, unavailable: shadowUnavailable("invalid_shadow_artifact") };
       }
       const modelResolution = resolveRushingShadowModel(artifactJson);
-      if (!modelResolution.ok) return { ok: false as const, reason: modelResolution.reason };
+      if (!modelResolution.ok) return { ok: false as const, reason: modelResolution.reason, unavailable: shadowUnavailable("invalid_shadow_artifact") };
       const teamOppRows = (JSON.parse(readSource(teamOppPath)) as { rows: { team: string; week: number; gameId: string; kickoff: string; projectedRushAttempts: number }[] }).rows ?? [];
       return { ok: true as const, model: modelResolution.model, teamOppRows: teamOppRows.filter((r) => r.week === args.week) };
     })();
 
     if (!resolution.ok) {
       console.error(`[nfl:current-week-projections] rushing shadow diagnostics: unavailable -- ${resolution.reason}`);
+      rushingShadowGlobalUnavailable = resolution.unavailable;
     } else if (resolution.teamOppRows.length === 0) {
       console.error(`[nfl:current-week-projections] rushing shadow diagnostics: unavailable -- WU4A team-opportunity artifact has no week-${args.week} rows.`);
+      rushingShadowGlobalUnavailable = shadowUnavailable("missing_team_opportunity");
     } else {
       console.log(
         `[nfl:current-week-projections] rushing shadow diagnostics: loaded (trainedThroughSeason=${resolution.model.trainedThroughSeason} ` +
@@ -487,6 +497,10 @@ function main(): void {
   // rewriting `artifact.rows` (so the public artifact discloses shadow
   // diagnostics too) and when building the archive `feature_snapshot`.
   const rushingShadowDiagnosticsByPlayerId = new Map<string, NflRushingAllocationDiagnostics>();
+  // WU4F.1 §4: every rushing playerId this run evaluates gets an explicit
+  // entry here -- available or a specific unavailable reason -- filled in
+  // below as each row's fate is decided. Never left as an implicit null.
+  const rushingShadowAvailabilityByPlayerId = new Map<string, NflShadowAvailability>();
   if (rushingShadowPending) {
     const { model, teamOppRows } = rushingShadowPending;
     const teamOppByTeam = new Map(teamOppRows.map((r) => [r.team, r]));
@@ -498,7 +512,12 @@ function main(): void {
     let coherenceFailures = 0;
     for (const [team, rows] of byTeam) {
       const to = teamOppByTeam.get(team);
-      if (!to) continue; // this team's game not in this week's WU4A rows -- shadow stays unavailable for it, production unaffected
+      if (!to) {
+        // this team's game not in this week's WU4A rows -- shadow stays
+        // unavailable for it, with an explicit reason; production unaffected.
+        for (const r of rows) rushingShadowAvailabilityByPlayerId.set(r.playerId, shadowUnavailable("missing_team_row"));
+        continue;
+      }
       const liveEvidence: NflLiveRbRoleEvidence[] = rows.map((r) => ({
         playerId: r.playerId, playerName: r.playerName, team: r.team, gameId: r.gameId, gameDateUtc: to.kickoff,
         poolKey: RUSH_POOL_OF[r.position] ?? "wrTe", depthRankProxy: r.depthRank, isProjectedStarter: r.starterFlag === true,
@@ -511,7 +530,10 @@ function main(): void {
         const result = computeShadowRushingAllocationForTeam({
           team, season: args.season, week: args.week, gameDateUtc: to.kickoff, projectedDesignedRushes: to.projectedRushAttempts, liveEvidence, model,
         });
-        for (const p of result.players) rushingShadowDiagnosticsByPlayerId.set(p.playerId, p.diagnostics);
+        for (const p of result.players) {
+          rushingShadowDiagnosticsByPlayerId.set(p.playerId, p.diagnostics);
+          rushingShadowAvailabilityByPlayerId.set(p.playerId, shadowAvailable());
+        }
         for (const poolKey of ["qb", "rb", "wrTe"] as const) {
           const poolPlayers = result.players.filter((p) => p.poolKey === poolKey);
           if (poolPlayers.length === 0) continue;
@@ -520,8 +542,10 @@ function main(): void {
         }
       } catch (err) {
         // One team's shadow allocation failing must never affect production
-        // rushing rows (for this team or any other) -- log and continue.
+        // rushing rows (for this team or any other) -- log, mark this
+        // team's rows explicitly unavailable, and continue.
         console.error(`[nfl:current-week-projections] rushing shadow diagnostics: team ${team} allocation failed -- ${(err as Error).message}`);
+        for (const r of rows) rushingShadowAvailabilityByPlayerId.set(r.playerId, shadowUnavailable("allocation_failure"));
       }
     }
     console.log(
@@ -604,6 +628,14 @@ function main(): void {
           allocation_diagnostics: row.market === "rushing"
             ? rushingShadowDiagnosticsByPlayerId.get(row.playerId) ?? null
             : (row as { allocationDiagnostics?: unknown }).allocationDiagnostics ?? null,
+          // WU4F.1 §4: explicit shadow-availability fact for every rushing
+          // row -- never an ambiguous null. A run-wide failure (no
+          // artifact, no WU4A at all) takes precedence; otherwise each
+          // row's own per-team outcome from the loop above is used. Null
+          // only for non-rushing rows, where shadow does not apply.
+          shadow_availability: row.market === "rushing"
+            ? asJson(rushingShadowGlobalUnavailable ?? rushingShadowAvailabilityByPlayerId.get(row.playerId) ?? shadowUnavailable("other"))
+            : null,
           // WU4D.2: flat top-level mirrors of the nested values above, so
           // nfl-evaluation-cohorts.ts's CANDIDATE_COHORT_FEATURE_KEYS
           // allowlist (a flat top-level lookup) can actually surface them
