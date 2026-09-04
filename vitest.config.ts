@@ -79,6 +79,8 @@ export default defineConfig({
       // NFL Yardage Props Review -- shared opponent-production-allowed artifact.
       "scripts/lib/nfl-production-allowed-core.test.mjs",
       "scripts/generate-nfl-team-pregame-features.test.ts",
+      // NFL total model production guard -- Week 1 empty-target-season-cache relief.
+      "scripts/generate-nfl-totals.test.ts",
       // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
       "scripts/cfb-fetch-rankings.test.ts",
       "scripts/cfb-update-rankings.test.ts",
