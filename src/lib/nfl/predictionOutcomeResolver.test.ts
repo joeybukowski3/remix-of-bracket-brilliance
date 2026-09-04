@@ -28,16 +28,17 @@ function tempRoot(): string {
   return root;
 }
 
-type FixtureType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
+type FixtureType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity" | "team_total";
 
 function draft(type: FixtureType, overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
-  const isPlayer = type !== "spread" && type !== "team_opportunity";
+  const isPlayer = type !== "spread" && type !== "team_opportunity" && type !== "team_total";
   const projections = {
     spread: { type: "spread" as const, projected_home_margin: 4, projected_spread_team: "lar", projected_spread_line: -4, market_spread: null, edge: null },
     passing: { type: "passing" as const, projected_attempts: null, projected_ypa: null, projected_passing_yards: 250, direct_model_prediction: 250 },
     rushing: { type: "rushing" as const, projected_carries: 12, projected_ypc: 4.5, projected_rushing_yards: 54 },
     receiving: { type: "receiving" as const, projected_targets: 8, projected_receptions: null, projected_yards_per_reception: null, projected_yards_per_target: 9, projected_receiving_yards: 72 },
     team_opportunity: { type: "team_opportunity" as const, projected_team_plays: 62, projected_dropback_rate: 0.58, projected_pass_attempts: 35.96, projected_rush_attempts: 26.04 },
+    team_total: { type: "team_total" as const, projected_team_points: 24.6 },
   };
   return {
     schema_version: "jkb-football-prediction-v1", snapshot_label: null,
@@ -50,7 +51,7 @@ function draft(type: FixtureType, overrides: Partial<PredictionSnapshotDraft> = 
     pipeline_version: "archive-v1", code_revision: "abc", run_id: "run-1", workflow_name: null, workflow_run_id: null,
     cutoff_policy: "game_before_kickoff", status: "projected", projection: projections[type],
     feature_snapshot: { values: { x: 1 }, source_manifest_hashes: { run: "source" }, fitted_model_hash: type === "spread" ? null : "fitted" },
-    market_reference_status: "missing", market_snapshot_refs: [], provenance: [{ kind: "source_manifest", logical_name: "inputs", content_hash: "source" }],
+    market_reference_status: type === "team_total" ? "not_applicable" : "missing", market_snapshot_refs: [], provenance: [{ kind: "source_manifest", logical_name: "inputs", content_hash: "source" }],
     ...overrides,
   };
 }
@@ -130,6 +131,47 @@ describe("game outcome resolution", () => {
     const input = sources();
     input.games![0].status = "scheduled";
     expect(resolvePredictionOutcome(prediction("spread"), input).resolution_status).toBe("pending_game");
+  });
+});
+
+describe("team_total outcome resolution (NFL projected game total)", () => {
+  it("resolves the home row's actual team points against the home score, and derives points_error", () => {
+    const event = resolvePredictionOutcome(prediction("team_total"), sources({ homeScore: 24, awayScore: 17 }), "2025-09-08T12:00:00.000Z");
+    expect(event.resolution_status).toBe("resolved");
+    expect(event.actual).toMatchObject({ type: "team_total", team_points: 24, opponent_points: 17, game_total: 41 });
+    // projected_team_points fixture is 24.6.
+    expect(event.derived).toMatchObject({ type: "team_total", points_error: 0.6000000000000014, absolute_points_error: 0.6000000000000014 });
+  });
+
+  it("resolves the away row's actual team points against the away score", () => {
+    const record = prediction("team_total", { team: "ari", opponent: "lar", home_away: "away" });
+    const event = resolvePredictionOutcome(record, sources({ homeScore: 24, awayScore: 17 }));
+    expect(event.actual).toMatchObject({ type: "team_total", team_points: 17, opponent_points: 24, game_total: 41 });
+  });
+
+  it("never gates on player-week stats, rosters, or team play volume -- only games + results", () => {
+    const event = resolvePredictionOutcome(prediction("team_total"), sources({ stats: null, rosters: null, teamPlayVolume: null }));
+    expect(event.resolution_status).toBe("resolved");
+  });
+
+  it("keeps scheduled games pending", () => {
+    expect(resolvePredictionOutcome(prediction("team_total"), sources({ final: false })).resolution_status).toBe("pending_game");
+  });
+
+  it("rejects a team/home_away combination inconsistent with the resolved game", () => {
+    const record = prediction("team_total", { team: "ari", opponent: "lar", home_away: "home" });
+    expect(resolvePredictionOutcome(record, sources()).resolution_status).toBe("identity_unresolved");
+  });
+
+  it("the home and away rows of one game, once both resolved, sum to the game's actual total", () => {
+    const home = resolvePredictionOutcome(prediction("team_total"), sources({ homeScore: 24, awayScore: 17 }));
+    const away = resolvePredictionOutcome(prediction("team_total", { team: "ari", opponent: "lar", home_away: "away" }), sources({ homeScore: 24, awayScore: 17 }));
+    expect(home.actual?.type).toBe("team_total");
+    expect(away.actual?.type).toBe("team_total");
+    if (home.actual?.type === "team_total" && away.actual?.type === "team_total") {
+      expect(home.actual.team_points + away.actual.team_points).toBe(home.actual.game_total);
+      expect(home.actual.game_total).toBe(away.actual.game_total);
+    }
   });
 });
 

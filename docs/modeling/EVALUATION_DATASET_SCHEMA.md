@@ -11,6 +11,24 @@ WU4C.1 (2026-09-02, operational) wires this into the scheduled
 resolution, on the same run, rather than by manual invocation only. It also
 adds the `team_opportunity` family (see below).
 
+The NFL projected-total model (2026-09-04) adds the `team_total` family
+additively, the same way: `EVALUATION_DATASET_SCHEMA_VERSION` and
+`EVALUATION_MATERIALIZER_VERSION` are unchanged, the `spread` /
+`passing` / `rushing` / `receiving` / `team_opportunity` row shapes and
+metrics are byte-identical to before, and no existing evaluation row is
+altered. `team_total`'s row carries the TEAM SCORE error (`points_error`,
+via the shared core MAE/RMSE/correlation/bias block, keyed on
+`projected_team_points` vs. `actual.team_points`) and cohorts (week band,
+home/away, division game, model version, history status, projected-total
+bucket) but no `market`/`volume` field -- the total model has no player
+prop or Vegas input. `computeMetricBlock("team_total", ...)` additionally
+computes a GAME TOTAL component by pairing the two sibling (home + away)
+rows of each `game_id` and comparing their summed `projected_team_points`
+against the game's actual total (`unpaired_games_excluded` counts, never
+silently drops, any team_total row whose sibling has not yet resolved).
+Vegas is never read anywhere in this evaluation layer, matching the total
+model's own no-market-input contract.
+
 ## Scope and non-goals
 
 WU3 builds a trustworthy research layer. It does **not** change spread,

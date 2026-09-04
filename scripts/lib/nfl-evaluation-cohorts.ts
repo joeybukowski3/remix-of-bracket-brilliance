@@ -198,6 +198,31 @@ export function deriveTeamOpportunityCohorts(input: {
   };
 }
 
+/**
+ * team_total cohorts: no market, no volume -- the total model never reads
+ * Vegas. `history_status`/`projected_total_bucket` come from the archived
+ * feature snapshot, never a postgame value.
+ */
+export function deriveTeamTotalCohorts(input: {
+  context: CohortContext;
+  homeAway: "home" | "away";
+  modelVersion: string;
+  historyStatus: string | null;
+  projectedGameTotal: number | null;
+  featureValues: Record<string, JsonValue>;
+}): Record<string, JsonValue> {
+  return {
+    week_band: weekBand(input.context.week),
+    home_away: input.homeAway,
+    neutral_site: input.context.neutral_site,
+    division_game: input.context.division_game,
+    model_version: input.modelVersion,
+    history_status: input.historyStatus,
+    projected_total_bucket: totalBucket(input.projectedGameTotal),
+    ...conditionalCandidateCohorts(input.featureValues),
+  };
+}
+
 export function derivePlayerCohorts(input: {
   predictionType: Exclude<EvaluationPredictionType, "spread">;
   context: CohortContext;

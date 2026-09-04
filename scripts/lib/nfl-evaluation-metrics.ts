@@ -58,6 +58,9 @@ function projActualPairs(rows: readonly EvaluationRowV1[]): ProjActual[] {
     if (row.prediction_type === "team_opportunity") {
       return { projection: row.outcome.projection.projected_team_plays, actual: row.outcome.actual.team_plays };
     }
+    if (row.prediction_type === "team_total") {
+      return { projection: row.outcome.projection.projected_team_points, actual: row.outcome.actual.team_points };
+    }
     return { projection: row.outcome.projection.projected_receiving_yards, actual: row.outcome.actual.yards };
   });
 }
@@ -213,11 +216,62 @@ function teamOpportunityExtras(rows: readonly EvaluationRowV1[]): Record<string,
   };
 }
 
+type TeamTotalRow = Extract<EvaluationRowV1, { prediction_type: "team_total" }>;
+
+/**
+ * team_total diagnostics: the top-level core block already carries TEAM
+ * SCORE MAE/RMSE/correlation/bias (see projActualPairs above -- projection
+ * vs actual team_points, exactly the required "TEAM SCORE" block). This adds
+ * the GAME TOTAL block by pairing the two sibling (home + away) rows of each
+ * game_id and comparing their SUMMED projected points against the game's
+ * actual total -- the pairing this family requires that a single row can
+ * never answer alone. Vegas is never read here; only JKB projected vs actual.
+ */
+function teamTotalExtras(rows: readonly EvaluationRowV1[]): Record<string, JsonValue> {
+  const teamRows = rows.filter((row): row is TeamTotalRow => row.prediction_type === "team_total");
+  const byGame = new Map<string, TeamTotalRow[]>();
+  for (const row of teamRows) {
+    const bucket = byGame.get(row.game_id) ?? [];
+    bucket.push(row);
+    byGame.set(row.game_id, bucket);
+  }
+  const gameProjections: number[] = [];
+  const gameActuals: number[] = [];
+  const absErrors: number[] = [];
+  const signedErrors: number[] = [];
+  let unpairedGames = 0;
+  for (const [, sides] of byGame) {
+    if (sides.length !== 2) { unpairedGames += 1; continue; }
+    const projectedTotal = sides[0].outcome.projection.projected_team_points + sides[1].outcome.projection.projected_team_points;
+    const actualTotal = sides[0].outcome.actual.game_total;
+    const signedError = projectedTotal - actualTotal;
+    gameProjections.push(projectedTotal);
+    gameActuals.push(actualTotal);
+    signedErrors.push(signedError);
+    absErrors.push(Math.abs(signedError));
+  }
+  const correlationEligible = gameActuals.length >= SAMPLE_SIZE_THRESHOLDS.correlation;
+  return {
+    component: {
+      game_total: {
+        n: gameActuals.length,
+        unpaired_games_excluded: unpairedGames,
+        mae: mean(absErrors),
+        rmse: gameActuals.length > 0 ? Math.sqrt(mean(signedErrors.map((e) => e * e)) as number) : null,
+        bias: mean(signedErrors),
+        correlation: correlationEligible ? pearsonCorrelation(gameActuals, gameProjections) : null,
+        correlation_insufficient_sample: !correlationEligible,
+      },
+    },
+  };
+}
+
 export function computeMetricBlock(predictionType: EvaluationPredictionType, rows: readonly EvaluationRowV1[]): Record<string, JsonValue> {
   const typed = rows.filter((row) => row.prediction_type === predictionType);
   const core = coreErrorBlock(typed);
   const extras = predictionType === "spread" ? spreadExtras(typed)
     : predictionType === "team_opportunity" ? teamOpportunityExtras(typed)
+    : predictionType === "team_total" ? teamTotalExtras(typed)
     : playerExtras(predictionType, typed);
   return {
     ...core,
@@ -240,7 +294,7 @@ function sortedEntries<T>(map: Map<string, T>): [string, T][] {
   return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 }
 
-const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving", "team_opportunity"];
+const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving", "team_opportunity", "team_total"];
 
 export type LedgerStatusCounts = Record<string, number>;
 

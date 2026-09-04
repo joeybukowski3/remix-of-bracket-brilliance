@@ -92,7 +92,24 @@ export type TeamOpportunityActual = {
   pass_attempts: number | null;
 };
 
-export type ActualOutcome = SpreadActual | PassingActual | RushingActual | ReceivingActual | TeamOpportunityActual | null;
+/**
+ * Team-level actual for `prediction_type: "team_total"`. One archived row is
+ * ONE team's expected points; `team_points` is that team's final score,
+ * `opponent_points` the other side, `game_total` their sum. `game_total` is
+ * carried on every row so the evaluation materializer can pair the two
+ * sibling rows of a game without re-reading results.json, but the
+ * projected-vs-actual GAME total comparison itself is done there (by
+ * pairing), never from a single row -- exactly how the home+away sum
+ * invariant is enforced at generation time, not in the archive validator.
+ */
+export type TeamTotalActual = {
+  type: "team_total";
+  team_points: number;
+  opponent_points: number;
+  game_total: number;
+};
+
+export type ActualOutcome = SpreadActual | PassingActual | RushingActual | ReceivingActual | TeamOpportunityActual | TeamTotalActual | null;
 
 export type SpreadDerived = {
   type: "spread";
@@ -155,7 +172,18 @@ export type TeamOpportunityDerived = {
   pass_attempts_error: number | null;
 };
 
-export type DerivedOutcome = SpreadDerived | PassingDerived | RushingDerived | ReceivingDerived | TeamOpportunityDerived | null;
+/**
+ * Error convention matches every other family: `projection - actual`.
+ * `points_error` = archived `projected_team_points` - actual `team_points`.
+ * Positive = the model over-projected this team's scoring.
+ */
+export type TeamTotalDerived = {
+  type: "team_total";
+  points_error: number;
+  absolute_points_error: number;
+};
+
+export type DerivedOutcome = SpreadDerived | PassingDerived | RushingDerived | ReceivingDerived | TeamOpportunityDerived | TeamTotalDerived | null;
 
 export type PredictionOutcomeEventV1 = {
   schema_version: typeof OUTCOME_SCHEMA_VERSION;
@@ -242,6 +270,7 @@ export type ResolutionSummary = Record<ResolutionStatus | "already_resolved" | "
   rushing_resolved: number;
   receiving_resolved: number;
   team_opportunity_resolved: number;
+  team_total_resolved: number;
   appended: number;
 };
 
@@ -249,7 +278,7 @@ function emptySummary(): ResolutionSummary {
   return {
     resolved: 0, pending_game: 0, pending_player_stats: 0, pending_team_stats: 0, inactive: 0, not_applicable: 0,
     identity_unresolved: 0, source_missing: 0, already_resolved: 0, corrections: 0,
-    spread_resolved: 0, passing_resolved: 0, rushing_resolved: 0, receiving_resolved: 0, team_opportunity_resolved: 0, appended: 0,
+    spread_resolved: 0, passing_resolved: 0, rushing_resolved: 0, receiving_resolved: 0, team_opportunity_resolved: 0, team_total_resolved: 0, appended: 0,
   };
 }
 
@@ -346,6 +375,12 @@ function teamOpportunityDerived(prediction: PredictionSnapshotV1, actual: TeamOp
     designed_rush_attempts_error: projection.projected_rush_attempts - actual.designed_rush_attempts,
     pass_attempts_error: actual.pass_attempts == null ? null : projection.projected_pass_attempts - actual.pass_attempts,
   };
+}
+
+function teamTotalDerived(prediction: PredictionSnapshotV1, actual: TeamTotalActual): TeamTotalDerived {
+  if (prediction.projection.type !== "team_total") throw new Error("team_total projection mismatch");
+  const error = prediction.projection.projected_team_points - actual.team_points;
+  return { type: "team_total", points_error: error, absolute_points_error: Math.abs(error) };
 }
 
 function actualPassAttemptsForTeam(prediction: PredictionSnapshotV1, playerStats: CsvRow[] | null): number | null {
@@ -512,6 +547,35 @@ export function resolvePredictionOutcome(
       provider: "nflverse", source_artifacts: teamOppArtifacts, source_state_hash: contentHash({ game, result, team_play_volume: volumeRow } as unknown as JsonValue),
       identity_resolution: { method: "game_id", actual_team: prediction.team, actual_opponent: prediction.opponent, team_match: true, roster_status: null, zero_source: null },
       actual, derived: teamOpportunityDerived(prediction, actual),
+    };
+  }
+
+  if (prediction.prediction_type === "team_total") {
+    // Team-level grade: games + results only, exactly like spread. Never
+    // gates on player-week stats or the play-volume cache -- one team's final
+    // score is fully determined by results.json. gameId + team identity +
+    // home/away must all line up with the resolved game.
+    if ((prediction.team !== teams.home && prediction.team !== teams.away) ||
+        (prediction.home_away === "home" && prediction.team !== teams.home) ||
+        (prediction.home_away === "away" && prediction.team !== teams.away) ||
+        (prediction.opponent !== teams.home && prediction.opponent !== teams.away) ||
+        prediction.team === prediction.opponent) {
+      return unresolvedDraft(prediction, "identity_unresolved", sources, "final", { game, result }, gamesArtifacts,
+        { method: "game_id", actual_team: teams.home, actual_opponent: teams.away, team_match: false, roster_status: null, zero_source: null }, recordedAt);
+    }
+    const teamPoints = prediction.team === teams.home ? homeScore : awayScore;
+    const opponentPoints = prediction.team === teams.home ? awayScore : homeScore;
+    const actual: TeamTotalActual = {
+      type: "team_total", team_points: teamPoints, opponent_points: opponentPoints, game_total: homeScore + awayScore,
+    };
+    return {
+      schema_version: OUTCOME_SCHEMA_VERSION, prediction_id: prediction.prediction_id, snapshot_key: prediction.snapshot_key,
+      prediction_type: "team_total", season: prediction.season, week: prediction.week, game_id: prediction.game_id,
+      player_id: null, team: prediction.team, opponent: prediction.opponent, recorded_at: recordedAt, resolved_at: recordedAt,
+      resolution_status: "resolved", game_completion_status: "final", resolver_version: OUTCOME_RESOLVER_VERSION,
+      provider: "nflverse", source_artifacts: gamesArtifacts, source_state_hash: contentHash({ game, result } as unknown as JsonValue),
+      identity_resolution: { method: "game_id", actual_team: prediction.team, actual_opponent: prediction.opponent, team_match: true, roster_status: null, zero_source: null },
+      actual, derived: teamTotalDerived(prediction, actual),
     };
   }
 

@@ -13,7 +13,7 @@
 /** WU1 prediction-archive partitions + their content-addressed manifests (nfl-yardage-projections.yml). */
 export function isAllowedPredictionArchivePath(path, season) {
   const partition = new RegExp(
-    `^data/nfl/predictions/${season}/[0-9]{2}/nfl-(passing-direct-ridge|rushing-carries-x-shrunk-ypc|receiving-targets-x-shrunk-ypt|team-opportunity)\\.jsonl$`,
+    `^data/nfl/predictions/${season}/[0-9]{2}/nfl-(passing-direct-ridge|rushing-carries-x-shrunk-ypc|receiving-targets-x-shrunk-ypt|team-opportunity|total-ridge)\\.jsonl$`,
   );
   const manifest = /^data\/nfl\/predictions\/manifests\/(sources|fitted-models)\/[0-9a-f]{64}\.json$/;
   return partition.test(path) || manifest.test(path);
@@ -22,14 +22,14 @@ export function isAllowedPredictionArchivePath(path, season) {
 /** WU2 outcome-event partitions (nfl-schedules-results.yml). */
 export function isAllowedOutcomePath(path, season) {
   const partition = new RegExp(
-    `^data/nfl/prediction-outcomes/${season}/[0-9]{2}/(spread|passing|rushing|receiving|team_opportunity)\\.jsonl$`,
+    `^data/nfl/prediction-outcomes/${season}/[0-9]{2}/(spread|passing|rushing|receiving|team_opportunity|team_total)\\.jsonl$`,
   );
   return partition.test(path);
 }
 
 /** WU3 derived evaluation datasets (nfl-schedules-results.yml, after resolution). Derived-only, never a source/outcome path. */
 export function isAllowedEvaluationPath(path) {
-  const versionedFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity)\/[0-9]{4}\.jsonl$/;
+  const versionedFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity|team_total)\/[0-9]{4}\.jsonl$/;
   const ledgerFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/resolution-status\/[0-9]{4}\.jsonl$/;
   const summaryFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/summary\/[0-9]{4}\.json$/;
   // WU4G: cumulative rushing shadow-vs-production / receiving role-conflict

@@ -30,6 +30,7 @@ import {
   type SpreadEvaluationRow,
   type SpreadMarketObservationEvaluation,
   type TeamOpportunityEvaluationRow,
+  type TeamTotalEvaluationRow,
   EVALUATION_DATASET_SCHEMA_VERSION,
   EVALUATION_MATERIALIZER_VERSION,
 } from "./nfl-evaluation-dataset";
@@ -37,6 +38,7 @@ import {
   derivePlayerCohorts,
   deriveSpreadCohorts,
   deriveTeamOpportunityCohorts,
+  deriveTeamTotalCohorts,
   type CohortContext,
 } from "./nfl-evaluation-cohorts";
 
@@ -471,6 +473,59 @@ function buildTeamOpportunityRow(
   };
 }
 
+function nestedString(values: Record<string, JsonValue>, path: readonly string[]): string | null {
+  let cursor: JsonValue = values;
+  for (const key of path) {
+    if (cursor == null || typeof cursor !== "object" || Array.isArray(cursor)) return null;
+    cursor = (cursor as Record<string, JsonValue>)[key];
+  }
+  return typeof cursor === "string" ? cursor : null;
+}
+
+function nestedNumber(values: Record<string, JsonValue>, path: readonly string[]): number | null {
+  let cursor: JsonValue = values;
+  for (const key of path) {
+    if (cursor == null || typeof cursor !== "object" || Array.isArray(cursor)) return null;
+    cursor = (cursor as Record<string, JsonValue>)[key];
+  }
+  return typeof cursor === "number" && Number.isFinite(cursor) ? cursor : null;
+}
+
+function buildTeamTotalRow(
+  prediction: PredictionSnapshotV1,
+  selected: PredictionOutcomeEventV1,
+  selection: ReturnType<typeof selectLatestOutcome>,
+  ctx: EvaluationRowBuildContext,
+): TeamTotalEvaluationRow {
+  if (prediction.projection.type !== "team_total" || selected.actual?.type !== "team_total" || selected.derived?.type !== "team_total") {
+    throw new Error(`team_total row type mismatch for ${prediction.prediction_id}`);
+  }
+  const projection = prediction.projection;
+  const actual = selected.actual;
+  const derived = selected.derived;
+  const provenance = outcomeProvenance(selected, selection);
+  const featureValues = prediction.feature_snapshot.values;
+  return {
+    ...identity(prediction, provenance),
+    prediction_type: "team_total",
+    outcome: {
+      ...provenance,
+      projection: { projected_team_points: projection.projected_team_points },
+      actual: { team_points: actual.team_points, opponent_points: actual.opponent_points, game_total: actual.game_total },
+      error: { points_error: derived.points_error, absolute_points_error: derived.absolute_points_error },
+    },
+    feature_snapshot_values: featureValues,
+    cohorts: deriveTeamTotalCohorts({
+      context: cohortContext(prediction, ctx),
+      homeAway: prediction.home_away,
+      modelVersion: prediction.model_version,
+      historyStatus: nestedString(featureValues, ["history", "history_status"]),
+      projectedGameTotal: nestedNumber(featureValues, ["prediction", "projected_game_total"]),
+      featureValues,
+    }),
+  };
+}
+
 function ledgerRow(
   prediction: PredictionSnapshotV1,
   selection: ReturnType<typeof selectLatestOutcome>,
@@ -532,6 +587,7 @@ export function buildEvaluationRow(
     rushing: buildRushingRow,
     receiving: buildReceivingRow,
     team_opportunity: buildTeamOpportunityRow,
+    team_total: buildTeamTotalRow,
   } as const;
   const row = builders[prediction.prediction_type](prediction, selected, selection, ctx);
   return { row, ledger };
