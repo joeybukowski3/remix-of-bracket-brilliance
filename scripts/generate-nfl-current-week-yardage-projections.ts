@@ -48,6 +48,7 @@ import {
   archiveProductionPredictions, buildFittedModelManifest, buildSourceManifest, contentHash,
   finalizePredictionSnapshot, type JsonValue, type MarketSnapshotReference, type PredictionSnapshotDraft,
 } from "./lib/nfl-production-prediction-archive";
+import { buildReceivingRoleConflictArchiveEntry, type ReceivingRoleConflictArchiveEntry } from "../src/lib/nfl/research/receivingRoleConflictDiagnostic";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "data", "nfl", "props");
@@ -592,6 +593,26 @@ function main(): void {
   const gameById = new Map(games.map((game) => [game.gameId, game]));
   const archiveCreatedAt = new Date().toISOString();
   const runId = process.env.GITHUB_RUN_ID ? `github:${process.env.GITHUB_RUN_ID}` : `local:${artifact.generatedAt}`;
+  // WU4F.2A: diagnostic-only receiving role-conflict archive entry.
+  // Depends ONLY on `receivingShareModel` (the production-safe, already-
+  // loaded fitted artifact -- same one `sources.receivingShareModel` feeds
+  // to production allocation) plus fields already present on the captured
+  // receiving row. Never reads the gitignored research dataset, the WU4E
+  // coaching dataset, or any WU4F research scan script -- see §13 in the
+  // checkpoint. Archive-only (§5): does NOT touch `artifact.rows`/the
+  // public yardage-projections.json artifact.
+  function buildReceivingRoleConflictEntry(row: NflCurrentWeekProjectionRow): ReceivingRoleConflictArchiveEntry | null {
+    if (row.market !== "receiving") return null;
+    const alloc = (row as { allocationDiagnostics?: { priorOpportunityShare: number | null; roleConfidenceEvidence: { depthRank: number | null; roleSourced: boolean; teamChanged: boolean | null; noHistory: boolean; limitedHistory: boolean } } }).allocationDiagnostics;
+    if (!alloc) return buildReceivingRoleConflictArchiveEntry({ hasAllocationDiagnostics: false, position: row.position, depthRank: null, roleSourced: false, historicalTargetShare: null, teamChanged: null, noHistory: false, limitedHistory: false, rankPrior: new Map() });
+    const ev = alloc.roleConfidenceEvidence;
+    return buildReceivingRoleConflictArchiveEntry({
+      hasAllocationDiagnostics: true, position: row.position, depthRank: ev.depthRank, roleSourced: ev.roleSourced,
+      historicalTargetShare: alloc.priorOpportunityShare, teamChanged: ev.teamChanged, noHistory: ev.noHistory, limitedHistory: ev.limitedHistory,
+      rankPrior: receivingShareModel?.fit.rankPrior ?? new Map(),
+    });
+  }
+
   const records = archiveCaptures.map((capture) => {
     const row = capture.row;
     if (row.projectedYards == null) throw new Error(`Cannot archive non-numeric production row ${row.market}/${row.playerId}`);
@@ -647,6 +668,14 @@ function main(): void {
           // flag (null for every non-rushing row, and for rushing rows the
           // shadow allocator couldn't cover this run).
           role_conflict: row.market === "rushing" ? rushingShadowDiagnosticsByPlayerId.get(row.playerId)?.roleConflictFlag ?? null : null,
+          // WU4F.2A: receiving role-conflict diagnostic (§3) -- diagnostic
+          // only, archive-only (see §5 rationale in the checkpoint), never
+          // fed back into `projectedTargets`/`projectedYards`. `null` for
+          // every non-receiving row; explicit `{available:false,reason}` for
+          // a receiving row lacking the inputs (see
+          // ReceivingRoleConflictUnavailableReason) rather than an
+          // ambiguous bare null.
+          receiving_role_conflict: asJson(buildReceivingRoleConflictEntry(row)),
         }) as Record<string, JsonValue>,
         ...(capture.orderedVector ? { ordered_vector: capture.orderedVector } : {}), ...(capture.imputationFlags ? { imputation_flags: capture.imputationFlags } : {}),
         source_manifest_hashes: { yardage_run: sourceManifest.hash }, fitted_model_hash: model.hash,
