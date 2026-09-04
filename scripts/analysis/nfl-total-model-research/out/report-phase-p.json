@@ -1,0 +1,453 @@
+{
+  "shrinkageLambda": 10,
+  "strongerLambda": 100,
+  "priorProvenance": {
+    "fold1": {
+      "successPrior": 1.032109207808901,
+      "defEpaPrior": 0.24424582986713664,
+      "source": "2021-only historical dataset (n=512), strictly prior to Fold1's 2022 training year -- independent of 2022-2025"
+    },
+    "fold2": {
+      "successPrior": 0.5093832656563037,
+      "defEpaPrior": 0.40194523057937753,
+      "source": "self-referential: unpenalized ridge on Fold2's own 2022-2023 training years only (equals Model A's own fold2 coefficient)"
+    },
+    "retrospective": {
+      "successPrior": 0.5037806331253235,
+      "defEpaPrior": 0.46982288338691675,
+      "source": "self-referential: unpenalized ridge on Retrospective's own 2022-2024 training years only (equals Model A's own retrospective coefficient)"
+    }
+  },
+  "baselineByFold": {
+    "fold1": {
+      "teamPoint": {
+        "n": 544,
+        "mae": 7.814268399042016,
+        "rmse": 9.91055168111467,
+        "correlation": 0.17024700598936787,
+        "meanBias": 0.15889478195669132
+      },
+      "gameTotal": {
+        "n": 272,
+        "mae": 10.626277746735775,
+        "rmse": 13.514548863544832,
+        "correlation": 0.16529605492996388,
+        "meanBias": 0.31778956391338253
+      }
+    },
+    "fold2": {
+      "teamPoint": {
+        "n": 544,
+        "mae": 7.660483207297208,
+        "rmse": 9.643761065321081,
+        "correlation": 0.2388675100328501,
+        "meanBias": -1.20844474875741
+      },
+      "gameTotal": {
+        "n": 272,
+        "mae": 10.058191377896087,
+        "rmse": 13.131091200512268,
+        "correlation": 0.16998087959188468,
+        "meanBias": -2.41688949751482
+      }
+    },
+    "retrospective": {
+      "teamPoint": {
+        "n": 544,
+        "mae": 7.962854546312364,
+        "rmse": 9.99233503188476,
+        "correlation": 0.05050457495828914,
+        "meanBias": -0.1574999853905591
+      },
+      "gameTotal": {
+        "n": 272,
+        "mae": 11.006281895639717,
+        "rmse": 13.841281335634001,
+        "correlation": 0.07090488250613104,
+        "meanBias": -0.3149999707811186
+      }
+    }
+  },
+  "modelResults": {
+    "A": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.694936582272845,
+          "rmse": 9.802956108600588,
+          "correlation": 0.23089392825438113,
+          "meanBias": -0.9838963796120791
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.597903972013064,
+          "rmse": 13.89684894681994,
+          "correlation": 0.1105875001918447,
+          "meanBias": -1.9677927592241573
+        }
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.275882746344369,
+          "rmse": 9.227476509228625,
+          "correlation": 0.35723528699959917,
+          "meanBias": -1.0586324857811131
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.93299033342195,
+          "rmse": 12.883620874698044,
+          "correlation": 0.24167763776763038,
+          "meanBias": -2.117264971562224
+        }
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.510260105120878,
+          "rmse": 9.431550856329027,
+          "correlation": 0.3144156063184664,
+          "meanBias": 0.06778408599297733
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.579946887682864,
+          "rmse": 13.403391591853403,
+          "correlation": 0.23688819827860022,
+          "meanBias": 0.1355681719859547
+        }
+      }
+    },
+    "B": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.6915014229465175,
+          "rmse": 9.799652342674744,
+          "correlation": 0.232277435509025,
+          "meanBias": -0.9901395177081315
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.597425194093692,
+          "rmse": 13.899940259555413,
+          "correlation": 0.11004543570828476,
+          "meanBias": -1.9802790354162658
+        }
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.275882264829037,
+          "rmse": 9.227474805794918,
+          "correlation": 0.3572349555036283,
+          "meanBias": -1.0586927362730716
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.933084748849483,
+          "rmse": 12.883704914916313,
+          "correlation": 0.24166098467776254,
+          "meanBias": -2.117385472546145
+        }
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.51016909999982,
+          "rmse": 9.43148019638964,
+          "correlation": 0.3144380660571925,
+          "meanBias": 0.06780174004216978
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.579881038080394,
+          "rmse": 13.40337382356694,
+          "correlation": 0.23689317495130038,
+          "meanBias": 0.1356034800843397
+        }
+      }
+    },
+    "C": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.640114304322248,
+          "rmse": 9.744547554512952,
+          "correlation": 0.24572334730558176,
+          "meanBias": -0.879224328974576
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.529254545062427,
+          "rmse": 13.797416603783526,
+          "correlation": 0.10765904010429601,
+          "meanBias": -1.7584486579491507
+        }
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.294891072762603,
+          "rmse": 9.242754638636885,
+          "correlation": 0.3576111313747854,
+          "meanBias": -1.0780257212299762
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.941575071932307,
+          "rmse": 12.892275909207923,
+          "correlation": 0.23950000685032333,
+          "meanBias": -2.1560514424599524
+        }
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.50808958165197,
+          "rmse": 9.431543332451643,
+          "correlation": 0.3155119453293502,
+          "meanBias": 0.0057089931682757
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.557850740867805,
+          "rmse": 13.394169451560344,
+          "correlation": 0.23819935849994434,
+          "meanBias": 0.011417986336552013
+        }
+      }
+    },
+    "D": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.6880030494275955,
+          "rmse": 9.797586660872694,
+          "correlation": 0.23315616564889363,
+          "meanBias": -0.9929504641626465
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.597636842184896,
+          "rmse": 13.905517283699481,
+          "correlation": 0.1089628125449326,
+          "meanBias": -1.9859009283252955
+        }
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.275919552888178,
+          "rmse": 9.22848064714278,
+          "correlation": 0.3556796689382832,
+          "meanBias": -1.0198815974492135
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.908477350783807,
+          "rmse": 12.860919660647111,
+          "correlation": 0.24437318161963403,
+          "meanBias": -2.0397631948984243
+        }
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.527644390455496,
+          "rmse": 9.442641966804578,
+          "correlation": 0.31092180378574663,
+          "meanBias": 0.11418000191975623
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.611389109139811,
+          "rmse": 13.41751118005722,
+          "correlation": 0.23349378873806115,
+          "meanBias": 0.22836000383951321
+        }
+      }
+    }
+  },
+  "coefficientsByModelFold": {
+    "A": {
+      "fold1": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.415327738498551,
+          "offenseSuccessRate": -0.2108542244452386,
+          "opponentDefenseEpaAllowed": -0.3397667077842864,
+          "opponentDefenseSuccessAllowed": 1.5172080956457394,
+          "homeIndicator": 1.0150758615301352
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "standardized": {
+          "offenseEpaPerPlay": 1.7700497282210597,
+          "offenseSuccessRate": 0.5093832656563037,
+          "opponentDefenseEpaAllowed": 0.40194523057937753,
+          "opponentDefenseSuccessAllowed": 0.33956199367052275,
+          "homeIndicator": 1.1776981531427306
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.174565929810065,
+          "offenseSuccessRate": 0.5037806331253235,
+          "opponentDefenseEpaAllowed": 0.46982288338691675,
+          "opponentDefenseSuccessAllowed": 0.290480476267353,
+          "homeIndicator": 1.0803630312805472
+        },
+        "intercept": 22.187730061349694
+      }
+    },
+    "B": {
+      "fold1": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.34955352976845,
+          "offenseSuccessRate": -0.13371188850330065,
+          "opponentDefenseEpaAllowed": -0.3236230685493517,
+          "opponentDefenseSuccessAllowed": 1.508196545819684,
+          "homeIndicator": 1.014686653395808
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "standardized": {
+          "offenseEpaPerPlay": 1.7684382545941861,
+          "offenseSuccessRate": 0.511230290012986,
+          "opponentDefenseEpaAllowed": 0.40270587778764194,
+          "opponentDefenseSuccessAllowed": 0.3390214148027569,
+          "homeIndicator": 1.1776931746642794
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.173398971591882,
+          "offenseSuccessRate": 0.5051065263029705,
+          "opponentDefenseEpaAllowed": 0.47044936085107236,
+          "opponentDefenseSuccessAllowed": 0.29002274364284136,
+          "homeIndicator": 1.0803568260329142
+        },
+        "intercept": 22.187730061349694
+      }
+    },
+    "C": {
+      "fold1": {
+        "standardized": {
+          "offenseEpaPerPlay": 1.5918389469926848,
+          "offenseSuccessRate": 0.39533992962064385,
+          "opponentDefenseEpaAllowed": -0.06175344122951537,
+          "opponentDefenseSuccessAllowed": 1.1175829536081987,
+          "homeIndicator": 0.8532681516222059
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "standardized": {
+          "offenseEpaPerPlay": 1.4601699997230915,
+          "offenseSuccessRate": 0.7130201663073488,
+          "opponentDefenseEpaAllowed": 0.38037493696687935,
+          "opponentDefenseSuccessAllowed": 0.32445045233508324,
+          "homeIndicator": 1.0791148061604592
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "standardized": {
+          "offenseEpaPerPlay": 1.8569332216068248,
+          "offenseSuccessRate": 0.7377413028810498,
+          "opponentDefenseEpaAllowed": 0.4454747766843226,
+          "opponentDefenseSuccessAllowed": 0.28870125615920494,
+          "homeIndicator": 1.019505868879385
+        },
+        "intercept": 22.187730061349694
+      }
+    },
+    "D": {
+      "fold1": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.2357859391719086,
+          "opponentDefenseEpaAllowed": -0.34853976065715114,
+          "opponentDefenseSuccessAllowed": 1.5296344889368427,
+          "homeIndicator": 1.0137420364626044
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.212255811411116,
+          "opponentDefenseEpaAllowed": 0.39940082378819225,
+          "opponentDefenseSuccessAllowed": 0.33974028177314625,
+          "homeIndicator": 1.1768310242514712
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "standardized": {
+          "offenseEpaPerPlay": 2.616618909050478,
+          "opponentDefenseEpaAllowed": 0.46354747599090257,
+          "opponentDefenseSuccessAllowed": 0.2950944500622137,
+          "homeIndicator": 1.079475492267562
+        },
+        "intercept": 22.187730061349694
+      }
+    }
+  },
+  "shrinkageDiagnostics": {
+    "fold1": {
+      "successPrior": 1.032109207808901,
+      "defEpaPrior": 0.24424582986713664,
+      "shrinkageLambda": 10,
+      "unconstrainedSuccess": -0.2108542244452386,
+      "finalSuccess": -0.13371188850330065,
+      "successShrinkageAmount": 0.07714233594193795,
+      "unconstrainedDefEpa": -0.3397667077842864,
+      "finalDefEpa": -0.3236230685493517,
+      "defEpaShrinkageAmount": 0.016143639234934726
+    },
+    "fold2": {
+      "successPrior": 0.5093832656563037,
+      "defEpaPrior": 0.40194523057937753,
+      "shrinkageLambda": 10,
+      "unconstrainedSuccess": 0.5093832656563037,
+      "finalSuccess": 0.511230290012986,
+      "successShrinkageAmount": 0.0018470243566823807,
+      "unconstrainedDefEpa": 0.40194523057937753,
+      "finalDefEpa": 0.40270587778764194,
+      "defEpaShrinkageAmount": 0.0007606472082644089
+    },
+    "retrospective": {
+      "successPrior": 0.5037806331253235,
+      "defEpaPrior": 0.46982288338691675,
+      "shrinkageLambda": 10,
+      "unconstrainedSuccess": 0.5037806331253235,
+      "finalSuccess": 0.5051065263029705,
+      "successShrinkageAmount": 0.0013258931776469751,
+      "unconstrainedDefEpa": 0.46982288338691675,
+      "finalDefEpa": 0.47044936085107236,
+      "defEpaShrinkageAmount": 0.000626477464155617
+    }
+  },
+  "fold1PostShrinkageBootstrap": {
+    "drawCount": 1000,
+    "gameCount": 271,
+    "offenseSuccessRate": {
+      "median": -0.2585067159763853,
+      "p5": -1.158356929214223,
+      "p95": 0.8204433945311991,
+      "pctPositive": 34.1,
+      "pctNegative": 65.9
+    },
+    "opponentDefenseEpaAllowed": {
+      "median": -0.4834524929496027,
+      "p5": -1.3382770617906703,
+      "p95": 0.5770283952843315,
+      "pctPositive": 20.2,
+      "pctNegative": 79.8
+    }
+  }
+}

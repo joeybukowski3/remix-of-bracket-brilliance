@@ -102,6 +102,18 @@ Coherence is a hard accounting constraint, not evidence of predictiveness: playe
 | Scores | Final home/away scores, margin, total | Outcomes/backtests |
 | Game market | Multi-book spread/total/moneyline observations with timestamps | Comparison infrastructure, not current JKB spread input or total model |
 
+## Total-model features (2026-09-04 update: production-candidate pipeline built, `src/lib/nfl/props/totals/**`; research history in `src/lib/nfl/research/total/**`)
+
+The 5 features below are now also consumed by the production-candidate pipeline (`totalsFeatures.ts`), locked to the frozen v1 contract (no `scoringEnvironment`, no explosive rate). Not wired into any UI/matchup consumer. See `docs/modeling/JKB_MODELING_MASTER_SPEC.md`'s "JKB total production-candidate pipeline" section.
+
+| Feature | Definition | Source | Window | Status |
+| --- | --- | --- | --- | --- |
+| Scoring environment | Point-in-time league-average points/team/game, 3 variants | `results.json` 2020-2025 | strictly-prior (season, week) cutoff | research input |
+| Offense EPA/play, success rate, explosive rate | Traditional down-based success (not EPA>0); explosive = pass>=15yd or rush>=10yd, unfiltered for garbage time | new research-only PBP aggregate, 2021-2025 | seasonPrior -> priorSeason coalesce | research input |
+| Opponent defense-allowed EPA/play, success rate, explosive rate | Same 3 metrics read off the opponent's offensive row in the team's own past games | same cache | same coalesce | research input |
+| Home indicator | Schedule side | `results.json` | pregame | research input |
+| Pass/rush EPA matchup, dropback rate, pace proxy, giveaway rate, sacks-allowed rate | Phase H residual candidates | production `epa-team-game`, `play-volume-team-game`, `stats-team-week` caches | same coalesce | tested, not promoted -- see `out/report.json` |
+
 ## Candidate/future features — not currently implemented as model inputs
 
 These are inventory items, not approved features: normalized weather (wind, temperature, precipitation), game-day roof state, surface, seconds/play pace, rest, travel/time-zone distance, current archived injury/availability, offensive-line/trench and defensive-front history, routes and route participation, snap-share projections, red-zone/goal-line role, air-yards share, player-prop closing designation, and consensus market construction. Their existence in raw PBP or display artifacts does not make them point-in-time model features.

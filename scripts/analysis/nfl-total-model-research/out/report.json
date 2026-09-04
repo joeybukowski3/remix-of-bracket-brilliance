@@ -1,0 +1,2917 @@
+{
+  "generatedAt": "2026-09-03T21:55:21.263Z",
+  "ridgeLambda": 1,
+  "ridgeFeatureNames": [
+    "scoringEnvironment",
+    "offenseEpaPerPlay",
+    "offenseSuccessRate",
+    "offenseExplosiveRate",
+    "opponentDefenseEpaAllowed",
+    "opponentDefenseSuccessAllowed",
+    "opponentDefenseExplosiveAllowed",
+    "homeIndicator"
+  ],
+  "rowCountsBySeason": {
+    "2022": 542,
+    "2023": 544,
+    "2024": 544,
+    "2025": 544
+  },
+  "pregameSafeCountsBySeason": {
+    "2022": 542,
+    "2023": 544,
+    "2024": 544,
+    "2025": 544
+  },
+  "environmentModeComparison": [
+    {
+      "mode": "priorSeasonOnly",
+      "mae": 7.871730518775782,
+      "sampleSize": 544
+    },
+    {
+      "mode": "seasonToDateWithPriorFallback",
+      "mae": 7.93402573221092,
+      "sampleSize": 544
+    },
+    {
+      "mode": "rollingWindow",
+      "mae": 7.890016760380624,
+      "sampleSize": 544
+    }
+  ],
+  "chosenEnvironmentMode": "priorSeasonOnly",
+  "folds": {
+    "fold1": {
+      "trainSeasons": [
+        2022
+      ],
+      "evalSeasons": [
+        2023
+      ],
+      "isRetrospective": false,
+      "trainRowCount": 542,
+      "evalRowCount": 544,
+      "baseline0": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.871730518775782,
+          "rmse": 10.012292869299287,
+          "correlation": 1.1253808371565366e-16
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.694540915997393,
+          "rmse": 13.657800137310542,
+          "correlation": 9.182095726017563e-17,
+          "meanBias": 0.22707293249403396,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 52,
+              "share": 0.19117647058823528
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 41,
+              "share": 0.15073529411764705
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 50,
+              "share": 0.18382352941176472
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 33,
+              "share": 0.1213235294117647
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 26,
+              "share": 0.09558823529411764
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 25,
+              "share": 0.09191176470588236
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 45,
+              "share": 0.16544117647058823
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 272,
+              "meanProjected": 43.76383763837653,
+              "meanActual": 43.536764705882355,
+              "meanError": 0.22707293249403396
+            }
+          ]
+        }
+      },
+      "baseline1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.836336262842438,
+          "rmse": 9.947133213724639,
+          "correlation": 0.15839278721139707
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.651033872617502,
+          "rmse": 13.554372392545265,
+          "correlation": 0.17749026103710053,
+          "meanBias": 0.23305691492473413,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 46,
+              "share": 0.16911764705882354
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 46,
+              "share": 0.16911764705882354
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 47,
+              "share": 0.17279411764705882
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 37,
+              "share": 0.13602941176470587
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 27,
+              "share": 0.09926470588235294
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 22,
+              "share": 0.08088235294117647
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 47,
+              "share": 0.17279411764705882
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 260,
+              "meanProjected": 43.694920022079906,
+              "meanActual": 43.34230769230769,
+              "meanError": 0.3526123297722076
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 12,
+              "meanProjected": 45.39268959322948,
+              "meanActual": 47.75,
+              "meanError": -2.3573104067705217
+            }
+          ]
+        },
+        "slope": 0.34438193904151637
+      },
+      "ridge": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.807403407046472,
+          "rmse": 9.882039368970034,
+          "correlation": 0.20253503791497682
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.688854695588171,
+          "rmse": 13.874589381344823,
+          "correlation": 0.12774612668011778,
+          "meanBias": -2.073787125593548,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 56,
+              "share": 0.20588235294117646
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 47,
+              "share": 0.17279411764705882
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 36,
+              "share": 0.1323529411764706
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 36,
+              "share": 0.1323529411764706
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 30,
+              "share": 0.11029411764705882
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 16,
+              "share": 0.058823529411764705
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 51,
+              "share": 0.1875
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "20-25",
+              "min": 20,
+              "max": 25,
+              "count": 1,
+              "meanProjected": 24.287261124883273,
+              "meanActual": 59,
+              "meanError": -34.71273887511673
+            },
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 2,
+              "meanProjected": 28.176772602966974,
+              "meanActual": 42.5,
+              "meanError": -14.323227397033026
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 11,
+              "meanProjected": 33.166542214009795,
+              "meanActual": 44.90909090909091,
+              "meanError": -11.742548695081119
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 71,
+              "meanProjected": 38.10812941694749,
+              "meanActual": 40.40845070422535,
+              "meanError": -2.300321287277867
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 147,
+              "meanProjected": 42.50719068573649,
+              "meanActual": 44.224489795918366,
+              "meanError": -1.7172991101818658
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 38,
+              "meanProjected": 46.5813395546448,
+              "meanActual": 44.10526315789474,
+              "meanError": 2.4760763967500656
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 1,
+              "meanProjected": 51.61179223709037,
+              "meanActual": 90,
+              "meanError": -38.38820776290963
+            },
+            {
+              "label": "55-60",
+              "min": 55,
+              "max": 60,
+              "count": 1,
+              "meanProjected": 56.52021643350089,
+              "meanActual": 68,
+              "meanError": -11.479783566499108
+            }
+          ]
+        },
+        "intercept": 21.881918819188193,
+        "coefficients": {
+          "scoringEnvironment": 4.030668150576392e-25,
+          "offenseEpaPerPlay": 1.5785358789078006,
+          "offenseSuccessRate": 0.4467621056767486,
+          "offenseExplosiveRate": -0.1594677827491445,
+          "opponentDefenseEpaAllowed": -0.44968818676168126,
+          "opponentDefenseSuccessAllowed": 1.4261381883910262,
+          "opponentDefenseExplosiveAllowed": 0.41122087284368447,
+          "homeIndicator": 1.0040179653108448
+        }
+      }
+    },
+    "fold2": {
+      "trainSeasons": [
+        2022,
+        2023
+      ],
+      "evalSeasons": [
+        2024
+      ],
+      "isRetrospective": false,
+      "trainRowCount": 1086,
+      "evalRowCount": 544,
+      "baseline0": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.8730671496539815,
+          "rmse": 9.85267846993938,
+          "correlation": -5.124516599351705e-17
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.153492647058815,
+          "rmse": 13.28697629962706,
+          "correlation": -1.4626608305113498e-16,
+          "meanBias": -2.2867647058823506,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 54,
+              "share": 0.19852941176470587
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 49,
+              "share": 0.1801470588235294
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 48,
+              "share": 0.17647058823529413
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 33,
+              "share": 0.1213235294117647
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 27,
+              "share": 0.09926470588235294
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 18,
+              "share": 0.0661764705882353
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 43,
+              "share": 0.15808823529411764
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 272,
+              "meanProjected": 43.536764705882405,
+              "meanActual": 45.8235294117647,
+              "meanError": -2.2867647058823506
+            }
+          ]
+        }
+      },
+      "baseline1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.725781700689971,
+          "rmse": 9.67954876246808,
+          "correlation": 0.21821985672221722
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.085217964192076,
+          "rmse": 13.120721017301594,
+          "correlation": 0.16849646653987466,
+          "meanBias": -2.2674113632327497,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 49,
+              "share": 0.1801470588235294
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 52,
+              "share": 0.19117647058823528
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 52,
+              "share": 0.19117647058823528
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 32,
+              "share": 0.11764705882352941
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 24,
+              "share": 0.08823529411764706
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 21,
+              "share": 0.07720588235294118
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 42,
+              "share": 0.15441176470588236
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 3,
+              "meanProjected": 38.90861358089223,
+              "meanActual": 42,
+              "meanError": -3.0913864191077707
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 232,
+              "meanProjected": 43.23870329090992,
+              "meanActual": 45.30172413793103,
+              "meanError": -2.063020847021139
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 37,
+              "meanProjected": 45.92321905315998,
+              "meanActual": 49.4054054054054,
+              "meanError": -3.4821863522454066
+            }
+          ]
+        },
+        "slope": 0.8113770030112706
+      },
+      "ridge": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.270865020827092,
+          "rmse": 9.20205032488929,
+          "correlation": 0.3523592701095783
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.695900266739997,
+          "rmse": 12.690741284292033,
+          "correlation": 0.2516899277710077,
+          "meanBias": -0.7644022888969753,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 67,
+              "share": 0.24632352941176472
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 45,
+              "share": 0.16544117647058823
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 44,
+              "share": 0.16176470588235295
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 32,
+              "share": 0.11764705882352941
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 25,
+              "share": 0.09191176470588236
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 16,
+              "share": 0.058823529411764705
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 43,
+              "share": 0.15808823529411764
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 3,
+              "meanProjected": 33.87092298232815,
+              "meanActual": 35.333333333333336,
+              "meanError": -1.4624103510051825
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 13,
+              "meanProjected": 38.234364088167524,
+              "meanActual": 37.69230769230769,
+              "meanError": 0.5420563958598286
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 110,
+              "meanProjected": 42.84867459470319,
+              "meanActual": 43.54545454545455,
+              "meanError": -0.6967799507513485
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 135,
+              "meanProjected": 47.18741714184371,
+              "meanActual": 47.785185185185185,
+              "meanError": -0.5977680433414924
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 11,
+              "meanProjected": 52.16068688732821,
+              "meanActual": 57,
+              "meanError": -4.839313112671788
+            }
+          ]
+        },
+        "intercept": 21.825046040515655,
+        "coefficients": {
+          "scoringEnvironment": -0.4913925411096889,
+          "offenseEpaPerPlay": 1.1385394340105641,
+          "offenseSuccessRate": 0.763427708605067,
+          "offenseExplosiveRate": 0.414825702491808,
+          "opponentDefenseEpaAllowed": 0.37817038684660537,
+          "opponentDefenseSuccessAllowed": 0.28317707335136005,
+          "opponentDefenseExplosiveAllowed": 0.19915789572438755,
+          "homeIndicator": 1.180744796517224
+        }
+      }
+    },
+    "retrospective": {
+      "trainSeasons": [
+        2022,
+        2023,
+        2024
+      ],
+      "evalSeasons": [
+        2025
+      ],
+      "isRetrospective": true,
+      "trainRowCount": 1630,
+      "evalRowCount": 544,
+      "baseline0": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.92419982698961,
+          "rmse": 9.933646643611711,
+          "correlation": -7.69238403542445e-17
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.972967128027681,
+          "rmse": 13.790174088244253,
+          "correlation": 2.334043530674599e-16,
+          "meanBias": -0.20220588235294767,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 56,
+              "share": 0.20588235294117646
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 43,
+              "share": 0.15808823529411764
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 29,
+              "share": 0.10661764705882353
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 31,
+              "share": 0.11397058823529412
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 38,
+              "share": 0.13970588235294118
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 24,
+              "share": 0.08823529411764706
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 51,
+              "share": 0.1875
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 272,
+              "meanProjected": 45.823529411764525,
+              "meanActual": 46.025735294117645,
+              "meanError": -0.20220588235294767
+            }
+          ]
+        }
+      },
+      "baseline1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.8472645275734845,
+          "rmse": 9.90056979808315,
+          "correlation": 0.0937948158163057
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 11.018633904836735,
+          "rmse": 13.88624960994585,
+          "correlation": 0.02288480823996011,
+          "meanBias": -0.22747405108515395,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 51,
+              "share": 0.1875
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 42,
+              "share": 0.15441176470588236
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 33,
+              "share": 0.1213235294117647
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 39,
+              "share": 0.14338235294117646
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 31,
+              "share": 0.11397058823529412
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 22,
+              "share": 0.08088235294117647
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 54,
+              "share": 0.19852941176470587
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 1,
+              "meanProjected": 39.73683388093057,
+              "meanActual": 77,
+              "meanError": -37.26316611906943
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 102,
+              "meanProjected": 43.90824318912161,
+              "meanActual": 45.23529411764706,
+              "meanError": -1.3270509285254453
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 165,
+              "meanProjected": 46.85084369024794,
+              "meanActual": 46.084848484848486,
+              "meanError": 0.7659952053994364
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 4,
+              "meanProjected": 52.090052510649,
+              "meanActual": 56,
+              "meanError": -3.909947489350996
+            }
+          ]
+        },
+        "slope": 1.1041857872022365
+      },
+      "ridge": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.687692143918228,
+          "rmse": 9.645759973281972,
+          "correlation": 0.26106297335155404
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.913382838217064,
+          "rmse": 13.923950606474891,
+          "correlation": 0.1414586743491974,
+          "meanBias": -2.049512543585702,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 53,
+              "share": 0.1948529411764706
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 46,
+              "share": 0.16911764705882354
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 44,
+              "share": 0.16176470588235295
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 25,
+              "share": 0.09191176470588236
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 26,
+              "share": 0.09558823529411764
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 22,
+              "share": 0.08088235294117647
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 56,
+              "share": 0.20588235294117646
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.386393569024506,
+              "meanActual": 52,
+              "meanError": -23.613606430975494
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 2,
+              "meanProjected": 34.255803481511705,
+              "meanActual": 49,
+              "meanError": -14.744196518488298
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 32,
+              "meanProjected": 38.37444761031733,
+              "meanActual": 41.34375,
+              "meanError": -2.9693023896826736
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 126,
+              "meanProjected": 42.644571858344,
+              "meanActual": 44.3968253968254,
+              "meanError": -1.7522535384813924
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 96,
+              "meanProjected": 46.72233929779343,
+              "meanActual": 49.1875,
+              "meanError": -2.4651607022065956
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 14,
+              "meanProjected": 51.248203552067444,
+              "meanActual": 49.285714285714285,
+              "meanError": 1.9624892663531714
+            },
+            {
+              "label": "60-65",
+              "min": 60,
+              "max": 65,
+              "count": 1,
+              "meanProjected": 60.616787614030955,
+              "meanActual": 40,
+              "meanError": 20.616787614030955
+            }
+          ]
+        },
+        "intercept": 22.187730061349694,
+        "coefficients": {
+          "scoringEnvironment": -0.6456493401095822,
+          "offenseEpaPerPlay": 1.2400798558053865,
+          "offenseSuccessRate": 0.9243678862372334,
+          "offenseExplosiveRate": 0.7309235145651671,
+          "opponentDefenseEpaAllowed": 0.6473861841378271,
+          "opponentDefenseSuccessAllowed": 0.24817363185322722,
+          "opponentDefenseExplosiveAllowed": -0.017963768010123757,
+          "homeIndicator": 1.0707207336920583
+        }
+      }
+    }
+  },
+  "ridgeCoefficientsByFold": {
+    "fold1": {
+      "intercept": 21.881918819188193,
+      "coefficients": [
+        4.030668150576392e-25,
+        1.5785358789078006,
+        0.4467621056767486,
+        -0.1594677827491445,
+        -0.44968818676168126,
+        1.4261381883910262,
+        0.41122087284368447,
+        1.0040179653108448
+      ]
+    },
+    "fold2": {
+      "intercept": 21.825046040515655,
+      "coefficients": [
+        -0.4913925411096889,
+        1.1385394340105641,
+        0.763427708605067,
+        0.414825702491808,
+        0.37817038684660537,
+        0.28317707335136005,
+        0.19915789572438755,
+        1.180744796517224
+      ]
+    },
+    "retrospective": {
+      "intercept": 22.187730061349694,
+      "coefficients": [
+        -0.6456493401095822,
+        1.2400798558053865,
+        0.9243678862372334,
+        0.7309235145651671,
+        0.6473861841378271,
+        0.24817363185322722,
+        -0.017963768010123757,
+        1.0707207336920583
+      ]
+    }
+  },
+  "diagnostics": {
+    "bySeason": [
+      {
+        "label": "season-2022",
+        "rowCount": 542,
+        "gameCount": 271,
+        "teamPoint": {
+          "n": 542,
+          "mae": 7.196273646645985,
+          "rmse": 9.056419958412537,
+          "correlation": 0.22863242373935883
+        },
+        "gameTotal": {
+          "n": 271,
+          "mae": 10.741933586371077,
+          "rmse": 13.694081416578717,
+          "correlation": 0.14370793655228292,
+          "meanBias": -0.022295779275289442,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 48,
+              "share": 0.17712177121771217
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 47,
+              "share": 0.17343173431734318
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 46,
+              "share": 0.16974169741697417
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 31,
+              "share": 0.11439114391143912
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 29,
+              "share": 0.1070110701107011
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 22,
+              "share": 0.08118081180811808
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 48,
+              "share": 0.17712177121771217
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.938563475892007,
+              "meanActual": 37,
+              "meanError": -8.061436524107993
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 24,
+              "meanProjected": 38.52069545881375,
+              "meanActual": 39.416666666666664,
+              "meanError": -0.8959712078529183
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 156,
+              "meanProjected": 42.65021001885754,
+              "meanActual": 42.666666666666664,
+              "meanError": -0.016456647809103577
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 85,
+              "meanProjected": 46.948244863226385,
+              "meanActual": 47.31764705882353,
+              "meanError": -0.3694021955971363
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 5,
+              "meanProjected": 51.29780260259027,
+              "meanActual": 39.8,
+              "meanError": 11.49780260259027
+            }
+          ]
+        }
+      },
+      {
+        "label": "season-2023",
+        "rowCount": 544,
+        "gameCount": 272,
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.716917802780959,
+          "rmse": 9.660003456263537,
+          "correlation": 0.2659974104386704
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.807423264772918,
+          "rmse": 13.627629153503106,
+          "correlation": 0.1587751627235773,
+          "meanBias": 0.24880570230728202,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 52,
+              "share": 0.19117647058823528
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 37,
+              "share": 0.13602941176470587
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 42,
+              "share": 0.15441176470588236
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 41,
+              "share": 0.15073529411764705
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 31,
+              "share": 0.11397058823529412
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 21,
+              "share": 0.07720588235294118
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 48,
+              "share": 0.17647058823529413
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 3,
+              "meanProjected": 27.603155240809333,
+              "meanActual": 53.666666666666664,
+              "meanError": -26.06351142585733
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 2,
+              "meanProjected": 33.99048643316066,
+              "meanActual": 52.5,
+              "meanError": -18.50951356683934
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 29,
+              "meanProjected": 38.1052640273275,
+              "meanActual": 36.89655172413793,
+              "meanError": 1.2087123031895686
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 133,
+              "meanProjected": 42.49303715993026,
+              "meanActual": 42.35338345864662,
+              "meanError": 0.1396537012836317
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 90,
+              "meanProjected": 46.86208770896888,
+              "meanActual": 45.71111111111111,
+              "meanError": 1.150976597857759
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 13,
+              "meanProjected": 51.53547596207739,
+              "meanActual": 46.23076923076923,
+              "meanError": 5.304706731308164
+            },
+            {
+              "label": "55-60",
+              "min": 55,
+              "max": 60,
+              "count": 2,
+              "meanProjected": 57.354516030703216,
+              "meanActual": 79,
+              "meanError": -21.645483969296784
+            }
+          ]
+        }
+      },
+      {
+        "label": "season-2024",
+        "rowCount": 544,
+        "gameCount": 272,
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.2202518393761395,
+          "rmse": 9.131817216303233,
+          "correlation": 0.36445007445767
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.63100839363047,
+          "rmse": 12.656541264920516,
+          "correlation": 0.2598759195190864,
+          "meanBias": -0.2265918928072184,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 66,
+              "share": 0.2426470588235294
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 47,
+              "share": 0.17279411764705882
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 42,
+              "share": 0.15441176470588236
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 33,
+              "share": 0.1213235294117647
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 23,
+              "share": 0.08455882352941177
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 18,
+              "share": 0.0661764705882353
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 43,
+              "share": 0.15808823529411764
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 3,
+              "meanProjected": 31.7491648929683,
+              "meanActual": 35.333333333333336,
+              "meanError": -3.584168440365031
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 16,
+              "meanProjected": 37.885739088932645,
+              "meanActual": 38.6875,
+              "meanError": -0.8017609110673543
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 95,
+              "meanProjected": 42.81571209768465,
+              "meanActual": 42.915789473684214,
+              "meanError": -0.10007737599956348
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 130,
+              "meanProjected": 47.51860366292254,
+              "meanActual": 47.61538461538461,
+              "meanError": -0.09678095246202437
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 25,
+              "meanProjected": 51.49030196803324,
+              "meanActual": 52.44,
+              "meanError": -0.949698031966754
+            },
+            {
+              "label": "55-60",
+              "min": 55,
+              "max": 60,
+              "count": 3,
+              "meanProjected": 56.25967013126664,
+              "meanActual": 53.666666666666664,
+              "meanError": 2.593003464599976
+            }
+          ]
+        }
+      },
+      {
+        "label": "season-2025",
+        "rowCount": 544,
+        "gameCount": 272,
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.687692143918228,
+          "rmse": 9.645759973281972,
+          "correlation": 0.26106297335155404
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.913382838217064,
+          "rmse": 13.923950606474891,
+          "correlation": 0.1414586743491974,
+          "meanBias": -2.049512543585702,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 53,
+              "share": 0.1948529411764706
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 46,
+              "share": 0.16911764705882354
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 44,
+              "share": 0.16176470588235295
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 25,
+              "share": 0.09191176470588236
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 26,
+              "share": 0.09558823529411764
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 22,
+              "share": 0.08088235294117647
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 56,
+              "share": 0.20588235294117646
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.386393569024506,
+              "meanActual": 52,
+              "meanError": -23.613606430975494
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 2,
+              "meanProjected": 34.255803481511705,
+              "meanActual": 49,
+              "meanError": -14.744196518488298
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 32,
+              "meanProjected": 38.37444761031733,
+              "meanActual": 41.34375,
+              "meanError": -2.9693023896826736
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 126,
+              "meanProjected": 42.644571858344,
+              "meanActual": 44.3968253968254,
+              "meanError": -1.7522535384813924
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 96,
+              "meanProjected": 46.72233929779343,
+              "meanActual": 49.1875,
+              "meanError": -2.4651607022065956
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 14,
+              "meanProjected": 51.248203552067444,
+              "meanActual": 49.285714285714285,
+              "meanError": 1.9624892663531714
+            },
+            {
+              "label": "60-65",
+              "min": 60,
+              "max": 65,
+              "count": 1,
+              "meanProjected": 60.616787614030955,
+              "meanActual": 40,
+              "meanError": 20.616787614030955
+            }
+          ]
+        }
+      }
+    ],
+    "earlyVsLate": [
+      {
+        "label": "weeks-1-6",
+        "rowCount": 186,
+        "gameCount": 93,
+        "teamPoint": {
+          "n": 186,
+          "mae": 7.437120458458446,
+          "rmse": 9.50983525238775,
+          "correlation": 0.20846198479287759
+        },
+        "gameTotal": {
+          "n": 93,
+          "mae": 11.183055222220393,
+          "rmse": 14.115173680550562,
+          "correlation": 0.06092053564191692,
+          "meanBias": -2.5153115079631556,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 15,
+              "share": 0.16129032258064516
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 14,
+              "share": 0.15053763440860216
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 17,
+              "share": 0.1827956989247312
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 12,
+              "share": 0.12903225806451613
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 8,
+              "share": 0.08602150537634409
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 6,
+              "share": 0.06451612903225806
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 21,
+              "share": 0.22580645161290322
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.386393569024506,
+              "meanActual": 52,
+              "meanError": -23.613606430975494
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 1,
+              "meanProjected": 34.91649362805878,
+              "meanActual": 38,
+              "meanError": -3.083506371941219
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 16,
+              "meanProjected": 38.04203248327975,
+              "meanActual": 45.1875,
+              "meanError": -7.145467516720252
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 43,
+              "meanProjected": 42.59308109225285,
+              "meanActual": 45.30232558139535,
+              "meanError": -2.709244489142496
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 21,
+              "meanProjected": 46.98559412889657,
+              "meanActual": 48.285714285714285,
+              "meanError": -1.3001201568177199
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 10,
+              "meanProjected": 51.52838715421357,
+              "meanActual": 48.5,
+              "meanError": 3.028387154213566
+            },
+            {
+              "label": "60-65",
+              "min": 60,
+              "max": 65,
+              "count": 1,
+              "meanProjected": 60.616787614030955,
+              "meanActual": 40,
+              "meanError": 20.616787614030955
+            }
+          ]
+        }
+      },
+      {
+        "label": "weeks-7+",
+        "rowCount": 358,
+        "gameCount": 179,
+        "teamPoint": {
+          "n": 358,
+          "mae": 7.8178774330118594,
+          "rmse": 9.715629451296504,
+          "correlation": 0.3046011565151669
+        },
+        "gameTotal": {
+          "n": 179,
+          "mae": 10.77327372250583,
+          "rmse": 13.823555927230707,
+          "correlation": 0.2122470521561242,
+          "meanBias": -1.8075052604175257,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 38,
+              "share": 0.2122905027932961
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 32,
+              "share": 0.1787709497206704
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 27,
+              "share": 0.15083798882681565
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 13,
+              "share": 0.07262569832402235
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 18,
+              "share": 0.1005586592178771
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 16,
+              "share": 0.0893854748603352
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 35,
+              "share": 0.19553072625698323
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 1,
+              "meanProjected": 33.59511333496462,
+              "meanActual": 60,
+              "meanError": -26.404886665035377
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 16,
+              "meanProjected": 38.706862737354896,
+              "meanActual": 37.5,
+              "meanError": 1.2068627373549052
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 83,
+              "meanProjected": 42.67124779740329,
+              "meanActual": 43.9277108433735,
+              "meanError": -1.2564630459702177
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 75,
+              "meanProjected": 46.64862794508452,
+              "meanActual": 49.44,
+              "meanError": -2.7913720549154806
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 4,
+              "meanProjected": 50.54774454670219,
+              "meanActual": 51.25,
+              "meanError": -0.7022554532978145
+            }
+          ]
+        }
+      }
+    ],
+    "homeAway": [
+      {
+        "label": "home",
+        "rowCount": 272,
+        "gameCount": 0,
+        "teamPoint": {
+          "n": 272,
+          "mae": 7.608996421380412,
+          "rmse": 9.69440303615779,
+          "correlation": 0.19122121954626112
+        },
+        "gameTotal": {
+          "n": 0,
+          "mae": null,
+          "rmse": null,
+          "correlation": null,
+          "meanBias": null,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 0,
+              "share": 0
+            }
+          ],
+          "calibrationByProjectedBucket": []
+        }
+      },
+      {
+        "label": "away",
+        "rowCount": 272,
+        "gameCount": 0,
+        "teamPoint": {
+          "n": 272,
+          "mae": 7.766387866456044,
+          "rmse": 9.596870359490739,
+          "correlation": 0.29424034054397785
+        },
+        "gameTotal": {
+          "n": 0,
+          "mae": null,
+          "rmse": null,
+          "correlation": null,
+          "meanBias": null,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 0,
+              "share": 0
+            }
+          ],
+          "calibrationByProjectedBucket": []
+        }
+      }
+    ],
+    "offenseStrength": [
+      {
+        "label": "offense-below-median-epa",
+        "rowCount": 272,
+        "gameCount": 75,
+        "teamPoint": {
+          "n": 272,
+          "mae": 7.775666620153935,
+          "rmse": 9.815746318886491,
+          "correlation": 0.21435924427734698
+        },
+        "gameTotal": {
+          "n": 75,
+          "mae": 10.847779556600024,
+          "rmse": 14.404908632635376,
+          "correlation": 0.056466549947292916,
+          "meanBias": -4.904988084084253,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 16,
+              "share": 0.21333333333333335
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 12,
+              "share": 0.16
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 15,
+              "share": 0.2
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 6,
+              "share": 0.08
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 7,
+              "share": 0.09333333333333334
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 2,
+              "share": 0.02666666666666667
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 17,
+              "share": 0.22666666666666666
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.386393569024506,
+              "meanActual": 52,
+              "meanError": -23.613606430975494
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 2,
+              "meanProjected": 34.255803481511705,
+              "meanActual": 49,
+              "meanError": -14.744196518488298
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 19,
+              "meanProjected": 38.19220886619969,
+              "meanActual": 41.21052631578947,
+              "meanError": -3.018317449589785
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 47,
+              "meanProjected": 42.174757573774556,
+              "meanActual": 47.255319148936174,
+              "meanError": -5.08056157516161
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 6,
+              "meanProjected": 45.3937197894058,
+              "meanActual": 48.5,
+              "meanError": -3.106280210594194
+            }
+          ]
+        }
+      },
+      {
+        "label": "offense-above-median-epa",
+        "rowCount": 272,
+        "gameCount": 75,
+        "teamPoint": {
+          "n": 272,
+          "mae": 7.599717667682514,
+          "rmse": 9.472723743866043,
+          "correlation": 0.2029473650719579
+        },
+        "gameTotal": {
+          "n": 75,
+          "mae": 13.054419408050384,
+          "rmse": 16.029382330852947,
+          "correlation": -0.013539148031280562,
+          "meanBias": -1.8453966630177634,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 9,
+              "share": 0.12
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 12,
+              "share": 0.16
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 11,
+              "share": 0.14666666666666667
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 8,
+              "share": 0.10666666666666667
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 9,
+              "share": 0.12
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 6,
+              "share": 0.08
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 20,
+              "share": 0.26666666666666666
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 11,
+              "meanProjected": 43.658233179307246,
+              "meanActual": 48.72727272727273,
+              "meanError": -5.069039547965482
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 50,
+              "meanProjected": 46.941206624807926,
+              "meanActual": 49.64,
+              "meanError": -2.6987933751920807
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 13,
+              "meanProjected": 51.0521204959124,
+              "meanActual": 48.61538461538461,
+              "meanError": 2.436735880527787
+            },
+            {
+              "label": "60-65",
+              "min": 60,
+              "max": 65,
+              "count": 1,
+              "meanProjected": 60.616787614030955,
+              "meanActual": 40,
+              "meanError": 20.616787614030955
+            }
+          ]
+        }
+      }
+    ],
+    "defenseStrength": [
+      {
+        "label": "faced-below-median-defense-allowed",
+        "rowCount": 272,
+        "gameCount": 66,
+        "teamPoint": {
+          "n": 272,
+          "mae": 7.370293758917563,
+          "rmse": 9.281128222163764,
+          "correlation": 0.293548619694395
+        },
+        "gameTotal": {
+          "n": 66,
+          "mae": 11.01004217508959,
+          "rmse": 13.648610108440895,
+          "correlation": 0.11952891573518588,
+          "meanBias": -3.4562796556543764,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 11,
+              "share": 0.16666666666666666
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 13,
+              "share": 0.19696969696969696
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 11,
+              "share": 0.16666666666666666
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 6,
+              "share": 0.09090909090909091
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 7,
+              "share": 0.10606060606060606
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 3,
+              "share": 0.045454545454545456
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 15,
+              "share": 0.22727272727272727
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.386393569024506,
+              "meanActual": 52,
+              "meanError": -23.613606430975494
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 1,
+              "meanProjected": 34.91649362805878,
+              "meanActual": 38,
+              "meanError": -3.083506371941219
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 4,
+              "meanProjected": 38.90539483701592,
+              "meanActual": 51,
+              "meanError": -12.094605162984083
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 31,
+              "meanProjected": 42.80385082289784,
+              "meanActual": 45.87096774193548,
+              "meanError": -3.067116919037644
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 24,
+              "meanProjected": 46.96689111161635,
+              "meanActual": 49,
+              "meanError": -2.0331088883836532
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 5,
+              "meanProjected": 51.16726279860775,
+              "meanActual": 53,
+              "meanError": -1.8327372013922427
+            }
+          ]
+        }
+      },
+      {
+        "label": "faced-above-median-defense-allowed",
+        "rowCount": 272,
+        "gameCount": 66,
+        "teamPoint": {
+          "n": 272,
+          "mae": 8.005090528918897,
+          "rmse": 9.997101072215512,
+          "correlation": 0.21412612287978783
+        },
+        "gameTotal": {
+          "n": 66,
+          "mae": 10.234753042860387,
+          "rmse": 13.611905668690568,
+          "correlation": 0.11224918327412277,
+          "meanBias": -1.2270324317643622,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 14,
+              "share": 0.21212121212121213
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 12,
+              "share": 0.18181818181818182
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 10,
+              "share": 0.15151515151515152
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 6,
+              "share": 0.09090909090909091
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 6,
+              "share": 0.09090909090909091
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 9,
+              "share": 0.13636363636363635
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 9,
+              "share": 0.13636363636363635
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 2,
+              "meanProjected": 39.36777459626927,
+              "meanActual": 45,
+              "meanError": -5.632225403730725
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 32,
+              "meanProjected": 42.958657896239444,
+              "meanActual": 43.46875,
+              "meanError": -0.5100921037605619
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 28,
+              "meanProjected": 46.6552213654986,
+              "meanActual": 49.07142857142857,
+              "meanError": -2.4162072059299695
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 3,
+              "meanProjected": 51.2134239277866,
+              "meanActual": 53.333333333333336,
+              "meanError": -2.1199094055467356
+            },
+            {
+              "label": "60-65",
+              "min": 60,
+              "max": 65,
+              "count": 1,
+              "meanProjected": 60.616787614030955,
+              "meanActual": 40,
+              "meanError": 20.616787614030955
+            }
+          ]
+        }
+      }
+    ],
+    "sparseSample": [
+      {
+        "label": "pregame-safe",
+        "rowCount": 544,
+        "gameCount": 272,
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.687692143918228,
+          "rmse": 9.645759973281972,
+          "correlation": 0.26106297335155404
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.913382838217064,
+          "rmse": 13.923950606474891,
+          "correlation": 0.1414586743491974,
+          "meanBias": -2.049512543585702,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 53,
+              "share": 0.1948529411764706
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 46,
+              "share": 0.16911764705882354
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 44,
+              "share": 0.16176470588235295
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 25,
+              "share": 0.09191176470588236
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 26,
+              "share": 0.09558823529411764
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 22,
+              "share": 0.08088235294117647
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 56,
+              "share": 0.20588235294117646
+            }
+          ],
+          "calibrationByProjectedBucket": [
+            {
+              "label": "25-30",
+              "min": 25,
+              "max": 30,
+              "count": 1,
+              "meanProjected": 28.386393569024506,
+              "meanActual": 52,
+              "meanError": -23.613606430975494
+            },
+            {
+              "label": "30-35",
+              "min": 30,
+              "max": 35,
+              "count": 2,
+              "meanProjected": 34.255803481511705,
+              "meanActual": 49,
+              "meanError": -14.744196518488298
+            },
+            {
+              "label": "35-40",
+              "min": 35,
+              "max": 40,
+              "count": 32,
+              "meanProjected": 38.37444761031733,
+              "meanActual": 41.34375,
+              "meanError": -2.9693023896826736
+            },
+            {
+              "label": "40-45",
+              "min": 40,
+              "max": 45,
+              "count": 126,
+              "meanProjected": 42.644571858344,
+              "meanActual": 44.3968253968254,
+              "meanError": -1.7522535384813924
+            },
+            {
+              "label": "45-50",
+              "min": 45,
+              "max": 50,
+              "count": 96,
+              "meanProjected": 46.72233929779343,
+              "meanActual": 49.1875,
+              "meanError": -2.4651607022065956
+            },
+            {
+              "label": "50-55",
+              "min": 50,
+              "max": 55,
+              "count": 14,
+              "meanProjected": 51.248203552067444,
+              "meanActual": 49.285714285714285,
+              "meanError": 1.9624892663531714
+            },
+            {
+              "label": "60-65",
+              "min": 60,
+              "max": 65,
+              "count": 1,
+              "meanProjected": 60.616787614030955,
+              "meanActual": 40,
+              "meanError": 20.616787614030955
+            }
+          ]
+        }
+      },
+      {
+        "label": "not-pregame-safe",
+        "rowCount": 0,
+        "gameCount": 0,
+        "teamPoint": {
+          "n": 0,
+          "mae": null,
+          "rmse": null,
+          "correlation": null
+        },
+        "gameTotal": {
+          "n": 0,
+          "mae": null,
+          "rmse": null,
+          "correlation": null,
+          "meanBias": null,
+          "errorDistribution": [
+            {
+              "label": "0-3",
+              "min": 0,
+              "max": 3,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "3-6",
+              "min": 3,
+              "max": 6,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "6-9",
+              "min": 6,
+              "max": 9,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "9-12",
+              "min": 9,
+              "max": 12,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "12-15",
+              "min": 12,
+              "max": 15,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "15-18",
+              "min": 15,
+              "max": 18,
+              "count": 0,
+              "share": 0
+            },
+            {
+              "label": "18+",
+              "min": 18,
+              "max": null,
+              "count": 0,
+              "share": 0
+            }
+          ],
+          "calibrationByProjectedBucket": []
+        }
+      }
+    ],
+    "projectedTotalBucket": [
+      {
+        "label": "25-30",
+        "min": 25,
+        "max": 30,
+        "count": 1,
+        "meanProjected": 28.386393569024506,
+        "meanActual": 52,
+        "meanError": -23.613606430975494
+      },
+      {
+        "label": "30-35",
+        "min": 30,
+        "max": 35,
+        "count": 2,
+        "meanProjected": 34.255803481511705,
+        "meanActual": 49,
+        "meanError": -14.744196518488298
+      },
+      {
+        "label": "35-40",
+        "min": 35,
+        "max": 40,
+        "count": 32,
+        "meanProjected": 38.37444761031733,
+        "meanActual": 41.34375,
+        "meanError": -2.9693023896826736
+      },
+      {
+        "label": "40-45",
+        "min": 40,
+        "max": 45,
+        "count": 126,
+        "meanProjected": 42.644571858344,
+        "meanActual": 44.3968253968254,
+        "meanError": -1.7522535384813924
+      },
+      {
+        "label": "45-50",
+        "min": 45,
+        "max": 50,
+        "count": 96,
+        "meanProjected": 46.72233929779343,
+        "meanActual": 49.1875,
+        "meanError": -2.4651607022065956
+      },
+      {
+        "label": "50-55",
+        "min": 50,
+        "max": 55,
+        "count": 14,
+        "meanProjected": 51.248203552067444,
+        "meanActual": 49.285714285714285,
+        "meanError": 1.9624892663531714
+      },
+      {
+        "label": "60-65",
+        "min": 60,
+        "max": 65,
+        "count": 1,
+        "meanProjected": 60.616787614030955,
+        "meanActual": 40,
+        "meanError": 20.616787614030955
+      }
+    ]
+  },
+  "offenseMetricCollinearity": {
+    "n": 1630,
+    "epaVsSuccess": 0.7652935546782718,
+    "epaVsExplosive": 0.6569690062230988,
+    "successVsExplosive": 0.5162010538344298
+  },
+  "residualFindings": {
+    "passMatchupDiff": {
+      "perFold": {
+        "fold1": {
+          "independentGameTotalMae": 10.669881333936516,
+          "coreRidgeGameTotalMae": 10.695791703899328,
+          "augmentedRidgeGameTotalMae": 10.693750450589539,
+          "maeDelta_augmentedMinusCore": -0.002041253309789326,
+          "candidateCoefficient": -0.48729825272663424,
+          "n": 544
+        },
+        "fold2": {
+          "independentGameTotalMae": 10.106932950489655,
+          "coreRidgeGameTotalMae": 9.698958520246617,
+          "augmentedRidgeGameTotalMae": 9.728420082671263,
+          "maeDelta_augmentedMinusCore": 0.029461562424646814,
+          "candidateCoefficient": -0.747232848430589,
+          "n": 544
+        },
+        "retrospective": {
+          "independentGameTotalMae": 10.972037956489617,
+          "coreRidgeGameTotalMae": 10.911070586245396,
+          "augmentedRidgeGameTotalMae": 10.911117847837236,
+          "maeDelta_augmentedMinusCore": 0.000047261591840097594,
+          "candidateCoefficient": -0.052366596086105124,
+          "n": 544
+        }
+      },
+      "coefficientsAcrossFolds": [
+        -0.48729825272663424,
+        -0.747232848430589,
+        -0.052366596086105124
+      ],
+      "coefficientSignStable": true
+    },
+    "rushMatchupDiff": {
+      "perFold": {
+        "fold1": {
+          "independentGameTotalMae": 10.685144725275343,
+          "coreRidgeGameTotalMae": 10.695791703899328,
+          "augmentedRidgeGameTotalMae": 10.697239974176235,
+          "maeDelta_augmentedMinusCore": 0.001448270276906527,
+          "candidateCoefficient": 0.23297455573363599,
+          "n": 544
+        },
+        "fold2": {
+          "independentGameTotalMae": 10.136691177141836,
+          "coreRidgeGameTotalMae": 9.698958520246617,
+          "augmentedRidgeGameTotalMae": 9.736670044292055,
+          "maeDelta_augmentedMinusCore": 0.03771152404543798,
+          "candidateCoefficient": 0.32358439376486836,
+          "n": 544
+        },
+        "retrospective": {
+          "independentGameTotalMae": 10.991386928675032,
+          "coreRidgeGameTotalMae": 10.911070586245396,
+          "augmentedRidgeGameTotalMae": 10.910747715905158,
+          "maeDelta_augmentedMinusCore": -0.000322870340237813,
+          "candidateCoefficient": 0.007418768880754992,
+          "n": 544
+        }
+      },
+      "coefficientsAcrossFolds": [
+        0.23297455573363599,
+        0.32358439376486836,
+        0.007418768880754992
+      ],
+      "coefficientSignStable": true
+    },
+    "dropbackRate": {
+      "perFold": {
+        "fold1": {
+          "independentGameTotalMae": 10.720174671357043,
+          "coreRidgeGameTotalMae": 10.695791703899328,
+          "augmentedRidgeGameTotalMae": 10.697462388594092,
+          "maeDelta_augmentedMinusCore": 0.0016706846947638354,
+          "candidateCoefficient": 0.45793775151640953,
+          "n": 544
+        },
+        "fold2": {
+          "independentGameTotalMae": 10.143510174056683,
+          "coreRidgeGameTotalMae": 9.698958520246617,
+          "augmentedRidgeGameTotalMae": 9.687158063324214,
+          "maeDelta_augmentedMinusCore": -0.011800456922403058,
+          "candidateCoefficient": 0.1213233109679063,
+          "n": 544
+        },
+        "retrospective": {
+          "independentGameTotalMae": 10.986145765149061,
+          "coreRidgeGameTotalMae": 10.911070586245396,
+          "augmentedRidgeGameTotalMae": 10.914044137196969,
+          "maeDelta_augmentedMinusCore": 0.002973550951573145,
+          "candidateCoefficient": 0.050577520556667206,
+          "n": 544
+        }
+      },
+      "coefficientsAcrossFolds": [
+        0.45793775151640953,
+        0.1213233109679063,
+        0.050577520556667206
+      ],
+      "coefficientSignStable": true
+    },
+    "paceProxy": {
+      "perFold": {
+        "fold1": {
+          "independentGameTotalMae": 10.678709205214,
+          "coreRidgeGameTotalMae": 10.695791703899328,
+          "augmentedRidgeGameTotalMae": 10.696693634334162,
+          "maeDelta_augmentedMinusCore": 0.0009019304348338864,
+          "candidateCoefficient": -0.005077289837401207,
+          "n": 544
+        },
+        "fold2": {
+          "independentGameTotalMae": 10.168351150562687,
+          "coreRidgeGameTotalMae": 9.698958520246617,
+          "augmentedRidgeGameTotalMae": 9.724866952922746,
+          "maeDelta_augmentedMinusCore": 0.025908432676128967,
+          "candidateCoefficient": 0.3962408851584758,
+          "n": 544
+        },
+        "retrospective": {
+          "independentGameTotalMae": 10.998415563808257,
+          "coreRidgeGameTotalMae": 10.911070586245396,
+          "augmentedRidgeGameTotalMae": 10.926777150487283,
+          "maeDelta_augmentedMinusCore": 0.015706564241886767,
+          "candidateCoefficient": 0.10761426045228929,
+          "n": 544
+        }
+      },
+      "coefficientsAcrossFolds": [
+        -0.005077289837401207,
+        0.3962408851584758,
+        0.10761426045228929
+      ],
+      "coefficientSignStable": false
+    },
+    "turnoverGiveawayRate": {
+      "perFold": {
+        "fold1": {
+          "independentGameTotalMae": 10.716343969591268,
+          "coreRidgeGameTotalMae": 10.695791703899328,
+          "augmentedRidgeGameTotalMae": 10.670981702554043,
+          "maeDelta_augmentedMinusCore": -0.024810001345285215,
+          "candidateCoefficient": 0.24757515936998273,
+          "n": 544
+        },
+        "fold2": {
+          "independentGameTotalMae": 10.116219853523502,
+          "coreRidgeGameTotalMae": 9.698958520246617,
+          "augmentedRidgeGameTotalMae": 9.71916449284658,
+          "maeDelta_augmentedMinusCore": 0.02020597259996393,
+          "candidateCoefficient": 0.3726269801295404,
+          "n": 544
+        },
+        "retrospective": {
+          "independentGameTotalMae": 10.941414181593537,
+          "coreRidgeGameTotalMae": 10.911070586245396,
+          "augmentedRidgeGameTotalMae": 10.909284102499392,
+          "maeDelta_augmentedMinusCore": -0.0017864837460042082,
+          "candidateCoefficient": 0.09200721702853625,
+          "n": 544
+        }
+      },
+      "coefficientsAcrossFolds": [
+        0.24757515936998273,
+        0.3726269801295404,
+        0.09200721702853625
+      ],
+      "coefficientSignStable": true
+    },
+    "sacksAllowedRate": {
+      "perFold": {
+        "fold1": {
+          "independentGameTotalMae": 10.770455151258231,
+          "coreRidgeGameTotalMae": 10.695791703899328,
+          "augmentedRidgeGameTotalMae": 10.729007922130869,
+          "maeDelta_augmentedMinusCore": 0.03321621823154075,
+          "candidateCoefficient": -0.4537295056321478,
+          "n": 544
+        },
+        "fold2": {
+          "independentGameTotalMae": 10.112859346781315,
+          "coreRidgeGameTotalMae": 9.698958520246617,
+          "augmentedRidgeGameTotalMae": 9.681449843499726,
+          "maeDelta_augmentedMinusCore": -0.017508676746890828,
+          "candidateCoefficient": -0.2488160452315958,
+          "n": 544
+        },
+        "retrospective": {
+          "independentGameTotalMae": 11.049491685981573,
+          "coreRidgeGameTotalMae": 10.911070586245396,
+          "augmentedRidgeGameTotalMae": 10.923767291462472,
+          "maeDelta_augmentedMinusCore": 0.012696705217075888,
+          "candidateCoefficient": -0.2778157589858798,
+          "n": 544
+        }
+      },
+      "coefficientsAcrossFolds": [
+        -0.4537295056321478,
+        -0.2488160452315958,
+        -0.2778157589858798
+      ],
+      "coefficientSignStable": true
+    }
+  }
+}

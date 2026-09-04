@@ -82,6 +82,52 @@ describe("prediction validation", () => {
   });
 });
 
+describe("team_total prediction type (NFL projected game total, Phase U)", () => {
+  function teamTotalDraft(overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
+    return draft({
+      prediction_type: "team_total", player_id: null, player_name_at_prediction: null, position: null,
+      model_name: "nfl-total-ridge", model_version: "jkb-nfl-total-ridge-v1.0.0", feature_schema_version: "nfl-total-feature-v1",
+      projection: { type: "team_total", projected_team_points: 24.5 },
+      feature_snapshot: { values: { offenseEpaPerPlay: 0.05, offenseSuccessRate: 0.45, opponentDefenseEpaAllowed: -0.02, opponentDefenseSuccessAllowed: 0.42, homeIndicator: 1 }, source_manifest_hashes: { scoringSupport: "hash1" }, fitted_model_hash: "sha256:abc" },
+      ...overrides,
+    });
+  }
+
+  it("accepts a valid team_total record", () => {
+    expect(() => validatePredictionSnapshot(finalizePredictionSnapshot(teamTotalDraft()))).not.toThrow();
+  });
+
+  it("rejects a team_total record carrying a player_id", () => {
+    expect(() => finalizePredictionSnapshot(teamTotalDraft({ player_id: "gsis:1" }))).toThrow(/team_total predictions must not carry a player_id/);
+  });
+
+  it("requires a fitted_model_hash", () => {
+    expect(() => finalizePredictionSnapshot(teamTotalDraft({ feature_snapshot: { values: {}, source_manifest_hashes: { s: "h" }, fitted_model_hash: null } }))).toThrow(/fitted_model_hash/);
+  });
+
+  it("rejects a non-finite projected_team_points", () => {
+    expect(() => finalizePredictionSnapshot(teamTotalDraft({ projection: { type: "team_total", projected_team_points: Number.NaN } }))).toThrow();
+  });
+
+  it("gives the two sibling rows of one game (home + away) distinct prediction_ids, keyed by team like team_opportunity", () => {
+    const home = finalizePredictionSnapshot(teamTotalDraft({ team: "lac", opponent: "ari", home_away: "home" }));
+    const away = finalizePredictionSnapshot(teamTotalDraft({ team: "ari", opponent: "lac", home_away: "away" }));
+    expect(home.prediction_id).not.toBe(away.prediction_id);
+    expect(home.snapshot_key).not.toBe(away.snapshot_key);
+  });
+
+  it("archives append-only, same as every other prediction type", () => {
+    const root = tempRoot();
+    const home = finalizePredictionSnapshot(teamTotalDraft({ team: "lac", opponent: "ari", home_away: "home" }));
+    const away = finalizePredictionSnapshot(teamTotalDraft({ team: "ari", opponent: "lac", home_away: "away" }));
+    const first = archiveProductionPredictions({ rootDir: root, records: [home, away] });
+    expect(first.appended).toBe(2);
+    const rerun = archiveProductionPredictions({ rootDir: root, records: [home, away] });
+    expect(rerun.appended).toBe(0);
+    expect(rerun.duplicates).toBe(2);
+  });
+});
+
 describe("append-only filesystem behavior", () => {
   it("is idempotent for an exact logical rerun even when run timestamps differ", () => {
     const root = tempRoot();
