@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import MatchupProjectedScore from "@/components/nfl/matchups/MatchupProjectedScore";
 import {
   formatMoneyline,
   formatSpread,
@@ -15,6 +16,7 @@ import {
   formatProjectedSpread,
   type GameProjection,
 } from "@/lib/nfl/projectionData";
+import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 
 const NA = "N/A";
@@ -120,10 +122,14 @@ export default function MatchupIdentityHeader({
   matchup,
   market,
   projection,
+  totalProjection,
+  totalProjectionLoading = false,
 }: {
   matchup: NflMatchup;
   market: MarketCurrentGame | null;
   projection: GameProjection | null;
+  totalProjection: TeamTotalProjection | null;
+  totalProjectionLoading?: boolean;
 }) {
   const { away, home } = matchup;
   const priced = hasAnyMarket(market);
@@ -196,6 +202,13 @@ export default function MatchupIdentityHeader({
           </p>
         </div>
       )}
+
+      <MatchupProjectedScore
+        matchup={matchup}
+        totalProjection={totalProjection}
+        market={market}
+        loading={totalProjectionLoading}
+      />
     </section>
   );
 }
