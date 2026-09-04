@@ -217,6 +217,17 @@ jobs:
       - name: Generate NFL projected totals
         run: npm run nfl:totals -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
+      # Regenerates public/data/nfl/team-totals.json, the frontend read view
+      # over the team_total archive rows the step above just wrote (see
+      # scripts/generate-nfl-team-totals-view.mts). Read-only over the
+      # archive -- no model math, writes nothing back to
+      # data/nfl/predictions/**. Runs after the archive write so this view
+      # always reflects the latest pregame snapshot from THIS run. Fail-
+      # closed like every other step in this job: existing artifact
+      # untouched on failure.
+      - name: Refresh NFL team totals view
+        run: npm run nfl:team-totals-view
+
       # Step 4/5 -- regenerate the production-candidate projection artifact.
       # No fetch/normalization logic of its own: reuses every already-
       # committed historical artifact plus the caches refreshed in steps 1-3
@@ -259,6 +270,7 @@ jobs:
             'public/data/nfl/matchup-market.json' \
             'public/data/nfl/${{ steps.current-week.outputs.season }}/team-opportunity.json' \
             'public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json' \
+            'public/data/nfl/team-totals.json' \
             ':(glob)data/nfl/predictions/${{ steps.current-week.outputs.season }}/[0-9][0-9]/nfl-*.jsonl' \
             ':(glob)data/nfl/predictions/manifests/sources/[0-9a-f]*.json' \
             ':(glob)data/nfl/predictions/manifests/fitted-models/[0-9a-f]*.json')" ]; then
@@ -308,7 +320,8 @@ jobs:
             data/nfl/nflverse/depth-charts/manifest.json \
             public/data/nfl/matchup-market.json \
             public/data/nfl/${{ steps.current-week.outputs.season }}/team-opportunity.json \
-            public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json
+            public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json \
+            public/data/nfl/team-totals.json
 
           # Scoring-support cache: guarded (not part of the unconditional git
           # add above) because the current season's file will not exist yet

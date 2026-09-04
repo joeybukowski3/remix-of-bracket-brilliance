@@ -90,6 +90,8 @@ export default defineConfig({
       "scripts/validate-nfl-current-week-yardage-projections.test.mjs",
       // NFL yardage workflow -- branch-aware CI ref resolution.
       "scripts/lib/ci-branch-resolution.test.mjs",
+      // NFL matchup-page JKB projected totals -- team-totals frontend view generator.
+      "scripts/generate-nfl-team-totals-view.test.ts",
     ],
   },
   resolve: {

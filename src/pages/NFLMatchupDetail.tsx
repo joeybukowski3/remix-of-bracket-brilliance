@@ -10,6 +10,8 @@ import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
+import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
+import { teamTotalFor } from "@/lib/nfl/totalsProjectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
@@ -138,6 +140,10 @@ export default function NFLMatchupDetail() {
     loading: projectionLoading,
     error: projectionError,
   } = useNflMatchupProjections();
+  // Independent optional enrichment: a missing or not-yet-generated
+  // team-total artifact leaves only the JKB Projected Score strip
+  // unavailable; every other section of the page keeps working.
+  const { artifact: totalsArtifact, loading: totalsLoading } = useNflMatchupTotals();
   // OVR/OFF/DEF all come from the universal current-rating board -- the same
   // canonical source every current-rating surface on the site reads, so this
   // page can never show a different rating than /nfl or a team dashboard.
@@ -254,6 +260,15 @@ export default function NFLMatchupDetail() {
     [projectionArtifact, matchup]
   );
 
+  // JKB projected team total. Same market-independent separation as the
+  // spread projection above: the model produces both team totals first, and
+  // the market total is joined here, in the consumer layer, purely for
+  // side-by-side comparison.
+  const totalProjection = useMemo(
+    () => teamTotalFor(totalsArtifact, matchup?.gameId),
+    [totalsArtifact, matchup]
+  );
+
   /**
    * Every comparison category, resolved once for this matchup and shared by the
    * Overview table and the Team Comparison accordions, so the two surfaces can
@@ -364,6 +379,8 @@ export default function NFLMatchupDetail() {
         matchup={matchup}
         market={market?.current ?? null}
         projection={projection}
+        totalProjection={totalProjection}
+        totalProjectionLoading={totalsLoading}
       />
 
       <MatchupTabRow
@@ -485,6 +502,13 @@ export default function NFLMatchupDetail() {
         <p className="text-[11px] leading-5 text-slate-400">
           Market data: nflverse / nfldata. A single source-published market line; the underlying
           sportsbook composition is not disclosed.
+        </p>
+      )}
+
+      {totalsArtifact && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          JKB Projected Score: {totalsArtifact.modelVersion ?? "jkb-nfl-total-ridge"}. Market-independent —
+          no Vegas data is used to produce either team's projected points.
         </p>
       )}
 
