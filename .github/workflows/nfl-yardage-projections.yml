@@ -199,22 +199,23 @@ jobs:
 
       # Step B/2: generate + archive this week's projected team totals.
       #
-      # INTENTIONALLY INERT (--dry-run) as of this integration: the
-      # generator, archive schema (team_total), outcome resolver, and
-      # evaluation materializer extension are implemented and unit/dry-run
-      # verified (see src/lib/nfl/props/totals/**, scripts/generate-nfl-totals.ts,
-      # scripts/lib/nfl-prediction-outcome-resolver.ts, scripts/lib/
-      # nfl-evaluation-materializer.ts), but this step is deliberately kept in
-      # --dry-run (computes and logs predictions, writes nothing) and the
-      # commit step below does NOT yet stage any team_total archive path.
-      # Turning this on for real is a separate, explicit follow-up: drop
-      # --dry-run here and add the nfl-total-ridge partition glob + the
-      # scoring-support cache files to the "Check for staged changes" /
-      # "Commit and push" steps below (see PR description for the exact
-      # diff). Until then this step can fail the job (protecting against a
-      # regression) without ever being able to write to main.
-      - name: Generate NFL projected totals (dry run -- not yet archiving to main)
-        run: npm run nfl:totals -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }} --dry-run
+      # ACTIVATED: the generator, archive schema (team_total), outcome
+      # resolver, and evaluation materializer extension are implemented and
+      # unit/dry-run verified (see src/lib/nfl/props/totals/**,
+      # scripts/generate-nfl-totals.ts, scripts/lib/
+      # nfl-prediction-outcome-resolver.ts, scripts/lib/
+      # nfl-evaluation-materializer.ts). The "Check for staged changes" /
+      # "Commit and push" steps below already stage any changed path under
+      # data/nfl/predictions generically (validated per-path against
+      # scripts/lib/nfl-prediction-archive-allowlist.mjs, which already
+      # allow-lists the nfl-total-ridge partition and team_total
+      # outcome/evaluation paths), so no separate allowlist widening was
+      # needed here -- removing --dry-run is the only change required to
+      # start archiving two team_total rows per game. This step still fails
+      # closed: any failure here stops the job before the commit step is
+      # ever reached, so last-known-good data is never overwritten.
+      - name: Generate NFL projected totals
+        run: npm run nfl:totals -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
       # Step 4/5 -- regenerate the production-candidate projection artifact.
       # No fetch/normalization logic of its own: reuses every already-
