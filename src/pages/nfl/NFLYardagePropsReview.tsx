@@ -8,10 +8,12 @@ import { useNflYardageOpponentContext } from "@/hooks/useNflYardageOpponentConte
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import NflYardageReviewTable from "@/components/nfl/yardage-review/NflYardageReviewTable";
-import NflYardageReviewCardList from "@/components/nfl/yardage-review/NflYardageReviewCardList";
+import NflYardageReviewMobileTable from "@/components/nfl/yardage-review/NflYardageReviewMobileTable";
 import NflYardageFreshnessStatus from "@/components/nfl/yardage-review/NflYardageFreshnessStatus";
 import { NflYardageMatchupFilterChips } from "@/components/nfl/yardage-review/NflYardageMatchupFilterChips";
-import { NflYardageBandFilterChips } from "@/components/nfl/yardage-review/NflYardageBandFilterChips";
+import { NflYardageBandFilterChips, BAND_FILTER_OPTIONS } from "@/components/nfl/yardage-review/NflYardageBandFilterChips";
+import NflYardageMobilePropTypeRow from "@/components/nfl/yardage-review/NflYardageMobilePropTypeRow";
+import NflYardageMobileFilterDropdowns from "@/components/nfl/yardage-review/NflYardageMobileFilterDropdowns";
 import { buildYardageReviewRows, type NflMatchupScoreBand } from "@/lib/nfl/props/review/yardageMarketJoin";
 import { buildYardageReviewFreshness } from "@/lib/nfl/props/review/freshness";
 import { buildYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
@@ -23,6 +25,7 @@ import {
 } from "@/lib/nfl/props/review/yardageHeat";
 import {
   DEFAULT_YARDAGE_REVIEW_FILTERS,
+  DEFAULT_YARDAGE_REVIEW_SORT,
   applyYardageReviewFilters,
   nextYardageReviewSort,
   sortYardageReviewRows,
@@ -42,7 +45,20 @@ const BAND_FILTER_LABEL: Record<"all" | NflMatchupScoreBand, string> = {
 };
 
 const LINE_OPTIONS = ["all", "available", "unavailable"] as const;
-const LINE_LABEL: Record<(typeof LINE_OPTIONS)[number], string> = { all: "All Lines", available: "Live Available", unavailable: "No Line" };
+const LINE_LABEL: Record<(typeof LINE_OPTIONS)[number], string> = { all: "All Lines", available: "Line Available", unavailable: "No Line" };
+/** Dropdown display order differs from filter-option order (Available first) -- same values/labels, just a different mobile-menu ordering. */
+const LINE_DROPDOWN_ORDER: readonly (typeof LINE_OPTIONS)[number][] = ["available", "all", "unavailable"];
+
+/**
+ * Mobile's default Line filter is "available" (matched-line-only); desktop's
+ * stays "all". This is a Vite SPA with no SSR/hydration step, so reading
+ * `window.matchMedia` in the lazy initial-state callback is safe and
+ * deterministic -- it runs once, on mount, before first paint.
+ */
+function defaultFiltersForViewport(): NflYardageReviewFilters {
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+  return isMobile ? { ...DEFAULT_YARDAGE_REVIEW_FILTERS, lineAvailability: "available" } : DEFAULT_YARDAGE_REVIEW_FILTERS;
+}
 
 export default function NFLYardagePropsReview() {
   usePageSeo({
@@ -53,8 +69,10 @@ export default function NFLYardagePropsReview() {
 
   const [week, setWeek] = useState<(typeof WEEK_OPTIONS)[number]>(1);
   const [market, setMarket] = useState<NflProjectionMarket>("passing");
-  const [filters, setFilters] = useState<NflYardageReviewFilters>(DEFAULT_YARDAGE_REVIEW_FILTERS);
-  const [sort, setSort] = useState<NflYardageReviewSortState>(null);
+  const [filters, setFilters] = useState<NflYardageReviewFilters>(defaultFiltersForViewport);
+  // Default sort is highest projection first, on initial load and after every market change; a user
+  // pick always overrides this until they clear it (nextYardageReviewSort's normal three-state cycle).
+  const [sort, setSort] = useState<NflYardageReviewSortState>(DEFAULT_YARDAGE_REVIEW_SORT);
   // Collapsed by default on mobile only -- on md+ the filter row is always
   // visible regardless of this state (see the `md:flex` override below). All
   // 32 team chips plus four more filter groups pushed every card below the
@@ -148,8 +166,8 @@ export default function NFLYardagePropsReview() {
 
   const handleMarketChange = (next: NflProjectionMarket) => {
     setMarket(next);
-    setFilters(DEFAULT_YARDAGE_REVIEW_FILTERS);
-    setSort(null);
+    setFilters(defaultFiltersForViewport());
+    setSort(DEFAULT_YARDAGE_REVIEW_SORT);
   };
 
   const loading = projections.loading;
@@ -171,14 +189,14 @@ export default function NFLYardagePropsReview() {
       >
         <div className="flex flex-wrap items-center gap-3">
           <NflFilterChips label="Week" options={WEEK_OPTIONS} value={week} onChange={setWeek} formatOption={(w) => `Week ${w}`} />
-          <NflFilterChips label="Market" options={MARKET_TABS} value={market} onChange={handleMarketChange} formatOption={(m) => MARKET_LABEL[m]} />
+          {/* Market stays a chip group on desktop; mobile gets its own dedicated prop-type row below (NflYardageMobilePropTypeRow). */}
+          <div className="hidden md:flex md:items-center">
+            <NflFilterChips label="Market" options={MARKET_TABS} value={market} onChange={handleMarketChange} formatOption={(m) => MARKET_LABEL[m]} />
+          </div>
         </div>
       </NflPageHeader>
 
-      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-900">
-        <strong className="font-semibold">Projection preview</strong> — sportsbook-relative performance has not yet been validated on the required
-        2026 sample.
-      </p>
+      <NflYardageMobilePropTypeRow value={market} onChange={handleMarketChange} />
 
       <NflYardageFreshnessStatus sources={freshnessSources} />
 
@@ -209,25 +227,36 @@ export default function NFLYardagePropsReview() {
                 filtersOpen ? "flex" : "hidden",
               )}
             >
-              <NflYardageMatchupFilterChips
+              <NflYardageMobileFilterDropdowns
                 matchups={weekMatchups}
-                value={filters.matchup}
-                onChange={(v) => setFilters((f) => ({ ...f, matchup: v }))}
+                positionOptions={positionOptions.map((o) => ({ value: o, label: o === "all" ? "All Positions" : o }))}
+                bandOptions={BAND_FILTER_OPTIONS.map((o) => ({ value: o, label: BAND_FILTER_LABEL[o] }))}
+                lineOptions={LINE_DROPDOWN_ORDER.map((o) => ({ value: o, label: LINE_LABEL[o] }))}
+                filters={filters}
+                onFilterChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
               />
-              <div className="flex flex-wrap items-center gap-3">
-                {positionOptions.length > 2 && (
-                  <NflFilterChips
-                    label="Position"
-                    options={positionOptions}
-                    value={filters.position}
-                    onChange={(v) => setFilters((f) => ({ ...f, position: v }))}
-                    formatOption={(o) => (o === "all" ? "All Positions" : o)}
-                    size="sm"
-                    tone="violet"
-                  />
-                )}
-                <NflYardageBandFilterChips value={filters.band} onChange={(v) => setFilters((f) => ({ ...f, band: v }))} formatOption={(o) => BAND_FILTER_LABEL[o]} />
-                <NflFilterChips label="Line availability" options={LINE_OPTIONS} value={filters.lineAvailability} onChange={(v) => setFilters((f) => ({ ...f, lineAvailability: v }))} formatOption={(o) => LINE_LABEL[o]} size="sm" tone="teal" />
+
+              <div className="hidden flex-col gap-3 md:flex">
+                <NflYardageMatchupFilterChips
+                  matchups={weekMatchups}
+                  value={filters.matchup}
+                  onChange={(v) => setFilters((f) => ({ ...f, matchup: v }))}
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  {positionOptions.length > 2 && (
+                    <NflFilterChips
+                      label="Position"
+                      options={positionOptions}
+                      value={filters.position}
+                      onChange={(v) => setFilters((f) => ({ ...f, position: v }))}
+                      formatOption={(o) => (o === "all" ? "All Positions" : o)}
+                      size="sm"
+                      tone="violet"
+                    />
+                  )}
+                  <NflYardageBandFilterChips value={filters.band} onChange={(v) => setFilters((f) => ({ ...f, band: v }))} formatOption={(o) => BAND_FILTER_LABEL[o]} />
+                  <NflFilterChips label="Line availability" options={LINE_OPTIONS} value={filters.lineAvailability} onChange={(v) => setFilters((f) => ({ ...f, lineAvailability: v }))} formatOption={(o) => LINE_LABEL[o]} size="sm" tone="teal" />
+                </div>
               </div>
             </div>
           </div>
@@ -252,8 +281,10 @@ export default function NFLYardagePropsReview() {
                 projectedYardsHeatByKey={projectedYardsHeatByKey}
                 season={SEASON}
               />
-              <NflYardageReviewCardList
+              <NflYardageReviewMobileTable
                 entries={sorted}
+                sort={sort}
+                onSort={handleSort}
                 opponentContextByKey={opponentContextByKey}
                 projectedYardsHeatByKey={projectedYardsHeatByKey}
                 season={SEASON}
@@ -262,6 +293,12 @@ export default function NFLYardagePropsReview() {
           )}
         </>
       )}
+
+      {/* Context/disclaimer, not primary navigation -- kept below the table and expanded player content on every viewport. */}
+      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-900">
+        <strong className="font-semibold">Projection preview</strong> — sportsbook-relative performance has not yet been validated on the required
+        2026 sample.
+      </p>
     </>
   );
 }

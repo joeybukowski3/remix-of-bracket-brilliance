@@ -4,7 +4,7 @@ import { matchupScoreHeatTone, weeklyHeatStyle, weeklyHeatTextClass } from "@/li
 
 export type NflYardageBandFilterOption = "all" | NflMatchupScoreBand;
 
-const BAND_FILTER_OPTIONS: readonly NflYardageBandFilterOption[] = ["all", "elite", "strong", "average", "weak", "poor"];
+export const BAND_FILTER_OPTIONS: readonly NflYardageBandFilterOption[] = ["all", "elite", "strong", "average", "weak", "poor"];
 
 /**
  * The Matchup Band filter is the one filter group whose options map directly

@@ -129,4 +129,16 @@ describe("sortYardageReviewRows", () => {
     const result = sortYardageReviewRows([high, low, missing], null);
     expect(result.map((e) => e.row.playerName)).toEqual(["High", "Low", "Missing"]);
   });
+
+  test("sorts by sportsbook line, ascending and descending, with unmatched lines sorting last", () => {
+    const lowLine = { ...buildRow({ playerName: "LowLine" }), marketInfo: { available: true, line: 40, book: "draftkings", overPrice: "-110", underPrice: "-110", rawDifference: 0, lastUpdate: "x" } as const };
+    const highLine = { ...buildRow({ playerName: "HighLine" }), marketInfo: { available: true, line: 90, book: "draftkings", overPrice: "-110", underPrice: "-110", rawDifference: 0, lastUpdate: "x" } as const };
+    const noLine = { ...buildRow({ playerName: "NoLine" }), marketInfo: { available: false } as const };
+
+    const asc = sortYardageReviewRows([highLine, noLine, lowLine], { key: "line", direction: "asc" });
+    expect(asc.map((e) => e.row.playerName)).toEqual(["LowLine", "HighLine", "NoLine"]);
+
+    const desc = sortYardageReviewRows([highLine, noLine, lowLine], { key: "line", direction: "desc" });
+    expect(desc.map((e) => e.row.playerName)).toEqual(["HighLine", "LowLine", "NoLine"]);
+  });
 });

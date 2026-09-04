@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import NflYardagePlayerLast10Table from "./NflYardagePlayerLast10Table";
 import type { NflYardagePlayerHistory } from "@/lib/nfl/props/types/yardageHistory";
 
@@ -54,9 +54,15 @@ function receivingHistory(): NflYardagePlayerHistory {
   };
 }
 
-/** Extracts the visible <th> header text, in DOM order, from the single rendered table. */
+/**
+ * Extracts the visible <th> header text, in DOM order, from the desktop
+ * (full-column) table -- a separate mobile-compact table also renders
+ * alongside it with a smaller fixed column set, so this scopes to the
+ * `DenseTableScroller` region rather than querying the whole document.
+ */
 function headerTexts() {
-  return screen.getAllByRole("columnheader").map((th) => th.textContent);
+  const region = screen.getByRole("region", { name: /last \d+ games?/i });
+  return within(region).getAllByRole("columnheader").map((th) => th.textContent);
 }
 
 describe("NflYardagePlayerLast10Table column order", () => {
@@ -83,19 +89,19 @@ describe("NflYardagePlayerLast10Table column order", () => {
 
   it("Opp Def Rank renders as an ordinal, never a rank-out-of-32", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
-    expect(screen.getByText("14th")).toBeInTheDocument();
+    expect(screen.getAllByText("14th").length).toBeGreaterThan(0);
     expect(screen.queryByText(/14\/32/)).not.toBeInTheDocument();
   });
 
   it("actual yards over TODAY's current line renders as a green/over result", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
-    const cell = screen.getByText("276");
+    const [cell] = screen.getAllByText("276");
     expect(cell.getAttribute("data-result")).toBe("over");
   });
 
   it("no current line renders yardage neutral, never fabricating an over/under result", () => {
     render(<NflYardagePlayerLast10Table playerName="Rhamondre Stevenson" history={rushingHistory()} currentLine={null} />);
-    const cell = screen.getByText("88");
+    const [cell] = screen.getAllByText("88");
     expect(cell.getAttribute("data-result")).toBe("neutral");
   });
 
