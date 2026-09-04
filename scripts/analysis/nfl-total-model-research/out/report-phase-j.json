@@ -1,0 +1,1719 @@
+{
+  "generatedAt": "2026-09-04T00:09:51.359Z",
+  "ridgeLambda": 1,
+  "baselineResultsByFold": {
+    "fold1": {
+      "baseline0": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.871730518775782,
+          "rmse": 10.012292869299287,
+          "correlation": 1.1253808371565366e-16,
+          "meanBias": 0.11353646624701906
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.694540915997393,
+          "rmse": 13.657800137310542,
+          "correlation": 9.182095726017563e-17,
+          "meanBias": 0.22707293249403396
+        }
+      },
+      "baseline1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.836336262842438,
+          "rmse": 9.947133213724639,
+          "correlation": 0.15839278721139707,
+          "meanBias": 0.11652845746236705
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.651033872617502,
+          "rmse": 13.554372392545265,
+          "correlation": 0.17749026103710053,
+          "meanBias": 0.23305691492473413
+        }
+      }
+    },
+    "fold2": {
+      "baseline0": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.8730671496539815,
+          "rmse": 9.85267846993938,
+          "correlation": -5.124516599351705e-17,
+          "meanBias": -1.1433823529411742
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.153492647058815,
+          "rmse": 13.28697629962706,
+          "correlation": -1.4626608305113498e-16,
+          "meanBias": -2.2867647058823506
+        }
+      },
+      "baseline1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.725781700689971,
+          "rmse": 9.67954876246808,
+          "correlation": 0.21821985672221722,
+          "meanBias": -1.133705681616375
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.085217964192076,
+          "rmse": 13.120721017301594,
+          "correlation": 0.16849646653987466,
+          "meanBias": -2.2674113632327497
+        }
+      }
+    },
+    "retrospective": {
+      "baseline0": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.92419982698961,
+          "rmse": 9.933646643611711,
+          "correlation": -7.69238403542445e-17,
+          "meanBias": -0.10110294117647471
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.972967128027681,
+          "rmse": 13.790174088244253,
+          "correlation": 2.334043530674599e-16,
+          "meanBias": -0.20220588235294767
+        }
+      },
+      "baseline1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.8472645275734845,
+          "rmse": 9.90056979808315,
+          "correlation": 0.0937948158163057,
+          "meanBias": -0.11373702554257697
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 11.018633904836735,
+          "rmse": 13.88624960994585,
+          "correlation": 0.02288480823996011,
+          "meanBias": -0.22747405108515395
+        }
+      }
+    }
+  },
+  "modelResults": {
+    "modelA": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.807403407046472,
+          "rmse": 9.882039368970034,
+          "correlation": 0.20253503791497682,
+          "meanBias": -1.0368935627967721
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.688854695588171,
+          "rmse": 13.874589381344823,
+          "correlation": 0.12774612668011778,
+          "meanBias": -2.073787125593548
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": 4.030668150576392e-25,
+          "offenseEpaPerPlay": 1.5785358789078006,
+          "offenseSuccessRate": 0.4467621056767486,
+          "offenseExplosiveRate": -0.1594677827491445,
+          "opponentDefenseEpaAllowed": -0.44968818676168126,
+          "opponentDefenseSuccessAllowed": 1.4261381883910262,
+          "opponentDefenseExplosiveAllowed": 0.41122087284368447,
+          "homeIndicator": 1.0040179653108448
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": 4.030668150576392e-25,
+          "offenseEpaPerPlay": 17.346952593105506,
+          "offenseSuccessRate": 11.160102758430826,
+          "offenseExplosiveRate": -7.785641687277522,
+          "opponentDefenseEpaAllowed": -5.467368369940796,
+          "opponentDefenseSuccessAllowed": 35.19368949958626,
+          "opponentDefenseExplosiveAllowed": 17.60729896259839,
+          "homeIndicator": 2.0080359306216895
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.270865020827092,
+          "rmse": 9.20205032488929,
+          "correlation": 0.3523592701095783,
+          "meanBias": -0.3822011444484873
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 9.695900266739997,
+          "rmse": 12.690741284292033,
+          "correlation": 0.2516899277710077,
+          "meanBias": -0.7644022888969753
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.4913925411096889,
+          "offenseEpaPerPlay": 1.1385394340105641,
+          "offenseSuccessRate": 0.763427708605067,
+          "offenseExplosiveRate": 0.414825702491808,
+          "opponentDefenseEpaAllowed": 0.37817038684660537,
+          "opponentDefenseSuccessAllowed": 0.28317707335136005,
+          "opponentDefenseExplosiveAllowed": 0.19915789572438755,
+          "homeIndicator": 1.180744796517224
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -0.8936871840784949,
+          "offenseEpaPerPlay": 10.977394282460828,
+          "offenseSuccessRate": 17.974430345414845,
+          "offenseExplosiveRate": 16.596692521314143,
+          "opponentDefenseEpaAllowed": 4.134934522768615,
+          "opponentDefenseSuccessAllowed": 6.925813137899436,
+          "opponentDefenseExplosiveAllowed": 8.391728556306632,
+          "homeIndicator": 2.361489593034448
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.687692143918228,
+          "rmse": 9.645759973281972,
+          "correlation": 0.26106297335155404,
+          "meanBias": -1.0247562717928507
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.913382838217064,
+          "rmse": 13.923950606474891,
+          "correlation": 0.1414586743491974,
+          "meanBias": -2.049512543585702
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.6456493401095822,
+          "offenseEpaPerPlay": 1.2400798558053865,
+          "offenseSuccessRate": 0.9243678862372334,
+          "offenseExplosiveRate": 0.7309235145651671,
+          "opponentDefenseEpaAllowed": 0.6473861841378271,
+          "opponentDefenseSuccessAllowed": 0.24817363185322722,
+          "opponentDefenseExplosiveAllowed": -0.017963768010123757,
+          "homeIndicator": 1.0707207336920583
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.1807801908830768,
+          "offenseEpaPerPlay": 11.443269844081344,
+          "offenseSuccessRate": 21.06822795555587,
+          "offenseExplosiveRate": 29.48758229775991,
+          "opponentDefenseEpaAllowed": 6.908800830134336,
+          "opponentDefenseSuccessAllowed": 6.145003350214939,
+          "opponentDefenseExplosiveAllowed": -0.7986098989254523,
+          "homeIndicator": 2.1414414673841167
+        },
+        "intercept": 22.187730061349694
+      }
+    },
+    "modelB": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.76323280142346,
+          "rmse": 9.835978798241333,
+          "correlation": 0.2194545678864113,
+          "meanBias": -1.0534208287599744
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.541949925152165,
+          "rmse": 13.740151037924633,
+          "correlation": 0.16110213600483467,
+          "meanBias": -2.106841657519943
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.47244481898910784,
+          "offenseEpaPerPlay": 1.5985360701240643,
+          "offenseSuccessRate": 0.45945372903167997,
+          "offenseExplosiveRate": -0.19137292614295304,
+          "opponentDefenseEpaAllowed": -0.43041960939214635,
+          "opponentDefenseSuccessAllowed": 1.4422226509795213,
+          "opponentDefenseExplosiveAllowed": 0.37635780150058096,
+          "homeIndicator": 1.0051594587245798
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.1275808802445313,
+          "offenseEpaPerPlay": 17.566740038875583,
+          "offenseSuccessRate": 11.47713909390467,
+          "offenseExplosiveRate": -9.343335725302488,
+          "opponentDefenseEpaAllowed": -5.233098461267871,
+          "opponentDefenseSuccessAllowed": 35.590615678770796,
+          "opponentDefenseExplosiveAllowed": 16.114562186744703,
+          "homeIndicator": 2.0103189174491596
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.4219276515583665,
+          "rmse": 9.439452783066908,
+          "correlation": 0.3375526782056485,
+          "meanBias": -1.9850138137340858
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.289624783420093,
+          "rmse": 13.373120928851359,
+          "correlation": 0.22696980999820224,
+          "meanBias": -3.9700276274681734
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.8153183644762562,
+          "offenseEpaPerPlay": 1.1987909640875052,
+          "offenseSuccessRate": 0.7752818033613522,
+          "offenseExplosiveRate": 0.29113272416379726,
+          "opponentDefenseEpaAllowed": 0.4149868882629577,
+          "opponentDefenseSuccessAllowed": 0.28347299280663424,
+          "opponentDefenseExplosiveAllowed": 0.09317641926242015,
+          "homeIndicator": 1.1809585882469258
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.8595227985321456,
+          "offenseEpaPerPlay": 11.558318211855436,
+          "offenseSuccessRate": 18.253527630073425,
+          "offenseExplosiveRate": 11.647880728736972,
+          "opponentDefenseEpaAllowed": 4.5374880489276705,
+          "opponentDefenseSuccessAllowed": 6.93305059828718,
+          "opponentDefenseExplosiveAllowed": 3.9260869645907936,
+          "homeIndicator": 2.3619171764938516
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.643775859178136,
+          "rmse": 9.603759417912018,
+          "correlation": 0.26706541031956454,
+          "meanBias": -0.7653528875669502
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.836587763784209,
+          "rmse": 13.801513947137412,
+          "correlation": 0.1549156871985703,
+          "meanBias": -1.5307057751339013
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.3333381344079029,
+          "offenseEpaPerPlay": 1.3268931843510066,
+          "offenseSuccessRate": 0.8512436088387855,
+          "offenseExplosiveRate": 0.6441172436295964,
+          "opponentDefenseEpaAllowed": 0.6970149616809138,
+          "opponentDefenseSuccessAllowed": 0.17269502068052694,
+          "opponentDefenseExplosiveAllowed": -0.08741783347921121,
+          "homeIndicator": 1.0691782863125998
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -0.6159217600674871,
+          "offenseEpaPerPlay": 12.244370144162605,
+          "offenseSuccessRate": 19.401576649021386,
+          "offenseExplosiveRate": 25.985564634944563,
+          "opponentDefenseEpaAllowed": 7.438431131010872,
+          "opponentDefenseSuccessAllowed": 4.27608474245519,
+          "opponentDefenseExplosiveAllowed": -3.886308658616101,
+          "homeIndicator": 2.1383565726251996
+        },
+        "intercept": 22.187730061349694
+      }
+    },
+    "modelC": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.761296616586801,
+          "rmse": 9.831075822762028,
+          "correlation": 0.21945456788641116,
+          "meanBias": -1.006612316588851
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.539407954265045,
+          "rmse": 13.72610804994458,
+          "correlation": 0.16110213600483456,
+          "meanBias": -2.013224633177701
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.47244481898910784,
+          "offenseEpaPerPlay": 1.5985360701240643,
+          "offenseSuccessRate": 0.45945372903167997,
+          "offenseExplosiveRate": -0.19137292614295304,
+          "opponentDefenseEpaAllowed": -0.43041960939214635,
+          "opponentDefenseSuccessAllowed": 1.4422226509795213,
+          "opponentDefenseExplosiveAllowed": 0.37635780150058096,
+          "homeIndicator": 1.0051594587245798
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.1275808802445313,
+          "offenseEpaPerPlay": 17.566740038875583,
+          "offenseSuccessRate": 11.47713909390467,
+          "offenseExplosiveRate": -9.343335725302488,
+          "opponentDefenseEpaAllowed": -5.233098461267871,
+          "opponentDefenseSuccessAllowed": 35.590615678770796,
+          "opponentDefenseExplosiveAllowed": 16.114562186744703,
+          "homeIndicator": 2.0103189174491596
+        },
+        "intercept": 21.881918819188193,
+        "biasCorrection": 0.04680851217112338,
+        "crossFitSampleSize": 542
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.4205421517626595,
+          "rmse": 9.437613679673053,
+          "correlation": 0.33755267820564827,
+          "meanBias": -1.9762497220031283
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.284984970150772,
+          "rmse": 13.36792788242409,
+          "correlation": 0.22696980999820213,
+          "meanBias": -3.9524994440062593
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.8153183644762562,
+          "offenseEpaPerPlay": 1.1987909640875052,
+          "offenseSuccessRate": 0.7752818033613522,
+          "offenseExplosiveRate": 0.29113272416379726,
+          "opponentDefenseEpaAllowed": 0.4149868882629577,
+          "opponentDefenseSuccessAllowed": 0.28347299280663424,
+          "opponentDefenseExplosiveAllowed": 0.09317641926242015,
+          "homeIndicator": 1.1809585882469258
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.8595227985321456,
+          "offenseEpaPerPlay": 11.558318211855436,
+          "offenseSuccessRate": 18.253527630073425,
+          "offenseExplosiveRate": 11.647880728736972,
+          "opponentDefenseEpaAllowed": 4.5374880489276705,
+          "opponentDefenseSuccessAllowed": 6.93305059828718,
+          "opponentDefenseExplosiveAllowed": 3.9260869645907936,
+          "homeIndicator": 2.3619171764938516
+        },
+        "intercept": 21.825046040515655,
+        "biasCorrection": 0.00876409173095659,
+        "crossFitSampleSize": 1086
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.643378447367613,
+          "rmse": 9.603307697657122,
+          "correlation": 0.26706541031956466,
+          "meanBias": -0.7596636237532252
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.835564414782041,
+          "rmse": 13.800256604426439,
+          "correlation": 0.15491568719857032,
+          "meanBias": -1.5193272475064528
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.3333381344079029,
+          "offenseEpaPerPlay": 1.3268931843510066,
+          "offenseSuccessRate": 0.8512436088387855,
+          "offenseExplosiveRate": 0.6441172436295964,
+          "opponentDefenseEpaAllowed": 0.6970149616809138,
+          "opponentDefenseSuccessAllowed": 0.17269502068052694,
+          "opponentDefenseExplosiveAllowed": -0.08741783347921121,
+          "homeIndicator": 1.0691782863125998
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -0.6159217600674871,
+          "offenseEpaPerPlay": 12.244370144162605,
+          "offenseSuccessRate": 19.401576649021386,
+          "offenseExplosiveRate": 25.985564634944563,
+          "opponentDefenseEpaAllowed": 7.438431131010872,
+          "opponentDefenseSuccessAllowed": 4.27608474245519,
+          "opponentDefenseExplosiveAllowed": -3.886308658616101,
+          "homeIndicator": 2.1383565726251996
+        },
+        "intercept": 22.187730061349694,
+        "biasCorrection": 0.005689263813724341,
+        "crossFitSampleSize": 1630
+      }
+    },
+    "modelD": {
+      "fold1": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.752411796799705,
+          "rmse": 9.818445140599072,
+          "correlation": 0.22705985834955686,
+          "meanBias": -1.0589379662390308
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.523161185268124,
+          "rmse": 13.723842498920511,
+          "correlation": 0.16926713265336044,
+          "meanBias": -2.117875932478063
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.48119592304910735,
+          "offenseEpaPerPlay": 1.526209299358345,
+          "offenseSuccessRate": 0.44590564692133144,
+          "opponentDefenseEpaAllowed": -0.2252167369579139,
+          "opponentDefenseSuccessAllowed": 1.4856826822102183,
+          "homeIndicator": 1.002473985721355
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.1484670816007012,
+          "offenseEpaPerPlay": 16.771921827614246,
+          "offenseSuccessRate": 11.138708446788538,
+          "opponentDefenseEpaAllowed": -2.738214834799613,
+          "opponentDefenseSuccessAllowed": 36.66310560802589,
+          "homeIndicator": 2.00494797144271
+        },
+        "intercept": 21.881918819188193
+      },
+      "fold2": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.441399287531904,
+          "rmse": 9.457573577262545,
+          "correlation": 0.33129760579235373,
+          "meanBias": -1.998330806502015
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.344343751334412,
+          "rmse": 13.429663437486445,
+          "correlation": 0.21559040065893034,
+          "meanBias": -3.9966616130040307
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.8281279182458884,
+          "offenseEpaPerPlay": 1.3907234255870458,
+          "offenseSuccessRate": 0.7909934971928975,
+          "opponentDefenseEpaAllowed": 0.4860924487331791,
+          "opponentDefenseSuccessAllowed": 0.28164981608538825,
+          "homeIndicator": 1.182770712886178
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -1.8887379595189286,
+          "offenseEpaPerPlay": 13.408863078853992,
+          "offenseSuccessRate": 18.623449684513403,
+          "opponentDefenseEpaAllowed": 5.3149599160424,
+          "opponentDefenseSuccessAllowed": 6.888460190104486,
+          "homeIndicator": 2.365541425772356
+        },
+        "intercept": 21.825046040515655
+      },
+      "retrospective": {
+        "teamPoint": {
+          "n": 544,
+          "mae": 7.6424121018129805,
+          "rmse": 9.586452108988743,
+          "correlation": 0.2693988703597106,
+          "meanBias": -0.6246816876340605
+        },
+        "gameTotal": {
+          "n": 272,
+          "mae": 10.802211776093927,
+          "rmse": 13.705905616305559,
+          "correlation": 0.171034933777124,
+          "meanBias": -1.2493633752681197
+        },
+        "standardizedCoefficients": {
+          "scoringEnvironment": -0.3415820557709638,
+          "offenseEpaPerPlay": 1.733331745047255,
+          "offenseSuccessRate": 0.8708942705776949,
+          "opponentDefenseEpaAllowed": 0.6803999168617115,
+          "opponentDefenseSuccessAllowed": 0.14566729525885014,
+          "homeIndicator": 1.0766569983391503
+        },
+        "rawCoefficients": {
+          "scoringEnvironment": -0.6311543723361482,
+          "offenseEpaPerPlay": 15.994923871258317,
+          "offenseSuccessRate": 19.84945527738669,
+          "opponentDefenseEpaAllowed": 7.26111805536577,
+          "opponentDefenseSuccessAllowed": 3.6068538413934754,
+          "homeIndicator": 2.1533139966783006
+        },
+        "intercept": 22.187730061349694
+      }
+    }
+  },
+  "weekBucketAnalysis": {
+    "modelA": {
+      "pooled": [
+        {
+          "label": "weeks-1-4",
+          "n": 192,
+          "mae": 10.72233860770379,
+          "meanSignedError": -1.9225523238913764,
+          "meanActualTotal": 44.75,
+          "meanProjectedTotal": 42.82744767610864
+        },
+        {
+          "label": "weeks-5-9",
+          "n": 217,
+          "mae": 9.395767877999138,
+          "meanSignedError": -1.8046434625314607,
+          "meanActualTotal": 45.47926267281106,
+          "meanProjectedTotal": 43.67461921027965
+        },
+        {
+          "label": "weeks-10-14",
+          "n": 215,
+          "mae": 10.47705951248599,
+          "meanSignedError": -1.278787425225248,
+          "meanActualTotal": 44.96279069767442,
+          "meanProjectedTotal": 43.684003272449196
+        },
+        {
+          "label": "weeks-15+",
+          "n": 192,
+          "mae": 11.26539085603581,
+          "meanSignedError": -1.5300935344626714,
+          "meanActualTotal": 45.296875,
+          "meanProjectedTotal": 43.76678146553733
+        }
+      ],
+      "bySeason": {
+        "2023": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 10.80311732452726,
+            "meanSignedError": -3.6985385631270185,
+            "meanActualTotal": 44.609375,
+            "meanProjectedTotal": 40.91083643687298
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 72,
+            "mae": 9.846692402557991,
+            "meanSignedError": -0.32449075141168454,
+            "meanActualTotal": 42.18055555555556,
+            "meanProjectedTotal": 41.856064804143884
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 72,
+            "mae": 11.240112983248059,
+            "meanSignedError": -2.1074973547637166,
+            "meanActualTotal": 43.625,
+            "meanProjectedTotal": 41.51750264523629
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 10.901859072690659,
+            "meanSignedError": -2.379070101198224,
+            "meanActualTotal": 43.890625,
+            "meanProjectedTotal": 41.51155489880178
+          }
+        ],
+        "2024": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 9.36580156096237,
+            "meanSignedError": 0.7814882859368573,
+            "meanActualTotal": 43.125,
+            "meanProjectedTotal": 43.90648828593686
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 74,
+            "mae": 8.221807492201844,
+            "meanSignedError": -2.2669672033932815,
+            "meanActualTotal": 47.28378378378378,
+            "meanProjectedTotal": 45.016816580390504
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 70,
+            "mae": 10.085473042581372,
+            "meanSignedError": -0.7661115931812712,
+            "meanActualTotal": 46.214285714285715,
+            "meanProjectedTotal": 45.448174121104444
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 11.30432351950088,
+            "meanSignedError": -0.5710826297835061,
+            "meanActualTotal": 46.40625,
+            "meanProjectedTotal": 45.83516737021651
+          }
+        ],
+        "2025": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 11.998096937621728,
+            "meanSignedError": -2.8506066944839654,
+            "meanActualTotal": 46.515625,
+            "meanProjectedTotal": 43.665018305516035
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 71,
+            "mae": 10.16205664955918,
+            "meanSignedError": -2.823784848120883,
+            "meanActualTotal": 46.943661971830984,
+            "meanProjectedTotal": 44.11987712371009
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 73,
+            "mae": 10.099952704245622,
+            "meanSignedError": -0.9530366487363278,
+            "meanActualTotal": 45.082191780821915,
+            "meanProjectedTotal": 44.129155132085586
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 11.589989975915907,
+            "meanSignedError": -1.6401278724062873,
+            "meanActualTotal": 45.59375,
+            "meanProjectedTotal": 43.953622127593725
+          }
+        ]
+      }
+    },
+    "modelB": {
+      "pooled": [
+        {
+          "label": "weeks-1-4",
+          "n": 192,
+          "mae": 10.460588726046117,
+          "meanSignedError": -1.81815056611243,
+          "meanActualTotal": 44.75,
+          "meanProjectedTotal": 42.931849433887585
+        },
+        {
+          "label": "weeks-5-9",
+          "n": 217,
+          "mae": 9.682589868531595,
+          "meanSignedError": -2.763351585970784,
+          "meanActualTotal": 45.47926267281106,
+          "meanProjectedTotal": 42.715911086840286
+        },
+        {
+          "label": "weeks-10-14",
+          "n": 215,
+          "mae": 10.673517558000707,
+          "meanSignedError": -2.4388780301639645,
+          "meanActualTotal": 44.96279069767442,
+          "meanProjectedTotal": 42.52391266751052
+        },
+        {
+          "label": "weeks-15+",
+          "n": 192,
+          "mae": 11.507181669992674,
+          "meanSignedError": -3.10504915113901,
+          "meanActualTotal": 45.296875,
+          "meanProjectedTotal": 42.19182584886098
+        }
+      ],
+      "bySeason": {
+        "2023": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 10.322830962530869,
+            "meanSignedError": -3.8287805305853055,
+            "meanActualTotal": 44.609375,
+            "meanProjectedTotal": 40.78059446941469
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 72,
+            "mae": 9.795082944232043,
+            "meanSignedError": -0.6258291537472643,
+            "meanActualTotal": 42.18055555555556,
+            "meanProjectedTotal": 41.55472640180828
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 72,
+            "mae": 11.198793028131035,
+            "meanSignedError": -1.7956909237077723,
+            "meanActualTotal": 43.625,
+            "meanProjectedTotal": 41.829309076292226
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 10.862345750457333,
+            "meanSignedError": -2.401086426737543,
+            "meanActualTotal": 43.890625,
+            "meanProjectedTotal": 41.48953857326244
+          }
+        ],
+        "2024": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 9.261024233563898,
+            "meanSignedError": -0.20656637877989248,
+            "meanActualTotal": 43.125,
+            "meanProjectedTotal": 42.9184336212201
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 74,
+            "mae": 9.182074917726348,
+            "meanSignedError": -5.018120418574443,
+            "meanActualTotal": 47.28378378378378,
+            "meanProjectedTotal": 42.26566336520934
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 70,
+            "mae": 10.77509264568547,
+            "meanSignedError": -4.901214786587595,
+            "meanActualTotal": 46.214285714285715,
+            "meanProjectedTotal": 41.31307092769812
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 12.067849391131952,
+            "meanSignedError": -5.50314563115295,
+            "meanActualTotal": 46.40625,
+            "meanProjectedTotal": 40.903104368847046
+          }
+        ],
+        "2025": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 11.797910982043591,
+            "meanSignedError": -1.4191047889720916,
+            "meanActualTotal": 46.515625,
+            "meanProjectedTotal": 45.09652021102789
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 71,
+            "mae": 10.090175853167608,
+            "meanSignedError": -2.580939212835889,
+            "meanActualTotal": 46.943661971830984,
+            "meanProjectedTotal": 44.36272275899509
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 73,
+            "mae": 10.058036873242933,
+            "meanSignedError": -0.7121095194131623,
+            "meanActualTotal": 45.082191780821915,
+            "meanProjectedTotal": 44.37008226140875
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 11.591349868388733,
+            "meanSignedError": -1.4109153955265374,
+            "meanActualTotal": 45.59375,
+            "meanProjectedTotal": 44.18283460447347
+          }
+        ]
+      }
+    },
+    "modelC": {
+      "pooled": [
+        {
+          "label": "weeks-1-4",
+          "n": 192,
+          "mae": 10.45745318032474,
+          "meanSignedError": -1.777309320968561,
+          "meanActualTotal": 44.75,
+          "meanProjectedTotal": 42.97269067903144
+        },
+        {
+          "label": "weeks-5-9",
+          "n": 217,
+          "mae": 9.68272653084134,
+          "meanSignedError": -2.722589434863078,
+          "meanActualTotal": 45.47926267281106,
+          "meanProjectedTotal": 42.75667323794794
+        },
+        {
+          "label": "weeks-10-14",
+          "n": 215,
+          "mae": 10.669489073212432,
+          "meanSignedError": -2.397956955225454,
+          "meanActualTotal": 44.96279069767442,
+          "meanProjectedTotal": 42.56483374244893
+        },
+        {
+          "label": "weeks-15+",
+          "n": 192,
+          "mae": 11.50304988388657,
+          "meanSignedError": -3.064207905995142,
+          "meanActualTotal": 45.296875,
+          "meanProjectedTotal": 42.23266709400486
+        }
+      ],
+      "bySeason": {
+        "2023": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 10.314054366498782,
+            "meanSignedError": -3.735163506243061,
+            "meanActualTotal": 44.609375,
+            "meanProjectedTotal": 40.87421149375693
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 72,
+            "mae": 9.805484835825625,
+            "meanSignedError": -0.5322121294050207,
+            "meanActualTotal": 42.18055555555556,
+            "meanProjectedTotal": 41.64834342615055
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 72,
+            "mae": 11.191790499900312,
+            "meanSignedError": -1.7020738993655284,
+            "meanActualTotal": 43.625,
+            "meanProjectedTotal": 41.92292610063448
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 10.856494686435934,
+            "meanSignedError": -2.3074694023952986,
+            "meanActualTotal": 43.890625,
+            "meanProjectedTotal": 41.5831555976047
+          }
+        ],
+        "2024": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 9.260476477830712,
+            "meanSignedError": -0.18903819531798038,
+            "meanActualTotal": 43.125,
+            "meanProjectedTotal": 42.93596180468203
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 74,
+            "mae": 9.174968897403957,
+            "meanSignedError": -5.0005922351125305,
+            "meanActualTotal": 47.28378378378378,
+            "meanProjectedTotal": 42.283191548671255
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 70,
+            "mae": 10.77008459326778,
+            "meanSignedError": -4.883686603125683,
+            "meanActualTotal": 46.214285714285715,
+            "meanProjectedTotal": 41.33059911116003
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 12.062371833800109,
+            "meanSignedError": -5.48561744769104,
+            "meanActualTotal": 46.40625,
+            "meanProjectedTotal": 40.92063255230896
+          }
+        ],
+        "2025": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 11.797828696644736,
+            "meanSignedError": -1.4077262613446424,
+            "meanActualTotal": 46.515625,
+            "meanProjectedTotal": 45.10789873865538
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 71,
+            "mae": 10.08745141697512,
+            "meanSignedError": -2.569560685208439,
+            "meanActualTotal": 46.943661971830984,
+            "meanProjectedTotal": 44.374101286622555
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 73,
+            "mae": 10.057881003001466,
+            "meanSignedError": -0.7007309917857113,
+            "meanActualTotal": 45.082191780821915,
+            "meanProjectedTotal": 44.38146078903622
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 11.59028313142366,
+            "meanSignedError": -1.3995368678990885,
+            "meanActualTotal": 45.59375,
+            "meanProjectedTotal": 44.19421313210091
+          }
+        ]
+      }
+    },
+    "modelD": {
+      "pooled": [
+        {
+          "label": "weeks-1-4",
+          "n": 192,
+          "mae": 10.45164745091534,
+          "meanSignedError": -1.6423320822629848,
+          "meanActualTotal": 44.75,
+          "meanProjectedTotal": 43.10766791773701
+        },
+        {
+          "label": "weeks-5-9",
+          "n": 217,
+          "mae": 9.635906772681858,
+          "meanSignedError": -2.6483309232079715,
+          "meanActualTotal": 45.47926267281106,
+          "meanProjectedTotal": 42.83093174960309
+        },
+        {
+          "label": "weeks-10-14",
+          "n": 215,
+          "mae": 10.70751382945717,
+          "meanSignedError": -2.429232784822929,
+          "meanActualTotal": 44.96279069767442,
+          "meanProjectedTotal": 42.533557912851485
+        },
+        {
+          "label": "weeks-15+",
+          "n": 192,
+          "mae": 11.533017668085643,
+          "meanSignedError": -3.0764605811276318,
+          "meanActualTotal": 45.296875,
+          "meanProjectedTotal": 42.22041441887237
+        }
+      ],
+      "bySeason": {
+        "2023": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 10.239586097178954,
+            "meanSignedError": -3.849886579621267,
+            "meanActualTotal": 44.609375,
+            "meanProjectedTotal": 40.759488420378744
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 72,
+            "mae": 9.701541132770505,
+            "meanSignedError": -0.6049537519262197,
+            "meanActualTotal": 42.18055555555556,
+            "meanProjectedTotal": 41.575601803629326
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 72,
+            "mae": 11.27071873498287,
+            "meanSignedError": -1.8183614352716768,
+            "meanActualTotal": 43.625,
+            "meanProjectedTotal": 41.80663856472833
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 10.89005658898806,
+            "meanSignedError": -2.4248565478128703,
+            "meanActualTotal": 43.890625,
+            "meanProjectedTotal": 41.46576845218713
+          }
+        ],
+        "2024": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 9.376691196174027,
+            "meanSignedError": -0.1282969596737049,
+            "meanActualTotal": 43.125,
+            "meanProjectedTotal": 42.996703040326295
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 74,
+            "mae": 9.203608566067082,
+            "meanSignedError": -5.058890131983699,
+            "meanActualTotal": 47.28378378378378,
+            "meanProjectedTotal": 42.22489365180009
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 70,
+            "mae": 10.79669404786245,
+            "meanSignedError": -4.986695409473051,
+            "meanActualTotal": 46.214285714285715,
+            "meanProjectedTotal": 41.227590304812665
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 12.136213227632613,
+            "meanSignedError": -5.553975076376112,
+            "meanActualTotal": 46.40625,
+            "meanProjectedTotal": 40.85227492362389
+          }
+        ],
+        "2025": [
+          {
+            "label": "weeks-1-4",
+            "n": 64,
+            "mae": 11.738665059393028,
+            "meanSignedError": -0.9488127074939812,
+            "meanActualTotal": 46.515625,
+            "meanProjectedTotal": 45.56681229250602
+          },
+          {
+            "label": "weeks-5-9",
+            "n": 71,
+            "mae": 10.019912313007357,
+            "meanSignedError": -2.2080742314175787,
+            "meanActualTotal": 46.943661971830984,
+            "meanProjectedTotal": 44.73558774041341
+          },
+          {
+            "label": "weeks-10-14",
+            "n": 73,
+            "mae": 10.066508781700724,
+            "meanSignedError": -0.5793746127980121,
+            "meanActualTotal": 45.082191780821915,
+            "meanProjectedTotal": 44.502817168023896
+          },
+          {
+            "label": "weeks-15+",
+            "n": 64,
+            "mae": 11.57278318763625,
+            "meanSignedError": -1.250550119193921,
+            "meanActualTotal": 45.59375,
+            "meanProjectedTotal": 44.343199880806054
+          }
+        ]
+      }
+    }
+  },
+  "environmentDiagnostics": {
+    "2023": [
+      {
+        "week": 1,
+        "priorSeasonOnly": {
+          "value": 21.881918819188193,
+          "sampleGames": 542,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 21.881918819188193,
+          "sampleGames": 542,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "priorSeason"
+        }
+      },
+      {
+        "week": 2,
+        "priorSeasonOnly": {
+          "value": 21.881918819188193,
+          "sampleGames": 542,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 20.5,
+          "sampleGames": 32,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      },
+      {
+        "week": 5,
+        "priorSeasonOnly": {
+          "value": 21.881918819188193,
+          "sampleGames": 542,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 22.3046875,
+          "sampleGames": 128,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      },
+      {
+        "week": 10,
+        "priorSeasonOnly": {
+          "value": 21.881918819188193,
+          "sampleGames": 542,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 21.66176470588235,
+          "sampleGames": 272,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      },
+      {
+        "week": 18,
+        "priorSeasonOnly": {
+          "value": 21.881918819188193,
+          "sampleGames": 542,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 21.95703125,
+          "sampleGames": 512,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      }
+    ],
+    "2025": [
+      {
+        "week": 1,
+        "priorSeasonOnly": {
+          "value": 22.91176470588235,
+          "sampleGames": 544,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 22.91176470588235,
+          "sampleGames": 544,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "priorSeason"
+        }
+      },
+      {
+        "week": 2,
+        "priorSeasonOnly": {
+          "value": 22.91176470588235,
+          "sampleGames": 544,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 20.65625,
+          "sampleGames": 32,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      },
+      {
+        "week": 5,
+        "priorSeasonOnly": {
+          "value": 22.91176470588235,
+          "sampleGames": 544,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 23.2578125,
+          "sampleGames": 128,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      },
+      {
+        "week": 10,
+        "priorSeasonOnly": {
+          "value": 22.91176470588235,
+          "sampleGames": 544,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 23.37037037037037,
+          "sampleGames": 270,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      },
+      {
+        "week": 18,
+        "priorSeasonOnly": {
+          "value": 22.91176470588235,
+          "sampleGames": 544,
+          "mode": "priorSeasonOnly",
+          "method": "priorSeason"
+        },
+        "seasonToDateWithPriorFallback": {
+          "value": 23.224609375,
+          "sampleGames": 512,
+          "mode": "seasonToDateWithPriorFallback",
+          "method": "seasonToDate"
+        }
+      }
+    ]
+  },
+  "collinearity": {
+    "n": 1630,
+    "offenseEpaVsOffenseSuccess": 0.7652935546782718,
+    "offenseExplosiveVsOffenseEpa": 0.6569690062230988,
+    "defenseEpaAllowedVsDefenseSuccessAllowed": 0.6901570969943717,
+    "defenseExplosiveAllowedVsDefenseEpaAllowed": 0.553397733334794
+  },
+  "lambdaSensitivity": {
+    "fold1": [
+      {
+        "lambda": 1,
+        "modelA": {
+          "coefficients": [
+            4.030668150576392e-25,
+            1.5785358789078006,
+            0.4467621056767486,
+            -0.1594677827491445,
+            -0.44968818676168126,
+            1.4261381883910262,
+            0.41122087284368447,
+            1.0040179653108448
+          ],
+          "valGameTotalMae": 10.688854695588171
+        },
+        "modelB": {
+          "coefficients": [
+            -0.47244481898910784,
+            1.5985360701240643,
+            0.45945372903167997,
+            -0.19137292614295304,
+            -0.43041960939214635,
+            1.4422226509795213,
+            0.37635780150058096,
+            1.0051594587245798
+          ],
+          "valGameTotalMae": 10.541949925152165
+        },
+        "modelC": {
+          "coefficients": [
+            -0.47244481898910784,
+            1.5985360701240643,
+            0.45945372903167997,
+            -0.19137292614295304,
+            -0.43041960939214635,
+            1.4422226509795213,
+            0.37635780150058096,
+            1.0051594587245798
+          ],
+          "biasCorrection": 0.04680851217112338,
+          "valGameTotalMae": 10.539407954265045
+        },
+        "modelD": {
+          "coefficients": [
+            -0.48119592304910735,
+            1.526209299358345,
+            0.44590564692133144,
+            -0.2252167369579139,
+            1.4856826822102183,
+            1.002473985721355
+          ],
+          "valGameTotalMae": 10.523161185268124
+        }
+      },
+      {
+        "lambda": 10,
+        "modelA": {
+          "coefficients": [
+            3.493918383870643e-26,
+            1.53322793955893,
+            0.4604383696615838,
+            -0.13587302220572595,
+            -0.412754123543495,
+            1.3833417252191023,
+            0.40136677770636275,
+            0.9871504266206707
+          ],
+          "valGameTotalMae": 10.680196762829961
+        },
+        "modelB": {
+          "coefficients": [
+            -0.46309312987378987,
+            1.5519045486063707,
+            0.47291701696294824,
+            -0.1662471495299665,
+            -0.3947340992188009,
+            1.3988747383009312,
+            0.36834816777312207,
+            0.9882127754118807
+          ],
+          "valGameTotalMae": 10.536428247281107
+        },
+        "modelC": {
+          "coefficients": [
+            -0.46309312987378987,
+            1.5519045486063707,
+            0.47291701696294824,
+            -0.1662471495299665,
+            -0.3947340992188009,
+            1.3988747383009312,
+            0.36834816777312207,
+            0.9882127754118807
+          ],
+          "biasCorrection": 0.04452425426996802,
+          "valGameTotalMae": 10.534463941945662
+        },
+        "modelD": {
+          "coefficients": [
+            -0.4725158736479123,
+            1.4932360601862105,
+            0.4591026597938547,
+            -0.1991201203160886,
+            1.443593165525049,
+            0.9861187665332524
+          ],
+          "valGameTotalMae": 10.518012959342078
+        }
+      },
+      {
+        "lambda": 50,
+        "modelA": {
+          "coefficients": [
+            3.404984763601768e-27,
+            1.3702167924162323,
+            0.499890481889831,
+            -0.05365968419251804,
+            -0.28596198892445096,
+            1.2262386913286631,
+            0.36788714523553173,
+            0.9187369194573133
+          ],
+          "valGameTotalMae": 10.650294497780216
+        },
+        "modelB": {
+          "coefficients": [
+            -0.4258807444734834,
+            1.384469992042205,
+            0.5111978975948436,
+            -0.0784795927816152,
+            -0.27214782641315693,
+            1.2395217707942265,
+            0.3414452497485098,
+            0.9195291111365028
+          ],
+          "valGameTotalMae": 10.518338074878454
+        },
+        "modelC": {
+          "coefficients": [
+            -0.4258807444734834,
+            1.384469992042205,
+            0.5111978975948436,
+            -0.0784795927816152,
+            -0.27214782641315693,
+            1.2395217707942265,
+            0.3414452497485098,
+            0.9195291111365028
+          ],
+          "biasCorrection": 0.03756688048178025,
+          "valGameTotalMae": 10.51668071250425
+        },
+        "modelD": {
+          "coefficients": [
+            -0.4373415523099764,
+            1.3683844712485458,
+            0.4997852282569259,
+            -0.10924974970456337,
+            1.287502730094021,
+            0.9193256281012526
+          ],
+          "valGameTotalMae": 10.503165856897876
+        }
+      },
+      {
+        "lambda": 100,
+        "modelA": {
+          "coefficients": [
+            3.225780585152187e-28,
+            1.2237721060866156,
+            0.5201396124869785,
+            0.014689590914892369,
+            -0.1828721269444946,
+            1.0817511574044223,
+            0.3400829309120546,
+            0.8457096220452528
+          ],
+          "valGameTotalMae": 10.620388951328243
+        },
+        "modelB": {
+          "coefficients": [
+            -0.3873411878062134,
+            1.2345284726655046,
+            0.5299263656099179,
+            -0.005175028362623221,
+            -0.1724161257800568,
+            1.0927439612587047,
+            0.31934089558520534,
+            0.8462839949141339
+          ],
+          "valGameTotalMae": 10.499983210152735
+        },
+        "modelC": {
+          "coefficients": [
+            -0.3873411878062134,
+            1.2345284726655046,
+            0.5299263656099179,
+            -0.005175028362623221,
+            -0.1724161257800568,
+            1.0927439612587047,
+            0.31934089558520534,
+            0.8462839949141339
+          ],
+          "biasCorrection": 0.03254808799486953,
+          "valGameTotalMae": 10.498068616741271
+        },
+        "modelD": {
+          "coefficients": [
+            -0.3999300113323101,
+            1.2472949121131298,
+            0.52417443846448,
+            -0.03663442804766104,
+            1.141673919194642,
+            0.847391994422929
+          ],
+          "valGameTotalMae": 10.4881316055918
+        }
+      }
+    ],
+    "fold2": [
+      {
+        "lambda": 1,
+        "modelA": {
+          "coefficients": [
+            -0.4913925411096889,
+            1.1385394340105641,
+            0.763427708605067,
+            0.414825702491808,
+            0.37817038684660537,
+            0.28317707335136005,
+            0.19915789572438755,
+            1.180744796517224
+          ],
+          "valGameTotalMae": 9.695900266739997
+        },
+        "modelB": {
+          "coefficients": [
+            -0.8153183644762562,
+            1.1987909640875052,
+            0.7752818033613522,
+            0.29113272416379726,
+            0.4149868882629577,
+            0.28347299280663424,
+            0.09317641926242015,
+            1.1809585882469258
+          ],
+          "valGameTotalMae": 10.289624783420093
+        },
+        "modelC": {
+          "coefficients": [
+            -0.8153183644762562,
+            1.1987909640875052,
+            0.7752818033613522,
+            0.29113272416379726,
+            0.4149868882629577,
+            0.28347299280663424,
+            0.09317641926242015,
+            1.1809585882469258
+          ],
+          "biasCorrection": 0.00876409173095659,
+          "valGameTotalMae": 10.284984970150772
+        },
+        "modelD": {
+          "coefficients": [
+            -0.8281279182458884,
+            1.3907234255870458,
+            0.7909934971928975,
+            0.4860924487331791,
+            0.28164981608538825,
+            1.182770712886178
+          ],
+          "valGameTotalMae": 10.344343751334412
+        }
+      },
+      {
+        "lambda": 10,
+        "modelA": {
+          "coefficients": [
+            -0.48529898239177593,
+            1.124529837600136,
+            0.7640162960127294,
+            0.41934821786752446,
+            0.3738903095409286,
+            0.282160814781813,
+            0.1994107217083013,
+            1.1709484714419502
+          ],
+          "valGameTotalMae": 9.69584987822298
+        },
+        "modelB": {
+          "coefficients": [
+            -0.8072479611442464,
+            1.181617749859727,
+            0.7763406042118234,
+            0.2994340618479585,
+            0.40877172269285744,
+            0.28291113953855607,
+            0.09621822356995582,
+            1.1711599315250396
+          ],
+          "valGameTotalMae": 10.281246759191326
+        },
+        "modelC": {
+          "coefficients": [
+            -0.8072479611442464,
+            1.181617749859727,
+            0.7763406042118234,
+            0.2994340618479585,
+            0.40877172269285744,
+            0.28291113953855607,
+            0.09621822356995582,
+            1.1711599315250396
+          ],
+          "biasCorrection": 0.00880658747830824,
+          "valGameTotalMae": 10.276584448173406
+        },
+        "modelD": {
+          "coefficients": [
+            -0.8202655589624901,
+            1.3756313933304427,
+            0.7948714228525897,
+            0.4807988023649163,
+            0.28189723630879054,
+            1.1730196594643316
+          ],
+          "valGameTotalMae": 10.337307067135736
+        }
+      },
+      {
+        "lambda": 50,
+        "modelA": {
+          "coefficients": [
+            -0.4593783339631969,
+            1.0704632266004814,
+            0.762977628144194,
+            0.43536430469225307,
+            0.3570381529369979,
+            0.27707682871340206,
+            0.19986208886800422,
+            1.129306614728174
+          ],
+          "valGameTotalMae": 9.696159799092682
+        },
+        "modelB": {
+          "coefficients": [
+            -0.773310082799244,
+            1.1161455984474757,
+            0.7764997770070745,
+            0.3301379081178596,
+            0.38486464260729697,
+            0.2793147707917094,
+            0.10775099282804494,
+            1.129504536376156
+          ],
+          "valGameTotalMae": 10.25081442522318
+        },
+        "modelC": {
+          "coefficients": [
+            -0.773310082799244,
+            1.1161455984474757,
+            0.7764997770070745,
+            0.3301379081178596,
+            0.38486464260729697,
+            0.2793147707917094,
+            0.10775099282804494,
+            1.129504536376156
+          ],
+          "biasCorrection": 0.009001793197068982,
+          "valGameTotalMae": 10.246445907936364
+        },
+        "modelD": {
+          "coefficients": [
+            -0.7868991789940943,
+            1.3156235671479843,
+            0.8064829004968103,
+            0.4594730432920954,
+            0.2817764952187115,
+            1.1315235338200027
+          ],
+          "valGameTotalMae": 10.307222370461984
+        }
+      },
+      {
+        "lambda": 100,
+        "modelA": {
+          "coefficients": [
+            -0.4295819442665789,
+            1.016422260823997,
+            0.7563165078305728,
+            0.4485697785721815,
+            0.33961856662060164,
+            0.270067974825387,
+            0.19935801284017488,
+            1.0812437450350518
+          ],
+          "valGameTotalMae": 9.697317633176851
+        },
+        "modelB": {
+          "coefficients": [
+            -0.7347996867270965,
+            1.0521031894104285,
+            0.7701206212878727,
+            0.35798165582390795,
+            0.36117686093896983,
+            0.2733638898653,
+            0.11867316260306265,
+            1.081421970567646
+          ],
+          "valGameTotalMae": 10.220168949828187
+        },
+        "modelC": {
+          "coefficients": [
+            -0.7347996867270965,
+            1.0521031894104285,
+            0.7701206212878727,
+            0.35798165582390795,
+            0.36117686093896983,
+            0.2733638898653,
+            0.11867316260306265,
+            1.081421970567646
+          ],
+          "biasCorrection": 0.009229506268182641,
+          "valGameTotalMae": 10.21596138079416
+        },
+        "modelD": {
+          "coefficients": [
+            -0.7485384797445225,
+            1.252895635927186,
+            0.8118251422382183,
+            0.43674306454383544,
+            0.2796745595657354,
+            1.0835501990917578
+          ],
+          "valGameTotalMae": 10.274629663418404
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,1459 @@
+{
+  "item1": [
+    {
+      "fold": "fold1",
+      "standardized": {
+        "offenseEpaPerPlay": 2.415327738498551,
+        "offenseSuccessRate": -0.2108542244452386,
+        "opponentDefenseEpaAllowed": -0.3397667077842864,
+        "opponentDefenseSuccessAllowed": 1.5172080956457394,
+        "homeIndicator": 1.0150758615301352
+      },
+      "raw": {
+        "offenseEpaPerPlay": 31.100811033863582,
+        "offenseSuccessRate": -6.37564261943937,
+        "opponentDefenseEpaAllowed": -5.2804830204439765,
+        "opponentDefenseSuccessAllowed": 48.667890760539,
+        "homeIndicator": 2.0301517230602704
+      },
+      "intercept": 21.881918819188193,
+      "lambda": 1,
+      "trainRowCount": 542,
+      "edf": 4.977262082190451,
+      "correlationMatrix": [
+        [
+          1,
+          0.8550325782758245,
+          -0.038874936954431304,
+          -0.06206183182346374,
+          -0.011979790214764715
+        ],
+        [
+          0.8550325782758245,
+          1,
+          -0.03280196795009107,
+          -0.08270618220766965,
+          -0.004038908932262391
+        ],
+        [
+          -0.038874936954431304,
+          -0.03280196795009107,
+          1,
+          0.7015606456074245,
+          -0.0060939027800302895
+        ],
+        [
+          -0.06206183182346374,
+          -0.08270618220766965,
+          0.7015606456074245,
+          1,
+          -0.001322041859907031
+        ],
+        [
+          -0.011979790214764715,
+          -0.004038908932262391,
+          -0.0060939027800302895,
+          -0.001322041859907031,
+          1
+        ]
+      ],
+      "featureNames": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ]
+    },
+    {
+      "fold": "fold2",
+      "standardized": {
+        "offenseEpaPerPlay": 1.7700497282210597,
+        "offenseSuccessRate": 0.5093832656563037,
+        "opponentDefenseEpaAllowed": 0.40194523057937753,
+        "opponentDefenseSuccessAllowed": 0.33956199367052275,
+        "homeIndicator": 1.1776981531427306
+      },
+      "raw": {
+        "offenseEpaPerPlay": 22.036750681878672,
+        "offenseSuccessRate": 15.006486293290452,
+        "opponentDefenseEpaAllowed": 6.055793771911986,
+        "opponentDefenseSuccessAllowed": 11.06878656603278,
+        "homeIndicator": 2.3553963062854613
+      },
+      "intercept": 21.825046040515655,
+      "lambda": 1,
+      "trainRowCount": 1086,
+      "edf": 4.987808343017638,
+      "correlationMatrix": [
+        [
+          1,
+          0.8688767155217981,
+          0.009601526503148673,
+          -0.0014840694237173413,
+          -0.003093512905570317
+        ],
+        [
+          0.8688767155217981,
+          1,
+          0.003587714256543872,
+          -0.004503452236814953,
+          -0.0043935118786281365
+        ],
+        [
+          0.009601526503148673,
+          0.003587714256543872,
+          1,
+          0.7190278964985362,
+          -0.0002580521055567856
+        ],
+        [
+          -0.0014840694237173413,
+          -0.004503452236814953,
+          0.7190278964985362,
+          1,
+          -0.015370852958443624
+        ],
+        [
+          -0.003093512905570317,
+          -0.0043935118786281365,
+          -0.0002580521055567856,
+          -0.015370852958443624,
+          1
+        ]
+      ],
+      "featureNames": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ]
+    },
+    {
+      "fold": "retrospective",
+      "standardized": {
+        "offenseEpaPerPlay": 2.174565929810065,
+        "offenseSuccessRate": 0.5037806331253235,
+        "opponentDefenseEpaAllowed": 0.46982288338691675,
+        "opponentDefenseSuccessAllowed": 0.290480476267353,
+        "homeIndicator": 1.0803630312805472
+      },
+      "raw": {
+        "offenseEpaPerPlay": 26.20098961311332,
+        "offenseSuccessRate": 14.532261443859687,
+        "opponentDefenseEpaAllowed": 6.983892871141876,
+        "opponentDefenseSuccessAllowed": 9.50981915608168,
+        "homeIndicator": 2.1607260625610945
+      },
+      "intercept": 22.187730061349694,
+      "lambda": 1,
+      "trainRowCount": 1630,
+      "edf": 4.991427871219337,
+      "correlationMatrix": [
+        [
+          1,
+          0.8779261094668163,
+          0.000960666472822035,
+          -0.006709519571192163,
+          0.005656091396559796
+        ],
+        [
+          0.8779261094668163,
+          1,
+          -0.004927729660642707,
+          -0.005787978279641826,
+          0.003024060418885914
+        ],
+        [
+          0.000960666472822035,
+          -0.004927729660642707,
+          1,
+          0.7306402363714306,
+          -0.0010615763625117815
+        ],
+        [
+          -0.006709519571192163,
+          -0.005787978279641826,
+          0.7306402363714306,
+          1,
+          -0.0206779000534944
+        ],
+        [
+          0.005656091396559796,
+          0.003024060418885914,
+          -0.0010615763625117815,
+          -0.0206779000534944,
+          1
+        ]
+      ],
+      "featureNames": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ]
+    }
+  ],
+  "item2": [
+    {
+      "season": 2022,
+      "standardized": {
+        "offenseEpaPerPlay": 2.415327738498551,
+        "offenseSuccessRate": -0.2108542244452386,
+        "opponentDefenseEpaAllowed": -0.3397667077842864,
+        "opponentDefenseSuccessAllowed": 1.5172080956457394,
+        "homeIndicator": 1.0150758615301352
+      },
+      "raw": {
+        "offenseEpaPerPlay": 31.100811033863582,
+        "offenseSuccessRate": -6.37564261943937,
+        "opponentDefenseEpaAllowed": -5.2804830204439765,
+        "opponentDefenseSuccessAllowed": 48.667890760539,
+        "homeIndicator": 2.0301517230602704
+      },
+      "intercept": 21.881918819188193,
+      "trainRowCount": 542,
+      "diagnosticOnly": false
+    },
+    {
+      "season": 2023,
+      "standardized": {
+        "offenseEpaPerPlay": 0.8222285318935115,
+        "offenseSuccessRate": 1.694867222392548,
+        "opponentDefenseEpaAllowed": 1.4419853296638596,
+        "opponentDefenseSuccessAllowed": -0.994939230210071,
+        "homeIndicator": 1.3045933815242006
+      },
+      "raw": {
+        "offenseEpaPerPlay": 10.120519161104307,
+        "offenseSuccessRate": 49.68614332029815,
+        "opponentDefenseEpaAllowed": 21.975691488687076,
+        "opponentDefenseSuccessAllowed": -34.329072888207754,
+        "homeIndicator": 2.609186763048401
+      },
+      "intercept": 21.768382352941178,
+      "trainRowCount": 544,
+      "diagnosticOnly": false
+    },
+    {
+      "season": 2024,
+      "standardized": {
+        "offenseEpaPerPlay": 2.676724694575305,
+        "offenseSuccessRate": 0.7566773269419093,
+        "opponentDefenseEpaAllowed": 0.47462195491863035,
+        "opponentDefenseSuccessAllowed": 0.29208821639258936,
+        "homeIndicator": 0.8719667945381882
+      },
+      "raw": {
+        "offenseEpaPerPlay": 30.387767782425485,
+        "offenseSuccessRate": 21.007906769661425,
+        "opponentDefenseEpaAllowed": 6.898049189906025,
+        "opponentDefenseSuccessAllowed": 9.646385839482084,
+        "homeIndicator": 1.7439335890763763
+      },
+      "intercept": 22.91176470588235,
+      "trainRowCount": 544,
+      "diagnosticOnly": false
+    },
+    {
+      "season": 2025,
+      "standardized": {
+        "offenseEpaPerPlay": 1.5279681375682783,
+        "offenseSuccessRate": 1.227585035154624,
+        "opponentDefenseEpaAllowed": 1.902013142101814,
+        "opponentDefenseSuccessAllowed": -0.03608171625684169,
+        "homeIndicator": 1.0486932696978404
+      },
+      "raw": {
+        "offenseEpaPerPlay": 17.96680842251393,
+        "offenseSuccessRate": 35.82168530732192,
+        "opponentDefenseEpaAllowed": 24.809044515283738,
+        "opponentDefenseSuccessAllowed": -1.1470105403304782,
+        "homeIndicator": 2.0973865393956808
+      },
+      "intercept": 23.012867647058822,
+      "trainRowCount": 544,
+      "diagnosticOnly": true
+    }
+  ],
+  "item3": [
+    {
+      "seasons": [
+        2022
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 2.415327738498551,
+        "offenseSuccessRate": -0.2108542244452386,
+        "opponentDefenseEpaAllowed": -0.3397667077842864,
+        "opponentDefenseSuccessAllowed": 1.5172080956457394,
+        "homeIndicator": 1.0150758615301352
+      },
+      "raw": {
+        "offenseEpaPerPlay": 31.100811033863582,
+        "offenseSuccessRate": -6.37564261943937,
+        "opponentDefenseEpaAllowed": -5.2804830204439765,
+        "opponentDefenseSuccessAllowed": 48.667890760539,
+        "homeIndicator": 2.0301517230602704
+      },
+      "intercept": 21.881918819188193,
+      "trainRowCount": 542,
+      "diagnosticOnly": false
+    },
+    {
+      "seasons": [
+        2022,
+        2023
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 1.7700497282210597,
+        "offenseSuccessRate": 0.5093832656563037,
+        "opponentDefenseEpaAllowed": 0.40194523057937753,
+        "opponentDefenseSuccessAllowed": 0.33956199367052275,
+        "homeIndicator": 1.1776981531427306
+      },
+      "raw": {
+        "offenseEpaPerPlay": 22.036750681878672,
+        "offenseSuccessRate": 15.006486293290452,
+        "opponentDefenseEpaAllowed": 6.055793771911986,
+        "opponentDefenseSuccessAllowed": 11.06878656603278,
+        "homeIndicator": 2.3553963062854613
+      },
+      "intercept": 21.825046040515655,
+      "trainRowCount": 1086,
+      "diagnosticOnly": false
+    },
+    {
+      "seasons": [
+        2022,
+        2023,
+        2024
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 2.174565929810065,
+        "offenseSuccessRate": 0.5037806331253235,
+        "opponentDefenseEpaAllowed": 0.46982288338691675,
+        "opponentDefenseSuccessAllowed": 0.290480476267353,
+        "homeIndicator": 1.0803630312805472
+      },
+      "raw": {
+        "offenseEpaPerPlay": 26.20098961311332,
+        "offenseSuccessRate": 14.532261443859687,
+        "opponentDefenseEpaAllowed": 6.983892871141876,
+        "opponentDefenseSuccessAllowed": 9.50981915608168,
+        "homeIndicator": 2.1607260625610945
+      },
+      "intercept": 22.187730061349694,
+      "trainRowCount": 1630,
+      "diagnosticOnly": false
+    },
+    {
+      "seasons": [
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 2.0171343846578678,
+        "offenseSuccessRate": 0.6793305004096304,
+        "opponentDefenseEpaAllowed": 0.8805827417043038,
+        "opponentDefenseSuccessAllowed": 0.17241515712023625,
+        "homeIndicator": 1.0706424844313351
+      },
+      "raw": {
+        "offenseEpaPerPlay": 23.991205463742197,
+        "offenseSuccessRate": 19.61472475844164,
+        "opponentDefenseEpaAllowed": 12.4752785290832,
+        "opponentDefenseSuccessAllowed": 5.582552594096727,
+        "homeIndicator": 2.1412849688626703
+      },
+      "intercept": 22.394204231830727,
+      "trainRowCount": 2174,
+      "diagnosticOnly": true
+    }
+  ],
+  "item4": [
+    {
+      "excludedSeason": 2022,
+      "trainSeasons": [
+        2023,
+        2024,
+        2025
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 1.6704298716149908,
+        "offenseSuccessRate": 1.2191049148902522,
+        "opponentDefenseEpaAllowed": 1.337355283624488,
+        "opponentDefenseSuccessAllowed": -0.28445947877327876,
+        "homeIndicator": 1.0835086433730259
+      },
+      "raw": {
+        "offenseEpaPerPlay": 19.41908335414704,
+        "offenseSuccessRate": 34.814615660380056,
+        "opponentDefenseEpaAllowed": 18.45504230625734,
+        "opponentDefenseSuccessAllowed": -9.283616126378478,
+        "homeIndicator": 2.1670172867460518
+      },
+      "intercept": 22.564338235294116,
+      "trainRowCount": 1632,
+      "diagnosticOnly": true
+    },
+    {
+      "excludedSeason": 2023,
+      "trainSeasons": [
+        2022,
+        2024,
+        2025
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 2.3744051315860957,
+        "offenseSuccessRate": 0.39824619013593954,
+        "opponentDefenseEpaAllowed": 0.7114008757383585,
+        "opponentDefenseSuccessAllowed": 0.5371954120725009,
+        "homeIndicator": 0.9830469927803246
+      },
+      "raw": {
+        "offenseEpaPerPlay": 28.202542286305956,
+        "offenseSuccessRate": 11.501941623638725,
+        "opponentDefenseEpaAllowed": 10.06899477749335,
+        "opponentDefenseSuccessAllowed": 17.26891050380355,
+        "homeIndicator": 1.9660939855606492
+      },
+      "intercept": 22.603067484662578,
+      "trainRowCount": 1630,
+      "diagnosticOnly": true
+    },
+    {
+      "excludedSeason": 2024,
+      "trainSeasons": [
+        2022,
+        2023,
+        2025
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 1.763525392211682,
+        "offenseSuccessRate": 0.6908858037788365,
+        "opponentDefenseEpaAllowed": 1.0073274964232521,
+        "opponentDefenseSuccessAllowed": 0.1549444467915527,
+        "homeIndicator": 1.1320155040983904
+      },
+      "raw": {
+        "offenseEpaPerPlay": 21.342119435956434,
+        "offenseSuccessRate": 20.254311045404442,
+        "opponentDefenseEpaAllowed": 14.155549331818266,
+        "opponentDefenseSuccessAllowed": 4.987668012102878,
+        "homeIndicator": 2.2640310081967807
+      },
+      "intercept": 22.221472392638038,
+      "trainRowCount": 1630,
+      "diagnosticOnly": true
+    },
+    {
+      "excludedSeason": 2025,
+      "trainSeasons": [
+        2022,
+        2023,
+        2024
+      ],
+      "standardized": {
+        "offenseEpaPerPlay": 2.174565929810065,
+        "offenseSuccessRate": 0.5037806331253235,
+        "opponentDefenseEpaAllowed": 0.46982288338691675,
+        "opponentDefenseSuccessAllowed": 0.290480476267353,
+        "homeIndicator": 1.0803630312805472
+      },
+      "raw": {
+        "offenseEpaPerPlay": 26.20098961311332,
+        "offenseSuccessRate": 14.532261443859687,
+        "opponentDefenseEpaAllowed": 6.983892871141876,
+        "opponentDefenseSuccessAllowed": 9.50981915608168,
+        "homeIndicator": 2.1607260625610945
+      },
+      "intercept": 22.187730061349694,
+      "trainRowCount": 1630,
+      "diagnosticOnly": false
+    }
+  ],
+  "item5": {
+    "drawCount": 1000,
+    "fold1_2022only": {
+      "drawCount": 1000,
+      "gameCount": 271,
+      "offenseSuccessRate": {
+        "median": -0.34541930440694957,
+        "p5": -1.2989221451575228,
+        "p95": 0.8003235819960568,
+        "pctPositive": 31.4,
+        "pctNegative": 68.6
+      },
+      "opponentDefenseEpaAllowed": {
+        "median": -0.5034426184243435,
+        "p5": -1.3836991983142006,
+        "p95": 0.5914819152940372,
+        "pctPositive": 20,
+        "pctNegative": 80
+      }
+    },
+    "retrospective_2022to2024": {
+      "drawCount": 1000,
+      "gameCount": 815,
+      "offenseSuccessRate": {
+        "median": 0.4925285103044163,
+        "p5": -0.27765187849790346,
+        "p95": 1.3170346957651662,
+        "pctPositive": 89,
+        "pctNegative": 11
+      },
+      "opponentDefenseEpaAllowed": {
+        "median": 0.46323684949555743,
+        "p5": -0.007106875416876966,
+        "p95": 1.2335712823873521,
+        "pctPositive": 94.6,
+        "pctNegative": 5.4
+      }
+    }
+  },
+  "item6": [
+    {
+      "label": "A_offenseEpaOnly",
+      "names": [
+        "offenseEpaPerPlay",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ],
+      "byFold": [
+        {
+          "fold": "fold1",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.2357859391719086,
+            "opponentDefenseEpaAllowed": -0.34853976065715114,
+            "opponentDefenseSuccessAllowed": 1.5296344889368427,
+            "homeIndicator": 1.0137420364626044
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.6880030494275955,
+            "correlation": 0.23315616564889363,
+            "meanBias": -0.9929504641626465
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.597636842184896,
+            "correlation": 0.1089628125449326,
+            "meanBias": -1.9859009283252955
+          }
+        },
+        {
+          "fold": "fold2",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.212255811411116,
+            "opponentDefenseEpaAllowed": 0.39940082378819225,
+            "opponentDefenseSuccessAllowed": 0.33974028177314625,
+            "homeIndicator": 1.1768310242514712
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.275919552888178,
+            "correlation": 0.3556796689382832,
+            "meanBias": -1.0198815974492135
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 9.908477350783807,
+            "correlation": 0.24437318161963403,
+            "meanBias": -2.0397631948984243
+          }
+        },
+        {
+          "fold": "retrospective",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.616618909050478,
+            "opponentDefenseEpaAllowed": 0.46354747599090257,
+            "opponentDefenseSuccessAllowed": 0.2950944500622137,
+            "homeIndicator": 1.079475492267562
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.527644390455496,
+            "correlation": 0.31092180378574663,
+            "meanBias": 0.11418000191975623
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.611389109139811,
+            "correlation": 0.23349378873806115,
+            "meanBias": 0.22836000383951321
+          }
+        }
+      ]
+    },
+    {
+      "label": "B_offenseSuccessOnly",
+      "names": [
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ],
+      "byFold": [
+        {
+          "fold": "fold1",
+          "coefficients": {
+            "offenseSuccessRate": 1.854169070248885,
+            "opponentDefenseEpaAllowed": -0.41986654432637227,
+            "opponentDefenseSuccessAllowed": 1.5941239197102726,
+            "homeIndicator": 0.9941333875267384
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.633986157116503,
+            "correlation": 0.22556994876749714,
+            "meanBias": -0.8611471822560278
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.656864152807376,
+            "correlation": 0.06245841949950617,
+            "meanBias": -1.7222943645120563
+          }
+        },
+        {
+          "fold": "fold2",
+          "coefficients": {
+            "offenseSuccessRate": 2.0458298116744267,
+            "opponentDefenseEpaAllowed": 0.41925933348301875,
+            "opponentDefenseSuccessAllowed": 0.33143032010593804,
+            "homeIndicator": 1.1788512929747788
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.3634276334867215,
+            "correlation": 0.33437718980113984,
+            "meanBias": -1.179906302209868
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.04371010985514,
+            "correlation": 0.21125283035051945,
+            "meanBias": -2.3598126044197376
+          }
+        },
+        {
+          "fold": "retrospective",
+          "coefficients": {
+            "offenseSuccessRate": 2.411701305609881,
+            "opponentDefenseEpaAllowed": 0.4997866410480633,
+            "opponentDefenseSuccessAllowed": 0.2651807691017263,
+            "homeIndicator": 1.0863978691855318
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.517574359685346,
+            "correlation": 0.310190430194227,
+            "meanBias": -0.24262541196644455
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.500033835002439,
+            "correlation": 0.23245539181295205,
+            "meanBias": -0.4852508239328897
+          }
+        }
+      ]
+    },
+    {
+      "label": "C_offenseBoth_control",
+      "names": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ],
+      "byFold": [
+        {
+          "fold": "fold1",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.415327738498551,
+            "offenseSuccessRate": -0.2108542244452386,
+            "opponentDefenseEpaAllowed": -0.3397667077842864,
+            "opponentDefenseSuccessAllowed": 1.5172080956457394,
+            "homeIndicator": 1.0150758615301352
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.694936582272845,
+            "correlation": 0.23089392825438113,
+            "meanBias": -0.9838963796120791
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.597903972013064,
+            "correlation": 0.1105875001918447,
+            "meanBias": -1.9677927592241573
+          }
+        },
+        {
+          "fold": "fold2",
+          "coefficients": {
+            "offenseEpaPerPlay": 1.7700497282210597,
+            "offenseSuccessRate": 0.5093832656563037,
+            "opponentDefenseEpaAllowed": 0.40194523057937753,
+            "opponentDefenseSuccessAllowed": 0.33956199367052275,
+            "homeIndicator": 1.1776981531427306
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.275882746344369,
+            "correlation": 0.35723528699959917,
+            "meanBias": -1.0586324857811131
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 9.93299033342195,
+            "correlation": 0.24167763776763038,
+            "meanBias": -2.117264971562224
+          }
+        },
+        {
+          "fold": "retrospective",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.174565929810065,
+            "offenseSuccessRate": 0.5037806331253235,
+            "opponentDefenseEpaAllowed": 0.46982288338691675,
+            "opponentDefenseSuccessAllowed": 0.290480476267353,
+            "homeIndicator": 1.0803630312805472
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.510260105120878,
+            "correlation": 0.3144156063184664,
+            "meanBias": 0.06778408599297733
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.579946887682864,
+            "correlation": 0.23688819827860022,
+            "meanBias": 0.1355681719859547
+          }
+        }
+      ]
+    },
+    {
+      "label": "D_defenseEpaOnly",
+      "names": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "homeIndicator"
+      ],
+      "byFold": [
+        {
+          "fold": "fold1",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.5054114685912015,
+            "offenseSuccessRate": -0.37824639465031346,
+            "opponentDefenseEpaAllowed": 0.7207309133354484,
+            "homeIndicator": 1.0199267707588728
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.62236023922891,
+            "correlation": 0.26775491636028087,
+            "meanBias": -0.8287113704040567
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.533130104786746,
+            "correlation": 0.14213505907021887,
+            "meanBias": -1.6574227408081106
+          }
+        },
+        {
+          "fold": "fold2",
+          "coefficients": {
+            "offenseEpaPerPlay": 1.7669876083379008,
+            "offenseSuccessRate": 0.5096165348344943,
+            "opponentDefenseEpaAllowed": 0.6459023709157132,
+            "homeIndicator": 1.1725380529584692
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.271504266219867,
+            "correlation": 0.35667840992827965,
+            "meanBias": -1.031708676259441
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 9.917791812045008,
+            "correlation": 0.24208299318095605,
+            "meanBias": -2.063417352518884
+          }
+        },
+        {
+          "fold": "retrospective",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.1677170696821326,
+            "offenseSuccessRate": 0.509171565920409,
+            "opponentDefenseEpaAllowed": 0.6819564986772162,
+            "homeIndicator": 1.0746076672270375
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.492563890761125,
+            "correlation": 0.31626671303358084,
+            "meanBias": 0.08913109645984947
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.590929031662892,
+            "correlation": 0.23262496724080697,
+            "meanBias": 0.17826219291969914
+          }
+        }
+      ]
+    },
+    {
+      "label": "E_defenseSuccessOnly",
+      "names": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ],
+      "byFold": [
+        {
+          "fold": "fold1",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.4364534796770827,
+            "offenseSuccessRate": -0.23746701729582537,
+            "opponentDefenseSuccessAllowed": 1.2783943280391477,
+            "homeIndicator": 1.0169727405416853
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.6819104534715335,
+            "correlation": 0.23875301740245827,
+            "meanBias": -1.0340363343276757
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.607763293938568,
+            "correlation": 0.11081597712971754,
+            "meanBias": -2.06807266865535
+          }
+        },
+        {
+          "fold": "fold2",
+          "coefficients": {
+            "offenseEpaPerPlay": 1.777768218233678,
+            "offenseSuccessRate": 0.505442218412289,
+            "opponentDefenseSuccessAllowed": 0.6283662787760956,
+            "homeIndicator": 1.182036166253162
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.286409631654049,
+            "correlation": 0.3561493353030233,
+            "meanBias": -1.1012628659828803
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 9.953880091004633,
+            "correlation": 0.24186943662436672,
+            "meanBias": -2.20252573196576
+          }
+        },
+        {
+          "fold": "retrospective",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.1876896504236147,
+            "offenseSuccessRate": 0.4919177946434173,
+            "opponentDefenseSuccessAllowed": 0.6336963702437021,
+            "homeIndicator": 1.0869188853460867
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.5635478258930595,
+            "correlation": 0.29963716317821,
+            "meanBias": -0.03874188737195029
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.57820769363228,
+            "correlation": 0.23610117400696473,
+            "meanBias": -0.07748377474390047
+          }
+        }
+      ]
+    },
+    {
+      "label": "F_defenseBoth_control",
+      "names": [
+        "offenseEpaPerPlay",
+        "offenseSuccessRate",
+        "opponentDefenseEpaAllowed",
+        "opponentDefenseSuccessAllowed",
+        "homeIndicator"
+      ],
+      "byFold": [
+        {
+          "fold": "fold1",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.415327738498551,
+            "offenseSuccessRate": -0.2108542244452386,
+            "opponentDefenseEpaAllowed": -0.3397667077842864,
+            "opponentDefenseSuccessAllowed": 1.5172080956457394,
+            "homeIndicator": 1.0150758615301352
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.694936582272845,
+            "correlation": 0.23089392825438113,
+            "meanBias": -0.9838963796120791
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.597903972013064,
+            "correlation": 0.1105875001918447,
+            "meanBias": -1.9677927592241573
+          }
+        },
+        {
+          "fold": "fold2",
+          "coefficients": {
+            "offenseEpaPerPlay": 1.7700497282210597,
+            "offenseSuccessRate": 0.5093832656563037,
+            "opponentDefenseEpaAllowed": 0.40194523057937753,
+            "opponentDefenseSuccessAllowed": 0.33956199367052275,
+            "homeIndicator": 1.1776981531427306
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.275882746344369,
+            "correlation": 0.35723528699959917,
+            "meanBias": -1.0586324857811131
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 9.93299033342195,
+            "correlation": 0.24167763776763038,
+            "meanBias": -2.117264971562224
+          }
+        },
+        {
+          "fold": "retrospective",
+          "coefficients": {
+            "offenseEpaPerPlay": 2.174565929810065,
+            "offenseSuccessRate": 0.5037806331253235,
+            "opponentDefenseEpaAllowed": 0.46982288338691675,
+            "opponentDefenseSuccessAllowed": 0.290480476267353,
+            "homeIndicator": 1.0803630312805472
+          },
+          "teamPoint": {
+            "n": 544,
+            "mae": 7.510260105120878,
+            "correlation": 0.3144156063184664,
+            "meanBias": 0.06778408599297733
+          },
+          "gameTotal": {
+            "n": 272,
+            "mae": 10.579946887682864,
+            "correlation": 0.23688819827860022,
+            "meanBias": 0.1355681719859547
+          }
+        }
+      ]
+    }
+  ],
+  "item7": {
+    "offenseSuccessResidualizedOnEpa": {
+      "pooledCorrelation": 0.02764277529520256,
+      "bySeason": [
+        {
+          "season": 2022,
+          "n": 542,
+          "correlation": -0.018786794103072546
+        },
+        {
+          "season": 2023,
+          "n": 544,
+          "correlation": 0.07719699966151684
+        },
+        {
+          "season": 2024,
+          "n": 544,
+          "correlation": 0.0405638310564224
+        },
+        {
+          "season": 2025,
+          "n": 544,
+          "correlation": 0.034906450263478744
+        }
+      ],
+      "rawOffenseSuccessCorrelation": 0.24867924041394723
+    },
+    "defenseEpaAllowedResidualizedOnSuccessAllowed": {
+      "pooledCorrelation": 0.06920938859487327,
+      "bySeason": [
+        {
+          "season": 2022,
+          "n": 542,
+          "correlation": -0.04507749791665053
+        },
+        {
+          "season": 2023,
+          "n": 544,
+          "correlation": 0.09760195413489656
+        },
+        {
+          "season": 2024,
+          "n": 544,
+          "correlation": 0.03403103315573721
+        },
+        {
+          "season": 2025,
+          "n": 544,
+          "correlation": 0.14465035201564322
+        }
+      ],
+      "rawDefenseEpaAllowedCorrelation": 0.10286577137904204
+    }
+  },
+  "item8": [
+    {
+      "season": 2022,
+      "n": 542,
+      "offenseEpa": {
+        "correlation": 0.2308115640263728,
+        "slope": 27.63777611286148
+      },
+      "offenseSuccess": {
+        "correlation": 0.18662747414813954,
+        "slope": 52.47677313750778
+      },
+      "defenseEpaAllowed": {
+        "correlation": 0.06783901975141965,
+        "slope": 9.804428355108163
+      },
+      "defenseSuccessAllowed": {
+        "correlation": 0.12343280893356107,
+        "slope": 36.81949862859065
+      },
+      "diagnosticOnly": false
+    },
+    {
+      "season": 2023,
+      "n": 544,
+      "offenseEpa": {
+        "correlation": 0.23066098850615374,
+        "slope": 28.42431565826323
+      },
+      "offenseSuccess": {
+        "correlation": 0.23623161814446855,
+        "slope": 69.33352038095705
+      },
+      "defenseEpaAllowed": {
+        "correlation": 0.07023519238990206,
+        "slope": 10.716231919635865
+      },
+      "defenseSuccessAllowed": {
+        "correlation": 0.00268430257569699,
+        "slope": 0.9272623102041673
+      },
+      "diagnosticOnly": false
+    },
+    {
+      "season": 2024,
+      "n": 544,
+      "offenseEpa": {
+        "correlation": 0.343967850431935,
+        "slope": 38.21404765358787
+      },
+      "offenseSuccess": {
+        "correlation": 0.322834965316247,
+        "slope": 87.71274878126705
+      },
+      "defenseEpaAllowed": {
+        "correlation": 0.06559005112154478,
+        "slope": 9.328816010800457
+      },
+      "defenseSuccessAllowed": {
+        "correlation": 0.058681875384749116,
+        "slope": 18.965516393379676
+      },
+      "diagnosticOnly": false
+    },
+    {
+      "season": 2025,
+      "n": 544,
+      "offenseEpa": {
+        "correlation": 0.25296781614493913,
+        "slope": 29.546641501534634
+      },
+      "offenseSuccess": {
+        "correlation": 0.24360622124575657,
+        "slope": 70.61045601202471
+      },
+      "defenseEpaAllowed": {
+        "correlation": 0.17197605875277153,
+        "slope": 22.2818234659549
+      },
+      "defenseSuccessAllowed": {
+        "correlation": 0.10812336422071746,
+        "slope": 34.14176622677751
+      },
+      "diagnosticOnly": true
+    }
+  ],
+  "item9": [
+    {
+      "n": 500,
+      "throughSeason": 2022,
+      "throughWeek": 17,
+      "standardized": {
+        "offenseEpaPerPlay": 2.5449161248877488,
+        "offenseSuccessRate": -0.3120033999471739,
+        "opponentDefenseEpaAllowed": 0.02583469906582215,
+        "opponentDefenseSuccessAllowed": 1.1320156018317802,
+        "homeIndicator": 0.9196692467896647
+      },
+      "raw": {
+        "offenseEpaPerPlay": 32.746041091227085,
+        "offenseSuccessRate": -9.391386948760967,
+        "opponentDefenseEpaAllowed": 0.3964557156570784,
+        "opponentDefenseSuccessAllowed": 35.841753801983096,
+        "homeIndicator": 1.8393384935793293
+      },
+      "intercept": 21.966
+    },
+    {
+      "n": 800,
+      "throughSeason": 2023,
+      "throughWeek": 9,
+      "standardized": {
+        "offenseEpaPerPlay": 2.081246470770165,
+        "offenseSuccessRate": 0.009370113934704596,
+        "opponentDefenseEpaAllowed": 0.2044397319738413,
+        "opponentDefenseSuccessAllowed": 0.859180167106826,
+        "homeIndicator": 1.053266289140181
+      },
+      "raw": {
+        "offenseEpaPerPlay": 26.578737016449413,
+        "offenseSuccessRate": 0.2860164374383291,
+        "opponentDefenseEpaAllowed": 3.037734319408705,
+        "opponentDefenseSuccessAllowed": 27.891667277603528,
+        "homeIndicator": 2.106532578280362
+      },
+      "intercept": 21.79125
+    },
+    {
+      "n": 1100,
+      "throughSeason": 2024,
+      "throughWeek": 1,
+      "standardized": {
+        "offenseEpaPerPlay": 1.772335627492938,
+        "offenseSuccessRate": 0.5512953350111668,
+        "opponentDefenseEpaAllowed": 0.4321923628434568,
+        "opponentDefenseSuccessAllowed": 0.3037148219824748,
+        "homeIndicator": 1.1989659902496295
+      },
+      "raw": {
+        "offenseEpaPerPlay": 22.066485628621287,
+        "offenseSuccessRate": 16.206594735722042,
+        "opponentDefenseEpaAllowed": 6.486897140410422,
+        "opponentDefenseSuccessAllowed": 9.887341865374557,
+        "homeIndicator": 2.397931980499259
+      },
+      "intercept": 21.893636363636364
+    },
+    {
+      "n": 1500,
+      "throughSeason": 2024,
+      "throughWeek": 14,
+      "standardized": {
+        "offenseEpaPerPlay": 1.903673621076692,
+        "offenseSuccessRate": 0.6448123718878489,
+        "opponentDefenseEpaAllowed": 0.6112350728135166,
+        "opponentDefenseSuccessAllowed": 0.1107512964431226,
+        "homeIndicator": 1.0614576494303904
+      },
+      "raw": {
+        "offenseEpaPerPlay": 23.125049764840035,
+        "offenseSuccessRate": 18.60937411117922,
+        "opponentDefenseEpaAllowed": 9.075853892981915,
+        "opponentDefenseSuccessAllowed": 3.5973302582518407,
+        "homeIndicator": 2.122915298860781
+      },
+      "intercept": 22.098666666666666
+    },
+    {
+      "n": 2000,
+      "throughSeason": 2025,
+      "throughWeek": 13,
+      "standardized": {
+        "offenseEpaPerPlay": 2.1187707749083997,
+        "offenseSuccessRate": 0.5274621587585321,
+        "opponentDefenseEpaAllowed": 0.478935967829889,
+        "opponentDefenseSuccessAllowed": 0.3499176587887357,
+        "homeIndicator": 1.1089322281067742
+      },
+      "raw": {
+        "offenseEpaPerPlay": 25.31171332477474,
+        "offenseSuccessRate": 15.319111011851898,
+        "opponentDefenseEpaAllowed": 6.946058051465124,
+        "opponentDefenseSuccessAllowed": 11.418266252385289,
+        "homeIndicator": 2.2178644562135483
+      },
+      "intercept": 22.3475
+    }
+  ],
+  "item10": [
+    {
+      "config": "2022-only",
+      "byLambda": [
+        {
+          "lambda": 1,
+          "standardized": {
+            "offenseEpaPerPlay": 2.415327738498551,
+            "offenseSuccessRate": -0.2108542244452386,
+            "opponentDefenseEpaAllowed": -0.3397667077842864,
+            "opponentDefenseSuccessAllowed": 1.5172080956457394,
+            "homeIndicator": 1.0150758615301352
+          },
+          "raw": {
+            "offenseEpaPerPlay": 31.100811033863582,
+            "offenseSuccessRate": -6.37564261943937,
+            "opponentDefenseEpaAllowed": -5.2804830204439765,
+            "opponentDefenseSuccessAllowed": 48.667890760539,
+            "homeIndicator": 2.0301517230602704
+          },
+          "intercept": 21.881918819188193,
+          "valGameTotalMae": 10.597903972013064
+        },
+        {
+          "lambda": 10,
+          "standardized": {
+            "offenseEpaPerPlay": 2.274311503178435,
+            "offenseSuccessRate": -0.09193369585524558,
+            "opponentDefenseEpaAllowed": -0.3013166661854421,
+            "opponentDefenseSuccessAllowed": 1.4670259428844212,
+            "homeIndicator": 0.9975035037161571
+          },
+          "raw": {
+            "offenseEpaPerPlay": 29.285024622151155,
+            "offenseSuccessRate": -2.7798180994448463,
+            "opponentDefenseEpaAllowed": -4.682911842496295,
+            "opponentDefenseSuccessAllowed": 47.058184395455925,
+            "homeIndicator": 1.9950070074323143
+          },
+          "intercept": 21.881918819188193,
+          "valGameTotalMae": 10.586954541175443
+        },
+        {
+          "lambda": 50,
+          "standardized": {
+            "offenseEpaPerPlay": 1.8687355440580908,
+            "offenseSuccessRate": 0.22157335766540362,
+            "opponentDefenseEpaAllowed": -0.16815596740306032,
+            "opponentDefenseSuccessAllowed": 1.2829817098693552,
+            "homeIndicator": 0.9273357176744899
+          },
+          "raw": {
+            "offenseEpaPerPlay": 24.062652078903287,
+            "offenseSuccessRate": 6.699759258703961,
+            "opponentDefenseEpaAllowed": -2.613395339551442,
+            "opponentDefenseSuccessAllowed": 41.15454820132383,
+            "homeIndicator": 1.8546714353489797
+          },
+          "intercept": 21.881918819188193,
+          "valGameTotalMae": 10.553011389990594
+        },
+        {
+          "lambda": 100,
+          "standardized": {
+            "offenseEpaPerPlay": 1.5918389469926848,
+            "offenseSuccessRate": 0.39533992962064385,
+            "opponentDefenseEpaAllowed": -0.06175344122951537,
+            "opponentDefenseSuccessAllowed": 1.1175829536081987,
+            "homeIndicator": 0.8532681516222059
+          },
+          "raw": {
+            "offenseEpaPerPlay": 20.497210998594912,
+            "offenseSuccessRate": 11.953974889937072,
+            "opponentDefenseEpaAllowed": -0.9597408762999524,
+            "opponentDefenseSuccessAllowed": 35.84900796281028,
+            "homeIndicator": 1.7065363032444119
+          },
+          "intercept": 21.881918819188193,
+          "valGameTotalMae": 10.529254545062427
+        }
+      ]
+    },
+    {
+      "config": "2022-2023",
+      "byLambda": [
+        {
+          "lambda": 1,
+          "standardized": {
+            "offenseEpaPerPlay": 1.7700497282210597,
+            "offenseSuccessRate": 0.5093832656563037,
+            "opponentDefenseEpaAllowed": 0.40194523057937753,
+            "opponentDefenseSuccessAllowed": 0.33956199367052275,
+            "homeIndicator": 1.1776981531427306
+          },
+          "raw": {
+            "offenseEpaPerPlay": 22.036750681878672,
+            "offenseSuccessRate": 15.006486293290452,
+            "opponentDefenseEpaAllowed": 6.055793771911986,
+            "opponentDefenseSuccessAllowed": 11.06878656603278,
+            "homeIndicator": 2.3553963062854613
+          },
+          "intercept": 21.825046040515655,
+          "valGameTotalMae": 9.93299033342195
+        },
+        {
+          "lambda": 10,
+          "standardized": {
+            "offenseEpaPerPlay": 1.72788457947308,
+            "offenseSuccessRate": 0.5414609566930051,
+            "opponentDefenseEpaAllowed": 0.39995065124662027,
+            "opponentDefenseSuccessAllowed": 0.3381283543471011,
+            "homeIndicator": 1.168015328465184
+          },
+          "raw": {
+            "offenseEpaPerPlay": 21.511803356609224,
+            "offenseSuccessRate": 15.951498552855853,
+            "opponentDefenseEpaAllowed": 6.025743008320426,
+            "opponentDefenseSuccessAllowed": 11.0220538692663,
+            "homeIndicator": 2.336030656930368
+          },
+          "intercept": 21.825046040515655,
+          "valGameTotalMae": 9.93456889760631
+        },
+        {
+          "lambda": 50,
+          "standardized": {
+            "offenseEpaPerPlay": 1.583025270293392,
+            "offenseSuccessRate": 0.6425509920547344,
+            "opponentDefenseEpaAllowed": 0.39110225187393644,
+            "opponentDefenseSuccessAllowed": 0.33192857703530765,
+            "homeIndicator": 1.1267909352885206
+          },
+          "raw": {
+            "offenseEpaPerPlay": 19.70833510967459,
+            "offenseSuccessRate": 18.929621966646224,
+            "opponentDefenseEpaAllowed": 5.892431109743471,
+            "opponentDefenseSuccessAllowed": 10.81995818983122,
+            "homeIndicator": 2.253581870577041
+          },
+          "intercept": 21.825046040515655,
+          "valGameTotalMae": 9.939136825415918
+        },
+        {
+          "lambda": 100,
+          "standardized": {
+            "offenseEpaPerPlay": 1.4601699997230915,
+            "offenseSuccessRate": 0.7130201663073488,
+            "opponentDefenseEpaAllowed": 0.38037493696687935,
+            "opponentDefenseSuccessAllowed": 0.32445045233508324,
+            "homeIndicator": 1.0791148061604592
+          },
+          "raw": {
+            "offenseEpaPerPlay": 18.178812563303314,
+            "offenseSuccessRate": 21.005651488658195,
+            "opponentDefenseEpaAllowed": 5.730811063375821,
+            "opponentDefenseSuccessAllowed": 10.57619190336844,
+            "homeIndicator": 2.1582296123209184
+          },
+          "intercept": 21.825046040515655,
+          "valGameTotalMae": 9.941575071932307
+        }
+      ]
+    },
+    {
+      "config": "2022-2024",
+      "byLambda": [
+        {
+          "lambda": 1,
+          "standardized": {
+            "offenseEpaPerPlay": 2.174565929810065,
+            "offenseSuccessRate": 0.5037806331253235,
+            "opponentDefenseEpaAllowed": 0.46982288338691675,
+            "opponentDefenseSuccessAllowed": 0.290480476267353,
+            "homeIndicator": 1.0803630312805472
+          },
+          "raw": {
+            "offenseEpaPerPlay": 26.20098961311332,
+            "offenseSuccessRate": 14.532261443859687,
+            "opponentDefenseEpaAllowed": 6.983892871141876,
+            "opponentDefenseSuccessAllowed": 9.50981915608168,
+            "homeIndicator": 2.1607260625610945
+          },
+          "intercept": 22.187730061349694,
+          "valGameTotalMae": 10.579946887682864
+        },
+        {
+          "lambda": 10,
+          "standardized": {
+            "offenseEpaPerPlay": 2.134786580428111,
+            "offenseSuccessRate": 0.5357318359888691,
+            "opponentDefenseEpaAllowed": 0.4675241106892444,
+            "opponentDefenseSuccessAllowed": 0.2903549142404457,
+            "homeIndicator": 1.0745567943011514
+          },
+          "raw": {
+            "offenseEpaPerPlay": 25.721694731461234,
+            "offenseSuccessRate": 15.453938862418442,
+            "opponentDefenseEpaAllowed": 6.949721733840272,
+            "opponentDefenseSuccessAllowed": 9.50570847647903,
+            "homeIndicator": 2.1491135886023027
+          },
+          "intercept": 22.187730061349694,
+          "valGameTotalMae": 10.577090383180366
+        },
+        {
+          "lambda": 50,
+          "standardized": {
+            "offenseEpaPerPlay": 1.9896236110753074,
+            "offenseSuccessRate": 0.6466479864029958,
+            "opponentDefenseEpaAllowed": 0.457462677590775,
+            "opponentDefenseSuccessAllowed": 0.2897477972182966,
+            "homeIndicator": 1.0494207497257082
+          },
+          "raw": {
+            "offenseEpaPerPlay": 23.97264983009386,
+            "offenseSuccessRate": 18.653471337823422,
+            "opponentDefenseEpaAllowed": 6.800159051019643,
+            "opponentDefenseSuccessAllowed": 9.485832534517607,
+            "homeIndicator": 2.0988414994514164
+          },
+          "intercept": 22.187730061349694,
+          "valGameTotalMae": 10.566654960640106
+        },
+        {
+          "lambda": 100,
+          "standardized": {
+            "offenseEpaPerPlay": 1.8569332216068248,
+            "offenseSuccessRate": 0.7377413028810498,
+            "opponentDefenseEpaAllowed": 0.4454747766843226,
+            "opponentDefenseSuccessAllowed": 0.28870125615920494,
+            "homeIndicator": 1.019505868879385
+          },
+          "raw": {
+            "offenseEpaPerPlay": 22.37388500601362,
+            "offenseSuccessRate": 21.281186267305472,
+            "opponentDefenseEpaAllowed": 6.621959523834033,
+            "opponentDefenseSuccessAllowed": 9.451570623564887,
+            "homeIndicator": 2.03901173775877
+          },
+          "intercept": 22.187730061349694,
+          "valGameTotalMae": 10.557850740867805
+        }
+      ]
+    }
+  ]
+}

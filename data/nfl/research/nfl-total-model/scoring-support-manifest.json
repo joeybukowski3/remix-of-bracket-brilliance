@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "nfl-total-model-scoring-support-cache-v1",
+  "purpose": "Research-only compact per-team-game EPA/play, traditional success rate, explosive-play-rate sums. NOT a production cache -- see file header of fetch-scoring-support-cache.mjs.",
+  "source": "nflverse (play-by-play, nflfastR EPA)",
+  "attribution": "EPA/play-by-play data: nflverse / nflfastR",
+  "eligiblePlayFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+  "successRateDefinition": "Traditional down-and-distance: 1st >= 0.4*ydstogo, 2nd >= 0.6*ydstogo, 3rd/4th >= ydstogo. NOT nflfastR's EPA>0 `success` field.",
+  "explosivePlayDefinition": "pass play with yards_gained >= 15, or rush play with yards_gained >= 10.",
+  "garbageTimeFilter": "NOT APPLIED -- unfiltered (all plays). Documented simplification vs. production performanceComposite2026.ts, which filters EPA/success but not explosive.",
+  "generatedAt": "2026-09-03T21:37:58.526Z",
+  "files": [
+    {
+      "season": 2021,
+      "filename": "scoring_support_team_game_2021.csv",
+      "sourcePbpRows": 49922,
+      "eligiblePlays": 35484,
+      "teamGameRowCount": 544
+    },
+    {
+      "season": 2022,
+      "filename": "scoring_support_team_game_2022.csv",
+      "sourcePbpRows": 49434,
+      "eligiblePlays": 35045,
+      "teamGameRowCount": 542
+    },
+    {
+      "season": 2023,
+      "filename": "scoring_support_team_game_2023.csv",
+      "sourcePbpRows": 49665,
+      "eligiblePlays": 35227,
+      "teamGameRowCount": 544
+    },
+    {
+      "season": 2024,
+      "filename": "scoring_support_team_game_2024.csv",
+      "sourcePbpRows": 49492,
+      "eligiblePlays": 34947,
+      "teamGameRowCount": 544
+    },
+    {
+      "season": 2025,
+      "filename": "scoring_support_team_game_2025.csv",
+      "sourcePbpRows": 48771,
+      "eligiblePlays": 34301,
+      "teamGameRowCount": 544
+    }
+  ]
+}
