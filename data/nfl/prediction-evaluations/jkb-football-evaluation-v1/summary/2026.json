@@ -1,0 +1,191 @@
+{
+  "coverage": {
+    "evaluable_by_type": {
+      "passing": 0,
+      "receiving": 0,
+      "rushing": 0,
+      "spread": 0,
+      "team_opportunity": 0
+    },
+    "ledger_by_status": {
+      "pending_game": 336,
+      "unresolved_missing_event": 938
+    },
+    "non_production_skipped": 0,
+    "predictions_loaded": 1274
+  },
+  "evaluation_mode": "production",
+  "filters": {
+    "prediction_type": null,
+    "week": null
+  },
+  "materializer_version": "nfl-evaluation-materializer-v1",
+  "metrics": {
+    "by_cohort": {
+      "passing": {},
+      "receiving": {},
+      "rushing": {},
+      "spread": {},
+      "team_opportunity": {}
+    },
+    "by_fitted_state": [],
+    "by_model_version": [],
+    "by_prediction_type": {
+      "passing": {
+        "bias": null,
+        "component": {
+          "attempts_mae": null,
+          "yards_mae": null,
+          "ypa_error_mean": null
+        },
+        "correlation": null,
+        "correlation_insufficient_sample": true,
+        "mae": null,
+        "market_direction": {
+          "graded_n": 0,
+          "insufficient_sample": true,
+          "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
+          "over": 0,
+          "push": 0,
+          "under": 0
+        },
+        "median_absolute_error": null,
+        "n": 0,
+        "rmse": null,
+        "small_sample": true,
+        "volume_decomposition": {
+          "non_zero_volume_n": 0,
+          "non_zero_volume_yards_mae": null,
+          "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
+          "zero_volume_n": 0,
+          "zero_volume_yards_mae": null
+        }
+      },
+      "receiving": {
+        "bias": null,
+        "component": {
+          "receptions_mae": null,
+          "targets_mae": null,
+          "yards_mae": null,
+          "ypr_error_mean": null,
+          "ypt_error_mean": null
+        },
+        "correlation": null,
+        "correlation_insufficient_sample": true,
+        "mae": null,
+        "market_direction": {
+          "graded_n": 0,
+          "insufficient_sample": true,
+          "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
+          "over": 0,
+          "push": 0,
+          "under": 0
+        },
+        "median_absolute_error": null,
+        "n": 0,
+        "rmse": null,
+        "small_sample": true,
+        "volume_decomposition": {
+          "non_zero_volume_n": 0,
+          "non_zero_volume_yards_mae": null,
+          "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
+          "zero_volume_n": 0,
+          "zero_volume_yards_mae": null
+        }
+      },
+      "rushing": {
+        "bias": null,
+        "component": {
+          "carries_mae": null,
+          "yards_mae": null,
+          "ypc_error_mean": null
+        },
+        "correlation": null,
+        "correlation_insufficient_sample": true,
+        "mae": null,
+        "market_direction": {
+          "graded_n": 0,
+          "insufficient_sample": true,
+          "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
+          "over": 0,
+          "push": 0,
+          "under": 0
+        },
+        "median_absolute_error": null,
+        "n": 0,
+        "rmse": null,
+        "small_sample": true,
+        "volume_decomposition": {
+          "non_zero_volume_n": 0,
+          "non_zero_volume_yards_mae": null,
+          "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
+          "zero_volume_n": 0,
+          "zero_volume_yards_mae": null
+        }
+      },
+      "spread": {
+        "ats": {
+          "ats_win_pct": null,
+          "decided": 0,
+          "insufficient_sample": true,
+          "loss": 0,
+          "push": 0,
+          "win": 0
+        },
+        "bias": null,
+        "correlation": null,
+        "correlation_insufficient_sample": true,
+        "mae": null,
+        "market_comparison": {
+          "comparable_n": 0,
+          "jkb_mae": null,
+          "jkb_minus_market_mae": null,
+          "market_mae": null
+        },
+        "median_absolute_error": null,
+        "n": 0,
+        "rmse": null,
+        "small_sample": true,
+        "winner_accuracy": {
+          "accuracy": null,
+          "actual_ties": 0,
+          "correct": 0,
+          "insufficient_sample": true,
+          "projected_picks": 0,
+          "total": 0
+        }
+      },
+      "team_opportunity": {
+        "bias": null,
+        "component": {
+          "designed_rush_attempts_bias": null,
+          "designed_rush_attempts_mae": null,
+          "dropback_rate_bias": null,
+          "dropback_rate_mae": null,
+          "dropbacks_bias": null,
+          "dropbacks_mae": null
+        },
+        "correlation": null,
+        "correlation_insufficient_sample": true,
+        "mae": null,
+        "median_absolute_error": null,
+        "n": 0,
+        "rmse": null,
+        "small_sample": true
+      }
+    },
+    "by_season": []
+  },
+  "sample_size_thresholds": {
+    "cohort_label": 20,
+    "correlation": 10,
+    "rate": 20
+  },
+  "schema_version": "jkb-football-evaluation-summary-v1",
+  "season": 2026,
+  "source_provenance": {
+    "outcome_schema_version": "jkb-football-prediction-outcome-v1",
+    "prediction_schema_version": "jkb-football-prediction-v1",
+    "teams_table_content_hash": "b74c15a22dca18e3f6d921b7495a842ab220d83794ee82cdef5a2a53cc967da6"
+  }
+}
