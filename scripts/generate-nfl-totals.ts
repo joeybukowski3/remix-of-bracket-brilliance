@@ -184,6 +184,31 @@ function loadSlate(season: number, week: number): SlateGame[] {
 
 const asJson = (v: unknown): JsonValue => JSON.parse(JSON.stringify(v)) as JsonValue;
 
+/**
+ * Seasons whose scoring-support cache rows must be loaded into the EWMA
+ * index. Always the fixed training window plus the season immediately prior
+ * to the target season (the most recent, most relevant history for a
+ * week-1 slate) plus the target season itself (needed from week 2 on).
+ */
+export function computeCacheSeasons(trainingSeasons: readonly number[], targetSeason: number): number[] {
+  return [...new Set([2021, ...trainingSeasons, targetSeason - 1, targetSeason])].sort((a, b) => a - b);
+}
+
+/**
+ * Seasons whose scoring-support cache rows the production guard requires to
+ * be present before generating predictions. Week 1 of the target season is
+ * built entirely from strictly-prior-season rows (see
+ * `computeEwmaWindow`'s `isStrictlyPrior` in src/lib/nfl/research/total/ewmaWindow.ts
+ * -- a cutoff of week 1 excludes every row with `row.season === cutoff.season`
+ * since there is no "week 0"), so the target season's own cache is never
+ * read for a week-1 slate and must not be required. Week 2+ slates read
+ * current-season rows (the prior weeks of the same season), so the
+ * target-season cache stays mandatory from week 2 on.
+ */
+export function computeRequiredScoringSupportSeasons(trainingSeasons: readonly number[], targetSeason: number, targetWeek: number): number[] {
+  return targetWeek === 1 ? [...trainingSeasons] : [...trainingSeasons, targetSeason];
+}
+
 function sideDraft(options: {
   args: Args;
   game: SlateGame;
@@ -246,10 +271,11 @@ function sideDraft(options: {
 function main(): void {
   const args = parseArgs(process.argv);
   const trainingSeasons = [...NFL_TOTAL_TRAINING_SEASONS];
-  const cacheSeasons = [...new Set([2021, ...trainingSeasons, args.season])].sort((a, b) => a - b);
+  const cacheSeasons = computeCacheSeasons(trainingSeasons, args.season);
 
   const scoringRows = loadScoringSupport(cacheSeasons);
-  for (const season of [...trainingSeasons, args.season]) {
+  const requiredSeasons = computeRequiredScoringSupportSeasons(trainingSeasons, args.season, args.week);
+  for (const season of requiredSeasons) {
     if (!scoringRows.some((r) => r.season === season)) {
       throw new Error(`Scoring-support cache has no rows for required season ${season}. Run: npm run nfl:scoring-support-cache -- --seasons=${season}`);
     }
@@ -339,4 +365,6 @@ function main(): void {
   console.log(`[nfl:totals] archive appended=${result.appended} duplicates=${result.duplicates} skippedPostKickoff=${records.length - preKickoff.length} files=${result.files.length}`);
 }
 
-main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}
