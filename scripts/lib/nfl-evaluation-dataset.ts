@@ -32,7 +32,7 @@ export const EVALUATION_MATERIALIZER_VERSION = "nfl-evaluation-materializer-v1" 
 
 export type EvaluationMode = "production";
 
-export type EvaluationPredictionType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
+export type EvaluationPredictionType = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity" | "team_total";
 
 /** Datasets the materializer writes. `resolution-status` is the coverage/exclusion ledger. */
 export type EvaluationDataset = EvaluationPredictionType | "resolution-status";
@@ -341,12 +341,42 @@ export type TeamOpportunityEvaluationRow = EvaluationRowIdentity & {
   cohorts: Record<string, JsonValue>;
 };
 
+/**
+ * Team-level evaluation row for `prediction_type: "team_total"`. No
+ * `volume`/`market` fields -- the total model never uses Vegas, and there is
+ * no player prop line to compare against a team's expected points, unlike
+ * the player families. `actual.game_total`/`actual.opponent_points` are
+ * carried on every row (both sibling rows of a game) so the materializer can
+ * derive the GAME-total projected-vs-actual comparison by pairing the two
+ * team rows of a game, without re-reading results.json a second time.
+ */
+export type TeamTotalEvaluationRow = EvaluationRowIdentity & {
+  prediction_type: "team_total";
+  outcome: EvaluationOutcomeProvenance & {
+    projection: {
+      projected_team_points: number;
+    };
+    actual: {
+      team_points: number;
+      opponent_points: number;
+      game_total: number;
+    };
+    error: {
+      points_error: number;
+      absolute_points_error: number;
+    };
+  };
+  feature_snapshot_values: Record<string, JsonValue>;
+  cohorts: Record<string, JsonValue>;
+};
+
 export type EvaluationRowV1 =
   | SpreadEvaluationRow
   | PassingEvaluationRow
   | RushingEvaluationRow
   | ReceivingEvaluationRow
-  | TeamOpportunityEvaluationRow;
+  | TeamOpportunityEvaluationRow
+  | TeamTotalEvaluationRow;
 
 export type ResolutionStatusRow = {
   schema_version: typeof EVALUATION_DATASET_SCHEMA_VERSION;
@@ -395,6 +425,7 @@ const NUMERIC_ERROR_FIELDS: Record<EvaluationPredictionType, string[]> = {
   rushing: ["yards_error", "absolute_yards_error", "carries_error"],
   receiving: ["yards_error", "absolute_yards_error", "targets_error"],
   team_opportunity: ["team_plays_error", "absolute_team_plays_error", "dropbacks_error", "absolute_dropbacks_error", "dropback_rate_error", "designed_rush_attempts_error"],
+  team_total: ["points_error", "absolute_points_error"],
 };
 
 /**
@@ -419,7 +450,7 @@ export function validateEvaluationRow(row: EvaluationRowV1): void {
   for (const field of NUMERIC_ERROR_FIELDS[row.prediction_type]) {
     if (!Number.isFinite(errorPayload[field] as number)) throw new Error(`${row.prediction_type}.${field} must be finite`);
   }
-  if (row.prediction_type !== "spread" && row.prediction_type !== "team_opportunity") {
+  if (row.prediction_type !== "spread" && row.prediction_type !== "team_opportunity" && row.prediction_type !== "team_total") {
     const market = (row.outcome as { market: PlayerMarketEvaluation | null }).market;
     if (market && !Number.isFinite(market.jkb_vs_market_edge)) throw new Error("player market edge must be finite when present");
   }

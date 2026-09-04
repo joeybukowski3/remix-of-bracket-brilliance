@@ -7,7 +7,7 @@ import {
 import type { EvaluationPredictionType } from "./lib/nfl-evaluation-dataset";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const PREDICTION_TYPES = new Set<EvaluationPredictionType>(["spread", "passing", "rushing", "receiving", "team_opportunity"]);
+const PREDICTION_TYPES = new Set<EvaluationPredictionType>(["spread", "passing", "rushing", "receiving", "team_opportunity", "team_total"]);
 
 export function parseMaterializerArgs(argv: string[]): MaterializerOptions {
   const options: MaterializerOptions = {
@@ -27,7 +27,7 @@ export function parseMaterializerArgs(argv: string[]): MaterializerOptions {
     else if (raw.startsWith("--week=")) options.week = Number(raw.slice("--week=".length));
     else if (raw.startsWith("--prediction-type=")) {
       const value = raw.slice("--prediction-type=".length) as EvaluationPredictionType;
-      if (!PREDICTION_TYPES.has(value)) throw new Error("--prediction-type must be spread, passing, rushing, receiving, or team_opportunity");
+      if (!PREDICTION_TYPES.has(value)) throw new Error("--prediction-type must be spread, passing, rushing, receiving, team_opportunity, or team_total");
       options.predictionType = value;
     } else if (raw.startsWith("--prediction-root=")) options.predictionRoot = resolve(raw.slice("--prediction-root=".length));
     else if (raw.startsWith("--outcome-root=")) options.outcomeRoot = resolve(raw.slice("--outcome-root=".length));

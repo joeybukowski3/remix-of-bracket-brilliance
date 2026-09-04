@@ -37,16 +37,17 @@ function tempRoot(prefix: string): string {
   return root;
 }
 
-type Type = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity";
+type Type = "spread" | "passing" | "rushing" | "receiving" | "team_opportunity" | "team_total";
 
 function draft(type: Type, overrides: Partial<PredictionSnapshotDraft> = {}): PredictionSnapshotDraft {
-  const isPlayer = type !== "spread" && type !== "team_opportunity";
+  const isPlayer = type !== "spread" && type !== "team_opportunity" && type !== "team_total";
   const projections = {
     spread: { type: "spread" as const, projected_home_margin: 4, projected_spread_team: "lar", projected_spread_line: -4, market_spread: -3.5, edge: 0.5, home_power_number: 6, away_power_number: 2 },
     passing: { type: "passing" as const, projected_attempts: null, projected_ypa: null, projected_passing_yards: 250, direct_model_prediction: 250 },
     rushing: { type: "rushing" as const, projected_carries: 12, projected_ypc: 4.5, projected_rushing_yards: 54 },
     receiving: { type: "receiving" as const, projected_targets: 8, projected_receptions: null, projected_yards_per_reception: null, projected_yards_per_target: 9, projected_receiving_yards: 72 },
     team_opportunity: { type: "team_opportunity" as const, projected_team_plays: 62, projected_dropback_rate: 0.58, projected_pass_attempts: 35.96, projected_rush_attempts: 26.04 },
+    team_total: { type: "team_total" as const, projected_team_points: 24.6 },
   };
   return {
     schema_version: "jkb-football-prediction-v1", snapshot_label: null,
@@ -59,10 +60,12 @@ function draft(type: Type, overrides: Partial<PredictionSnapshotDraft> = {}): Pr
     pipeline_version: "archive-v1", code_revision: "abc", run_id: "run-1", workflow_name: null, workflow_run_id: null,
     cutoff_policy: "game_before_kickoff", status: "projected", projection: projections[type],
     feature_snapshot: {
-      values: type === "team_opportunity" ? { feature_snapshot: { market: { spread: -3.5, total: 44.5 } } } : { spread_input: -3.5, role_certainty: "high" },
+      values: type === "team_opportunity" ? { feature_snapshot: { market: { spread: -3.5, total: 44.5 } } }
+        : type === "team_total" ? { history: { history_status: "normal" }, prediction: { projected_game_total: 48.6 } }
+        : { spread_input: -3.5, role_certainty: "high" },
       source_manifest_hashes: { run: "source" }, fitted_model_hash: type === "spread" ? null : "fitted-a",
     },
-    market_reference_status: "missing", market_snapshot_refs: [], provenance: [{ kind: "source_manifest", logical_name: "inputs", content_hash: "source" }],
+    market_reference_status: type === "team_total" ? "not_applicable" : "missing", market_snapshot_refs: [], provenance: [{ kind: "source_manifest", logical_name: "inputs", content_hash: "source" }],
     ...overrides,
   };
 }
@@ -532,5 +535,64 @@ describe("team_opportunity evaluation rows (WU4C.1)", () => {
     const firstBytes = result.files_written.map((f) => readFileSync(f, "utf8"));
     const rerun = materializeEvaluation(o);
     expect(rerun.files_written.map((f) => readFileSync(f, "utf8"))).toEqual(firstBytes);
+  });
+});
+
+describe("team_total evaluation rows (NFL projected game total)", () => {
+  it("builds an evaluable row with team-score error and no market/volume field", () => {
+    const home = prediction("team_total", { team: "lar", opponent: "ari" });
+    const src = sources({ homeScore: 27, awayScore: 20 });
+    const draftOutcome = resolvePredictionOutcome(home, src, "2025-09-08T10:00:00.000Z");
+    expect(draftOutcome.resolution_status).toBe("resolved");
+    const { events } = appendOutcomeDrafts({ rootDir: tempRoot("jkb-total-out-"), drafts: [draftOutcome] });
+    const built = buildEvaluationRow(home, events, { divisionGame: null });
+    expect(built.row).not.toBeNull();
+    const row = built.row!;
+    expect(row.prediction_type).toBe("team_total");
+    expect("market" in row.outcome).toBe(false);
+    expect("volume" in row.outcome).toBe(false);
+    expect(row.outcome).toMatchObject({
+      projection: { projected_team_points: 24.6 },
+      actual: { team_points: 27, opponent_points: 20, game_total: 47 },
+      error: { points_error: 24.6 - 27, absolute_points_error: 27 - 24.6 },
+    });
+    expect(row.cohorts).toMatchObject({ home_away: "home", history_status: "normal", projected_total_bucket: "44-51" });
+    validateEvaluationRow(row);
+  });
+
+  it("materializes team-score AND game-total metrics by pairing the home+away sibling rows, with a stable rerun", () => {
+    const home = prediction("team_total", { team: "lar", opponent: "ari", home_away: "home", projection: { type: "team_total", projected_team_points: 26 } });
+    const away = prediction("team_total", { team: "ari", opponent: "lar", home_away: "away", run_id: "run-away", projection: { type: "team_total", projected_team_points: 21 } });
+    const predRoot = predictionRootFor([home, away]);
+    const src = sources({ homeScore: 24, awayScore: 20 });
+    const outRoot = outcomeRootFor([home, away], src);
+    const o = opts(predRoot, outRoot);
+    const result = materializeEvaluation(o);
+    expect(result.evaluable_by_type.team_total).toBe(2);
+    const rows = readFileSync(result.files_written.find((f) => f.includes("team_total"))!, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.prediction_type === "team_total" && r.player_id === null)).toBe(true);
+
+    const block = computeMetricBlock("team_total", rows.map((r) => r as never));
+    // team score: (26-24) and (21-20) -> bias 1.5, mae 1.5.
+    expect(block.bias).toBeCloseTo(1.5, 10);
+    expect(block.mae).toBeCloseTo(1.5, 10);
+    // game total: projected 26+21=47 vs actual 24+20=44 -> one paired game, error +3.
+    expect((block.component as { game_total: { n: number; mae: number; bias: number } }).game_total).toMatchObject({ n: 1, mae: 3, bias: 3 });
+
+    const firstBytes = result.files_written.map((f) => readFileSync(f, "utf8"));
+    const rerun = materializeEvaluation(o);
+    expect(rerun.files_written.map((f) => readFileSync(f, "utf8"))).toEqual(firstBytes);
+  });
+
+  it("excludes an unpaired team_total row (sibling not yet resolved) from the game-total component without dropping it from team-score", () => {
+    const home = prediction("team_total", { team: "lar", opponent: "ari", home_away: "home" });
+    const src = sources({ homeScore: 27, awayScore: 20 });
+    const draftOutcome = resolvePredictionOutcome(home, src, "2025-09-08T10:00:00.000Z");
+    const { events } = appendOutcomeDrafts({ rootDir: tempRoot("jkb-total-out-"), drafts: [draftOutcome] });
+    const built = buildEvaluationRow(home, events, { divisionGame: null });
+    const block = computeMetricBlock("team_total", [built.row! as never]);
+    expect(block.n).toBe(1);
+    expect((block.component as { game_total: { n: number; unpaired_games_excluded: number } }).game_total).toMatchObject({ n: 0, unpaired_games_excluded: 1 });
   });
 });
