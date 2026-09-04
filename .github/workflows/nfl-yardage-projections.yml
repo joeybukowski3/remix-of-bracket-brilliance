@@ -182,6 +182,40 @@ jobs:
       - name: Generate WU4A team opportunity
         run: npm run nfl:team-opportunity -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
+      # NFL projected-total pipeline (jkb-nfl-total-ridge-v1.0.0). Runs after
+      # WU4A on this same fresh runner, same fail-closed convention as every
+      # step in this job: a failure here stops the job before the commit
+      # step is ever reached and last-known-good data is never overwritten.
+      #
+      # Step A/2: refresh ONLY the current season's scoring-support cache
+      # (data/nfl/nflverse/scoring-support-team-game/) -- mirrors the
+      # depth-chart step's "--seasons=2026 only" reasoning above: the
+      # training-window seasons (2021-2024, plus the closed portion of the
+      # current season already covered) are static history and do not need
+      # re-fetching every run; only the current season's file can still grow
+      # week to week. Fail-closed: existing cache untouched on failure.
+      - name: Refresh NFL total scoring-support cache (current season only)
+        run: npm run nfl:scoring-support-cache -- --seasons=${{ steps.current-week.outputs.season }}
+
+      # Step B/2: generate + archive this week's projected team totals.
+      #
+      # INTENTIONALLY INERT (--dry-run) as of this integration: the
+      # generator, archive schema (team_total), outcome resolver, and
+      # evaluation materializer extension are implemented and unit/dry-run
+      # verified (see src/lib/nfl/props/totals/**, scripts/generate-nfl-totals.ts,
+      # scripts/lib/nfl-prediction-outcome-resolver.ts, scripts/lib/
+      # nfl-evaluation-materializer.ts), but this step is deliberately kept in
+      # --dry-run (computes and logs predictions, writes nothing) and the
+      # commit step below does NOT yet stage any team_total archive path.
+      # Turning this on for real is a separate, explicit follow-up: drop
+      # --dry-run here and add the nfl-total-ridge partition glob + the
+      # scoring-support cache files to the "Check for staged changes" /
+      # "Commit and push" steps below (see PR description for the exact
+      # diff). Until then this step can fail the job (protecting against a
+      # regression) without ever being able to write to main.
+      - name: Generate NFL projected totals (dry run -- not yet archiving to main)
+        run: npm run nfl:totals -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }} --dry-run
+
       # Step 4/5 -- regenerate the production-candidate projection artifact.
       # No fetch/normalization logic of its own: reuses every already-
       # committed historical artifact plus the caches refreshed in steps 1-3
@@ -219,6 +253,8 @@ jobs:
             'data/nfl/nflverse/weekly-rosters/manifest.json' \
             'data/nfl/nflverse/depth-charts/depth_charts_2026.csv' \
             'data/nfl/nflverse/depth-charts/manifest.json' \
+            'data/nfl/nflverse/scoring-support-team-game/scoring_support_team_game_${{ steps.current-week.outputs.season }}.csv' \
+            'data/nfl/nflverse/scoring-support-team-game/manifest.json' \
             'public/data/nfl/matchup-market.json' \
             'public/data/nfl/${{ steps.current-week.outputs.season }}/team-opportunity.json' \
             'public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json' \
@@ -272,6 +308,22 @@ jobs:
             public/data/nfl/matchup-market.json \
             public/data/nfl/${{ steps.current-week.outputs.season }}/team-opportunity.json \
             public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json
+
+          # Scoring-support cache: guarded (not part of the unconditional git
+          # add above) because the current season's file will not exist yet
+          # on an early-preseason run before nflverse publishes any
+          # play-by-play for the season -- an unconditional `git add` on a
+          # not-yet-existing path would abort this entire step (pathspec
+          # error) and take down the whole commit, including the unrelated
+          # roster/depth-chart/projection files above. Every other season's
+          # file is untouched by this run (--seasons scoped above) and is
+          # never re-staged here.
+          scoring_support_csv="data/nfl/nflverse/scoring-support-team-game/scoring_support_team_game_${{ steps.current-week.outputs.season }}.csv"
+          if [ -f "$scoring_support_csv" ]; then
+            git add -- "$scoring_support_csv" data/nfl/nflverse/scoring-support-team-game/manifest.json
+          else
+            echo "NFL scoring-support cache: no file for season ${{ steps.current-week.outputs.season }} yet (upstream not published) -- not staging."
+          fi
 
           # Stage only WU1 prediction-archive partitions (spread/passing/
           # rushing/receiving/team_opportunity) and their content-addressed
