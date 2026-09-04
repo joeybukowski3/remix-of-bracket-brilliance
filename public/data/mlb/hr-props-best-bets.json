@@ -1,10 +1,10 @@
 {
   "date": "2026-09-04",
-  "generatedAt": "2026-09-04T17:41:30.526Z",
+  "generatedAt": "2026-09-04T18:33:54.415Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field (1.40) and Great American Ball Park (1.25) headline a slate with three hitter-friendly venues, while Daikin Park (1.04) offers a modest boost. Merrill Kelly and Jameson Taillon face lineups with elevated barrel and hard-hit rates, and Ryan Feltner draws the unenviable Coors assignment against St. Louis power bats.",
-    "modelNote": "The model elevates Yordan Alvarez to the top spot by combining his elite barrel/hard-hit profile with a favorable park and pitcher matchup, while Coors and GABP park factors push multiple Cardinals and Brewers into the top tier despite modest individual metrics."
+    "slateOverview": "Coors Field (1.40) and Great American Ball Park (1.25) headline the slate, inflating power for STL and MIL bats against righties Feltner and Lowder. Daikin Park (1.04) and Kauffman Stadium (0.96) offer modest boosts, while loanDepot park (0.88) and PNC Park (0.90) suppress, making Alvarez and Witt Jr. stand out on raw talent alone. Favorable righty matchups and elevated barrel rates for the top three create the clearest edges.",
+    "modelNote": "The model is overweighting park-adjusted barrel and hard-hit rates while discounting recent HR volume, elevating Alvarez to the top spot despite only one homer in his last seven games."
   },
   "bestBets": [
     {
@@ -71,46 +71,6 @@
       "opposingPitcher": "Janson Junk",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=50.8",
-        "Hard Hit%=48.6"
-      ],
-      "bullets": [
-        "HR score 68.7 (#4)",
-        "Pitcher HR VS 50.8 at park 0.88"
-      ],
-      "hrOddsYes": "+296",
-      "marketImpliedProbability": 0.25252525252525254,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "TOR",
-      "opposingPitcher": "Jameson Taillon",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=80.7",
-        "Hard Hit%=50.9"
-      ],
-      "bullets": [
-        "HR score 66.8 (#5)",
-        "Pitcher HR VS 80.7 at park 0.96"
-      ],
-      "hrOddsYes": "+415",
-      "marketImpliedProbability": 0.1941747572815534,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "MIA",
-      "opposingPitcher": "Janson Junk",
-      "hrScoreRank": 4,
-      "topStats": [
         "barrel=13.1%",
         "HH=48.6%"
       ],
@@ -141,6 +101,27 @@
       "marketImpliedProbability": 0.1941747572815534,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "WSH",
+      "opposingPitcher": "Jackson Kent",
+      "hrScoreRank": 25,
+      "topStats": [
+        "barrel=13.4%",
+        "HH=45.6%"
+      ],
+      "bullets": [
+        "barrel=13.4%",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+850",
+      "marketImpliedProbability": 0.10526315789473684,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
     },
     {
       "player": "Jackson Chourio",
@@ -149,12 +130,12 @@
       "opposingPitcher": "Rhett Lowder",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=12.9%",
-        "HH=47.7%"
+        "Pitcher HR VS=62.7",
+        "Hard Hit%=47.7"
       ],
       "bullets": [
-        "barrel=12.9%",
-        "park=1.25"
+        "HR score 66.1 (#6)",
+        "Pitcher HR VS 62.7 at park 1.25"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -179,63 +160,25 @@
       "marketImpliedProbability": 0.24813895781637718,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
-    {
-      "player": "Oneil Cruz",
-      "team": "PIT",
-      "opponent": "LAA",
-      "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=70.3",
-        "Hard Hit%=56.0"
-      ],
-      "bullets": [
-        "HR score 65.1 (#8)",
-        "Pitcher HR VS 70.3 at park 0.90"
-      ],
-      "hrOddsYes": "+334",
-      "marketImpliedProbability": 0.2304147465437788,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Jordan Walker",
-      "team": "STL",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=13.5%",
-        "HH=48.9%"
-      ],
-      "bullets": [
-        "barrel=13.5%",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+303",
-      "marketImpliedProbability": 0.24813895781637718,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Oneil Cruz",
+      "player": "Rafael Flores Jr.",
       "team": "PIT",
       "opponent": "LAA",
       "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 8,
+      "hrScoreRank": 15,
       "topStats": [
-        "barrel=17.2%",
-        "HH=56%"
+        "barrel=15.3%",
+        "HH=44.1%"
       ],
       "bullets": [
-        "barrel=17.2%",
+        "barrel=15.3%",
         "park=0.9"
       ],
-      "hrOddsYes": "+334",
-      "marketImpliedProbability": 0.2304147465437788,
+      "hrOddsYes": "+590",
+      "marketImpliedProbability": 0.14492753623188406,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -255,25 +198,6 @@
       ],
       "hrOddsYes": "+850",
       "marketImpliedProbability": 0.10526315789473684,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Rafael Flores Jr.",
-      "team": "PIT",
-      "opponent": "LAA",
-      "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 15,
-      "topStats": [
-        "Pitcher HR VS=70.3",
-        "Hard Hit%=44.1"
-      ],
-      "bullets": [
-        "HR score 59.7 (#15)",
-        "Pitcher HR VS 70.3 at park 0.90"
-      ],
-      "hrOddsYes": "+590",
-      "marketImpliedProbability": 0.14492753623188406,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
