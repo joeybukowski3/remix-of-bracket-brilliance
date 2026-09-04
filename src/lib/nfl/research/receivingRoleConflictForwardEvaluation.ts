@@ -41,6 +41,16 @@ export interface ReceivingRoleConflictEvaluationRow {
   roleSourced: boolean;
   depthRank: number | null;
   noHistory: boolean;
+  /**
+   * WU4G.1 §5: true only when the archived `receiving_role_conflict` entry
+   * itself is `{available: true, ...}` -- a genuine structural gap (no v2
+   * allocation ran, no depth rank, no rank-prior bucket; see
+   * `ReceivingRoleConflictUnavailableReason`). A `noHistory` player with a
+   * legitimately null `conflictLevel` is STILL `diagnosticAvailable: true`
+   * -- that is a real diagnostic value, not an availability failure. Do not
+   * conflate the two when computing coverage.
+   */
+  diagnosticAvailable: boolean;
 }
 
 export interface ReceivingRoleConflictEvaluationErrors {

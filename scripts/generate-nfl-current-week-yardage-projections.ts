@@ -49,11 +49,18 @@ import {
   finalizePredictionSnapshot, type JsonValue, type MarketSnapshotReference, type PredictionSnapshotDraft,
 } from "./lib/nfl-production-prediction-archive";
 import { buildReceivingRoleConflictArchiveEntry, type ReceivingRoleConflictArchiveEntry } from "../src/lib/nfl/research/receivingRoleConflictDiagnostic";
+import { buildRushingRoleConflictV2ArchiveEntry, type RushingRoleConflictV2ArchiveEntry } from "../src/lib/nfl/research/rushingRoleConflictDiagnosticV2";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "data", "nfl", "props");
 const RECEIVING_ROLE_ALLOCATION_ARTIFACT_PATH = join(ROOT, "data", "nfl", "models", "receiving-role-allocation-v2.json");
 const RUSHING_SHADOW_ARTIFACT_PATH = join(ROOT, "data", "nfl", "models", "rushing-shadow-allocation-v1.json");
+// WU4G.2: small, committed, offline-fit lookup table (see
+// scripts/analysis/nfl-role-allocation/fit-rushing-role-conflict-v2-prior.ts)
+// -- NOT the 33MB gitignored research dataset. Used only to compute the
+// diagnostic-only `rushing_role_conflict_v2` archive field; never read by
+// the production carries/yards row-construction path.
+const RUSHING_ROLE_CONFLICT_V2_PRIOR_ARTIFACT_PATH = join(ROOT, "data", "nfl", "models", "rushing-role-conflict-v2-prior.json");
 const PLAY_VOLUME_CACHE_DIR = "data/nfl/nflverse/play-volume-team-game";
 const EPA_CACHE_DIR = "data/nfl/nflverse/epa-team-game";
 const STATS_CACHE_DIR = "data/nfl/nflverse/stats-player-week";
@@ -502,6 +509,13 @@ function main(): void {
   // entry here -- available or a specific unavailable reason -- filled in
   // below as each row's fate is decided. Never left as an implicit null.
   const rushingShadowAvailabilityByPlayerId = new Map<string, NflShadowAvailability>();
+  // WU4G.2: run-level pool-coherence evidence, already computed as a
+  // byproduct of the shadow-allocation loop below -- persisted (not just
+  // logged) so downstream forward-evaluation readiness can read an
+  // affirmative fact instead of treating an always-null value as unknown.
+  // Stays `null` (never `0`) whenever the shadow allocator did not run at
+  // all this week -- "zero failures" must never be inferred from "did not run".
+  let rushingPoolCoherenceFailures: number | null = null;
   if (rushingShadowPending) {
     const { model, teamOppRows } = rushingShadowPending;
     const teamOppByTeam = new Map(teamOppRows.map((r) => [r.team, r]));
@@ -549,6 +563,7 @@ function main(): void {
         for (const r of rows) rushingShadowAvailabilityByPlayerId.set(r.playerId, shadowUnavailable("allocation_failure"));
       }
     }
+    rushingPoolCoherenceFailures = coherenceFailures;
     console.log(
       `[nfl:current-week-projections] rushing shadow diagnostics: attached to ${rushingShadowDiagnosticsByPlayerId.size}/${rushingRows.length} rushing rows, pool coherence failures=${coherenceFailures}`,
     );
@@ -561,6 +576,51 @@ function main(): void {
             : r,
         ),
       };
+    }
+  }
+
+  // WU4G.2: corrected, pool-scoped rushing role-conflict SEVERITY diagnostic
+  // (`rushing_role_conflict_v2`) -- archive-only, deliberately independent of
+  // the shadow-allocation block above (a missing/failed shadow artifact must
+  // never block this, and vice versa; they read different committed
+  // artifacts and answer different questions). Uses ONLY the row's own
+  // already-computed live evidence (identical inputs to `liveEvidence` above)
+  // plus the small committed pool-scoped prior lookup table -- never the
+  // research dataset, never a second WU4A/shadow recomputation. Does not
+  // read or write `allocation_diagnostics`/`role_conflict` (the OLD,
+  // cross-position-biased allocator score) -- those stay exactly as they
+  // were, preserved for S5E/allocator provenance only.
+  const rushingRoleConflictV2ByPlayerId = new Map<string, RushingRoleConflictV2ArchiveEntry>();
+  {
+    const RUSH_POOL_OF: Record<string, "qb" | "rb" | "wrTe"> = { QB: "qb", RB: "rb", WR: "wrTe", TE: "wrTe" };
+    let poolScopedRankPrior: Map<string, number> | null = null;
+    if (existsSync(RUSHING_ROLE_CONFLICT_V2_PRIOR_ARTIFACT_PATH)) {
+      try {
+        const parsed = JSON.parse(readSource(RUSHING_ROLE_CONFLICT_V2_PRIOR_ARTIFACT_PATH)) as { pool_scoped_rank_prior?: Record<string, number> };
+        poolScopedRankPrior = parsed.pool_scoped_rank_prior ? new Map(Object.entries(parsed.pool_scoped_rank_prior)) : null;
+      } catch (err) {
+        console.error(`[nfl:current-week-projections] rushing role-conflict v2: artifact at ${RUSHING_ROLE_CONFLICT_V2_PRIOR_ARTIFACT_PATH} is not valid JSON: ${(err as Error).message}`);
+      }
+    }
+    if (!poolScopedRankPrior) {
+      console.error(`[nfl:current-week-projections] rushing role-conflict v2: unavailable -- prior artifact not found or invalid at ${RUSHING_ROLE_CONFLICT_V2_PRIOR_ARTIFACT_PATH}.`);
+    } else {
+      const prior = poolScopedRankPrior;
+      const rushingRows = artifact.rows.filter((r): r is Extract<NflCurrentWeekProjectionRow, { market: "rushing" }> => r.market === "rushing");
+      for (const r of rushingRows) {
+        const entry = buildRushingRoleConflictV2ArchiveEntry({
+          poolKey: RUSH_POOL_OF[r.position] ?? "wrTe",
+          depthRank: r.depthRank,
+          roleSourced: r.roleConfidence === "sourced",
+          historicalSharePrior: r.featureSnapshot.carryShare.priorSeason ?? r.featureSnapshot.carryShare.seasonPrior ?? null,
+          teamChanged: r.hardCaseFlags.teamChanged,
+          noHistory: r.hardCaseFlags.noHistory,
+          poolScopedRankPrior: prior,
+        });
+        rushingRoleConflictV2ByPlayerId.set(r.playerId, entry);
+      }
+      const available = [...rushingRoleConflictV2ByPlayerId.values()].filter((e) => e.available).length;
+      console.log(`[nfl:current-week-projections] rushing role-conflict v2: available=${available}/${rushingRoleConflictV2ByPlayerId.size} rushing rows`);
     }
   }
 
@@ -676,6 +736,22 @@ function main(): void {
           // ReceivingRoleConflictUnavailableReason) rather than an
           // ambiguous bare null.
           receiving_role_conflict: asJson(buildReceivingRoleConflictEntry(row)),
+          // WU4G.2: corrected, pool-scoped rushing role-conflict SEVERITY
+          // diagnostic -- see `rushingRoleConflictDiagnosticV2.ts`. Distinct
+          // from `role_conflict`/`allocation_diagnostics.roleConflictScore`
+          // above (the OLD cross-position-biased allocator score, kept
+          // unchanged for allocator/S5E provenance): forward-evaluation
+          // severity cohorts must read THIS field, never the old one. `null`
+          // for every non-rushing row; explicit `{available:false,reason}`
+          // for a rushing row the diagnostic structurally does not cover
+          // (non-RB pool, no depth rank, no rank-prior bucket).
+          rushing_role_conflict_v2: row.market === "rushing" ? asJson(rushingRoleConflictV2ByPlayerId.get(row.playerId) ?? { available: false, reason: "missing_prior_artifact" }) : null,
+          // WU4G.2: run-level pool-coherence evidence (§11), broadcast onto
+          // every rushing row in this run so a per-row-oriented reader (the
+          // WU4G forward-evaluation materializer) can read an affirmative
+          // fact without a separate run-metadata channel. `null` (not `0`)
+          // whenever the shadow allocator did not run this week.
+          rushing_pool_coherence_failures: row.market === "rushing" ? rushingPoolCoherenceFailures : null,
         }) as Record<string, JsonValue>,
         ...(capture.orderedVector ? { ordered_vector: capture.orderedVector } : {}), ...(capture.imputationFlags ? { imputation_flags: capture.imputationFlags } : {}),
         source_manifest_hashes: { yardage_run: sourceManifest.hash }, fitted_model_hash: model.hash,

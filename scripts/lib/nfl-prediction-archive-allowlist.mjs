@@ -32,7 +32,12 @@ export function isAllowedEvaluationPath(path) {
   const versionedFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity)\/[0-9]{4}\.jsonl$/;
   const ledgerFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/resolution-status\/[0-9]{4}\.jsonl$/;
   const summaryFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/summary\/[0-9]{4}\.json$/;
-  return versionedFile.test(path) || ledgerFile.test(path) || summaryFile.test(path);
+  // WU4G: cumulative rushing shadow-vs-production / receiving role-conflict
+  // forward-evaluation datasets. Derived-only from the WU3 files above,
+  // written by a separate materializer; never a source/prediction/outcome path.
+  const forwardRowsFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/forward-(rushing|receiving)\/[0-9]{4}\.jsonl$/;
+  const forwardSummaryFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/forward-(rushing|receiving)-summary\/[0-9]{4}\.json$/;
+  return versionedFile.test(path) || ledgerFile.test(path) || summaryFile.test(path) || forwardRowsFile.test(path) || forwardSummaryFile.test(path);
 }
 
 /**

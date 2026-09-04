@@ -38,4 +38,14 @@ describe("prediction archive commit-path allowlist (WU4C.1 Part 6)", () => {
     expect(isAllowedEvaluationPath("data/nfl/predictions/2026/01/nfl-team-opportunity.jsonl")).toBe(false);
     expect(isAllowedEvaluationPath("data/nfl/prediction-outcomes/2026/01/spread.jsonl")).toBe(false);
   });
+
+  it("accepts every WU4G forward-evaluation path and rejects an unversioned or mistyped variant", () => {
+    for (const type of ["rushing", "receiving"]) {
+      expect(isAllowedEvaluationPath(`data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-${type}/2026.jsonl`)).toBe(true);
+      expect(isAllowedEvaluationPath(`data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-${type}-summary/2026.json`)).toBe(true);
+    }
+    expect(isAllowedEvaluationPath("data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-spread/2026.jsonl")).toBe(false);
+    expect(isAllowedEvaluationPath("data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-rushing-summary/2026.jsonl")).toBe(false);
+    expect(isAllowedEvaluationPath("data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-rushing/2026.json")).toBe(false);
+  });
 });
