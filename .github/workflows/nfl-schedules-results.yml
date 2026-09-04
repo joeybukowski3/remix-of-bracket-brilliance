@@ -107,6 +107,19 @@ jobs:
         shell: bash
         run: npm run materialize:nfl-evaluation -- --season=2026
 
+      # WU4G: cumulative rushing shadow-vs-production / receiving
+      # role-conflict forward evaluation. Reads ONLY the WU3 files this same
+      # job just wrote above -- never the WU1/WU2 archives directly -- so it
+      # is gated on the WU3 step actually having succeeded this run.
+      # continue-on-error: same rationale as WU3 above -- a bug here must
+      # never block the far more load-bearing commit below it.
+      - name: Materialize WU4G forward evaluation
+        id: forward-evaluate
+        if: steps.materialize.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run materialize:nfl-forward-evaluation -- --season=2026
+
       - name: Detect meaningful data changes
         id: changes
         shell: bash

@@ -11,6 +11,7 @@ function row(overrides: Partial<ReceivingRoleConflictEvaluationRow> = {}): Recei
     playerId: "p1", gameId: "2026_01_HOU_BUF", season: 2026, week: 1, position: "WR",
     projectedTargets: 6.5, projectedYards: 78.2, actualTargets: 9, actualYards: 101,
     conflictLevel: "high", orderingConflict: true, teamChanged: true, roleSourced: true, depthRank: 1, noHistory: false,
+    diagnosticAvailable: true,
     ...overrides,
   };
 }

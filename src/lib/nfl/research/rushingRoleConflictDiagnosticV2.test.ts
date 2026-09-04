@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPoolScopedRankPrior,
+  buildRushingRoleConflictV2ArchiveEntry,
   classifyCombinedConflict,
   classifyConflictLevel,
   computeNormalizedRoleConflictScore,
@@ -112,5 +113,60 @@ describe("classifyCombinedConflict", () => {
   it("uses the plain share-gap classification when ranks agree", () => {
     expect(classifyCombinedConflict(0.05, false)).toBe("low");
     expect(classifyCombinedConflict(0.4, false)).toBe("high");
+  });
+});
+
+describe("buildRushingRoleConflictV2ArchiveEntry", () => {
+  const prior = buildPoolScopedRankPrior([
+    { poolKey: "rb", depthRankProxy: 1, shareOfPositionalPool: 0.6685 },
+    { poolKey: "rb", depthRankProxy: 2, shareOfPositionalPool: 0.2708 },
+    { poolKey: "qb", depthRankProxy: 1, shareOfPositionalPool: 1.4 }, // mixed-in QB row must never leak into rb:1
+  ]);
+
+  it("uses the RB-scoped prior, not any cross-position value, for an RB1", () => {
+    const entry = buildRushingRoleConflictV2ArchiveEntry({
+      poolKey: "rb", depthRank: 1, roleSourced: true, historicalSharePrior: 0.6, teamChanged: false, noHistory: false, poolScopedRankPrior: prior,
+    });
+    expect(entry.available).toBe(true);
+    if (!entry.available) throw new Error("expected available");
+    expect(entry.diagnostic.role_prior_share).toBeCloseTo(0.6685);
+    expect(entry.diagnostic.role_prior_share).not.toBeCloseTo(1.4);
+  });
+
+  it("applies the canonical 0.15/0.35 thresholds to the computed conflict_score", () => {
+    const low = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "rb", depthRank: 1, roleSourced: true, historicalSharePrior: 0.66, teamChanged: false, noHistory: false, poolScopedRankPrior: prior });
+    const medium = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "rb", depthRank: 1, roleSourced: true, historicalSharePrior: 0.5, teamChanged: false, noHistory: false, poolScopedRankPrior: prior });
+    const high = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "rb", depthRank: 1, roleSourced: true, historicalSharePrior: 0.2, teamChanged: true, noHistory: false, poolScopedRankPrior: prior });
+    expect(low.available && low.diagnostic.conflict_level).toBe("low");
+    expect(medium.available && medium.diagnostic.conflict_level).toBe("medium");
+    expect(high.available && high.diagnostic.conflict_level).toBe("high");
+  });
+
+  it("is available with a null conflict_score/conflict_level for a legitimate noHistory RB with a sourced depth rank", () => {
+    const entry = buildRushingRoleConflictV2ArchiveEntry({
+      poolKey: "rb", depthRank: 2, roleSourced: true, historicalSharePrior: null, teamChanged: null, noHistory: true, poolScopedRankPrior: prior,
+    });
+    expect(entry.available).toBe(true);
+    if (!entry.available) throw new Error("expected available");
+    expect(entry.diagnostic.conflict_score).toBeNull();
+    expect(entry.diagnostic.conflict_level).toBeNull();
+    expect(entry.diagnostic.no_history).toBe(true);
+  });
+
+  it("is unavailable (unsupported_pool) for a QB or WR/TE rushing row -- V2 is RB-scoped only", () => {
+    const qb = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "qb", depthRank: 1, roleSourced: true, historicalSharePrior: 0.9, teamChanged: false, noHistory: false, poolScopedRankPrior: prior });
+    expect(qb).toEqual({ available: false, reason: "unsupported_pool" });
+    const wrTe = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "wrTe", depthRank: 1, roleSourced: true, historicalSharePrior: 0.3, teamChanged: false, noHistory: false, poolScopedRankPrior: prior });
+    expect(wrTe).toEqual({ available: false, reason: "unsupported_pool" });
+  });
+
+  it("is unavailable (missing_depth_rank) when no depth rank was sourced", () => {
+    const entry = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "rb", depthRank: null, roleSourced: false, historicalSharePrior: 0.5, teamChanged: false, noHistory: false, poolScopedRankPrior: prior });
+    expect(entry).toEqual({ available: false, reason: "missing_depth_rank" });
+  });
+
+  it("is unavailable (missing_rank_prior) when the pool has no fitted prior for that rank", () => {
+    const entry = buildRushingRoleConflictV2ArchiveEntry({ poolKey: "rb", depthRank: 9, roleSourced: true, historicalSharePrior: 0.1, teamChanged: false, noHistory: false, poolScopedRankPrior: prior });
+    expect(entry).toEqual({ available: false, reason: "missing_rank_prior" });
   });
 });

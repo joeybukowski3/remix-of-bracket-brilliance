@@ -138,3 +138,78 @@ export function classifyCombinedConflict(
   if (rankDisagrees === true) return "high";
   return base;
 }
+
+// ---------------------------------------------------------------------------
+// WU4G.2 -- forward archive contract.
+//
+// Mirrors `receivingRoleConflictDiagnostic.ts`'s two-tier availability
+// exactly: "available" describes whether the INPUTS this diagnostic needs
+// exist at all (the committed pool-scoped prior artifact loaded, a depth
+// rank was sourced, that pool+rank has a fitted prior bucket) -- NOT
+// whether the player happens to have no personal history. A `noHistory`
+// RB with a valid depth rank and a valid rank-prior lookup IS "available",
+// with `conflict_score`/`conflict_level` legitimately null -- a real,
+// expected diagnostic value, not an availability failure. Only a genuine
+// structural gap (no fitted prior artifact, no depth rank, non-RB pool, or
+// no rank-prior bucket for that rank) is "unavailable".
+// ---------------------------------------------------------------------------
+
+export type RushingRoleConflictV2UnavailableReason =
+  | "missing_prior_artifact"
+  | "unsupported_pool"
+  | "missing_depth_rank"
+  | "missing_rank_prior";
+
+export type RushingRoleConflictV2Diagnostic = {
+  historical_share: number | null;
+  role_prior_share: number;
+  conflict_score: number | null;
+  conflict_level: ConflictLevel | null;
+  depth_rank: number;
+  role_sourced: boolean;
+  team_changed: boolean | null;
+  no_history: boolean;
+};
+
+export type RushingRoleConflictV2ArchiveEntry =
+  | { available: true; diagnostic: RushingRoleConflictV2Diagnostic }
+  | { available: false; reason: RushingRoleConflictV2UnavailableReason };
+
+/**
+ * Builds the archive entry for one RB rushing row. Reads ONLY the row's own
+ * already-computed live evidence (`historicalSharePrior`, `depthRank`,
+ * `roleSourced`, `teamChanged`, `noHistory` -- the exact same inputs the
+ * shadow allocator itself already uses) plus the small committed
+ * pool-scoped prior lookup -- never the 33MB research dataset, never a
+ * recomputed historical allocation. `poolKey` gates eligibility: only "rb"
+ * rows get a V2 diagnostic (a QB/WR/TE rushing row is structurally
+ * unsupported -- the pool-scoped prior this fixes is RB-specific).
+ */
+export function buildRushingRoleConflictV2ArchiveEntry(args: {
+  poolKey: "qb" | "rb" | "wrTe";
+  depthRank: number | null;
+  roleSourced: boolean;
+  historicalSharePrior: number | null;
+  teamChanged: boolean | null;
+  noHistory: boolean;
+  poolScopedRankPrior: ReadonlyMap<string, number>;
+}): RushingRoleConflictV2ArchiveEntry {
+  if (args.poolKey !== "rb") return { available: false, reason: "unsupported_pool" };
+  if (args.depthRank == null) return { available: false, reason: "missing_depth_rank" };
+  const rolePriorShare = poolScopedRankPriorFor(args.poolScopedRankPrior, "rb", args.depthRank);
+  if (rolePriorShare == null) return { available: false, reason: "missing_rank_prior" };
+  const conflictScore = computeNormalizedRoleConflictScore(args.historicalSharePrior, rolePriorShare);
+  return {
+    available: true,
+    diagnostic: {
+      historical_share: args.historicalSharePrior,
+      role_prior_share: rolePriorShare,
+      conflict_score: conflictScore,
+      conflict_level: classifyConflictLevel(conflictScore),
+      depth_rank: args.depthRank,
+      role_sourced: args.roleSourced,
+      team_changed: args.teamChanged,
+      no_history: args.noHistory,
+    },
+  };
+}

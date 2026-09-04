@@ -104,6 +104,7 @@
     "nfl:matchup-score-research": "tsx scripts/run-nfl-matchup-score-research.ts",
     "nfl:current-week-projections": "tsx scripts/generate-nfl-current-week-yardage-projections.ts",
     "nfl:fit-receiving-production-model": "tsx scripts/analysis/nfl-role-allocation/fit-receiving-production-model.ts",
+    "nfl:fit-rushing-role-conflict-v2-prior": "tsx scripts/analysis/nfl-role-allocation/fit-rushing-role-conflict-v2-prior.ts",
     "nfl:team-opportunity": "tsx scripts/generate-nfl-team-opportunity.ts",
     "nfl:team-opportunity-calibration": "tsx scripts/analysis/nfl-team-opportunity-calibration/evaluate.ts",
     "nfl:resolve-current-week": "node scripts/resolve-nfl-current-week.mjs",
@@ -166,7 +167,8 @@
     "sixteen-zero:stats": "vite-node scripts/audit-sixteen-zero-statistics.ts --seasons 10000 --drafts 120",
     "sixteen-zero:browser": "node scripts/audit/sixteen-zero-browser-check.mjs",
     "resolve:nfl-prediction-outcomes": "tsx scripts/resolve-nfl-prediction-outcomes.ts",
-    "materialize:nfl-evaluation": "tsx scripts/materialize-nfl-evaluation.ts"
+    "materialize:nfl-evaluation": "tsx scripts/materialize-nfl-evaluation.ts",
+    "materialize:nfl-forward-evaluation": "tsx scripts/materialize-nfl-forward-evaluation.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

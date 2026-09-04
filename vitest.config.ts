@@ -73,6 +73,9 @@ export default defineConfig({
       "scripts/lib/nfl-play-volume-core.test.mjs",
       // WU4C.1 -- scheduled-workflow commit-path allowlist (predictions/outcomes/evaluations).
       "scripts/lib/nfl-prediction-archive-allowlist.test.mjs",
+      // WU4G -- forward evaluation (rushing shadow-vs-production / receiving role-conflict) operational layer.
+      "scripts/lib/nfl-forward-evaluation.test.ts",
+      "scripts/materialize-nfl-forward-evaluation.test.ts",
       // NFL Yardage Props Review -- shared opponent-production-allowed artifact.
       "scripts/lib/nfl-production-allowed-core.test.mjs",
       "scripts/generate-nfl-team-pregame-features.test.ts",
