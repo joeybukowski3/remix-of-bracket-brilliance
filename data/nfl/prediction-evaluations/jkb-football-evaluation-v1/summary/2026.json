@@ -5,14 +5,15 @@
       "receiving": 0,
       "rushing": 0,
       "spread": 0,
-      "team_opportunity": 0
+      "team_opportunity": 0,
+      "team_total": 0
     },
     "ledger_by_status": {
-      "pending_game": 336,
-      "unresolved_missing_event": 938
+      "pending_game": 672,
+      "unresolved_missing_event": 1906
     },
     "non_production_skipped": 0,
-    "predictions_loaded": 1274
+    "predictions_loaded": 2578
   },
   "evaluation_mode": "production",
   "filters": {
@@ -26,7 +27,8 @@
       "receiving": {},
       "rushing": {},
       "spread": {},
-      "team_opportunity": {}
+      "team_opportunity": {},
+      "team_total": {}
     },
     "by_fitted_state": [],
     "by_model_version": [],
@@ -164,6 +166,27 @@
           "dropback_rate_mae": null,
           "dropbacks_bias": null,
           "dropbacks_mae": null
+        },
+        "correlation": null,
+        "correlation_insufficient_sample": true,
+        "mae": null,
+        "median_absolute_error": null,
+        "n": 0,
+        "rmse": null,
+        "small_sample": true
+      },
+      "team_total": {
+        "bias": null,
+        "component": {
+          "game_total": {
+            "bias": null,
+            "correlation": null,
+            "correlation_insufficient_sample": true,
+            "mae": null,
+            "n": 0,
+            "rmse": null,
+            "unpaired_games_excluded": 0
+          }
         },
         "correlation": null,
         "correlation_insufficient_sample": true,
