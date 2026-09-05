@@ -9,6 +9,38 @@ import { NflMatchupScoreBadgeCompact } from "./NflYardageReviewBadges";
 import NflYardageReviewDetailPanel from "./NflYardageReviewDetailPanel";
 import { isInteractiveTarget } from "./interactiveTarget";
 
+/**
+ * Sticky mobile category-header CELL class -- mirrors the identical contract
+ * in src/components/mlb/props-mobile/PropsMobileTablePrimitives.tsx
+ * (STICKY_MOBILE_HEADER_CELL_CLASS) so K Props, HR Props, and this table all
+ * look and behave the same. Kept duplicated on purpose rather than a
+ * cross-sport import.
+ *
+ * Applied to every `<th>`, NOT the `<tr>` -- `position: sticky` on a table
+ * row has no reliable visible effect since a row isn't an independently
+ * painted box; each header cell needs its own sticky position + opaque
+ * background, or the header appears to float mid-table with body rows
+ * visible through it while scrolling.
+ *
+ * `top-[73px]` = SiteHeader's real rendered height: `min-h-[72px]` plus its
+ * own `border-b` (1px) -- see src/components/layout/SiteHeader.tsx
+ * (`sticky top-0 z-[100]`). `z-30` sits below SiteHeader (z-[100]) and above
+ * table body rows.
+ *
+ * No ancestor between the table and the page body may set ANY `overflow`
+ * value other than `visible`/`clip` -- not `overflow-hidden`, not
+ * `overflow-auto`, and not `overflow-x-hidden` either. Every non-`visible`
+ * overflow value (including `overflow-x-hidden`) establishes a CSS
+ * "scroll container" per spec, which becomes the containing block that
+ * `position: sticky` resolves against -- so the header sticks relative to
+ * that wrapper instead of the page viewport, and clips or detaches once the
+ * wrapper scrolls out of view. The table already uses `table-fixed` with
+ * explicit `colgroup` widths, so no horizontal clipping is needed to avoid
+ * overflow.
+ */
+const STICKY_MOBILE_HEADER_CELL_CLASS =
+  "sticky top-[73px] z-30 border-b border-slate-200 bg-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.06)]";
+
 function SortArrow({ direction }: { direction: "asc" | "desc" | null }) {
   if (!direction) {
     return (
@@ -44,7 +76,7 @@ function MobileSortHeader({
       scope="col"
       data-testid={`nfl-yardage-mobile-sort-${sortKey}`}
       aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
-      className={cn("px-1.5 py-1.5", align === "left" ? "text-left" : "text-center")}
+      className={cn("px-1.5 py-1.5", align === "left" ? "text-left" : "text-center", STICKY_MOBILE_HEADER_CELL_CLASS)}
     >
       <button
         type="button"
@@ -100,7 +132,7 @@ export default function NflYardageReviewMobileTable({
 
   return (
     <div className="md:hidden" data-testid="nfl-yardage-mobile-table">
-      <div className="overflow-hidden rounded-lg border border-slate-300 shadow-sm">
+      <div className="rounded-lg border border-slate-300 shadow-sm">
         <table className="w-full table-fixed text-[11px]">
           <colgroup>
             <col className="w-[38%]" />
@@ -110,7 +142,7 @@ export default function NflYardageReviewMobileTable({
             <col className="w-[16%]" />
           </colgroup>
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-100">
+            <tr data-testid="nfl-yardage-mobile-sticky-header">
               <MobileSortHeader label="Player" sortKey="player" sort={sort} onSort={onSort} align="left" />
               <MobileSortHeader label="Proj" sortKey="projectedYards" sort={sort} onSort={onSort} />
               <MobileSortHeader label="Line" sortKey="line" sort={sort} onSort={onSort} />

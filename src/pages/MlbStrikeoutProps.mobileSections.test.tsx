@@ -211,61 +211,102 @@ describe("Main table incremental loading", () => {
   }, SLOW_RENDER_TIMEOUT_MS);
 });
 
-describe("Mobile compact rows -- collapsed header and K Model Metrics expand grid", () => {
-  it("keeps Core / Market visible and places secondary metrics in closed-by-default accordions", async () => {
+describe("Mobile compact rows -- dense sortable table with Pitcher Stats / Opponent Stats tabs", () => {
+  it("keeps Player/Proj K/Line/Diff/Match visible in the collapsed row and places stats behind a two-tab switch, Pitcher Stats active by default", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow({ pitcher: "Compact Guy", strikeoutMatchupScore: 71 })]);
     await renderPage();
 
     const collapsedRow = await screen.findByRole("button", { name: /Show recent strikeout details for Compact Guy/ });
-    expect(within(collapsedRow).getByText("Compact Guy")).toBeInTheDocument();
+    // Pitcher name renders as two stacked lines (first/last), not one combined string.
+    expect(within(collapsedRow).getByText("Compact")).toBeInTheDocument();
+    expect(within(collapsedRow).getByText("Guy")).toBeInTheDocument();
     expect(within(collapsedRow).getByText("vs CHC")).toBeInTheDocument();
-    expect(within(collapsedRow).getByText("Away")).toBeInTheDocument();
+    expect(within(collapsedRow).getByText(/Away/)).toBeInTheDocument();
     // Secondary metrics are not in the collapsed row.
     expect(within(collapsedRow).queryByText(/K\/Inning SZN/)).not.toBeInTheDocument();
 
     fireEvent.click(collapsedRow);
-    // Scope to the row's <article> (not `screen`): the page now also has a
-    // "K Score" tab label (K Score / +EV view toggle) elsewhere on the page,
-    // so an unscoped getByText("K Score") is ambiguous.
-    const rowArticle = collapsedRow.closest("article") as HTMLElement;
-    expect(rowArticle).toBeTruthy();
+    // The detail panel is the sibling <tr> rendered right after the collapsed row --
+    // scope to it (not `screen`) since the page also has a "K Score" tab label
+    // (K Score / +EV view toggle) elsewhere, so an unscoped getByText("K Score") is ambiguous.
+    const detailRow = collapsedRow.nextElementSibling as HTMLElement;
+    expect(detailRow).toBeTruthy();
     for (const label of ["K Line", "Proj K", "Edge", "K Score"]) {
-      expect(within(rowArticle).getByText(label)).toBeInTheDocument();
+      expect(within(detailRow).getByText(label)).toBeInTheDocument();
     }
-    const pitcherStats = within(rowArticle).getByRole("button", { name: "Pitcher Stats" });
-    const opposingStats = within(rowArticle).getByRole("button", { name: "Opposing Team Stats" });
-    expect(pitcherStats.className).toContain("border-emerald-200");
-    expect(opposingStats.className).toContain("border-indigo-200");
-    expect(pitcherStats).toHaveAttribute("aria-expanded", "false");
-    expect(opposingStats).toHaveAttribute("aria-expanded", "false");
-    expect(within(rowArticle).queryByText("K Per Game SZN")).not.toBeInTheDocument();
-    expect(within(rowArticle).queryByText("Opp wRC+ Rank L30 vs Hand")).not.toBeInTheDocument();
-
-    fireEvent.click(pitcherStats);
-    expect(pitcherStats).toHaveAttribute("aria-expanded", "true");
+    const pitcherStats = within(detailRow).getByRole("tab", { name: "Pitcher Stats" });
+    const opponentStats = within(detailRow).getByRole("tab", { name: "Opponent Stats" });
+    expect(pitcherStats.className).toContain("border-emerald-700");
+    expect(opponentStats.className).toContain("border-blue-200");
+    // Pitcher Stats is the default active tab -- its content is already visible.
+    expect(pitcherStats).toHaveAttribute("aria-selected", "true");
+    expect(opponentStats).toHaveAttribute("aria-selected", "false");
     for (const label of ["K Per Game SZN", "K Per Game L5", "K Per Game @ Site", "Avg IP"]) {
-      expect(within(rowArticle).getByText(label)).toBeInTheDocument();
+      expect(within(detailRow).getByText(label)).toBeInTheDocument();
     }
-    expect(opposingStats).toHaveAttribute("aria-expanded", "false");
-    expect(within(rowArticle).queryByText("Opp wRC+ Rank L30 vs Hand")).not.toBeInTheDocument();
+    expect(within(detailRow).queryByText("Opp wRC+ Rank L30 vs Hand")).not.toBeInTheDocument();
 
-    fireEvent.click(opposingStats);
-    expect(opposingStats).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(opponentStats);
+    expect(opponentStats).toHaveAttribute("aria-selected", "true");
+    expect(pitcherStats).toHaveAttribute("aria-selected", "false");
     for (const label of ["Szn vs Hand", "Opp wRC+ Rank L30 vs Hand", "Opp K/Game @ Site", "Opp wRC+ Rank L30 @ Site", "Opp wRC+ Rank L10"]) {
-      expect(within(rowArticle).getByText(label)).toBeInTheDocument();
+      expect(within(detailRow).getByText(label)).toBeInTheDocument();
+    }
+    expect(within(detailRow).queryByText("K Per Game SZN")).not.toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("keeps the mobile category header sticky beneath the site header, with sort buttons still present", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow({ pitcher: "Sticky Guy" })]);
+    const { container } = await renderPage();
+
+    await screen.findByRole("button", { name: /Show recent strikeout details for Sticky Guy/ });
+    const headerRow = container.querySelector('[data-testid="k-props-mobile-sticky-header"]');
+    expect(headerRow).toBeTruthy();
+    // Sticky positioning must live on each header <th>, not the <tr> -- a
+    // sticky <tr> has no reliable visible effect since a row isn't an
+    // independently painted box.
+    const headerCells = headerRow!.querySelectorAll("th");
+    expect(headerCells.length).toBe(5);
+    for (const cell of Array.from(headerCells)) {
+      expect(cell.className).toContain("sticky");
+      expect(cell.className).toContain("top-[73px]");
+      expect(cell.className).toMatch(/z-\d+/);
+      expect(cell.className).toMatch(/bg-slate-100/);
+    }
+    // No ancestor between the table and the page may set any `overflow`
+    // value other than visible/clip -- that includes `overflow-x-hidden`,
+    // which still establishes a CSS scroll container and would make the
+    // sticky <th> resolve against that wrapper instead of the page
+    // viewport (checking each ancestor's own classes, not the whole
+    // subtree -- unrelated <td> cells legitimately use overflow-hidden for
+    // text truncation).
+    const mobileTable = container.querySelector('[data-testid="k-props-mobile-table"]');
+    expect(mobileTable).toBeTruthy();
+    const table = mobileTable!.querySelector("table")!;
+    for (let ancestor = table.parentElement; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
+      expect(ancestor.className).not.toMatch(/(^|\s)overflow-(hidden|auto|x-hidden|x-auto|y-hidden|y-auto)(\s|$)/);
+    }
+    // Sort controls remain clickable inside the sticky header.
+    for (const label of ["Sort by Pitcher", "Sort by Proj K", "Sort by Diff", "Sort by Match"]) {
+      expect(within(headerRow as HTMLElement).getByRole("button", { name: label })).toBeInTheDocument();
     }
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("renders no page-level table markup below lg for the main section", async () => {
+  it("renders exactly one dense sortable table (Player/Proj K/Line/Diff/Match) below lg for the main section, not the old card list", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow()]);
     const { container } = await renderPage();
 
     await screen.findAllByText("Base Pitcher");
-    expect(container.querySelector('[data-x-export="mlb-strikeout-props"] table')).toBeNull();
+    const mainTables = container.querySelectorAll('[data-x-export="mlb-strikeout-props"] table');
+    expect(mainTables.length).toBe(1);
+    const headerCells = Array.from(mainTables[0].querySelectorAll("thead th")).map((th) => th.textContent?.trim());
+    expect(headerCells).toEqual(["Pitcher", "Proj K", "Line", "Diff", "Match"]);
   }, SLOW_RENDER_TIMEOUT_MS);
 });
 
@@ -390,21 +431,18 @@ describe("Compact row accessibility -- aria-controls, visible expand label, keyb
     expect(document.getElementById(panelId as string)).not.toBeNull();
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("main table: shows a visible 'Click to expand' label that becomes 'Show less' once expanded", async () => {
+  it("main table: aria-label toggles between 'Show' and 'Hide' once expanded (row header carries no separate visible expand-label text, matching the NFL Yardage mobile table pattern)", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow({ pitcher: "Label Guy" })]);
     await renderPage();
 
     const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Label Guy/ });
-    expect(within(trigger).getByText("Click to expand")).toBeInTheDocument();
-
     fireEvent.click(trigger);
-    expect(within(trigger).getByText("Show less")).toBeInTheDocument();
-    expect(within(trigger).queryByText("Click to expand")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Hide recent strikeout details for Label Guy/ })).toBe(trigger);
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("main table: preserves aria-expanded and keyboard activation still works (real <button>, focusable, native Enter/Space semantics apply)", async () => {
+  it("main table: preserves aria-expanded and keyboard activation still works (focusable row, Enter/Space toggle handled explicitly, matching the NFL Yardage mobile table row pattern)", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow({ pitcher: "Keyboard Guy" })]);
@@ -412,19 +450,13 @@ describe("Compact row accessibility -- aria-controls, visible expand label, keyb
 
     const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Keyboard Guy/ });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
-
-    // A native <button> (not a div/span with an onClick) is inherently keyboard-operable --
-    // real browsers fire a click on Enter/Space automatically, which jsdom does not simulate.
-    // Asserting it's a genuine, focusable button element is what actually proves keyboard
-    // activation works for a user, rather than faking a keydown-to-click bridge in the test.
-    expect(trigger.tagName).toBe("BUTTON");
+    expect(trigger.tagName).toBe("TR");
     expect(trigger).not.toHaveAttribute("tabindex", "-1");
     trigger.focus();
     expect(document.activeElement).toBe(trigger);
 
-    fireEvent.click(trigger);
+    fireEvent.keyDown(trigger, { key: "Enter" });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(within(trigger).getByText("Show less")).toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("main table: only one pitcher is expanded at a time", async () => {
@@ -445,7 +477,7 @@ describe("Compact row accessibility -- aria-controls, visible expand label, keyb
     expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("main table: does not overflow the viewport at 320px", async () => {
+  it("main table: does not overflow the viewport at 320px -- fixed-layout table, no horizontal scroll wrapper", async () => {
     stubMatchMedia(true);
     vi.resetModules();
     mockPropsData([makeRow({ pitcher: "Narrow Viewport Guy" })]);
@@ -453,12 +485,11 @@ describe("Compact row accessibility -- aria-controls, visible expand label, keyb
 
     const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Narrow Viewport Guy/ });
     fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
 
-    const label = within(trigger).getByText("Show less");
-    expect(label.className).not.toMatch(/whitespace-nowrap/);
-    // The row stays a block-level flex column (chevron/logo/name/odds row, then the label on its own line)
-    // rather than forcing the label onto the same horizontal line as the odds/score content.
-    expect(trigger.className).toMatch(/flex-col/);
+    const table = container.querySelector('[data-testid="k-props-mobile-table"] table');
+    expect(table?.className).toMatch(/table-fixed/);
+    expect(table?.className).toMatch(/w-full/);
     expect(container.querySelector('[data-x-export="mlb-strikeout-props"]')?.className).not.toMatch(/overflow-x-auto/);
   }, SLOW_RENDER_TIMEOUT_MS);
 

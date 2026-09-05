@@ -410,6 +410,29 @@ describe("opponent Last 10 games", () => {
   });
 });
 
+describe("Opponent Last 10 vs SP mobile collapsed row -- opposing starter name", () => {
+  it("shows the opposing starter's last name above the team abbreviation when opposingStartingPitcher exists on the history record", () => {
+    render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
+    fireEvent.click(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }));
+    // Source: detail.opponentLastFiveGames[0].opposingStartingPitcher ("Braydon Fisher") -- the same
+    // field already rendered in the desktop "Opposing SP" column, not inferred from any lineup data.
+    expect(screen.getByText("Fisher")).toBeInTheDocument();
+  });
+
+  it("does not fabricate a starter name when opposingStartingPitcher is missing on the history record -- falls back to the team-only cell", () => {
+    const noStarterDetail: StrikeoutPropDetail = {
+      ...detail,
+      opponentLastFiveGames: [
+        { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: null, opposingStarterInningsPitched: "1.1", opposingStarterStrikeouts: 1, teamTotalStrikeouts: 9 },
+      ],
+    };
+    render(<MlbStrikeoutPropRowDetail detail={noStarterDetail} compactLayout />);
+    fireEvent.click(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }));
+    expect(screen.queryByText("Fisher")).not.toBeInTheDocument();
+    expect(screen.getAllByText("TOR").length).toBeGreaterThan(0);
+  });
+});
+
 describe("pitcher Home/Away split K/Inning and K/Game", () => {
   const venueDetail: StrikeoutPropDetail = {
     ...detail,

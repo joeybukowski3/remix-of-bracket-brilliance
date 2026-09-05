@@ -31,7 +31,6 @@ import { useMlbKPlusEv } from "@/hooks/useMlbKPlusEv";
 import { evaluateKPlusEvArtifact } from "@/lib/mlb/kPlusEvSourceAdapter";
 import KPlusEvTable from "@/components/mlb/KPlusEvTable";
 import MlbStrikeoutPropRowDetail, {
-  MlbStrikeoutCompactAccordion,
   MlbStrikeoutPropDetailsStaleBanner,
   MlbStrikeoutPropRowDetailLoading,
   MlbStrikeoutPropRowDetailStale,
@@ -45,6 +44,14 @@ import {
   frozenDenseColumn,
   stickyDenseHeader,
 } from "@/components/ui/dense-table";
+import { MobileSortHeader, PropsTabPanel, PropsTwoTabSwitch, STICKY_MOBILE_HEADER_CELL_CLASS, splitDisplayName } from "@/components/mlb/props-mobile/PropsMobileTablePrimitives";
+
+type KStatsTabKey = "pitcher" | "opponent";
+const K_STATS_TABS = [
+  { key: "pitcher" as KStatsTabKey, label: "Pitcher Stats", tone: "emerald" as const },
+  { key: "opponent" as KStatsTabKey, label: "Opponent Stats", tone: "blue" as const },
+] as const;
+type MobileSortableKey = "pitcher" | "projectedKs" | "absoluteProjectionEdge" | "strikeoutMatchupScore";
 
 const DASH = "—";
 /** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors the Batter View pattern from MlbHrProps.tsx. */
@@ -407,6 +414,8 @@ export default function MlbStrikeoutProps() {
   const [sortKey, setSortKey] = useState<SortKey>("strikeoutMatchupScore");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
+  /** Pitcher Stats / Opponent Stats mobile tab state -- only one row is ever expanded at a time (expandedRowKey), so a single shared tab selection is sufficient and resets naturally when a different row expands. */
+  const [kStatsTab, setKStatsTab] = useState<KStatsTabKey>("pitcher");
   /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. Mirrors MlbHrProps.tsx. */
   const isCompactLayout = useIsCompactLayout();
   /** How many already-sorted/filtered rows are currently rendered -- "Show 50 more" grows this, a materially-changed filter/sort resets it. Never affects ranking order or which rows pass the filters, only how many of them are on screen. */
@@ -493,6 +502,7 @@ export default function MlbStrikeoutProps() {
   const toggleRow = (row: PitcherStrikeoutTeamRow) => {
     const key = keyForStrikeoutPropRow(row, slateDate);
     setExpandedRowKey((current) => (current === key ? null : key));
+    setKStatsTab("pitcher");
   };
 
   function RowDetailPanel({ row }: { row: PitcherStrikeoutTeamRow }) {
@@ -755,114 +765,159 @@ export default function MlbStrikeoutProps() {
                 </p>
               )}
 
-              <section data-x-export="mlb-strikeout-props" className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
+              <section data-x-export="mlb-strikeout-props" className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
                 {isCompactLayout ? (
-                  /* Mobile/tablet (below lg): compact expandable rows, mirroring MlbHrProps.tsx's Batter View. */
-                  <div className="grid gap-2 p-3">
-                    {visibleRows.length ? visibleRows.map((row) => {
-                      const rowKey = keyForStrikeoutPropRow(row, slateDate);
-                      const isExpanded = expandedRowKey === rowKey;
-                      const panelId = compactRowPanelId("strikeout-row-detail", rowKey);
-                      const edgeInfo = getProjectionEdgeInfo(row);
-                      const hasPostedLine = row.kLine != null && row.kLine > 0;
-                      const tintClass = edgeInfo.direction === "over" ? "bg-orange-50/70" : edgeInfo.direction === "under" ? "bg-blue-50/70" : "bg-white";
-                      const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
-                      const venueIndicator = resolveVenueIndicator(row);
-                      const displayMetrics = visibleMetricsByKey.get(rowKey) ?? getDisplayMetrics(row);
-                      return (
-                        <article key={`mobile-${row.rank}-${row.pitcher}`} className={cn("overflow-hidden rounded-xl border border-slate-100 shadow-sm", tintClass)}>
-                          <button
-                            type="button"
-                            onClick={() => toggleRow(row)}
-                            aria-expanded={isExpanded}
-                            aria-controls={panelId}
-                            aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
-                            className="flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
-                              <MlbTeamLogo team={row.team} size={28} />
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
-                                <div className="truncate text-[11px] text-slate-400">
-                                  <span>vs {row.opponent}</span>
-                                  <span className="ml-1">· {formatGameTime(row.gameStartTime)}</span>
-                                </div>
-                              </div>
-                              <span className={cn("shrink-0 rounded-md border px-1.5 py-1 text-[8px] font-black uppercase tracking-wide", venueTileClass(venueIndicator))}>{venueIndicator}</span>
-                              <div className="flex shrink-0 flex-col items-end gap-1">
-                                <span className="whitespace-nowrap text-[10px] font-bold text-slate-600">
-                                  {hasPostedLine ? `${fmt(row.kLine)} K` : DASH}
-                                  <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>
-                                </span>
-                                <PercentileCell
-                                  value={row.strikeoutMatchupScore}
-                                  display={row.strikeoutMatchupScore.toFixed(1)}
-                                  percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
-                                  strong
-                                  bypassSampleGate
-                                />
-                              </div>
-                            </div>
-                            <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
-                              {isExpanded ? "Show less" : "Click to expand"}
-                            </span>
-                            {showKProjectionV2Debug && shadowRow && <KShadowDebugComparison shadowRow={shadowRow} row={row} />}
-                            {showKProjectionV2Debug && !shadowRow && (
-                              <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for this legacy row.</span>
-                            )}
-                          </button>
-                          {isExpanded && (
-                            <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
-                              <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Core / Market</div>
-                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                  <MetricTile label="K Line"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{hasPostedLine ? fmt(row.kLine) : DASH}</span></MetricTile>
-                                  <MetricTile label="Proj K"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{fmt(row.projectedKs)}</span></MetricTile>
-                                  <MetricTile label="Edge">
-                                    <span className={cn(
-                                      "rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
-                                      edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
-                                    )}>
-                                      {formatEdgeLabel(row)}
-                                    </span>
-                                  </MetricTile>
-                                  <MetricTile label="K Score">
-                                    <PercentileCell
-                                      value={row.strikeoutMatchupScore}
-                                      display={row.strikeoutMatchupScore.toFixed(1)}
-                                      percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
-                                      strong
-                                      bypassSampleGate
-                                    />
-                                  </MetricTile>
-                                </div>
-                              </div>
-                              <MlbStrikeoutCompactAccordion id={`${panelId}-pitcher-stats`} title="Pitcher Stats" tone="emerald">
-                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                  <MetricTile label="K Per Game SZN"><ComparativeMetricValue tone={metricTone("pitcherSeasonKPerGame", displayMetrics.pitcherSeasonKPerGame)}>{fmt(displayMetrics.pitcherSeasonKPerGame)}</ComparativeMetricValue></MetricTile>
-                                  <MetricTile label="K Per Game L5"><ComparativeMetricValue tone={metricTone("pitcherLastFiveKPerGame", displayMetrics.pitcherLastFiveKPerGame)}>{fmt(displayMetrics.pitcherLastFiveKPerGame)}</ComparativeMetricValue></MetricTile>
-                                  <MetricTile label="K Per Game @ Site"><ComparativeMetricValue tone={metricTone("pitcherVenueKPerGame", displayMetrics.pitcherVenueKPerGame)}>{fmt(displayMetrics.pitcherVenueKPerGame)}</ComparativeMetricValue></MetricTile>
-                                  <MetricTile label="Avg IP"><ComparativeMetricValue tone={metricTone("projectedIP", row.projectedIP)}>{fmt(row.projectedIP)}</ComparativeMetricValue></MetricTile>
-                                </div>
-                              </MlbStrikeoutCompactAccordion>
-                              <MlbStrikeoutCompactAccordion id={`${panelId}-opposing-team-stats`} title="Opposing Team Stats" tone="blue">
-                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                  <MetricTile label="Szn vs Hand"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></MetricTile>
-                                  <MetricTile label="Opp wRC+ Rank L30 vs Hand"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30VsHand} /></MetricTile>
-                                  <MetricTile label="Opp K/Game @ Site"><ComparativeMetricValue tone={metricTone("opponentVenueKPerGame", displayMetrics.opponentVenueKPerGame)}>{fmt(displayMetrics.opponentVenueKPerGame)}</ComparativeMetricValue></MetricTile>
-                                  <MetricTile label="Opp wRC+ Rank L30 @ Site"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30AtSite} /></MetricTile>
-                                  <MetricTile label="Opp wRC+ Rank L10"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL10} /></MetricTile>
-                                </div>
-                              </MlbStrikeoutCompactAccordion>
-                              <RowDetailPanel row={row} />
-                            </div>
-                          )}
-                        </article>
-                      );
-                    }) : (
-                      <div className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</div>
-                    )}
+                  /* Mobile/tablet (below lg): dense sortable table (Pitcher/Proj K/Line/Diff/K Score), matching the NFL Yardage Props Review mobile table pattern. Tapping a row expands the same detail content inline underneath it. */
+                  <div data-testid="k-props-mobile-table" className="rounded-lg border border-slate-200 p-2">
+                    <table className="w-full table-fixed text-[11px]">
+                      <colgroup>
+                        <col className="w-[36%]" />
+                        <col className="w-[16%]" />
+                        <col className="w-[16%]" />
+                        <col className="w-[16%]" />
+                        <col className="w-[16%]" />
+                      </colgroup>
+                      <thead>
+                        <tr data-testid="k-props-mobile-sticky-header">
+                          <MobileSortHeader<MobileSortableKey> label="Pitcher" sortKey="pitcher" activeKey={sortKey as MobileSortableKey} direction={sortDir} onSort={handleSort} align="left" testIdPrefix="k-props-mobile-sort" sticky />
+                          <MobileSortHeader<MobileSortableKey> label="Proj K" sortKey="projectedKs" activeKey={sortKey as MobileSortableKey} direction={sortDir} onSort={handleSort} testIdPrefix="k-props-mobile-sort" sticky />
+                          <th scope="col" className={cn("px-1.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wide text-slate-500", STICKY_MOBILE_HEADER_CELL_CLASS)}>Line</th>
+                          <MobileSortHeader<MobileSortableKey> label="Diff" sortKey="absoluteProjectionEdge" activeKey={sortKey as MobileSortableKey} direction={sortDir} onSort={handleSort} testIdPrefix="k-props-mobile-sort" sticky />
+                          <MobileSortHeader<MobileSortableKey> label="Match" sortKey="strikeoutMatchupScore" activeKey={sortKey as MobileSortableKey} direction={sortDir} onSort={handleSort} testIdPrefix="k-props-mobile-sort" sticky />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleRows.length ? visibleRows.map((row) => {
+                          const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                          const isExpanded = expandedRowKey === rowKey;
+                          const panelId = compactRowPanelId("strikeout-row-detail", rowKey);
+                          const edgeInfo = getProjectionEdgeInfo(row);
+                          const hasPostedLine = row.kLine != null && row.kLine > 0;
+                          const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
+                          const venueIndicator = resolveVenueIndicator(row);
+                          const displayMetrics = visibleMetricsByKey.get(rowKey) ?? getDisplayMetrics(row);
+                          return (
+                            <Fragment key={`mobile-${row.rank}-${row.pitcher}`}>
+                              <tr
+                                className="cursor-pointer border-b border-slate-100 transition hover:bg-slate-50"
+                                tabIndex={0}
+                                role="button"
+                                aria-expanded={isExpanded}
+                                aria-controls={panelId}
+                                aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
+                                onClick={() => toggleRow(row)}
+                                onKeyDown={(event) => {
+                                  if (event.key !== "Enter" && event.key !== " ") return;
+                                  event.preventDefault();
+                                  toggleRow(row);
+                                }}
+                              >
+                                <td className="overflow-hidden px-1.5 py-2">
+                                  {(() => {
+                                    const { first, last } = splitDisplayName(row.pitcher);
+                                    return (
+                                      <span className="flex min-w-0 items-start gap-1.5">
+                                        <MlbTeamLogo team={row.team} size={20} className="mt-0.5 shrink-0" />
+                                        <span className="min-w-0 leading-tight">
+                                          {first && <span className="block truncate font-semibold text-slate-900">{first}</span>}
+                                          <span className="flex min-w-0 items-baseline gap-1">
+                                            <span className="min-w-0 truncate font-semibold text-slate-900">{last}</span>
+                                            <span className="shrink-0 truncate text-[9px] font-medium text-slate-500">vs {row.opponent}</span>
+                                          </span>
+                                        </span>
+                                      </span>
+                                    );
+                                  })()}
+                                  <span className={cn("mt-0.5 inline-block rounded-md border px-1 py-0 text-[8px] font-black uppercase tracking-wide", venueTileClass(venueIndicator))}>{venueIndicator} · {formatGameTime(row.gameStartTime)}</span>
+                                  {showKProjectionV2Debug && !shadowRow && (
+                                    <span className="mt-0.5 block text-[9px] font-semibold text-amber-800">No unambiguous V2 shadow match for this legacy row.</span>
+                                  )}
+                                </td>
+                                <td className="px-1 py-2 text-center tabular-nums font-bold text-slate-900">{fmt(row.projectedKs)}</td>
+                                <td className="px-1 py-2 text-center tabular-nums text-slate-600">{hasPostedLine ? fmt(row.kLine) : <span className="text-slate-400">{DASH}</span>}</td>
+                                <td
+                                  data-testid="k-props-mobile-diff-cell"
+                                  className={cn(
+                                    "px-1 py-2 text-center tabular-nums font-bold",
+                                    edgeInfo.direction === "over" ? "text-orange-700" : edgeInfo.direction === "under" ? "text-blue-700" : "text-slate-400",
+                                  )}
+                                  title="Projected strikeouts minus sportsbook line -- research context only, not a recommendation"
+                                >
+                                  {formatEdgeLabel(row)}
+                                </td>
+                                <td className="px-1 py-2 text-center">
+                                  <PercentileCell
+                                    value={row.strikeoutMatchupScore}
+                                    display={row.strikeoutMatchupScore.toFixed(1)}
+                                    percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
+                                    strong
+                                    bypassSampleGate
+                                  />
+                                </td>
+                              </tr>
+                              {isExpanded && (
+                                <tr className="border-b border-slate-100">
+                                  <td colSpan={5} className="p-0">
+                                    <div id={panelId} className="space-y-3 border-y-2 border-slate-300 bg-yellow-50/60 p-3 shadow-inner">
+                                      {showKProjectionV2Debug && shadowRow && <KShadowDebugComparison shadowRow={shadowRow} row={row} />}
+                                      {showKProjectionV2Debug && !shadowRow && (
+                                        <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for this legacy row.</span>
+                                      )}
+                                      <div>
+                                        <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Core / Market</div>
+                                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                          <MetricTile label="K Line"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{hasPostedLine ? fmt(row.kLine) : DASH}</span></MetricTile>
+                                          <MetricTile label="Proj K"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{fmt(row.projectedKs)}</span></MetricTile>
+                                          <MetricTile label="Edge">
+                                            <span className={cn(
+                                              "rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
+                                              edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
+                                            )}>
+                                              {formatEdgeLabel(row)}
+                                            </span>
+                                          </MetricTile>
+                                          <MetricTile label="K Score">
+                                            <PercentileCell
+                                              value={row.strikeoutMatchupScore}
+                                              display={row.strikeoutMatchupScore.toFixed(1)}
+                                              percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
+                                              strong
+                                              bypassSampleGate
+                                            />
+                                          </MetricTile>
+                                        </div>
+                                      </div>
+                                      <PropsTwoTabSwitch<KStatsTabKey> tabs={K_STATS_TABS} active={kStatsTab} onChange={setKStatsTab} idPrefix={panelId} />
+                                      <PropsTabPanel id={`${panelId}-panel-pitcher`} labelledBy={`${panelId}-tab-pitcher`} active={kStatsTab === "pitcher"}>
+                                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                          <MetricTile label="K Per Game SZN"><ComparativeMetricValue tone={metricTone("pitcherSeasonKPerGame", displayMetrics.pitcherSeasonKPerGame)}>{fmt(displayMetrics.pitcherSeasonKPerGame)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="K Per Game L5"><ComparativeMetricValue tone={metricTone("pitcherLastFiveKPerGame", displayMetrics.pitcherLastFiveKPerGame)}>{fmt(displayMetrics.pitcherLastFiveKPerGame)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="K Per Game @ Site"><ComparativeMetricValue tone={metricTone("pitcherVenueKPerGame", displayMetrics.pitcherVenueKPerGame)}>{fmt(displayMetrics.pitcherVenueKPerGame)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="Avg IP"><ComparativeMetricValue tone={metricTone("projectedIP", row.projectedIP)}>{fmt(row.projectedIP)}</ComparativeMetricValue></MetricTile>
+                                        </div>
+                                      </PropsTabPanel>
+                                      <PropsTabPanel id={`${panelId}-panel-opponent`} labelledBy={`${panelId}-tab-opponent`} active={kStatsTab === "opponent"}>
+                                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                          <MetricTile label="Szn vs Hand"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="Opp wRC+ Rank L30 vs Hand"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30VsHand} /></MetricTile>
+                                          <MetricTile label="Opp K/Game @ Site"><ComparativeMetricValue tone={metricTone("opponentVenueKPerGame", displayMetrics.opponentVenueKPerGame)}>{fmt(displayMetrics.opponentVenueKPerGame)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="Opp wRC+ Rank L30 @ Site"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30AtSite} /></MetricTile>
+                                          <MetricTile label="Opp wRC+ Rank L10"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL10} /></MetricTile>
+                                        </div>
+                                      </PropsTabPanel>
+                                      {/* Recent Performance / Home-Away Splits / Opponent Last 10 vs SP -- already rendered as its own accordion group by MlbStrikeoutPropRowDetail; kept as-is rather than re-wrapped to avoid duplicating or relabeling existing, working history content. */}
+                                      <RowDetailPanel row={row} />
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
+                          );
+                        }) : (
+                          <tr><td colSpan={5} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
                   /* Desktop (lg and above): grouped, responsive-density table. */

@@ -7,6 +7,7 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { mlbInningsToOuts, outsToMlbInnings } from "@/lib/mlb/baseballInnings";
 import { cn } from "@/lib/utils";
 import { formatRankOrdinal, rankHeatValueClass } from "@/lib/mlb/rankPresentation";
+import { splitDisplayName } from "@/components/mlb/props-mobile/PropsMobileTablePrimitives";
 
 const DASH = "N/A";
 
@@ -119,6 +120,28 @@ function TeamCell({ team }: { team: string | null }) {
     <span className="inline-flex items-center gap-1">
       <MlbTeamLogo team={team} size={14} />
       {team}
+    </span>
+  );
+}
+
+/**
+ * Mobile collapsed-row team cell for "Opponent Last 10 Games vs SP" --
+ * stacks the opposing starter's last name above the team abbreviation so the
+ * matchup is identifiable without expanding the row. `starterName` comes
+ * straight from the history record's own `opposingStartingPitcher` field
+ * (see opponentSource below); when that field is missing, falls back to the
+ * plain team-only cell rather than fabricating a name.
+ */
+function OpponentGameTeamCell({ team, starterName }: { team: string | null; starterName: string | null }) {
+  if (!team) return <span>{DASH}</span>;
+  if (!starterName) return <TeamCell team={team} />;
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      <MlbTeamLogo team={team} size={14} />
+      <span className="min-w-0 leading-tight">
+        <span className="block truncate font-semibold text-slate-700">{splitDisplayName(starterName).last}</span>
+        <span className="block truncate text-[9px] font-medium text-slate-400">{team}</span>
+      </span>
     </span>
   );
 }
@@ -832,7 +855,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const opponentCollapsibleRows: CollapsibleGameRow[] = opponentSource.map((game, index) => ({
     key: `opponent-game-${index}`,
     date: fmtDate(game.date as string | null | undefined),
-    team: <TeamCell team={getString(game, "opponent")} />,
+    team: <OpponentGameTeamCell team={getString(game, "opponent")} starterName={getString(game, "opposingStartingPitcher")} />,
     primaryValue: <StrikeoutsVsCurrentLine strikeouts={getNumber(game, "opposingStarterStrikeouts")} currentKLine={currentKLine} suffix=" K" />,
     details: [
       { label: "Opposing SP", value: fmtText(getString(game, "opposingStartingPitcher")) },
