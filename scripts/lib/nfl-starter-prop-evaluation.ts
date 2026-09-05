@@ -468,3 +468,14 @@ export function summarizeStarterPropEvaluations(
 export function serializeStarterPropEvaluations(rows: readonly StarterPropEvaluationRowV1[]): string {
   return rows.map((row) => canonicalJson(row as unknown as JsonValue)).join("\n") + (rows.length > 0 ? "\n" : "");
 }
+
+/**
+ * Sibling exclusion-diagnostics file, written alongside the gradeable-rows
+ * JSONL by the generator CLI. This is the only persisted record of WHY a
+ * cohort row did not become a gradeable evaluation row -- the props.json
+ * public artifact (WU4) reads this file rather than recomputing exclusions
+ * by re-running buildStarterPropEvaluations against the source archives.
+ */
+export function serializeStarterPropExclusions(exclusions: readonly StarterPropExclusion[]): string {
+  return exclusions.map((row) => canonicalJson(row as unknown as JsonValue)).join("\n") + (exclusions.length > 0 ? "\n" : "");
+}

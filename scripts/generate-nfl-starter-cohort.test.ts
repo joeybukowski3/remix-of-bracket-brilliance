@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { archiveProductionPredictions, finalizePredictionSnapshot, type PredictionSnapshotDraft } from "./lib/nfl-production-prediction-archive";
-import { outputPath } from "./generate-nfl-starter-cohort";
+import { outputPath, missingOutputPath } from "./generate-nfl-starter-cohort";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -61,6 +61,11 @@ describe("generate-nfl-starter-cohort CLI", () => {
     expect(existsSync(path)).toBe(true);
     const firstContent = readFileSync(path, "utf8");
     expect(firstContent).toContain("QB1_BY_ARCHIVED_DEPTH_CHART");
+
+    const missingPath = missingOutputPath(outRoot, 2026, 1);
+    expect(existsSync(missingPath)).toBe(true);
+    // Fixture only archives a passing prediction, so RB/WR/TE slots are unfillable.
+    expect(readFileSync(missingPath, "utf8")).toContain("no_archived_projection_for_position");
 
     run();
     const secondContent = readFileSync(path, "utf8");

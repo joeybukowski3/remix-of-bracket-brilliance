@@ -26,7 +26,7 @@
  * (`projected_carries`/`projected_targets`) already present on `rushing`/
  * `receiving` prediction rows, filtered to the relevant `position`.
  */
-import type { PredictionSnapshotV1 } from "./nfl-production-prediction-archive";
+import type { JsonValue, PredictionSnapshotV1 } from "./nfl-production-prediction-archive";
 import { canonicalJson, contentHash } from "./nfl-production-prediction-archive";
 
 export const STARTER_COHORT_SCHEMA_VERSION = "nfl-starter-cohort-v1" as const;
@@ -360,4 +360,15 @@ export function buildStarterCohort(input: {
 
 export function serializeStarterCohort(records: readonly StarterCohortRecordV1[]): string {
   return records.map((record) => canonicalJson(record)).join("\n") + (records.length > 0 ? "\n" : "");
+}
+
+/**
+ * Sibling missing-slot diagnostics file, written alongside the cohort JSONL
+ * by the generator CLI. This is the only persisted record of which starter
+ * slots could not be filled -- the WU4 health.json artifact reads this file
+ * rather than recomputing missing slots by re-running buildStarterCohort
+ * against the source archives.
+ */
+export function serializeMissingStarterSlots(missing: readonly MissingStarterSlot[]): string {
+  return missing.map((row) => canonicalJson(row as unknown as JsonValue)).join("\n") + (missing.length > 0 ? "\n" : "");
 }

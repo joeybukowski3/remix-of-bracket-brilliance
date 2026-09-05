@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { archiveProductionPredictions, finalizePredictionSnapshot, type PredictionSnapshotDraft } from "./lib/nfl-production-prediction-archive";
 import { appendOutcomeDrafts, type OutcomeDraft } from "./lib/nfl-prediction-outcome-resolver";
 import { serializeStarterCohort, type StarterCohortRecordV1 } from "./lib/nfl-starter-cohort";
-import { outputPath, loadStarterCohort } from "./generate-nfl-starter-prop-evaluations";
+import { outputPath, exclusionsOutputPath, loadStarterCohort } from "./generate-nfl-starter-prop-evaluations";
 
 const tempDirs: string[] = [];
 afterEach(() => {
@@ -116,6 +116,10 @@ describe("generate-nfl-starter-prop-evaluations CLI", () => {
     expect(firstContent).toContain("passing_yards");
     expect(firstContent).toContain("WIN");
 
+    const exclusionsPath = exclusionsOutputPath(outRoot, 2026, 1);
+    expect(existsSync(exclusionsPath)).toBe(true);
+    expect(readFileSync(exclusionsPath, "utf8")).toBe("");
+
     run();
     const secondContent = readFileSync(path, "utf8");
     expect(secondContent).toBe(firstContent);
@@ -147,5 +151,10 @@ describe("generate-nfl-starter-prop-evaluations CLI", () => {
     const path = outputPath(outRoot, 2026, 1);
     expect(existsSync(path)).toBe(true);
     expect(readFileSync(path, "utf8")).toBe("");
+
+    const exclusionsPath = exclusionsOutputPath(outRoot, 2026, 1);
+    expect(existsSync(exclusionsPath)).toBe(true);
+    const exclusionsContent = readFileSync(exclusionsPath, "utf8");
+    expect(exclusionsContent).toContain("ACTUAL_UNRESOLVED");
   }, 30000);
 });

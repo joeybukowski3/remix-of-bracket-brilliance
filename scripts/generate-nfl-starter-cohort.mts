@@ -27,7 +27,13 @@ import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "no
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadArchivedPredictions } from "./resolve-nfl-prediction-outcomes";
-import { buildStarterCohort, serializeStarterCohort, type MissingStarterSlot, type StarterCohortRecordV1 } from "./lib/nfl-starter-cohort";
+import {
+  buildStarterCohort,
+  serializeMissingStarterSlots,
+  serializeStarterCohort,
+  type MissingStarterSlot,
+  type StarterCohortRecordV1,
+} from "./lib/nfl-starter-cohort";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ARCHIVE_ROOT = join(ROOT, "data", "nfl", "predictions");
@@ -53,6 +59,10 @@ function parseArgs(argv: string[]): Args {
 
 export function outputPath(outRoot: string, season: number, week: number): string {
   return join(outRoot, String(season), `${String(week).padStart(2, "0")}.jsonl`);
+}
+
+export function missingOutputPath(outRoot: string, season: number, week: number): string {
+  return join(outRoot, String(season), `${String(week).padStart(2, "0")}.missing.jsonl`);
 }
 
 function atomicWrite(path: string, text: string): void {
@@ -112,12 +122,14 @@ function main() {
   }
 
   const outPath = outputPath(args.outRoot, args.season, args.week);
+  const missingPath = missingOutputPath(args.outRoot, args.season, args.week);
   if (args.dryRun) {
-    console.log(`[nfl:starter-cohort] dry-run — not writing ${outPath}`);
+    console.log(`[nfl:starter-cohort] dry-run — not writing ${outPath} or ${missingPath}`);
     return;
   }
   atomicWrite(outPath, serializeStarterCohort(records));
-  console.log(`[nfl:starter-cohort] wrote ${outPath}`);
+  atomicWrite(missingPath, serializeMissingStarterSlots(missing));
+  console.log(`[nfl:starter-cohort] wrote ${outPath} and ${missingPath}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

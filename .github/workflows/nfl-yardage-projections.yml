@@ -247,6 +247,20 @@ jobs:
       - name: Validate generated projection artifact
         run: npm run nfl:validate-current-week-projections -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
+      # WU4 -- freeze this week's pregame starter cohort from the
+      # passing/rushing/receiving predictions THIS run just archived above
+      # (generate-nfl-starter-cohort.mts reads only what's already on disk,
+      # so it only ever sees this run's own freshly-written week). No
+      # continue-on-error, same fail-closed convention as every load-bearing
+      # step in this job: buildStarterCohort's underlying archive reader
+      # throws if no predictions exist yet for this season/week, which stops
+      # the job here rather than writing/committing an empty or partial
+      # cohort. Writes only data/nfl/starter-cohorts/<season>/<week>.jsonl
+      # (+ its sibling .missing.jsonl diagnostics) -- it never touches a
+      # prior week's frozen cohort file.
+      - name: Generate NFL starter cohort
+        run: npm run nfl:starter-cohort -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
       # Defense-in-depth only, NOT a real no-op/commit-skip mechanism: both
       # matchup-market.json and yardage-projections.json write a fresh
       # provenance/generatedAt timestamp on every successful run regardless
@@ -273,7 +287,8 @@ jobs:
             'public/data/nfl/team-totals.json' \
             ':(glob)data/nfl/predictions/${{ steps.current-week.outputs.season }}/[0-9][0-9]/nfl-*.jsonl' \
             ':(glob)data/nfl/predictions/manifests/sources/[0-9a-f]*.json' \
-            ':(glob)data/nfl/predictions/manifests/fitted-models/[0-9a-f]*.json')" ]; then
+            ':(glob)data/nfl/predictions/manifests/fitted-models/[0-9a-f]*.json' \
+            ':(glob)data/nfl/starter-cohorts/${{ steps.current-week.outputs.season }}/[0-9][0-9]*.jsonl')" ]; then
             echo "No NFL yardage-projection input/output changes (unexpected on a successful run -- see the provenance-only-commit note above)."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -351,6 +366,15 @@ jobs:
             node scripts/lib/nfl-prediction-archive-allowlist.mjs predictions "$archive_season" "$archive_path"
             git add -- "$archive_path"
           done < <(git status --porcelain=v1 -z --untracked-files=all -- data/nfl/predictions)
+
+          # WU4: this run's frozen starter-cohort partition (+ sibling
+          # missing-slot diagnostics), validated against the shared
+          # allowlist module the same way as every other archive path above.
+          while IFS= read -r -d '' entry; do
+            cohort_path="${entry:3}"
+            node scripts/lib/nfl-prediction-archive-allowlist.mjs starter-cohorts "$archive_season" "$cohort_path"
+            git add -- "$cohort_path"
+          done < <(git status --porcelain=v1 -z --untracked-files=all -- data/nfl/starter-cohorts)
 
           if git diff --cached --quiet; then
             echo "No staged NFL yardage-projection changes."

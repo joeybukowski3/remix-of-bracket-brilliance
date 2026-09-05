@@ -23,6 +23,7 @@ import type { StarterCohortRecordV1 } from "./lib/nfl-starter-cohort";
 import {
   buildStarterPropEvaluations,
   serializeStarterPropEvaluations,
+  serializeStarterPropExclusions,
   summarizeStarterPropEvaluations,
   type StarterPropExclusion,
 } from "./lib/nfl-starter-prop-evaluation";
@@ -68,6 +69,10 @@ function parseArgs(argv: string[]): Args {
 
 export function outputPath(outRoot: string, season: number, week: number): string {
   return join(outRoot, String(season), `${String(week).padStart(2, "0")}.jsonl`);
+}
+
+export function exclusionsOutputPath(outRoot: string, season: number, week: number): string {
+  return join(outRoot, String(season), `${String(week).padStart(2, "0")}.exclusions.jsonl`);
 }
 
 function cohortPath(cohortRoot: string, season: number, week: number): string {
@@ -123,12 +128,14 @@ function main() {
   }
 
   const outPath = outputPath(args.outRoot, args.season, args.week);
+  const exclusionsPath = exclusionsOutputPath(args.outRoot, args.season, args.week);
   if (args.dryRun) {
-    console.log(`[nfl:starter-prop-evaluations] dry-run — not writing ${outPath}`);
+    console.log(`[nfl:starter-prop-evaluations] dry-run — not writing ${outPath} or ${exclusionsPath}`);
     return;
   }
   atomicWrite(outPath, serializeStarterPropEvaluations(rows));
-  console.log(`[nfl:starter-prop-evaluations] wrote ${outPath}`);
+  atomicWrite(exclusionsPath, serializeStarterPropExclusions(exclusions));
+  console.log(`[nfl:starter-prop-evaluations] wrote ${outPath} and ${exclusionsPath}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

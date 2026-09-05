@@ -120,11 +120,80 @@ jobs:
         shell: bash
         run: npm run materialize:nfl-forward-evaluation -- --season=2026
 
+      # WU4 -- regrade every week that already has a frozen pregame starter
+      # cohort (data/nfl/starter-cohorts/2026/*.jsonl), not just the
+      # currently-resolving week. This is deliberate: the day the season's
+      # last game of a week goes final is the SAME day that week stops being
+      # "current" for other workflows' current-week resolution, so a
+      # current-week-only loop here would flip away from a week the instant
+      # it most needs (re)grading. The generator is idempotent and safe to
+      # rerun after a stat correction (see generate-nfl-starter-prop-
+      # evaluations.mts's docblock), so regrading every existing week on
+      # every run is cheap and simply reflects the latest outcome archive.
+      # continue-on-error, same rationale as WU3/WU4G above -- a bug here
+      # must never block the far more load-bearing commit below it.
+      - name: Materialize WU4 starter-prop evaluations (every frozen cohort week)
+        id: starter-prop-evaluate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for cohort_file in data/nfl/starter-cohorts/2026/[0-9][0-9].jsonl; do
+            week="$(basename "$cohort_file" .jsonl)"
+            week="$((10#$week))"
+            echo "[nfl:starter-prop-evaluations] season=2026 week=${week}"
+            npm run nfl:starter-prop-evaluations -- --season=2026 --week="${week}"
+          done
+
+      # WU4 -- canonical totals performance artifact. Reads only already-
+      # canonical WU1 predictions + the outcome resolver + betting-lines
+      # history; writes no model output and grades nothing itself (see
+      # scripts/generate-nfl-totals-performance.ts's docblock). Safe when
+      # gradedGames=0 (a valid, correct pregame output, not an error state).
+      # continue-on-error, same rationale as every derived-artifact step
+      # above -- never blocks the far more load-bearing commit below it.
+      - name: Generate NFL totals performance artifact
+        id: totals-performance
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:totals-performance
+
+      # WU4 -- canonical starter-props performance artifact. Reads only the
+      # starter-cohort + starter-prop-evaluation archives written above; no
+      # grading logic of its own (see scripts/generate-nfl-props-
+      # performance.ts's docblock).
+      - name: Generate NFL props performance artifact
+        id: props-performance
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:props-performance
+
+      # WU4 -- thin cross-family overview rollup. Reads only totals.json,
+      # props.json, and the already-canonical WU3 spread evaluation summary;
+      # runs after both of the family artifacts above so it always reflects
+      # this run's own regeneration.
+      - name: Generate NFL performance overview artifact
+        id: performance-overview
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:performance-overview
+
+      # WU4 -- operational health artifact. Reads only repo artifacts already
+      # committed by this pipeline (no live GitHub API calls); runs last so
+      # its generated-at-by-artifact map reflects every artifact this same
+      # run just wrote.
+      - name: Generate NFL performance health artifact
+        id: performance-health
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:performance-health
+
       - name: Detect meaningful data changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations')" ]; then
+          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations' 'data/nfl/starter-prop-evaluations' 'public/data/nfl/performance')" ]; then
             echo "No NFL source or prediction-outcome changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -137,7 +206,7 @@ jobs:
         shell: bash
         run: |
           node -e "
-            const { readFileSync } = require('fs');
+            const { existsSync, readFileSync } = require('fs');
             for (let season = 2022; season <= 2026; season += 1) {
               for (const name of ['games.json', 'results.json']) {
                 const file = \`public/data/nfl/\${season}/\${name}\`;
@@ -145,6 +214,22 @@ jobs:
                 if (!parsed._meta || parsed._meta.schemaVersion !== 'nfl-v0.1') {
                   throw new Error(\`\${file} is missing a valid _meta block\`);
                 }
+              }
+            }
+            // WU4: only validate a performance artifact when it actually exists --
+            // each generation step above runs continue-on-error, so a bug in one
+            // must never fail this whole job over an artifact that was never written.
+            const expectedSchemaByFile = {
+              'public/data/nfl/performance/totals.json': 'nfl-totals-performance-v1',
+              'public/data/nfl/performance/props.json': 'nfl-props-performance-v1',
+              'public/data/nfl/performance/overview.json': 'nfl-performance-overview-v1',
+              'public/data/nfl/performance/health.json': 'nfl-performance-health-v1',
+            };
+            for (const [file, expectedSchema] of Object.entries(expectedSchemaByFile)) {
+              if (!existsSync(file)) continue;
+              const parsed = JSON.parse(readFileSync(file, 'utf8'));
+              if (parsed.schemaVersion !== expectedSchema) {
+                throw new Error(\`\${file} has unexpected schemaVersion \${parsed.schemaVersion}\`);
               }
             }
             console.log('All generated NFL JSON files are valid.');
@@ -200,6 +285,38 @@ jobs:
           else
             echo "::warning::WU3 materialization failed or was skipped; not staging data/nfl/prediction-evaluations this run."
           fi
+
+          # WU4: starter-prop-evaluation partitions (+ sibling exclusion
+          # diagnostics), staged only when this run's regrade loop actually
+          # ran successfully -- never stage a possibly-partial write from a
+          # failed loop.
+          if [ "${{ steps.starter-prop-evaluate.outcome }}" = "success" ]; then
+            while IFS= read -r status_line; do
+              starter_prop_path="${status_line:3}"
+              node scripts/lib/nfl-prediction-archive-allowlist.mjs starter-prop-evaluations 2026 "$starter_prop_path"
+              git add -- "$starter_prop_path"
+            done < <(git status --porcelain --untracked-files=all -- data/nfl/starter-prop-evaluations)
+          else
+            echo "::warning::WU4 starter-prop-evaluation regrade failed or was skipped; not staging data/nfl/starter-prop-evaluations this run."
+          fi
+
+          # WU4: public performance artifacts, staged only when their own
+          # generation step actually succeeded this run -- each is
+          # independent (a props.json bug must never block staging an
+          # already-good totals.json, and vice versa).
+          declare -A performance_steps=(
+            [public/data/nfl/performance/totals.json]='${{ steps.totals-performance.outcome }}'
+            [public/data/nfl/performance/props.json]='${{ steps.props-performance.outcome }}'
+            [public/data/nfl/performance/overview.json]='${{ steps.performance-overview.outcome }}'
+            [public/data/nfl/performance/health.json]='${{ steps.performance-health.outcome }}'
+          )
+          for performance_file in "${!performance_steps[@]}"; do
+            if [ "${performance_steps[$performance_file]}" = "success" ] && [ -f "$performance_file" ]; then
+              git add -- "$performance_file"
+            else
+              echo "::warning::Skipping staging of ${performance_file} (generation step outcome=${performance_steps[$performance_file]})."
+            fi
+          done
 
           if git diff --cached --quiet; then
             echo "No staged NFL source or prediction-outcome changes."
