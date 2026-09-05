@@ -60,7 +60,7 @@ const PAGE_SIZE = 50;
 type SortKey = "rank" | "pitcher" | "team" | "opponent" | "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "projectedKs" | "absoluteProjectionEdge" | "gameStartTime";
 type SortDirection = "asc" | "desc";
 type ComparativeMetricTone = "positive" | "negative" | "neutral";
-type ComparativeMetricKey = "pitcherSeasonKPerGame" | "pitcherLastFiveKPerGame" | "pitcherVenueKPerGame" | "projectedIP" | "seasonVsHand" | "opponentVenueKPerGame";
+type ComparativeMetricKey = "pitcherSeasonKPerGame" | "pitcherKPerInningLastFive" | "pitcherVenueKPerGame" | "projectedIP" | "seasonVsHand" | "opponentKRateVsHandL30" | "opponentKRateAtSiteSzn";
 
 const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"];
 
@@ -113,6 +113,12 @@ function getStickyRowTintClass(row: PitcherStrikeoutTeamRow, index: number) {
 function fmt(value: number | null | undefined, digits = 1) {
   if (value == null || !Number.isFinite(value)) return DASH;
   return value.toFixed(digits);
+}
+
+/** Formats a 0-1 fraction (e.g. a raw strikeout rate) as a percentage string; never fabricates a value when the source rate is missing. */
+function fmtPercent(value: number | null | undefined, digits = 1) {
+  if (value == null || !Number.isFinite(value)) return DASH;
+  return `${(value * 100).toFixed(digits)}%`;
 }
 
 function perGame(total: number | null | undefined, games: number | null | undefined) {
@@ -486,15 +492,15 @@ export default function MlbStrikeoutProps() {
     return {
       pitcherSeasonKPerGame: perGame(seasonStrikeouts, seasonGames),
       seasonVsHand,
-      pitcherLastFiveKPerGame: detail?.pitcherLastFiveSummary?.averageStrikeouts ?? null,
+      // Total strikeouts / total innings across the pitcher's last 5 appearances -- never an average of each game's own K/IP rate. Sourced directly from the canonical pitcherLastFiveSummary.strikeoutsPerInning (see mlb-strikeout-prop-details-core.mjs's perInningFromEligibleRows), which already sums numerators/denominators across only the starts with recorded outs before dividing.
+      pitcherKPerInningLastFive: detail?.pitcherLastFiveSummary?.strikeoutsPerInning ?? null,
       pitcherVenueKPerGame: perGame(pitcherVenueSeason?.strikeouts, pitcherVenueSeason?.gamesUsed),
-      opponentVenueKPerGame: opponentSiteContext?.kPerNine ?? null,
-      opponentWrcPlusRankL30VsHand: opponentReference?.opponentWrcPlusRankL30VsHand ?? null,
-      opponentWrcPlusRankL30AtSite: opponentSite === "home"
-        ? opponentReference?.opponentWrcPlusRankL30Home ?? null
-        : opponentSite === "away"
-          ? opponentReference?.opponentWrcPlusRankL30Away ?? null
-          : null,
+      // Opposing team's strikeout rate (fraction, e.g. 0.24) over the last 30 days specifically vs the pitcher's handedness -- the raw rate behind opponentKRateRankL30VsHand's rank, not itself a rank.
+      opponentKRateVsHandL30: opponentReference?.opponentKRateL30VsHand ?? null,
+      // Opposing team's season strikeout rate (fraction) for today's relevant home/away site split.
+      opponentKRateAtSiteSzn: opponentSiteContext?.kRate ?? null,
+      // Opposing team's overall wRC+ rank over the last 30 days -- explicitly NOT the home/away site split.
+      opponentWrcPlusRankL30: opponentReference?.opponentWrcPlusRankL30 ?? null,
       opponentWrcPlusRankL10: opponentReference?.opponentWrcPlusRankL10 ?? null,
     };
   };
@@ -563,11 +569,12 @@ export default function MlbStrikeoutProps() {
   const visibleMetricsByKey = new Map(visibleMetricRows.map(({ key, metrics }) => [key, metrics]));
   const comparativeMetricLookups: Record<ComparativeMetricKey, Map<number, number>> = {
     pitcherSeasonKPerGame: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.pitcherSeasonKPerGame)),
-    pitcherLastFiveKPerGame: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.pitcherLastFiveKPerGame)),
+    pitcherKPerInningLastFive: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.pitcherKPerInningLastFive)),
     pitcherVenueKPerGame: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.pitcherVenueKPerGame)),
     projectedIP: buildPercentileLookup(visibleMetricRows.map(({ row }) => row.projectedIP)),
     seasonVsHand: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.seasonVsHand)),
-    opponentVenueKPerGame: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.opponentVenueKPerGame)),
+    opponentKRateVsHandL30: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.opponentKRateVsHandL30)),
+    opponentKRateAtSiteSzn: buildPercentileLookup(visibleMetricRows.map(({ metrics }) => metrics.opponentKRateAtSiteSzn)),
   };
   const metricTone = (key: ComparativeMetricKey, value: number | null | undefined) => resolveComparativeMetricTone(
     value,
@@ -891,17 +898,17 @@ export default function MlbStrikeoutProps() {
                                       <PropsTabPanel id={`${panelId}-panel-pitcher`} labelledBy={`${panelId}-tab-pitcher`} active={kStatsTab === "pitcher"}>
                                         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                           <MetricTile label="K Per Game SZN"><ComparativeMetricValue tone={metricTone("pitcherSeasonKPerGame", displayMetrics.pitcherSeasonKPerGame)}>{fmt(displayMetrics.pitcherSeasonKPerGame)}</ComparativeMetricValue></MetricTile>
-                                          <MetricTile label="K Per Game L5"><ComparativeMetricValue tone={metricTone("pitcherLastFiveKPerGame", displayMetrics.pitcherLastFiveKPerGame)}>{fmt(displayMetrics.pitcherLastFiveKPerGame)}</ComparativeMetricValue></MetricTile>
                                           <MetricTile label="K Per Game @ Site"><ComparativeMetricValue tone={metricTone("pitcherVenueKPerGame", displayMetrics.pitcherVenueKPerGame)}>{fmt(displayMetrics.pitcherVenueKPerGame)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="K/Inning Last 5"><ComparativeMetricValue tone={metricTone("pitcherKPerInningLastFive", displayMetrics.pitcherKPerInningLastFive)}>{fmt(displayMetrics.pitcherKPerInningLastFive, 2)}</ComparativeMetricValue></MetricTile>
                                           <MetricTile label="Avg IP"><ComparativeMetricValue tone={metricTone("projectedIP", row.projectedIP)}>{fmt(row.projectedIP)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="Szn Vs Hand Rate"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></MetricTile>
                                         </div>
                                       </PropsTabPanel>
                                       <PropsTabPanel id={`${panelId}-panel-opponent`} labelledBy={`${panelId}-tab-opponent`} active={kStatsTab === "opponent"}>
                                         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                          <MetricTile label="Szn vs Hand"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></MetricTile>
-                                          <MetricTile label="Opp wRC+ Rank L30 vs Hand"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30VsHand} /></MetricTile>
-                                          <MetricTile label="Opp K/Game @ Site"><ComparativeMetricValue tone={metricTone("opponentVenueKPerGame", displayMetrics.opponentVenueKPerGame)}>{fmt(displayMetrics.opponentVenueKPerGame)}</ComparativeMetricValue></MetricTile>
-                                          <MetricTile label="Opp wRC+ Rank L30 @ Site"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30AtSite} /></MetricTile>
+                                          <MetricTile label="K% vs Hand L30"><ComparativeMetricValue tone={metricTone("opponentKRateVsHandL30", displayMetrics.opponentKRateVsHandL30)}>{fmtPercent(displayMetrics.opponentKRateVsHandL30)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="Opp K% at Site Szn"><ComparativeMetricValue tone={metricTone("opponentKRateAtSiteSzn", displayMetrics.opponentKRateAtSiteSzn)}>{fmtPercent(displayMetrics.opponentKRateAtSiteSzn)}</ComparativeMetricValue></MetricTile>
+                                          <MetricTile label="Opp wRC+ Rank L30"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30} /></MetricTile>
                                           <MetricTile label="Opp wRC+ Rank L10"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL10} /></MetricTile>
                                         </div>
                                       </PropsTabPanel>
@@ -927,14 +934,14 @@ export default function MlbStrikeoutProps() {
                       <col className="w-8" /><col className="w-[210px]" /><col className="w-[68px]" />
                       <col className="w-[84px]" /><col className="w-[56px]" /><col className="w-[56px]" />
                       <col className="w-[64px]" />
-                      {Array.from({ length: 4 }, (_, index) => <col key={`pitcher-stat-col-${index}`} className="w-[68px]" />)}
-                      {Array.from({ length: 5 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[72px]" />)}
+                      {Array.from({ length: 5 }, (_, index) => <col key={`pitcher-stat-col-${index}`} className="w-[68px]" />)}
+                      {Array.from({ length: 4 }, (_, index) => <col key={`opponent-stat-col-${index}`} className="w-[76px]" />)}
                     </colgroup>
                     <thead className={stickyDenseHeader()}>
                     <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
                       <th colSpan={7} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
-                      <th colSpan={4} data-table-group="pitcher-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
-                      <th colSpan={5} data-table-group="opposing-team-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
+                      <th colSpan={5} data-table-group="pitcher-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
+                      <th colSpan={4} data-table-group="opposing-team-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
                     </tr>
                     <tr className="text-[9px] uppercase tracking-wide text-slate-500">
                       <th className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-50", className: "w-8 border-b border-r border-slate-200 px-1 py-2 text-center align-middle font-black text-slate-500" })}>
@@ -945,8 +952,8 @@ export default function MlbStrikeoutProps() {
                       </th>
                       <SortTh k="gameStartTime" label="Game Time" />
                       <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th><SortTh k="projectedKs" label="Proj K" /><SortTh k="absoluteProjectionEdge" label="Edge" /><SortTh k="strikeoutMatchupScore" label="K Score" />
-                      {["K Per Game SZN", "K Per Game L5", "K Per Game @ Site", "Avg IP"].map((label, index) => <th key={label} data-table-group={index === 0 ? "pitcher-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
-                      {["Szn vs Hand", "Opp wRC+ Rank L30 vs Hand", "Opp K/Game @ Site", "Opp wRC+ Rank L30 @ Site", "Opp wRC+ Rank L10"].map((label, index) => <th key={label} data-table-group={index === 0 ? "opposing-team-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
+                      {["K Per Game SZN", "K Per Game @ Site", "K/Inning Last 5", "Avg IP", "Szn Vs Hand Rate"].map((label, index) => <th key={label} data-table-group={index === 0 ? "pitcher-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
+                      {["K% vs Hand L30", "Opp K% at Site Szn", "Opp wRC+ Rank L30", "Opp wRC+ Rank L10"].map((label, index) => <th key={label} data-table-group={index === 0 ? "opposing-team-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
                     </tr></thead>
                     <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
@@ -1009,13 +1016,13 @@ export default function MlbStrikeoutProps() {
                         />
                       </td>
                       <td data-table-group="pitcher-stats-start" className="border-b border-l-2 border-slate-400 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("pitcherSeasonKPerGame", displayMetrics.pitcherSeasonKPerGame)}>{fmt(displayMetrics.pitcherSeasonKPerGame)}</ComparativeMetricValue></td>
-                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("pitcherLastFiveKPerGame", displayMetrics.pitcherLastFiveKPerGame)}>{fmt(displayMetrics.pitcherLastFiveKPerGame)}</ComparativeMetricValue></td>
                       <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("pitcherVenueKPerGame", displayMetrics.pitcherVenueKPerGame)}>{fmt(displayMetrics.pitcherVenueKPerGame)}</ComparativeMetricValue></td>
+                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("pitcherKPerInningLastFive", displayMetrics.pitcherKPerInningLastFive)}>{fmt(displayMetrics.pitcherKPerInningLastFive, 2)}</ComparativeMetricValue></td>
                       <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("projectedIP", row.projectedIP)}>{fmt(row.projectedIP)}</ComparativeMetricValue></td>
-                      <td data-table-group="opposing-team-stats-start" className="border-b border-l-2 border-slate-400 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></td>
-                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30VsHand} /></td>
-                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("opponentVenueKPerGame", displayMetrics.opponentVenueKPerGame)}>{fmt(displayMetrics.opponentVenueKPerGame)}</ComparativeMetricValue></td>
-                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30AtSite} /></td>
+                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("seasonVsHand", displayMetrics.seasonVsHand)}>{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</ComparativeMetricValue></td>
+                      <td data-table-group="opposing-team-stats-start" className="border-b border-l-2 border-slate-400 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("opponentKRateVsHandL30", displayMetrics.opponentKRateVsHandL30)}>{fmtPercent(displayMetrics.opponentKRateVsHandL30)}</ComparativeMetricValue></td>
+                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><ComparativeMetricValue tone={metricTone("opponentKRateAtSiteSzn", displayMetrics.opponentKRateAtSiteSzn)}>{fmtPercent(displayMetrics.opponentKRateAtSiteSzn)}</ComparativeMetricValue></td>
+                      <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30} /></td>
                       <td className="border-b border-slate-100 px-1 py-2 text-center align-middle"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL10} /></td>
                       </tr>
                       {showKProjectionV2Debug && (
@@ -1118,18 +1125,18 @@ export default function MlbStrikeoutProps() {
                                   <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Pitcher Stats</div>
                                   <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                     <MetricTile label="K Per Game SZN"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherSeasonKPerGame)}</span></MetricTile>
-                                    <MetricTile label="K Per Game L5"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherLastFiveKPerGame)}</span></MetricTile>
                                     <MetricTile label="K Per Game @ Site"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherVenueKPerGame)}</span></MetricTile>
+                                    <MetricTile label="K/Inning Last 5"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.pitcherKPerInningLastFive, 2)}</span></MetricTile>
                                     <MetricTile label="Avg IP"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedIP)}</span></MetricTile>
+                                    <MetricTile label="Szn Vs Hand Rate"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</span></MetricTile>
                                   </div>
                                 </div>
                                 <div>
                                   <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Opposing Team Stats</div>
                                   <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                    <MetricTile label="Szn vs Hand"><span className="text-[11px] font-semibold text-slate-700">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</span></MetricTile>
-                                    <MetricTile label="Opp wRC+ Rank L30 vs Hand"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30VsHand} /></MetricTile>
-                                    <MetricTile label="Opp K/Game @ Site"><span className="text-[11px] font-semibold text-slate-700">{fmt(displayMetrics.opponentVenueKPerGame)}</span></MetricTile>
-                                    <MetricTile label="Opp wRC+ Rank L30 @ Site"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30AtSite} /></MetricTile>
+                                    <MetricTile label="K% vs Hand L30"><span className="text-[11px] font-semibold text-slate-700">{fmtPercent(displayMetrics.opponentKRateVsHandL30)}</span></MetricTile>
+                                    <MetricTile label="Opp K% at Site Szn"><span className="text-[11px] font-semibold text-slate-700">{fmtPercent(displayMetrics.opponentKRateAtSiteSzn)}</span></MetricTile>
+                                    <MetricTile label="Opp wRC+ Rank L30"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30} /></MetricTile>
                                     <MetricTile label="Opp wRC+ Rank L10"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL10} /></MetricTile>
                                   </div>
                                 </div>
@@ -1149,14 +1156,14 @@ export default function MlbStrikeoutProps() {
                     <table className="w-full min-w-[1180px] table-fixed border-separate border-spacing-0 text-xs 2xl:min-w-full">
                       <colgroup>
                         <col className="w-8" /><col className="w-[220px]" /><col className="w-[130px]" /><col className="w-[72px]" /><col className="w-[64px]" />
-                        {Array.from({ length: 4 }, (_, index) => <col key={`low-pitcher-stat-col-${index}`} className="w-[68px]" />)}
-                        {Array.from({ length: 5 }, (_, index) => <col key={`low-opponent-stat-col-${index}`} className="w-[78px]" />)}
+                        {Array.from({ length: 5 }, (_, index) => <col key={`low-pitcher-stat-col-${index}`} className="w-[68px]" />)}
+                        {Array.from({ length: 4 }, (_, index) => <col key={`low-opponent-stat-col-${index}`} className="w-[78px]" />)}
                       </colgroup>
                       <thead className={stickyDenseHeader()}>
                       <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
                         <th colSpan={5} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
-                        <th colSpan={4} className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
-                        <th colSpan={5} className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
+                        <th colSpan={5} className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
+                        <th colSpan={4} className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
                       </tr>
                       <tr className="text-[9px] uppercase tracking-wide text-slate-500">
                         <th className="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle text-[10px] font-black uppercase tracking-widest text-slate-500">#</th>
@@ -1164,8 +1171,8 @@ export default function MlbStrikeoutProps() {
                         <th className="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-2 py-2 text-left align-middle text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
                         <th className="whitespace-nowrap border-b border-slate-200 bg-slate-50 px-2 py-2 text-center align-middle text-[10px] font-black uppercase tracking-widest text-slate-500">Game Time</th>
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-center align-middle text-[10px] font-black uppercase tracking-widest text-slate-500">K Score</th>
-                        {["K Per Game SZN", "K Per Game L5", "K Per Game @ Site", "Avg IP"].map((label, index) => <th key={label} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
-                        {["Szn vs Hand", "Opp wRC+ Rank L30 vs Hand", "Opp K/Game @ Site", "Opp wRC+ Rank L30 @ Site", "Opp wRC+ Rank L10"].map((label, index) => <th key={label} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
+                        {["K Per Game SZN", "K Per Game @ Site", "K/Inning Last 5", "Avg IP", "Szn Vs Hand Rate"].map((label, index) => <th key={label} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
+                        {["K% vs Hand L30", "Opp K% at Site Szn", "Opp wRC+ Rank L30", "Opp wRC+ Rank L10"].map((label, index) => <th key={label} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
                       </tr></thead>
                       <tbody>{lowConfidenceRows.map((row, index) => {
                         const rowKey = keyForStrikeoutPropRow(row, slateDate);
@@ -1205,13 +1212,13 @@ export default function MlbStrikeoutProps() {
                         <td className="whitespace-nowrap border-b border-slate-100 px-2 py-2 text-center align-middle tabular-nums">{formatGameTime(row.gameStartTime)}</td>
                         <td className="border-b border-slate-100 px-2 py-2 text-center align-middle"><StatScorePill value={row.strikeoutMatchupScore} /></td>
                         <td className="border-b border-l-2 border-slate-400 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmt(displayMetrics.pitcherSeasonKPerGame)}</td>
-                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmt(displayMetrics.pitcherLastFiveKPerGame)}</td>
                         <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmt(displayMetrics.pitcherVenueKPerGame)}</td>
+                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmt(displayMetrics.pitcherKPerInningLastFive, 2)}</td>
                         <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmt(row.projectedIP)}</td>
-                        <td className="border-b border-l-2 border-slate-400 px-1 py-2 text-center align-middle font-semibold tabular-nums">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</td>
-                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30VsHand} /></td>
-                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmt(displayMetrics.opponentVenueKPerGame)}</td>
-                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30AtSite} /></td>
+                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{displayMetrics.seasonVsHand == null ? DASH : `${fmt(displayMetrics.seasonVsHand)}%`}</td>
+                        <td className="border-b border-l-2 border-slate-400 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmtPercent(displayMetrics.opponentKRateVsHandL30)}</td>
+                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums">{fmtPercent(displayMetrics.opponentKRateAtSiteSzn)}</td>
+                        <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL30} /></td>
                         <td className="border-b border-slate-100 px-1 py-2 text-center align-middle font-semibold tabular-nums"><RankHeatValue rank={displayMetrics.opponentWrcPlusRankL10} /></td>
                         </tr>
                         {isExpanded && (

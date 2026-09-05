@@ -227,18 +227,23 @@ export function buildPitcherDetails(starts, { pitcherId = null, season = null } 
 }
 
 export function buildOpponentLastFiveGames(games) {
-  return (games ?? []).map((game) => ({
-    date: game?.date ?? null,
-    opponent: game?.opponent ?? null,
-    opposingStartingPitcher: game?.opposingStartingPitcher ?? null,
-    opposingStartingPitcherId: integer(game?.opposingStartingPitcherId),
-    opposingStarterInningsPitched: game?.opposingStarterInningsPitched == null ? null : String(game.opposingStarterInningsPitched),
-    opposingStarterStrikeouts: finite(game?.opposingStarterStrikeouts),
-    opposingStarterWalks: finite(game?.opposingStarterWalks),
-    opposingStarterSeasonKPerGame: finite(game?.opposingStarterSeasonKPerGame),
-    opposingStarterLastFiveKPerGamePrior: finite(game?.opposingStarterLastFiveKPerGamePrior),
-    teamTotalStrikeouts: finite(game?.teamTotalStrikeouts),
-  }));
+  return (games ?? []).map((game) => {
+    const isHome = typeof game?.isHome === "boolean" ? game.isHome : null;
+    return {
+      date: game?.date ?? null,
+      opponent: game?.opponent ?? null,
+      opposingStartingPitcher: game?.opposingStartingPitcher ?? null,
+      opposingStartingPitcherId: integer(game?.opposingStartingPitcherId),
+      opposingStarterInningsPitched: game?.opposingStarterInningsPitched == null ? null : String(game.opposingStarterInningsPitched),
+      opposingStarterStrikeouts: finite(game?.opposingStarterStrikeouts),
+      opposingStarterWalks: finite(game?.opposingStarterWalks),
+      opposingStarterSeasonKPerGame: finite(game?.opposingStarterSeasonKPerGame),
+      opposingStarterLastFiveKPerGamePrior: finite(game?.opposingStarterLastFiveKPerGamePrior),
+      teamTotalStrikeouts: finite(game?.teamTotalStrikeouts),
+      isHome,
+      site: isHome === true ? "home" : isHome === false ? "away" : null,
+    };
+  });
 }
 
 export function buildStarterPregameKContext(starts, beforeDate) {

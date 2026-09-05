@@ -177,6 +177,67 @@ describe("MlbStrikeoutPropRowDetail", () => {
     expect(chips.every((chip) => !chip.className.match(/emerald|rose/))).toBe(true);
   });
 
+  describe("Home/Away indicator on Recent Performance rows", () => {
+    const homeAwayDetail: StrikeoutPropDetail = {
+      ...rateDetail,
+      pitcherRecentStarts: [
+        { date: "2026-07-18", opponent: "CWS", inningsPitched: "6.0", outsRecorded: 18, strikeouts: 7, isHome: true, site: "home" },
+        { date: "2026-07-10", opponent: "SD", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 4, isHome: false, site: "away" },
+        { date: "2026-07-04", opponent: "NYY", inningsPitched: "5.0", outsRecorded: 15, strikeouts: 5, isHome: null, site: null },
+      ],
+      opponentLastFiveGames: [
+        { date: "2026-07-22", opponent: "TOR", opposingStartingPitcher: "Starter Over", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 7, teamTotalStrikeouts: 9, isHome: true, site: "home" },
+        { date: "2026-07-21", opponent: "BOS", opposingStartingPitcher: "Starter Under", opposingStarterInningsPitched: "6.0", opposingStarterStrikeouts: 4, teamTotalStrikeouts: 8, isHome: false, site: "away" },
+        { date: "2026-07-20", opponent: "NYY", opposingStartingPitcher: "Starter Push", opposingStarterInningsPitched: "5.0", opposingStarterStrikeouts: 5, teamTotalStrikeouts: 10, isHome: null, site: null },
+      ],
+    };
+
+    it("renders H for home games and A for away games with the site's established color tokens, in the pitcher's Last 5 Starts table", () => {
+      render(<MlbStrikeoutPropRowDetail detail={homeAwayDetail} row={currentLineRow} />);
+      const panel = screen.getByText("Shane Bieber — Last 5 Starts").parentElement as HTMLElement;
+      const desktopTable = panel.querySelector("table") as HTMLElement;
+      const badges = within(desktopTable).getAllByTestId("recent-performance-home-away");
+      expect(badges.map((badge) => badge.textContent)).toEqual(["H", "A"]);
+      expect(badges[0]).toHaveAttribute("data-site", "home");
+      expect(badges[0].className).toContain("emerald");
+      expect(badges[1]).toHaveAttribute("data-site", "away");
+      expect(badges[1].className).toContain("sky");
+    });
+
+    it("renders H for home games and A for away games with the site's established color tokens, in the Opponent Last 10 Games vs SP table", () => {
+      render(<MlbStrikeoutPropRowDetail detail={homeAwayDetail} row={currentLineRow} />);
+      const panel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+      const desktopTable = panel.querySelector("table") as HTMLElement;
+      const badges = within(desktopTable).getAllByTestId("recent-performance-home-away");
+      expect(badges.map((badge) => badge.textContent)).toEqual(["H", "A"]);
+      expect(badges[0]).toHaveAttribute("data-site", "home");
+      expect(badges[0].className).toContain("emerald");
+      expect(badges[1]).toHaveAttribute("data-site", "away");
+      expect(badges[1].className).toContain("sky");
+    });
+
+    it("does not render a false H or A badge when historical location data is missing, in either table", () => {
+      render(<MlbStrikeoutPropRowDetail detail={homeAwayDetail} row={currentLineRow} />);
+      const pitcherPanel = screen.getByText("Shane Bieber — Last 5 Starts").parentElement as HTMLElement;
+      const pitcherTable = pitcherPanel.querySelector("table") as HTMLElement;
+      // 3 starts total, but only the first two have a known site -- the NYY row (unknown site) must not render any badge.
+      expect(within(pitcherTable).getAllByTestId("recent-performance-home-away").length).toBe(2);
+      const nyyRow = within(pitcherTable).getByText("NYY").closest("tr") as HTMLElement;
+      expect(within(nyyRow).queryByTestId("recent-performance-home-away")).not.toBeInTheDocument();
+
+      const opponentPanel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+      const opponentTable = opponentPanel.querySelector("table") as HTMLElement;
+      expect(within(opponentTable).getAllByTestId("recent-performance-home-away").length).toBe(2);
+      const pushRow = within(opponentTable).getByText("Starter Push").closest("tr") as HTMLElement;
+      expect(within(pushRow).queryByTestId("recent-performance-home-away")).not.toBeInTheDocument();
+    });
+
+    it("renders no badges at all when no historical row has known location data (existing fixtures without isHome/site)", () => {
+      render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
+      expect(screen.queryAllByTestId("recent-performance-home-away").length).toBe(0);
+    });
+  });
+
   it("renders compact detail sections as independent, accessible, closed-by-default accordions", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
 

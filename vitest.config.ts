@@ -22,6 +22,11 @@ export default defineConfig({
       "scripts/lib/pga-best-bets-schema.test.mjs",
       "scripts/lib/mlb-opponent-k-context.test.mjs",
       "scripts/lib/mlb-strikeout-reference-context.test.mjs",
+      // MLB K table column updates -- K/Inning Last 5 (total/total, not an
+      // average of per-game rates) and opponent last-10-games home/away
+      // passthrough.
+      "scripts/lib/mlb-strikeout-prop-details-core.test.mjs",
+      "scripts/lib/mlb-strikeout-prop-details-fetch.test.mjs",
       "scripts/lib/mlb-prop-line-selection.test.mjs",
       "scripts/lib/mlb-prop-odds-integrity.test.mjs",
       "tests/social-cards.test.mjs",
