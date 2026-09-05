@@ -98,6 +98,10 @@ export default defineConfig({
       // NFL Performance Center WU2 -- canonical starter-prop evaluation materializer.
       "scripts/lib/nfl-starter-prop-evaluation.test.ts",
       "scripts/generate-nfl-starter-prop-evaluations.test.ts",
+      // NFL Performance Center WU3 -- canonical totals performance artifact.
+      "scripts/lib/nfl-totals-performance.test.ts",
+      "scripts/lib/nfl-game-context.test.ts",
+      "scripts/generate-nfl-totals-performance.test.ts",
     ],
   },
   resolve: {
