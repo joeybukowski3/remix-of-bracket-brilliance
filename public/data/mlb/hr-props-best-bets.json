@@ -1,10 +1,10 @@
 {
   "date": "2026-09-05",
-  "generatedAt": "2026-09-05T11:19:44.400Z",
+  "generatedAt": "2026-09-05T15:23:45.268Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field leads the slate with a 1.4 park factor and Mason Adams on the mound, creating a massive power environment for the Cardinals trio. Great American Ball Park (1.25) and Camden Yards (1.1) also boost fly-ball contact, while Citi Field and Petco Park play neutral-to-pitcher. The model is zeroing in on barrel rate, exit velocity, and park-adjusted HR/FB ratios rather than recent home-run volume.",
-    "modelNote": "hrScore heavily weights parkFactor and barrelRate, elevating Leo Bernal and Jordan Walker despite modest recent HR counts, while discounting players in pitcher-friendly venues like Fernando Tatis Jr."
+    "slateOverview": "Coors Field dominates the slate with a 1.4 park factor and Mason Adams on the mound, creating a massive HR environment for the Cardinals trio. Great American Ball Park (1.25) and Camden Yards (1.1) add secondary boosts, while Citi Field and Petco Park suppress power despite Soto and Tatis topping the model. The weather and park factors outweigh opposing pitcher HR vulnerability in today's environment.",
+    "modelNote": "The model heavily weights Coors Field park factors and barrel rates, pushing Bernal and Walker to the top despite modest recent HR totals, while discounting Tatis and Soto due to pitcher-friendly venues despite strong underlying metrics."
   },
   "bestBets": [
     {
@@ -14,15 +14,15 @@
       "opposingPitcher": "Mason Adams",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=10%",
-        "HH=70%"
+        "barrel=8.3%",
+        "HH=75%"
       ],
       "bullets": [
-        "hrScore=72.7",
+        "hrScore=68.7",
         "park=1.4"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
+      "hrOddsYes": "+580",
+      "marketImpliedProbability": 0.14705882352941177,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -33,15 +33,15 @@
       "opposingPitcher": "Mason Adams",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=13.5%",
+        "barrel=13.4%",
         "HH=48.9%"
       ],
       "bullets": [
-        "hrScore=69.1",
+        "hrScore=68.5",
         "park=1.4"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,11 +52,11 @@
       "opposingPitcher": "Ryan Gusto",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=13.1%",
-        "HH=48.6%"
+        "barrel=13%",
+        "HH=48.7%"
       ],
       "bullets": [
-        "hrScore=67.5",
+        "hrScore=67.3",
         "park=0.88"
       ],
       "hrOddsYes": "+310",
@@ -71,15 +71,15 @@
       "opposingPitcher": "Mason Adams",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=83.0",
-        "Hard Hit%=49.8"
+        "barrel=10.7%",
+        "HH=49.4%"
       ],
       "bullets": [
-        "HR score 67.1 (#4)",
-        "Pitcher HR VS 83.0 at park 1.40"
+        "hrScore=66",
+        "park=1.4"
       ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -90,12 +90,12 @@
       "opposingPitcher": "Carlos Rodón",
       "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=53.9",
-        "Pitcher HR VS=45.6"
+        "barrel=12.7%",
+        "HH=53.9%"
       ],
       "bullets": [
-        "HR score 65.6 (#5)",
-        "Pitcher HR VS 45.6 at park 0.89"
+        "hrScore=65.1",
+        "park=0.89"
       ],
       "hrOddsYes": "+390",
       "marketImpliedProbability": 0.20408163265306123,
@@ -105,40 +105,78 @@
   ],
   "valueBets": [
     {
-      "player": "Alec Burleson",
+      "player": "Leo Bernal",
       "team": "STL",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 4,
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=10.8%",
-        "HH=49.8%"
+        "barrel=8.3%",
+        "HH=75%"
       ],
       "bullets": [
-        "hrScore=67.1",
+        "hrScore=68.7",
         "park=1.4"
       ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
+      "hrOddsYes": "+580",
+      "marketImpliedProbability": 0.14705882352941177,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "NYY",
-      "opposingPitcher": "Carlos Rodón",
-      "hrScoreRank": 5,
+      "player": "Jordan Walker",
+      "team": "STL",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=12.6%",
-        "HH=53.9%"
+        "barrel=13.4%",
+        "HH=48.9%"
       ],
       "bullets": [
-        "hrScore=65.6",
-        "park=0.89"
+        "hrScore=68.5",
+        "park=1.4"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=13%",
+        "HH=48.7%"
+      ],
+      "bullets": [
+        "hrScore=67.3",
+        "park=0.88"
+      ],
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "CIN",
+      "opposingPitcher": "Andrew Abbott",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Pitcher HR VS=59.6",
+        "Hard Hit%=47.6"
+      ],
+      "bullets": [
+        "HR score 63.9 (#6)",
+        "Pitcher HR VS 59.6 at park 1.25"
+      ],
+      "hrOddsYes": "+295",
+      "marketImpliedProbability": 0.25316455696202533,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,95 +185,17 @@
       "team": "NYM",
       "opponent": "SF",
       "opposingPitcher": "Anthony Molina",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=14.7%",
-        "HH=49%"
-      ],
-      "bullets": [
-        "hrScore=64.8",
-        "park=1.06"
-      ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "CIN",
-      "opposingPitcher": "Andrew Abbott",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=59.6",
-        "Hard Hit%=47.7"
+        "Hard Hit%=48.7",
+        "Pitcher HR VS=44.8"
       ],
       "bullets": [
-        "HR score 64.6 (#7)",
-        "Pitcher HR VS 59.6 at park 1.25"
+        "HR score 63.8 (#7)",
+        "Pitcher HR VS 44.8 at park 1.06"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "HOU",
-      "opposingPitcher": "Ethan Pecko",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=91.8",
-        "Hard Hit%=42.7"
-      ],
-      "bullets": [
-        "HR score 63.5 (#8)",
-        "Pitcher HR VS 91.8 at park 1.04"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "CIN",
-      "opposingPitcher": "Andrew Abbott",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=12.9%",
-        "HH=47.7%"
-      ],
-      "bullets": [
-        "hrScore=64.6",
-        "park=1.25"
-      ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "HOU",
-      "opposingPitcher": "Ethan Pecko",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=7.8%",
-        "HH=42.7%"
-      ],
-      "bullets": [
-        "hrScore=63.5",
-        "park=1.04"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
+      "hrOddsYes": "+265",
+      "marketImpliedProbability": 0.273972602739726,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,36 +204,95 @@
       "team": "BOS",
       "opponent": "BAL",
       "opposingPitcher": "Chris Bassitt",
-      "hrScoreRank": 14,
+      "hrScoreRank": 8,
       "topStats": [
         "Pitcher HR VS=41.6",
-        "Hard Hit%=37.4"
+        "Hard Hit%=38.9"
       ],
       "bullets": [
-        "HR score 61.5 (#14)",
+        "HR score 63.6 (#8)",
         "Pitcher HR VS 41.6 at park 1.10"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+480",
+      "marketImpliedProbability": 0.1724137931034483,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Leo Bernal",
+      "team": "STL",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
+      "hrScoreRank": 1,
+      "topStats": [
+        "barrel=8.3%",
+        "HH=75%"
+      ],
+      "bullets": [
+        "hrScore=68.7",
+        "park=1.4"
+      ],
+      "hrOddsYes": "+580",
+      "marketImpliedProbability": 0.14705882352941177,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Roman Anthony",
-      "team": "BOS",
-      "opponent": "BAL",
-      "opposingPitcher": "Chris Bassitt",
-      "hrScoreRank": 22,
+      "player": "Jordan Walker",
+      "team": "STL",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
+      "hrScoreRank": 2,
       "topStats": [
-        "Hard Hit%=50.5",
-        "Pitcher HR VS=41.6"
+        "barrel=13.4%",
+        "HH=48.9%"
       ],
       "bullets": [
-        "HR score 58.7 (#22)",
-        "Pitcher HR VS 41.6 at park 1.10"
+        "hrScore=68.5",
+        "park=1.4"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Gabriel Moreno",
+      "team": "AZ",
+      "opponent": "HOU",
+      "opposingPitcher": "Ethan Pecko",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Pitcher HR VS=91.8",
+        "Hard Hit%=42.9"
+      ],
+      "bullets": [
+        "HR score 63.4 (#9)",
+        "Pitcher HR VS 91.8 at park 1.04"
+      ],
+      "hrOddsYes": "+595",
+      "marketImpliedProbability": 0.14388489208633093,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "LAA",
+      "opposingPitcher": "Yusei Kikuchi",
+      "hrScoreRank": 14,
+      "topStats": [
+        "Pitcher HR VS=75.6",
+        "Hard Hit%=55.7"
+      ],
+      "bullets": [
+        "HR score 61.3 (#14)",
+        "Pitcher HR VS 75.6 at park 0.90"
+      ],
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
