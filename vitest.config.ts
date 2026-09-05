@@ -95,6 +95,9 @@ export default defineConfig({
       // NFL Performance Center WU1 -- deterministic pregame starter-cohort selector.
       "scripts/lib/nfl-starter-cohort.test.ts",
       "scripts/generate-nfl-starter-cohort.test.ts",
+      // NFL Performance Center WU2 -- canonical starter-prop evaluation materializer.
+      "scripts/lib/nfl-starter-prop-evaluation.test.ts",
+      "scripts/generate-nfl-starter-prop-evaluations.test.ts",
     ],
   },
   resolve: {
