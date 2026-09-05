@@ -92,6 +92,9 @@ export default defineConfig({
       "scripts/lib/ci-branch-resolution.test.mjs",
       // NFL matchup-page JKB projected totals -- team-totals frontend view generator.
       "scripts/generate-nfl-team-totals-view.test.ts",
+      // NFL Performance Center WU1 -- deterministic pregame starter-cohort selector.
+      "scripts/lib/nfl-starter-cohort.test.ts",
+      "scripts/generate-nfl-starter-cohort.test.ts",
     ],
   },
   resolve: {
