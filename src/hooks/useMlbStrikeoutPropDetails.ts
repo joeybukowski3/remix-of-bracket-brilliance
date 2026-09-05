@@ -91,6 +91,9 @@ export type StrikeoutPropOpponentGameRow = {
   opposingStarterSeasonKPerGame?: number | null;
   opposingStarterLastFiveKPerGamePrior?: number | null;
   teamTotalStrikeouts: number | null;
+  /** Whether the opponent team (not the pitcher's team) was the home club for this historical game. Sourced from the game's boxscore; null when the boxscore could not be resolved. */
+  isHome?: boolean | null;
+  site?: "home" | "away" | null;
 };
 
 export type OpponentLastFiveVsStartersSummary = {
@@ -112,9 +115,9 @@ export type OpponentLastFiveVsStartersSummary = {
 };
 
 export type OpponentContext = {
-  home: { kPerNine: number | null; xba: number | null };
-  away: { kPerNine: number | null; xba: number | null };
-  last10: { kPerNine: number | null; xba: number | null };
+  home: { kPerNine: number | null; xba: number | null; kRate?: number | null };
+  away: { kPerNine: number | null; xba: number | null; kRate?: number | null };
+  last10: { kPerNine: number | null; xba: number | null; kRate?: number | null };
   samples?: Record<string, number>;
   sources?: { strikeouts?: string; xba?: string };
   warnings?: string[];
@@ -125,6 +128,8 @@ export type OpponentReferenceContext = {
   pitcherHand: "L" | "R" | null;
   opponentKRateRankL30: number | null;
   opponentKRateRankL30VsHand: number | null;
+  /** Raw opponent strikeout rate (0-1) over the last 30 days vs the pitcher's handedness -- the value behind opponentKRateRankL30VsHand's rank, not itself a rank. */
+  opponentKRateL30VsHand?: number | null;
   opponentWrcPlusRankL30: number | null;
   opponentWrcPlusRankL30VsHand: number | null;
   opponentWrcPlusRankL30Home: number | null;

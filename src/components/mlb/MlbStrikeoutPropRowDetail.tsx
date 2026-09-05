@@ -114,12 +114,35 @@ function fmtDate(value: string | null | undefined) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function TeamCell({ team }: { team: string | null }) {
+/**
+ * Compact Home/Away letter badge for a single historical game row. Reuses
+ * this site's established Home/Away color language (emerald = Home, sky =
+ * Away -- see venueTileClass in MlbStrikeoutProps.tsx) rather than
+ * introducing a new visual style. Renders nothing when the historical
+ * location is unknown so a missing/unresolved boxscore site never gets
+ * mislabeled as either H or A.
+ */
+function HomeAwayBadge({ site }: { site: "home" | "away" | null | undefined }) {
+  if (site !== "home" && site !== "away") return null;
+  const toneClass = site === "home" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-sky-200 bg-sky-50 text-sky-700";
+  return (
+    <span
+      data-testid="recent-performance-home-away"
+      data-site={site}
+      className={cn("inline-flex h-3.5 shrink-0 items-center justify-center rounded border px-1 text-[8px] font-black leading-none", toneClass)}
+    >
+      {site === "home" ? "H" : "A"}
+    </span>
+  );
+}
+
+function TeamCell({ team, site }: { team: string | null; site?: "home" | "away" | null }) {
   if (!team) return <span>{DASH}</span>;
   return (
     <span className="inline-flex items-center gap-1">
       <MlbTeamLogo team={team} size={14} />
       {team}
+      <HomeAwayBadge site={site} />
     </span>
   );
 }
@@ -132,14 +155,17 @@ function TeamCell({ team }: { team: string | null }) {
  * (see opponentSource below); when that field is missing, falls back to the
  * plain team-only cell rather than fabricating a name.
  */
-function OpponentGameTeamCell({ team, starterName }: { team: string | null; starterName: string | null }) {
+function OpponentGameTeamCell({ team, starterName, site }: { team: string | null; starterName: string | null; site?: "home" | "away" | null }) {
   if (!team) return <span>{DASH}</span>;
-  if (!starterName) return <TeamCell team={team} />;
+  if (!starterName) return <TeamCell team={team} site={site} />;
   return (
     <span className="flex min-w-0 items-center gap-1">
       <MlbTeamLogo team={team} size={14} />
       <span className="min-w-0 leading-tight">
-        <span className="block truncate font-semibold text-slate-700">{splitDisplayName(starterName).last}</span>
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="truncate font-semibold text-slate-700">{splitDisplayName(starterName).last}</span>
+          <HomeAwayBadge site={site} />
+        </span>
         <span className="block truncate text-[9px] font-medium text-slate-400">{team}</span>
       </span>
     </span>
@@ -403,6 +429,12 @@ function getNestedRecord(source: Record<string, unknown>, path: string[]) {
 function getNumber(source: Record<string, unknown> | null, key: string) {
   const value = source?.[key];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** Reads a canonical "home" | "away" site value; never guesses one from any other field (e.g. row order or team-name comparisons). */
+function getSite(source: Record<string, unknown> | null, key = "site"): "home" | "away" | null {
+  const value = source?.[key];
+  return value === "home" || value === "away" ? value : null;
 }
 
 function getString(source: Record<string, unknown> | null, key: string) {
@@ -671,6 +703,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     opponentKRateRankL30: start.opponentKRateRankL30,
     opponentKRateRankL30VsHand: start.opponentKRateRankL30VsHand,
     opponentWrcPlusRankL30: start.opponentWrcPlusRankL30,
+    site: start.site ?? (start.isHome === true ? "home" : start.isHome === false ? "away" : null),
   }));
   const fallbackStartOuts = (start: Record<string, unknown>) => getNumber(start, "outs") ?? mlbInningsToOuts(start.inningsPitched as number | string | null | undefined);
   const perInningFromRecords = (records: Record<string, unknown>[], numeratorKey: string, outsKey: string, inningsKey?: string) => {
@@ -693,7 +726,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     const strikeouts = getNumber(start, "strikeouts");
     return [
       fmtDate(start.date),
-      <TeamCell key={`start-opp-${index}`} team={getString(start, "opponent")} />,
+      <TeamCell key={`start-opp-${index}`} team={getString(start, "opponent")} site={getSite(start)} />,
       outs != null ? fmtOutsIp(outs) : fmtIp(start.inningsPitched as number | string | null | undefined),
       <StrikeoutsVsCurrentLine key={`start-k-${index}`} strikeouts={strikeouts} currentKLine={currentKLine} />,
       fmtNumber(getNumber(start, "hitsAllowed")),
@@ -710,7 +743,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     return {
       key: `pitcher-fallback-start-${index}`,
       date: fmtDate(start.date as string | null | undefined),
-      team: <TeamCell team={getString(start, "opponent")} />,
+      team: <TeamCell team={getString(start, "opponent")} site={getSite(start)} />,
       primaryValue: <StrikeoutsVsCurrentLine strikeouts={strikeouts} currentKLine={currentKLine} suffix=" K" />,
       details: [
         { label: "IP", value: outs != null ? fmtOutsIp(outs) : fmtIp(start.inningsPitched as number | string | null | undefined) },
@@ -743,7 +776,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const enrichedStartRows: ReactNode[][] = (enrichedStarts ?? []).map((start, index) => {
     return [
       fmtDate(start.date),
-      <TeamCell key={`pitcher-start-opp-${index}`} team={start.opponentAbbr ?? start.opponent ?? null} />,
+      <TeamCell key={`pitcher-start-opp-${index}`} team={start.opponentAbbr ?? start.opponent ?? null} site={start.site ?? (start.isHome === true ? "home" : start.isHome === false ? "away" : null)} />,
       start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched),
       <StrikeoutsVsCurrentLine key={`pitcher-start-k-${index}`} strikeouts={start.strikeouts} currentKLine={currentKLine} />,
       fmtNumber(start.hitsAllowed),
@@ -758,7 +791,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     return {
       key: `pitcher-enriched-start-${index}`,
       date: fmtDate(start.date),
-      team: <TeamCell team={start.opponentAbbr ?? start.opponent ?? null} />,
+      team: <TeamCell team={start.opponentAbbr ?? start.opponent ?? null} site={start.site ?? (start.isHome === true ? "home" : start.isHome === false ? "away" : null)} />,
       primaryValue: <StrikeoutsVsCurrentLine strikeouts={start.strikeouts} currentKLine={currentKLine} suffix=" K" />,
       details: [
         { label: "IP", value: start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched) },
@@ -835,6 +868,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     opposingStarterSeasonKPerGame: game.opposingStarterSeasonKPerGame,
     opposingStarterLastFiveKPerGamePrior: game.opposingStarterLastFiveKPerGamePrior,
     teamStrikeouts: game.teamTotalStrikeouts,
+    site: game.site ?? (game.isHome === true ? "home" : game.isHome === false ? "away" : null),
   })) : opponentSummaryRows;
   const opponentRows: ReactNode[][] = opponentSource.map((game, index) => {
     const starterOuts = getNumber(game, "opposingStarterOuts") ?? mlbInningsToOuts(game.opposingStarterInningsPitched as number | string | null | undefined);
@@ -842,7 +876,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     const teamStrikeouts = getNumber(game, "teamStrikeouts");
     return [
       fmtDate(game.date),
-      <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} />,
+      <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} site={getSite(game)} />,
       fmtText(getString(game, "opposingStartingPitcher")),
       starterOuts != null ? fmtOutsIp(starterOuts) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined),
       <StrikeoutsVsCurrentLine key={`opponent-sp-k-${index}`} strikeouts={starterStrikeouts} currentKLine={currentKLine} />,
@@ -855,7 +889,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const opponentCollapsibleRows: CollapsibleGameRow[] = opponentSource.map((game, index) => ({
     key: `opponent-game-${index}`,
     date: fmtDate(game.date as string | null | undefined),
-    team: <OpponentGameTeamCell team={getString(game, "opponent")} starterName={getString(game, "opposingStartingPitcher")} />,
+    team: <OpponentGameTeamCell team={getString(game, "opponent")} starterName={getString(game, "opposingStartingPitcher")} site={getSite(game)} />,
     primaryValue: <StrikeoutsVsCurrentLine strikeouts={getNumber(game, "opposingStarterStrikeouts")} currentKLine={currentKLine} suffix=" K" />,
     details: [
       { label: "Opposing SP", value: fmtText(getString(game, "opposingStartingPitcher")) },

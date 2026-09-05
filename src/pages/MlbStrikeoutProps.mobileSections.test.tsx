@@ -243,15 +243,15 @@ describe("Mobile compact rows -- dense sortable table with Pitcher Stats / Oppon
     // Pitcher Stats is the default active tab -- its content is already visible.
     expect(pitcherStats).toHaveAttribute("aria-selected", "true");
     expect(opponentStats).toHaveAttribute("aria-selected", "false");
-    for (const label of ["K Per Game SZN", "K Per Game L5", "K Per Game @ Site", "Avg IP"]) {
+    for (const label of ["K Per Game SZN", "K Per Game @ Site", "K/Inning Last 5", "Avg IP", "Szn Vs Hand Rate"]) {
       expect(within(detailRow).getByText(label)).toBeInTheDocument();
     }
-    expect(within(detailRow).queryByText("Opp wRC+ Rank L30 vs Hand")).not.toBeInTheDocument();
+    expect(within(detailRow).queryByText("Opp wRC+ Rank L30")).not.toBeInTheDocument();
 
     fireEvent.click(opponentStats);
     expect(opponentStats).toHaveAttribute("aria-selected", "true");
     expect(pitcherStats).toHaveAttribute("aria-selected", "false");
-    for (const label of ["Szn vs Hand", "Opp wRC+ Rank L30 vs Hand", "Opp K/Game @ Site", "Opp wRC+ Rank L30 @ Site", "Opp wRC+ Rank L10"]) {
+    for (const label of ["K% vs Hand L30", "Opp K% at Site Szn", "Opp wRC+ Rank L30", "Opp wRC+ Rank L10"]) {
       expect(within(detailRow).getByText(label)).toBeInTheDocument();
     }
     expect(within(detailRow).queryByText("K Per Game SZN")).not.toBeInTheDocument();

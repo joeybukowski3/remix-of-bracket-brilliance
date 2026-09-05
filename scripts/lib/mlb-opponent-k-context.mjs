@@ -165,6 +165,18 @@ function aggregateXba(rows) {
   return atBats > 0 ? { xba: expectedHits / atBats, atBats } : { xba: null, atBats: 0 };
 }
 
+/**
+ * Season strikeout rate for a slice of plate appearances -- each row is
+ * already one record per completed PA (see plateAppearanceRows), so this is
+ * strikeouts / PA, matching the same methodology used for the league L30
+ * reference rates in mlb-strikeout-reference-context.mjs.
+ */
+function aggregateKRate(rows) {
+  if (!rows.length) return { kRate: null, plateAppearances: 0 };
+  const strikeouts = rows.filter((row) => row.events === "strikeout" || row.events === "strikeout_double_play").length;
+  return { kRate: strikeouts / rows.length, plateAppearances: rows.length };
+}
+
 function plateAppearanceRows(rows) {
   // The Statcast CSV repeats each PA for every pitch; `events` is populated on
   // the terminal pitch only, so selecting rows with an event yields one record
@@ -227,13 +239,22 @@ export async function fetchTeamXbaContext(teamAbbr, season, beforeDate, options 
     ? options.last10GamePks.map(String).filter((gamePk) => withSite.some((row) => String(row.game_pk) === gamePk)).slice(0, 10)
     : latestGamePks(withSite, 10);
   const last10GamePks = new Set(sourceLast10GamePks);
-  const home = aggregateXba(withSite.filter((row) => row.isHome));
-  const away = aggregateXba(withSite.filter((row) => !row.isHome));
-  const last10 = aggregateXba(withSite.filter((row) => last10GamePks.has(String(row.game_pk))));
+  const homeRows = withSite.filter((row) => row.isHome);
+  const awayRows = withSite.filter((row) => !row.isHome);
+  const last10Rows = withSite.filter((row) => last10GamePks.has(String(row.game_pk)));
+  const home = aggregateXba(homeRows);
+  const away = aggregateXba(awayRows);
+  const last10 = aggregateXba(last10Rows);
+  const homeKRate = aggregateKRate(homeRows);
+  const awayKRate = aggregateKRate(awayRows);
+  const last10KRate = aggregateKRate(last10Rows);
   return {
     homeXba: home.xba,
     awayXba: away.xba,
     last10Xba: last10.xba,
+    homeKRate: homeKRate.kRate,
+    awayKRate: awayKRate.kRate,
+    last10KRate: last10KRate.kRate,
     samples: { homeAtBats: home.atBats, awayAtBats: away.atBats, last10AtBats: last10.atBats, last10Games: last10GamePks.size },
     source: "baseball_savant_statcast",
   };
@@ -256,14 +277,17 @@ export async function fetchOpponentContext(teamId, teamAbbr, season, beforeDate,
     home: {
       kPerNine: kResult.status === "fulfilled" ? kResult.value.homeKPerNine : null,
       xba: xbaResult.status === "fulfilled" ? xbaResult.value.homeXba : null,
+      kRate: xbaResult.status === "fulfilled" ? xbaResult.value.homeKRate : null,
     },
     away: {
       kPerNine: kResult.status === "fulfilled" ? kResult.value.awayKPerNine : null,
       xba: xbaResult.status === "fulfilled" ? xbaResult.value.awayXba : null,
+      kRate: xbaResult.status === "fulfilled" ? xbaResult.value.awayKRate : null,
     },
     last10: {
       kPerNine: kResult.status === "fulfilled" ? kResult.value.last10KPerNine : null,
       xba: xbaResult.status === "fulfilled" ? xbaResult.value.last10Xba : null,
+      kRate: xbaResult.status === "fulfilled" ? xbaResult.value.last10KRate : null,
     },
     samples: {
       ...(kResult.status === "fulfilled" ? kResult.value.games : {}),

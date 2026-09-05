@@ -80,6 +80,7 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
     const plateAppearances = nonNegativeNumber(game?.teamPlateAppearances);
     const whiffRate = nonNegativeNumber(game?.teamWhiffRate ?? game?.whiffRate);
     const valid = opposingStarterOuts != null && opposingStarterOuts > 0 && opposingStarterStrikeouts != null;
+    const isHome = typeof game?.isHome === "boolean" ? game.isHome : null;
 
     return {
       index,
@@ -94,6 +95,8 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
       plateAppearances,
       whiffRate,
       valid,
+      isHome,
+      site: isHome === true ? "home" : isHome === false ? "away" : null,
     };
   });
   const validRows = rows.filter((row) => row.valid);
