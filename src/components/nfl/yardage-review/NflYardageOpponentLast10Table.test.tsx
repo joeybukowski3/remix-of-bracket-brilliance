@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import NflYardageOpponentLast10Table from "./NflYardageOpponentLast10Table";
 import type { NflYardageOpponentHistory } from "@/lib/nfl/props/types/yardageHistory";
 
@@ -20,8 +20,15 @@ function passingHistory(homeAway: "home" | "away" | null = "home"): NflYardageOp
   };
 }
 
+/**
+ * Extracts the visible <th> header text, in DOM order, from the desktop
+ * (full-column) table -- a separate mobile-compact table also renders
+ * alongside it with a smaller fixed column set, so this scopes to the
+ * `DenseTableScroller` region rather than querying the whole document.
+ */
 function headerTexts() {
-  return screen.getAllByRole("columnheader").map((th) => th.textContent);
+  const region = screen.getByRole("region", { name: /defense last \d+ vs/i });
+  return within(region).getAllByRole("columnheader").map((th) => th.textContent);
 }
 
 describe("NflYardageOpponentLast10Table column order", () => {
@@ -34,7 +41,7 @@ describe("NflYardageOpponentLast10Table column order", () => {
 
   it("Opp Off Rank renders as an ordinal, never a rank-out-of-32", () => {
     render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
-    expect(screen.getByText("20th")).toBeInTheDocument();
+    expect(screen.getAllByText("20th").length).toBeGreaterThan(0);
     expect(screen.queryByText(/20\/32/)).not.toBeInTheDocument();
   });
 

@@ -40,12 +40,16 @@ export type NflYardageReviewSortKey =
   | "projectedYards"
   | "matchupScore"
   | "difference"
+  | "line"
   | "depthRank"
   | "oppYardsAllowedSeason"
   | "oppYardsAllowedL5"
   | "oppEpaAllowedRank"
   | "oppSuccessAllowedRank";
 export type NflYardageReviewSortState = { key: NflYardageReviewSortKey; direction: "asc" | "desc" } | null;
+
+/** Initial/post-market-change sort: highest projected yards first. */
+export const DEFAULT_YARDAGE_REVIEW_SORT: NflYardageReviewSortState = { key: "projectedYards", direction: "desc" };
 
 export function nextYardageReviewSort(
   current: NflYardageReviewSortState,
@@ -94,6 +98,8 @@ function sortValue(
       return entry.row.matchupScore?.matchupScore ?? null;
     case "difference":
       return entry.marketInfo.available ? entry.marketInfo.rawDifference : null;
+    case "line":
+      return entry.marketInfo.available ? entry.marketInfo.line : null;
     case "depthRank":
       return entry.row.depthRank;
     case "oppYardsAllowedSeason":

@@ -1,15 +1,17 @@
 /**
  * Expandable player-level detail panel for the Yardage Props Review table
- * (desktop row expansion) and card list (mobile card expansion). Pure
+ * (desktop row expansion) and mobile table (mobile row expansion). Pure
  * presentation over `playerDetailView.ts`'s selectors and
  * `yardageHistoryView.ts`'s history selectors -- no model input is ever
  * recomputed here; every value rendered is read directly from the
  * projection row, the sportsbook join, the opponent-context join, or the
  * generated Last-10 history artifact.
  *
- * Structure (approved spec): "Show the Work" cards (Projected Yards,
- * Sportsbook, Diff, Matchup, Yds Allowed, EPA, Success, Edge), then the
- * Player Last-10 table, then the Opponent Last-10 table.
+ * Structure: compact mobile-only header, then two independent tab systems
+ * -- Player Stats / Opponent Stats (NflYardageStatsTabs) above Player Last
+ * 10 / Opponent Last 10 (Last10Tabs below) -- then "Projection Details"
+ * (Show the Work / Role & Provenance / Notes) collapsed by default at the
+ * very bottom -- never before the Last 10 analysis, on any screen size.
  */
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -20,7 +22,7 @@ import type { NflCurrentWeekProjectionRow } from "@/lib/nfl/props/types/currentW
 import type { NflWindowedRate } from "@/lib/nfl/props/types/qbPassingFeatures";
 import type { NflYardageReviewMarketInfo } from "@/lib/nfl/props/review/yardageMarketJoin";
 import { MATCHUP_SCORE_BAND_LABEL } from "@/lib/nfl/props/review/yardageMarketJoin";
-import type { NflYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
+import type { NflYardageOpponentContextWithHeat } from "@/lib/nfl/props/review/yardageHeat";
 import {
   buildProjectionSummary,
   buildDetailComponents,
@@ -39,6 +41,7 @@ import { lookupPlayerHistory, lookupOpponentHistory, resolvePositionSlice } from
 import NflYardageReviewTeamCell from "./NflYardageReviewTeamCell";
 import NflYardagePlayerLast10Table from "./NflYardagePlayerLast10Table";
 import NflYardageOpponentLast10Table from "./NflYardageOpponentLast10Table";
+import NflYardageStatsTabs from "./NflYardageStatsTabs";
 
 function fmt1(value: number | null): string {
   return value != null && Number.isFinite(value) ? value.toFixed(1) : "N/A";
@@ -87,9 +90,8 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 /**
- * One of the three independently-collapsible top-level subsections (Show the
- * Work / Player Last 10 / Opponent Last 10). Collapsing only hides the
- * rendered subtree -- the Last-10 history fetch lives in the parent panel's
+ * One of the collapsible subsections. Collapsing only hides the rendered
+ * subtree -- the Last-10 history fetch lives in the parent panel's
  * `useNflYardageHistory` hook, so no already-loaded data is discarded by
  * collapsing a section.
  */
@@ -100,7 +102,7 @@ function CollapsibleSection({
   children,
 }: {
   title: string;
-  tone: "sky" | "amber" | "violet";
+  tone: "sky" | "amber" | "violet" | "slate";
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
@@ -109,6 +111,7 @@ function CollapsibleSection({
     sky: "bg-sky-50 hover:bg-sky-100",
     amber: "bg-amber-50 hover:bg-amber-100",
     violet: "bg-violet-50 hover:bg-violet-100",
+    slate: "bg-slate-100 hover:bg-slate-200",
   }[tone];
   return (
     <div className="rounded-md border-2 border-slate-300 bg-white">
@@ -183,6 +186,88 @@ function ProjectionInputs({ row }: { row: NflCurrentWeekProjectionRow }) {
   );
 }
 
+/** Player/Opponent Last-10 as a single-active-tab control -- only one table rendered at a time. */
+function Last10Tabs({
+  row,
+  playerHistory,
+  opponentHistory,
+  currentLine,
+  historyError,
+}: {
+  row: NflCurrentWeekProjectionRow;
+  playerHistory: ReturnType<typeof lookupPlayerHistory>;
+  opponentHistory: ReturnType<typeof lookupOpponentHistory>;
+  currentLine: number | null;
+  historyError: boolean;
+}) {
+  const [active, setActive] = useState<"player" | "opponent">("player");
+  // Distinct, restrained per-tab color identity -- sky for Player, light violet/purple for Opponent.
+  // Selected state is filled/tinted + stronger border, but `aria-selected` (not
+  // color alone) is what actually communicates the active tab to assistive tech.
+  const tabClass = (isActive: boolean, tone: "player" | "opponent") =>
+    cn(
+      "rounded border px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition",
+      tone === "player"
+        ? isActive
+          ? "border-sky-700 bg-sky-600 text-white shadow-sm"
+          : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
+        : isActive
+          ? "border-violet-600 bg-violet-600 text-white shadow-sm"
+          : "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100",
+    );
+  return (
+    <div>
+      <div role="tablist" aria-label="Last 10 history" className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          role="tab"
+          id="last10-tab-player"
+          aria-selected={active === "player"}
+          aria-controls="last10-panel-player"
+          tabIndex={active === "player" ? 0 : -1}
+          onClick={() => setActive("player")}
+          className={tabClass(active === "player", "player")}
+        >
+          Player Last 10
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="last10-tab-opponent"
+          aria-selected={active === "opponent"}
+          aria-controls="last10-panel-opponent"
+          tabIndex={active === "opponent" ? 0 : -1}
+          onClick={() => setActive("opponent")}
+          className={tabClass(active === "opponent", "opponent")}
+        >
+          Opponent Last 10
+        </button>
+      </div>
+      <div id="last10-panel-player" role="tabpanel" aria-labelledby="last10-tab-player" className={cn("mt-2", active === "player" && "border-t-2 border-sky-200 pt-2")}>
+        {active === "player" &&
+          (historyError ? (
+            <p className="text-slate-400">Last-10 history unavailable this run.</p>
+          ) : (
+            <NflYardagePlayerLast10Table playerName={row.playerName} history={playerHistory} currentLine={currentLine} />
+          ))}
+      </div>
+      <div id="last10-panel-opponent" role="tabpanel" aria-labelledby="last10-tab-opponent" className={cn("mt-2", active === "opponent" && "border-t-2 border-violet-200 pt-2")}>
+        {active === "opponent" &&
+          (historyError ? (
+            <p className="text-slate-400">Last-10 history unavailable this run.</p>
+          ) : (
+            <NflYardageOpponentLast10Table
+              opponentAbbr={row.opponent}
+              position={resolvePositionSlice(row.market, row.position)}
+              history={opponentHistory}
+              currentLine={currentLine}
+            />
+          ))}
+      </div>
+    </div>
+  );
+}
+
 export default function NflYardageReviewDetailPanel({
   row,
   marketInfo,
@@ -191,7 +276,7 @@ export default function NflYardageReviewDetailPanel({
 }: {
   row: NflCurrentWeekProjectionRow;
   marketInfo: NflYardageReviewMarketInfo;
-  opponentContext: NflYardageOpponentContext | undefined;
+  opponentContext: NflYardageOpponentContextWithHeat | undefined;
   season: number;
 }) {
   const projection = buildProjectionSummary(row);
@@ -208,164 +293,165 @@ export default function NflYardageReviewDetailPanel({
   const currentLine = marketInfo.available ? marketInfo.line : null;
 
   return (
-    <div className="space-y-3 border-y-2 border-slate-300 bg-slate-50 p-3 text-[11px] shadow-inner">
-      <CollapsibleSection title="Show the Work" tone="sky">
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          <Card title="1. Projected Yards">
-            <div className="space-y-0.5">
-              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Projected Yards</span><span className="font-semibold tabular-nums text-slate-900">{fmt1(projection.projectedYards)}</span></div>
-              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Estimated Range</span><span className="tabular-nums text-slate-800">{projection.estimatedRange ? `${projection.estimatedRange.estimatedLow.toFixed(0)}–${projection.estimatedRange.estimatedHigh.toFixed(0)}` : "N/A"}</span></div>
-              <div className="mt-1.5 border-t border-slate-200 pt-1.5"><ProjectionInputs row={row} /></div>
-            </div>
-          </Card>
+    // Faint warm contrast against the neutral collapsed row board below -- deliberately NOT the
+    // site's amber "warning" tone (that stays reserved for the Projection Preview notice and Notes
+    // card); this is `yellow-50` at partial opacity, restrained enough that metric colors and table
+    // text still read cleanly on top of it.
+    <div className="space-y-3 border-y-2 border-slate-300 bg-yellow-50/60 p-3 text-[11px] shadow-inner">
+      {/* Mobile-only compact context header -- on desktop this context already lives in the row's own columns. */}
+      <div className="md:hidden">
+        <p className="text-[13px] font-bold text-slate-900">{row.playerName}</p>
+        <p className="text-[10px] text-slate-500">
+          {row.team.toUpperCase()} vs {row.opponent.toUpperCase()} · {row.position}
+          {marketInfo.available && <> · Line {marketInfo.line.toFixed(1)}</>}
+        </p>
+      </div>
 
-          <Card title="2. Sportsbook">
-            {sportsbook.available ? (
-              <div className="space-y-0.5">
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Book</span><span className="text-slate-800">{sportsbook.book}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Line</span><span className="tabular-nums text-slate-800">{sportsbook.line.toFixed(1)}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Over / Under</span><span className="tabular-nums text-slate-800">{sportsbook.overPrice} / {sportsbook.underPrice}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Observed</span><span className="text-slate-800">{new Date(sportsbook.lastUpdate).toLocaleString()}</span></div>
-              </div>
-            ) : (
-              <p className="text-slate-400">No approved sportsbook line available.</p>
-            )}
-          </Card>
+      {/* Player Stats / Opponent Stats -- a separate tab system from Last 10 below, on every screen size. */}
+      <NflYardageStatsTabs row={row} opponentContext={opponentContext} playerHistory={playerHistory} />
 
-          {/* Research context only -- literal equation, never a betting recommendation. */}
-          <Card title="3. Diff">
-            {diff ? (
-              <div className="space-y-1">
-                <p className="tabular-nums text-slate-800">
-                  {diff.projectedYards.toFixed(1)} − {diff.line.toFixed(1)} = <span className="font-semibold">{fmtSigned(diff.diff)}</span>
-                </p>
-                <p className="text-[10px] text-slate-400">Projection − Sportsbook Line. Research context only, not a recommendation.</p>
-              </div>
-            ) : (
-              <p className="text-slate-400">No available line to diff against.</p>
-            )}
-          </Card>
+      <Last10Tabs row={row} playerHistory={playerHistory} opponentHistory={opponentHistory} currentLine={currentLine} historyError={Boolean(history.error)} />
 
-          <Card title="4. Matchup">
-            {matchup ? (
-              <div className="space-y-0.5">
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Matchup Score</span><span className="font-semibold tabular-nums text-slate-900">{matchup.matchupScore.toFixed(1)}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Band</span><span className="text-slate-800">{matchup.band ? MATCHUP_SCORE_BAND_LABEL[matchup.band] : "N/A"}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Opportunity</span><span className="tabular-nums text-slate-800">{matchup.opportunityScore.toFixed(1)}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Environment</span><span className="tabular-nums text-slate-800">{matchup.environmentScore.toFixed(1)}</span></div>
-                <div className="mt-1.5 border-t border-slate-200 pt-1.5 space-y-0.5">
-                  {matchup.components.map((c) => (
-                    <div key={c.key} className="flex items-baseline justify-between">
-                      <span className="capitalize font-medium text-slate-600">{c.key.replace(/([A-Z])/g, " $1").trim()}</span>
-                      <span className="tabular-nums text-slate-800">
-                        {c.score.toFixed(1)}
-                        {c.weight != null && <span className="ml-1 text-[9px] font-normal text-slate-400">({(c.weight * 100).toFixed(0)}% contribution)</span>}
-                      </span>
-                    </div>
-                  ))}
+      <CollapsibleSection title="Projection Details" tone="slate" defaultOpen={false}>
+        <div className="space-y-3">
+          <CollapsibleSection title="Show the Work" tone="sky" defaultOpen={false}>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+              <Card title="1. Projected Yards">
+                <div className="space-y-0.5">
+                  <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Projected Yards</span><span className="font-semibold tabular-nums text-slate-900">{fmt1(projection.projectedYards)}</span></div>
+                  <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Estimated Range</span><span className="tabular-nums text-slate-800">{projection.estimatedRange ? `${projection.estimatedRange.estimatedLow.toFixed(0)}–${projection.estimatedRange.estimatedHigh.toFixed(0)}` : "N/A"}</span></div>
+                  <div className="mt-1.5 border-t border-slate-200 pt-1.5"><ProjectionInputs row={row} /></div>
                 </div>
-                <p className="mt-1 text-[9px] italic text-slate-400">Contribution is each component&apos;s share of this row&apos;s total score, not a literal configured weight.</p>
-              </div>
-            ) : (
-              <p className="text-slate-400">No Matchup Score available.</p>
-            )}
-          </Card>
+              </Card>
 
-          <Card title="5. Yds Allowed Season / Last 5">
-            {opponentContext ? (
-              <div className="space-y-0.5">
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Slice</span><span className="text-slate-800">{opponentContext.productionAllowed.position}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Season</span><span className="tabular-nums text-slate-800">{formatYardsAllowed(opponentContext.productionAllowed.season)}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Last 5</span><span className="tabular-nums text-slate-800">{formatYardsAllowed(opponentContext.productionAllowed.last5)}</span></div>
-              </div>
-            ) : (
-              <p className="text-slate-400">No opponent context available.</p>
-            )}
-          </Card>
+              <Card title="2. Sportsbook">
+                {sportsbook.available ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Book</span><span className="text-slate-800">{sportsbook.book}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Line</span><span className="tabular-nums text-slate-800">{sportsbook.line.toFixed(1)}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Over / Under</span><span className="tabular-nums text-slate-800">{sportsbook.overPrice} / {sportsbook.underPrice}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Observed</span><span className="text-slate-800">{new Date(sportsbook.lastUpdate).toLocaleString()}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No approved sportsbook line available.</p>
+                )}
+              </Card>
 
-          <Card title="6. Opp EPA Allowed">
-            {opponentContext?.epaEdge.defense ? (
-              <div className="space-y-0.5">
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Value</span><span className="tabular-nums text-slate-800">{opponentContext.epaEdge.defense.formattedValue}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Rank</span><span className="tabular-nums text-slate-800">{formatRankOrdinal(opponentContext.epaEdge.defenseRank) ?? "N/A"}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Mode</span><span className="capitalize text-slate-800">{opponentContext.mode}</span></div>
-              </div>
-            ) : (
-              <p className="text-slate-400">No EPA data available.</p>
-            )}
-          </Card>
+              {/* Research context only -- literal equation, never a betting recommendation. */}
+              <Card title="3. Diff">
+                {diff ? (
+                  <div className="space-y-1">
+                    <p className="tabular-nums text-slate-800">
+                      {diff.projectedYards.toFixed(1)} − {diff.line.toFixed(1)} = <span className="font-semibold">{fmtSigned(diff.diff)}</span>
+                    </p>
+                    <p className="text-[10px] text-slate-400">Projection − Sportsbook Line. Research context only, not a recommendation.</p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No available line to diff against.</p>
+                )}
+              </Card>
 
-          <Card title="7. Opp Success Allowed">
-            {opponentContext?.successEdge.defense ? (
-              <div className="space-y-0.5">
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Value</span><span className="tabular-nums text-slate-800">{opponentContext.successEdge.defense.formattedValue}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Rank</span><span className="tabular-nums text-slate-800">{formatRankOrdinal(opponentContext.successEdge.defenseRank) ?? "N/A"}</span></div>
-                <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Period</span><span className="text-slate-800">{opponentContext.successPeriodLabel}</span></div>
-              </div>
-            ) : (
-              <p className="text-slate-400">No Success Rate data available.</p>
-            )}
-          </Card>
+              <Card title="4. Matchup">
+                {matchup ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Matchup Score</span><span className="font-semibold tabular-nums text-slate-900">{matchup.matchupScore.toFixed(1)}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Band</span><span className="text-slate-800">{matchup.band ? MATCHUP_SCORE_BAND_LABEL[matchup.band] : "N/A"}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Opportunity</span><span className="tabular-nums text-slate-800">{matchup.opportunityScore.toFixed(1)}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Environment</span><span className="tabular-nums text-slate-800">{matchup.environmentScore.toFixed(1)}</span></div>
+                    <div className="mt-1.5 border-t border-slate-200 pt-1.5 space-y-0.5">
+                      {matchup.components.map((c) => (
+                        <div key={c.key} className="flex items-baseline justify-between">
+                          <span className="capitalize font-medium text-slate-600">{c.key.replace(/([A-Z])/g, " $1").trim()}</span>
+                          <span className="tabular-nums text-slate-800">
+                            {c.score.toFixed(1)}
+                            {c.weight != null && <span className="ml-1 text-[9px] font-normal text-slate-400">({(c.weight * 100).toFixed(0)}% contribution)</span>}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[9px] italic text-slate-400">Contribution is each component&apos;s share of this row&apos;s total score, not a literal configured weight.</p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No Matchup Score available.</p>
+                )}
+              </Card>
 
-          <Card title="8. Team Edge">
-            {edge ? (
-              <div className="space-y-1">
-                <p className="tabular-nums text-slate-800">
-                  {edge.defenseRank} − {edge.offenseRank} = <span className="font-semibold">{fmtSigned(edge.edge)}</span> Team Edge
-                </p>
-                <p className="text-[10px] text-slate-400">Opponent Defense EPA Rank − Team Offense EPA Rank = Team Edge. Distinct from Matchup Score.</p>
-              </div>
-            ) : (
-              <p className="text-slate-400">No rank data available for Team Edge.</p>
-            )}
-          </Card>
+              <Card title="5. Yds Allowed Season / Last 5">
+                {opponentContext ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Slice</span><span className="text-slate-800">{opponentContext.productionAllowed.position}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Season</span><span className="tabular-nums text-slate-800">{formatYardsAllowed(opponentContext.productionAllowed.season)}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Last 5</span><span className="tabular-nums text-slate-800">{formatYardsAllowed(opponentContext.productionAllowed.last5)}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No opponent context available.</p>
+                )}
+              </Card>
+
+              <Card title="6. Opp EPA Allowed">
+                {opponentContext?.epaEdge.defense ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Value</span><span className="tabular-nums text-slate-800">{opponentContext.epaEdge.defense.formattedValue}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Rank</span><span className="tabular-nums text-slate-800">{formatRankOrdinal(opponentContext.epaEdge.defenseRank) ?? "N/A"}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Mode</span><span className="capitalize text-slate-800">{opponentContext.mode}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No EPA data available.</p>
+                )}
+              </Card>
+
+              <Card title="7. Opp Success Allowed">
+                {opponentContext?.successEdge.defense ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Value</span><span className="tabular-nums text-slate-800">{opponentContext.successEdge.defense.formattedValue}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Rank</span><span className="tabular-nums text-slate-800">{formatRankOrdinal(opponentContext.successEdge.defenseRank) ?? "N/A"}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Period</span><span className="text-slate-800">{opponentContext.successPeriodLabel}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No Success Rate data available.</p>
+                )}
+              </Card>
+
+              <Card title="8. Team Edge">
+                {edge ? (
+                  <div className="space-y-1">
+                    <p className="tabular-nums text-slate-800">
+                      {edge.defenseRank} − {edge.offenseRank} = <span className="font-semibold">{fmtSigned(edge.edge)}</span> Team Edge
+                    </p>
+                    <p className="text-[10px] text-slate-400">Opponent Defense EPA Rank − Team Offense EPA Rank = Team Edge. Distinct from Matchup Score.</p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">No rank data available for Team Edge.</p>
+                )}
+              </Card>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Role / Provenance" tone="slate" defaultOpen={false}>
+            <div className="grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Depth Rank</span><span className="text-slate-800">{role.depthRank ?? "N/A"}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Starter</span><span className="text-slate-800">{role.starterFlag ? "Yes" : "No"}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Role Source</span><span className="max-w-[140px] truncate text-right text-slate-800" title={role.roleSource}>{role.roleSource}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Role Confidence</span><span className="text-slate-800">{role.roleConfidence}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Fallback Provenance</span><span className="text-slate-800">{role.fallbackProvenance}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Games w/ Prior Usage</span><span className="tabular-nums text-slate-800">{role.gamesWithPriorUsage}</span></div>
+              <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Team Changed</span><span className="text-slate-800">{role.teamChanged ? "Yes" : "No"}</span></div>
+            </div>
+          </CollapsibleSection>
+
+          {notes.length > 0 && (
+            <CollapsibleSection title="Notes" tone="amber" defaultOpen={false}>
+              <ul className="space-y-1">
+                {notes.map((note) => (
+                  <li key={note.key} className="flex gap-1.5 text-amber-900">
+                    <span aria-hidden>•</span>
+                    <span>{note.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleSection>
+          )}
         </div>
-      </CollapsibleSection>
-
-      <Card title="Role / Provenance">
-        <div className="grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Depth Rank</span><span className="text-slate-800">{role.depthRank ?? "N/A"}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Starter</span><span className="text-slate-800">{role.starterFlag ? "Yes" : "No"}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Role Source</span><span className="max-w-[140px] truncate text-right text-slate-800" title={role.roleSource}>{role.roleSource}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Role Confidence</span><span className="text-slate-800">{role.roleConfidence}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Fallback Provenance</span><span className="text-slate-800">{role.fallbackProvenance}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Games w/ Prior Usage</span><span className="tabular-nums text-slate-800">{role.gamesWithPriorUsage}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Team Changed</span><span className="text-slate-800">{role.teamChanged ? "Yes" : "No"}</span></div>
-        </div>
-      </Card>
-
-      {notes.length > 0 && (
-        <Card title="Notes">
-          <ul className="space-y-1">
-            {notes.map((note) => (
-              <li key={note.key} className="flex gap-1.5 text-amber-900">
-                <span aria-hidden>•</span>
-                <span>{note.text}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      <CollapsibleSection title="Player Last 10" tone="amber">
-        {history.error ? (
-          <p className="text-slate-400">Last-10 history unavailable this run.</p>
-        ) : (
-          <NflYardagePlayerLast10Table playerName={row.playerName} history={playerHistory} currentLine={currentLine} />
-        )}
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Opponent Last 10" tone="violet">
-        {history.error ? (
-          <p className="text-slate-400">Last-10 history unavailable this run.</p>
-        ) : (
-          <NflYardageOpponentLast10Table
-            opponentAbbr={row.opponent}
-            position={resolvePositionSlice(row.market, row.position)}
-            history={opponentHistory}
-            currentLine={currentLine}
-          />
-        )}
       </CollapsibleSection>
 
       <div className="flex items-center gap-2 border-t border-slate-200 pt-2 text-[10px] text-slate-400">

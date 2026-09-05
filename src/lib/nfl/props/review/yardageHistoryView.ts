@@ -122,6 +122,23 @@ export function formatOpponentDisplay(opponentAbbr: string | null, homeAway: "ho
   return homeAway === "away" ? `@ ${abbr}` : `vs ${abbr}`;
 }
 
+/**
+ * Opponent (team-defense) Last-10 table only. `game.homeAway` there is the
+ * DEFENSE team's own home/away status for that historical game (see
+ * `buildGameLookup` in scripts/lib/nfl-yardage-history-core.mjs, which keys
+ * the lookup by the defense team, not the visiting offense) -- so the
+ * OPPOSING offense's own field status is the inverse: the defense hosting
+ * ("home") means the visiting offense played "@" the defense; the defense
+ * traveling ("away") means the offense hosted the defense ("vs"). Returns
+ * null -- never a fabricated guess -- when the historical record has no
+ * homeAway for that game.
+ */
+export function formatOpposingOffenseContext(defenseHomeAway: "home" | "away" | null, defenseAbbr: string): string | null {
+  if (defenseHomeAway == null) return null;
+  const abbr = defenseAbbr.toUpperCase();
+  return defenseHomeAway === "home" ? `@ ${abbr}` : `vs ${abbr}`;
+}
+
 export function formatGameScore(score: { result: "W" | "L" | "T" | null; teamScore: number | null; oppScore: number | null } | null): string {
   if (!score || score.result == null || score.teamScore == null || score.oppScore == null) return "N/A";
   return `${score.result} ${score.teamScore}–${score.oppScore}`;

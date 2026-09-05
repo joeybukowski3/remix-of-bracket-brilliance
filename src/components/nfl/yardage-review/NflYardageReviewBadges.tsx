@@ -26,6 +26,29 @@ export function NflMatchupScoreBadge({ score, band }: { score: number | null; ba
   );
 }
 
+/**
+ * Compact stand-in for `NflMatchupScoreBadge` used on the mobile table row --
+ * same score/band/tone, laid out as a two-line stack instead of a wide pill
+ * so the Matchup column fits alongside Player/Proj Yds/Diff on a ~360px
+ * viewport without wrapping.
+ */
+export function NflMatchupScoreBadgeCompact({ score, band }: { score: number | null; band: NflMatchupScoreBand | null }) {
+  if (score == null || band == null) {
+    return <span className="text-slate-400">—</span>;
+  }
+  const tone = matchupScoreHeatTone(band);
+  return (
+    <span
+      className={cn("inline-flex min-w-[2.25rem] flex-col items-center justify-center rounded px-1 py-0.5 leading-tight tabular-nums", weeklyHeatClass(tone))}
+      style={weeklyHeatStyle(tone)}
+      title={MATCHUP_SCORE_BAND_LABEL[band]}
+    >
+      <span className="text-[11px] font-bold">{Math.round(score)}</span>
+      <span className="text-[7px] font-semibold uppercase tracking-wide opacity-80">{MATCHUP_SCORE_BAND_LABEL[band]}</span>
+    </span>
+  );
+}
+
 const FLAG_LABEL: Record<string, string> = {
   noHistory: "No History",
   roleUncertain: "Role Uncertain",

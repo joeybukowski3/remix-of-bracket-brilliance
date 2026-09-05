@@ -41,6 +41,29 @@ function fmtVegasAvg(value: number | null): string {
 }
 
 const MARKET_YARDS_LABEL: Record<NflProjectionMarket, string> = { passing: "Pass Yds", rushing: "Rush Yds", receiving: "Rec Yds" };
+/** Compact-column header for the mobile volume field -- "Cmp/Att", "Att", "Tgt/Rec". */
+const MARKET_MOBILE_VOLUME_LABEL: Record<NflProjectionMarket, string> = { passing: "Cmp/Att", rushing: "Att", receiving: "Tgt/Rec" };
+/** Compact-column header for the mobile score field -- "TD/INT" for passing, "TD" otherwise. */
+const MARKET_MOBILE_SCORE_LABEL: Record<NflProjectionMarket, string> = { passing: "TD/INT", rushing: "TD", receiving: "TD" };
+
+function mobileVolumeCell(market: NflProjectionMarket, stat: NflYardagePassingStatBlock | NflYardageRushingStatBlock | NflYardageReceivingStatBlock): string {
+  if (market === "passing") {
+    const s = stat as NflYardagePassingStatBlock;
+    return `${s.completions}/${s.attempts}`;
+  }
+  if (market === "rushing") return String((stat as NflYardageRushingStatBlock).rushAttempts);
+  const s = stat as NflYardageReceivingStatBlock;
+  return `${s.targets}/${s.receptions}`;
+}
+
+function mobileScoreCell(market: NflProjectionMarket, stat: NflYardagePassingStatBlock | NflYardageRushingStatBlock | NflYardageReceivingStatBlock): string {
+  if (market === "passing") {
+    const s = stat as NflYardagePassingStatBlock;
+    return `${s.passingTds}/${s.interceptions}`;
+  }
+  if (market === "rushing") return String((stat as NflYardageRushingStatBlock).rushTds);
+  return String((stat as NflYardageReceivingStatBlock).recTds);
+}
 
 export default function NflYardagePlayerLast10Table({
   playerName,
@@ -69,9 +92,48 @@ export default function NflYardagePlayerLast10Table({
         {playerName} — Last {history.games.length} Games
       </h4>
       <NflYardageLast10SummaryStrip summary={summary} />
+
+      {/* Compact mobile-width table -- Date / Opp / volume / Yards vs line / TD(-INT) / Opp Def Rank, no horizontal scroll (table-fixed keeps all 6 columns within a ~360px viewport). */}
+      <div className="overflow-hidden rounded-md border-2 border-slate-300 md:hidden">
+        <table className="w-full table-fixed border-collapse text-[10px]">
+          <colgroup>
+            <col className="w-[17%]" />
+            <col className="w-[19%]" />
+            <col className="w-[17%]" />
+            <col className="w-[16%]" />
+            <col className="w-[15%]" />
+            <col className="w-[16%]" />
+          </colgroup>
+          <thead>
+            <tr className="border-b-2 border-slate-300 bg-slate-200/70 text-left text-[8px] font-bold uppercase tracking-wide text-slate-600">
+              <th className="px-1 py-1.5">Date</th>
+              <th className="px-1 py-1.5">Opp</th>
+              <th className="px-1 py-1.5 text-center">{MARKET_MOBILE_VOLUME_LABEL[market]}</th>
+              <th className="px-1 py-1.5 text-center">Yds</th>
+              <th className="px-1 py-1.5 text-center">{MARKET_MOBILE_SCORE_LABEL[market]}</th>
+              <th className="px-1 py-1.5 text-center">Rk</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.games.map((game) => (
+              <tr key={`m-${game.gameId ?? `${game.season}-${game.week}`}`} className="border-b border-slate-100 last:border-b-0">
+                <td className="px-1 py-1.5 tabular-nums text-slate-600">{fmtDate(game.dateUtc)}</td>
+                <td className="truncate px-1 py-1.5 text-slate-800">{formatOpponentDisplay(game.opponentAbbr, game.homeAway)}</td>
+                <td className="px-1 py-1.5 text-center tabular-nums text-slate-700">{mobileVolumeCell(market, game.stat)}</td>
+                <td className="px-1 py-1.5 text-center"><NflYardageActualYardsCell actualYards={game.actualYards} currentLine={currentLine} /></td>
+                <td className="px-1 py-1.5 text-center tabular-nums text-slate-700">{mobileScoreCell(market, game.stat)}</td>
+                <td className="px-1 py-1.5 text-center">
+                  <NflYardageRankCell rank={game.oppDefRank} heatTone={historicalDefRankHeatTone(game.oppDefRank, game.oppDefRankPoolSize)} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <DenseTableScroller
         label={`${playerName} last ${history.games.length} games`}
-        className="rounded-md border-2 border-slate-300"
+        className="hidden rounded-md border-2 border-slate-300 md:block"
       >
         <table className="w-full min-w-[820px] border-collapse text-[11px]">
           <thead>
