@@ -39,6 +39,15 @@ import {
 } from "@/lib/mlb/mlbSocialSelection";
 import { evaluateHrPlusEv, isPlusEvEligible } from "@/lib/mlb/hrPlusEvModel";
 import HrPlusEvTable from "@/components/mlb/HrPlusEvTable";
+import { MobileSortHeader, PropsTabPanel, PropsTwoTabSwitch, STICKY_MOBILE_HEADER_CELL_CLASS, splitDisplayName } from "@/components/mlb/props-mobile/PropsMobileTablePrimitives";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
+
+type HrStatsTabKey = "batter" | "matchup";
+const HR_STATS_TABS = [
+  { key: "batter" as HrStatsTabKey, label: "Batter Stats", tone: "emerald" as const },
+  { key: "matchup" as HrStatsTabKey, label: "Matchup Stats", tone: "violet" as const },
+] as const;
+type HrMobileSortableKey = "player" | "hrScore" | "last7HR" | "opposingPitcherHrVs";
 
 /**
  * Re-exported for backward compatibility -- the real implementations live
@@ -1952,6 +1961,8 @@ export default function MlbHrProps() {
   const { loading: bvpHistoryLoading, fileUnavailable: bvpHistoryUnavailable, historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
   const [bvpExpandedBatterKey, setBvpExpandedBatterKey] = useState<string | null>(null);
   const [bvpExpandedMatchupKey, setBvpExpandedMatchupKey] = useState<string | null>(null);
+  /** Batter Stats / Matchup Stats mobile tab state for the Batter View's compact table -- only one batter row is ever expanded at a time, so a single shared tab selection is sufficient. */
+  const [hrStatsTab, setHrStatsTab] = useState<HrStatsTabKey>("batter");
   /** Mobile-only expand toggle for the Strikeout Matchup lens's compact rows -- there is no batter-vs-pitcher panel for a team-level strikeout row, so this tracks expansion locally instead of reusing bvpExpandedMatchupKey. */
   const [expandedStrikeoutRowKey, setExpandedStrikeoutRowKey] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -2279,6 +2290,7 @@ export default function MlbHrProps() {
   const toggleBvpBatterRow = (row: { playerId: number | null; opposingPitcherId: number | null }) => {
     const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
     setBvpExpandedBatterKey((current) => (current === key ? null : key));
+    setHrStatsTab("batter");
   };
 
   const toggleBvpMatchupRow = (row: { playerId: number | null; opposingPitcherId: number | null }) => {
@@ -2783,41 +2795,65 @@ export default function MlbHrProps() {
                         <DataLegend />
                         <div data-x-export="mlb-hr-props" className="rounded-xl border border-slate-200">
                           {isCompactLayout ? (
-                          /* Mobile/tablet (below lg): compact expandable rows. */
-                          <div className="divide-y divide-slate-100">
+                          /* Mobile/tablet (below lg): dense sortable table (Batter/HR Score/Odds/L7 HR/Ptch HR Vs), matching the K Props / NFL Yardage Props Review mobile table pattern. */
+                          <div data-testid="hr-props-mobile-table" className="rounded-lg p-2">
+                            <table className="w-full table-fixed text-[11px]">
+                              <colgroup>
+                                <col className="w-[34%]" />
+                                <col className="w-[18%]" />
+                                <col className="w-[16%]" />
+                                <col className="w-[16%]" />
+                                <col className="w-[16%]" />
+                              </colgroup>
+                              <thead>
+                                <tr data-testid="hr-props-mobile-sticky-header">
+                                  <MobileSortHeader<HrMobileSortableKey> label="Batter" sortKey="player" activeKey={batterSortKey as HrMobileSortableKey} direction={batterSortDirection} onSort={handleBatterSort} align="left" testIdPrefix="hr-props-mobile-sort" sticky />
+                                  <MobileSortHeader<HrMobileSortableKey> label="HR Score" sortKey="hrScore" activeKey={batterSortKey as HrMobileSortableKey} direction={batterSortDirection} onSort={handleBatterSort} testIdPrefix="hr-props-mobile-sort" sticky />
+                                  <th scope="col" className={cn("px-1.5 py-1.5 text-center text-[9px] font-bold uppercase tracking-wide text-slate-500", STICKY_MOBILE_HEADER_CELL_CLASS)}>Odds</th>
+                                  <MobileSortHeader<HrMobileSortableKey> label="L7 HR" sortKey="last7HR" activeKey={batterSortKey as HrMobileSortableKey} direction={batterSortDirection} onSort={handleBatterSort} testIdPrefix="hr-props-mobile-sort" sticky />
+                                  <MobileSortHeader<HrMobileSortableKey> label="Ptch HR Vs" sortKey="opposingPitcherHrVs" activeKey={batterSortKey as HrMobileSortableKey} direction={batterSortDirection} onSort={handleBatterSort} testIdPrefix="hr-props-mobile-sort" sticky />
+                                </tr>
+                              </thead>
+                              <tbody>
                             {visibleBatters.length ? visibleBatters.map((row, i) => {
                               const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
                               const isBvpExpanded = bvpExpandedBatterKey === bvpKey;
                               const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
                               const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
-                              const onBvpRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-                                if (event.key === "Enter" || event.key === " ") {
-                                  event.preventDefault();
-                                  toggleBvpBatterRow(row);
-                                }
-                              };
                               const angleTags = getBatterAngleTags(row);
                               return (
-                                <div key={`m-${row.player}-${row.team}-${row.opponent}`} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-                                  <div
-                                    onClick={() => toggleBvpBatterRow(row)}
-                                    onKeyDown={onBvpRowKeyDown}
-                                    role="button"
+                                <Fragment key={`m-${row.player}-${row.team}-${row.opponent}`}>
+                                  <tr
+                                    className={cn("cursor-pointer border-b border-slate-100 transition hover:bg-slate-50", i % 2 === 0 ? "bg-white" : "bg-slate-50/70")}
                                     tabIndex={0}
+                                    role="button"
                                     aria-expanded={isBvpExpanded}
                                     aria-label={bvpRowLabel}
-                                    className="flex cursor-pointer items-center gap-2 px-3 py-2.5 transition-colors active:bg-slate-100"
+                                    onClick={() => toggleBvpBatterRow(row)}
+                                    onKeyDown={(event) => {
+                                      if (event.key !== "Enter" && event.key !== " ") return;
+                                      event.preventDefault();
+                                      toggleBvpBatterRow(row);
+                                    }}
                                   >
-                                    <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
-                                    <TeamLogoBadge team={row.team} size={22} showLabel={false} />
-                                    <div className="min-w-0 flex-1">
-                                      <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
-                                      <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
-                                    </div>
-                                    <div className="flex shrink-0 flex-col items-end gap-1">
-                                      {hasHrOdds && row.hrOddsYes != null ? (
-                                        <span className="whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">Y {row.hrOddsYes}</span>
-                                      ) : null}
+                                    <td className="overflow-hidden px-1.5 py-2.5">
+                                      {(() => {
+                                        const { first, last } = splitDisplayName(row.player);
+                                        return (
+                                          <span className="flex min-w-0 items-start gap-1.5">
+                                            <MlbTeamLogo team={row.team} size={24} className="mt-0.5 shrink-0" />
+                                            <span className="min-w-0 leading-tight">
+                                              {first && <span className="block truncate font-semibold text-slate-900">{first}</span>}
+                                              <span className="block truncate font-semibold text-slate-900">{last}</span>
+                                              {row.opposingPitcher && (
+                                                <span className="block truncate text-[9px] font-medium text-slate-500">vs {splitDisplayName(row.opposingPitcher).last}</span>
+                                              )}
+                                            </span>
+                                          </span>
+                                        );
+                                      })()}
+                                    </td>
+                                    <td className="px-1 py-2 text-center">
                                       <PercentileCell
                                         value={row.hrScore}
                                         display={row.hrScore.toFixed(1)}
@@ -2825,102 +2861,137 @@ export default function MlbHrProps() {
                                         strong
                                         bypassSampleGate
                                       />
-                                    </div>
-                                  </div>
+                                    </td>
+                                    <td className="px-1 py-2 text-center tabular-nums text-slate-600">
+                                      {hasHrOdds && row.hrOddsYes != null ? row.hrOddsYes : <span className="text-slate-400">{DASH}</span>}
+                                    </td>
+                                    <td className="px-1 py-2 text-center tabular-nums">
+                                      <GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} />
+                                    </td>
+                                    <td className="px-1 py-2 text-center">
+                                      <StatScorePill value={row.opposingPitcherHrVs} />
+                                    </td>
+                                  </tr>
                                   {isBvpExpanded && (
-                                    <div className="space-y-3 bg-slate-50 px-3 pb-3 pt-1">
-                                      <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
-                                      <BatterVsPitcherSummary
-                                        opposingPitcher={row.opposingPitcher}
-                                        bvpEntry={bvpEntry}
-                                        bvpLoading={bvpHistoryLoading}
-                                        bvpUnavailable={bvpHistoryUnavailable}
-                                      />
-                                      <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
-                                      <div>
-                                        <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
-                                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                          {hasHrOdds && (
-                                            <MetricTile label="HR Odds">
-                                              {row.hrOddsYes != null ? (
-                                                <div className="flex flex-col gap-0">
-                                                  <span className="text-[11px] font-bold text-slate-700">Y {row.hrOddsYes}{row.hrOddsNo ? <span className="ml-1 font-normal text-slate-400">N {row.hrOddsNo}</span> : null}</span>
-                                                  {row.marketImpliedProbability != null && (
-                                                    <span className="text-[9px] text-slate-400">{(row.marketImpliedProbability * 100).toFixed(1)}% mkt</span>
-                                                  )}
-                                                </div>
-                                              ) : <span className="text-[11px] text-slate-300">No odds posted</span>}
-                                            </MetricTile>
-                                          )}
-                                          <MetricTile label="Barrel%">
-                                            {row.barrelRate != null && row.barrelRate >= 18 ? <span>💣</span> : null}
-                                            <GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} />
-                                          </MetricTile>
-                                          <MetricTile label="HH%">
-                                            {row.hardHitRate != null && row.hardHitRate >= 55 ? <span>💥</span> : null}
-                                            <GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} />
-                                          </MetricTile>
-                                          <MetricTile label="L7 HR">
-                                            {row.last7HR != null && row.last7HR >= 3 ? <span>📈</span> : null}
-                                            <GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} />
-                                          </MetricTile>
-                                          <MetricTile label="L30 HR">
-                                            {row.last30HR != null && row.last30HR >= 7 ? <span>👑</span> : null}
-                                            <GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} />
-                                          </MetricTile>
-                                          <MetricTile label="Ptch HR VS">
-                                            {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 ? <span>⚔️</span> : null}
-                                            <StatScorePill value={row.opposingPitcherHrVs} />
-                                          </MetricTile>
-                                          <MetricTile label="Ptch xERA">
-                                            {row.pitcherXera != null ? (() => {
-                                              const style = getXeraToneStyle(row.pitcherXera);
-                                              return (
-                                                <span className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ backgroundColor: style.bg, color: style.text }}>
-                                                  {row.pitcherXera.toFixed(2)}
-                                                </span>
-                                              );
-                                            })() : <span className="text-[11px] text-slate-300">—</span>}
-                                          </MetricTile>
-                                          <MetricTile label="Ptch FB%">
-                                            {row.pitcherFlyBallRate != null
-                                              ? <span className="text-[11px] font-semibold text-slate-600">{row.pitcherFlyBallRate.toFixed(1)}%</span>
-                                              : <span className="text-[11px] text-slate-300">—</span>}
-                                          </MetricTile>
-                                          <MetricTile label="Pitcher Trend">
-                                            {row.pitcherRegressionScore != null ? (() => {
-                                              const s = row.pitcherRegressionScore;
-                                              const style = getRegressionToneStyle(s);
-                                              return (
-                                                <span className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ backgroundColor: style.bg, color: style.text }}>
-                                                  {s > 0 ? "+" : ""}{s.toFixed(1)} {style.label}
-                                                </span>
-                                              );
-                                            })() : <span className="text-[11px] text-slate-300">—</span>}
-                                          </MetricTile>
-                                          <MetricTile label="Game Time">
-                                            <span className="text-[11px] font-semibold text-slate-600">{formatGameTime(row.gameStartTime)}</span>
-                                          </MetricTile>
-                                          <MetricTile label="Angle">
-                                            {angleTags.length ? (
-                                              <div className="flex flex-wrap gap-1">
-                                                {angleTags.map((tag) => (
-                                                  <span key={`${row.player}-m-${tag}`} className="whitespace-nowrap rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
-                                                ))}
+                                    <tr className="border-b border-slate-100">
+                                      <td colSpan={5} className="p-0">
+                                        <div className="space-y-3 border-y-2 border-slate-300 bg-yellow-50/60 p-3 shadow-inner">
+                                          <div>
+                                            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Core / Market</div>
+                                            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                              {hasHrOdds && (
+                                                <MetricTile label="HR Odds">
+                                                  {row.hrOddsYes != null ? (
+                                                    <div className="flex flex-col gap-0">
+                                                      <span className="text-[11px] font-bold text-slate-700">Y {row.hrOddsYes}{row.hrOddsNo ? <span className="ml-1 font-normal text-slate-400">N {row.hrOddsNo}</span> : null}</span>
+                                                      {row.marketImpliedProbability != null && (
+                                                        <span className="text-[9px] text-slate-400">{(row.marketImpliedProbability * 100).toFixed(1)}% mkt</span>
+                                                      )}
+                                                    </div>
+                                                  ) : <span className="text-[11px] text-slate-300">No odds posted</span>}
+                                                </MetricTile>
+                                              )}
+                                              <MetricTile label="HR Score">
+                                                <PercentileCell
+                                                  value={row.hrScore}
+                                                  display={row.hrScore.toFixed(1)}
+                                                  percentile={lookupPercentile(row.hrScore, hrScorePercentileLookup)}
+                                                  strong
+                                                  bypassSampleGate
+                                                />
+                                              </MetricTile>
+                                              <MetricTile label="Game Time"><span className="text-[11px] font-semibold text-slate-600">{formatGameTime(row.gameStartTime)}</span></MetricTile>
+                                              <MetricTile label="Angle">
+                                                {angleTags.length ? (
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {angleTags.map((tag) => (
+                                                      <span key={`${row.player}-m-${tag}`} className="whitespace-nowrap rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
+                                                    ))}
+                                                  </div>
+                                                ) : <span className="text-[11px] text-slate-300">{DASH}</span>}
+                                              </MetricTile>
+                                            </div>
+                                          </div>
+                                          <PropsTwoTabSwitch<HrStatsTabKey> tabs={HR_STATS_TABS} active={hrStatsTab} onChange={setHrStatsTab} idPrefix={`hr-batter-${bvpKey ?? i}`} />
+                                          <PropsTabPanel id={`hr-batter-${bvpKey ?? i}-panel-batter`} labelledBy={`hr-batter-${bvpKey ?? i}-tab-batter`} active={hrStatsTab === "batter"}>
+                                            <div className="space-y-3">
+                                              <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
+                                              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                                <MetricTile label="Barrel%">
+                                                  {row.barrelRate != null && row.barrelRate >= 18 ? <span>💣</span> : null}
+                                                  <GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} />
+                                                </MetricTile>
+                                                <MetricTile label="HH%">
+                                                  {row.hardHitRate != null && row.hardHitRate >= 55 ? <span>💥</span> : null}
+                                                  <GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} />
+                                                </MetricTile>
+                                                <MetricTile label="L7 HR">
+                                                  {row.last7HR != null && row.last7HR >= 3 ? <span>📈</span> : null}
+                                                  <GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} />
+                                                </MetricTile>
+                                                <MetricTile label="L30 HR">
+                                                  {row.last30HR != null && row.last30HR >= 7 ? <span>👑</span> : null}
+                                                  <GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} />
+                                                </MetricTile>
                                               </div>
-                                            ) : <span className="text-[11px] text-slate-300">{DASH}</span>}
-                                          </MetricTile>
+                                            </div>
+                                          </PropsTabPanel>
+                                          <PropsTabPanel id={`hr-batter-${bvpKey ?? i}-panel-matchup`} labelledBy={`hr-batter-${bvpKey ?? i}-tab-matchup`} active={hrStatsTab === "matchup"}>
+                                            <div className="space-y-3">
+                                              <BatterVsPitcherSummary
+                                                opposingPitcher={row.opposingPitcher}
+                                                bvpEntry={bvpEntry}
+                                                bvpLoading={bvpHistoryLoading}
+                                                bvpUnavailable={bvpHistoryUnavailable}
+                                              />
+                                              <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
+                                              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                                <MetricTile label="Ptch HR VS">
+                                                  {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 ? <span>⚔️</span> : null}
+                                                  <StatScorePill value={row.opposingPitcherHrVs} />
+                                                </MetricTile>
+                                                <MetricTile label="Ptch xERA">
+                                                  {row.pitcherXera != null ? (() => {
+                                                    const style = getXeraToneStyle(row.pitcherXera);
+                                                    return (
+                                                      <span className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ backgroundColor: style.bg, color: style.text }}>
+                                                        {row.pitcherXera.toFixed(2)}
+                                                      </span>
+                                                    );
+                                                  })() : <span className="text-[11px] text-slate-300">—</span>}
+                                                </MetricTile>
+                                                <MetricTile label="Ptch FB%">
+                                                  {row.pitcherFlyBallRate != null
+                                                    ? <span className="text-[11px] font-semibold text-slate-600">{row.pitcherFlyBallRate.toFixed(1)}%</span>
+                                                    : <span className="text-[11px] text-slate-300">—</span>}
+                                                </MetricTile>
+                                                <MetricTile label="Pitcher Trend">
+                                                  {row.pitcherRegressionScore != null ? (() => {
+                                                    const s = row.pitcherRegressionScore;
+                                                    const style = getRegressionToneStyle(s);
+                                                    return (
+                                                      <span className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ backgroundColor: style.bg, color: style.text }}>
+                                                        {s > 0 ? "+" : ""}{s.toFixed(1)} {style.label}
+                                                      </span>
+                                                    );
+                                                  })() : <span className="text-[11px] text-slate-300">—</span>}
+                                                </MetricTile>
+                                              </div>
+                                            </div>
+                                          </PropsTabPanel>
                                         </div>
-                                      </div>
-                                    </div>
+                                      </td>
+                                    </tr>
                                   )}
-                                </div>
+                                </Fragment>
                               );
                             }) : (
-                              <div className="px-3 py-6 text-center text-sm text-slate-500">
+                              <tr><td colSpan={5} className="px-3 py-6 text-center text-sm text-slate-500">
                                 {hrFilterActive ? "No Sin City batters match the current filters." : "No batters match the current search or game filter."}
-                              </div>
+                              </td></tr>
                             )}
+                              </tbody>
+                            </table>
                           </div>
                           ) : (
                           /* Desktop (lg and above): existing table, unchanged. */
