@@ -1,10 +1,10 @@
 {
   "date": "2026-09-05",
-  "generatedAt": "2026-09-05T16:54:14.548Z",
+  "generatedAt": "2026-09-05T17:35:26.355Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field leads the slate with a 1.4 park factor and Mason Adams on the mound, creating a massive HR environment for the Cardinals trio. Great American Ball Park (1.25) and Camden Yards (1.1) also boost power, while Petco and loanDepot park suppress it. Lefties Abbott and Rodón face right-handed power bats in hitter-friendly spots, adding leverage.",
-    "modelNote": "The model heavily weights park factors and recent barrel authority, elevating Bernal and Walker despite modest HR/FB ratios, while discounting Tatis and Soto due to suppressed venues despite strong underlying contact metrics."
+    "slateOverview": "Coors Field and Great American Ball Park headline the slate with 1.4 and 1.25 park factors, while Mason Adams and Andrew Abbott face lineups that post 75% and 47.6% hard-hit rates. The lefty-righty splits favor STL and MIL bats, and the thin air plus elevated barrel rates create the clearest HR edges.",
+    "modelNote": "The model is weighting park factor and hard-hit rate most heavily, then layering in recent HR volume and opposing pitcher HR vulnerability, which is why Bernal, Walker, and Crow-Armstrong occupy the top three spots."
   },
   "bestBets": [
     {
@@ -52,6 +52,65 @@
       "opposingPitcher": "Ryan Gusto",
       "hrScoreRank": 3,
       "topStats": [
+        "Pitcher HR VS=57.2",
+        "Hard Hit%=48.7"
+      ],
+      "bullets": [
+        "HR score 67.3 (#3)",
+        "Pitcher HR VS 57.2 at park 0.88"
+      ],
+      "hrOddsYes": "+315",
+      "marketImpliedProbability": 0.24096385542168675,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=83.0",
+        "Hard Hit%=49.4"
+      ],
+      "bullets": [
+        "HR score 65.9 (#4)",
+        "Pitcher HR VS 83.0 at park 1.40"
+      ],
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "NYY",
+      "opposingPitcher": "Carlos Rodón",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=53.9",
+        "Pitcher HR VS=45.6"
+      ],
+      "bullets": [
+        "HR score 65.0 (#5)",
+        "Pitcher HR VS 45.6 at park 0.89"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
+      "hrScoreRank": 3,
+      "topStats": [
         "barrel=13%",
         "HH=48.7%"
       ],
@@ -71,51 +130,11 @@
       "opposingPitcher": "Mason Adams",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=83.0",
-        "Hard Hit%=49.4"
-      ],
-      "bullets": [
-        "HR score 66.0 (#4)",
-        "Pitcher HR VS 83.0 at park 1.40"
-      ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "NYY",
-      "opposingPitcher": "Carlos Rodón",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Hard Hit%=53.9",
-        "Pitcher HR VS=45.6"
-      ],
-      "bullets": [
-        "HR score 65.1 (#5)",
-        "Pitcher HR VS 45.6 at park 0.89"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "COL",
-      "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 4,
-      "topStats": [
         "barrel=10.7%",
         "HH=49.4%"
       ],
       "bullets": [
-        "hrScore=66",
+        "hrScore=65.9",
         "park=1.4"
       ],
       "hrOddsYes": "+360",
@@ -134,7 +153,7 @@
         "HH=53.9%"
       ],
       "bullets": [
-        "hrScore=65.1",
+        "hrScore=65",
         "park=0.89"
       ],
       "hrOddsYes": "+390",
@@ -143,40 +162,40 @@
       "hrValueEdge": null
     },
     {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "SF",
-      "opposingPitcher": "Anthony Molina",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=14.4%",
-        "HH=48.7%"
-      ],
-      "bullets": [
-        "hrScore=63.8",
-        "park=1.06"
-      ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Jackson Chourio",
       "team": "MIL",
       "opponent": "CIN",
       "opposingPitcher": "Andrew Abbott",
-      "hrScoreRank": 7,
+      "hrScoreRank": 6,
       "topStats": [
         "Pitcher HR VS=59.6",
         "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 63.7 (#7)",
+        "HR score 63.9 (#6)",
         "Pitcher HR VS 59.6 at park 1.25"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "SF",
+      "opposingPitcher": "Anthony Molina",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=48.7",
+        "Pitcher HR VS=44.8"
+      ],
+      "bullets": [
+        "HR score 63.8 (#7)",
+        "Pitcher HR VS 44.8 at park 1.06"
+      ],
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -206,13 +225,13 @@
       "team": "MIL",
       "opponent": "CIN",
       "opposingPitcher": "Andrew Abbott",
-      "hrScoreRank": 7,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=12.8%",
         "HH=47.6%"
       ],
       "bullets": [
-        "hrScore=63.7",
+        "hrScore=63.9",
         "park=1.25"
       ],
       "hrOddsYes": "+320",
@@ -221,21 +240,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Mickey Gasper",
-      "team": "BOS",
-      "opponent": "BAL",
-      "opposingPitcher": "Chris Bassitt",
-      "hrScoreRank": 8,
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "SF",
+      "opposingPitcher": "Anthony Molina",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=10.3%",
-        "HH=38.9%"
+        "barrel=14.4%",
+        "HH=48.7%"
       ],
       "bullets": [
-        "hrScore=63.6",
-        "park=1.1"
+        "hrScore=63.8",
+        "park=1.06"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -250,7 +269,7 @@
         "Hard Hit%=42.9"
       ],
       "bullets": [
-        "HR score 63.4 (#9)",
+        "HR score 63.3 (#9)",
         "Pitcher HR VS 91.8 at park 1.04"
       ],
       "hrOddsYes": "+750",
@@ -259,21 +278,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Roman Anthony",
-      "team": "BOS",
-      "opponent": "BAL",
-      "opposingPitcher": "Chris Bassitt",
-      "hrScoreRank": 19,
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "LAA",
+      "opposingPitcher": "Yusei Kikuchi",
+      "hrScoreRank": 13,
       "topStats": [
-        "Hard Hit%=51.0",
-        "Pitcher HR VS=41.6"
+        "Pitcher HR VS=75.6",
+        "Hard Hit%=55.7"
       ],
       "bullets": [
-        "HR score 59.9 (#19)",
-        "Pitcher HR VS 41.6 at park 1.10"
+        "HR score 61.5 (#13)",
+        "Pitcher HR VS 75.6 at park 0.90"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
