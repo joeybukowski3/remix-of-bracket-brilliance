@@ -400,6 +400,46 @@ function actualPassAttemptsForTeam(prediction: PredictionSnapshotV1, playerStats
   return sawAny ? total : null;
 }
 
+/**
+ * The player-week-stats CSV the workflow actually refreshes
+ * (`nfl:player-week-stats-cache` -> refresh-fantasy-player-week-source-cache.mjs)
+ * is nflverse's fantasy-oriented weekly aggregate: it carries `recent_team`
+ * instead of `team`, `interceptions` instead of `passing_interceptions`, and
+ * no `game_id` column at all (it is a per-player-per-week row, not a
+ * per-game box score). `exactPlayerRows`/`actualFromStats` above need the
+ * canonical shape (`team`, `game_id`, `passing_interceptions`) that this
+ * resolver's own tests exercise. Normalize at the ingestion boundary --
+ * derived once per season from the already-loaded schedule -- so the
+ * resolution logic itself stays agnostic to which upstream CSV shape
+ * produced a row, and a row this cannot confidently map a game_id for
+ * (bye week, unrecognized team) is left with an empty game_id, which the
+ * unchanged "no exact match" path already treats as safely unresolved.
+ */
+function normalizePlayerStatsRow(row: CsvRow, gameIdByTeamWeek: Map<string, string>, season: number): CsvRow {
+  if (row.game_id) return row;
+  const team = row.team || row.recent_team;
+  const normalizedTeam = team ? normalizeNflTeamAbbr(team) : null;
+  const week = Number(row.week);
+  const gameId = normalizedTeam && Number.isInteger(week) ? gameIdByTeamWeek.get(`${season}|${week}|${normalizedTeam}`) : undefined;
+  return {
+    ...row,
+    team: team ?? row.team,
+    game_id: gameId ?? "",
+    passing_interceptions: row.passing_interceptions ?? row.interceptions,
+  };
+}
+
+function buildGameIdByTeamWeek(games: RawGame[]): Map<string, string> {
+  const lookup = new Map<string, string>();
+  for (const game of games) {
+    const home = normalizeNflTeamAbbr(game.homeAbbr);
+    const away = normalizeNflTeamAbbr(game.awayAbbr);
+    if (home) lookup.set(`${game.season}|${game.week}|${home}`, game.gameId);
+    if (away) lookup.set(`${game.season}|${game.week}|${away}`, game.gameId);
+  }
+  return lookup;
+}
+
 function artifactList(sources: ResolverSeasonSources, names: SourceArtifact["logical_name"][]): SourceArtifact[] {
   return names.flatMap((name) => sources.artifacts[name] ? [sources.artifacts[name] as SourceArtifact] : []);
 }
@@ -838,11 +878,13 @@ export function loadResolverSeasonSources(rootDir: string, season: number): Reso
   const teamPlayVolume: TeamPlayVolumeRow[] | null = playVolume
     ? (parseCsv(playVolume.text) as CsvRow[]).map((row) => parsePlayVolumeCompactRow(row) as TeamPlayVolumeRow)
     : null;
+  const games = gamesPayload?.games ?? null;
+  const gameIdByTeamWeek = games ? buildGameIdByTeamWeek(games) : new Map<string, string>();
   return {
     season,
-    games: gamesPayload?.games ?? null,
+    games,
     results: resultsPayload?.results ?? null,
-    playerStats: stats ? parseCsv(stats.text) as CsvRow[] : null,
+    playerStats: stats ? (parseCsv(stats.text) as CsvRow[]).map((row) => normalizePlayerStatsRow(row, gameIdByTeamWeek, season)) : null,
     rosters: rosters ? parseCsv(rosters.text) as CsvRow[] : null,
     teamPlayVolume,
     artifacts: Object.fromEntries([schedule, results, stats, rosters, playVolume].filter((item) => item != null).map((item) => [item.artifact.logical_name, item.artifact])),

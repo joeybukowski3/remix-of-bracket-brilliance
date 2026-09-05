@@ -487,3 +487,68 @@ describe("manual resolver entrypoint", () => {
     expect(teamOppEvents.every((event: { resolution_status: string; player_id: string | null }) => event.resolution_status === "resolved" && event.player_id === null)).toBe(true);
   });
 });
+
+describe("real player-week-stats cache schema (recent_team/no game_id/interceptions)", () => {
+  // WU2.5 operational-gap fix: `nfl:player-week-stats-cache` (the script the
+  // workflow actually runs) produces nflverse's fantasy-oriented weekly
+  // aggregate CSV, not a per-game box score -- it has `recent_team` instead
+  // of `team`, `interceptions` instead of `passing_interceptions`, and no
+  // `game_id` column. Before the loadResolverSeasonSources normalization fix,
+  // exactPlayerRows' `row.game_id === prediction.game_id` check could never
+  // match a single row from this schema, so passing/rushing/receiving would
+  // stay pending_player_stats forever even once real stats were published.
+  it("derives game_id from the schedule and maps recent_team/interceptions so passing/rushing/receiving resolve", () => {
+    const repoRoot = tempRoot();
+    const predictionRoot = join(repoRoot, "data", "nfl", "predictions");
+    const outcomeRoot = join(repoRoot, "data", "nfl", "prediction-outcomes");
+    const records = [
+      prediction("passing", { player_id: "gsis:00-001", team: "lar", opponent: "ari" }),
+      prediction("rushing", { player_id: "gsis:00-002", team: "lar", opponent: "ari" }),
+      prediction("receiving", { player_id: "gsis:00-003", team: "ari", opponent: "lar", home_away: "away" }),
+    ];
+    archiveProductionPredictions({ rootDir: predictionRoot, records });
+    const publicSeason = join(repoRoot, "public", "data", "nfl", "2025");
+    mkdirSync(publicSeason, { recursive: true });
+    writeFileSync(join(publicSeason, "games.json"), JSON.stringify({ _meta: { generatedAt: "2025-09-08T10:00:00.000Z" }, games: sources().games }));
+    writeFileSync(join(publicSeason, "results.json"), JSON.stringify({ _meta: { generatedAt: "2025-09-08T10:00:00.000Z" }, results: sources().results }));
+    const statsDir = join(repoRoot, "data", "nfl", "nflverse", "player-week-stats");
+    mkdirSync(statsDir, { recursive: true });
+    // Exact column set/order produced by refresh-fantasy-player-week-source-cache.mjs.
+    const header = "player_id,player_name,player_display_name,position,position_group,recent_team,season,week,season_type,opponent_team,completions,attempts,passing_yards,passing_tds,interceptions,carries,rushing_yards,rushing_tds,receptions,targets,receiving_yards,receiving_tds\n";
+    const rows = [
+      "00-001,Q.Back,Q.Back,QB,QB,LA,2025,1,REG,AZ,20,30,250,2,1,0,0,0,0,0,0,0",
+      "00-002,R.Back,R.Back,RB,RB,LA,2025,1,REG,AZ,0,0,0,0,0,15,60,1,2,3,10,0",
+      "00-003,W.Out,W.Out,WR,WR,AZ,2025,1,REG,LA,0,0,0,0,0,0,0,0,5,7,80,1",
+    ].join("\n");
+    writeFileSync(join(statsDir, "stats_player_week_2025.csv"), `${header}${rows}\n`);
+    writeFileSync(join(statsDir, "manifest.json"), JSON.stringify({ files: [{ season: 2025, retrievedAtUtc: "2025-09-08T09:00:00.000Z" }] }));
+    const args = { season: 2025, week: 1, dryRun: false, predictionRoot, outcomeRoot, repoRoot, recordedAt: "2025-09-08T12:00:00.000Z", predictionTypes: null };
+    const result = runResolver(args);
+    expect(result.summary).toMatchObject({ passing_resolved: 1, rushing_resolved: 1, receiving_resolved: 1, pending_player_stats: 0, identity_unresolved: 0 });
+    const passing = JSON.parse(readFileSync(join(outcomeRoot, "2025", "01", "passing.jsonl"), "utf8").trim());
+    expect(passing.actual).toMatchObject({ yards: 250, attempts: 30 });
+    const receiving = JSON.parse(readFileSync(join(outcomeRoot, "2025", "01", "receiving.jsonl"), "utf8").trim());
+    expect(receiving.actual).toMatchObject({ yards: 80, targets: 7, receptions: 5 });
+  });
+
+  it("leaves a row unresolved rather than crashing when its team cannot be matched to a schedule game_id", () => {
+    const repoRoot = tempRoot();
+    const predictionRoot = join(repoRoot, "data", "nfl", "predictions");
+    const outcomeRoot = join(repoRoot, "data", "nfl", "prediction-outcomes");
+    archiveProductionPredictions({ rootDir: predictionRoot, records: [prediction("passing", { player_id: "gsis:00-999", team: "lar", opponent: "ari" })] });
+    const publicSeason = join(repoRoot, "public", "data", "nfl", "2025");
+    mkdirSync(publicSeason, { recursive: true });
+    writeFileSync(join(publicSeason, "games.json"), JSON.stringify({ _meta: { generatedAt: "2025-09-08T10:00:00.000Z" }, games: sources().games }));
+    writeFileSync(join(publicSeason, "results.json"), JSON.stringify({ _meta: { generatedAt: "2025-09-08T10:00:00.000Z" }, results: sources().results }));
+    const statsDir = join(repoRoot, "data", "nfl", "nflverse", "player-week-stats");
+    mkdirSync(statsDir, { recursive: true });
+    const header = "player_id,player_name,player_display_name,position,position_group,recent_team,season,week,season_type,opponent_team,completions,attempts,passing_yards,passing_tds,interceptions,carries,rushing_yards,rushing_tds,receptions,targets,receiving_yards,receiving_tds\n";
+    // recent_team "FA" (free agent / practice squad, not in this week's schedule).
+    writeFileSync(join(statsDir, "stats_player_week_2025.csv"), `${header}00-999,X,X,QB,QB,FA,2025,1,REG,AZ,20,30,250,2,1,0,0,0,0,0,0,0\n`);
+    writeFileSync(join(statsDir, "manifest.json"), JSON.stringify({ files: [{ season: 2025, retrievedAtUtc: "2025-09-08T09:00:00.000Z" }] }));
+    const args = { season: 2025, week: 1, dryRun: false, predictionRoot, outcomeRoot, repoRoot, recordedAt: "2025-09-08T12:00:00.000Z", predictionTypes: null };
+    const result = runResolver(args);
+    expect(result.summary.pending_player_stats).toBe(1);
+    expect(result.summary.passing_resolved).toBe(0);
+  });
+});
