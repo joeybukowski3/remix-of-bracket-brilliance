@@ -109,6 +109,9 @@ export default defineConfig({
       "scripts/generate-nfl-performance-overview.test.ts",
       "scripts/lib/nfl-performance-health.test.ts",
       "scripts/generate-nfl-performance-health.test.ts",
+      // NFL Performance Center WU6 -- canonical sides (spread) performance artifact.
+      "scripts/lib/nfl-sides-performance.test.ts",
+      "scripts/generate-nfl-sides-performance.test.ts",
     ],
   },
   resolve: {

@@ -192,27 +192,49 @@ describe("buildPropsHealthSection", () => {
 });
 
 describe("buildSidesHealthSection", () => {
-  it("reports NOT_IMPLEMENTED for the dedicated public view while still computing an operational status", () => {
-    const section = buildSidesHealthSection({
-      ledgerExists: true,
-      latestSpreadPredictionTimestamp: "2026-09-04T17:58:46.030Z",
-      latestSpreadEvaluationTimestamp: "2026-09-05T09:32:43.533Z",
-      evaluationAgeMs: 1000,
-      modelVersionsSeen: ["jkb-power-number-v1.0.0"],
-      unresolvedFinalGames: 0,
-    });
+  const baseInput = {
+    ledgerExists: true,
+    latestSpreadPredictionTimestamp: "2026-09-04T17:58:46.030Z",
+    latestSpreadEvaluationTimestamp: "2026-09-05T09:32:43.533Z",
+    evaluationAgeMs: 1000,
+    modelVersionsSeen: ["jkb-power-number-v1.0.0"],
+    unresolvedFinalGames: 0,
+    sidesArtifactExists: true,
+    sidesArtifactGenerationTimestamp: "2026-09-05T12:00:00.000Z",
+    sidesArtifactGradedGames: 0,
+    sidesArtifactAgeMs: 1000,
+  };
+
+  it("reports HEALTHY for a fresh sides.json while computing an operational status", () => {
+    const section = buildSidesHealthSection(baseInput);
     expect(section.status).toBe("HEALTHY");
-    expect(section.public_performance_view_status).toBe("NOT_IMPLEMENTED");
+    expect(section.public_performance_view_status).toBe("HEALTHY");
+    expect(section.sides_artifact_graded_games).toBe(0);
+  });
+
+  it("reports NOT_AVAILABLE for the public view when sides.json has not been generated yet", () => {
+    const section = buildSidesHealthSection({
+      ...baseInput,
+      sidesArtifactExists: false,
+      sidesArtifactGenerationTimestamp: null,
+      sidesArtifactAgeMs: null,
+    });
+    expect(section.public_performance_view_status).toBe("NOT_AVAILABLE");
+  });
+
+  it("reports STALE for the public view when sides.json is past the daily threshold", () => {
+    const section = buildSidesHealthSection({ ...baseInput, sidesArtifactAgeMs: 48 * 60 * 60 * 1000 });
+    expect(section.public_performance_view_status).toBe("STALE");
   });
 
   it("is NOT_AVAILABLE when no resolution-status ledger exists for the season", () => {
     const section = buildSidesHealthSection({
+      ...baseInput,
       ledgerExists: false,
       latestSpreadPredictionTimestamp: null,
       latestSpreadEvaluationTimestamp: null,
       evaluationAgeMs: null,
       modelVersionsSeen: [],
-      unresolvedFinalGames: 0,
     });
     expect(section.status).toBe("NOT_AVAILABLE");
   });

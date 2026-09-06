@@ -163,11 +163,22 @@ export type SidesHealthSection = {
   status: HealthStatus;
   latest_spread_prediction_timestamp: string | null;
   latest_spread_evaluation_timestamp: string | null;
+  latest_sides_artifact_generation_timestamp: string | null;
   model_versions_seen: string[];
   unresolved_final_games: number;
-  public_performance_view_status: "NOT_IMPLEMENTED";
+  sides_artifact_graded_games: number;
+  sides_artifact_age_ms: number | null;
+  public_performance_view_status: HealthStatus;
 };
 
+/**
+ * WU6: sides now has a dedicated public artifact
+ * (public/data/nfl/performance/sides.json). `status` still reflects the
+ * upstream ledger/evaluation freshness + backlog (the plumbing that feeds
+ * the artifact); `public_performance_view_status` reflects the artifact
+ * itself -- NOT_AVAILABLE until it is first generated, STALE past the daily
+ * threshold, otherwise HEALTHY.
+ */
 export function buildSidesHealthSection(input: {
   ledgerExists: boolean;
   latestSpreadPredictionTimestamp: string | null;
@@ -175,6 +186,10 @@ export function buildSidesHealthSection(input: {
   evaluationAgeMs: number | null;
   modelVersionsSeen: string[];
   unresolvedFinalGames: number;
+  sidesArtifactExists: boolean;
+  sidesArtifactGenerationTimestamp: string | null;
+  sidesArtifactGradedGames: number;
+  sidesArtifactAgeMs: number | null;
 }): SidesHealthSection {
   const status = computeFamilyStatus({
     artifactExists: input.ledgerExists,
@@ -183,13 +198,21 @@ export function buildSidesHealthSection(input: {
     backlogCount: input.unresolvedFinalGames,
     missingCount: 0,
   });
+  const viewStatus: HealthStatus = !input.sidesArtifactExists
+    ? "NOT_AVAILABLE"
+    : input.sidesArtifactAgeMs != null && input.sidesArtifactAgeMs > DAILY_ARTIFACT_STALE_THRESHOLD_MS
+      ? "STALE"
+      : "HEALTHY";
   return {
     status,
     latest_spread_prediction_timestamp: input.latestSpreadPredictionTimestamp,
     latest_spread_evaluation_timestamp: input.latestSpreadEvaluationTimestamp,
+    latest_sides_artifact_generation_timestamp: input.sidesArtifactGenerationTimestamp,
     model_versions_seen: input.modelVersionsSeen,
     unresolved_final_games: input.unresolvedFinalGames,
-    public_performance_view_status: "NOT_IMPLEMENTED",
+    sides_artifact_graded_games: input.sidesArtifactGradedGames,
+    sides_artifact_age_ms: input.sidesArtifactAgeMs,
+    public_performance_view_status: viewStatus,
   };
 }
 

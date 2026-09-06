@@ -1,0 +1,79 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "source": "generated (data/nfl/predictions/**/jkb-power-number.jsonl + prediction-outcome resolver + embedded market_snapshot_refs)",
+    "season": null,
+    "week": null,
+    "modelVersion": "jkb-power-number-v1.0.0",
+    "notes": [
+      "Canonical derived sides (spread) performance artifact for /nfl/performance. Not a raw archive -- do not parse JSONL for this view.",
+      "Live side model: jkb-power-number-v1.0.0. Side-model math is untouched by this artifact.",
+      "Actual outcomes are computed exclusively via resolvePredictionOutcome() from nfl-prediction-outcome-resolver.ts -- no independent grading logic exists here.",
+      "Sign contract: every margin (projected, market-implied, actual) and every signed error is a HOME margin (home points - away points). market_spread is the posted home line (negative = home favored); market_implied_home_margin = -market_spread. Positive jkb_minus_market = JKB more bullish on the home team than the market.",
+      "Market spread = latest valid pregame comparison line (spread/comparison ref, observed strictly before kickoff, highest-priority book then latest observed_at). Never chosen after seeing the result.",
+      "Analysis context (trenches/ypp/epa) is attached only for games in the current season, using the prior-season-full window, null/unavailable everywhere else -- see nfl-game-context.ts for the leakage guarantee.",
+      "coaching_context_status is always NOT_IMPLEMENTED -- no canonical coaching-rating system exists yet."
+    ]
+  },
+  "schemaVersion": "nfl-sides-performance-v1",
+  "performanceMeta": {
+    "schemaVersion": "nfl-sides-performance-v1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "seasons": [
+      2026
+    ],
+    "modelVersions": [
+      "jkb-power-number-v1.0.0"
+    ],
+    "liveModelVersion": "jkb-power-number-v1.0.0",
+    "gradedGames": 0,
+    "latestPredictionTimestamp": "2026-09-04T16:17:22.667Z",
+    "latestOutcomeTimestamp": null,
+    "marketCoverageCount": 0,
+    "contextCoverage": {
+      "trenches": 0,
+      "ypp": 0,
+      "epa": 0,
+      "coaching": 0
+    }
+  },
+  "summary": {
+    "graded_games": 0,
+    "margin_mae": null,
+    "margin_rmse": null,
+    "margin_median_absolute_error": null,
+    "mean_signed_error": null,
+    "correlation_projected_actual_margin": null,
+    "directional_wins": 0,
+    "directional_losses": 0,
+    "directional_pushes": 0,
+    "directional_neutral": 0,
+    "ats_directional_hit_rate": null,
+    "average_abs_jkb_market_difference": null,
+    "winner_accuracy": {
+      "correct": 0,
+      "total": 0,
+      "accuracy": null
+    },
+    "market_comparison": {
+      "comparable_n": 0,
+      "jkb_mae": null,
+      "market_mae": null,
+      "jkb_minus_market_mae": null
+    }
+  },
+  "buckets": {
+    "by_week": [],
+    "by_jkb_market_difference_bucket": [],
+    "by_market_spread_bucket": [],
+    "by_favorite_underdog": [],
+    "by_jkb_ats_side": []
+  },
+  "rows": [],
+  "exclusions": {
+    "missing": 0,
+    "model_version_mismatch": 0,
+    "not_resolved": 272
+  }
+}

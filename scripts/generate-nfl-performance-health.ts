@@ -29,6 +29,7 @@ const EVALUATION_SUMMARY_ROOT = join(ROOT, "data", "nfl", "prediction-evaluation
 const RESOLUTION_STATUS_ROOT = join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1", "resolution-status");
 const TOTALS_FILE = join(ROOT, "public", "data", "nfl", "performance", "totals.json");
 const PROPS_FILE = join(ROOT, "public", "data", "nfl", "performance", "props.json");
+const SIDES_FILE = join(ROOT, "public", "data", "nfl", "performance", "sides.json");
 const OUT_FILE = join(ROOT, "public", "data", "nfl", "performance", "health.json");
 export const HEALTH_SCHEMA_VERSION = "nfl-performance-health-v1";
 
@@ -192,6 +193,7 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
   const evaluationSummaryFile = join(EVALUATION_SUMMARY_ROOT, `${season}.json`);
   const resolutionStatusFile = join(RESOLUTION_STATUS_ROOT, `${season}.jsonl`);
 
+  const sides = loadJsonIfExists<{ _meta: { generatedAt: string }; summary: { graded_games: number } }>(SIDES_FILE);
   const sidesSection = buildSidesHealthSection({
     ledgerExists: existsSync(resolutionStatusFile),
     latestSpreadPredictionTimestamp: latestTimestamp(spreadPredictions),
@@ -199,12 +201,17 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
     evaluationAgeMs: ageMs(generatedAt, mtimeIsoOrNull(evaluationSummaryFile)),
     modelVersionsSeen: spreadModelVersions,
     unresolvedFinalGames: unresolvedFinalCount(ledger, ["spread"]),
+    sidesArtifactExists: sides != null,
+    sidesArtifactGenerationTimestamp: sides?._meta.generatedAt ?? null,
+    sidesArtifactGradedGames: sides?.summary.graded_games ?? 0,
+    sidesArtifactAgeMs: sides ? ageMs(generatedAt, sides._meta.generatedAt) : null,
   });
 
   // ---- WORKFLOW ----
   const workflowSection = buildWorkflowHealthSection({
     "public/data/nfl/performance/totals.json": totals?._meta.generatedAt ?? null,
     "public/data/nfl/performance/props.json": props?._meta.generatedAt ?? null,
+    "public/data/nfl/performance/sides.json": sides?._meta.generatedAt ?? null,
     "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/summary": mtimeIsoOrNull(evaluationSummaryFile),
     "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/resolution-status": mtimeIsoOrNull(resolutionStatusFile),
   });

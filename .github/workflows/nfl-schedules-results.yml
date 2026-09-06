@@ -146,6 +146,21 @@ jobs:
             npm run nfl:starter-prop-evaluations -- --season=2026 --week="${week}"
           done
 
+      # WU6 -- canonical sides (spread) performance artifact. Reads only the
+      # already-canonical jkb-power-number spread predictions + the outcome
+      # resolver + the predictions' own embedded market_snapshot_refs; writes
+      # no model output and grades nothing itself (see
+      # scripts/generate-nfl-sides-performance.ts's docblock). Runs first in
+      # the performance-artifact chain so overview/health downstream reflect
+      # this run's regeneration. Safe when gradedGames=0. continue-on-error,
+      # same rationale as every derived-artifact step -- never blocks the
+      # load-bearing commit below.
+      - name: Generate NFL sides performance artifact
+        id: sides-performance
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:sides-performance
+
       # WU4 -- canonical totals performance artifact. Reads only already-
       # canonical WU1 predictions + the outcome resolver + betting-lines
       # history; writes no model output and grades nothing itself (see
@@ -169,10 +184,9 @@ jobs:
         shell: bash
         run: npm run nfl:props-performance
 
-      # WU4 -- thin cross-family overview rollup. Reads only totals.json,
-      # props.json, and the already-canonical WU3 spread evaluation summary;
-      # runs after both of the family artifacts above so it always reflects
-      # this run's own regeneration.
+      # WU4/WU6 -- thin cross-family overview rollup. Reads only sides.json,
+      # totals.json and props.json; runs after all three family artifacts
+      # above so it always reflects this run's own regeneration.
       - name: Generate NFL performance overview artifact
         id: performance-overview
         continue-on-error: true
@@ -220,6 +234,7 @@ jobs:
             // each generation step above runs continue-on-error, so a bug in one
             // must never fail this whole job over an artifact that was never written.
             const expectedSchemaByFile = {
+              'public/data/nfl/performance/sides.json': 'nfl-sides-performance-v1',
               'public/data/nfl/performance/totals.json': 'nfl-totals-performance-v1',
               'public/data/nfl/performance/props.json': 'nfl-props-performance-v1',
               'public/data/nfl/performance/overview.json': 'nfl-performance-overview-v1',
@@ -305,6 +320,7 @@ jobs:
           # independent (a props.json bug must never block staging an
           # already-good totals.json, and vice versa).
           declare -A performance_steps=(
+            [public/data/nfl/performance/sides.json]='${{ steps.sides-performance.outcome }}'
             [public/data/nfl/performance/totals.json]='${{ steps.totals-performance.outcome }}'
             [public/data/nfl/performance/props.json]='${{ steps.props-performance.outcome }}'
             [public/data/nfl/performance/overview.json]='${{ steps.performance-overview.outcome }}'

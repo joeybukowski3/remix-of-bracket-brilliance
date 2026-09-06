@@ -2,13 +2,13 @@
   "_meta": {
     "schemaVersion": "nfl-v0.1",
     "generatedAt": "2026-09-05T12:00:00.000Z",
-    "source": "generated (public/data/nfl/performance/totals.json + props.json + data/nfl/prediction-evaluations/jkb-football-evaluation-v1/summary)",
+    "source": "generated (public/data/nfl/performance/totals.json + props.json + sides.json)",
     "season": 2026,
     "week": null,
     "modelVersion": null,
     "notes": [
-      "Thin cross-family rollup for the future /nfl/performance dashboard. Every metric here is read verbatim from an already-canonical derived artifact -- no independent grading or aggregation logic exists here.",
-      "sides is a thin summary of the canonical WU3 spread evaluation dataset (jkb-power-number-v1.0.0); full Sides performance support is not yet materialized into a dedicated sides.json."
+      "Thin cross-family rollup for the /nfl/performance dashboard. Every metric here is read verbatim from an already-canonical derived artifact -- no independent grading or aggregation logic exists here.",
+      "sides is the canonical summary of public/data/nfl/performance/sides.json (jkb-power-number-v1.0.0); row-level detail and buckets live in that artifact."
     ]
   },
   "schemaVersion": "nfl-performance-overview-v1",
@@ -39,6 +39,10 @@
     "status": "AVAILABLE",
     "graded_games": 0,
     "spread_mae": null,
+    "bias": null,
+    "correlation": null,
+    "ats_directional_hit_rate": null,
+    "average_abs_jkb_market_difference": null,
     "market_direction_metric": {
       "comparable_n": 0,
       "jkb_mae": null,
@@ -46,7 +50,7 @@
       "jkb_minus_market_mae": null
     },
     "winner_accuracy": null,
-    "latest_grade_timestamp": "2026-09-05T09:32:43.533Z",
-    "note": "Thin summary of the canonical WU3 spread evaluation dataset (jkb-power-number-v1.0.0). Full Sides performance support (rows/buckets/detail context) is not yet materialized into a dedicated sides.json."
+    "latest_grade_timestamp": null,
+    "note": "Canonical summary of public/data/nfl/performance/sides.json (jkb-power-number-v1.0.0). Row-level detail, buckets and pregame context live in that artifact."
   }
 }
