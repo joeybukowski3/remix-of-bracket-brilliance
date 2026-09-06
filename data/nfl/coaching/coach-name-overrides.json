@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "purpose": "Smallest bounded curated layer on top of nflverse games.csv home_coach/away_coach free text. Only records that games.csv text alone CANNOT resolve belong here: name aliases/spelling drift, and interim designations (games.csv does not mark interim head coaches).",
+    "source": "hand-curated from public reporting; every row is auditable against the nflverse coach string it maps",
+    "rules": [
+      "aliases: maps a raw games.csv coach string (exact) to the canonical coach_name used for identity. Do NOT add an alias that only changes capitalization/whitespace -- the normalizer already handles that.",
+      "interim: [coach_id, team, season] triples (optionally with from_week) flagged interim_flag=true in coach-history and coach-game-context. team uses canonical repo abbr (wsh, lar, lac, lv).",
+      "This file must never fabricate a coach/team/season row that games.csv does not already contain."
+    ]
+  },
+  "aliases": {
+    "Klint Kubliak": "Klint Kubiak",
+    "Mike Mccarthy": "Mike McCarthy",
+    "Sean Mcdermott": "Sean McDermott",
+    "Sean Mcvay": "Sean McVay",
+    "Kevin O'connell": "Kevin O'Connell",
+    "Robert Saleh ": "Robert Saleh",
+    "Raheem Morris ": "Raheem Morris"
+  },
+  "interim": [
+    { "coach_id": "perry-fewell", "team": "car", "season": 2019 },
+    { "coach_id": "romeo-crennel", "team": "hou", "season": 2020 },
+    { "coach_id": "darrell-bevell", "team": "det", "season": 2020 },
+    { "coach_id": "raheem-morris", "team": "atl", "season": 2020 },
+    { "coach_id": "rich-bisaccia", "team": "lv", "season": 2021 },
+    { "coach_id": "romeo-crennel", "team": "kc", "season": 2011 },
+    { "coach_id": "todd-bowles", "team": "mia", "season": 2011 },
+    { "coach_id": "jason-garrett", "team": "dal", "season": 2010 },
+    { "coach_id": "leslie-frazier", "team": "min", "season": 2010 },
+    { "coach_id": "eric-studesville", "team": "den", "season": 2010 },
+    { "coach_id": "mike-mularkey", "team": "ten", "season": 2015 },
+    { "coach_id": "ron-rivera", "team": "car", "season": 2011 },
+    { "coach_id": "anthony-lynn", "team": "buf", "season": 2016 },
+    { "coach_id": "steve-wilks", "team": "car", "season": 2022 },
+    { "coach_id": "jeff-ulbrich", "team": "nyj", "season": 2024 },
+    { "coach_id": "antonio-pierce", "team": "lv", "season": 2023 },
+    { "coach_id": "ejiro-evero", "team": "car", "season": 2023 },
+    { "coach_id": "chris-tabor", "team": "chi", "season": 2021 },
+    { "coach_id": "chris-tabor", "team": "car", "season": 2023 },
+    { "coach_id": "gregg-williams", "team": "cle", "season": 2018 },
+    { "coach_id": "darren-rizzi", "team": "no", "season": 2024 },
+    { "coach_id": "jerod-mayo", "team": "ne", "season": 2024, "note": "not interim -- full HC; listed here only to document he is NOT interim (no flag emitted)", "not_interim": true }
+  ]
+}

@@ -114,6 +114,21 @@ export default defineConfig({
       "scripts/generate-nfl-performance-overview.test.ts",
       "scripts/lib/nfl-performance-health.test.ts",
       "scripts/generate-nfl-performance-health.test.ts",
+      // NFL Performance Center WU6 -- canonical sides (spread) performance artifact.
+      "scripts/lib/nfl-sides-performance.test.ts",
+      "scripts/generate-nfl-sides-performance.test.ts",
+      // NFL Coaching Ratings v1 -- ingestion + canonical coach identity +
+      // leakage-safe pregame coach-game context + persistence research.
+      "scripts/lib/nfl-coach-core.test.mjs",
+      "scripts/lib/nfl-coach-context.test.mjs",
+      "scripts/lib/nfl-coach-research.test.mjs",
+      // NFL Coaching Ratings v1 -- frozen composite + public artifact builder.
+      "scripts/lib/nfl-coach-rating.test.mjs",
+      // NFL Coaching Rating v1 Phase B -- historical point-in-time rating snapshots.
+      "scripts/lib/nfl-coach-rating-snapshot.test.mjs",
+      // NFL Coaching Rating v1 Phase C -- current-season adapter + per-game snapshot selection.
+      "scripts/lib/nfl-coach-rating-current-adapter.test.ts",
+      "scripts/lib/nfl-coaching-snapshot-source.test.ts",
     ],
   },
   resolve: {

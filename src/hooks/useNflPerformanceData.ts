@@ -3,6 +3,7 @@ import type {
   NflPerformanceHealthArtifact,
   NflPerformanceOverviewArtifact,
   NflPropsPerformanceArtifact,
+  NflSidesPerformanceArtifact,
   NflTotalsPerformanceArtifact,
 } from "@/types/nfl/performance";
 
@@ -21,6 +22,11 @@ function isPropsShape(json: unknown): json is NflPropsPerformanceArtifact {
   return Boolean(candidate && candidate.summary && Array.isArray(candidate.rows) && candidate.coverage);
 }
 
+function isSidesShape(json: unknown): json is NflSidesPerformanceArtifact {
+  const candidate = json as Partial<NflSidesPerformanceArtifact> | null;
+  return Boolean(candidate && candidate.summary && Array.isArray(candidate.rows) && candidate.buckets);
+}
+
 function isHealthShape(json: unknown): json is NflPerformanceHealthArtifact {
   const candidate = json as Partial<NflPerformanceHealthArtifact> | null;
   return Boolean(candidate && candidate.totals && candidate.props && candidate.sides);
@@ -28,6 +34,7 @@ function isHealthShape(json: unknown): json is NflPerformanceHealthArtifact {
 
 export type NflPerformanceData = {
   overview: NflPerformanceArtifactState<NflPerformanceOverviewArtifact>;
+  sides: NflPerformanceArtifactState<NflSidesPerformanceArtifact>;
   totals: NflPerformanceArtifactState<NflTotalsPerformanceArtifact>;
   props: NflPerformanceArtifactState<NflPropsPerformanceArtifact>;
   health: NflPerformanceArtifactState<NflPerformanceHealthArtifact>;
@@ -41,9 +48,10 @@ export type NflPerformanceData = {
  */
 export function useNflPerformanceData(): NflPerformanceData {
   const overview = useNflPerformanceArtifact("/data/nfl/performance/overview.json", isOverviewShape, "Performance overview");
+  const sides = useNflPerformanceArtifact("/data/nfl/performance/sides.json", isSidesShape, "Sides performance");
   const totals = useNflPerformanceArtifact("/data/nfl/performance/totals.json", isTotalsShape, "Totals performance");
   const props = useNflPerformanceArtifact("/data/nfl/performance/props.json", isPropsShape, "Starter props performance");
   const health = useNflPerformanceArtifact("/data/nfl/performance/health.json", isHealthShape, "Model health");
 
-  return { overview, totals, props, health };
+  return { overview, sides, totals, props, health };
 }

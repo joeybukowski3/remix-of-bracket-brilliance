@@ -1,12 +1,70 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCoachingHealthSection,
   buildPropsHealthSection,
   buildSidesHealthSection,
   buildTotalsHealthSection,
   buildWorkflowHealthSection,
+  COACHING_ARTIFACT_STALE_AFTER_HOURS,
   computeFamilyStatus,
   DAILY_ARTIFACT_STALE_THRESHOLD_MS,
 } from "./nfl-performance-health";
+
+describe("buildCoachingHealthSection", () => {
+  const base = {
+    currentArtifactExists: true,
+    ratingVersion: "coaching-v1.0.0",
+    artifactGeneratedAt: "2026-09-06T00:00:00.000Z",
+    sourceCutoff: "completed games through 2025 season",
+    expectedTeamCount: 32,
+    ratedTeamCount: 32,
+    smallSampleCoachCount: 11,
+    firstYearCoachCount: 4,
+    historicalSnapshotFileCount: 215,
+    latestSnapshotSeason: 2025,
+    latestSnapshotWeek: 22,
+    publicArtifactAgeMs: 60 * 60 * 1000,
+  };
+
+  it("is HEALTHY with a fresh full-coverage artifact even with first-year / small-sample coaches", () => {
+    const section = buildCoachingHealthSection(base);
+    expect(section.status).toBe("HEALTHY");
+    expect(section.first_year_count).toBe(4);
+    expect(section.small_sample_coach_count).toBe(11);
+    expect(section.stale_after_hours).toBe(COACHING_ARTIFACT_STALE_AFTER_HOURS);
+  });
+
+  it("is NOT_AVAILABLE when the current-ratings artifact is missing", () => {
+    expect(buildCoachingHealthSection({ ...base, currentArtifactExists: false }).status).toBe("NOT_AVAILABLE");
+  });
+
+  it("is STALE when the artifact is older than the staleness allowance", () => {
+    const section = buildCoachingHealthSection({
+      ...base,
+      publicArtifactAgeMs: (COACHING_ARTIFACT_STALE_AFTER_HOURS + 1) * 60 * 60 * 1000,
+    });
+    expect(section.status).toBe("STALE");
+  });
+
+  it("DEGRADES when teams are missing a current coach rating", () => {
+    const section = buildCoachingHealthSection({ ...base, ratedTeamCount: 30 });
+    expect(section.unrated_coach_count).toBe(2);
+    expect(section.status).toBe("DEGRADED");
+  });
+
+  it("DEGRADES when there is no historical snapshot coverage", () => {
+    expect(buildCoachingHealthSection({ ...base, historicalSnapshotFileCount: 0 }).status).toBe("DEGRADED");
+  });
+
+  it("does not degrade purely because every coach is first-year / small-sample", () => {
+    const section = buildCoachingHealthSection({
+      ...base,
+      smallSampleCoachCount: 32,
+      firstYearCoachCount: 32,
+    });
+    expect(section.status).toBe("HEALTHY");
+  });
+});
 
 describe("computeFamilyStatus", () => {
   it("returns NOT_AVAILABLE when the artifact does not exist, regardless of other inputs", () => {
@@ -192,27 +250,49 @@ describe("buildPropsHealthSection", () => {
 });
 
 describe("buildSidesHealthSection", () => {
-  it("reports NOT_IMPLEMENTED for the dedicated public view while still computing an operational status", () => {
-    const section = buildSidesHealthSection({
-      ledgerExists: true,
-      latestSpreadPredictionTimestamp: "2026-09-04T17:58:46.030Z",
-      latestSpreadEvaluationTimestamp: "2026-09-05T09:32:43.533Z",
-      evaluationAgeMs: 1000,
-      modelVersionsSeen: ["jkb-power-number-v1.0.0"],
-      unresolvedFinalGames: 0,
-    });
+  const baseInput = {
+    ledgerExists: true,
+    latestSpreadPredictionTimestamp: "2026-09-04T17:58:46.030Z",
+    latestSpreadEvaluationTimestamp: "2026-09-05T09:32:43.533Z",
+    evaluationAgeMs: 1000,
+    modelVersionsSeen: ["jkb-power-number-v1.0.0"],
+    unresolvedFinalGames: 0,
+    sidesArtifactExists: true,
+    sidesArtifactGenerationTimestamp: "2026-09-05T12:00:00.000Z",
+    sidesArtifactGradedGames: 0,
+    sidesArtifactAgeMs: 1000,
+  };
+
+  it("reports HEALTHY for a fresh sides.json while computing an operational status", () => {
+    const section = buildSidesHealthSection(baseInput);
     expect(section.status).toBe("HEALTHY");
-    expect(section.public_performance_view_status).toBe("NOT_IMPLEMENTED");
+    expect(section.public_performance_view_status).toBe("HEALTHY");
+    expect(section.sides_artifact_graded_games).toBe(0);
+  });
+
+  it("reports NOT_AVAILABLE for the public view when sides.json has not been generated yet", () => {
+    const section = buildSidesHealthSection({
+      ...baseInput,
+      sidesArtifactExists: false,
+      sidesArtifactGenerationTimestamp: null,
+      sidesArtifactAgeMs: null,
+    });
+    expect(section.public_performance_view_status).toBe("NOT_AVAILABLE");
+  });
+
+  it("reports STALE for the public view when sides.json is past the daily threshold", () => {
+    const section = buildSidesHealthSection({ ...baseInput, sidesArtifactAgeMs: 48 * 60 * 60 * 1000 });
+    expect(section.public_performance_view_status).toBe("STALE");
   });
 
   it("is NOT_AVAILABLE when no resolution-status ledger exists for the season", () => {
     const section = buildSidesHealthSection({
+      ...baseInput,
       ledgerExists: false,
       latestSpreadPredictionTimestamp: null,
       latestSpreadEvaluationTimestamp: null,
       evaluationAgeMs: null,
       modelVersionsSeen: [],
-      unresolvedFinalGames: 0,
     });
     expect(section.status).toBe("NOT_AVAILABLE");
   });

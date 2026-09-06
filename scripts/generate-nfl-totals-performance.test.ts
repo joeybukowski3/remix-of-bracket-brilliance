@@ -19,6 +19,13 @@ describe("buildTotalsPerformanceArtifact", () => {
     expect(artifact.performanceMeta.gradedGames).toBe(artifact.rows.length);
   });
 
+  it("exposes contextCoverage.coaching as the count of rows with an OK coaching join, implying no O/U lean", () => {
+    const { artifact } = buildTotalsPerformanceArtifact("2026-09-05T12:00:00.000Z");
+    const okCount = artifact.rows.filter((r) => r.context.coaching.coaching_context_status === "OK").length;
+    expect(artifact.performanceMeta.contextCoverage.coaching).toBe(okCount);
+    expect(artifact.rows.every((r) => typeof r.context.coaching.coaching_context_status === "string")).toBe(true);
+  });
+
   it("is deterministic: building twice from the same inputs yields identical output", () => {
     const first = buildTotalsPerformanceArtifact("2026-09-05T12:00:00.000Z");
     const second = buildTotalsPerformanceArtifact("2026-09-05T12:00:00.000Z");

@@ -66,13 +66,175 @@ export type TrenchesContext = {
   provenance_status: "available" | "unavailable";
 };
 
-export type CoachingContext = {
-  home_coaching_rating: null;
-  away_coaching_rating: null;
-  coaching_advantage_team: null;
-  coaching_differential: null;
-  coaching_context_status: "NOT_IMPLEMENTED";
+/**
+ * Coaching Rating v1 context — ANALYSIS CONTEXT ONLY. The rating and every
+ * record below are diagnostic/segmentation, never a Sides/Totals model input.
+ * ATS records are shown as historical context and are NOT weighted in the
+ * rating (research: coach ATS skill did not persist).
+ */
+export type CoachingContextStatus = "OK" | "COACH_UNRATED" | "SOURCE_UNAVAILABLE";
+
+export type CoachRecordContext = {
+  career_wl: string;
+  tenure_wl: string;
+  season_wl: string;
+  career_ats: string;
+  tenure_ats: string;
+  season_ats: string;
+  recent_ats: string;
+  small_sample: boolean;
+  tenure_year: number | null;
+  first_year: boolean;
+  interim: boolean;
 };
+
+export type CoachingContext = {
+  home_coach: string | null;
+  away_coach: string | null;
+  home_coaching_rating: number | null;
+  away_coaching_rating: number | null;
+  coaching_differential: number | null;
+  coaching_advantage_team: TeamAdvantage | null;
+  home_coach_context: CoachRecordContext | null;
+  away_coach_context: CoachRecordContext | null;
+  rating_version: string | null;
+  source_timestamp: string | null;
+  pregame_cutoff: string | null;
+  coaching_context_status: CoachingContextStatus;
+};
+
+/** |differential| <= this -> EVEN (frozen Coaching Rating v1 even_threshold). */
+export const COACHING_EVEN_THRESHOLD = 4;
+
+/** One coach's point-in-time snapshot entry (rating-snapshots/<season>/<week>.json). */
+export type CoachSnapshotEntry = {
+  coach_id: string;
+  coach: string;
+  team: string;
+  coaching_rating: number;
+  career_wl: string;
+  tenure_wl: string;
+  season_wl: string;
+  career_ats: string;
+  tenure_ats: string;
+  season_ats: string;
+  recent_ats: string;
+  tenure_year: number | null;
+  small_sample: boolean;
+  first_year: boolean;
+  interim: boolean;
+};
+
+export type CoachRatingSnapshot = {
+  rating_version: string;
+  season: number;
+  week: number;
+  generated_from_cutoff: string | null;
+  source_timestamp: string | null;
+  coaches: CoachSnapshotEntry[];
+};
+
+function coachRecord(entry: CoachSnapshotEntry): CoachRecordContext {
+  return {
+    career_wl: entry.career_wl,
+    tenure_wl: entry.tenure_wl,
+    season_wl: entry.season_wl,
+    career_ats: entry.career_ats,
+    tenure_ats: entry.tenure_ats,
+    season_ats: entry.season_ats,
+    recent_ats: entry.recent_ats,
+    small_sample: entry.small_sample,
+    tenure_year: entry.tenure_year,
+    first_year: entry.first_year,
+    interim: entry.interim,
+  };
+}
+
+function coachingAdvantageTeam(differential: number | null): TeamAdvantage | null {
+  if (differential == null || !Number.isFinite(differential)) return null;
+  if (Math.abs(differential) <= COACHING_EVEN_THRESHOLD) return "even";
+  return differential > 0 ? "home" : "away";
+}
+
+/**
+ * Build the coaching context for one game from a point-in-time rating snapshot.
+ *
+ * Leakage rule (enforced by the caller's snapshot selection AND re-checked
+ * here): a game may only consume a snapshot whose `generated_from_cutoff` is
+ * not later than the game's kickoff. `snapshot === null` (no leak-safe
+ * snapshot, or the current-season source cutoff is invalid) yields
+ * SOURCE_UNAVAILABLE — the context NEVER silently falls back to current
+ * ratings for a historical game.
+ */
+export function buildCoachingContext(input: {
+  snapshot: CoachRatingSnapshot | null;
+  homeTeam: string;
+  awayTeam: string;
+  gameKickoffUtc?: string | null;
+}): CoachingContext {
+  const base: CoachingContext = {
+    home_coach: null,
+    away_coach: null,
+    home_coaching_rating: null,
+    away_coaching_rating: null,
+    coaching_differential: null,
+    coaching_advantage_team: null,
+    home_coach_context: null,
+    away_coach_context: null,
+    rating_version: null,
+    source_timestamp: null,
+    pregame_cutoff: null,
+    coaching_context_status: "SOURCE_UNAVAILABLE",
+  };
+
+  const { snapshot, homeTeam, awayTeam, gameKickoffUtc } = input;
+  if (!snapshot) return base;
+  if (
+    gameKickoffUtc != null &&
+    snapshot.generated_from_cutoff != null &&
+    snapshot.generated_from_cutoff > gameKickoffUtc
+  ) {
+    // snapshot cutoff is AFTER this game -> would leak -> refuse
+    return base;
+  }
+
+  const byTeam = new Map(snapshot.coaches.map((c) => [c.team, c]));
+  const home = byTeam.get(homeTeam) ?? null;
+  const away = byTeam.get(awayTeam) ?? null;
+  const meta = {
+    rating_version: snapshot.rating_version,
+    source_timestamp: snapshot.source_timestamp,
+    pregame_cutoff: snapshot.generated_from_cutoff,
+  };
+
+  if (!home || !away) {
+    return {
+      ...base,
+      ...meta,
+      home_coach: home?.coach ?? null,
+      away_coach: away?.coach ?? null,
+      home_coaching_rating: home?.coaching_rating ?? null,
+      away_coaching_rating: away?.coaching_rating ?? null,
+      home_coach_context: home ? coachRecord(home) : null,
+      away_coach_context: away ? coachRecord(away) : null,
+      coaching_context_status: "COACH_UNRATED",
+    };
+  }
+
+  const differential = home.coaching_rating - away.coaching_rating;
+  return {
+    ...meta,
+    home_coach: home.coach,
+    away_coach: away.coach,
+    home_coaching_rating: home.coaching_rating,
+    away_coaching_rating: away.coaching_rating,
+    coaching_differential: differential,
+    coaching_advantage_team: coachingAdvantageTeam(differential),
+    home_coach_context: coachRecord(home),
+    away_coach_context: coachRecord(away),
+    coaching_context_status: "OK",
+  };
+}
 
 export type PregameGameContext = {
   epa: EpaContext;
@@ -223,13 +385,29 @@ export function buildTrenchesContext(
   };
 }
 
-export const NOT_IMPLEMENTED_COACHING_CONTEXT: CoachingContext = {
+/**
+ * The explicit "no leak-safe coaching source" contract. Returned whenever a
+ * game has no valid point-in-time snapshot (all historical rows a generator
+ * has no snapshot for; a current-season game whose ratings-artifact cutoff is
+ * invalid). Never a silent current-ratings fallback.
+ */
+export const SOURCE_UNAVAILABLE_COACHING_CONTEXT: CoachingContext = {
+  home_coach: null,
+  away_coach: null,
   home_coaching_rating: null,
   away_coaching_rating: null,
-  coaching_advantage_team: null,
   coaching_differential: null,
-  coaching_context_status: "NOT_IMPLEMENTED",
+  coaching_advantage_team: null,
+  home_coach_context: null,
+  away_coach_context: null,
+  rating_version: null,
+  source_timestamp: null,
+  pregame_cutoff: null,
+  coaching_context_status: "SOURCE_UNAVAILABLE",
 };
+
+/** @deprecated back-compat alias — use SOURCE_UNAVAILABLE_COACHING_CONTEXT. */
+export const NOT_IMPLEMENTED_COACHING_CONTEXT = SOURCE_UNAVAILABLE_COACHING_CONTEXT;
 
 export function buildPregameGameContext(input: {
   epaWindow: EpaPriorSeasonWindow | null;
@@ -238,11 +416,24 @@ export function buildPregameGameContext(input: {
   trenchSeasonKey: number | null;
   homeTeam: string;
   awayTeam: string;
+  /**
+   * Optional leak-safe coaching snapshot for this game. Callers select it
+   * (historical: rating-snapshots/<season>/<week>.json; current season: the
+   * public coaching-ratings artifact only if its source cutoff is valid) and
+   * pass it in. Omit / null -> SOURCE_UNAVAILABLE, never a silent fallback.
+   */
+  coachingSnapshot?: CoachRatingSnapshot | null;
+  gameKickoffUtc?: string | null;
 }): PregameGameContext {
   return {
     epa: buildEpaContext(input.epaWindow, input.homeTeam, input.awayTeam),
     ypp: buildYppContext(input.yppWindow, input.homeTeam, input.awayTeam),
     trenches: buildTrenchesContext(input.trenchSeasonData, input.trenchSeasonKey, input.homeTeam, input.awayTeam),
-    coaching: NOT_IMPLEMENTED_COACHING_CONTEXT,
+    coaching: buildCoachingContext({
+      snapshot: input.coachingSnapshot ?? null,
+      homeTeam: input.homeTeam,
+      awayTeam: input.awayTeam,
+      gameKickoffUtc: input.gameKickoffUtc ?? null,
+    }),
   };
 }

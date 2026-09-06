@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
 import { loadArchivedPredictions } from "./resolve-nfl-prediction-outcomes";
 import {
+  buildCoachingHealthSection,
   buildPropsHealthSection,
   buildSidesHealthSection,
   buildTotalsHealthSection,
@@ -29,7 +30,13 @@ const EVALUATION_SUMMARY_ROOT = join(ROOT, "data", "nfl", "prediction-evaluation
 const RESOLUTION_STATUS_ROOT = join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1", "resolution-status");
 const TOTALS_FILE = join(ROOT, "public", "data", "nfl", "performance", "totals.json");
 const PROPS_FILE = join(ROOT, "public", "data", "nfl", "performance", "props.json");
+const SIDES_FILE = join(ROOT, "public", "data", "nfl", "performance", "sides.json");
+const COACHING_RATINGS_FILE = join(ROOT, "public", "data", "nfl", "coaching-ratings.json");
+const COACHING_SNAPSHOT_ROOT = join(ROOT, "data", "nfl", "coaching", "rating-snapshots");
 const OUT_FILE = join(ROOT, "public", "data", "nfl", "performance", "health.json");
+
+/** All 32 NFL franchises are expected to carry a current head-coach rating. */
+const EXPECTED_NFL_TEAM_COUNT = 32;
 export const HEALTH_SCHEMA_VERSION = "nfl-performance-health-v1";
 
 /** Matches the default season used elsewhere in this pipeline (e.g. resolve-nfl-current-week.mjs) when no artifact yet reports a season. */
@@ -192,6 +199,7 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
   const evaluationSummaryFile = join(EVALUATION_SUMMARY_ROOT, `${season}.json`);
   const resolutionStatusFile = join(RESOLUTION_STATUS_ROOT, `${season}.jsonl`);
 
+  const sides = loadJsonIfExists<{ _meta: { generatedAt: string }; summary: { graded_games: number } }>(SIDES_FILE);
   const sidesSection = buildSidesHealthSection({
     ledgerExists: existsSync(resolutionStatusFile),
     latestSpreadPredictionTimestamp: latestTimestamp(spreadPredictions),
@@ -199,14 +207,69 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
     evaluationAgeMs: ageMs(generatedAt, mtimeIsoOrNull(evaluationSummaryFile)),
     modelVersionsSeen: spreadModelVersions,
     unresolvedFinalGames: unresolvedFinalCount(ledger, ["spread"]),
+    sidesArtifactExists: sides != null,
+    sidesArtifactGenerationTimestamp: sides?._meta.generatedAt ?? null,
+    sidesArtifactGradedGames: sides?.summary.graded_games ?? 0,
+    sidesArtifactAgeMs: sides ? ageMs(generatedAt, sides._meta.generatedAt) : null,
+  });
+
+  // ---- COACHING (Coaching Rating v1 — ANALYSIS CONTEXT ONLY) ----
+  const coachingRatings = loadJsonIfExists<{
+    _meta?: { generatedAt?: string };
+    ratingVersion?: string | null;
+    sourceCutoff?: string | null;
+    coaches?: { team?: string; small_sample?: boolean; first_year?: boolean }[];
+  }>(COACHING_RATINGS_FILE);
+  const coachRows = coachingRatings?.coaches ?? [];
+  const ratedTeams = new Set(coachRows.map((c) => c.team).filter((t): t is string => !!t));
+
+  let snapshotFileCount = 0;
+  let latestSnapshotSeason: number | null = null;
+  let latestSnapshotWeek: number | null = null;
+  if (existsSync(COACHING_SNAPSHOT_ROOT)) {
+    for (const seasonEntry of readdirSync(COACHING_SNAPSHOT_ROOT, { withFileTypes: true })) {
+      if (!seasonEntry.isDirectory() || !/^[0-9]{4}$/.test(seasonEntry.name)) continue;
+      const season = Number(seasonEntry.name);
+      for (const fileEntry of readdirSync(join(COACHING_SNAPSHOT_ROOT, seasonEntry.name), { withFileTypes: true })) {
+        const weekMatch = fileEntry.isFile() ? /^([0-9]{1,2})\.json$/.exec(fileEntry.name) : null;
+        if (!weekMatch) continue;
+        snapshotFileCount += 1;
+        const week = Number(weekMatch[1]);
+        if (
+          latestSnapshotSeason == null ||
+          season > latestSnapshotSeason ||
+          (season === latestSnapshotSeason && week > (latestSnapshotWeek ?? 0))
+        ) {
+          latestSnapshotSeason = season;
+          latestSnapshotWeek = week;
+        }
+      }
+    }
+  }
+
+  const coachingSection = buildCoachingHealthSection({
+    currentArtifactExists: coachingRatings != null,
+    ratingVersion: coachingRatings?.ratingVersion ?? null,
+    artifactGeneratedAt: coachingRatings?._meta?.generatedAt ?? null,
+    sourceCutoff: coachingRatings?.sourceCutoff ?? null,
+    expectedTeamCount: EXPECTED_NFL_TEAM_COUNT,
+    ratedTeamCount: ratedTeams.size,
+    smallSampleCoachCount: coachRows.filter((c) => c.small_sample).length,
+    firstYearCoachCount: coachRows.filter((c) => c.first_year).length,
+    historicalSnapshotFileCount: snapshotFileCount,
+    latestSnapshotSeason,
+    latestSnapshotWeek,
+    publicArtifactAgeMs: coachingRatings ? ageMs(generatedAt, coachingRatings._meta?.generatedAt ?? null) : null,
   });
 
   // ---- WORKFLOW ----
   const workflowSection = buildWorkflowHealthSection({
     "public/data/nfl/performance/totals.json": totals?._meta.generatedAt ?? null,
     "public/data/nfl/performance/props.json": props?._meta.generatedAt ?? null,
+    "public/data/nfl/performance/sides.json": sides?._meta.generatedAt ?? null,
     "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/summary": mtimeIsoOrNull(evaluationSummaryFile),
     "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/resolution-status": mtimeIsoOrNull(resolutionStatusFile),
+    "public/data/nfl/coaching-ratings.json": coachingRatings?._meta?.generatedAt ?? null,
   });
 
   const artifact = {
@@ -229,6 +292,7 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
     totals: totalsSection,
     props: propsSection,
     sides: sidesSection,
+    coaching: coachingSection,
     workflow: workflowSection,
   };
 
@@ -243,7 +307,7 @@ function main() {
   const { artifact } = buildPerformanceHealthArtifact(generatedAt);
 
   console.log(
-    `[nfl:performance-health] season=${artifact.performanceMeta.season} totals=${artifact.totals.status} props=${artifact.props.status} sides=${artifact.sides.status}`,
+    `[nfl:performance-health] season=${artifact.performanceMeta.season} totals=${artifact.totals.status} props=${artifact.props.status} sides=${artifact.sides.status} coaching=${artifact.coaching.status}`,
   );
 
   if (dryRun) {

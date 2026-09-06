@@ -163,11 +163,22 @@ export type SidesHealthSection = {
   status: HealthStatus;
   latest_spread_prediction_timestamp: string | null;
   latest_spread_evaluation_timestamp: string | null;
+  latest_sides_artifact_generation_timestamp: string | null;
   model_versions_seen: string[];
   unresolved_final_games: number;
-  public_performance_view_status: "NOT_IMPLEMENTED";
+  sides_artifact_graded_games: number;
+  sides_artifact_age_ms: number | null;
+  public_performance_view_status: HealthStatus;
 };
 
+/**
+ * WU6: sides now has a dedicated public artifact
+ * (public/data/nfl/performance/sides.json). `status` still reflects the
+ * upstream ledger/evaluation freshness + backlog (the plumbing that feeds
+ * the artifact); `public_performance_view_status` reflects the artifact
+ * itself -- NOT_AVAILABLE until it is first generated, STALE past the daily
+ * threshold, otherwise HEALTHY.
+ */
 export function buildSidesHealthSection(input: {
   ledgerExists: boolean;
   latestSpreadPredictionTimestamp: string | null;
@@ -175,6 +186,10 @@ export function buildSidesHealthSection(input: {
   evaluationAgeMs: number | null;
   modelVersionsSeen: string[];
   unresolvedFinalGames: number;
+  sidesArtifactExists: boolean;
+  sidesArtifactGenerationTimestamp: string | null;
+  sidesArtifactGradedGames: number;
+  sidesArtifactAgeMs: number | null;
 }): SidesHealthSection {
   const status = computeFamilyStatus({
     artifactExists: input.ledgerExists,
@@ -183,13 +198,92 @@ export function buildSidesHealthSection(input: {
     backlogCount: input.unresolvedFinalGames,
     missingCount: 0,
   });
+  const viewStatus: HealthStatus = !input.sidesArtifactExists
+    ? "NOT_AVAILABLE"
+    : input.sidesArtifactAgeMs != null && input.sidesArtifactAgeMs > DAILY_ARTIFACT_STALE_THRESHOLD_MS
+      ? "STALE"
+      : "HEALTHY";
   return {
     status,
     latest_spread_prediction_timestamp: input.latestSpreadPredictionTimestamp,
     latest_spread_evaluation_timestamp: input.latestSpreadEvaluationTimestamp,
+    latest_sides_artifact_generation_timestamp: input.sidesArtifactGenerationTimestamp,
     model_versions_seen: input.modelVersionsSeen,
     unresolved_final_games: input.unresolvedFinalGames,
-    public_performance_view_status: "NOT_IMPLEMENTED",
+    sides_artifact_graded_games: input.sidesArtifactGradedGames,
+    sides_artifact_age_ms: input.sidesArtifactAgeMs,
+    public_performance_view_status: viewStatus,
+  };
+}
+
+// -------------------------------------------------------------------------
+// COACHING (Coaching Rating v1 — ANALYSIS CONTEXT ONLY)
+// -------------------------------------------------------------------------
+
+/** Coaching display/context artifacts regenerate on the same daily postgame cadence. */
+export const COACHING_ARTIFACT_STALE_AFTER_HOURS = 36;
+
+export type CoachingHealthSection = {
+  status: HealthStatus;
+  rating_version: string | null;
+  artifact_generated_at: string | null;
+  source_cutoff: string | null;
+  current_coach_count: number;
+  unrated_coach_count: number;
+  small_sample_coach_count: number;
+  first_year_count: number;
+  historical_snapshot_coverage: number;
+  latest_snapshot_season: number | null;
+  latest_snapshot_week: number | null;
+  stale_after_hours: number;
+  public_artifact_age_ms: number | null;
+};
+
+/**
+ * Coaching-rating operational status. First-year / small-sample coaches are
+ * a normal, expected state (Coaching Rating v1 is deliberately low dynamic
+ * range) and NEVER a failure. What degrades:
+ *   - the current-ratings artifact missing entirely -> NOT_AVAILABLE;
+ *   - it being older than the daily staleness allowance -> STALE;
+ *   - teams with no rated current coach (unrated_coach_count > 0) -> DEGRADED;
+ *   - no historical snapshot coverage at all -> DEGRADED.
+ */
+export function buildCoachingHealthSection(input: {
+  currentArtifactExists: boolean;
+  ratingVersion: string | null;
+  artifactGeneratedAt: string | null;
+  sourceCutoff: string | null;
+  expectedTeamCount: number;
+  ratedTeamCount: number;
+  smallSampleCoachCount: number;
+  firstYearCoachCount: number;
+  historicalSnapshotFileCount: number;
+  latestSnapshotSeason: number | null;
+  latestSnapshotWeek: number | null;
+  publicArtifactAgeMs: number | null;
+}): CoachingHealthSection {
+  const unratedCoachCount = Math.max(0, input.expectedTeamCount - input.ratedTeamCount);
+  const status = computeFamilyStatus({
+    artifactExists: input.currentArtifactExists,
+    ageMs: input.publicArtifactAgeMs,
+    staleThresholdMs: COACHING_ARTIFACT_STALE_AFTER_HOURS * 60 * 60 * 1000,
+    backlogCount: unratedCoachCount,
+    missingCount: input.historicalSnapshotFileCount > 0 ? 0 : 1,
+  });
+  return {
+    status,
+    rating_version: input.ratingVersion,
+    artifact_generated_at: input.artifactGeneratedAt,
+    source_cutoff: input.sourceCutoff,
+    current_coach_count: input.ratedTeamCount,
+    unrated_coach_count: unratedCoachCount,
+    small_sample_coach_count: input.smallSampleCoachCount,
+    first_year_count: input.firstYearCoachCount,
+    historical_snapshot_coverage: input.historicalSnapshotFileCount,
+    latest_snapshot_season: input.latestSnapshotSeason,
+    latest_snapshot_week: input.latestSnapshotWeek,
+    stale_after_hours: COACHING_ARTIFACT_STALE_AFTER_HOURS,
+    public_artifact_age_ms: input.publicArtifactAgeMs,
   };
 }
 

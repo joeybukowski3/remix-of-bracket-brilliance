@@ -19,13 +19,14 @@ import {
   buildOverviewSidesSection,
   buildOverviewTotalsSection,
   type PropsOverviewInput,
-  type SpreadEvaluationSummaryInput,
+  type SidesOverviewInput,
   type TotalsOverviewInput,
 } from "./lib/nfl-performance-overview";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const TOTALS_FILE = join(ROOT, "public", "data", "nfl", "performance", "totals.json");
 const PROPS_FILE = join(ROOT, "public", "data", "nfl", "performance", "props.json");
+const SIDES_FILE = join(ROOT, "public", "data", "nfl", "performance", "sides.json");
 const OUT_FILE = join(ROOT, "public", "data", "nfl", "performance", "overview.json");
 export const OVERVIEW_SCHEMA_VERSION = "nfl-performance-overview-v1";
 
@@ -42,40 +43,35 @@ function mtimeIsoOrNull(filePath: string): string | null {
   return statSync(filePath).mtime.toISOString();
 }
 
-function spreadSummaryPath(season: number): string {
-  return join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1", "summary", `${season}.json`);
-}
-
 /**
  * Pure(-ish) artifact build: reads the same on-disk sources `main()` does,
  * but performs no writes. Exported so tests can call it twice and assert
- * determinism, and can point it at a different totalsFile/propsFile/root
+ * determinism, and can point it at a different totalsFile/propsFile/sidesFile
  * without touching the real public/data/nfl/performance/overview.json.
  */
 export function buildPerformanceOverviewArtifact(
   generatedAt: string,
   totalsFile: string = TOTALS_FILE,
   propsFile: string = PROPS_FILE,
-  evaluationRoot: string = join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1", "summary"),
+  sidesFile: string = SIDES_FILE,
 ) {
   const totals = loadJsonIfExists<TotalsOverviewInput & { performanceMeta: { latestOutcomeTimestamp: string | null } }>(totalsFile);
   const props = loadJsonIfExists<PropsOverviewInput>(propsFile);
+  const sides = loadJsonIfExists<SidesOverviewInput & { performanceMeta: { seasons: number[] } }>(sidesFile);
 
   const totalsSeasons = totals?.performanceMeta.seasons ?? [];
   const propsSeasons = props?.performanceMeta.seasons ?? [];
-  const allSeasons = [...new Set([...totalsSeasons, ...propsSeasons])].sort();
+  const sidesSeasons = sides?.performanceMeta.seasons ?? [];
+  const allSeasons = [...new Set([...totalsSeasons, ...propsSeasons, ...sidesSeasons])].sort();
   const season = allSeasons.length ? allSeasons[allSeasons.length - 1] : FALLBACK_SEASON;
-
-  const spreadSummaryFile = join(evaluationRoot, `${season}.json`);
-  const spread = loadJsonIfExists<SpreadEvaluationSummaryInput>(spreadSummaryFile);
 
   const artifact = {
     _meta: buildNflMeta({
-      source: "generated (public/data/nfl/performance/totals.json + props.json + data/nfl/prediction-evaluations/jkb-football-evaluation-v1/summary)",
+      source: "generated (public/data/nfl/performance/totals.json + props.json + sides.json)",
       season,
       notes: [
-        "Thin cross-family rollup for the future /nfl/performance dashboard. Every metric here is read verbatim from an already-canonical derived artifact -- no independent grading or aggregation logic exists here.",
-        "sides is a thin summary of the canonical WU3 spread evaluation dataset (jkb-power-number-v1.0.0); full Sides performance support is not yet materialized into a dedicated sides.json.",
+        "Thin cross-family rollup for the /nfl/performance dashboard. Every metric here is read verbatim from an already-canonical derived artifact -- no independent grading or aggregation logic exists here.",
+        "sides is the canonical summary of public/data/nfl/performance/sides.json (jkb-power-number-v1.0.0); row-level detail and buckets live in that artifact.",
       ],
       generatedAt,
     }),
@@ -87,7 +83,7 @@ export function buildPerformanceOverviewArtifact(
     },
     totals: buildOverviewTotalsSection(totals, totals?.performanceMeta.latestOutcomeTimestamp ?? null),
     props: buildOverviewPropsSection(props, mtimeIsoOrNull(propsFile)),
-    sides: buildOverviewSidesSection(spread, mtimeIsoOrNull(spreadSummaryFile)),
+    sides: buildOverviewSidesSection(sides, sides?.performanceMeta.latestOutcomeTimestamp ?? null),
   };
 
   return { artifact };

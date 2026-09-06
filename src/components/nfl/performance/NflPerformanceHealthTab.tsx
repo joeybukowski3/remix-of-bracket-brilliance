@@ -18,6 +18,14 @@ function timestampOrDash(value: string | null): string {
   return value ? formatNflMetadataTimestamp(value) : "—";
 }
 
+/** "12h ago" style freshness, paired with (never replaced by) the status badge. */
+function freshnessLabel(ageMs: number | null, staleAfterHours: number): string {
+  if (ageMs == null || !Number.isFinite(ageMs)) return "—";
+  const hours = ageMs / (60 * 60 * 1000);
+  const rendered = hours < 1 ? `${Math.max(0, Math.round(ageMs / 60000))}m` : `${hours.toFixed(1)}h`;
+  return `${rendered} old (stale after ${staleAfterHours}h)`;
+}
+
 /**
  * Operational status only -- predictive performance (MAE / hit rate) is
  * deliberately never shown here (spec section 16: "Predictive performance
@@ -37,7 +45,7 @@ export default function NflPerformanceHealthTab({
     );
   }
 
-  const { totals, props, sides, workflow } = state.data;
+  const { totals, props, sides, coaching, workflow } = state.data;
   const propsCoverageIsOnlyMissingSlots =
     props.status === "DEGRADED" &&
     props.missing_starter_slots > 0 &&
@@ -98,6 +106,52 @@ export default function NflPerformanceHealthTab({
           <HealthRow label="Public performance view" value={<NflHealthStatusBadge status={sides.public_performance_view_status} />} />
           <HealthRow label="Model versions" value={sides.model_versions_seen.join(", ") || "—"} />
         </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm" data-testid="nfl-health-coaching">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Coaching Rating</h3>
+          <NflHealthStatusBadge status={coaching?.status ?? "NOT_AVAILABLE"} />
+        </div>
+        {coaching == null ? (
+          <p className="mt-2 text-[12px] text-slate-600" data-testid="nfl-health-coaching-missing">
+            Coaching rating artifact not available.
+          </p>
+        ) : (
+          <>
+            {coaching.status === "STALE" && (
+              <p
+                className="mt-2 rounded border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] leading-4 text-rose-900"
+                data-testid="nfl-health-coaching-stale-note"
+              >
+                Stale — the current coaching-ratings artifact is older than the {coaching.stale_after_hours}h refresh allowance.
+              </p>
+            )}
+            <div className="mt-2">
+              <HealthRow label="Rating version" value={coaching.rating_version ?? "—"} />
+              <HealthRow label="Current coaches rated" value={formatCount(coaching.current_coach_count)} />
+              <HealthRow label="Unrated coaches" value={formatCount(coaching.unrated_coach_count)} />
+              <HealthRow label="Small-sample coaches" value={formatCount(coaching.small_sample_coach_count)} />
+              <HealthRow label="First-year coaches" value={formatCount(coaching.first_year_count)} />
+              <HealthRow label="Historical snapshot coverage" value={formatCount(coaching.historical_snapshot_coverage)} />
+              <HealthRow
+                label="Latest snapshot"
+                value={
+                  coaching.latest_snapshot_season != null
+                    ? `${coaching.latest_snapshot_season} week ${coaching.latest_snapshot_week ?? "—"}`
+                    : "—"
+                }
+              />
+              <HealthRow label="Artifact generated" value={timestampOrDash(coaching.artifact_generated_at)} />
+              <HealthRow label="Freshness" value={freshnessLabel(coaching.public_artifact_age_ms, coaching.stale_after_hours)} />
+              <HealthRow label="Source cutoff" value={coaching.source_cutoff ?? "—"} />
+            </div>
+            <p className="mt-2 text-[11px] leading-4 text-slate-500">
+              Small-sample and first-year head coaches are an expected state, not a failure — Coaching Rating v1 is deliberately
+              low dynamic range and first-year coaches carry the league-average prior.
+            </p>
+          </>
+        )}
       </section>
 
       {Object.keys(workflow.generated_at_by_artifact).length > 0 && (
