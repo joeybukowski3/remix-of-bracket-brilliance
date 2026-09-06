@@ -211,9 +211,10 @@ describe("deferred metrics stay unavailable", () => {
         <MatchupTrenches matchup={MATCHUP} resolver={resolver} />
       </MemoryRouter>
     );
-    // Phase 3B: one N/A per battle when the ESPN artifact is absent; sacks are
-    // never substituted for a win rate.
-    expect(screen.getAllByText("N/A")).toHaveLength(4);
+    // One neutral "Not compared" battle per pairing per possession when the ESPN
+    // artifact is absent; sacks are never substituted for a win rate.
+    expect(screen.getAllByText("Not compared")).toHaveLength(4);
+    expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Sacks/i)).toBeNull();
   });
 });

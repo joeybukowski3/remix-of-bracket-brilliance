@@ -108,8 +108,8 @@ describe("preseason — 2025 only", () => {
 
   it("renders all four battles across both possessions", () => {
     renderTrenches(resolveTrenchPeriods(0, 0));
-    expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
-    expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
+    expect(screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ })).toHaveLength(2);
+    expect(screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })).toHaveLength(2);
     expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
     expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
   });
@@ -127,11 +127,17 @@ describe("preseason — 2025 only", () => {
     expect(screen.queryByText(/\d+\.\d%/)).toBeNull();
   });
 
-  it("labels each side with its team and metric abbreviation", () => {
+  it("labels each side of a battle with its team and role", () => {
     renderTrenches(resolveTrenchPeriods(0, 0));
-    expect(screen.getAllByText(/NE PBWR/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/SEA PRWR/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/SEA RSWR/).length).toBeGreaterThan(0);
+    // The possession the row belongs to establishes which unit each side is.
+    const passRush = screen.getByRole("img", {
+      name: /Pass Block vs Pass Rush.*New England Patriots offense.*Seattle Seahawks defense/,
+    });
+    expect(passRush).toBeInTheDocument();
+    const runStop = screen.getAllByRole("img", {
+      name: /Run Block vs Run Stop.*Seattle Seahawks offense.*New England Patriots defense/,
+    });
+    expect(runStop.length).toBeGreaterThan(0);
   });
 });
 
@@ -207,8 +213,11 @@ describe("integrity", () => {
         <MatchupTrenches matchup={MATCHUP} />
       </MemoryRouter>
     );
-    expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
-    expect(screen.getAllByText("N/A")).toHaveLength(4);
+    expect(screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ })).toHaveLength(2);
+    expect(screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })).toHaveLength(2);
+    // Every battle reads a neutral "Not compared" state; no fabricated value.
+    expect(screen.getAllByText("Not compared")).toHaveLength(4);
+    expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
   });
 });
 
@@ -244,9 +253,9 @@ describe("offense vs defense pairings", () => {
         />
       </MemoryRouter>
     );
-    const row = screen.getAllByText("Pass Block vs Pass Rush")[0].closest("div.border-b") as HTMLElement;
-    // Both period lines present, each pairing the same season on both sides.
-    expect(within(row).getAllByText("2025 Season").length).toBeGreaterThan(0);
-    expect(within(row).getAllByText("2026 Through Week 4").length).toBeGreaterThan(0);
+    // Each pairing renders one row per period, the same season on both sides.
+    const rows = screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ });
+    expect(rows.some((r) => /2025 Season/.test(r.getAttribute("aria-label") ?? ""))).toBe(true);
+    expect(rows.some((r) => /2026 Through Week 4/.test(r.getAttribute("aria-label") ?? ""))).toBe(true);
   });
 });

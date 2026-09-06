@@ -254,8 +254,10 @@ describe("nothing else regressed", () => {
         <MatchupTrenches matchup={MATCHUP} resolver={unavailableMetricResolver} />
       </MemoryRouter>
     );
-    // Phase 3B: one N/A per battle when the ESPN artifact is absent.
-    expect(screen.getAllByText("N/A")).toHaveLength(4);
+    // One neutral "Not compared" battle per pairing per possession when the
+    // ESPN artifact is absent.
+    expect(screen.getAllByText("Not compared")).toHaveLength(4);
+    expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
   });
 
   it("renders no success rate at all when the artifact is missing", () => {
