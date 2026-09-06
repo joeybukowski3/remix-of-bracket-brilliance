@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "source": "generated (data/nfl/starter-cohorts/** + data/nfl/starter-prop-evaluations/**)",
+    "season": null,
+    "week": null,
+    "modelVersion": null,
+    "notes": [
+      "Canonical derived starter-props performance artifact for the future /nfl/performance dashboard. Not a raw archive -- do not parse JSONL for this view.",
+      "directional_result, market_outcome, and every error field are read verbatim from the WU2 starter-prop-evaluation archive -- no independent grading logic exists here.",
+      "Rows are grouped by market (passing_yards/rushing_yards/receiving_yards); WR and TE share receiving_yards."
+    ]
+  },
+  "schemaVersion": "nfl-props-performance-v1",
+  "performanceMeta": {
+    "schemaVersion": "nfl-props-performance-v1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "seasons": [
+      2026
+    ],
+    "modelVersions": [],
+    "gradedStarterProps": 0,
+    "latestPredictionTimestamp": null
+  },
+  "summary": {
+    "graded_starter_props": 0,
+    "passing_n": 0,
+    "rushing_n": 0,
+    "receiving_n": 0,
+    "wins": 0,
+    "losses": 0,
+    "pushes": 0,
+    "neutral": 0,
+    "directional_hit_rate": null,
+    "over_wins": 0,
+    "over_losses": 0,
+    "over_hit_rate": null,
+    "under_wins": 0,
+    "under_losses": 0,
+    "under_hit_rate": null,
+    "projection_mae": null,
+    "projection_rmse": null,
+    "median_absolute_error": null,
+    "mean_signed_projection_error": null,
+    "average_abs_jkb_line_difference": null
+  },
+  "buckets": {
+    "by_week": [],
+    "by_market": [],
+    "by_position": [],
+    "by_direction": [],
+    "by_starter_basis": [],
+    "by_jkb_line_difference_bucket": []
+  },
+  "coverage": {
+    "total_cohort_rows": 188,
+    "gradeable_rows": 0,
+    "excluded_rows": 188,
+    "exclusions_by_reason": {
+      "NO_VALID_PROJECTION": 0,
+      "MODEL_STATUS_NOT_PROJECTED": 0,
+      "POST_KICKOFF_ONLY_PROJECTION": 0,
+      "NO_VALID_COMPARISON_LINE": 116,
+      "GAME_NOT_FINAL": 0,
+      "ACTUAL_UNRESOLVED": 72,
+      "MARKET_MISMATCH": 0
+    }
+  },
+  "rows": []
+}

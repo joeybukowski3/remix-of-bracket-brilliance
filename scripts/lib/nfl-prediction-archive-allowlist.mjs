@@ -27,6 +27,16 @@ export function isAllowedOutcomePath(path, season) {
   return partition.test(path);
 }
 
+/** WU4 frozen pregame starter-cohort partitions + sibling missing-slot diagnostics (nfl-yardage-projections.yml). Derived-only from WU1 predictions, never a source/outcome path. */
+export function isAllowedStarterCohortPath(path, season) {
+  return new RegExp(`^data/nfl/starter-cohorts/${season}/[0-9]{2}(\\.missing)?\\.jsonl$`).test(path);
+}
+
+/** WU4 starter-prop-evaluation datasets + sibling exclusion diagnostics (nfl-schedules-results.yml, after resolution). Derived-only from WU1 cohort + WU2 outcomes, never a source/outcome path. */
+export function isAllowedStarterPropEvaluationPath(path, season) {
+  return new RegExp(`^data/nfl/starter-prop-evaluations/${season}/[0-9]{2}(\\.exclusions)?\\.jsonl$`).test(path);
+}
+
 /** WU3 derived evaluation datasets (nfl-schedules-results.yml, after resolution). Derived-only, never a source/outcome path. */
 export function isAllowedEvaluationPath(path) {
   const versionedFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity|team_total)\/[0-9]{4}\.jsonl$/;
@@ -48,7 +58,7 @@ export function isAllowedEvaluationPath(path) {
 function main() {
   const [, , kind, season, path] = process.argv;
   if (!kind || !season || !path) {
-    console.error("usage: nfl-prediction-archive-allowlist.mjs <predictions|outcomes|evaluations> <season> <path>");
+    console.error("usage: nfl-prediction-archive-allowlist.mjs <predictions|outcomes|evaluations|starter-cohorts|starter-prop-evaluations> <season> <path>");
     process.exitCode = 1;
     return;
   }
@@ -56,6 +66,8 @@ function main() {
     kind === "predictions" ? isAllowedPredictionArchivePath(path, season)
     : kind === "outcomes" ? isAllowedOutcomePath(path, season)
     : kind === "evaluations" ? isAllowedEvaluationPath(path)
+    : kind === "starter-cohorts" ? isAllowedStarterCohortPath(path, season)
+    : kind === "starter-prop-evaluations" ? isAllowedStarterPropEvaluationPath(path, season)
     : false;
   if (!allowed) {
     console.error(`ERROR: Refusing unexpected ${kind} path: ${path}`);

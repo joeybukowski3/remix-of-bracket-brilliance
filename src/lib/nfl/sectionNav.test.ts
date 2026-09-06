@@ -11,6 +11,7 @@ import {
 const LIVE_NFL_ROUTES = new Set([
   "/nfl",
   "/nfl/power-ratings",
+  "/nfl/performance",
   "/16-0",
   "/nfl/standings",
   "/nfl/schedule",
@@ -19,9 +20,11 @@ const LIVE_NFL_ROUTES = new Set([
   "/nfl/analytics",
   "/nfl/super-bowl",
   "/nfl/coach-of-year",
+  "/nfl/yardage-props-review",
   "/nfl/guide",
   "/nfl/guide/regression",
   "/fantasy-football",
+  "/nfl/dfs",
 ]);
 
 describe("NFL section navigation", () => {
@@ -29,6 +32,7 @@ describe("NFL section navigation", () => {
     expect(NFL_SECTION_NAV_ITEMS.map((item) => item.to)).toEqual([
       "/nfl",
       "/nfl/power-ratings",
+      "/nfl/performance",
       "/16-0",
       "/nfl/standings",
       "/nfl/schedule",
@@ -37,9 +41,11 @@ describe("NFL section navigation", () => {
       "/nfl/analytics",
       "/nfl/super-bowl",
       "/nfl/coach-of-year",
+      "/nfl/yardage-props-review",
       "/nfl/guide",
       "/nfl/guide/regression",
       "/fantasy-football",
+      "/nfl/dfs",
     ]);
   });
 

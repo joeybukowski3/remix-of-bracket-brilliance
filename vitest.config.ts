@@ -97,6 +97,23 @@ export default defineConfig({
       "scripts/lib/ci-branch-resolution.test.mjs",
       // NFL matchup-page JKB projected totals -- team-totals frontend view generator.
       "scripts/generate-nfl-team-totals-view.test.ts",
+      // NFL Performance Center WU1 -- deterministic pregame starter-cohort selector.
+      "scripts/lib/nfl-starter-cohort.test.ts",
+      "scripts/generate-nfl-starter-cohort.test.ts",
+      // NFL Performance Center WU2 -- canonical starter-prop evaluation materializer.
+      "scripts/lib/nfl-starter-prop-evaluation.test.ts",
+      "scripts/generate-nfl-starter-prop-evaluations.test.ts",
+      // NFL Performance Center WU3 -- canonical totals performance artifact.
+      "scripts/lib/nfl-totals-performance.test.ts",
+      "scripts/lib/nfl-game-context.test.ts",
+      "scripts/generate-nfl-totals-performance.test.ts",
+      // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
+      "scripts/lib/nfl-props-performance.test.ts",
+      "scripts/generate-nfl-props-performance.test.ts",
+      "scripts/lib/nfl-performance-overview.test.ts",
+      "scripts/generate-nfl-performance-overview.test.ts",
+      "scripts/lib/nfl-performance-health.test.ts",
+      "scripts/generate-nfl-performance-health.test.ts",
     ],
   },
   resolve: {

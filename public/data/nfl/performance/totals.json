@@ -1,0 +1,66 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "source": "generated (data/nfl/predictions/**/nfl-total-ridge.jsonl + prediction-outcome resolver + data/market/betting-lines/history)",
+    "season": null,
+    "week": null,
+    "modelVersion": "jkb-nfl-total-ridge-v1.0.0",
+    "notes": [
+      "Canonical derived totals performance artifact for the future /nfl/performance dashboard. Not a raw archive -- do not parse JSONL for this view.",
+      "Actual outcomes are computed exclusively via resolvePredictionOutcome() from nfl-prediction-outcome-resolver.ts -- no independent grading logic exists here.",
+      "Analysis context (trenches/ypp/epa) is attached only for games in the current season, using the prior-season-full window, and is null/unavailable everywhere else -- see nfl-game-context.ts for the leakage guarantee.",
+      "coaching_context_status is always NOT_IMPLEMENTED -- no canonical coaching-rating system exists yet."
+    ]
+  },
+  "schemaVersion": "nfl-totals-performance-v1",
+  "performanceMeta": {
+    "schemaVersion": "nfl-totals-performance-v1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "seasons": [
+      2026
+    ],
+    "modelVersions": [
+      "jkb-nfl-total-ridge-v1.0.0"
+    ],
+    "gradedGames": 0,
+    "latestPredictionTimestamp": "2026-09-04T17:58:46.030Z",
+    "latestOutcomeTimestamp": null,
+    "marketCoverageCount": 0,
+    "contextCoverage": {
+      "trenches": 0,
+      "ypp": 0,
+      "epa": 0,
+      "coaching": 0
+    }
+  },
+  "summary": {
+    "graded_games": 0,
+    "game_total_mae": null,
+    "game_total_rmse": null,
+    "game_total_median_absolute_error": null,
+    "mean_signed_error": null,
+    "correlation_projected_actual": null,
+    "team_score_mae": null,
+    "team_score_rmse": null,
+    "directional_wins": 0,
+    "directional_losses": 0,
+    "directional_pushes": 0,
+    "directional_neutral": 0,
+    "directional_hit_rate": null,
+    "average_abs_jkb_market_difference": null
+  },
+  "buckets": {
+    "by_week": [],
+    "by_projected_total_bucket": [],
+    "by_jkb_market_difference_bucket": []
+  },
+  "rows": [],
+  "exclusions": {
+    "missing_home": 0,
+    "missing_away": 0,
+    "model_version_mismatch": 0,
+    "fitted_hash_mismatch": 0,
+    "not_resolved": 16
+  }
+}

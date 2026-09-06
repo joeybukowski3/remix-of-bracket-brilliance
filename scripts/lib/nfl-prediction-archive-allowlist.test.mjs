@@ -3,6 +3,8 @@ import {
   isAllowedEvaluationPath,
   isAllowedOutcomePath,
   isAllowedPredictionArchivePath,
+  isAllowedStarterCohortPath,
+  isAllowedStarterPropEvaluationPath,
 } from "./nfl-prediction-archive-allowlist.mjs";
 
 describe("prediction archive commit-path allowlist (WU4C.1 Part 6)", () => {
@@ -49,5 +51,23 @@ describe("prediction archive commit-path allowlist (WU4C.1 Part 6)", () => {
     expect(isAllowedEvaluationPath("data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-spread/2026.jsonl")).toBe(false);
     expect(isAllowedEvaluationPath("data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-rushing-summary/2026.jsonl")).toBe(false);
     expect(isAllowedEvaluationPath("data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-rushing/2026.json")).toBe(false);
+  });
+
+  it("accepts WU4 starter-cohort weekly partitions and rejects a wrong season, non-padded week, or wrong extension", () => {
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2026/01.jsonl", 2026)).toBe(true);
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2026/18.jsonl", 2026)).toBe(true);
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2026/01.missing.jsonl", 2026)).toBe(true);
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2025/01.jsonl", 2026)).toBe(false);
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2026/1.jsonl", 2026)).toBe(false);
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2026/01.json", 2026)).toBe(false);
+    expect(isAllowedStarterCohortPath("data/nfl/starter-cohorts/2026/../../secrets.jsonl", 2026)).toBe(false);
+  });
+
+  it("accepts WU4 starter-prop-evaluation weekly partitions and their sibling exclusions file, and rejects a wrong season or unrelated path", () => {
+    expect(isAllowedStarterPropEvaluationPath("data/nfl/starter-prop-evaluations/2026/01.jsonl", 2026)).toBe(true);
+    expect(isAllowedStarterPropEvaluationPath("data/nfl/starter-prop-evaluations/2026/01.exclusions.jsonl", 2026)).toBe(true);
+    expect(isAllowedStarterPropEvaluationPath("data/nfl/starter-prop-evaluations/2025/01.jsonl", 2026)).toBe(false);
+    expect(isAllowedStarterPropEvaluationPath("data/nfl/starter-prop-evaluations/2026/1.jsonl", 2026)).toBe(false);
+    expect(isAllowedStarterPropEvaluationPath("data/nfl/starter-cohorts/2026/01.jsonl", 2026)).toBe(false);
   });
 });

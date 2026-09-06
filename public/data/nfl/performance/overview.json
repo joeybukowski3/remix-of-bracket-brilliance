@@ -1,0 +1,52 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "source": "generated (public/data/nfl/performance/totals.json + props.json + data/nfl/prediction-evaluations/jkb-football-evaluation-v1/summary)",
+    "season": 2026,
+    "week": null,
+    "modelVersion": null,
+    "notes": [
+      "Thin cross-family rollup for the future /nfl/performance dashboard. Every metric here is read verbatim from an already-canonical derived artifact -- no independent grading or aggregation logic exists here.",
+      "sides is a thin summary of the canonical WU3 spread evaluation dataset (jkb-power-number-v1.0.0); full Sides performance support is not yet materialized into a dedicated sides.json."
+    ]
+  },
+  "schemaVersion": "nfl-performance-overview-v1",
+  "performanceMeta": {
+    "schemaVersion": "nfl-performance-overview-v1",
+    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "season": 2026
+  },
+  "totals": {
+    "status": "AVAILABLE",
+    "graded_games": 0,
+    "mae": null,
+    "bias": null,
+    "directional_hit_rate": null,
+    "latest_grade_timestamp": null
+  },
+  "props": {
+    "status": "AVAILABLE",
+    "graded_props": 0,
+    "directional_hit_rate": null,
+    "mae": null,
+    "passing_n": 0,
+    "rushing_n": 0,
+    "receiving_n": 0,
+    "latest_grade_timestamp": "2026-09-05T12:32:49.994Z"
+  },
+  "sides": {
+    "status": "AVAILABLE",
+    "graded_games": 0,
+    "spread_mae": null,
+    "market_direction_metric": {
+      "comparable_n": 0,
+      "jkb_mae": null,
+      "market_mae": null,
+      "jkb_minus_market_mae": null
+    },
+    "winner_accuracy": null,
+    "latest_grade_timestamp": "2026-09-05T09:32:43.533Z",
+    "note": "Thin summary of the canonical WU3 spread evaluation dataset (jkb-power-number-v1.0.0). Full Sides performance support (rows/buckets/detail context) is not yet materialized into a dedicated sides.json."
+  }
+}
