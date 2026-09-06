@@ -77,7 +77,16 @@ function main() {
       historical_snapshots: "data/nfl/coaching/rating-snapshots/<season>/<week>.json",
       coach_history: "data/nfl/coaching/coach-history.json",
       coach_game_context: "data/nfl/coaching/coach-game-context/<season>.jsonl",
+      coach_effective_overrides: "data/nfl/coaching/coach-effective-overrides.json",
       research: "data/nfl/coaching/coaching-ratings-research.json",
+    },
+    integration: {
+      phase: "C",
+      usage: "ANALYSIS CONTEXT ONLY — joined per game into Sides/Totals performance rows and the NFL matchup detail. Never an input to Sides/Totals projection math; ATS never weighted.",
+      snapshot_selection:
+        "Historical games (season < current-ratings season) use the point-in-time rating-snapshots/<season>/<week>.json; current/upcoming games use a leak-checked adapter over public/data/nfl/coaching-ratings.json. A historical game never falls back to current ratings.",
+      current_season_coach_changes:
+        "coach-effective-overrides.json applies an identity-only override from its effective (season, week) forward for an in-season firing/interim not yet in games.csv; earlier weeks are never rewritten and canonical history wins once games.csv confirms.",
     },
   };
 

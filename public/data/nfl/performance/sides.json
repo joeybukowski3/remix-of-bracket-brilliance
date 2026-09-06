@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "generatedAt": "2026-09-06T18:00:00.000Z",
     "source": "generated (data/nfl/predictions/**/jkb-power-number.jsonl + prediction-outcome resolver + embedded market_snapshot_refs)",
     "season": null,
     "week": null,
@@ -13,13 +13,13 @@
       "Sign contract: every margin (projected, market-implied, actual) and every signed error is a HOME margin (home points - away points). market_spread is the posted home line (negative = home favored); market_implied_home_margin = -market_spread. Positive jkb_minus_market = JKB more bullish on the home team than the market.",
       "Market spread = latest valid pregame comparison line (spread/comparison ref, observed strictly before kickoff, highest-priority book then latest observed_at). Never chosen after seeing the result.",
       "Analysis context (trenches/ypp/epa) is attached only for games in the current season, using the prior-season-full window, null/unavailable everywhere else -- see nfl-game-context.ts for the leakage guarantee.",
-      "coaching_context_status is always NOT_IMPLEMENTED -- no canonical coaching-rating system exists yet."
+      "Coaching Rating v1 context is joined per row (Phase C): historical rows use the point-in-time data/nfl/coaching/rating-snapshots/<season>/<week>.json; current-season rows use the current coaching-ratings artifact only when its source cutoff is strictly pregame. A historical row never falls back to current ratings -- coaching_context_status is SOURCE_UNAVAILABLE when no leak-safe snapshot exists. Coaching is ANALYSIS CONTEXT ONLY and never a model input; ATS is shown as record context and never weighted."
     ]
   },
   "schemaVersion": "nfl-sides-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-sides-performance-v1",
-    "generatedAt": "2026-09-05T12:00:00.000Z",
+    "generatedAt": "2026-09-06T18:00:00.000Z",
     "seasons": [
       2026
     ],

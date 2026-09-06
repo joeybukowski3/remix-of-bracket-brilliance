@@ -121,6 +121,9 @@ export default defineConfig({
       "scripts/lib/nfl-coach-rating.test.mjs",
       // NFL Coaching Rating v1 Phase B -- historical point-in-time rating snapshots.
       "scripts/lib/nfl-coach-rating-snapshot.test.mjs",
+      // NFL Coaching Rating v1 Phase C -- current-season adapter + per-game snapshot selection.
+      "scripts/lib/nfl-coach-rating-current-adapter.test.ts",
+      "scripts/lib/nfl-coaching-snapshot-source.test.ts",
     ],
   },
   resolve: {

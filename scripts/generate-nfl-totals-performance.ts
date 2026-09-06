@@ -31,6 +31,7 @@ import {
   type MetricsPriorSeasonWindow,
   type TrenchSeasonData,
 } from "./lib/nfl-game-context";
+import { createCoachingSnapshotSelector } from "./lib/nfl-coaching-snapshot-source";
 import {
   buildTotalsPerformanceRow,
   computeBucketRollups,
@@ -173,6 +174,7 @@ export function buildTotalsPerformanceArtifact(generatedAt: string) {
   }
 
   const { epa, metrics, trench } = loadContextSources();
+  const selectCoachingSnapshot = createCoachingSnapshotSelector(ROOT);
   const sourcesBySeason = new Map<number, ReturnType<typeof loadResolverSeasonSources>>();
   const rows: TotalsPerformanceRow[] = [];
   const exclusions: Record<string, number> = {
@@ -227,6 +229,11 @@ export function buildTotalsPerformanceArtifact(generatedAt: string) {
     const market = loadMarketTotal(selection.home.season, selection.home.gameId, selection.home.kickoffUtc);
 
     const seasonMatchesEpaArtifact = epa != null && selection.home.season === epa.currentSeason;
+    const coachingSnapshot = selectCoachingSnapshot({
+      season: selection.home.season,
+      week: selection.home.week,
+      kickoffUtc: selection.home.kickoffUtc,
+    });
     const context = buildPregameGameContext({
       epaWindow: seasonMatchesEpaArtifact ? (epa!.windows["prior-season-full"] ?? null) : null,
       yppWindow: seasonMatchesEpaArtifact ? (metrics?.windows["prior-season-full"] ?? null) : null,
@@ -234,6 +241,8 @@ export function buildTotalsPerformanceArtifact(generatedAt: string) {
       trenchSeasonKey: selection.home.season - 1,
       homeTeam: selection.home.team,
       awayTeam: selection.away.team,
+      coachingSnapshot,
+      gameKickoffUtc: selection.home.kickoffUtc,
     });
 
     rows.push(
@@ -261,7 +270,7 @@ export function buildTotalsPerformanceArtifact(generatedAt: string) {
     trenches: rows.filter((r) => r.context.trenches.provenance_status === "available").length,
     ypp: rows.filter((r) => r.context.ypp.provenance_status === "available").length,
     epa: rows.filter((r) => r.context.epa.provenance_status === "available").length,
-    coaching: 0,
+    coaching: rows.filter((r) => r.context.coaching.coaching_context_status === "OK").length,
   };
 
   const artifact = {
@@ -273,7 +282,7 @@ export function buildTotalsPerformanceArtifact(generatedAt: string) {
         "Canonical derived totals performance artifact for the future /nfl/performance dashboard. Not a raw archive -- do not parse JSONL for this view.",
         "Actual outcomes are computed exclusively via resolvePredictionOutcome() from nfl-prediction-outcome-resolver.ts -- no independent grading logic exists here.",
         "Analysis context (trenches/ypp/epa) is attached only for games in the current season, using the prior-season-full window, and is null/unavailable everywhere else -- see nfl-game-context.ts for the leakage guarantee.",
-        "coaching_context_status is always SOURCE_UNAVAILABLE in this artifact revision -- point-in-time coaching snapshots exist (data/nfl/coaching/rating-snapshots) but are not yet joined into these rows (Phase B follow-up). Coaching is ANALYSIS CONTEXT ONLY and never a model input; no Over/Under coaching lean is ever implied.",
+        "Coaching Rating v1 context is joined per row (Phase C): historical rows use the point-in-time data/nfl/coaching/rating-snapshots/<season>/<week>.json; current-season rows use the current coaching-ratings artifact only when its source cutoff is strictly pregame. A historical row never falls back to current ratings. Coaching is ANALYSIS CONTEXT ONLY and never a model input; no Over/Under coaching lean is ever implied and ATS is never weighted.",
       ],
       generatedAt,
     }),

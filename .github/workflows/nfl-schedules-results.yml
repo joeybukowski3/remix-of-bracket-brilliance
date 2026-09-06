@@ -146,6 +146,41 @@ jobs:
             npm run nfl:starter-prop-evaluations -- --season=2026 --week="${week}"
           done
 
+      # Phase C -- Coaching Rating v1 display/context refresh. ANALYSIS
+      # CONTEXT ONLY: none of these steps touch Sides/Totals model math, and
+      # ATS is never a rating input. Ordered foundation -> snapshots ->
+      # ratings -> analysis-metadata, and BEFORE the derived performance
+      # artifacts below so sides/totals pick up this run's coaching join.
+      # continue-on-error on every step, same rationale as the derived
+      # performance pipeline -- core results ingestion / grading above must
+      # never fail because coaching display generation fails.
+      - name: Generate NFL coaching foundation
+        id: coaching-foundation
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-foundation
+
+      - name: Generate NFL coaching rating snapshots
+        id: coaching-snapshots
+        if: steps.coaching-foundation.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-snapshots
+
+      - name: Generate NFL current coaching ratings
+        id: coaching-ratings
+        if: steps.coaching-foundation.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-ratings
+
+      - name: Generate NFL coaching analysis metadata
+        id: coaching-analysis-metadata
+        if: steps.coaching-ratings.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-analysis-metadata
+
       # WU6 -- canonical sides (spread) performance artifact. Reads only the
       # already-canonical jkb-power-number spread predictions + the outcome
       # resolver + the predictions' own embedded market_snapshot_refs; writes
@@ -207,7 +242,7 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations' 'data/nfl/starter-prop-evaluations' 'public/data/nfl/performance')" ]; then
+          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations' 'data/nfl/starter-prop-evaluations' 'public/data/nfl/performance' 'public/data/nfl/coaching-ratings.json' 'data/nfl/coaching')" ]; then
             echo "No NFL source or prediction-outcome changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -313,6 +348,22 @@ jobs:
             done < <(git status --porcelain --untracked-files=all -- data/nfl/starter-prop-evaluations)
           else
             echo "::warning::WU4 starter-prop-evaluation regrade failed or was skipped; not staging data/nfl/starter-prop-evaluations this run."
+          fi
+
+          # Phase C: Coaching Rating v1 display/context artifacts, staged
+          # only when their own generation step actually succeeded this run.
+          # ANALYSIS CONTEXT ONLY -- never a Sides/Totals model input.
+          if [ "${{ steps.coaching-foundation.outcome }}" = "success" ]; then
+            git add -- data/nfl/coaching/coach-history.json data/nfl/coaching/coach-game-context 2>/dev/null || true
+          fi
+          if [ "${{ steps.coaching-snapshots.outcome }}" = "success" ]; then
+            git add -- data/nfl/coaching/rating-snapshots
+          fi
+          if [ "${{ steps.coaching-ratings.outcome }}" = "success" ] && [ -f public/data/nfl/coaching-ratings.json ]; then
+            git add -- public/data/nfl/coaching-ratings.json
+          fi
+          if [ "${{ steps.coaching-analysis-metadata.outcome }}" = "success" ] && [ -f data/nfl/coaching/coaching-analysis-metadata.json ]; then
+            git add -- data/nfl/coaching/coaching-analysis-metadata.json
           fi
 
           # WU4: public performance artifacts, staged only when their own

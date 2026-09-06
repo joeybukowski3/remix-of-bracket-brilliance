@@ -21,6 +21,14 @@ describe("buildSidesPerformanceArtifact", () => {
     expect(artifact.performanceMeta.liveModelVersion).toBe("jkb-power-number-v1.0.0");
   });
 
+  it("exposes contextCoverage.coaching as the count of rows with an OK coaching join", () => {
+    const { artifact } = buildSidesPerformanceArtifact(AT);
+    const okCount = artifact.rows.filter((r) => r.context.coaching.coaching_context_status === "OK").length;
+    expect(artifact.performanceMeta.contextCoverage.coaching).toBe(okCount);
+    // every row still carries an explicit coaching context object (never undefined)
+    expect(artifact.rows.every((r) => typeof r.context.coaching.coaching_context_status === "string")).toBe(true);
+  });
+
   it("is deterministic: building twice from the same inputs yields identical output", () => {
     const first = buildSidesPerformanceArtifact(AT);
     const second = buildSidesPerformanceArtifact(AT);

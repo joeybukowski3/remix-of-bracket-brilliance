@@ -1,12 +1,70 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCoachingHealthSection,
   buildPropsHealthSection,
   buildSidesHealthSection,
   buildTotalsHealthSection,
   buildWorkflowHealthSection,
+  COACHING_ARTIFACT_STALE_AFTER_HOURS,
   computeFamilyStatus,
   DAILY_ARTIFACT_STALE_THRESHOLD_MS,
 } from "./nfl-performance-health";
+
+describe("buildCoachingHealthSection", () => {
+  const base = {
+    currentArtifactExists: true,
+    ratingVersion: "coaching-v1.0.0",
+    artifactGeneratedAt: "2026-09-06T00:00:00.000Z",
+    sourceCutoff: "completed games through 2025 season",
+    expectedTeamCount: 32,
+    ratedTeamCount: 32,
+    smallSampleCoachCount: 11,
+    firstYearCoachCount: 4,
+    historicalSnapshotFileCount: 215,
+    latestSnapshotSeason: 2025,
+    latestSnapshotWeek: 22,
+    publicArtifactAgeMs: 60 * 60 * 1000,
+  };
+
+  it("is HEALTHY with a fresh full-coverage artifact even with first-year / small-sample coaches", () => {
+    const section = buildCoachingHealthSection(base);
+    expect(section.status).toBe("HEALTHY");
+    expect(section.first_year_count).toBe(4);
+    expect(section.small_sample_coach_count).toBe(11);
+    expect(section.stale_after_hours).toBe(COACHING_ARTIFACT_STALE_AFTER_HOURS);
+  });
+
+  it("is NOT_AVAILABLE when the current-ratings artifact is missing", () => {
+    expect(buildCoachingHealthSection({ ...base, currentArtifactExists: false }).status).toBe("NOT_AVAILABLE");
+  });
+
+  it("is STALE when the artifact is older than the staleness allowance", () => {
+    const section = buildCoachingHealthSection({
+      ...base,
+      publicArtifactAgeMs: (COACHING_ARTIFACT_STALE_AFTER_HOURS + 1) * 60 * 60 * 1000,
+    });
+    expect(section.status).toBe("STALE");
+  });
+
+  it("DEGRADES when teams are missing a current coach rating", () => {
+    const section = buildCoachingHealthSection({ ...base, ratedTeamCount: 30 });
+    expect(section.unrated_coach_count).toBe(2);
+    expect(section.status).toBe("DEGRADED");
+  });
+
+  it("DEGRADES when there is no historical snapshot coverage", () => {
+    expect(buildCoachingHealthSection({ ...base, historicalSnapshotFileCount: 0 }).status).toBe("DEGRADED");
+  });
+
+  it("does not degrade purely because every coach is first-year / small-sample", () => {
+    const section = buildCoachingHealthSection({
+      ...base,
+      smallSampleCoachCount: 32,
+      firstYearCoachCount: 32,
+    });
+    expect(section.status).toBe("HEALTHY");
+  });
+});
 
 describe("computeFamilyStatus", () => {
   it("returns NOT_AVAILABLE when the artifact does not exist, regardless of other inputs", () => {
