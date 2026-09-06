@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "nfl-coaching-analysis-metadata-v1",
+  "generatedAt": "2026-09-06T16:25:59.840Z",
+  "study_id": "coaching-study-v1",
+  "title": "Head-coach forward-signal study (Coaching Rating v1)",
+  "rating_version": "coaching-v1.0.0",
+  "data_seasons": "1999-2025",
+  "sample_size": 731,
+  "research_question": "Which head-coach signals persist and carry forward-predictive value for team performance, and how should they be combined into a single rating?",
+  "methodology": "Coach-season unit. Entering signal = state through end of S-1. Persistence via odd/even split-half (autocorrelation-free) + year-to-year. Forward value via entering signal vs actual win-over-market-expectation during S and S+1. Composite weights fit by OLS, validated rolling-origin 2009–2025.",
+  "key_findings": [
+    "Coach ATS skill did not persist — every ATS window (career, recent, favorite, underdog, division, after-bye) had forward r ≈ 0.",
+    "Win-over-market-expectation was the strongest supported forward signal (seasoned fwd-next-season r ≈ 0.19), though its raw persistence is weak (split-half SB r ≈ 0.18).",
+    "Straight-up win% is highly persistent (split-half SB r ≈ 0.75) but roster/QB confounded — kept as a hard-shrunk secondary component.",
+    "First-year head coaches have no usable prior NFL-HC signal — assigned the league-average prior.",
+    "Signal stabilizes materially around 50+ career games; 17–49 is heavily shrunk; <17 is an average-band prior.",
+    "Adding experience/tenure as a fitted additive term reduced out-of-sample r and flipped sign across folds — experience is used only as a reliability modifier."
+  ],
+  "negative_findings": [
+    "Every ATS window (career / recent / favorite / underdog / division / after-bye) had forward r ≈ 0 — coach ATS skill did not persist.",
+    "Adding experience / tenure / playoff games as a fitted additive term reduced out-of-sample r and flipped sign across folds."
+  ],
+  "signal_classifications": {
+    "win_over_market_expectation": "KEEP (primary)",
+    "career_straight_up_win_pct": "KEEP (secondary, shrunk)",
+    "experience_tenure_playoff": "KEEP-BUT-SHRINK (reliability modifier only)",
+    "ats_all_windows": "CONTEXT-ONLY / DROP (not a rating input)"
+  },
+  "final_model_decision": "Ship Coaching Rating v1 as ANALYSIS CONTEXT only. ATS shown as record context, never weighted. Rating is deliberately low-dynamic-range (forward r is small). Not an input to Sides/Totals model math.",
+  "fitted_weights": {
+    "intercept": -0.02906,
+    "w_win_over_expectation": 0.26546,
+    "w_career_win_pct": 0.22121,
+    "shrinkage": {
+      "k_win_over_expectation": 32,
+      "k_career_win_pct": 40
+    },
+    "reliability": {
+      "full_sample_games": 50,
+      "floor_games": 17,
+      "ramp_floor": 0.5
+    },
+    "even_threshold": 4,
+    "raw_score_population": {
+      "mean": -0.019181,
+      "sd": 0.023539,
+      "n": 731
+    },
+    "transform": {
+      "center": 50,
+      "points_per_sd": 10,
+      "min": 0,
+      "max": 100
+    }
+  },
+  "oos_validation": "rolling-origin (train season<T, test season==T), 2009–2025: out-of-sample r ≈ 0.15 same-season / ≈ 0.22 next-season, sign-consistent every fold.",
+  "limitations": [
+    "Forward r ≈ 0.19 — a coach rating explains a small share of forward outcome variance; the rating is analysis context, not a model input.",
+    "Leakage-safe research cannot fully remove roster/QB confounding from win%.",
+    "No point-in-time historical rating snapshots are materialized yet, so historical evaluation rows cannot carry a coaching rating.",
+    "Current roster reflects the repo's canonical 2026 scenario (src/data/nflOffseason2026.ts / games.csv 2026 rows)."
+  ],
+  "model_input_use": "NONE — analysis context only. Not an input to Sides/Totals model math.",
+  "artifact_paths": {
+    "current_ratings": "public/data/nfl/coaching-ratings.json",
+    "historical_snapshots": "data/nfl/coaching/rating-snapshots/<season>/<week>.json",
+    "coach_history": "data/nfl/coaching/coach-history.json",
+    "coach_game_context": "data/nfl/coaching/coach-game-context/<season>.jsonl",
+    "research": "data/nfl/coaching/coaching-ratings-research.json"
+  }
+}

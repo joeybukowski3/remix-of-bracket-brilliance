@@ -238,7 +238,7 @@ describe("buildSidesPerformanceRow", () => {
     expect(row.projected_winner_correct).toBe(false);
   });
 
-  it("keeps the coaching context as the NOT_IMPLEMENTED null contract", () => {
+  it("passes the coaching context through untouched (SOURCE_UNAVAILABLE null contract here)", () => {
     const row = buildSidesPerformanceRow({
       snapshot: snap(),
       actual: actual(21, 20),
@@ -246,7 +246,7 @@ describe("buildSidesPerformanceRow", () => {
       context: NULL_CONTEXT,
       outcomeSourceStateHash: null,
     });
-    expect(row.context.coaching.coaching_context_status).toBe("NOT_IMPLEMENTED");
+    expect(row.context.coaching.coaching_context_status).toBe("SOURCE_UNAVAILABLE");
     expect(row.context.coaching.home_coaching_rating).toBeNull();
   });
 });

@@ -273,7 +273,7 @@ export function buildTotalsPerformanceArtifact(generatedAt: string) {
         "Canonical derived totals performance artifact for the future /nfl/performance dashboard. Not a raw archive -- do not parse JSONL for this view.",
         "Actual outcomes are computed exclusively via resolvePredictionOutcome() from nfl-prediction-outcome-resolver.ts -- no independent grading logic exists here.",
         "Analysis context (trenches/ypp/epa) is attached only for games in the current season, using the prior-season-full window, and is null/unavailable everywhere else -- see nfl-game-context.ts for the leakage guarantee.",
-        "coaching_context_status is always NOT_IMPLEMENTED -- no canonical coaching-rating system exists yet.",
+        "coaching_context_status is always SOURCE_UNAVAILABLE in this artifact revision -- point-in-time coaching snapshots exist (data/nfl/coaching/rating-snapshots) but are not yet joined into these rows (Phase B follow-up). Coaching is ANALYSIS CONTEXT ONLY and never a model input; no Over/Under coaching lean is ever implied.",
       ],
       generatedAt,
     }),

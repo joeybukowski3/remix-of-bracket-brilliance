@@ -225,7 +225,7 @@ export function buildSidesPerformanceArtifact(generatedAt: string) {
         "Sign contract: every margin (projected, market-implied, actual) and every signed error is a HOME margin (home points - away points). market_spread is the posted home line (negative = home favored); market_implied_home_margin = -market_spread. Positive jkb_minus_market = JKB more bullish on the home team than the market.",
         "Market spread = latest valid pregame comparison line (spread/comparison ref, observed strictly before kickoff, highest-priority book then latest observed_at). Never chosen after seeing the result.",
         "Analysis context (trenches/ypp/epa) is attached only for games in the current season, using the prior-season-full window, null/unavailable everywhere else -- see nfl-game-context.ts for the leakage guarantee.",
-        "coaching_context_status is always NOT_IMPLEMENTED -- no canonical coaching-rating system exists yet.",
+        "coaching_context_status is always SOURCE_UNAVAILABLE in this artifact revision -- point-in-time coaching snapshots exist (data/nfl/coaching/rating-snapshots) but are not yet joined into these rows (Phase B follow-up). Coaching is ANALYSIS CONTEXT ONLY and never a model input; ATS is never weighted.",
       ],
       generatedAt,
     }),

@@ -119,6 +119,8 @@ export default defineConfig({
       "scripts/lib/nfl-coach-research.test.mjs",
       // NFL Coaching Ratings v1 -- frozen composite + public artifact builder.
       "scripts/lib/nfl-coach-rating.test.mjs",
+      // NFL Coaching Rating v1 Phase B -- historical point-in-time rating snapshots.
+      "scripts/lib/nfl-coach-rating-snapshot.test.mjs",
     ],
   },
   resolve: {
