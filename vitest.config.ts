@@ -112,6 +112,11 @@ export default defineConfig({
       // NFL Performance Center WU6 -- canonical sides (spread) performance artifact.
       "scripts/lib/nfl-sides-performance.test.ts",
       "scripts/generate-nfl-sides-performance.test.ts",
+      // NFL Coaching Ratings v1 -- ingestion + canonical coach identity +
+      // leakage-safe pregame coach-game context + persistence research.
+      "scripts/lib/nfl-coach-core.test.mjs",
+      "scripts/lib/nfl-coach-context.test.mjs",
+      "scripts/lib/nfl-coach-research.test.mjs",
     ],
   },
   resolve: {

@@ -1,0 +1,6174 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-09-06T14:44:27.778Z",
+    "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+    "season": null,
+    "week": null,
+    "modelVersion": null,
+    "notes": [
+      "Canonical HEAD_COACH tenure segments derived from per-game coach strings, seasons 1999-2025.",
+      "A segment is a maximal unbroken run of one franchise's games under one coach, kickoff-ordered. Midseason changes create separate segments; one coach is never assumed to hold an entire season.",
+      "interim_flag comes from data/nfl/coaching/coach-name-overrides.json (games.csv does not mark interim HCs).",
+      "Relocated franchises (STL/SD/OAK) fold onto the current abbr (lar/lac/lv).",
+      "Current-season (not-yet-played) coach identity is intentionally NOT here -- games.csv future rows are unreliable.",
+      "0 appearance warning(s) during build."
+    ]
+  },
+  "schemaVersion": "nfl-coach-history-v1",
+  "coachCount": 173,
+  "segmentCount": 246,
+  "warnings": [],
+  "segments": [
+    {
+      "coach_id": "vince-tobin",
+      "coach_name": "Vince Tobin",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 10,
+        "date": "2000-11-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 25,
+      "first_game_id": "1999_01_ARI_PHI",
+      "last_game_id": "2000_10_WAS_ARI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dan-reeves",
+      "coach_name": "Dan Reeves",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 14,
+        "date": "2003-12-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 79,
+      "first_game_id": "1999_01_MIN_ATL",
+      "last_game_id": "2003_14_CAR_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brian-billick",
+      "coach_name": "Brian Billick",
+      "team": "bal",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2007,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2007,
+        "week": 17,
+        "date": "2007-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 152,
+      "first_game_id": "1999_01_BAL_STL",
+      "last_game_id": "2007_17_PIT_BAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "wade-phillips",
+      "coach_name": "Wade Phillips",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 17,
+        "date": "2000-12-23"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 33,
+      "first_game_id": "1999_01_BUF_IND",
+      "last_game_id": "2000_17_BUF_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "george-seifert",
+      "coach_name": "George Seifert",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 17,
+        "date": "2002-01-06"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 48,
+      "first_game_id": "1999_01_CAR_NO",
+      "last_game_id": "2001_17_NE_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dick-jauron",
+      "coach_name": "Dick Jauron",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 81,
+      "first_game_id": "1999_01_KC_CHI",
+      "last_game_id": "2003_17_CHI_KC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bruce-coslet",
+      "coach_name": "Bruce Coslet",
+      "team": "cin",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 4,
+        "date": "2000-09-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 19,
+      "first_game_id": "1999_01_CIN_TEN",
+      "last_game_id": "2000_04_CIN_BAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chris-palmer",
+      "coach_name": "Chris Palmer",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 16,
+        "date": "2000-12-17"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 32,
+      "first_game_id": "1999_01_PIT_CLE",
+      "last_game_id": "2000_16_TEN_CLE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chan-gailey",
+      "coach_name": "Chan Gailey",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 18,
+        "date": "2000-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 17,
+      "first_game_id": "1999_01_DAL_WAS",
+      "last_game_id": "1999_18_DAL_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-shanahan",
+      "coach_name": "Mike Shanahan",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-13"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 165,
+      "first_game_id": "1999_01_MIA_DEN",
+      "last_game_id": "2008_17_DEN_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bobby-ross",
+      "coach_name": "Bobby Ross",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 8,
+        "date": "2000-10-19"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 24,
+      "first_game_id": "1999_01_DET_SEA",
+      "last_game_id": "2000_08_DET_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ray-rhodes",
+      "coach_name": "Ray Rhodes",
+      "team": "gb",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 17,
+        "date": "2000-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 16,
+      "first_game_id": "1999_01_OAK_GB",
+      "last_game_id": "1999_17_ARI_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-mora",
+      "coach_name": "Jim Mora",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 17,
+        "date": "2002-01-06"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 50,
+      "first_game_id": "1999_01_BUF_IND",
+      "last_game_id": "2001_17_DEN_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tom-coughlin",
+      "coach_name": "Tom Coughlin",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2002,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2002,
+        "week": 17,
+        "date": "2002-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 66,
+      "first_game_id": "1999_01_SF_JAX",
+      "last_game_id": "2002_17_JAX_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gunther-cunningham",
+      "coach_name": "Gunther Cunningham",
+      "team": "kc",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 17,
+        "date": "2000-12-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 32,
+      "first_game_id": "1999_01_KC_CHI",
+      "last_game_id": "2000_17_KC_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dick-vermeil",
+      "coach_name": "Dick Vermeil",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 21,
+        "date": "2000-01-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 19,
+      "first_game_id": "1999_01_BAL_STL",
+      "last_game_id": "1999_21_STL_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jon-gruden",
+      "coach_name": "Jon Gruden",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 19,
+        "date": "2002-01-19"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 52,
+      "first_game_id": "1999_01_OAK_GB",
+      "last_game_id": "2001_19_OAK_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jimmy-johnson",
+      "coach_name": "Jimmy Johnson",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-13"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 19,
+        "date": "2000-01-15"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 18,
+      "first_game_id": "1999_01_MIA_DEN",
+      "last_game_id": "1999_19_MIA_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dennis-green",
+      "coach_name": "Dennis Green",
+      "team": "min",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 16,
+        "date": "2001-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 51,
+      "first_game_id": "1999_01_MIN_ATL",
+      "last_game_id": "2001_16_MIN_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "pete-carroll",
+      "coach_name": "Pete Carroll",
+      "team": "ne",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 17,
+        "date": "2000-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 16,
+      "first_game_id": "1999_01_NE_NYJ",
+      "last_game_id": "1999_17_BAL_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-ditka",
+      "coach_name": "Mike Ditka",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 17,
+        "date": "2000-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 16,
+      "first_game_id": "1999_01_CAR_NO",
+      "last_game_id": "1999_17_NO_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-fassel",
+      "coach_name": "Jim Fassel",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 84,
+      "first_game_id": "1999_01_NYG_TB",
+      "last_game_id": "2003_17_CAR_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-parcells",
+      "coach_name": "Bill Parcells",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 1999,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 1999,
+        "week": 17,
+        "date": "2000-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 16,
+      "first_game_id": "1999_01_NE_NYJ",
+      "last_game_id": "1999_17_SEA_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "andy-reid",
+      "coach_name": "Andy Reid",
+      "team": "phi",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 243,
+      "first_game_id": "1999_01_ARI_PHI",
+      "last_game_id": "2012_17_PHI_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-cowher",
+      "coach_name": "Bill Cowher",
+      "team": "pit",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 17,
+        "date": "2006-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 138,
+      "first_game_id": "1999_01_PIT_CLE",
+      "last_game_id": "2006_17_PIT_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-holmgren",
+      "coach_name": "Mike Holmgren",
+      "team": "sea",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 170,
+      "first_game_id": "1999_01_DET_SEA",
+      "last_game_id": "2008_17_SEA_ARI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-mariucci",
+      "coach_name": "Steve Mariucci",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2002,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2002,
+        "week": 19,
+        "date": "2003-01-12"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 67,
+      "first_game_id": "1999_01_SF_JAX",
+      "last_game_id": "2002_19_SF_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tony-dungy",
+      "coach_name": "Tony Dungy",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 18,
+        "date": "2002-01-12"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 52,
+      "first_game_id": "1999_01_NYG_TB",
+      "last_game_id": "2001_18_TB_PHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jeff-fisher",
+      "coach_name": "Jeff Fisher",
+      "team": "ten",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 203,
+      "first_game_id": "1999_01_CIN_TEN",
+      "last_game_id": "2010_17_TEN_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "norv-turner",
+      "coach_name": "Norv Turner",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 1999,
+        "week": 1,
+        "date": "1999-09-12"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 3,
+        "date": "2000-09-18"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 21,
+      "first_game_id": "1999_01_DAL_WAS",
+      "last_game_id": "2000_03_DAL_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-riley",
+      "coach_name": "Mike Riley",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 1999,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 1999,
+        "week": 2,
+        "date": "1999-09-19"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 16,
+        "date": "2001-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 48,
+      "first_game_id": "1999_02_SD_CIN",
+      "last_game_id": "2001_16_SEA_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dave-campo",
+      "coach_name": "Dave Campo",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2002,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-03"
+      },
+      "effective_end": {
+        "season": 2002,
+        "week": 17,
+        "date": "2002-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 48,
+      "first_game_id": "2000_01_PHI_DAL",
+      "last_game_id": "2002_17_DAL_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-sherman",
+      "coach_name": "Mike Sherman",
+      "team": "gb",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-03"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 102,
+      "first_game_id": "2000_01_NYJ_GB",
+      "last_game_id": "2005_17_SEA_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-martz",
+      "coach_name": "Mike Martz",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-04"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 5,
+        "date": "2005-10-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 92,
+      "first_game_id": "2000_01_DEN_STL",
+      "last_game_id": "2005_05_SEA_STL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dave-wannstedt",
+      "coach_name": "Dave Wannstedt",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2004,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-03"
+      },
+      "effective_end": {
+        "season": 2004,
+        "week": 9,
+        "date": "2004-11-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 76,
+      "first_game_id": "2000_01_SEA_MIA",
+      "last_game_id": "2004_09_ARI_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-belichick",
+      "coach_name": "Bill Belichick",
+      "team": "ne",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-03"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 429,
+      "first_game_id": "2000_01_TB_NE",
+      "last_game_id": "2023_18_NYJ_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-haslett",
+      "coach_name": "Jim Haslett",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-03"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 98,
+      "first_game_id": "2000_01_DET_NO",
+      "last_game_id": "2005_17_NO_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "al-groh",
+      "coach_name": "Al Groh",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 2000,
+        "week": 1,
+        "date": "2000-09-03"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 17,
+        "date": "2000-12-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 16,
+      "first_game_id": "2000_01_NYJ_GB",
+      "last_game_id": "2000_17_NYJ_BAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "terry-robiskie",
+      "coach_name": "Terry Robiskie",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 2000,
+        "week": 4,
+        "date": "2000-09-24"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 17,
+        "date": "2000-12-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 13,
+      "first_game_id": "2000_04_WAS_NYG",
+      "last_game_id": "2000_17_ARI_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dick-lebeau",
+      "coach_name": "Dick LeBeau",
+      "team": "cin",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2002,
+      "effective_start": {
+        "season": 2000,
+        "week": 5,
+        "date": "2000-10-01"
+      },
+      "effective_end": {
+        "season": 2002,
+        "week": 17,
+        "date": "2002-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 45,
+      "first_game_id": "2000_05_MIA_CIN",
+      "last_game_id": "2002_17_CIN_BUF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gary-moeller",
+      "coach_name": "Gary Moeller",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2000,
+      "effective_start": {
+        "season": 2000,
+        "week": 9,
+        "date": "2000-10-29"
+      },
+      "effective_end": {
+        "season": 2000,
+        "week": 17,
+        "date": "2000-12-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 9,
+      "first_game_id": "2000_09_DET_IND",
+      "last_game_id": "2000_17_CHI_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dave-mcginnis",
+      "coach_name": "Dave McGinnis",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2000,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 2000,
+        "week": 11,
+        "date": "2000-11-12"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2000,
+      "games": 55,
+      "first_game_id": "2000_11_ARI_MIN",
+      "last_game_id": "2003_17_MIN_ARI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gregg-williams",
+      "coach_name": "Gregg Williams",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 2001,
+        "week": 1,
+        "date": "2001-09-09"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-27"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 48,
+      "first_game_id": "2001_01_NO_BUF",
+      "last_game_id": "2003_17_BUF_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "butch-davis",
+      "coach_name": "Butch Davis",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2004,
+      "effective_start": {
+        "season": 2001,
+        "week": 1,
+        "date": "2001-09-09"
+      },
+      "effective_end": {
+        "season": 2004,
+        "week": 12,
+        "date": "2004-11-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 60,
+      "first_game_id": "2001_01_SEA_CLE",
+      "last_game_id": "2004_12_CLE_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "marty-mornhinweg",
+      "coach_name": "Marty Mornhinweg",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2002,
+      "effective_start": {
+        "season": 2001,
+        "week": 1,
+        "date": "2001-09-09"
+      },
+      "effective_end": {
+        "season": 2002,
+        "week": 17,
+        "date": "2002-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 32,
+      "first_game_id": "2001_01_DET_GB",
+      "last_game_id": "2002_17_MIN_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dick-vermeil",
+      "coach_name": "Dick Vermeil",
+      "team": "kc",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2001,
+        "week": 1,
+        "date": "2001-09-09"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 81,
+      "first_game_id": "2001_01_OAK_KC",
+      "last_game_id": "2005_17_CIN_KC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "herm-edwards",
+      "coach_name": "Herm Edwards",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2001,
+        "week": 1,
+        "date": "2001-09-09"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 85,
+      "first_game_id": "2001_01_IND_NYJ",
+      "last_game_id": "2005_17_BUF_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "marty-schottenheimer",
+      "coach_name": "Marty Schottenheimer",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2001,
+      "effective_start": {
+        "season": 2001,
+        "week": 1,
+        "date": "2001-09-09"
+      },
+      "effective_end": {
+        "season": 2001,
+        "week": 17,
+        "date": "2002-01-06"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 16,
+      "first_game_id": "2001_01_WAS_SD",
+      "last_game_id": "2001_17_ARI_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-tice",
+      "coach_name": "Mike Tice",
+      "team": "min",
+      "role": "HEAD_COACH",
+      "season_start": 2001,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2001,
+        "week": 17,
+        "date": "2002-01-07"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2001,
+      "games": 67,
+      "first_game_id": "2001_17_MIN_BAL",
+      "last_game_id": "2005_17_CHI_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "john-fox",
+      "coach_name": "John Fox",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 152,
+      "first_game_id": "2002_01_BAL_CAR",
+      "last_game_id": "2010_17_CAR_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dom-capers",
+      "coach_name": "Dom Capers",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 64,
+      "first_game_id": "2002_01_DAL_HOU",
+      "last_game_id": "2005_17_HOU_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tony-dungy",
+      "coach_name": "Tony Dungy",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 18,
+        "date": "2009-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 125,
+      "first_game_id": "2002_01_IND_JAX",
+      "last_game_id": "2008_18_IND_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "marty-schottenheimer",
+      "coach_name": "Marty Schottenheimer",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 19,
+        "date": "2007-01-14"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 82,
+      "first_game_id": "2002_01_SD_CIN",
+      "last_game_id": "2006_19_NE_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-callahan",
+      "coach_name": "Bill Callahan",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 35,
+      "first_game_id": "2002_01_SEA_OAK",
+      "last_game_id": "2003_17_OAK_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jon-gruden",
+      "coach_name": "Jon Gruden",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 117,
+      "first_game_id": "2002_01_NO_TB",
+      "last_game_id": "2008_17_OAK_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-spurrier",
+      "coach_name": "Steve Spurrier",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2002,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 2002,
+        "week": 1,
+        "date": "2002-09-08"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-27"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2002,
+      "games": 32,
+      "first_game_id": "2002_01_ARI_WAS",
+      "last_game_id": "2003_17_PHI_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "marvin-lewis",
+      "coach_name": "Marvin Lewis",
+      "team": "cin",
+      "role": "HEAD_COACH",
+      "season_start": 2003,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2003,
+        "week": 1,
+        "date": "2003-09-07"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2003,
+      "games": 263,
+      "first_game_id": "2003_01_DEN_CIN",
+      "last_game_id": "2018_17_CIN_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-parcells",
+      "coach_name": "Bill Parcells",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 2003,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 2003,
+        "week": 1,
+        "date": "2003-09-07"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 18,
+        "date": "2007-01-06"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2003,
+      "games": 66,
+      "first_game_id": "2003_01_ATL_DAL",
+      "last_game_id": "2006_18_DAL_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-mariucci",
+      "coach_name": "Steve Mariucci",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2003,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2003,
+        "week": 1,
+        "date": "2003-09-07"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 12,
+        "date": "2005-11-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2003,
+      "games": 43,
+      "first_game_id": "2003_01_ARI_DET",
+      "last_game_id": "2005_12_ATL_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jack-del-rio",
+      "coach_name": "Jack Del Rio",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2003,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2003,
+        "week": 1,
+        "date": "2003-09-07"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 12,
+        "date": "2011-11-27"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2003,
+      "games": 142,
+      "first_game_id": "2003_01_JAX_CAR",
+      "last_game_id": "2011_12_HOU_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dennis-erickson",
+      "coach_name": "Dennis Erickson",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2003,
+      "season_end": 2004,
+      "effective_start": {
+        "season": 2003,
+        "week": 1,
+        "date": "2003-09-07"
+      },
+      "effective_end": {
+        "season": 2004,
+        "week": 17,
+        "date": "2005-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2003,
+      "games": 32,
+      "first_game_id": "2003_01_CHI_SF",
+      "last_game_id": "2004_17_SF_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "wade-phillips",
+      "coach_name": "Wade Phillips",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2003,
+      "season_end": 2003,
+      "effective_start": {
+        "season": 2003,
+        "week": 15,
+        "date": "2003-12-14"
+      },
+      "effective_end": {
+        "season": 2003,
+        "week": 17,
+        "date": "2003-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2003,
+      "games": 3,
+      "first_game_id": "2003_15_ATL_IND",
+      "last_game_id": "2003_17_JAX_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dennis-green",
+      "coach_name": "Dennis Green",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 17,
+        "date": "2006-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 48,
+      "first_game_id": "2004_01_ARI_STL",
+      "last_game_id": "2006_17_ARI_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-mora",
+      "coach_name": "Jim Mora",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 17,
+        "date": "2006-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 50,
+      "first_game_id": "2004_01_ATL_SF",
+      "last_game_id": "2006_17_ATL_PHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mularkey",
+      "coach_name": "Mike Mularkey",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 32,
+      "first_game_id": "2004_01_JAX_BUF",
+      "last_game_id": "2005_17_BUF_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "lovie-smith",
+      "coach_name": "Lovie Smith",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 150,
+      "first_game_id": "2004_01_DET_CHI",
+      "last_game_id": "2012_17_CHI_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "norv-turner",
+      "coach_name": "Norv Turner",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2005-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 32,
+      "first_game_id": "2004_01_OAK_PIT",
+      "last_game_id": "2005_17_NYG_OAK",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tom-coughlin",
+      "coach_name": "Tom Coughlin",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 203,
+      "first_game_id": "2004_01_NYG_PHI",
+      "last_game_id": "2015_17_PHI_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "joe-gibbs",
+      "coach_name": "Joe Gibbs",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2007,
+      "effective_start": {
+        "season": 2004,
+        "week": 1,
+        "date": "2004-09-12"
+      },
+      "effective_end": {
+        "season": 2007,
+        "week": 18,
+        "date": "2008-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 67,
+      "first_game_id": "2004_01_TB_WAS",
+      "last_game_id": "2007_18_WAS_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-bates",
+      "coach_name": "Jim Bates",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2004,
+      "effective_start": {
+        "season": 2004,
+        "week": 11,
+        "date": "2004-11-21"
+      },
+      "effective_end": {
+        "season": 2004,
+        "week": 17,
+        "date": "2005-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 7,
+      "first_game_id": "2004_11_MIA_SEA",
+      "last_game_id": "2004_17_MIA_BAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "terry-robiskie",
+      "coach_name": "Terry Robiskie",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2004,
+      "season_end": 2004,
+      "effective_start": {
+        "season": 2004,
+        "week": 13,
+        "date": "2004-12-05"
+      },
+      "effective_end": {
+        "season": 2004,
+        "week": 17,
+        "date": "2005-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2004,
+      "games": 5,
+      "first_game_id": "2004_13_NE_CLE",
+      "last_game_id": "2004_17_CLE_HOU",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "romeo-crennel",
+      "coach_name": "Romeo Crennel",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2005,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2005,
+        "week": 1,
+        "date": "2005-09-11"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2005,
+      "games": 64,
+      "first_game_id": "2005_01_CIN_CLE",
+      "last_game_id": "2008_17_CLE_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "nick-saban",
+      "coach_name": "Nick Saban",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2005,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 2005,
+        "week": 1,
+        "date": "2005-09-11"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 17,
+        "date": "2006-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2005,
+      "games": 32,
+      "first_game_id": "2005_01_DEN_MIA",
+      "last_game_id": "2006_17_MIA_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-nolan",
+      "coach_name": "Mike Nolan",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2005,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2005,
+        "week": 1,
+        "date": "2005-09-11"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 7,
+        "date": "2008-10-19"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2005,
+      "games": 55,
+      "first_game_id": "2005_01_STL_SF",
+      "last_game_id": "2008_07_SF_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "joe-vitt",
+      "coach_name": "Joe Vitt",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2005,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2005,
+        "week": 6,
+        "date": "2005-10-17"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2005,
+      "games": 11,
+      "first_game_id": "2005_06_STL_IND",
+      "last_game_id": "2005_17_STL_DAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dick-jauron",
+      "coach_name": "Dick Jauron",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2005,
+      "season_end": 2005,
+      "effective_start": {
+        "season": 2005,
+        "week": 13,
+        "date": "2005-12-04"
+      },
+      "effective_end": {
+        "season": 2005,
+        "week": 17,
+        "date": "2006-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2005,
+      "games": 5,
+      "first_game_id": "2005_13_MIN_DET",
+      "last_game_id": "2005_17_DET_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dick-jauron",
+      "coach_name": "Dick Jauron",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2009,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2009,
+        "week": 10,
+        "date": "2009-11-15"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 57,
+      "first_game_id": "2006_01_BUF_NE",
+      "last_game_id": "2009_10_BUF_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "rod-marinelli",
+      "coach_name": "Rod Marinelli",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 48,
+      "first_game_id": "2006_01_SEA_DET",
+      "last_game_id": "2008_17_DET_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mccarthy",
+      "coach_name": "Mike McCarthy",
+      "team": "gb",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 13,
+        "date": "2018-12-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 222,
+      "first_game_id": "2006_01_CHI_GB",
+      "last_game_id": "2018_13_ARI_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gary-kubiak",
+      "coach_name": "Gary Kubiak",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 14,
+        "date": "2013-12-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 129,
+      "first_game_id": "2006_01_PHI_HOU",
+      "last_game_id": "2013_14_HOU_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "herm-edwards",
+      "coach_name": "Herm Edwards",
+      "team": "kc",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 49,
+      "first_game_id": "2006_01_CIN_KC",
+      "last_game_id": "2008_17_KC_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "scott-linehan",
+      "coach_name": "Scott Linehan",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 4,
+        "date": "2008-09-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 36,
+      "first_game_id": "2006_01_DEN_STL",
+      "last_game_id": "2008_04_BUF_STL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "art-shell",
+      "coach_name": "Art Shell",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2006,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-11"
+      },
+      "effective_end": {
+        "season": 2006,
+        "week": 17,
+        "date": "2006-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 16,
+      "first_game_id": "2006_01_SD_OAK",
+      "last_game_id": "2006_17_OAK_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brad-childress",
+      "coach_name": "Brad Childress",
+      "team": "min",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-11"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 11,
+        "date": "2010-11-21"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 77,
+      "first_game_id": "2006_01_MIN_WAS",
+      "last_game_id": "2010_11_GB_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "sean-payton",
+      "coach_name": "Sean Payton",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 19,
+        "date": "2012-01-14"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 104,
+      "first_game_id": "2006_01_NO_CLE",
+      "last_game_id": "2011_19_NO_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "eric-mangini",
+      "coach_name": "Eric Mangini",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2006,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2006,
+        "week": 1,
+        "date": "2006-09-10"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 49,
+      "first_game_id": "2006_01_NYJ_TEN",
+      "last_game_id": "2008_17_MIA_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ken-whisenhunt",
+      "coach_name": "Ken Whisenhunt",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-10"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 102,
+      "first_game_id": "2007_01_ARI_SF",
+      "last_game_id": "2012_17_ARI_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bobby-petrino",
+      "coach_name": "Bobby Petrino",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2007,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-09"
+      },
+      "effective_end": {
+        "season": 2007,
+        "week": 13,
+        "date": "2007-12-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 12,
+      "first_game_id": "2007_01_ATL_MIN",
+      "last_game_id": "2007_13_ATL_STL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "wade-phillips",
+      "coach_name": "Wade Phillips",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-09"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 9,
+        "date": "2010-11-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 59,
+      "first_game_id": "2007_01_NYG_DAL",
+      "last_game_id": "2010_09_DAL_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "norv-turner",
+      "coach_name": "Norv Turner",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-09"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 102,
+      "first_game_id": "2007_01_CHI_SD",
+      "last_game_id": "2012_17_OAK_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "lane-kiffin",
+      "coach_name": "Lane Kiffin",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-09"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 4,
+        "date": "2008-09-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 20,
+      "first_game_id": "2007_01_DET_OAK",
+      "last_game_id": "2008_04_SD_OAK",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "cam-cameron",
+      "coach_name": "Cam Cameron",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2007,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-09"
+      },
+      "effective_end": {
+        "season": 2007,
+        "week": 17,
+        "date": "2007-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 16,
+      "first_game_id": "2007_01_MIA_WAS",
+      "last_game_id": "2007_17_CIN_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-tomlin",
+      "coach_name": "Mike Tomlin",
+      "team": "pit",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2007,
+        "week": 1,
+        "date": "2007-09-09"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 19,
+        "date": "2026-01-12"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 329,
+      "first_game_id": "2007_01_PIT_CLE",
+      "last_game_id": "2025_19_HOU_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "emmitt-thomas",
+      "coach_name": "Emmitt Thomas",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2007,
+      "season_end": 2007,
+      "effective_start": {
+        "season": 2007,
+        "week": 14,
+        "date": "2007-12-10"
+      },
+      "effective_end": {
+        "season": 2007,
+        "week": 17,
+        "date": "2007-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2007,
+      "games": 4,
+      "first_game_id": "2007_14_NO_ATL",
+      "last_game_id": "2007_17_SEA_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-smith",
+      "coach_name": "Mike Smith",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2008,
+        "week": 1,
+        "date": "2008-09-07"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 17,
+        "date": "2014-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 117,
+      "first_game_id": "2008_01_DET_ATL",
+      "last_game_id": "2014_17_CAR_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "john-harbaugh",
+      "coach_name": "John Harbaugh",
+      "team": "bal",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2008,
+        "week": 1,
+        "date": "2008-09-07"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 317,
+      "first_game_id": "2008_01_CIN_BAL",
+      "last_game_id": "2025_18_BAL_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tony-sparano",
+      "coach_name": "Tony Sparano",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2008,
+        "week": 1,
+        "date": "2008-09-07"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 14,
+        "date": "2011-12-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 62,
+      "first_game_id": "2008_01_NYJ_MIA",
+      "last_game_id": "2011_14_PHI_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-zorn",
+      "coach_name": "Jim Zorn",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2009,
+      "effective_start": {
+        "season": 2008,
+        "week": 1,
+        "date": "2008-09-04"
+      },
+      "effective_end": {
+        "season": 2009,
+        "week": 17,
+        "date": "2010-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 32,
+      "first_game_id": "2008_01_WAS_NYG",
+      "last_game_id": "2009_17_WAS_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-haslett",
+      "coach_name": "Jim Haslett",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2008,
+      "effective_start": {
+        "season": 2008,
+        "week": 6,
+        "date": "2008-10-12"
+      },
+      "effective_end": {
+        "season": 2008,
+        "week": 17,
+        "date": "2008-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 12,
+      "first_game_id": "2008_06_STL_WAS",
+      "last_game_id": "2008_17_STL_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tom-cable",
+      "coach_name": "Tom Cable",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2008,
+        "week": 6,
+        "date": "2008-10-12"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 44,
+      "first_game_id": "2008_06_OAK_NO",
+      "last_game_id": "2010_17_OAK_KC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-singletary",
+      "coach_name": "Mike Singletary",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2008,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2008,
+        "week": 8,
+        "date": "2008-10-26"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 16,
+        "date": "2010-12-26"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2008,
+      "games": 40,
+      "first_game_id": "2008_08_SEA_SF",
+      "last_game_id": "2010_16_SF_STL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "eric-mangini",
+      "coach_name": "Eric Mangini",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 32,
+      "first_game_id": "2009_01_MIN_CLE",
+      "last_game_id": "2010_17_PIT_CLE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "josh-mcdaniels",
+      "coach_name": "Josh McDaniels",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 13,
+        "date": "2010-12-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 28,
+      "first_game_id": "2009_01_DEN_CIN",
+      "last_game_id": "2010_13_DEN_KC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-schwartz",
+      "coach_name": "Jim Schwartz",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 81,
+      "first_game_id": "2009_01_DET_NO",
+      "last_game_id": "2013_17_DET_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-caldwell",
+      "coach_name": "Jim Caldwell",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 17,
+        "date": "2012-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 52,
+      "first_game_id": "2009_01_JAX_IND",
+      "last_game_id": "2011_17_IND_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "todd-haley",
+      "coach_name": "Todd Haley",
+      "team": "kc",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 14,
+        "date": "2011-12-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 46,
+      "first_game_id": "2009_01_KC_BAL",
+      "last_game_id": "2011_14_KC_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-spagnuolo",
+      "coach_name": "Steve Spagnuolo",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 17,
+        "date": "2012-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 48,
+      "first_game_id": "2009_01_STL_SEA",
+      "last_game_id": "2011_17_SF_STL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "rex-ryan",
+      "coach_name": "Rex Ryan",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 17,
+        "date": "2014-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 102,
+      "first_game_id": "2009_01_NYJ_HOU",
+      "last_game_id": "2014_17_NYJ_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-mora",
+      "coach_name": "Jim Mora",
+      "team": "sea",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2009,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2009,
+        "week": 17,
+        "date": "2010-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 16,
+      "first_game_id": "2009_01_STL_SEA",
+      "last_game_id": "2009_17_TEN_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "raheem-morris",
+      "coach_name": "Raheem Morris",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2009,
+        "week": 1,
+        "date": "2009-09-13"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 17,
+        "date": "2012-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 48,
+      "first_game_id": "2009_01_DAL_TB",
+      "last_game_id": "2011_17_TB_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "perry-fewell",
+      "coach_name": "Perry Fewell",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2009,
+      "season_end": 2009,
+      "effective_start": {
+        "season": 2009,
+        "week": 11,
+        "date": "2009-11-22"
+      },
+      "effective_end": {
+        "season": 2009,
+        "week": 17,
+        "date": "2010-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2009,
+      "games": 7,
+      "first_game_id": "2009_11_BUF_JAX",
+      "last_game_id": "2009_17_IND_BUF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chan-gailey",
+      "coach_name": "Chan Gailey",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2010,
+        "week": 1,
+        "date": "2010-09-12"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2010,
+      "games": 48,
+      "first_game_id": "2010_01_MIA_BUF",
+      "last_game_id": "2012_17_NYJ_BUF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "pete-carroll",
+      "coach_name": "Pete Carroll",
+      "team": "sea",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2010,
+        "week": 1,
+        "date": "2010-09-12"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2010,
+      "games": 246,
+      "first_game_id": "2010_01_SF_SEA",
+      "last_game_id": "2023_18_SEA_ARI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-shanahan",
+      "coach_name": "Mike Shanahan",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2010,
+        "week": 1,
+        "date": "2010-09-12"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2010,
+      "games": 65,
+      "first_game_id": "2010_01_DAL_WAS",
+      "last_game_id": "2013_17_WAS_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jason-garrett",
+      "coach_name": "Jason Garrett",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2019,
+      "effective_start": {
+        "season": 2010,
+        "week": 10,
+        "date": "2010-11-14"
+      },
+      "effective_end": {
+        "season": 2019,
+        "week": 17,
+        "date": "2019-12-29"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2010,
+      "games": 157,
+      "first_game_id": "2010_10_DAL_NYG",
+      "last_game_id": "2019_17_WAS_DAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "leslie-frazier",
+      "coach_name": "Leslie Frazier",
+      "team": "min",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2010,
+        "week": 12,
+        "date": "2010-11-28"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2010,
+      "games": 55,
+      "first_game_id": "2010_12_MIN_WAS",
+      "last_game_id": "2013_17_DET_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "eric-studesville",
+      "coach_name": "Eric Studesville",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2010,
+        "week": 14,
+        "date": "2010-12-12"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2010,
+      "games": 4,
+      "first_game_id": "2010_14_DEN_ARI",
+      "last_game_id": "2010_17_SD_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-tomsula",
+      "coach_name": "Jim Tomsula",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2010,
+      "season_end": 2010,
+      "effective_start": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "effective_end": {
+        "season": 2010,
+        "week": 17,
+        "date": "2011-01-02"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2010,
+      "games": 1,
+      "first_game_id": "2010_17_ARI_SF",
+      "last_game_id": "2010_17_ARI_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ron-rivera",
+      "coach_name": "Ron Rivera",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2019,
+      "effective_start": {
+        "season": 2011,
+        "week": 1,
+        "date": "2011-09-11"
+      },
+      "effective_end": {
+        "season": 2019,
+        "week": 17,
+        "date": "2019-12-29"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2011,
+      "games": 151,
+      "first_game_id": "2011_01_CAR_ARI",
+      "last_game_id": "2019_17_NO_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "pat-shurmur",
+      "coach_name": "Pat Shurmur",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2011,
+        "week": 1,
+        "date": "2011-09-11"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2011,
+      "games": 32,
+      "first_game_id": "2011_01_CIN_CLE",
+      "last_game_id": "2012_17_CLE_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "john-fox",
+      "coach_name": "John Fox",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2011,
+        "week": 1,
+        "date": "2011-09-12"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 19,
+        "date": "2015-01-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2011,
+      "games": 71,
+      "first_game_id": "2011_01_OAK_DEN",
+      "last_game_id": "2014_19_IND_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "hue-jackson",
+      "coach_name": "Hue Jackson",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2011,
+        "week": 1,
+        "date": "2011-09-12"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 17,
+        "date": "2012-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2011,
+      "games": 16,
+      "first_game_id": "2011_01_OAK_DEN",
+      "last_game_id": "2011_17_SD_OAK",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-harbaugh",
+      "coach_name": "Jim Harbaugh",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2011,
+        "week": 1,
+        "date": "2011-09-11"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 17,
+        "date": "2014-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2011,
+      "games": 72,
+      "first_game_id": "2011_01_SEA_SF",
+      "last_game_id": "2014_17_ARI_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-munchak",
+      "coach_name": "Mike Munchak",
+      "team": "ten",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2011,
+        "week": 1,
+        "date": "2011-09-11"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2011,
+      "games": 48,
+      "first_game_id": "2011_01_TEN_JAX",
+      "last_game_id": "2013_17_HOU_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mel-tucker",
+      "coach_name": "Mel Tucker",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2011,
+        "week": 13,
+        "date": "2011-12-05"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 17,
+        "date": "2012-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2011,
+      "games": 5,
+      "first_game_id": "2011_13_SD_JAX",
+      "last_game_id": "2011_17_IND_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "romeo-crennel",
+      "coach_name": "Romeo Crennel",
+      "team": "kc",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2011,
+        "week": 15,
+        "date": "2011-12-18"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2011,
+      "games": 19,
+      "first_game_id": "2011_15_GB_KC",
+      "last_game_id": "2012_17_KC_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "todd-bowles",
+      "coach_name": "Todd Bowles",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2011,
+      "season_end": 2011,
+      "effective_start": {
+        "season": 2011,
+        "week": 15,
+        "date": "2011-12-18"
+      },
+      "effective_end": {
+        "season": 2011,
+        "week": 17,
+        "date": "2012-01-01"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2011,
+      "games": 3,
+      "first_game_id": "2011_15_MIA_BUF",
+      "last_game_id": "2011_17_NYJ_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chuck-pagano",
+      "coach_name": "Chuck Pagano",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-09"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 17,
+        "date": "2017-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 102,
+      "first_game_id": "2012_01_IND_CHI",
+      "last_game_id": "2017_17_HOU_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mularkey",
+      "coach_name": "Mike Mularkey",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-09"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 16,
+      "first_game_id": "2012_01_JAX_MIN",
+      "last_game_id": "2012_17_JAX_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jeff-fisher",
+      "coach_name": "Jeff Fisher",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-09"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 17,
+        "date": "2017-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 80,
+      "first_game_id": "2012_01_STL_DET",
+      "last_game_id": "2016_17_ARI_LA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dennis-allen",
+      "coach_name": "Dennis Allen",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-10"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 4,
+        "date": "2014-09-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 36,
+      "first_game_id": "2012_01_SD_OAK",
+      "last_game_id": "2014_04_MIA_OAK",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "joe-philbin",
+      "coach_name": "Joe Philbin",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-09"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 64,
+      "first_game_id": "2012_01_MIA_HOU",
+      "last_game_id": "2015_17_NE_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "aaron-kromer",
+      "coach_name": "Aaron Kromer",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-09"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 7,
+        "date": "2012-10-21"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 6,
+      "first_game_id": "2012_01_WAS_NO",
+      "last_game_id": "2012_07_NO_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "greg-schiano",
+      "coach_name": "Greg Schiano",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2012,
+        "week": 1,
+        "date": "2012-09-09"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 32,
+      "first_game_id": "2012_01_CAR_TB",
+      "last_game_id": "2013_17_TB_NO",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "joe-vitt",
+      "coach_name": "Joe Vitt",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2012,
+      "season_end": 2012,
+      "effective_start": {
+        "season": 2012,
+        "week": 8,
+        "date": "2012-10-28"
+      },
+      "effective_end": {
+        "season": 2012,
+        "week": 17,
+        "date": "2012-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2012,
+      "games": 10,
+      "first_game_id": "2012_08_NO_DEN",
+      "last_game_id": "2012_17_CAR_NO",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bruce-arians",
+      "coach_name": "Bruce Arians",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 17,
+        "date": "2017-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 83,
+      "first_game_id": "2013_01_ARI_STL",
+      "last_game_id": "2017_17_ARI_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "doug-marrone",
+      "coach_name": "Doug Marrone",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 17,
+        "date": "2014-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 32,
+      "first_game_id": "2013_01_NE_BUF",
+      "last_game_id": "2014_17_BUF_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "marc-trestman",
+      "coach_name": "Marc Trestman",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 17,
+        "date": "2014-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 32,
+      "first_game_id": "2013_01_CIN_CHI",
+      "last_game_id": "2014_17_CHI_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "rob-chudzinski",
+      "coach_name": "Rob Chudzinski",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 16,
+      "first_game_id": "2013_01_MIA_CLE",
+      "last_game_id": "2013_17_CLE_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gus-bradley",
+      "coach_name": "Gus Bradley",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 15,
+        "date": "2016-12-18"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 62,
+      "first_game_id": "2013_01_KC_JAX",
+      "last_game_id": "2016_15_JAX_HOU",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "andy-reid",
+      "coach_name": "Andy Reid",
+      "team": "kc",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 239,
+      "first_game_id": "2013_01_KC_JAX",
+      "last_game_id": "2025_18_KC_LV",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mccoy",
+      "coach_name": "Mike McCoy",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-09"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 17,
+        "date": "2017-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 66,
+      "first_game_id": "2013_01_HOU_SD",
+      "last_game_id": "2016_17_KC_SD",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "sean-payton",
+      "coach_name": "Sean Payton",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-08"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2006,
+      "games": 154,
+      "first_game_id": "2013_01_ATL_NO",
+      "last_game_id": "2021_18_NO_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chip-kelly",
+      "coach_name": "Chip Kelly",
+      "team": "phi",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2013,
+        "week": 1,
+        "date": "2013-09-09"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 16,
+        "date": "2015-12-26"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 48,
+      "first_game_id": "2013_01_PHI_WAS",
+      "last_game_id": "2015_16_WAS_PHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "wade-phillips",
+      "coach_name": "Wade Phillips",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2013,
+      "season_end": 2013,
+      "effective_start": {
+        "season": 2013,
+        "week": 15,
+        "date": "2013-12-15"
+      },
+      "effective_end": {
+        "season": 2013,
+        "week": 17,
+        "date": "2013-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2013,
+      "games": 3,
+      "first_game_id": "2013_15_HOU_IND",
+      "last_game_id": "2013_17_HOU_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-pettine",
+      "coach_name": "Mike Pettine",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-07"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 32,
+      "first_game_id": "2014_01_CLE_PIT",
+      "last_game_id": "2015_17_PIT_CLE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-caldwell",
+      "coach_name": "Jim Caldwell",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-08"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 17,
+        "date": "2017-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 66,
+      "first_game_id": "2014_01_NYG_DET",
+      "last_game_id": "2017_17_GB_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-obrien",
+      "coach_name": "Bill O'Brien",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-07"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 4,
+        "date": "2020-10-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 106,
+      "first_game_id": "2014_01_WAS_HOU",
+      "last_game_id": "2020_04_MIN_HOU",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-zimmer",
+      "coach_name": "Mike Zimmer",
+      "team": "min",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-07"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 134,
+      "first_game_id": "2014_01_MIN_STL",
+      "last_game_id": "2021_18_CHI_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "lovie-smith",
+      "coach_name": "Lovie Smith",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-07"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 32,
+      "first_game_id": "2014_01_CAR_TB",
+      "last_game_id": "2015_17_TB_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ken-whisenhunt",
+      "coach_name": "Ken Whisenhunt",
+      "team": "ten",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-07"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 32,
+      "first_game_id": "2014_01_TEN_KC",
+      "last_game_id": "2015_17_TEN_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jay-gruden",
+      "coach_name": "Jay Gruden",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2019,
+      "effective_start": {
+        "season": 2014,
+        "week": 1,
+        "date": "2014-09-07"
+      },
+      "effective_end": {
+        "season": 2019,
+        "week": 5,
+        "date": "2019-10-06"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 86,
+      "first_game_id": "2014_01_WAS_HOU",
+      "last_game_id": "2019_05_NE_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "tony-sparano",
+      "coach_name": "Tony Sparano",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2014,
+      "season_end": 2014,
+      "effective_start": {
+        "season": 2014,
+        "week": 6,
+        "date": "2014-10-12"
+      },
+      "effective_end": {
+        "season": 2014,
+        "week": 17,
+        "date": "2014-12-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2014,
+      "games": 12,
+      "first_game_id": "2014_06_SD_OAK",
+      "last_game_id": "2014_17_OAK_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dan-quinn",
+      "coach_name": "Dan Quinn",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-14"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 5,
+        "date": "2020-10-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 90,
+      "first_game_id": "2015_01_PHI_ATL",
+      "last_game_id": "2020_05_CAR_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "rex-ryan",
+      "coach_name": "Rex Ryan",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-13"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 16,
+        "date": "2016-12-24"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 31,
+      "first_game_id": "2015_01_IND_BUF",
+      "last_game_id": "2016_16_MIA_BUF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "john-fox",
+      "coach_name": "John Fox",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-13"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 17,
+        "date": "2017-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 48,
+      "first_game_id": "2015_01_GB_CHI",
+      "last_game_id": "2017_17_CHI_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gary-kubiak",
+      "coach_name": "Gary Kubiak",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-13"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 17,
+        "date": "2017-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 35,
+      "first_game_id": "2015_01_BAL_DEN",
+      "last_game_id": "2016_17_OAK_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jack-del-rio",
+      "coach_name": "Jack Del Rio",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-13"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 17,
+        "date": "2017-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 49,
+      "first_game_id": "2015_01_CIN_OAK",
+      "last_game_id": "2017_17_OAK_LAC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "todd-bowles",
+      "coach_name": "Todd Bowles",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-13"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 64,
+      "first_game_id": "2015_01_CLE_NYJ",
+      "last_game_id": "2018_17_NYJ_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-tomsula",
+      "coach_name": "Jim Tomsula",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2015,
+        "week": 1,
+        "date": "2015-09-14"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2010,
+      "games": 16,
+      "first_game_id": "2015_01_MIN_SF",
+      "last_game_id": "2015_17_STL_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "pat-shurmur",
+      "coach_name": "Pat Shurmur",
+      "team": "phi",
+      "role": "HEAD_COACH",
+      "season_start": 2015,
+      "season_end": 2015,
+      "effective_start": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "effective_end": {
+        "season": 2015,
+        "week": 17,
+        "date": "2016-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2015,
+      "games": 1,
+      "first_game_id": "2015_17_PHI_NYG",
+      "last_game_id": "2015_17_PHI_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "hue-jackson",
+      "coach_name": "Hue Jackson",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-11"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 8,
+        "date": "2018-10-28"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 40,
+      "first_game_id": "2016_01_CLE_PHI",
+      "last_game_id": "2018_08_CLE_PIT",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "adam-gase",
+      "coach_name": "Adam Gase",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-11"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 49,
+      "first_game_id": "2016_01_MIA_SEA",
+      "last_game_id": "2018_17_MIA_BUF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ben-mcadoo",
+      "coach_name": "Ben McAdoo",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-11"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 13,
+        "date": "2017-12-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 29,
+      "first_game_id": "2016_01_NYG_DAL",
+      "last_game_id": "2017_13_NYG_OAK",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "doug-pederson",
+      "coach_name": "Doug Pederson",
+      "team": "phi",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-11"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 86,
+      "first_game_id": "2016_01_CLE_PHI",
+      "last_game_id": "2020_17_WAS_PHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chip-kelly",
+      "coach_name": "Chip Kelly",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-12"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 17,
+        "date": "2017-01-01"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 16,
+      "first_game_id": "2016_01_LA_SF",
+      "last_game_id": "2016_17_SEA_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dirk-koetter",
+      "coach_name": "Dirk Koetter",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-11"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 48,
+      "first_game_id": "2016_01_TB_ATL",
+      "last_game_id": "2018_17_ATL_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mularkey",
+      "coach_name": "Mike Mularkey",
+      "team": "ten",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2016,
+        "week": 1,
+        "date": "2016-09-11"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 19,
+        "date": "2018-01-13"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 34,
+      "first_game_id": "2016_01_MIN_TEN",
+      "last_game_id": "2017_19_TEN_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "doug-marrone",
+      "coach_name": "Doug Marrone",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2016,
+        "week": 16,
+        "date": "2016-12-24"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2016,
+      "games": 69,
+      "first_game_id": "2016_16_TEN_JAX",
+      "last_game_id": "2020_17_JAX_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "anthony-lynn",
+      "coach_name": "Anthony Lynn",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2016,
+      "season_end": 2016,
+      "effective_start": {
+        "season": 2016,
+        "week": 17,
+        "date": "2017-01-01"
+      },
+      "effective_end": {
+        "season": 2016,
+        "week": 17,
+        "date": "2017-01-01"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2016,
+      "games": 1,
+      "first_game_id": "2016_17_BUF_NYJ",
+      "last_game_id": "2016_17_BUF_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "sean-mcdermott",
+      "coach_name": "Sean McDermott",
+      "team": "buf",
+      "role": "HEAD_COACH",
+      "season_start": 2017,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2017,
+        "week": 1,
+        "date": "2017-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 20,
+        "date": "2026-01-17"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2017,
+      "games": 164,
+      "first_game_id": "2017_01_NYJ_BUF",
+      "last_game_id": "2025_20_BUF_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "vance-joseph",
+      "coach_name": "Vance Joseph",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2017,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2017,
+        "week": 1,
+        "date": "2017-09-11"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2017,
+      "games": 32,
+      "first_game_id": "2017_01_LAC_DEN",
+      "last_game_id": "2018_17_LAC_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "anthony-lynn",
+      "coach_name": "Anthony Lynn",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2017,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2017,
+        "week": 1,
+        "date": "2017-09-11"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2017,
+      "games": 66,
+      "first_game_id": "2017_01_LAC_DEN",
+      "last_game_id": "2020_17_LAC_KC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "sean-mcvay",
+      "coach_name": "Sean McVay",
+      "team": "lar",
+      "role": "HEAD_COACH",
+      "season_start": 2017,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2017,
+        "week": 1,
+        "date": "2017-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 21,
+        "date": "2026-01-25"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2017,
+      "games": 165,
+      "first_game_id": "2017_01_IND_LA",
+      "last_game_id": "2025_21_LA_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "kyle-shanahan",
+      "coach_name": "Kyle Shanahan",
+      "team": "sf",
+      "role": "HEAD_COACH",
+      "season_start": 2017,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2017,
+        "week": 1,
+        "date": "2017-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 20,
+        "date": "2026-01-17"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2017,
+      "games": 163,
+      "first_game_id": "2017_01_CAR_SF",
+      "last_game_id": "2025_20_SF_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-spagnuolo",
+      "coach_name": "Steve Spagnuolo",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 2017,
+      "season_end": 2017,
+      "effective_start": {
+        "season": 2017,
+        "week": 14,
+        "date": "2017-12-10"
+      },
+      "effective_end": {
+        "season": 2017,
+        "week": 17,
+        "date": "2017-12-31"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2017,
+      "games": 4,
+      "first_game_id": "2017_14_DAL_NYG",
+      "last_game_id": "2017_17_WAS_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-wilks",
+      "coach_name": "Steve Wilks",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-09"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 16,
+      "first_game_id": "2018_01_WAS_ARI",
+      "last_game_id": "2018_17_ARI_SEA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "matt-nagy",
+      "coach_name": "Matt Nagy",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-09"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 67,
+      "first_game_id": "2018_01_CHI_GB",
+      "last_game_id": "2021_18_CHI_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "matt-patricia",
+      "coach_name": "Matt Patricia",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-10"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 12,
+        "date": "2020-11-26"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 43,
+      "first_game_id": "2018_01_NYJ_DET",
+      "last_game_id": "2020_12_HOU_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "frank-reich",
+      "coach_name": "Frank Reich",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-09"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 9,
+        "date": "2022-11-06"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 77,
+      "first_game_id": "2018_01_CIN_IND",
+      "last_game_id": "2022_09_IND_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jon-gruden",
+      "coach_name": "Jon Gruden",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-10"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 5,
+        "date": "2021-10-10"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 1999,
+      "games": 53,
+      "first_game_id": "2018_01_LA_OAK",
+      "last_game_id": "2021_05_CHI_LV",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "pat-shurmur",
+      "coach_name": "Pat Shurmur",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2019,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-09"
+      },
+      "effective_end": {
+        "season": 2019,
+        "week": 17,
+        "date": "2019-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 32,
+      "first_game_id": "2018_01_JAX_NYG",
+      "last_game_id": "2019_17_PHI_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-vrabel",
+      "coach_name": "Mike Vrabel",
+      "team": "ten",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2018,
+        "week": 1,
+        "date": "2018-09-09"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 104,
+      "first_game_id": "2018_01_TEN_MIA",
+      "last_game_id": "2023_18_JAX_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "gregg-williams",
+      "coach_name": "Gregg Williams",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2018,
+        "week": 9,
+        "date": "2018-11-04"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2018,
+      "games": 8,
+      "first_game_id": "2018_09_KC_CLE",
+      "last_game_id": "2018_17_CLE_BAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "joe-philbin",
+      "coach_name": "Joe Philbin",
+      "team": "gb",
+      "role": "HEAD_COACH",
+      "season_start": 2018,
+      "season_end": 2018,
+      "effective_start": {
+        "season": 2018,
+        "week": 14,
+        "date": "2018-12-09"
+      },
+      "effective_end": {
+        "season": 2018,
+        "week": 17,
+        "date": "2018-12-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2018,
+      "games": 4,
+      "first_game_id": "2018_14_ATL_GB",
+      "last_game_id": "2018_17_DET_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "kliff-kingsbury",
+      "coach_name": "Kliff Kingsbury",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-08"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 18,
+        "date": "2023-01-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 67,
+      "first_game_id": "2019_01_DET_ARI",
+      "last_game_id": "2022_18_ARI_SF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "zac-taylor",
+      "coach_name": "Zac Taylor",
+      "team": "cin",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 123,
+      "first_game_id": "2019_01_CIN_SEA",
+      "last_game_id": "2025_18_CLE_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "freddie-kitchens",
+      "coach_name": "Freddie Kitchens",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2019,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-08"
+      },
+      "effective_end": {
+        "season": 2019,
+        "week": 17,
+        "date": "2019-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 16,
+      "first_game_id": "2019_01_TEN_CLE",
+      "last_game_id": "2019_17_CLE_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "vic-fangio",
+      "coach_name": "Vic Fangio",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-09"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 49,
+      "first_game_id": "2019_01_DEN_OAK",
+      "last_game_id": "2021_18_KC_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "matt-lafleur",
+      "coach_name": "Matt LaFleur",
+      "team": "gb",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-05"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 19,
+        "date": "2026-01-10"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 126,
+      "first_game_id": "2019_01_GB_CHI",
+      "last_game_id": "2025_19_GB_CHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brian-flores",
+      "coach_name": "Brian Flores",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-08"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 49,
+      "first_game_id": "2019_01_BAL_MIA",
+      "last_game_id": "2021_18_NE_MIA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "adam-gase",
+      "coach_name": "Adam Gase",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-08"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 32,
+      "first_game_id": "2019_01_BUF_NYJ",
+      "last_game_id": "2020_17_NYJ_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bruce-arians",
+      "coach_name": "Bruce Arians",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2019,
+        "week": 1,
+        "date": "2019-09-08"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 20,
+        "date": "2022-01-23"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 55,
+      "first_game_id": "2019_01_SF_TB",
+      "last_game_id": "2021_20_LA_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "bill-callahan",
+      "coach_name": "Bill Callahan",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2019,
+      "season_end": 2019,
+      "effective_start": {
+        "season": 2019,
+        "week": 6,
+        "date": "2019-10-13"
+      },
+      "effective_end": {
+        "season": 2019,
+        "week": 17,
+        "date": "2019-12-29"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2019,
+      "games": 11,
+      "first_game_id": "2019_06_WAS_MIA",
+      "last_game_id": "2019_17_WAS_DAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "matt-rhule",
+      "coach_name": "Matt Rhule",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2020,
+        "week": 1,
+        "date": "2020-09-13"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 5,
+        "date": "2022-10-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2020,
+      "games": 38,
+      "first_game_id": "2020_01_LV_CAR",
+      "last_game_id": "2022_05_SF_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "kevin-stefanski",
+      "coach_name": "Kevin Stefanski",
+      "team": "cle",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2020,
+        "week": 1,
+        "date": "2020-09-13"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2020,
+      "games": 104,
+      "first_game_id": "2020_01_CLE_BAL",
+      "last_game_id": "2025_18_CLE_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mccarthy",
+      "coach_name": "Mike McCarthy",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2020,
+        "week": 1,
+        "date": "2020-09-13"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2020,
+      "games": 88,
+      "first_game_id": "2020_01_DAL_LA",
+      "last_game_id": "2024_18_WAS_DAL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "joe-judge",
+      "coach_name": "Joe Judge",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2020,
+        "week": 1,
+        "date": "2020-09-14"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2020,
+      "games": 33,
+      "first_game_id": "2020_01_PIT_NYG",
+      "last_game_id": "2021_18_WAS_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ron-rivera",
+      "coach_name": "Ron Rivera",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2020,
+        "week": 1,
+        "date": "2020-09-13"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2020,
+      "games": 68,
+      "first_game_id": "2020_01_PHI_WAS",
+      "last_game_id": "2023_18_DAL_WAS",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "romeo-crennel",
+      "coach_name": "Romeo Crennel",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2020,
+        "week": 5,
+        "date": "2020-10-11"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2020,
+      "games": 12,
+      "first_game_id": "2020_05_JAX_HOU",
+      "last_game_id": "2020_17_TEN_HOU",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "raheem-morris",
+      "coach_name": "Raheem Morris",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2020,
+        "week": 6,
+        "date": "2020-10-18"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2020,
+      "games": 11,
+      "first_game_id": "2020_06_ATL_MIN",
+      "last_game_id": "2020_17_ATL_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "darrell-bevell",
+      "coach_name": "Darrell Bevell",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2020,
+      "season_end": 2020,
+      "effective_start": {
+        "season": 2020,
+        "week": 13,
+        "date": "2020-12-06"
+      },
+      "effective_end": {
+        "season": 2020,
+        "week": 17,
+        "date": "2021-01-03"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2020,
+      "games": 5,
+      "first_game_id": "2020_13_DET_CHI",
+      "last_game_id": "2020_17_MIN_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "arthur-smith",
+      "coach_name": "Arthur Smith",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 51,
+      "first_game_id": "2021_01_PHI_ATL",
+      "last_game_id": "2023_18_ATL_NO",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dan-campbell",
+      "coach_name": "Dan Campbell",
+      "team": "det",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 89,
+      "first_game_id": "2021_01_SF_DET",
+      "last_game_id": "2025_18_DET_CHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "david-culley",
+      "coach_name": "David Culley",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 17,
+      "first_game_id": "2021_01_JAX_HOU",
+      "last_game_id": "2021_18_TEN_HOU",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "urban-meyer",
+      "coach_name": "Urban Meyer",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 14,
+        "date": "2021-12-12"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 13,
+      "first_game_id": "2021_01_JAX_HOU",
+      "last_game_id": "2021_14_JAX_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brandon-staley",
+      "coach_name": "Brandon Staley",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 15,
+        "date": "2023-12-14"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 49,
+      "first_game_id": "2021_01_LAC_WAS",
+      "last_game_id": "2023_15_LAC_LV",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "robert-saleh",
+      "coach_name": "Robert Saleh",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 68,
+      "first_game_id": "2021_01_NYJ_CAR",
+      "last_game_id": "2024_18_MIA_NYJ",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "nick-sirianni",
+      "coach_name": "Nick Sirianni",
+      "team": "phi",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2021,
+        "week": 1,
+        "date": "2021-09-12"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 19,
+        "date": "2026-01-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 95,
+      "first_game_id": "2021_01_PHI_ATL",
+      "last_game_id": "2025_19_SF_PHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "rich-bisaccia",
+      "coach_name": "Rich Bisaccia",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2021,
+        "week": 6,
+        "date": "2021-10-17"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 19,
+        "date": "2022-01-15"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2021,
+      "games": 13,
+      "first_game_id": "2021_06_LV_DEN",
+      "last_game_id": "2021_19_LV_CIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "darrell-bevell",
+      "coach_name": "Darrell Bevell",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2021,
+      "season_end": 2021,
+      "effective_start": {
+        "season": 2021,
+        "week": 15,
+        "date": "2021-12-19"
+      },
+      "effective_end": {
+        "season": 2021,
+        "week": 18,
+        "date": "2022-01-09"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2021,
+      "games": 4,
+      "first_game_id": "2021_15_HOU_JAX",
+      "last_game_id": "2021_18_IND_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "matt-eberflus",
+      "coach_name": "Matt Eberflus",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 51,
+      "first_game_id": "2022_01_SF_CHI",
+      "last_game_id": "2024_18_CHI_GB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "nathaniel-hackett",
+      "coach_name": "Nathaniel Hackett",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-12"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 16,
+        "date": "2022-12-25"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 15,
+      "first_game_id": "2022_01_DEN_SEA",
+      "last_game_id": "2022_16_DEN_LA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "lovie-smith",
+      "coach_name": "Lovie Smith",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 18,
+        "date": "2023-01-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 17,
+      "first_game_id": "2022_01_IND_HOU",
+      "last_game_id": "2022_18_HOU_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "doug-pederson",
+      "coach_name": "Doug Pederson",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 53,
+      "first_game_id": "2022_01_JAX_WAS",
+      "last_game_id": "2024_18_JAX_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "josh-mcdaniels",
+      "coach_name": "Josh McDaniels",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 8,
+        "date": "2023-10-30"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 25,
+      "first_game_id": "2022_01_LV_LAC",
+      "last_game_id": "2023_08_LV_DET",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-mcdaniel",
+      "coach_name": "Mike McDaniel",
+      "team": "mia",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 70,
+      "first_game_id": "2022_01_NE_MIA",
+      "last_game_id": "2025_18_MIA_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "kevin-oconnell",
+      "coach_name": "Kevin O'Connell",
+      "team": "min",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 70,
+      "first_game_id": "2022_01_GB_MIN",
+      "last_game_id": "2025_18_GB_MIN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dennis-allen",
+      "coach_name": "Dennis Allen",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 51,
+      "first_game_id": "2022_01_NO_ATL",
+      "last_game_id": "2024_18_NO_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brian-daboll",
+      "coach_name": "Brian Daboll",
+      "team": "nyg",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 70,
+      "first_game_id": "2022_01_NYG_TEN",
+      "last_game_id": "2025_18_DAL_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "todd-bowles",
+      "coach_name": "Todd Bowles",
+      "team": "tb",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2022,
+        "week": 1,
+        "date": "2022-09-11"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-03"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 72,
+      "first_game_id": "2022_01_TB_DAL",
+      "last_game_id": "2025_18_CAR_TB",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "steve-wilks",
+      "coach_name": "Steve Wilks",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2022,
+        "week": 6,
+        "date": "2022-10-16"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 18,
+        "date": "2023-01-08"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2022,
+      "games": 12,
+      "first_game_id": "2022_06_CAR_LA",
+      "last_game_id": "2022_18_CAR_NO",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jeff-saturday",
+      "coach_name": "Jeff Saturday",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2022,
+        "week": 10,
+        "date": "2022-11-13"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 18,
+        "date": "2023-01-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 8,
+      "first_game_id": "2022_10_IND_LV",
+      "last_game_id": "2022_18_HOU_IND",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jay-rosburg",
+      "coach_name": "Jay Rosburg",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2022,
+      "season_end": 2022,
+      "effective_start": {
+        "season": 2022,
+        "week": 17,
+        "date": "2023-01-01"
+      },
+      "effective_end": {
+        "season": 2022,
+        "week": 18,
+        "date": "2023-01-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2022,
+      "games": 2,
+      "first_game_id": "2022_17_DEN_KC",
+      "last_game_id": "2022_18_LAC_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jonathan-gannon",
+      "coach_name": "Jonathan Gannon",
+      "team": "ari",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2023,
+        "week": 1,
+        "date": "2023-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2023,
+      "games": 51,
+      "first_game_id": "2023_01_ARI_WAS",
+      "last_game_id": "2025_18_ARI_LA",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "frank-reich",
+      "coach_name": "Frank Reich",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2023,
+        "week": 1,
+        "date": "2023-09-10"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 12,
+        "date": "2023-11-26"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2023,
+      "games": 11,
+      "first_game_id": "2023_01_CAR_ATL",
+      "last_game_id": "2023_12_CAR_TEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "sean-payton",
+      "coach_name": "Sean Payton",
+      "team": "den",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2023,
+        "week": 1,
+        "date": "2023-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 21,
+        "date": "2026-01-25"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2023,
+      "games": 54,
+      "first_game_id": "2023_01_LV_DEN",
+      "last_game_id": "2025_21_NE_DEN",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "demeco-ryans",
+      "coach_name": "DeMeco Ryans",
+      "team": "hou",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2023,
+        "week": 1,
+        "date": "2023-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 20,
+        "date": "2026-01-18"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2023,
+      "games": 57,
+      "first_game_id": "2023_01_HOU_BAL",
+      "last_game_id": "2025_20_HOU_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "shane-steichen",
+      "coach_name": "Shane Steichen",
+      "team": "ind",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2023,
+        "week": 1,
+        "date": "2023-09-10"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2023,
+      "games": 51,
+      "first_game_id": "2023_01_JAX_IND",
+      "last_game_id": "2025_18_IND_HOU",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "antonio-pierce",
+      "coach_name": "Antonio Pierce",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2023,
+        "week": 9,
+        "date": "2023-11-05"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2023,
+      "games": 26,
+      "first_game_id": "2023_09_NYG_LV",
+      "last_game_id": "2024_18_LAC_LV",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "chris-tabor",
+      "coach_name": "Chris Tabor",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2023,
+        "week": 13,
+        "date": "2023-12-03"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": true,
+      "first_year_with_team": 2023,
+      "games": 6,
+      "first_game_id": "2023_13_CAR_TB",
+      "last_game_id": "2023_18_TB_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "giff-smith",
+      "coach_name": "Giff Smith",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2023,
+      "season_end": 2023,
+      "effective_start": {
+        "season": 2023,
+        "week": 16,
+        "date": "2023-12-23"
+      },
+      "effective_end": {
+        "season": 2023,
+        "week": 18,
+        "date": "2024-01-07"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2023,
+      "games": 3,
+      "first_game_id": "2023_16_BUF_LAC",
+      "last_game_id": "2023_18_KC_LAC",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "raheem-morris",
+      "coach_name": "Raheem Morris",
+      "team": "atl",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2020,
+      "games": 34,
+      "first_game_id": "2024_01_PIT_ATL",
+      "last_game_id": "2025_18_NO_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dave-canales",
+      "coach_name": "Dave Canales",
+      "team": "car",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 19,
+        "date": "2026-01-10"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2024,
+      "games": 35,
+      "first_game_id": "2024_01_CAR_NO",
+      "last_game_id": "2025_19_LA_CAR",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jim-harbaugh",
+      "coach_name": "Jim Harbaugh",
+      "team": "lac",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 19,
+        "date": "2026-01-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2024,
+      "games": 36,
+      "first_game_id": "2024_01_LV_LAC",
+      "last_game_id": "2025_19_LAC_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "jerod-mayo",
+      "coach_name": "Jerod Mayo",
+      "team": "ne",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2024,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2024,
+        "week": 18,
+        "date": "2025-01-05"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2024,
+      "games": 17,
+      "first_game_id": "2024_01_NE_CIN",
+      "last_game_id": "2024_18_BUF_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-macdonald",
+      "coach_name": "Mike Macdonald",
+      "team": "sea",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 22,
+        "date": "2026-02-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2024,
+      "games": 37,
+      "first_game_id": "2024_01_DEN_SEA",
+      "last_game_id": "2025_22_SEA_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brian-callahan",
+      "coach_name": "Brian Callahan",
+      "team": "ten",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2024,
+      "games": 34,
+      "first_game_id": "2024_01_TEN_CHI",
+      "last_game_id": "2025_18_TEN_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "dan-quinn",
+      "coach_name": "Dan Quinn",
+      "team": "wsh",
+      "role": "HEAD_COACH",
+      "season_start": 2024,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2024,
+        "week": 1,
+        "date": "2024-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2024,
+      "games": 37,
+      "first_game_id": "2024_01_WAS_TB",
+      "last_game_id": "2025_18_WAS_PHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "ben-johnson",
+      "coach_name": "Ben Johnson",
+      "team": "chi",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-08"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 20,
+        "date": "2026-01-18"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 19,
+      "first_game_id": "2025_01_MIN_CHI",
+      "last_game_id": "2025_20_LA_CHI",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "brian-schottenheimer",
+      "coach_name": "Brian Schottenheimer",
+      "team": "dal",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-04"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 17,
+      "first_game_id": "2025_01_DAL_PHI",
+      "last_game_id": "2025_18_DAL_NYG",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "liam-coen",
+      "coach_name": "Liam Coen",
+      "team": "jax",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-07"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 19,
+        "date": "2026-01-11"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 18,
+      "first_game_id": "2025_01_CAR_JAX",
+      "last_game_id": "2025_19_BUF_JAX",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "pete-carroll",
+      "coach_name": "Pete Carroll",
+      "team": "lv",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-07"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 17,
+      "first_game_id": "2025_01_LV_NE",
+      "last_game_id": "2025_18_KC_LV",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "mike-vrabel",
+      "coach_name": "Mike Vrabel",
+      "team": "ne",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-07"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 22,
+        "date": "2026-02-08"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 21,
+      "first_game_id": "2025_01_LV_NE",
+      "last_game_id": "2025_22_SEA_NE",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "kellen-moore",
+      "coach_name": "Kellen Moore",
+      "team": "no",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-07"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 17,
+      "first_game_id": "2025_01_ARI_NO",
+      "last_game_id": "2025_18_NO_ATL",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    },
+    {
+      "coach_id": "aaron-glenn",
+      "coach_name": "Aaron Glenn",
+      "team": "nyj",
+      "role": "HEAD_COACH",
+      "season_start": 2025,
+      "season_end": 2025,
+      "effective_start": {
+        "season": 2025,
+        "week": 1,
+        "date": "2025-09-07"
+      },
+      "effective_end": {
+        "season": 2025,
+        "week": 18,
+        "date": "2026-01-04"
+      },
+      "interim_flag": false,
+      "first_year_with_team": 2025,
+      "games": 17,
+      "first_game_id": "2025_01_PIT_NYJ",
+      "last_game_id": "2025_18_NYJ_BUF",
+      "source": "nflverse (nfldata games.csv) home_coach/away_coach",
+      "source_timestamp": "2026-09-06T11:15:13Z"
+    }
+  ]
+}
