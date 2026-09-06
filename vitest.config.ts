@@ -117,6 +117,8 @@ export default defineConfig({
       "scripts/lib/nfl-coach-core.test.mjs",
       "scripts/lib/nfl-coach-context.test.mjs",
       "scripts/lib/nfl-coach-research.test.mjs",
+      // NFL Coaching Ratings v1 -- frozen composite + public artifact builder.
+      "scripts/lib/nfl-coach-rating.test.mjs",
     ],
   },
   resolve: {
