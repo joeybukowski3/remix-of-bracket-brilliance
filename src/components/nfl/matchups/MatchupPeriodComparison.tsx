@@ -1,52 +1,57 @@
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
-import CompactMatchupMetricRow from "@/components/nfl/matchups/CompactMatchupMetricRow";
-import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
-import {
-  describeMetricAdvantage,
-  type MatchupSuccessRateSource,
-} from "@/components/nfl/matchups/matchupDisplayMetrics";
+import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
+import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { classifyMetricComparison } from "@/lib/nfl/matchupCategoryAdvantage";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup } from "@/lib/nfl/matchups";
-import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   SUCCESS_PERIOD_LABELS,
   SUCCESS_RATE_METRIC_KEYS,
   formatSuccessRate,
-  type SuccessMetricValue,
 } from "@/lib/nfl/successRateData";
 
-function ValueCell({ value }: { value: SuccessMetricValue | null }) {
+/**
+ * Away/home identity for the comparison rows below — the same quiet one-line
+ * header the Statistical Comparison accordions use, so both surfaces read with
+ * one comparison language.
+ */
+function ComparisonSideHeader({ matchup }: { matchup: NflMatchup }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span
-        className={`text-[13px] font-bold tabular-nums ${
-          value ? "text-slate-900" : "text-slate-600"
-        }`}
-      >
-        {formatSuccessRate(value)}
+    <div className="mx-auto grid w-full grid-cols-[3.75rem_minmax(0,1fr)_3.75rem] items-center gap-x-2 border-b border-slate-200 px-3 pb-1.5 pt-3 sm:max-w-[760px] sm:grid-cols-[5rem_minmax(0,1fr)_5rem] sm:gap-x-4 sm:px-4">
+      <span className="flex items-center justify-end gap-1">
+        <NflTeamCrest team={matchup.away} side="away" size={16} />
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          {matchup.away.abbr.toUpperCase()}
+        </span>
       </span>
-      <MatchupRankBadge rank={value?.rank ?? null} />
-    </span>
+      <span aria-hidden className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
+        Advantage
+      </span>
+      <span className="flex items-center justify-start gap-1">
+        <NflTeamCrest team={matchup.home} side="home" size={16} />
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          {matchup.home.abbr.toUpperCase()}
+        </span>
+      </span>
+    </div>
   );
 }
 
 /**
  * Success rate by period.
  *
- * This is the analyzer's only genuine multi-period comparison, which is why it
- * lives inside Team Comparison rather than behind a Trends tab: no home/away
- * splits and no week-indexed series exist in any artifact, so a Trends tab
- * would have had one real occupant and would have implied several more.
+ * The analyzer's only genuine multi-period comparison, which is why it lives
+ * inside Team Comparison rather than behind a Trends tab: no home/away splits
+ * and no week-indexed series exist in any artifact.
  *
  * Which periods appear is decided once per matchup by `resolveSuccessPeriods()`
  * and both teams always move together — a comparison where one side showed Last
  * 5 and the other Last 8 would not be a comparison.
  *
- * Two presentations of the same values: a real table where the width exists,
- * and one expandable metric block at a time below `sm`, each period labelled
- * with the two teams paired underneath it. Every value stays reachable by
- * vertical scrolling; nothing here scrolls sideways.
+ * Every paired stat renders through the shared `NflHeadToHeadMetricRow`, one row
+ * per metric and visible period, with the period carried in the row's context
+ * sub-label. Nothing here scrolls sideways.
  */
 export default function MatchupPeriodComparison({
   matchup,
@@ -57,16 +62,20 @@ export default function MatchupPeriodComparison({
   successRate: MatchupSuccessRateSource;
   note: string;
 }) {
-  const isMobile = useIsCompactLayout("(max-width: 639px)");
   const { away, home } = matchup;
   const periods = successRate.periods;
-  const rows = SUCCESS_RATE_METRIC_KEYS.map((key) => ({
-    key,
-    label: getMetricDef(key)?.label ?? key,
-    shortLabel: getMetricDef(key)?.shortLabel,
-    away: periods.map((period) => successRate.resolve(away.abbr, key, period)),
-    home: periods.map((period) => successRate.resolve(home.abbr, key, period)),
-  }));
+  const rows = SUCCESS_RATE_METRIC_KEYS.map((key) => {
+    const def = getMetricDef(key);
+    return {
+      key,
+      label: def?.label ?? key,
+      shortLabel: def?.shortLabel,
+      help: def?.help,
+      direction: def?.direction ?? "context-only",
+      away: periods.map((period) => successRate.resolve(away.abbr, key, period)),
+      home: periods.map((period) => successRate.resolve(home.abbr, key, period)),
+    };
+  });
 
   return (
     <MatchupSectionCard
@@ -76,91 +85,49 @@ export default function MatchupPeriodComparison({
       subtitle={note}
       bodyClassName="px-0 py-0 sm:px-0"
     >
+      <ComparisonSideHeader matchup={matchup} />
 
-      {!isMobile ? (
-      <div className="px-3 py-3 sm:px-4">
-        <table className="w-full border-collapse text-left">
-          <caption className="sr-only">
-            Published success rates for {away.teamName} and {home.teamName} across each visible
-            period.
-          </caption>
-          <thead>
-            <tr className="border-b border-slate-200 text-[9px] font-bold uppercase tracking-[0.08em] text-slate-600">
-              <th scope="col" className="py-1.5 pr-2">
-                Metric
-              </th>
-              {periods.map((period) => (
-                <th key={`away-${period}`} scope="col" className="py-1.5 pr-2 text-right">
-                  {away.abbr.toUpperCase()} {SUCCESS_PERIOD_LABELS[period].short}
-                </th>
-              ))}
-              {periods.map((period) => (
-                <th key={`home-${period}`} scope="col" className="py-1.5 pr-2 text-right">
-                  {home.abbr.toUpperCase()} {SUCCESS_PERIOD_LABELS[period].short}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.key} className="border-b border-slate-100 last:border-0">
-                <th
-                  scope="row"
-                  className="py-1.5 pr-2 text-[11px] font-semibold text-slate-700"
-                >
-                  {row.label}
-                </th>
-                {row.away.map((value, index) => (
-                  <td key={`away-${periods[index]}`} className="py-1.5 pr-2 text-right">
-                    <ValueCell value={value} />
-                  </td>
-                ))}
-                {row.home.map((value, index) => (
-                  <td key={`home-${periods[index]}`} className="py-1.5 pr-2 text-right">
-                    <ValueCell value={value} />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div>
+        {rows.flatMap((row) =>
+          periods.map((period, index) => {
+            const awayValue = row.away[index];
+            const homeValue = row.home[index];
+            const higherIsBetter =
+              row.direction === "higher-is-better"
+                ? true
+                : row.direction === "lower-is-better"
+                  ? false
+                  : null;
+            const comparison = classifyMetricComparison({
+              key: row.key,
+              direction: row.direction,
+              awayValue: awayValue?.pct ?? null,
+              homeValue: homeValue?.pct ?? null,
+            });
+            return (
+              <NflHeadToHeadMetricRow
+                key={`${row.key}-${period}`}
+                label={row.label}
+                shortLabel={row.shortLabel}
+                contextLabel={SUCCESS_PERIOD_LABELS[period].short}
+                help={row.help}
+                leftValue={formatSuccessRate(awayValue)}
+                rightValue={formatSuccessRate(homeValue)}
+                leftRank={awayValue?.rank ?? null}
+                rightRank={homeValue?.rank ?? null}
+                leftRawValue={awayValue?.pct ?? null}
+                rightRawValue={homeValue?.pct ?? null}
+                higherIsBetter={higherIsBetter}
+                comparison={comparison}
+                leftTeamName={away.teamName}
+                rightTeamName={home.teamName}
+                leftTeamAbbr={away.abbr}
+                rightTeamAbbr={home.abbr}
+              />
+            );
+          })
+        )}
       </div>
-      ) : (<>
-
-      {/* Dense phone sheet: one directly comparable row per metric and period. */}
-      <div className="divide-y divide-slate-200">
-        {rows.flatMap((row) => periods.map((period, index) => {
-          const awayValue = row.away[index];
-          const homeValue = row.home[index];
-          const direction = getMetricDef(row.key)?.direction ?? "context-only";
-          const comparison = classifyMetricComparison({
-            key: row.key,
-            direction,
-            awayValue: awayValue?.pct ?? null,
-            homeValue: homeValue?.pct ?? null,
-          });
-          return (
-            <CompactMatchupMetricRow
-              key={`${row.key}-${period}`}
-              label={row.shortLabel ?? row.label}
-              sublabel={SUCCESS_PERIOD_LABELS[period].short}
-              away={{
-                formatted: formatSuccessRate(awayValue),
-                rank: awayValue?.rank ?? null,
-                accessibleName: away.teamName,
-              }}
-              home={{
-                formatted: formatSuccessRate(homeValue),
-                rank: homeValue?.rank ?? null,
-                accessibleName: home.teamName,
-              }}
-              winner={comparison}
-              advantageText={describeMetricAdvantage(comparison, away.abbr, home.abbr)}
-            />
-          );
-        }))}
-      </div>
-      </>)}
 
       <p className="border-t border-slate-100 px-3 py-2 text-[11px] leading-4 text-slate-600 sm:px-4">
         Periods switch together for both teams once each has six completed current-season games, so

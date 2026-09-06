@@ -1,18 +1,31 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
-import MatchupTrenchRow, { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
-import { TRENCH_BATTLES, getMetricDef, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
-import { collectTrenchPeriodValues } from "@/lib/nfl/trenchMetricsData";
+import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
+import { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
+import { TRENCH_BATTLES, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
+import { deriveMetricComparisonFromRanks } from "@/lib/nfl/matchupRailNormalization";
+import {
+  collectTrenchPeriodValues,
+  formatTrenchValue,
+  trenchPeriodLabel,
+} from "@/lib/nfl/trenchMetricsData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /**
  * One line-of-scrimmage battle: the team with the ball's blocking metric against
- * the opposing front's matching disruption metric.
+ * the opposing front's matching disruption metric (e.g. Pass Block Win Rate vs
+ * the opponent's Pass Rush Win Rate).
+ *
+ * The two win rates are not the same raw statistic, so their percentages are
+ * never compared directly. Each side's league rank is direction-normalized, so
+ * the stronger league position is the stronger side of the matchup — that is the
+ * only comparison the row's advantage caption and rail express. When a rank is
+ * missing the row falls back to its neutral "not compared" state.
  *
  * Periods are always aligned across the pairing — a 2025 blocking value is never
- * shown against a 2026 rush value. No trench score, percentage edge, projected
- * sacks or winner is derived; this stays a factual comparison.
+ * shown against a 2026 rush value. No trench score, percentage edge or projected
+ * sacks is derived.
  */
 function TrenchBattle({
   offenseTeam,
@@ -31,8 +44,6 @@ function TrenchBattle({
   help?: string;
   trench?: MatchupTrenchConfig;
 }) {
-  const offenseDef = getMetricDef(offenseKey);
-  const defenseDef = getMetricDef(defenseKey);
   const periods = trench?.periods ?? [];
 
   const awayValues = trench
@@ -42,47 +53,39 @@ function TrenchBattle({
     ? collectTrenchPeriodValues(trench.resolve, defenseTeam.abbr, defenseKey, periods)
     : {};
 
+  // A missing artifact or an unavailable season still renders the row, with N/A
+  // values and a neutral rail — never a hidden pairing or a fabricated winner.
+  const periodList: (typeof periods[number] | null)[] = periods.length > 0 ? [...periods] : [null];
+
   return (
-    <div className="border-t border-slate-100 pt-1.5 first:border-t-0 first:pt-0">
-      <div className="mb-0.5 hidden text-center text-[10px] font-bold uppercase tracking-wide text-slate-600 sm:block">
-        {label}
-      </div>
-
-      {/* Which team and metric each side represents. */}
-      <div className="hidden grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] items-end gap-2 sm:grid">
-        <div
-          title={offenseDef?.help}
-          className="truncate text-right text-[9px] font-bold uppercase tracking-wide text-slate-600"
-        >
-          {offenseTeam.abbr.toUpperCase()} {offenseDef?.shortLabel ?? ""}
-        </div>
-        <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
-          vs
-        </div>
-        <div
-          title={defenseDef?.help}
-          className="truncate text-left text-[9px] font-bold uppercase tracking-wide text-slate-600"
-        >
-          {defenseTeam.abbr.toUpperCase()} {defenseDef?.shortLabel ?? ""}
-        </div>
-      </div>
-
-      {periods.length > 0 ? (
-        <MatchupTrenchRow
-          metricLabel={label}
-          help={help}
-          showMetricLabel={false}
-          artifact={trench?.artifact ?? null}
-          periods={periods}
-          awayValues={awayValues}
-          homeValues={homeValues}
-          awayTeamName={`${offenseTeam.teamName} ${offenseDef?.label ?? ""}`.trim()}
-          homeTeamName={`${defenseTeam.teamName} ${defenseDef?.label ?? ""}`.trim()}
-        />
-      ) : (
-        <p className="py-2 text-center text-[11px] font-semibold text-slate-600">N/A</p>
-      )}
-    </div>
+    <>
+      {periodList.map((period) => {
+        const away = period ? awayValues[period] ?? null : null;
+        const home = period ? homeValues[period] ?? null : null;
+        const leftRank = away?.espnRank ?? null;
+        const rightRank = home?.espnRank ?? null;
+        return (
+          <NflHeadToHeadMetricRow
+            key={`${offenseKey}-${period ?? "na"}`}
+            label={label}
+            contextLabel={period ? trenchPeriodLabel(trench?.artifact ?? null, period).label : undefined}
+            help={help}
+            leftValue={formatTrenchValue(away)}
+            rightValue={formatTrenchValue(home)}
+            leftRank={leftRank}
+            rightRank={rightRank}
+            leftRawValue={null}
+            rightRawValue={null}
+            higherIsBetter
+            comparison={deriveMetricComparisonFromRanks(leftRank, rightRank)}
+            leftTeamName={`${offenseTeam.teamName} offense`}
+            rightTeamName={`${defenseTeam.teamName} defense`}
+            leftTeamAbbr={offenseTeam.abbr}
+            rightTeamAbbr={defenseTeam.abbr}
+          />
+        );
+      })}
+    </>
   );
 }
 
