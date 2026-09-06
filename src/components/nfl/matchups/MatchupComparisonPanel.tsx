@@ -5,7 +5,7 @@ import MatchupCategoryAdvantageChip, {
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
-import MatchupMetricRow from "@/components/nfl/matchups/MatchupMetricRow";
+import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
@@ -24,21 +24,25 @@ import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 /** How long the arrival highlight stays on the destination group. */
 const JUMP_HIGHLIGHT_MS = 1100;
 
-/** Column header naming each side of the comparison. Table-width only. */
-function ComparisonColumnHeader({ matchup }: { matchup: NflMatchup }) {
+/**
+ * Away/home identity for a comparison group: the two crests and abbreviations
+ * over the value columns the new head-to-head rows align to. One quiet line,
+ * not the former full table header.
+ */
+function ComparisonSideHeader({ matchup }: { matchup: NflMatchup }) {
   return (
-    <div className="hidden grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] items-center gap-2 border-b border-slate-200 pb-1.5 sm:grid">
-      <span className="flex items-center justify-end gap-1.5">
-        <NflTeamCrest team={matchup.away} side="away" size={18} />
+    <div className="mx-auto grid w-full grid-cols-[3.75rem_minmax(0,1fr)_3.75rem] items-center gap-x-2 border-b border-slate-200 pb-1.5 sm:max-w-[760px] sm:grid-cols-[5rem_minmax(0,1fr)_5rem] sm:gap-x-4">
+      <span className="flex items-center justify-end gap-1">
+        <NflTeamCrest team={matchup.away} side="away" size={16} />
         <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
           {matchup.away.abbr.toUpperCase()}
         </span>
       </span>
-      <span className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-600">
-        Metric · Advantage
+      <span aria-hidden className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
+        Advantage
       </span>
-      <span className="flex items-center justify-start gap-1.5">
-        <NflTeamCrest team={matchup.home} side="home" size={18} />
+      <span className="flex items-center justify-start gap-1">
+        <NflTeamCrest team={matchup.home} side="home" size={16} />
         <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
           {matchup.home.abbr.toUpperCase()}
         </span>
@@ -250,29 +254,54 @@ export default function MatchupComparisonPanel({
                   setOpen((current) => ({ ...current, [category.id]: !current[category.id] }))
                 }
               >
-                <ComparisonColumnHeader matchup={matchup} />
+                <ComparisonSideHeader matchup={matchup} />
                 {rows.map((metric) => (
-                  <MatchupMetricRow
+                  <NflHeadToHeadMetricRow
                     key={metric.key}
-                    metric={metric}
-                    awayAbbr={matchup.away.abbr}
-                    homeAbbr={matchup.home.abbr}
-                    awayTeamName={matchup.away.teamName}
-                    homeTeamName={matchup.home.teamName}
+                    label={metric.label}
+                    shortLabel={metric.shortLabel}
+                    help={metric.help}
+                    leftValue={metric.away.formatted}
+                    rightValue={metric.home.formatted}
+                    leftRank={metric.away.rank}
+                    rightRank={metric.home.rank}
+                    leftRawValue={metric.away.value}
+                    rightRawValue={metric.home.value}
+                    higherIsBetter={
+                      metric.direction === "higher-is-better"
+                        ? true
+                        : metric.direction === "lower-is-better"
+                          ? false
+                          : null
+                    }
+                    comparison={metric.comparison}
+                    leftTeamName={matchup.away.teamName}
+                    rightTeamName={matchup.home.teamName}
+                    leftTeamAbbr={matchup.away.abbr}
+                    rightTeamAbbr={matchup.home.abbr}
                   />
                 ))}
               </MatchupCollapsibleGroup>
             );
           })}
 
-          {/* Rendered once per page, at the foot of the section it describes. */}
-          <div className="border-t border-slate-200 p-3 sm:p-4">
-            <MatchupRankLegend />
-            <p className="mt-2 text-[11px] leading-4 text-slate-600">
-              Colour is secondary — every value carries its numeric rank and every row states the
-              advantage in words.
-            </p>
-          </div>
+          {/* One compact, collapsed-by-default legend beneath every category,
+              rather than a raised card repeated in view. Rank colours stay
+              reachable; the numeric rank on every badge carries the signal
+              without it. */}
+          <details className="group border-t border-slate-200 p-3 sm:p-4">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
+              <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+              Rank tier colours
+            </summary>
+            <div className="mt-2">
+              <MatchupRankLegend />
+              <p className="mt-2 text-[11px] leading-4 text-slate-600">
+                Colour is secondary — every value carries its numeric rank and every row states the
+                advantage in words.
+              </p>
+            </div>
+          </details>
         </MatchupSectionCard>
 
         {periodComparison}
