@@ -47,6 +47,15 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         icon: "📈",
       },
       {
+        to: "/nfl/performance",
+        label: "Results & Performance",
+        shortLabel: "Performance",
+        description: "Forward-tracked model performance -- sides, totals and starter props -- graded from archived pregame predictions.",
+        icon: "✅",
+        match: "prefix",
+        status: "new",
+      },
+      {
         to: "/16-0",
         label: "16-0 Draft Game",
         shortLabel: "16-0 Draft",
