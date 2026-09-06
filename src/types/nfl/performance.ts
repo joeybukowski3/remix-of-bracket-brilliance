@@ -54,13 +54,46 @@ export type TrenchesContext = {
   provenance_status: "available" | "unavailable";
 };
 
-export type CoachingContext = {
-  home_coaching_rating: null;
-  away_coaching_rating: null;
-  coaching_advantage_team: null;
-  coaching_differential: null;
-  coaching_context_status: "NOT_IMPLEMENTED";
+/**
+ * Coaching Rating v1 — ANALYSIS CONTEXT ONLY. Mirrors CoachRecordContext /
+ * CoachingContext in scripts/lib/nfl-game-context.ts. The rating and every
+ * record below are diagnostic/segmentation; none of them is a Sides/Totals
+ * model input, and ATS is displayed as historical context only (it is NOT
+ * weighted in the rating).
+ */
+export type CoachingContextStatus = "OK" | "COACH_UNRATED" | "SOURCE_UNAVAILABLE";
+
+export type CoachRecordContext = {
+  career_wl: string;
+  tenure_wl: string;
+  season_wl: string;
+  career_ats: string;
+  tenure_ats: string;
+  season_ats: string;
+  recent_ats: string;
+  small_sample: boolean;
+  tenure_year: number | null;
+  first_year: boolean;
+  interim: boolean;
 };
+
+export type CoachingContext = {
+  home_coach: string | null;
+  away_coach: string | null;
+  home_coaching_rating: number | null;
+  away_coaching_rating: number | null;
+  coaching_differential: number | null;
+  coaching_advantage_team: TeamAdvantage | null;
+  home_coach_context: CoachRecordContext | null;
+  away_coach_context: CoachRecordContext | null;
+  rating_version: string | null;
+  source_timestamp: string | null;
+  pregame_cutoff: string | null;
+  coaching_context_status: CoachingContextStatus;
+};
+
+/** |differential| <= this -> EVEN (frozen Coaching Rating v1 even_threshold). */
+export const COACHING_EVEN_THRESHOLD = 4;
 
 export type PregameGameContext = {
   epa: EpaContext;
@@ -510,11 +543,35 @@ export type NflSidesHealth = {
   public_performance_view_status: NflHealthStatus;
 };
 
+/**
+ * Coaching Rating v1 operational status. Small-sample and first-year coaches
+ * are a normal, expected state and never a failure -- only a missing/stale
+ * current-ratings artifact, unrated teams, or zero historical snapshot
+ * coverage move this off HEALTHY.
+ */
+export type NflCoachingHealth = {
+  status: NflHealthStatus;
+  rating_version: string | null;
+  artifact_generated_at: string | null;
+  source_cutoff: string | null;
+  current_coach_count: number;
+  unrated_coach_count: number;
+  small_sample_coach_count: number;
+  first_year_count: number;
+  historical_snapshot_coverage: number;
+  latest_snapshot_season: number | null;
+  latest_snapshot_week: number | null;
+  stale_after_hours: number;
+  public_artifact_age_ms: number | null;
+};
+
 export type NflPerformanceHealthArtifact = {
   schemaVersion: string;
   performanceMeta: { schemaVersion: string; generatedAt: string; season: number };
   totals: NflTotalsHealth;
   props: NflPropsHealth;
   sides: NflSidesHealth;
+  /** Absent on health artifacts generated before Coaching Rating v1 landed. */
+  coaching?: NflCoachingHealth;
   workflow: { generated_at_by_artifact: Record<string, string> };
 };

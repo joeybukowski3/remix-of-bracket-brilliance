@@ -5,6 +5,7 @@
  * state, so they assert presentation and zero-state handling only -- the
  * fetch layer is covered separately in useNflPerformanceData.test.ts.
  */
+import { coachingContextFixture } from "@/lib/nfl/performance/__fixtures__/coaching";
 import { describe, expect, it } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -174,13 +175,7 @@ const sidesRow: SidesPerformanceRow = {
       source_timestamp: null,
       provenance_status: "unavailable",
     },
-    coaching: {
-      home_coaching_rating: null,
-      away_coaching_rating: null,
-      coaching_advantage_team: null,
-      coaching_differential: null,
-      coaching_context_status: "NOT_IMPLEMENTED",
-    },
+    coaching: coachingContextFixture(),
   },
   provenance: {
     prediction_id_ref: "pred-1",
@@ -279,13 +274,7 @@ const totalsRow: TotalsPerformanceRow = {
       source_timestamp: null,
       provenance_status: "unavailable",
     },
-    coaching: {
-      home_coaching_rating: null,
-      away_coaching_rating: null,
-      coaching_advantage_team: null,
-      coaching_differential: null,
-      coaching_context_status: "NOT_IMPLEMENTED",
-    },
+    coaching: coachingContextFixture(),
   },
   provenance: { home_prediction_id_ref: "pred-home-1", away_prediction_id_ref: "pred-away-1" },
 };
@@ -488,7 +477,7 @@ describe("NflPerformanceSidesTab", () => {
     expect(expander).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(expander);
     expect(expander).toHaveAttribute("aria-expanded", "true");
-    expect(within(list).getByText("Coaching rating")).toBeInTheDocument();
+    expect(within(list).getByTestId("nfl-sides-coaching-panel")).toBeInTheDocument();
   });
 
   it("filters rows by ATS result", () => {
@@ -507,7 +496,7 @@ describe("NflPerformanceTotalsTab", () => {
     expect(expander).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(expander);
     expect(within(list).getByRole("button")).toHaveAttribute("aria-expanded", "true");
-    expect(within(list).getByText(/AAA/)).toBeInTheDocument();
+    expect(within(list).getAllByText(/AAA/).length).toBeGreaterThan(0);
   });
 });
 

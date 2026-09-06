@@ -21,6 +21,7 @@ const SIDE_OPTIONS: readonly (AtsSide | "all")[] = ["all", "home", "away", "pick
 const RESULT_OPTIONS: readonly (AtsResult | "all")[] = ["all", "WIN", "LOSS", "PUSH", "NEUTRAL"];
 const FAVDOG_OPTIONS = ["all", "favorite", "underdog", "pick"] as const;
 const ADVANTAGE_OPTIONS = ["all", "home", "away", "even"] as const;
+const COACHING_AGREEMENT_OPTIONS = ["all", "agree", "disagree", "even"] as const;
 
 /**
  * WU6 -- detailed Sides (spread) performance view, backed by the dedicated
@@ -106,6 +107,8 @@ export default function NflPerformanceSidesTab({
             <NflFilterChips label="Trenches Adv." options={ADVANTAGE_OPTIONS} value={filters.trenchesAdvantage} onChange={(v) => setFilters((f) => ({ ...f, trenchesAdvantage: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" />
             <NflFilterChips label="YPP Adv." options={ADVANTAGE_OPTIONS} value={filters.yppAdvantage} onChange={(v) => setFilters((f) => ({ ...f, yppAdvantage: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" />
             <NflFilterChips label="EPA Adv." options={ADVANTAGE_OPTIONS} value={filters.epaAdvantage} onChange={(v) => setFilters((f) => ({ ...f, epaAdvantage: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" />
+            <NflFilterChips label="Coaching Adv." options={ADVANTAGE_OPTIONS} value={filters.coachingAdvantage} onChange={(v) => setFilters((f) => ({ ...f, coachingAdvantage: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" tone="violet" />
+            <NflFilterChips label="JKB Side vs Coaching Adv." options={COACHING_AGREEMENT_OPTIONS} value={filters.coachingAgreement} onChange={(v) => setFilters((f) => ({ ...f, coachingAgreement: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" tone="violet" />
           </div>
 
           <p className="text-[11px] text-slate-500">{sortedRows.length} of {state.data.rows.length} graded games shown</p>
@@ -120,7 +123,9 @@ export default function NflPerformanceSidesTab({
 
       <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-[12px] leading-5 text-slate-600" data-testid="nfl-sides-artifact-note">
         Sign convention: every margin and error is a home margin (home − away points). Market spread is the posted home line
-        (negative = home favored). Coaching context is not implemented yet.
+        (negative = home favored). Coaching Rating v1 is analysis context only — it is never an input to the spread model, and the
+        JKB Side vs Coaching Advantage filter describes co-occurrence, not causation. ATS records are shown as historical context and
+        are not weighted in the JKB Coaching Rating.
       </p>
     </div>
   );

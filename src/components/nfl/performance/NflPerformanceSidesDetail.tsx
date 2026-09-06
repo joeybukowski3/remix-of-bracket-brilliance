@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 import { formatMetric, formatSigned } from "@/lib/nfl/performance/format";
+import NflCoachingComparison from "@/components/nfl/coaching/NflCoachingComparison";
+import { coachingAdvantageSummary } from "@/lib/nfl/performance/coachingPresentation";
 import type { SidesPerformanceRow } from "@/types/nfl/performance";
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
@@ -35,9 +37,9 @@ function sideLabel(row: SidesPerformanceRow): string {
 
 /**
  * Full diagnostic breakdown for one sides row -- JKB projection / market /
- * actual / matchup context / provenance. Coaching is always rendered as
- * "Not implemented" rather than omitted (spec section 9): no fake coaching
- * values, but the row exists so the schema reads as complete.
+ * actual / matchup context / coaching / provenance. Coaching Rating v1 is
+ * ANALYSIS CONTEXT ONLY -- it is displayed here and filterable, but it is
+ * never an input to the spread model and never implies a pick.
  */
 export default function NflPerformanceSidesDetail({ row }: { row: SidesPerformanceRow }) {
   const { context } = row;
@@ -106,8 +108,23 @@ export default function NflPerformanceSidesDetail({ row }: { row: SidesPerforman
               : "Unavailable"
           }
         />
-        <Field label="Coaching rating" value="Not implemented" />
       </DetailSection>
+
+      <section data-testid="nfl-sides-coaching-panel">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Coaching advantage</h4>
+          <span className="text-[12px] font-bold tabular-nums tracking-wide text-slate-900">
+            {coachingAdvantageSummary(context.coaching)}
+          </span>
+        </div>
+        <NflCoachingComparison
+          className="mt-1.5"
+          coaching={context.coaching}
+          homeTeam={row.home_team}
+          awayTeam={row.away_team}
+          showHeading={false}
+        />
+      </section>
 
       <DetailSection title="Provenance">
         <Field label="Prediction ref" value={row.provenance.prediction_id_ref} />

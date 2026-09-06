@@ -1,3 +1,4 @@
+import { coachingAgreement } from "@/lib/nfl/performance/coachingPresentation";
 import type { AtsResult, AtsSide, FavoriteUnderdog, SidesPerformanceRow } from "@/types/nfl/performance";
 
 export type SidesFilters = {
@@ -9,6 +10,13 @@ export type SidesFilters = {
   trenchesAdvantage: "home" | "away" | "even" | "all";
   yppAdvantage: "home" | "away" | "even" | "all";
   epaAdvantage: "home" | "away" | "even" | "all";
+  /** Coaching Rating v1 advantage. Segmentation only -- never a predictive filter. */
+  coachingAdvantage: "home" | "away" | "even" | "all";
+  /**
+   * Whether the JKB ATS side lands on the same team the coaching differential
+   * favors. Descriptive co-occurrence, NOT a causal or predictive claim.
+   */
+  coachingAgreement: "agree" | "disagree" | "even" | "all";
 };
 
 export const DEFAULT_SIDES_FILTERS: SidesFilters = {
@@ -20,6 +28,8 @@ export const DEFAULT_SIDES_FILTERS: SidesFilters = {
   trenchesAdvantage: "all",
   yppAdvantage: "all",
   epaAdvantage: "all",
+  coachingAdvantage: "all",
+  coachingAgreement: "all",
 };
 
 export function applySidesFilters(rows: readonly SidesPerformanceRow[], filters: SidesFilters): SidesPerformanceRow[] {
@@ -46,6 +56,14 @@ export function applySidesFilters(rows: readonly SidesPerformanceRow[], filters:
       (row.context.epa.provenance_status !== "available" || row.context.epa.epa_advantage_team !== filters.epaAdvantage)
     ) {
       return false;
+    }
+    if (filters.coachingAdvantage !== "all") {
+      const coaching = row.context.coaching;
+      if (coaching.coaching_context_status === "SOURCE_UNAVAILABLE") return false;
+      if (coaching.coaching_advantage_team !== filters.coachingAdvantage) return false;
+    }
+    if (filters.coachingAgreement !== "all") {
+      if (coachingAgreement(row.jkb_ats_side, row.context.coaching) !== filters.coachingAgreement) return false;
     }
     return true;
   });
