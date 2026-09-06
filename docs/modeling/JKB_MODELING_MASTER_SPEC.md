@@ -19,6 +19,10 @@ JKB is building one football modeling platform for game spreads, game totals, pa
 
 ## Governing principles
 
+### Team Comparison projection lens
+
+The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.
+
 - Production predictions **MUST** have an unambiguous UTC prediction timestamp, model name and model version.
 - Archived production predictions **MUST NOT** be retroactively overwritten. Corrections create a new snapshot or an explicit correction event linked to the original.
 - Historical backtests **MUST** be labeled as backtests or historical replays and **MUST NOT** be represented as true production predictions.

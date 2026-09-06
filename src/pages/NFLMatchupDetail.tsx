@@ -14,6 +14,8 @@ import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
 import { teamTotalFor } from "@/lib/nfl/totalsProjectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
+import { useNflProjectedMatchupMetrics } from "@/hooks/useNflProjectedMatchupMetrics";
+import { createProjectedMatchupMetricResolver, PROJECTION_LENS_DESCRIPTION, type MatchupComparisonLens } from "@/lib/nfl/projectedMatchupMetrics";
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
@@ -155,6 +157,13 @@ export default function NFLMatchupDetail() {
 
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
+  );
+  const [comparisonLens, setComparisonLens] = useState<MatchupComparisonLens>("observed");
+  const isProjection = comparisonLens === "projection";
+  const projectedMetrics = useNflProjectedMatchupMetrics(isProjection, data?.teams);
+  const projectedResolver = useMemo(
+    () => createProjectedMatchupMetricResolver(projectedMetrics.artifact),
+    [projectedMetrics.artifact]
   );
   const navigation = useMatchupNavigation();
   const { theme, setTheme } = useMatchupTheme();
@@ -306,6 +315,7 @@ export default function NFLMatchupDetail() {
     if (!matchup) return { categoryMetrics: metrics, categoryResults: results };
 
     const sources: MatchupMetricSources = {
+      projected: isProjection ? projectedResolver : undefined,
       resolver: metricResolver,
       successRate,
       trench,
@@ -317,7 +327,7 @@ export default function NFLMatchupDetail() {
       results[category.id] = categoryResultFrom(category.id, rows);
     }
     return { categoryMetrics: metrics, categoryResults: results };
-  }, [matchup, metricResolver, successRate, trench, modelRatings]);
+  }, [matchup, metricResolver, successRate, trench, modelRatings, isProjection, projectedResolver]);
 
   usePageSeo({
     title: matchup
@@ -394,6 +404,7 @@ export default function NFLMatchupDetail() {
       )}
 
       <div {...panelProps("overview")} className="space-y-2">
+        {isProjection && <p className="text-sm text-slate-700"><strong>2026 Projection:</strong> {PROJECTION_LENS_DESCRIPTION}</p>}
         <MatchupOverviewPanel
           matchup={matchup}
           categoryResults={categoryResults}
@@ -415,7 +426,7 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         />
-        <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />
+        {!isProjection && <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />}
       </div>
 
       <div {...panelProps("comparison")} className="space-y-2">
@@ -423,9 +434,19 @@ export default function NFLMatchupDetail() {
           settings={sampleSettings}
           onChange={setSampleSettings}
           sampleLabel={sample?.label}
+          lens={comparisonLens}
+          onLensChange={setComparisonLens}
         />
+        {isProjection && <p role="status" className="text-sm text-slate-600">
+          {projectedMetrics.loading ? "Loading projected statistics…" : projectedMetrics.error ?? (
+            projectedMetrics.artifact
+              ? `2026 Projection · ${projectedMetrics.artifact.projectionVersion} · As of ${projectedMetrics.artifact.asOf.slice(0, 10)}. Ranks cover teams with available projections; missing values are not ranked.`
+              : "Season-stat projections are not yet published. JKB Power Rating remains available; other rows show N/A."
+          )}
+        </p>}
 
         <MatchupComparisonPanel
+          projection={isProjection}
           matchup={matchup}
           categoryMetrics={categoryMetrics}
           categoryResults={categoryResults}
@@ -433,15 +454,15 @@ export default function NFLMatchupDetail() {
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
           unitBattles={
-            <MatchupUnitBattles
+            !isProjection ? <MatchupUnitBattles
               matchup={matchup}
               resolver={metricResolver}
               successRate={successRate}
               trench={trench}
-            />
+            /> : undefined
           }
           periodComparison={
-            successArtifact && successRate ? (
+            !isProjection && successArtifact && successRate ? (
               <MatchupPeriodComparison
                 matchup={matchup}
                 successRate={successRate}
@@ -450,7 +471,7 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         >
-          <MatchupMarketContext matchup={matchup} projection={projection} />
+          {!isProjection && <><MatchupMarketContext matchup={matchup} projection={projection} />
 
           <div className="grid grid-cols-1 items-start gap-2 @[1080px]:grid-cols-2">
             <MatchupTrenches
@@ -461,6 +482,7 @@ export default function NFLMatchupDetail() {
 
             <MatchupMarketProfile matchup={matchup} market={market} />
           </div>
+          </>}
         </MatchupComparisonPanel>
       </div>
 
@@ -484,9 +506,9 @@ export default function NFLMatchupDetail() {
       </div>
 
       {/* Stated once for the whole page, beneath every tab. */}
-      <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
+      {!isProjection && <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>}
 
-      {successArtifact && successRate && (
+      {!isProjection && successArtifact && successRate && (
         <p className="text-[11px] leading-5 text-slate-400">
           {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
         </p>

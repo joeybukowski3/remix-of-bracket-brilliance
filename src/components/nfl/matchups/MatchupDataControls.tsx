@@ -1,4 +1,5 @@
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
+import { PROJECTION_LENS_DESCRIPTION, PROJECTION_RATING_NOTE, type MatchupComparisonLens } from "@/lib/nfl/projectedMatchupMetrics";
 import {
   describeSampleRule,
   type NflDataWindow,
@@ -23,11 +24,15 @@ export default function MatchupDataControls({
   settings,
   onChange,
   sampleLabel,
+  lens = "observed",
+  onLensChange,
 }: {
   settings: NflMatchupSampleSettings;
   onChange: (next: NflMatchupSampleSettings) => void;
   /** Compact description of the resolved sample, e.g. "8 games · 2025". */
   sampleLabel?: string;
+  lens?: MatchupComparisonLens;
+  onLensChange?: (lens: MatchupComparisonLens) => void;
 }) {
   const blendOn = settings.includePriorSeason;
 
@@ -44,14 +49,17 @@ export default function MatchupDataControls({
             Data Window
           </span>
           <MatchupSegmentedControl
-            options={WINDOW_OPTIONS}
-            value={settings.window}
-            onChange={(window: NflDataWindow) => onChange({ ...settings, window })}
+            options={onLensChange ? [{ value: "projection", label: "2026 Projection" }, ...WINDOW_OPTIONS] : WINDOW_OPTIONS}
+            value={lens === "projection" ? "projection" : settings.window}
+            onChange={(window: NflDataWindow | "projection") => {
+              onLensChange?.(window === "projection" ? "projection" : "observed");
+              if (window !== "projection") onChange({ ...settings, window });
+            }}
             ariaLabel="Data window"
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3 sm:justify-start">
+        {lens === "observed" && <div className="flex items-center justify-between gap-3 sm:justify-start">
           <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800">
             Historical Blend
           </span>
@@ -73,9 +81,9 @@ export default function MatchupDataControls({
             Include 2025 Last 8
             <span className="tabular-nums">{blendOn ? "ON" : "OFF"}</span>
           </button>
-        </div>
+        </div>}
 
-        {sampleLabel && (
+        {sampleLabel && lens === "observed" && (
           <div className="flex items-center gap-2 sm:ml-auto">
             <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800">
               Sample
@@ -91,12 +99,14 @@ export default function MatchupDataControls({
       </div>
 
       <p className="mt-1.5 border-t border-emerald-200 pt-1.5 text-[11px] leading-4 text-emerald-900/80">
+        {lens === "projection" ? <>{PROJECTION_LENS_DESCRIPTION} {PROJECTION_RATING_NOTE}</> : <>
         <span className="font-bold text-emerald-900">Active sample rule:</span>{" "}
         {describeSampleRule(settings)}{" "}
         <span className="text-slate-600">
           Conventional team stats respond to these controls. The Joe Knows Ball power baseline in
           the header is a separate preseason model and is unaffected.
         </span>
+        </>}
       </p>
     </div>
   );

@@ -54,6 +54,7 @@ export type NflHeadToHeadMetricRowProps = {
   rightTeamAbbr: string;
   /** Existing per-metric winner authority. */
   comparison?: MetricComparison;
+  projected?: boolean;
 };
 
 function RankLine({
@@ -61,11 +62,13 @@ function RankLine({
   neutral,
   align,
   teamName,
+  projected,
 }: {
   rank: number | null;
   neutral: boolean;
   align: "start" | "end";
   teamName: string;
+  projected: boolean;
 }) {
   if (rank == null || !Number.isFinite(rank)) {
     return (
@@ -82,7 +85,7 @@ function RankLine({
   }
   return (
     <span className={cn("flex", align === "end" ? "justify-end" : "justify-start")}>
-      <MatchupRankBadge rank={rank} neutral={neutral} />
+      <MatchupRankBadge rank={rank} neutral={neutral} projected={projected} />
     </span>
   );
 }
@@ -104,6 +107,7 @@ export default function NflHeadToHeadMetricRow({
   leftTeamAbbr,
   rightTeamAbbr,
   comparison = "not-comparable",
+  projected = false,
 }: NflHeadToHeadMetricRowProps) {
   const helpId = useId();
   const [helpOpen, setHelpOpen] = useState(false);
@@ -122,8 +126,8 @@ export default function NflHeadToHeadMetricRow({
           ? "even"
           : "not compared"
   }. ${leftTeamName} ${leftValue}${
-    leftRank != null ? `, rank ${leftRank} of 32` : ""
-  }. ${rightTeamName} ${rightValue}${rightRank != null ? `, rank ${rightRank} of 32` : ""}.`;
+    leftRank != null ? `, rank ${leftRank} ${projected ? "among available teams" : "of 32"}` : ""
+  }. ${rightTeamName} ${rightValue}${rightRank != null ? `, rank ${rightRank} ${projected ? "among available teams" : "of 32"}` : ""}.`;
 
   const valueClass = (value: string) =>
     cn(
@@ -146,7 +150,7 @@ export default function NflHeadToHeadMetricRow({
             {leftValue}
           </span>
           <span className="mt-1 block">
-            <RankLine rank={leftRank} neutral={neutral} align="end" teamName={leftTeamName} />
+            <RankLine rank={leftRank} neutral={neutral} align="end" teamName={leftTeamName} projected={projected} />
           </span>
         </div>
 
@@ -187,7 +191,7 @@ export default function NflHeadToHeadMetricRow({
             {rightValue}
           </span>
           <span className="mt-1 block">
-            <RankLine rank={rightRank} neutral={neutral} align="start" teamName={rightTeamName} />
+            <RankLine rank={rightRank} neutral={neutral} align="start" teamName={rightTeamName} projected={projected} />
           </span>
         </div>
       </div>

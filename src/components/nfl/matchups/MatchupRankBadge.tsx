@@ -29,9 +29,11 @@ export default function MatchupRankBadge({
   neutral = false,
   emphasis = "default",
   className = "",
+  projected = false,
 }: {
   rank: number | null | undefined;
   neutral?: boolean;
+  projected?: boolean;
   /**
    * "primary" renders the rank at the shared headline size, with the chip sized
    * to fit the number. Chosen with a prop rather than a className override so
@@ -44,7 +46,9 @@ export default function MatchupRankBadge({
   if (!hasRank) return null;
   const tierLabel = getRankTierLabel(rank);
 
-  const description = neutral
+  const description = projected
+    ? `Projected rank ${rank} among available teams`
+    : neutral
     ? `League rank ${rank} of 32, descriptive only`
     : `League rank ${rank} of 32, ${tierLabel}`;
 

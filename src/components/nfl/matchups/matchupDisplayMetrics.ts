@@ -85,6 +85,8 @@ export type MatchupTrenchSource = {
 };
 
 export type MatchupMetricSources = {
+  /** Presence selects the exclusive projection lens, even when every value is unavailable. */
+  projected?: NflMatchupMetricResolver;
   /** Conventional + EPA resolver, keyed by team slug. */
   resolver: NflMatchupMetricResolver;
   /** RBSDM success rates, keyed by canonical abbreviation. */
@@ -159,6 +161,22 @@ export function resolveCategoryMetrics(
   const rows: MatchupDisplayMetric[] = [];
 
   for (const ref of category.metrics) {
+    if (sources.projected && !(ref.kind === "team" && ref.id === "overallRating")) {
+      const key = ref.kind === "team" ? `team.${ref.id}` : ref.key;
+      const def = ref.kind === "team" ? MATCHUP_TEAM_METRICS[ref.id] : getMetricDef(ref.key);
+      if (!def) continue;
+      const side = (team: NflMatchupTeam): MatchupDisplaySide => {
+        const metric = sources.projected!(team.abbr, key);
+        return metric ? { value: metric.value, rank: metric.rank, formatted: metric.formattedValue } : UNAVAILABLE;
+      };
+      const away = side(matchup.away);
+      const home = side(matchup.home);
+      rows.push({ key, label: def.label, help: `2026 Projection. ${def.help ?? ""}`.trim(),
+        direction: def.direction, away, home,
+        comparison: classifyMetricComparison({ key, direction: def.direction, awayValue: away.value, homeValue: home.value }),
+      });
+      continue;
+    }
     if (ref.kind === "team") {
       const def = MATCHUP_TEAM_METRICS[ref.id];
       const resolveRating = sources.modelRatings ?? unavailableHeroModelRatings;
