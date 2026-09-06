@@ -156,17 +156,21 @@ describe("Strikeout Props Player Score uses the shared percentile tier system", 
     mockPropsData();
     await renderPage();
 
-    await screen.findAllByText("Pitcher 01");
-    const card = mainSection().getByText("Pitcher 01").closest("article");
+    // Pitcher name renders as two stacked lines (first/last) in the mobile row, so locate
+    // the row via its aria-label rather than a single combined "Pitcher 01" text node.
+    const card = await screen.findByRole("button", { name: /Show recent strikeout details for Pitcher 01/ });
     expect(card).not.toBeNull();
 
     const collapsedCell = card!.querySelector("[data-percentile-tier]");
     expect(collapsedCell).toHaveAttribute("data-percentile-tier", "elite");
 
-    const expandButton = within(card as HTMLElement).getByRole("button");
-    fireEvent.click(expandButton);
+    // The collapsed row itself is the expand trigger (role="button" on the <tr>);
+    // its detail content renders in the sibling <tr> immediately after it.
+    fireEvent.click(card as HTMLElement);
+    const detailRow = card!.nextElementSibling as HTMLElement;
+    expect(detailRow).toBeTruthy();
 
-    const tiers = card!.querySelectorAll("[data-percentile-tier]");
+    const tiers = [collapsedCell, ...Array.from(detailRow.querySelectorAll("[data-percentile-tier]"))];
     expect(tiers.length).toBeGreaterThanOrEqual(2);
     tiers.forEach((el) => expect(el).toHaveAttribute("data-percentile-tier", "elite"));
   }, SLOW_RENDER_TIMEOUT_MS);

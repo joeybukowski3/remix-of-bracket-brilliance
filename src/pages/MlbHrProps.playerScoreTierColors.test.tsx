@@ -156,8 +156,9 @@ describe("HR Props Player Score uses the shared percentile tier system", () => {
     mockPropsData();
     await renderPage();
 
-    await screen.findByText("Batter 01");
-    const card = screen.getByText("Batter 01").closest("div[class*='cursor-pointer']");
+    // Batter name renders as two stacked lines (first/last) in the mobile row, so locate
+    // the row via its aria-label rather than a single combined "Batter 01" text node.
+    const card = await screen.findByRole("button", { name: /Show batter-vs-pitcher history for Batter 01/ });
     expect(card).not.toBeNull();
     const scoreCell = card!.querySelector('[data-percentile-tier]');
     expect(scoreCell).toHaveAttribute("data-percentile-tier", "elite");

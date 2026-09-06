@@ -566,6 +566,32 @@ describe("NFLYardagePropsReview mobile table", () => {
     expect(within(table).queryByText(/draftkings/i)).not.toBeInTheDocument();
   });
 
+  it("keeps the mobile category header sticky beneath the site header, with all five sort controls still working", async () => {
+    stubFetch(projectionsArtifact(twoPlayerRows()), twoPlayerMarket());
+    renderPage();
+
+    const table = await screen.findByTestId("nfl-yardage-mobile-table");
+    // Sticky positioning must live on each header <th>, not the <tr> -- a
+    // sticky <tr> has no reliable visible effect since a row isn't an
+    // independently painted box.
+    for (const key of ["player", "projectedYards", "line", "difference", "matchupScore"] as const) {
+      const cell = mobileSortHeader(key);
+      expect(cell.className).toContain("sticky");
+      expect(cell.className).toContain("top-[73px]");
+      expect(cell.className).toMatch(/z-\d+/);
+      expect(cell.className).toMatch(/bg-slate-100/);
+      expect(within(cell).getByRole("button")).toBeInTheDocument();
+    }
+    // No ancestor between the table and the page may set any `overflow`
+    // value other than visible/clip -- `overflow-x-hidden` still
+    // establishes a CSS scroll container, which would make the sticky
+    // <th> resolve against that wrapper instead of the page viewport.
+    const innerTable = table.querySelector("table")!;
+    for (let ancestor = innerTable.parentElement; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
+      expect(ancestor.className).not.toMatch(/(^|\s)overflow-(hidden|auto|x-hidden|x-auto|y-hidden|y-auto)(\s|$)/);
+    }
+  });
+
   it("shows @ OPP for an away game and vs OPP for a home game, from the row's own homeAway field", async () => {
     const awayRow = passingRow(); // homeAway: "away", opponent: "sea"
     const homeRow = passingRow({

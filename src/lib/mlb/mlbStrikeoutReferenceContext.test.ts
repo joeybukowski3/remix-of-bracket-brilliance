@@ -54,6 +54,17 @@ describe("MLB strikeout visual-reference context", () => {
     expect(rightHandedContext.get("AAA")).toMatchObject({ opponentKRateRankL30VsHand: 2, opponentWrcPlusRankL30VsHand: 2 });
   });
 
+  it("exposes the raw opponent K rate vs hand (not just its rank), computed strikeouts / plate appearances over only the vs-hand rows", () => {
+    const rowsByTeam = new Map([
+      ["AAA", [pa("2026-08-03", "1", 1, 0.8, { hand: "L" }), pa("2026-08-02", "2", 0, 0.1, { hand: "R" })]],
+      ["BBB", [pa("2026-08-03", "3", 0, 0.2, { hand: "L" }), pa("2026-08-02", "4", 1, 0.7, { hand: "R" })]],
+    ]);
+    const context = buildLeagueReferenceContext(rowsByTeam, "2026-08-04", "L", { expectedTeamCount: 2 });
+    // AAA's only vs-L row struck out (1/1 = 1.0); BBB's only vs-L row did not (0/1 = 0.0).
+    expect(context.get("AAA")?.opponentKRateL30VsHand).toBe(1);
+    expect(context.get("BBB")?.opponentKRateL30VsHand).toBe(0);
+  });
+
   it("ranks the rounded repository wRC+ approximation rather than raw wOBA", () => {
     const rowsByTeam = new Map([
       ["AAA", [pa("2026-08-03", "1", 0, 0.3)]],

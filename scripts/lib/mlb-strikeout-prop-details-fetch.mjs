@@ -170,7 +170,7 @@ export async function fetchBoxscoreCached(gamePk, cache, options = {}) {
 }
 
 export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
-  if (!boxscore?.teams) return { date: officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
+  if (!boxscore?.teams) return { date: officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null, isHome: null, site: null };
   const isHomeTeam = boxscore.teams.home?.team?.id === teamId;
   const own = isHomeTeam ? boxscore.teams.home : boxscore.teams.away;
   const opposing = isHomeTeam ? boxscore.teams.away : boxscore.teams.home;
@@ -199,6 +199,8 @@ export function deriveOpponentGameSummary(boxscore, teamId, officialDate) {
     opposingStarterStrikeouts,
     opposingStarterWalks,
     teamTotalStrikeouts: own?.teamStats?.batting?.strikeOuts ?? null,
+    isHome: isHomeTeam,
+    site: isHomeTeam ? "home" : "away",
   };
 }
 
@@ -206,7 +208,7 @@ export async function fetchOpponentLastFiveGamesDetail(teamId, games, boxscoreCa
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   return runLimited(games, concurrency, async (game) => {
     const { boxscore, error } = await fetchBoxscoreCached(game.gamePk, boxscoreCache, options);
-    if (error || !boxscore) return { date: game.officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null };
+    if (error || !boxscore) return { date: game.officialDate ?? null, opponent: null, opposingStartingPitcher: null, opposingStartingPitcherId: null, opposingStarterInningsPitched: null, opposingStarterStrikeouts: null, opposingStarterWalks: null, teamTotalStrikeouts: null, isHome: null, site: null };
     return deriveOpponentGameSummary(boxscore, teamId, game.officialDate);
   });
 }

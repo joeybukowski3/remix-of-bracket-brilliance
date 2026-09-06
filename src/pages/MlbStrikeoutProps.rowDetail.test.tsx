@@ -95,7 +95,8 @@ function comparativeDetail(
     opponent: row.opponent,
     gameDate: "2026-07-08",
     pitcherLastFiveStarts: [],
-    pitcherLastFiveSummary: { gamesUsed: 5, totalOuts, totalStrikeouts: strikeouts / 2, averageStrikeouts: kPerGame },
+    // strikeoutsPerInning is the canonical total-K/total-outs field the page now reads for "K/Inning Last 5" -- averageStrikeouts is kept only for legacy callers of this fixture.
+    pitcherLastFiveSummary: { gamesUsed: 5, totalOuts, totalStrikeouts: strikeouts / 2, averageStrikeouts: kPerGame, strikeoutsPerInning: kPerGame },
     opponentLastFiveGames: [],
     pitcherVenueSplits: {
       home: {
@@ -110,15 +111,22 @@ function comparativeDetail(
       },
     },
     opponentContext: {
-      home: { kPerNine: opponentKPerGame, xba: opponentXba },
-      away: { kPerNine: opponentKPerGame, xba: opponentXba },
-      last10: { kPerNine: opponentKPerGame, xba: opponentXba },
+      // kRate is a fraction (e.g. 0.12 == 12.0%) -- derived here only for
+      // fixture convenience so it still varies with opponentKPerGame across
+      // callers of this helper; real data comes from the opponent's season
+      // Statcast plate-appearance split (see fetchTeamXbaContext).
+      home: { kPerNine: opponentKPerGame, xba: opponentXba, kRate: opponentKPerGame / 100 },
+      away: { kPerNine: opponentKPerGame, xba: opponentXba, kRate: opponentKPerGame / 100 },
+      last10: { kPerNine: opponentKPerGame, xba: opponentXba, kRate: opponentKPerGame / 100 },
     },
     opponentReference: {
       cutoffDate: "2026-07-08",
       pitcherHand: "R",
       opponentKRateRankL30: 1,
       opponentKRateRankL30VsHand: 2,
+      // Deliberately a different fraction than opponentContext's kRate above so
+      // tests can distinguish "K% vs Hand L30" from "Opp K% at Site Szn" text.
+      opponentKRateL30VsHand: opponentKPerGame / 1000,
       opponentWrcPlusRankL30: 3,
       opponentWrcPlusRankL30VsHand: 4,
       opponentWrcPlusRankL30Home: 5,
@@ -351,8 +359,8 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     expect(screen.getByText("Core / Market")).toHaveClass("text-center");
     expect(screen.getByText("Pitcher Stats")).toHaveClass("text-center");
     expect(screen.getByText("Opposing Team Stats")).toHaveClass("text-center");
-    expect(screen.getByText("Opp wRC+ Rank L30 vs Hand")).toHaveClass("text-center");
-    expect(screen.getByText("Opp wRC+ Rank L30 @ Site")).toHaveClass("text-center");
+    expect(screen.getByText("K% vs Hand L30")).toHaveClass("text-center");
+    expect(screen.getByText("Opp wRC+ Rank L30")).toHaveClass("text-center");
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("selects pitcher and opponent site metrics from the correct side of an away matchup", async () => {
@@ -360,18 +368,19 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     const detail = comparativeDetail(baseRow, "dean-kremer|bal|chc|2026-07-08", 6, 12, null);
     detail.pitcherVenueSplits!.home.season.strikeouts = 40;
     detail.pitcherVenueSplits!.away.season.strikeouts = 15;
-    detail.opponentContext!.home.kPerNine = 12;
-    detail.opponentContext!.away.kPerNine = 7;
+    detail.opponentContext!.home.kRate = 0.12;
+    detail.opponentContext!.away.kRate = 0.07;
     mockPropsData([baseRow]);
     mockDetails({ detailsByKey: new Map([[detail.key, detail]]) });
     await renderPage();
 
     const row = firstTrigger("Show recent strikeout details for Dean Kremer");
-    // BAL is away in BAL@CHC: pitcher uses away (15 / 5 = 3.0), while CHC uses its home split.
+    // BAL is away in BAL@CHC: pitcher uses away (15 / 5 = 3.0), while opponent CHC's site split uses ITS home context.
     expect(within(row).getAllByText("3.0").length).toBeGreaterThan(0);
-    expect(within(row).getByText("12.0")).toBeInTheDocument();
-    expect(within(row).getByText("5th")).toHaveAttribute("data-testid", "mlb-rank-heat");
-    expect(within(row).queryByText("25th")).not.toBeInTheDocument();
+    expect(within(row).getByText("12.0%")).toBeInTheDocument();
+    expect(within(row).queryByText("7.0%")).not.toBeInTheDocument();
+    // wRC+ Rank L30 is the overall league rank now, never the home/away site split.
+    expect(within(row).getByText("3rd")).toHaveAttribute("data-testid", "mlb-rank-heat");
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("selects pitcher and opponent site metrics from the correct side of a home matchup", async () => {
@@ -380,18 +389,19 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     const detail = comparativeDetail(homeRow, "dean-kremer|bal|chc|2026-07-08", 6, 12, null);
     detail.pitcherVenueSplits!.home.season.strikeouts = 40;
     detail.pitcherVenueSplits!.away.season.strikeouts = 15;
-    detail.opponentContext!.home.kPerNine = 12;
-    detail.opponentContext!.away.kPerNine = 7;
+    detail.opponentContext!.home.kRate = 0.12;
+    detail.opponentContext!.away.kRate = 0.07;
     mockPropsData([homeRow]);
     mockDetails({ detailsByKey: new Map([[detail.key, detail]]) });
     await renderPage();
 
     const row = firstTrigger("Show recent strikeout details for Dean Kremer");
-    // BAL is home in CHC@BAL: pitcher uses home (40 / 5 = 8.0), while CHC uses its away split.
+    // BAL is home in CHC@BAL: pitcher uses home (40 / 5 = 8.0), while opponent CHC's site split uses ITS away context.
     expect(within(row).getByText("8.0")).toBeInTheDocument();
-    expect(within(row).getByText("7.0")).toBeInTheDocument();
-    expect(within(row).getByText("25th")).toHaveAttribute("data-testid", "mlb-rank-heat");
-    expect(within(row).queryByText("5th")).not.toBeInTheDocument();
+    expect(within(row).getByText("7.0%")).toBeInTheDocument();
+    expect(within(row).queryByText("12.0%")).not.toBeInTheDocument();
+    // wRC+ Rank L30 stays the same overall rank regardless of which side is home -- it is no longer site-split.
+    expect(within(row).getByText("3rd")).toHaveAttribute("data-testid", "mlb-rank-heat");
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("applies visible-row tones to the new K/game metrics and keeps unavailable values neutral", async () => {

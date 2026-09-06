@@ -84,6 +84,36 @@ describe("mlb opponent K context", () => {
     expect(context.samples.last10Games).toBe(3);
   });
 
+  it("derives season K% home/away splits from the same plate-appearance rows used for xBA (K% at Site Szn's actual data source)", async () => {
+    const csv = [
+      "game_pk,game_date,events,home_team,away_team,estimated_ba_using_speedangle",
+      "1003,2026-07-12,strikeout,ATL,NYM,",
+      "1003,2026-07-12,field_out,ATL,NYM,0.200",
+      "1002,2026-07-11,strikeout,PHI,ATL,",
+      "1002,2026-07-11,double,PHI,ATL,0.600",
+      "1001,2026-07-10,field_out,ATL,MIA,0.100",
+    ].join("\n");
+    const fetchImpl = vi.fn(async () => textResponse(csv));
+
+    const context = await fetchTeamXbaContext("ATL", 2026, "2026-07-13", { fetchImpl });
+    // Home rows (ATL is home in games 1003 and 1001): strikeout, field_out, field_out -> 1 K / 3 PA.
+    expect(context.homeKRate).toBeCloseTo(1 / 3, 6);
+    // Away rows (ATL is away in game 1002): strikeout, double -> 1 K / 2 PA.
+    expect(context.awayKRate).toBeCloseTo(1 / 2, 6);
+  });
+
+  it("returns a null K% when a site has no plate appearances, never a fabricated 0", async () => {
+    const csv = [
+      "game_pk,game_date,events,home_team,away_team,estimated_ba_using_speedangle",
+      "2001,2026-07-12,field_out,ATL,NYM,0.100",
+    ].join("\n");
+    const fetchImpl = vi.fn(async () => textResponse(csv));
+
+    const context = await fetchTeamXbaContext("ATL", 2026, "2026-07-13", { fetchImpl });
+    expect(context.homeKRate).toBeCloseTo(0, 6);
+    expect(context.awayKRate).toBeNull();
+  });
+
   it("counts a doubleheader as two separate games in the recent xBA sample", async () => {
     const rows = ["game_pk,game_date,events,home_team,away_team,estimated_ba_using_speedangle"];
     for (let i = 0; i < 9; i += 1) {
@@ -137,6 +167,9 @@ describe("mlb opponent K context", () => {
     expect(context.last10.kPerNine).toBe(8);
     expect(context.home.xba).toBeNull();
     expect(context.last10.xba).toBeNull();
+    // K% comes from the same (failed) Savant fetch as xBA -- must not be fabricated either.
+    expect(context.home.kRate).toBeNull();
+    expect(context.away.kRate).toBeNull();
     expect(context.samples).toMatchObject({ season: 1, away: 1, last10: 1 });
     expect(context.sources).toEqual({ strikeouts: "mlb_stats_api", xba: "baseball_savant_statcast" });
     expect(context.warnings[0]).toMatch(/^OPPONENT_XBA_CONTEXT_FAILED:/);
@@ -165,6 +198,9 @@ describe("mlb opponent K context", () => {
     expect(context.last10.kPerNine).toBe(9);
     expect(context.home.xba).toBeCloseTo(0.6, 6);
     expect(context.last10.xba).toBeCloseTo(0.6, 6);
+    // The single row (a non-strikeout "single") has no strikeouts, so K% is 0/1 = 0 -- a real rate, not a missing value.
+    expect(context.home.kRate).toBeCloseTo(0, 6);
+    expect(context.last10.kRate).toBeCloseTo(0, 6);
     expect(context.warnings).toEqual([]);
   });
 });

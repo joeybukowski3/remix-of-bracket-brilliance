@@ -438,3 +438,91 @@ describe("Top HR Environments -- relocated below Batter View, collapsed to top r
     expect(section.queryByRole("button")).not.toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 });
+
+describe("Batter View mobile table -- dense sortable table with Batter Stats / Matchup Stats tabs", () => {
+  it("renders exactly one dense sortable table (Batter/HR Score/Odds/L7 HR/Ptch HR Vs) below lg, not the old card list", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData();
+    const { container } = await renderPage();
+
+    // Batter name renders as two stacked lines (first/last), so match via the row's aria-label rather than a single combined text node.
+    await screen.findByRole("button", { name: /Batter 01/ });
+    const table = container.querySelector('[data-testid="hr-props-mobile-table"] table');
+    expect(table).toBeTruthy();
+    const headerCells = Array.from(table!.querySelectorAll("thead th")).map((th) => th.textContent?.trim());
+    expect(headerCells).toEqual(["Batter", "HR Score", "Odds", "L7 HR", "Ptch HR Vs"]);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("renders the batter's full name across stacked lines with a normal-size team logo and the opposing pitcher's last name in muted text", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData();
+    await renderPage();
+
+    const row = await screen.findByRole("button", { name: /Batter 01/ });
+    // Full name "Batter 01" stacks as first="Batter" / last="01", not truncated to a single node.
+    expect(within(row).getByText("Batter")).toBeInTheDocument();
+    expect(within(row).getByText("01")).toBeInTheDocument();
+    // Team logo is the normal MlbTeamLogo used elsewhere (BAL fixture team), not the tiny ESPN dot logo.
+    const logo = row.querySelector("img[alt='BAL logo']");
+    expect(logo).toBeTruthy();
+    // Opposing pitcher (fixture default "Justin Steele") renders as a muted "vs Steele" line, sourced from row.opposingPitcher.
+    expect(within(row).getByText("vs Steele")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("keeps the mobile category header sticky beneath the site header, with sort buttons still present", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData();
+    const { container } = await renderPage();
+
+    await screen.findByRole("button", { name: /Batter 01/ });
+    const headerRow = container.querySelector('[data-testid="hr-props-mobile-sticky-header"]');
+    expect(headerRow).toBeTruthy();
+    // Sticky positioning must live on each header <th>, not the <tr>.
+    const headerCells = headerRow!.querySelectorAll("th");
+    expect(headerCells.length).toBe(5);
+    for (const cell of Array.from(headerCells)) {
+      expect(cell.className).toContain("sticky");
+      expect(cell.className).toContain("top-[73px]");
+      expect(cell.className).toMatch(/z-\d+/);
+      expect(cell.className).toMatch(/bg-slate-100/);
+    }
+    // No ancestor between the table and the page may set any `overflow`
+    // value other than visible/clip -- see MlbStrikeoutProps.mobileSections
+    // for why `overflow-x-hidden` is included in this check too.
+    const mobileTable = container.querySelector('[data-testid="hr-props-mobile-table"]');
+    expect(mobileTable).toBeTruthy();
+    const table = mobileTable!.querySelector("table")!;
+    for (let ancestor = table.parentElement; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
+      expect(ancestor.className).not.toMatch(/(^|\s)overflow-(hidden|auto|x-hidden|x-auto|y-hidden|y-auto)(\s|$)/);
+    }
+    for (const label of ["Sort by Batter", "Sort by HR Score", "Sort by L7 HR", "Sort by Ptch HR Vs"]) {
+      expect(within(headerRow as HTMLElement).getByRole("button", { name: label })).toBeInTheDocument();
+    }
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("expanding a row shows Batter Stats by default and switches to Matchup Stats on click", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData();
+    await renderPage();
+
+    const trigger = await screen.findByRole("button", { name: /Show batter-vs-pitcher history for Batter 01/ });
+    fireEvent.click(trigger);
+
+    const detailRow = trigger.nextElementSibling as HTMLElement;
+    expect(detailRow).toBeTruthy();
+    const batterTab = within(detailRow).getByRole("tab", { name: "Batter Stats" });
+    const matchupTab = within(detailRow).getByRole("tab", { name: "Matchup Stats" });
+    expect(batterTab).toHaveAttribute("aria-selected", "true");
+    expect(matchupTab).toHaveAttribute("aria-selected", "false");
+    expect(within(detailRow).getAllByText("Barrel%").length).toBeGreaterThan(0);
+    expect(within(detailRow).queryByText("Ptch xERA")).not.toBeInTheDocument();
+
+    fireEvent.click(matchupTab);
+    expect(matchupTab).toHaveAttribute("aria-selected", "true");
+    expect(within(detailRow).getByText("Ptch xERA")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+});

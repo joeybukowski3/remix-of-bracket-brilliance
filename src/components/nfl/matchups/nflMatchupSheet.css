@@ -722,3 +722,59 @@ body.nfl-matchup-route[data-nfl-matchup-theme="dark"] > #root > div > header spa
   .matchup-snapshot__block--passing { grid-column: 1 / 7; grid-row: 3; }
   .matchup-snapshot__block--rushing { grid-column: 7 / 13; grid-row: 3; }
 }
+
+/* -------------------------------------------------------------------------
+ * Head-to-head comparison rail (Team Comparison tab)
+ *
+ * One continuous rail per metric: the centre is parity and a single fill
+ * grows from it toward the advantaged team's side. Colours reuse the sheet's
+ * away/home tokens so the fill matches the crest it points at, in both the
+ * light and the dark-navy theme. Motion is confined to width/opacity and is
+ * dropped under reduced-motion.
+ * ---------------------------------------------------------------------- */
+.nfl-h2h-rail {
+  --rail-away: var(--sheet-away, #c3223a);
+  --rail-home: var(--sheet-home, #e85d04);
+  width: 100%;
+  padding: 0.15rem 0;
+}
+.nfl-h2h-rail__track {
+  position: relative;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--sheet-panel-2, #f1f5f9);
+  border: 1px solid var(--sheet-border-soft, #cbd5e1);
+  overflow: hidden;
+}
+.nfl-h2h-rail__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  max-width: 50%;
+  transition: width 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nfl-h2h-rail__fill { transition: none; }
+}
+.nfl-h2h-rail__fill--left {
+  right: 50%;
+  border-radius: 999px 0 0 999px;
+  background: linear-gradient(270deg, var(--rail-away), color-mix(in srgb, var(--rail-away) 55%, transparent));
+}
+.nfl-h2h-rail__fill--right {
+  left: 50%;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(90deg, var(--rail-home), color-mix(in srgb, var(--rail-home) 55%, transparent));
+}
+.nfl-h2h-rail__tick {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--sheet-text, #0b1728);
+  opacity: 0.35;
+}
+.nfl-h2h-rail[data-side="even"] .nfl-h2h-rail__tick,
+.nfl-h2h-rail[data-side="none"] .nfl-h2h-rail__tick { opacity: 0.5; }

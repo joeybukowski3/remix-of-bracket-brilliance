@@ -185,11 +185,13 @@ export function buildLeagueReferenceContext(rowsByTeam, cutoffDate, pitcherHand,
     wrcPlusL30Away: rankDescending(approximateWrcPlusForSamples(samples, "battingL30Away"), expectedTeamCount),
     wrcPlusL10: rankDescending(approximateWrcPlusForSamples(samples, "battingL10"), expectedTeamCount),
   };
+  const samplesByTeam = new Map(samples.map((sample) => [sample.team, sample]));
   return new Map(teams.map((team) => [team, {
     cutoffDate,
     pitcherHand,
     opponentKRateRankL30: ranks.kRateL30.get(team) ?? null,
     opponentKRateRankL30VsHand: ranks.kRateL30VsHand.get(team) ?? null,
+    opponentKRateL30VsHand: samplesByTeam.get(team)?.kRateL30VsHand ?? null,
     opponentWrcPlusRankL30: ranks.wrcPlusL30.get(team) ?? null,
     opponentWrcPlusRankL30VsHand: ranks.wrcPlusL30VsHand.get(team) ?? null,
     opponentWrcPlusRankL30Home: ranks.wrcPlusL30Home.get(team) ?? null,
