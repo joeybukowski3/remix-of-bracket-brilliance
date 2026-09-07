@@ -1,0 +1,274 @@
+{
+  "generatedAt": "2026-09-07T12:34:09.531Z",
+  "gameId": "2026_01_BAL_IND",
+  "methodA": {
+    "homeTeam": "ind",
+    "awayTeam": "bal",
+    "homeCurrentOVR": 58.6,
+    "awayCurrentOVR": 54.4,
+    "leagueAverageOVR": 49.9421875,
+    "homePowerNumber": 2.0778749999999997,
+    "awayPowerNumber": 1.069874999999999,
+    "neutralProjectedMargin": 1.0080000000000007,
+    "homeFieldAdvantage": 2,
+    "projectedHomeMargin": 3.008000000000001,
+    "formattedJkbSpread": "IND −3.0",
+    "ovrProvenance": {
+      "ind": {
+        "rank": 10,
+        "team": "Indianapolis Colts",
+        "abbr": "ind",
+        "division": "AFC South",
+        "rating2025Adjusted": 60.1,
+        "projectionAdjustment2026": -1.5,
+        "rating2026": 58.6,
+        "sosRank": 26,
+        "sosAvgOpponentRating": 48.4,
+        "confidence": "Medium",
+        "components": {
+          "jkbV03Rating": 59.835,
+          "guideRating": 61.3,
+          "guideCalibrationAdjustment": 0.22,
+          "luckAverageRank": null,
+          "luckAdjustment": 0,
+          "personnelAdjustment": -2,
+          "coachAdjustment": 0,
+          "returningInjuryAdjustment": 0.5
+        },
+        "notes": "Post-preseason review (VSiN 2.0 p34): Daniel Jones opens the season off an Achilles tear, Michael Pittman Jr. was traded to Pittsburgh and replaced late by 34-year-old Keenan Allen, and Charvarius Ward is not 100% with a back injury. Justin Walley's return from a torn ACL is credited separately as returningInjuryAdjustment."
+      },
+      "bal": {
+        "rank": 16,
+        "team": "Baltimore Ravens",
+        "abbr": "bal",
+        "division": "AFC North",
+        "rating2025Adjusted": 53.4,
+        "projectionAdjustment2026": 1,
+        "rating2026": 54.4,
+        "sosRank": 27,
+        "sosAvgOpponentRating": 48,
+        "confidence": "Medium-High",
+        "components": {
+          "jkbV03Rating": 53.115,
+          "guideRating": 49.5,
+          "guideCalibrationAdjustment": -0.54,
+          "luckAverageRank": 19.8,
+          "luckAdjustment": 0.85,
+          "personnelAdjustment": 1,
+          "coachAdjustment": 0,
+          "returningInjuryAdjustment": 0
+        },
+        "notes": "Trey Hendrickson addition, reduced for the center position: Danny Pinter's season-ending patellar injury leaves Ethan Pocic or Jovaughn Gwyn behind the departed Tyler Linderbaum (VSiN 2.0 p32). New Jesse Minter staff still held neutral pending evidence. STRUCTURAL REVIEW FLAG: see _meta.reviewFlags.bal — BAL's 2025-only base differs materially from the multi-year 2026 Projection and VSiN views; that gap is a base-window question and was deliberately NOT closed with a synthetic upward adjustment."
+      }
+    }
+  },
+  "methodB": {
+    "modelVersion": "jkb-nfl-total-ridge-v1.0.0",
+    "trainingSeasons": [
+      2022,
+      2023,
+      2024
+    ],
+    "trainRowCount": 1630,
+    "ridgeLambda": 1,
+    "ind": {
+      "team": "ind",
+      "homeAway": "home",
+      "intercept": 22.187730061349694,
+      "contributions": [
+        {
+          "feature": "offenseEpaPerPlay",
+          "rawValue": 0.01380161538655279,
+          "trainMean": -0.00869381919089482,
+          "trainStd": 0.08299556474468878,
+          "zScore": 0.27104381597556615,
+          "coefficient": 2.1745659298100586,
+          "pointsContribution": 0.5894026477061735
+        },
+        {
+          "feature": "offenseSuccessRate",
+          "rawValue": 0.4430742300986069,
+          "trainMean": 0.45464922941913716,
+          "trainStd": 0.03466636180965391,
+          "zScore": -0.33389714744472637,
+          "coefficient": 0.5037806331253304,
+          "pointsContribution": -0.16821091633844604
+        },
+        {
+          "feature": "opponentDefenseEpaAllowed",
+          "rawValue": 0.00425552878894936,
+          "trainMean": -0.009142176889858283,
+          "trainStd": 0.06727234968455352,
+          "zScore": 0.19915620223807798,
+          "coefficient": 0.4698228833869183,
+          "pointsContribution": 0.09356814117988203
+        },
+        {
+          "feature": "opponentDefenseSuccessAllowed",
+          "rawValue": 0.4573102485491599,
+          "trainMean": 0.45426043102520014,
+          "trainStd": 0.03054532073636607,
+          "zScore": 0.09984565394753837,
+          "coefficient": 0.2904804762673515,
+          "pointsContribution": 0.029003213111906113
+        },
+        {
+          "feature": "homeIndicator",
+          "rawValue": 1,
+          "trainMean": 0.5,
+          "trainStd": 0.5,
+          "zScore": 1,
+          "coefficient": 1.0803630312805472,
+          "pointsContribution": 1.0803630312805472
+        }
+      ],
+      "reconstructedPoints": 23.811856178289755,
+      "archivedPoints": 23.811856178289755,
+      "reconstructionError": 0,
+      "history": {
+        "defense_effective_sample_size": 11.570417736966768,
+        "defense_games_used": 85,
+        "history_status": "normal",
+        "offense_effective_sample_size": 17.32970555009141,
+        "offense_games_used": 85
+      }
+    },
+    "bal": {
+      "team": "bal",
+      "homeAway": "away",
+      "intercept": 22.187730061349694,
+      "contributions": [
+        {
+          "feature": "offenseEpaPerPlay",
+          "rawValue": 0.08347495944005276,
+          "trainMean": -0.00869381919089482,
+          "trainStd": 0.08299556474468878,
+          "zScore": 1.1105265554186838,
+          "coefficient": 2.1745659298100586,
+          "pointsContribution": 2.4149132115627916
+        },
+        {
+          "feature": "offenseSuccessRate",
+          "rawValue": 0.49091812777897653,
+          "trainMean": 0.45464922941913716,
+          "trainStd": 0.03466636180965391,
+          "zScore": 1.0462274223924815,
+          "coefficient": 0.5037806331253304,
+          "pointsContribution": 0.5270691132459667
+        },
+        {
+          "feature": "opponentDefenseEpaAllowed",
+          "rawValue": 0.044403939723700006,
+          "trainMean": -0.009142176889858283,
+          "trainStd": 0.06727234968455352,
+          "zScore": 0.7959602550623124,
+          "coefficient": 0.4698228833869183,
+          "pointsContribution": 0.37396034209476253
+        },
+        {
+          "feature": "opponentDefenseSuccessAllowed",
+          "rawValue": 0.4771149693184999,
+          "trainMean": 0.45426043102520014,
+          "trainStd": 0.03054532073636607,
+          "zScore": 0.7482173289504873,
+          "coefficient": 0.2904804762673515,
+          "pointsContribution": 0.21734252606502316
+        },
+        {
+          "feature": "homeIndicator",
+          "rawValue": 0,
+          "trainMean": 0.5,
+          "trainStd": 0.5,
+          "zScore": -1,
+          "coefficient": 1.0803630312805472,
+          "pointsContribution": -1.0803630312805472
+        }
+      ],
+      "reconstructedPoints": 24.64065222303769,
+      "archivedPoints": 24.64065222303769,
+      "reconstructionError": 0,
+      "history": {
+        "defense_effective_sample_size": 11.570417736966768,
+        "defense_games_used": 85,
+        "history_status": "normal",
+        "offense_effective_sample_size": 17.32970555009141,
+        "offense_games_used": 85
+      }
+    },
+    "impliedHomeMargin": -0.8287960447479357,
+    "homeFieldPointsInMargin": 2.1607260625610945,
+    "teamStrengthOnlyMargin": -2.9895221073090283,
+    "windows": {
+      "ind": {
+        "team": "ind",
+        "offense": {
+          "epaPerPlay": 0.01380161538655279,
+          "successRate": 0.443074230098607,
+          "explosiveRate": 0.12177420486086941,
+          "halfLife": 6,
+          "totalGamesUsed": 85,
+          "currentSeasonGamesUsed": 0,
+          "priorSeasonGamesUsed": 17,
+          "olderSeasonGamesUsed": 68,
+          "nonCurrentSeasonWeightSharePct": 100.00000000000003,
+          "effectiveSampleSize": 17.32970555009141
+        },
+        "defenseAllowed": {
+          "epaPerPlay": 0.04440393972370001,
+          "successRate": 0.4771149693184999,
+          "explosiveRate": 0.13627733611809786,
+          "halfLife": 4,
+          "totalGamesUsed": 85,
+          "currentSeasonGamesUsed": 0,
+          "priorSeasonGamesUsed": 17,
+          "olderSeasonGamesUsed": 68,
+          "nonCurrentSeasonWeightSharePct": 100,
+          "effectiveSampleSize": 11.570417736966766
+        }
+      },
+      "bal": {
+        "team": "bal",
+        "offense": {
+          "epaPerPlay": 0.08347495944005276,
+          "successRate": 0.49091812777897653,
+          "explosiveRate": 0.1455779557454325,
+          "halfLife": 6,
+          "totalGamesUsed": 85,
+          "currentSeasonGamesUsed": 0,
+          "priorSeasonGamesUsed": 17,
+          "olderSeasonGamesUsed": 68,
+          "nonCurrentSeasonWeightSharePct": 100.00000000000003,
+          "effectiveSampleSize": 17.32970555009141
+        },
+        "defenseAllowed": {
+          "epaPerPlay": 0.00425552878894936,
+          "successRate": 0.4573102485491599,
+          "explosiveRate": 0.12445343548374829,
+          "halfLife": 4,
+          "totalGamesUsed": 85,
+          "currentSeasonGamesUsed": 0,
+          "priorSeasonGamesUsed": 17,
+          "olderSeasonGamesUsed": 68,
+          "nonCurrentSeasonWeightSharePct": 100,
+          "effectiveSampleSize": 11.570417736966766
+        }
+      }
+    },
+    "leagueRanks": {
+      "indOffenseEpaRank": 18,
+      "balOffenseEpaRank": 5,
+      "indDefenseEpaAllowedRank": 21,
+      "balDefenseEpaAllowedRank": 16,
+      "note": "rank 1 = best; EWMA windows at the 2026 week-1 cutoff, i.e. 2021-2025 history only"
+    }
+  },
+  "disagreement": {
+    "methodAHomeMargin": 3.008000000000001,
+    "methodBHomeMargin": -0.8287960447479357,
+    "gap": 3.8367960447479366,
+    "methodANeutralMargin": 1.0080000000000007,
+    "methodBNeutralMargin": -2.9895221073090283,
+    "methodAHomeField": 2,
+    "methodBHomeField": 2.1607260625610945
+  }
+}
