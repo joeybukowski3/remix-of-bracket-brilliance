@@ -48,6 +48,24 @@ const num = (value) => {
   return Number.isFinite(n) ? n : null;
 };
 
+/**
+ * Number(null) is 0 and Number("") is 0, so `num` reports an ABSENT value as a
+ * real zero. That is harmless for the pregame fields above, where a zero and a
+ * blank mean the same thing to the study, but it is not harmless for a graded
+ * outcome: an unplayed game whose actualStrikeOuts and battersFaced are still
+ * null would otherwise be admitted as a genuine appearance of 0 strikeouts over
+ * 0 batters faced. Outcome fields therefore use this strict reader instead.
+ */
+const strictNum = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** A graded outcome is real only if the pitcher actually faced someone. */
+const isResolvedOutcome = (strikeouts, battersFaced) =>
+  strikeouts !== null && battersFaced !== null && battersFaced > 0;
+
 // ---------- pregame projections ----------
 const V2 = "public/data/mlb/k-props-v2-shadow.json";
 const v2Revs = revisions(V2);
@@ -141,9 +159,11 @@ function harvestStarts(list, pitcherId) {
   if (!Array.isArray(list) || pitcherId == null) return;
   for (const start of list) {
     if (start?.gamePk == null) continue;
-    const outs = start.outsRecorded != null ? num(start.outsRecorded) : ipToOuts(start.inningsPitched);
-    const strikeouts = num(start.strikeouts);
-    if (strikeouts == null || outs == null) continue;
+    const outs = start.outsRecorded != null ? strictNum(start.outsRecorded) : ipToOuts(start.inningsPitched);
+    const strikeouts = strictNum(start.strikeouts);
+    const battersFaced = strictNum(start.battersFaced);
+    if (outs == null) continue;
+    if (!isResolvedOutcome(strikeouts, battersFaced)) continue;
     actuals.set(`${start.gamePk}|${pitcherId}`, {
       gamePk: start.gamePk,
       pitcherId,
@@ -151,8 +171,8 @@ function harvestStarts(list, pitcherId) {
       actualKs: strikeouts,
       actualOuts: outs,
       actualIP: outs / 3,
-      actualBF: num(start.battersFaced),
-      actualPitches: num(start.pitchCount),
+      actualBF: battersFaced,
+      actualPitches: strictNum(start.pitchCount),
       source: "start-log",
     });
   }
@@ -178,8 +198,12 @@ for (const { sha } of topkRevs) {
     if (record.gameId == null || record.pitcherId == null) continue;
     const key = `${record.gameId}|${record.pitcherId}`;
     if (actuals.has(key)) continue;
-    const strikeouts = num(record.actualStrikeOuts);
-    if (strikeouts == null) continue;
+    const strikeouts = strictNum(record.actualStrikeOuts);
+    const battersFaced = strictNum(record.battersFaced);
+    // This is the path that admitted 8 unplayed games into the v1/v2 archive:
+    // top-k-performance.json carries scheduled starters with null outcomes, and
+    // the old `num` turned those nulls into a 0-K, 0-BF "appearance".
+    if (!isResolvedOutcome(strikeouts, battersFaced)) continue;
     const outs = ipToOuts(record.actualInningsPitched);
     actuals.set(key, {
       gamePk: record.gameId,
@@ -188,7 +212,7 @@ for (const { sha } of topkRevs) {
       actualKs: strikeouts,
       actualOuts: outs,
       actualIP: outs == null ? null : outs / 3,
-      actualBF: num(record.battersFaced),
+      actualBF: battersFaced,
       actualPitches: null,
       source: "top-k-grading",
     });
