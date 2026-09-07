@@ -19,19 +19,20 @@ JKB is building one football modeling platform for game spreads, game totals, pa
 
 ## Governing principles
 
-<<<<<<< HEAD
 ### Team Comparison projection lens
 
 The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.
 
 The distinct `2026 Blended` lens composes that projected-stat contract with observed 2026 full-season values at runtime. Comparison policy `nfl-comparison-blend-v1` uses each team's final REG results count: projection weights 100/80/60/40/20/0 percent at 0/1/2/3/4/5+ games. This is a configurable initial comparison policy, not a backtested model conclusion. Required observed game IDs must exactly match that team's final 2026 results; missing required inputs fail closed. Raw values are blended before competition ranking over available teams. Current Power Rating is explicitly model-managed and bypasses this policy, retaining its existing six-game fade and canonical rank. Explicit `2026 Season` and `2025 Season` choices contain observed statistics only; existing Season/historical-blend and Last 5 policies are retained unchanged. See the linked comparison contract for precision, source-freshness limitations and future out-of-sample validation requirements.
-=======
+
 WU6A.1 historical DFS context is a comparison-only data extension, documented in
 [NFL DFS historical context](../features/nfl-dfs-history.md). It reuses the
 trailing-average and historical-line authorities, adds a distinct individual
 appearance cohort, and labels its source timing as event-time reconstruction.
 It does not change model features, projections, prediction archives or scoring.
->>>>>>> 5f429c35 (feat: add cutoff-safe NFL DFS history foundation)
+
+WU6A.2 adds static index/position delivery and DFS historical presentation only;
+the same linked feature document owns its schemas, lazy loading and sample labels.
 
 - Production predictions **MUST** have an unambiguous UTC prediction timestamp, model name and model version.
 - Archived production predictions **MUST NOT** be retroactively overwritten. Corrections create a new snapshot or an explicit correction event linked to the original.

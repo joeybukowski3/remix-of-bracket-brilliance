@@ -1,8 +1,9 @@
-# NFL DFS historical context — WU6A.1
+# NFL DFS historical context — WU6A.1 / WU6A.2
 
-Domain/data foundation only; no DFS UI, projection, ranking, eligibility or
-optimizer behavior changes. The existing weekly research join remains the FPA
-authority. See [DFS analyzer](nfl-dfs-contest-analyzer.md).
+WU6A.1 supplies the domain/data foundation; WU6A.2 exposes it on the DFS board
+and in expanded history. Projection, ranking, eligibility and optimizer behavior
+remain unchanged. The existing weekly research join remains the FPA authority.
+See [DFS analyzer](nfl-dfs-contest-analyzer.md).
 
 ## Producer and compatibility
 
@@ -91,7 +92,7 @@ verified official closing line. Missing historical coverage remains null.
 
 `summarizeHistoryDeltas` reports total input `n`, valid `comparisonCount`, mean,
 median, above/below/equal and missing counts. Nonfinite deltas are missing. The
-future UI must use aboveCount/comparisonCount, never divide by ten by default.
+UI uses aboveCount/comparisonCount, never divides by ten by default.
 
 `adaptDfsFantasyPointsAllowed` passes `opponentFpaSeason` and `opponentFpaLast5`
 from an already compatibility-checked DFS research join unchanged, including
@@ -103,6 +104,71 @@ standalone 2025 CSV substitution occurs.
 Run the new Node suite, focused TypeScript tests, existing rolling/line and
 Yardage Review suites, DFS domain regressions and typecheck. Generator validation
 uses `--dry-run` (local committed inputs only, no network or artifact writes).
-Existing published v1 artifacts remain valid for Yardage Review but do not yet
-serve the new context; regeneration and visible history integration belong to
-the subsequent data/UI rollout. No workflow or schedule changes are included.
+Existing published v1 artifacts remain valid for Yardage Review. WU6A.2 uses
+separate DFS transport files below; no workflow or schedule changes are included.
+
+## WU6A.2 browser delivery and UI
+
+Generate only the selected week's DFS files, leaving legacy season artifacts untouched:
+
+```sh
+node scripts/generate-nfl-yardage-history.mjs --season=2026 --as-of=2026-09-07T00:00:00.000Z --dfs-only
+```
+
+`scripts/lib/nfl-dfs-history-delivery.mjs` slices the existing context into
+`public/data/nfl/yardage-history/<season>/week-<NN>/{index,QB,RB,WR,TE}.json`.
+The index (`nfl-dfs-history-index-v1`) carries original metadata, covered player
+keys and at most ten source defense deltas per key. Position detail retains
+`nfl-individual-yardage-history-v1` with a transport `position` discriminator.
+Only QB passing, RB rushing, WR receiving and TE receiving are delivered. Empty
+player logs are omitted from coverage. Defense coverage remains independent.
+
+No history fetch occurs before a CSV board exists. The board requests only the
+index; expanding a player requests that position's detail file. Session caches
+deduplicate pending and completed requests. Network/schema failures can retry on
+remount; week changes hide previous-week history immediately while preserving
+the analyzer's existing filters and expansion behavior.
+The loader rejects wrong schemas/policies, season/week mismatch, future cutoff,
+different index/detail asOf or excluded targets, wrong position/market/lookup
+identity, duplicate row IDs, target/future rows and post-kickoff archived lines.
+It never re-slices a bounded context or substitutes an older week's artifact.
+
+Main table and mobile cards show canonical Season and L5 FPA values/ranks/source
+seasons, plus DEF VS AVG mean and above/valid count. FPA sample sizes and rank
+pools are in tooltips. The shared `summarizeHistoryDeltas` is the only summary
+authority. DST displays N/A for both signals. History availability has no effect
+on projections, ranks, readiness, filters or player usability.
+
+Expanded weekly research stays visible above Player Last 10 / Opponent Last 10
+tabs. Player rows show date, opponent, home/away, actual yardage, entering-game
+whole-position allowance, signed delta, archived line/book and O/U/push. Opponent
+rows show date, individual player/team, actual yardage, own pregame average,
+signed delta and the same line fields. Baseline tooltips show prior-game sample
+size; line tooltips show observed timing. Summaries include mean/median,
+above/below/equal/missing counts with valid denominator and archived O/U/push
+coverage. Tables scroll within their own region on narrow screens.
+
+Missing player history reads "No historical sample"; artifact failures read
+"History unavailable". No line is fabricated, no current line is substituted,
+and none is labeled closing. Expanded notes and board methodology tooltips
+disclose event-time reconstruction and possible later official corrections.
+
+The local 2026 W1 output has 3,106 player rows and 1,280 defense appearances:
+
+| File | Uncompressed bytes | gzip bytes | Player rows | Defense rows |
+| --- | ---: | ---: | ---: | ---: |
+| index.json | 25,311 | 5,838 | — | — |
+| QB.json | 411,505 | 25,231 | 320 | 320 |
+| RB.json | 723,235 | 40,695 | 781 | 320 |
+| WR.json | 972,562 | 52,205 | 1,139 | 320 |
+| TE.json | 783,701 | 42,689 | 866 | 320 |
+
+Gzip sizes are measured with Node zlib, not a guarantee about a hosting provider's
+compression. All 4,386 serialized appearances have null archived lines. Their
+historical game coverage predates the available player-line archive.
+
+Browser validation uses `tests/nfl-dfs-contest-analyzer.spec.ts` and the repository
+analytics-blocking fixture. If local server binding is unavailable, build first,
+then set `PLAYWRIGHT_DFS_LOCAL_DIST=1` and `PLAYWRIGHT_BASE_URL=http://jkb-dfs.local`;
+the spec fulfills same-origin requests directly from this workspace's `dist`
+without mocking application behavior or data.

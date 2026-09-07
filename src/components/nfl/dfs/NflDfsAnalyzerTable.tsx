@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   FANTASY_TABLE_BODY_CELL,
   FANTASY_TABLE_HEADER_CELL,
@@ -32,6 +32,9 @@ import {
 } from "@/lib/nfl/dfs/presentation";
 import { matchupGradeHeatClass, weeklyHeatStyle } from "@/lib/fantasy/weekly/researchPresentation";
 import { cn } from "@/lib/utils";
+
+import NflDfsHistory, { FpaSignal, DefenseSignal, FPA_HELP, DEF_AVG_HELP } from "./NflDfsHistory";
+import { dfsHistoryLoader, historyCoverage, type DfsHistoryIndex, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
 
 const BOARD_VIEWS: readonly DfsBoardView[] = ["VALUE", "QB", "RB", "WR", "TE", "DST"];
 
@@ -151,10 +154,24 @@ function ResearchDetail({ row }: { row: DfsEnrichedAnalyzerRow }) {
 
 export type NflDfsAnalyzerTableProps = {
   rows: readonly DfsEnrichedAnalyzerRow[];
+  historyTarget?: HistoryTarget;
 };
 
-export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) {
+export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnalyzerTableProps) {
   const compact = useIsCompactLayout();
+  const [historyState, setHistoryState] = useState<{ target: HistoryTarget; index: DfsHistoryIndex | null } | null>(null);
+  useEffect(() => {
+    let active = true;
+    if (historyTarget) void dfsHistoryLoader.index(historyTarget).then(
+      (index) => { if (active) setHistoryState({ target: historyTarget, index }); },
+      () => { if (active) setHistoryState({ target: historyTarget, index: null }); },
+    );
+    return () => { active = false; };
+  }, [historyTarget]);
+  const currentHistory = historyState?.target === historyTarget ? historyState : null;
+  const historyIndex = currentHistory?.index ?? null;
+  const historyLoading = !!historyTarget && !currentHistory;
+  const coverage = historyIndex ? historyCoverage(historyIndex, rows) : null;
   const [view, setView] = useState<DfsBoardView>("VALUE");
   const [search, setSearch] = useState("");
   const [availableOnly, setAvailableOnly] = useState(false);
@@ -219,6 +236,8 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
         </label>
       </div>
 
+      {coverage && <p className="text-[10px] text-slate-500">Player history: {coverage.covered}/{coverage.total} offensive entries have a sample. Expand a player for yardage history; opponent coverage is independent.</p>}
+
       {visibleRows.length === 0 && (
         <p role="status" className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500">
           No players match the current filters.
@@ -233,8 +252,8 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
           <table className="w-full min-w-[860px] border-collapse text-[11px]">
             <thead className={stickyDenseHeader("bg-slate-50")}>
               <tr className={DENSE_TABLE_HEAD_ROW}>
-                {["Player", "Team/Opp", "Salary", "DK Pos RK", "JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Matchup", ""].map((label) => (
-                  <th key={label} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-left font-black uppercase tracking-wide text-slate-500")}>
+                {["Player", "Team/Opp", "Salary", "DK Pos RK", "JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Matchup", "FPA", "DEF VS AVG", ""].map((label) => (
+                  <th key={label} title={label === "FPA" ? FPA_HELP : label === "DEF VS AVG" ? DEF_AVG_HELP : undefined} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-left font-black uppercase tracking-wide text-slate-500")}>
                     {label}
                   </th>
                 ))}
@@ -274,14 +293,17 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
                           <span className={cn("rounded px-1.5 py-0.5 font-bold", matchupGradeHeatClass(row.research.matchupGrade.id))}>{row.research.matchupGrade.label}</span>
                         ) : "—"}
                       </td>
+                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}><FpaSignal row={row} /></td>
+                      <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}><DefenseSignal row={row} index={historyIndex} loading={historyLoading} /></td>
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-1.5")}>
                         <FantasyExpandControl label={`${expanded ? "Collapse" : "Expand"} ${row.playerName}`} expanded={expanded} onClick={() => setExpandedDkId(expanded ? null : row.dkId)} />
                       </td>
                     </tr>
                     {expanded && (
                       <tr>
-                        <td colSpan={11} className="border-b border-slate-100 bg-slate-50/60 px-3 py-2">
+                        <td colSpan={13} className="border-b border-slate-100 bg-slate-50/60 px-3 py-2">
                           <ResearchDetail row={row} />
+                          <NflDfsHistory key={row.dkId} row={row} target={historyTarget} index={historyIndex} />
                         </td>
                       </tr>
                     )}
@@ -315,6 +337,10 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
                     <span className="text-[10px] font-bold text-slate-500">{isDst ? "No JKB proj" : `Proj ${formatDfsProjection(row.kind === "offense" ? row.projectedFantasyPoints : null)}`}</span>
                   </div>
                 </button>
+                <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-1.5">
+                  <div><span className="text-[9px] font-bold text-slate-500" title={FPA_HELP}>FPA TO POSITION</span><FpaSignal row={row} /></div>
+                  <div><span className="text-[9px] font-bold text-slate-500" title={DEF_AVG_HELP}>DEF VS AVG</span><DefenseSignal row={row} index={historyIndex} loading={historyLoading} /></div>
+                </div>
                 <IdentityWarning row={row} />
                 {expanded && (
                   <div className="mt-2 border-t border-slate-100 pt-2">
@@ -324,6 +350,7 @@ export default function NflDfsAnalyzerTable({ rows }: NflDfsAnalyzerTableProps) 
                       </p>
                     )}
                     <ResearchDetail row={row} />
+                    <NflDfsHistory key={row.dkId} row={row} target={historyTarget} index={historyIndex} />
                   </div>
                 )}
               </li>

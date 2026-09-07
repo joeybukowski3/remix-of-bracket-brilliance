@@ -23,6 +23,8 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
+import { buildDfsHistoryDelivery } from "./lib/nfl-dfs-history-delivery.mjs";
 import { parseCsv, buildNflverseTeamMap } from "./lib/nfl-schedules-results-core.mjs";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
 import { normalizeEpaTeamGameRows, TRAILING_GAMES } from "./lib/nfl-epa-week-rank-core.mjs";
@@ -56,10 +58,11 @@ const MARKET_TO_POSITION_SLICE = (market, playerPosition) => {
 };
 
 function parseArgs(argv) {
-  const args = { season: 2026, dryRun: false, asOf: null };
+  const args = { season: 2026, dryRun: false, asOf: null, dfsOnly: false };
   for (let i = 2; i < argv.length; i++) {
     const raw = argv[i];
     if (raw === "--dry-run") args.dryRun = true;
+    else if (raw === "--dfs-only") args.dfsOnly = true;
     else if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
     else if (raw === "--season") args.season = Number(argv[++i]);
     else if (raw.startsWith("--as-of=")) args.asOf = raw.slice(8);
@@ -145,6 +148,23 @@ function main() {
     statRows: loadAllStatRows(contextSeasons, normalizeIndividualHistoryStatRows),
     gameLookup, canonicalToNflverseAbbr, archiveIndex,
   });
+
+  if (args.dfsOnly) {
+    const directory = join(DATA_DIR, "yardage-history", String(season), `week-${String(week).padStart(2, "0")}`);
+    for (const [name, payload] of Object.entries(buildDfsHistoryDelivery(individualContext))) {
+      const text = JSON.stringify(payload);
+      const playerRows = Object.values(payload.players ?? {}).flat();
+      const defenseRows = Object.values(payload.defenseMatchups ?? {}).flat();
+      console.log(`${name}: bytes=${Buffer.byteLength(text)} gzip=${gzipSync(text).length} playerRows=${playerRows.length} defenseRows=${defenseRows.length} archivedLines=${[...playerRows, ...defenseRows].filter((row) => row.historicalSportsbookLine).length} asOf=${asOf}`);
+      if (!args.dryRun) {
+        mkdirSync(directory, { recursive: true });
+        const path = join(directory, name);
+        writeFileSync(`${path}.tmp`, text, "utf-8");
+        renameSync(`${path}.tmp`, path);
+      }
+    }
+    return;
+  }
 
   const players = {};
   const teamDefense = {};

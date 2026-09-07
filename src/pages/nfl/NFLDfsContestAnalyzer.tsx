@@ -36,6 +36,11 @@ export default function NFLDfsContestAnalyzer() {
   const projection = useWeeklyFantasyProjectionArtifact(WEEKLY_RANKINGS_SEASON, selectedWeek);
   const research = useWeeklyFantasyResearchArtifact(WEEKLY_RANKINGS_SEASON, selectedWeek);
 
+  const historyTarget = useMemo(() => {
+    const kickoffs = (games ?? []).filter((game) => game.season === WEEKLY_RANKINGS_SEASON && game.week === selectedWeek).map((game) => Date.parse(game.dateUtc)).filter(Number.isFinite);
+    return kickoffs.length ? { season: WEEKLY_RANKINGS_SEASON, week: selectedWeek, firstKickoff: new Date(Math.min(...kickoffs)).toISOString() } : undefined;
+  }, [games, selectedWeek]);
+
   const [parseResult, setParseResult] = useState<DraftKingsNflClassicParseResult | null>(null);
 
   const projectionArtifact = projection.status === "ready" ? projection.artifact : null;
@@ -107,7 +112,7 @@ export default function NFLDfsContestAnalyzer() {
       {enrichedAnalysis && (
         <>
           <NflDfsSlateSummary analysis={enrichedAnalysis} season={WEEKLY_RANKINGS_SEASON} week={selectedWeek} />
-          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} />
+          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} />
         </>
       )}
     </div>

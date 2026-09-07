@@ -10,6 +10,9 @@ positional allowance, with exact kickoff cutoffs and reference sample sizes.
 See [NFL DFS historical context](../features/nfl-dfs-history.md) for cohort,
 missing-data and reconstructed-source timing limitations. Canonical weekly FPA
 is passed through unchanged; no scoring, projection or rank formula changes.
+WU6A.2 exposes these comparison-only fields on DFS with a small static index and
+lazy position detail; it introduces no new load-bearing model features. Transport
+and presentation contracts are in the same historical-context feature document.
 
 | Feature | Definition | Source | Availability timing | Window/transformation | Models | Leakage risk | Status/notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -104,8 +104,10 @@ are explicitly provisional presentation thresholds, not model thresholds.
 
 ## Research/context adapter
 
-WU6A.1 adds a domain/data-only [historical context foundation](nfl-dfs-history.md).
-It does not yet change this page's UI or its published projection/rank behavior.
+WU6A.1 adds the [historical context foundation](nfl-dfs-history.md). WU6A.2 exposes
+canonical FPA and individual defense yardage comparisons on the main board, with
+lazy Player/Opponent Last 10 detail. The linked document owns delivery schemas,
+sample/line semantics and coverage. Published projection/rank behavior is unchanged.
 
 The optional companion artifact is
 `public/data/fantasy/weekly-research/<season>/week-<NN>.json`, loaded by
