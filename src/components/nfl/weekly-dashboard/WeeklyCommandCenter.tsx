@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { ArrowUpRight, BarChart3, CalendarDays, ChevronRight, Gauge, ListTree, Sparkles, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { NflDataMeta } from "@/lib/nfl/standings";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 import { formatTotal } from "@/lib/nfl/marketData";
 import { modelMarketGapBadgeColor } from "@/lib/nfl/gapColor";
 import { getNflRatingHeatClass } from "@/lib/nfl/ratingPresentation";
+import {
+  formatTeamPoints,
+  formatTotalDifference,
+  formatTotalIndicatorLabel,
+  totalIndicatorToneClasses,
+} from "@/lib/nfl/totalsProjectionData";
+import { isInteractiveTarget } from "@/components/nfl/yardage-review/interactiveTarget";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   WEEKLY_RANKING_POSITIONS,
@@ -95,6 +102,27 @@ function GapBadgeContent({ game }: { game: WeeklyDashboardGame }) {
     );
   }
   return <>{game.formattedComparison}</>;
+}
+
+/**
+ * JKB projected combined total, primary value plus a compact magnitude-aware
+ * lean chip vs. the market total (e.g. "Slight Lean Over +0.4"). Reuses the
+ * same JkbTotalVsMarket shape and formatters the matchup-detail hero uses, so
+ * the two never drift and never disagree on classification.
+ */
+function JkbTotalCell({ total }: { total: WeeklyDashboardGame["total"] }) {
+  if (!total) return <span className="text-[11px] font-bold text-slate-400">N/A</span>;
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="text-[11px] font-bold tabular-nums text-slate-800">{formatTeamPoints(total.jkbTotal)}</span>
+      <span
+        data-testid="jkb-total-lean-chip"
+        className={`inline-flex items-center rounded px-1 py-0.5 text-center text-[9px] font-extrabold leading-tight ${totalIndicatorToneClasses(total.indicator)}`}
+      >
+        {total.indicator ? `${formatTotalIndicatorLabel(total.indicator)} ${formatTotalDifference(total.difference)}` : "N/A"}
+      </span>
+    </div>
+  );
 }
 
 function ModuleHeader({ title, detail, action }: { title: string; detail?: string; action?: React.ReactNode }) {
@@ -262,46 +290,69 @@ function TeamIdentity({ team, align = "left" }: { team: WeeklyDashboardTeam; ali
 }
 
 function DesktopGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
+  const navigate = useNavigate();
   return (
     <div className="hidden overflow-hidden rounded-b-lg md:block">
       <table className="w-full table-fixed border-collapse text-left">
-        <caption className="sr-only">NFL weekly games with market and model spread comparisons</caption>
+        <caption className="sr-only">NFL weekly games with market and model spread and total comparisons</caption>
         <colgroup>
-          <col className="w-[92px]" /><col /><col className="w-8" /><col /><col className="w-[96px]" />
-          <col className="w-[96px]" /><col className="w-[102px]" /><col className="w-[64px]" /><col className="w-9" />
+          <col className="w-[88px]" /><col /><col className="w-8" /><col /><col className="w-[88px]" />
+          <col className="w-[88px]" /><col className="w-[96px]" /><col className="w-[68px]" /><col className="w-[128px]" /><col className="w-9" />
         </colgroup>
         <thead className="bg-slate-50 text-[9px] font-bold uppercase tracking-wider text-slate-500">
           <tr>
             <th className="px-3 py-2">Kickoff</th><th className="border-l border-slate-200 px-2 py-2 text-right">Away</th><th className="border-l border-slate-200 py-2 text-center">At</th>
             <th className="px-2 py-2">Home</th><th className="border-l border-slate-200 px-2 py-2 text-center">Market</th><th className="border-l border-slate-200 px-2 py-2 text-center">JKB</th>
-            <th className="border-l border-slate-200 px-2 py-2 text-center">Model vs Market</th><th className="border-l border-slate-200 px-2 py-2 text-center">Total</th><th><span className="sr-only">Open</span></th>
+            <th className="border-l border-slate-200 px-2 py-2 text-center">Model vs Market</th><th className="border-l border-slate-200 px-2 py-2 text-center">Mkt Total</th>
+            <th className="border-l border-slate-200 px-2 py-2 text-center">JKB Total</th><th><span className="sr-only">Open</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
-          {games.map((game) => (
-            <tr key={game.gameId} className="group bg-white transition-colors hover:bg-sky-50/50">
-              <td className="px-3 py-2.5 text-[10px] font-bold tabular-nums text-slate-600">{kickoffLabel(game.kickoffUtc)}</td>
-              <td className="border-l border-slate-200 px-2 py-2"><TeamIdentity team={game.away} align="right" /></td>
-              <td className="border-l border-slate-200 text-center text-[9px] font-bold uppercase text-slate-400">{game.neutralSite ? "vs" : "at"}</td>
-              <td className="px-2 py-2"><TeamIdentity team={game.home} /></td>
-              <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800">{game.market?.formattedSpread ?? "N/A"}</td>
-              <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-emerald-800">{game.projection?.formattedSpread ?? "N/A"}</td>
-              <td className="border-l border-slate-200 px-2 py-2 text-center">
-                <span
-                  className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
-                  style={modelMarketGapBadgeColor(game.absoluteModelMarketGap)}
-                >
-                  <GapBadgeContent game={game} />
-                </span>
-              </td>
-              <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-700">{formatTotal(game.market?.total)}</td>
-              <td className="pr-2 text-right">
-                <Link to={game.matchupHref} aria-label={`${game.away.name} ${game.neutralSite ? "versus" : "at"} ${game.home.name} matchup details`} className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-500 hover:bg-slate-900 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
-                  <ChevronRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </td>
-            </tr>
-          ))}
+          {games.map((game) => {
+            const rowLabel = `${game.away.name} ${game.neutralSite ? "versus" : "at"} ${game.home.name} matchup details`;
+            const openMatchup = () => navigate(game.matchupHref);
+            return (
+              <tr
+                key={game.gameId}
+                tabIndex={0}
+                role="button"
+                aria-label={rowLabel}
+                className="group cursor-pointer bg-white transition-colors hover:bg-sky-50/50 focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500"
+                onClick={(event) => {
+                  if (isInteractiveTarget(event.target)) return;
+                  openMatchup();
+                }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key !== "Enter" && event.key !== " ") return;
+                  event.preventDefault();
+                  openMatchup();
+                }}
+              >
+                <td className="px-3 py-2.5 text-[10px] font-bold tabular-nums text-slate-600">{kickoffLabel(game.kickoffUtc)}</td>
+                <td className="border-l border-slate-200 px-2 py-2"><TeamIdentity team={game.away} align="right" /></td>
+                <td className="border-l border-slate-200 text-center text-[9px] font-bold uppercase text-slate-400">{game.neutralSite ? "vs" : "at"}</td>
+                <td className="px-2 py-2"><TeamIdentity team={game.home} /></td>
+                <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-800">{game.market?.formattedSpread ?? "N/A"}</td>
+                <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-emerald-800">{game.projection?.formattedSpread ?? "N/A"}</td>
+                <td className="border-l border-slate-200 px-2 py-2 text-center">
+                  <span
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-extrabold tabular-nums"
+                    style={modelMarketGapBadgeColor(game.absoluteModelMarketGap)}
+                  >
+                    <GapBadgeContent game={game} />
+                  </span>
+                </td>
+                <td className="border-l border-slate-200 px-2 py-2 text-center text-[11px] font-bold tabular-nums text-slate-700">{formatTotal(game.market?.total)}</td>
+                <td className="border-l border-slate-200 px-2 py-2 text-center"><JkbTotalCell total={game.total} /></td>
+                <td className="pr-2 text-right">
+                  <span aria-hidden className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-500 group-hover:bg-slate-900 group-hover:text-white">
+                    <ChevronRight className="h-4 w-4" aria-hidden />
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -322,7 +373,18 @@ function MobileGameBoard({ games }: { games: readonly WeeklyDashboardGame[] }) {
           <Link key={game.gameId} to={game.matchupHref} className="group block px-2 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" aria-label={`${game.away.name} ${game.neutralSite ? "versus" : "at"} ${game.home.name} matchup details`}>
             <div className="mb-1 flex items-center justify-between gap-2 text-[9px] font-semibold text-slate-500">
               <span>{kickoffLabel(game.kickoffUtc)}{game.neutralSite ? " · Neutral" : ""}</span>
-              <span className="tabular-nums">Total {formatTotal(game.market?.total)}</span>
+              <span className="flex items-center gap-1">
+                <span className="tabular-nums">Mkt Total {formatTotal(game.market?.total)}</span>
+                {game.total && (
+                  <span
+                    data-testid="jkb-total-lean-chip"
+                    className={`rounded px-1 py-0.5 font-extrabold ${totalIndicatorToneClasses(game.total.indicator)}`}
+                  >
+                    <span className="tabular-nums">JKB {formatTeamPoints(game.total.jkbTotal)}</span>
+                    {game.total.indicator && ` · ${formatTotalIndicatorLabel(game.total.indicator)}`}
+                  </span>
+                )}
+              </span>
             </div>
             <div className="grid grid-cols-[minmax(0,1fr)_58px_58px_66px] items-center">
               <div className="min-w-0 space-y-0.5">

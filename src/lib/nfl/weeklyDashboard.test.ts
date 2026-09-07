@@ -7,6 +7,7 @@ import type { CurrentRatingRow } from "@/lib/nfl/currentRating2026";
 import type { MarketArtifact, MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { GameProjection, ProjectionsArtifact } from "@/lib/nfl/projectionData";
 import type { CanonicalNflTeam, NflGameRecord } from "@/lib/nfl/standings";
+import type { TeamTotalProjection, TeamTotalsArtifact } from "@/lib/nfl/totalsProjectionData";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 
 function team(abbr: string, name: string): CanonicalNflTeam {
@@ -120,6 +121,27 @@ function marketArtifact(rows: MarketCurrentGame[]): MarketArtifact {
 
 function projectionsArtifact(rows: GameProjection[]): ProjectionsArtifact {
   return { projections: Object.fromEntries(rows.map((row) => [row.gameId, row])) } as ProjectionsArtifact;
+}
+
+function totalProjection(gameId: string, awayAbbr: string, homeAbbr: string, projectedGameTotal: number): TeamTotalProjection {
+  return {
+    gameId,
+    season: 2026,
+    week: 1,
+    kickoffUtc: "2026-09-10T17:00:00Z",
+    homeTeam: homeAbbr,
+    awayTeam: awayAbbr,
+    homeExpectedPoints: projectedGameTotal / 2,
+    awayExpectedPoints: projectedGameTotal / 2,
+    projectedGameTotal,
+    modelVersion: "jkb-nfl-total-ridge-v1.0.0",
+    predictionTimestamp: "2026-09-04T17:58:46.030Z",
+    status: "projected",
+  };
+}
+
+function totalsArtifact(rows: TeamTotalProjection[]): TeamTotalsArtifact {
+  return { projections: Object.fromEntries(rows.map((row) => [row.gameId, row])) } as TeamTotalsArtifact;
 }
 
 function fantasyRow(position: FantasyPosition, rank: number, player: string, ppg: number): WeeklyRankingRow {
@@ -237,13 +259,20 @@ describe("buildWeeklyDashboard Model vs Market", () => {
     expect(result.largestModelMarketGaps.map((row) => row.gameId)).toEqual(["away-fav", "home-fav", "pickem"]);
   });
 
-  it("degrades independently when market, projection, or ratings are missing", () => {
+  it("degrades independently when market, projection, ratings, or totals are missing", () => {
     const result = buildWeeklyDashboard({ season: 2026, week: 1, games: [games[0]], teams: TEAMS });
-    expect(result.games[0]).toMatchObject({ market: null, projection: null, comparison: null, absoluteModelMarketGap: null });
+    expect(result.games[0]).toMatchObject({
+      market: null,
+      projection: null,
+      comparison: null,
+      absoluteModelMarketGap: null,
+      total: null,
+    });
     expect(result.games[0].away.rating).toBeNull();
     expect(result.diagnostics.missingMarketGameIds).toEqual(["home-fav"]);
     expect(result.diagnostics.missingProjectionGameIds).toEqual(["home-fav"]);
     expect(result.diagnostics.missingRatingTeamAbbrs).toEqual(["aaa", "bbb"]);
+    expect(result.diagnostics.missingTotalsGameIds).toEqual(["home-fav"]);
   });
 
   it("does not fabricate projected-total or over/under fields", () => {
@@ -289,6 +318,106 @@ describe("buildWeeklyDashboard Model vs Market", () => {
       marketArtifact: marketArtifact([market("one", "aaa", "bbb", -3, null)]),
     });
     expect(result.highlights.highestMarketTotal).toBeNull();
+  });
+});
+
+describe("buildWeeklyDashboard JKB Total vs Market", () => {
+  const game1 = game("total-game", "aaa", "bbb", "2026-09-10T17:00:00Z");
+
+  it("computes Strong Lean Over: JKB 51.2 vs market 48.5 => Strong Lean Over +2.7", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game1],
+      teams: TEAMS,
+      marketArtifact: marketArtifact([market("total-game", "aaa", "bbb", -3, 48.5)]),
+      totalsArtifact: totalsArtifact([totalProjection("total-game", "aaa", "bbb", 51.2)]),
+    });
+    const total = result.games[0].total!;
+    expect(total.jkbTotal).toBeCloseTo(51.2, 10);
+    expect(total.vegasTotal).toBe(48.5);
+    expect(total.difference).toBeCloseTo(2.7, 10);
+    expect(total.indicator).toBe("STRONG_OVER");
+  });
+
+  it("computes Strong Lean Under: JKB 45.9 vs market 48.5 => Strong Lean Under -2.6", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game1],
+      teams: TEAMS,
+      marketArtifact: marketArtifact([market("total-game", "aaa", "bbb", -3, 48.5)]),
+      totalsArtifact: totalsArtifact([totalProjection("total-game", "aaa", "bbb", 45.9)]),
+    });
+    const total = result.games[0].total!;
+    expect(total.difference).toBeCloseTo(-2.6, 10);
+    expect(total.indicator).toBe("STRONG_UNDER");
+  });
+
+  it("classifies boundary magnitudes correctly: +0.9 slight, +1.0 moderate, +2.5 moderate, +2.6 strong (and negative equivalents)", () => {
+    const cases: Array<[number, string]> = [
+      [48.5 + 0.9, "SLIGHT_OVER"],
+      [48.5 + 1.0, "MODERATE_OVER"],
+      [48.5 + 2.5, "MODERATE_OVER"],
+      [48.5 + 2.6, "STRONG_OVER"],
+      [48.5 - 0.9, "SLIGHT_UNDER"],
+      [48.5 - 1.0, "MODERATE_UNDER"],
+      [48.5 - 2.5, "MODERATE_UNDER"],
+      [48.5 - 2.6, "STRONG_UNDER"],
+    ];
+    for (const [jkbTotal, expected] of cases) {
+      const result = buildWeeklyDashboard({
+        season: 2026,
+        week: 1,
+        games: [game1],
+        teams: TEAMS,
+        marketArtifact: marketArtifact([market("total-game", "aaa", "bbb", -3, 48.5)]),
+        totalsArtifact: totalsArtifact([totalProjection("total-game", "aaa", "bbb", jkbTotal)]),
+      });
+      expect(result.games[0].total!.indicator).toBe(expected);
+    }
+  });
+
+  it("computes EVEN: JKB 48.5 vs market 48.5 => EVEN", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game1],
+      teams: TEAMS,
+      marketArtifact: marketArtifact([market("total-game", "aaa", "bbb", -3, 48.5)]),
+      totalsArtifact: totalsArtifact([totalProjection("total-game", "aaa", "bbb", 48.5)]),
+    });
+    const total = result.games[0].total!;
+    expect(total.difference).toBeCloseTo(0, 10);
+    expect(total.indicator).toBe("EVEN");
+  });
+
+  it("shows the JKB total with vegasTotal/difference/indicator N/A when the market total is missing, without hiding it", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game1],
+      teams: TEAMS,
+      marketArtifact: marketArtifact([market("total-game", "aaa", "bbb", -3, null)]),
+      totalsArtifact: totalsArtifact([totalProjection("total-game", "aaa", "bbb", 48.5)]),
+    });
+    const total = result.games[0].total!;
+    expect(total.jkbTotal).toBeCloseTo(48.5, 10);
+    expect(total.vegasTotal).toBeNull();
+    expect(total.difference).toBeNull();
+    expect(total.indicator).toBeNull();
+  });
+
+  it("is null (not fabricated) when there is no JKB total projection", () => {
+    const result = buildWeeklyDashboard({
+      season: 2026,
+      week: 1,
+      games: [game1],
+      teams: TEAMS,
+      marketArtifact: marketArtifact([market("total-game", "aaa", "bbb", -3, 48.5)]),
+    });
+    expect(result.games[0].total).toBeNull();
+    expect(result.diagnostics.missingTotalsGameIds).toEqual(["total-game"]);
   });
 });
 

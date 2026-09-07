@@ -61,21 +61,77 @@ export function formatTeamPoints(value: number | null | undefined): string {
   return value.toFixed(1);
 }
 
+/**
+ * Descriptive, magnitude-aware model-vs-market total classification — never a
+ * pick, edge, confidence or probability. Six directional tiers plus EVEN,
+ * derived from the DISPLAYED one-decimal difference (never the raw
+ * full-precision difference), so the label always agrees with the number
+ * shown next to it.
+ */
+export type TotalIndicator =
+  | "EVEN"
+  | "SLIGHT_OVER"
+  | "MODERATE_OVER"
+  | "STRONG_OVER"
+  | "SLIGHT_UNDER"
+  | "MODERATE_UNDER"
+  | "STRONG_UNDER";
+
 export type JkbTotalVsMarket = {
   jkbTotal: number;
   vegasTotal: number | null;
-  /** jkbTotal − vegasTotal. Null when there is no Vegas total to compare against. */
+  /** jkbTotal − vegasTotal, full precision. Null when there is no market total to compare against. */
   difference: number | null;
-  /** Neutral descriptive lean — never a pick, edge, confidence or probability. */
-  lean: "OVER LEAN" | "UNDER LEAN" | "NEUTRAL" | null;
+  /** Null when there is no market total to compare against. */
+  indicator: TotalIndicator | null;
 };
 
-/**
- * Half a point is the smallest meaningful gap given both figures round to one
- * decimal place — anything smaller is display noise, not a real lean.
- */
-const LEAN_THRESHOLD = 0.5;
+const TOTAL_INDICATOR_LABELS: Record<TotalIndicator, string> = {
+  EVEN: "EVEN",
+  SLIGHT_OVER: "Slight Lean Over",
+  MODERATE_OVER: "Moderate Lean Over",
+  STRONG_OVER: "Strong Lean Over",
+  SLIGHT_UNDER: "Slight Lean Under",
+  MODERATE_UNDER: "Moderate Lean Under",
+  STRONG_UNDER: "Strong Lean Under",
+};
 
+/** Human-readable classification label, e.g. "Slight Lean Over" / "EVEN" / "N/A". */
+export function formatTotalIndicatorLabel(indicator: TotalIndicator | null): string {
+  if (indicator == null) return NA;
+  return TOTAL_INDICATOR_LABELS[indicator];
+}
+
+function roundTo1Decimal(value: number): number {
+  return Number(value.toFixed(1));
+}
+
+/**
+ * Classifies a total-vs-market difference into a magnitude-aware lean, using
+ * the DISPLAYED (one-decimal-rounded) difference so the classification always
+ * matches the number a viewer sees next to it:
+ *
+ *   roundedDifference === 0        -> EVEN
+ *   0 < |roundedDifference| < 1     -> Slight
+ *   1 <= |roundedDifference| <= 2.5 -> Moderate
+ *   |roundedDifference| > 2.5       -> Strong
+ *
+ * Direction: positive -> Over, negative -> Under.
+ */
+export function classifyTotalIndicator(roundedDifference: number): TotalIndicator {
+  if (roundedDifference === 0) return "EVEN";
+  const magnitude = Math.abs(roundedDifference);
+  const direction = roundedDifference > 0 ? "OVER" : "UNDER";
+  const strength = magnitude < 1 ? "SLIGHT" : magnitude <= 2.5 ? "MODERATE" : "STRONG";
+  return `${strength}_${direction}` as TotalIndicator;
+}
+
+/**
+ * Compares the JKB projected total to the current market total. Returns null
+ * only when there is no JKB projection at all — a missing market total still
+ * returns the JKB total with `vegasTotal`/`difference`/`indicator` as null, so
+ * callers render "JKB total, comparison N/A" rather than hiding the total.
+ */
 export function compareTotalToMarket(
   projection: TeamTotalProjection | null,
   market: MarketCurrentGame | null | undefined
@@ -83,12 +139,39 @@ export function compareTotalToMarket(
   if (!projection) return null;
   const vegasTotal = market?.total ?? null;
   if (vegasTotal == null || !Number.isFinite(vegasTotal)) {
-    return { jkbTotal: projection.projectedGameTotal, vegasTotal: null, difference: null, lean: null };
+    return { jkbTotal: projection.projectedGameTotal, vegasTotal: null, difference: null, indicator: null };
   }
   const difference = projection.projectedGameTotal - vegasTotal;
-  const lean: JkbTotalVsMarket["lean"] =
-    difference >= LEAN_THRESHOLD ? "OVER LEAN" : difference <= -LEAN_THRESHOLD ? "UNDER LEAN" : "NEUTRAL";
-  return { jkbTotal: projection.projectedGameTotal, vegasTotal, difference, lean };
+  const indicator = classifyTotalIndicator(roundTo1Decimal(difference));
+  return { jkbTotal: projection.projectedGameTotal, vegasTotal, difference, indicator };
+}
+
+/**
+ * Text/background classes for the indicator chip — three progressively
+ * stronger shades per direction (Slight/Moderate/Strong), a neutral slate
+ * treatment for EVEN, and a muted fallback for "no comparison available".
+ * Color is never the only signal: every caller renders the full text label
+ * alongside these classes.
+ */
+export function totalIndicatorToneClasses(indicator: TotalIndicator | null): string {
+  switch (indicator) {
+    case "SLIGHT_OVER":
+      return "bg-emerald-50 text-emerald-700";
+    case "MODERATE_OVER":
+      return "bg-emerald-100 text-emerald-800";
+    case "STRONG_OVER":
+      return "bg-emerald-700 text-white";
+    case "SLIGHT_UNDER":
+      return "bg-rose-50 text-rose-700";
+    case "MODERATE_UNDER":
+      return "bg-rose-100 text-rose-800";
+    case "STRONG_UNDER":
+      return "bg-rose-700 text-white";
+    case "EVEN":
+      return "bg-slate-100 text-slate-600";
+    default:
+      return "bg-slate-100 text-slate-400";
+  }
 }
 
 /** Signed one-decimal difference, e.g. "+2.5" / "−1.5" / "0.0". */

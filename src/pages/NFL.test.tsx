@@ -9,6 +9,7 @@ const useDashboard = vi.hoisted(() => vi.fn(() => ({
   season: { loading: false, error: null, data: { gamesMeta: null } },
   market: { error: null },
   projections: { error: null },
+  totals: { error: null },
   ratings: { error: null },
   fantasy: { contextErrors: [] },
 })));

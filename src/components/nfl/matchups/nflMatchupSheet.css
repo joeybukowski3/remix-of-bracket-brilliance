@@ -226,11 +226,13 @@
 .matchup-market-band > div > div:nth-child(2) > div > div:nth-child(2) { color: var(--sheet-muted) !important; font-size: 0.55rem !important; }
 
 /*
- * JKB Projected Score — compact team-total strip beneath the market band.
- * Deliberately a sibling of .matchup-market-band rather than an added cell
- * inside it: that grid's CSS is hand-tuned to an exact 7-child count via
- * nth-child selectors, so a new independent block avoids any risk of
- * disturbing the existing spread/total/moneyline layout.
+ * JKB Projected Total — combined-total-only model-vs-market card beneath the
+ * market band. Deliberately a sibling of .matchup-market-band rather than an
+ * added cell inside it: that grid's CSS is hand-tuned to an exact 7-child
+ * count via nth-child selectors, so a new independent block avoids any risk
+ * of disturbing the existing spread/total/moneyline layout. Individual
+ * team-level projected points are never rendered here — see
+ * MatchupProjectedScore.tsx.
  */
 .matchup-projected-score {
   border-top: 1px solid var(--sheet-border);
@@ -245,44 +247,6 @@
   font-weight: 850;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-}
-
-.matchup-projected-score__teams {
-  display: flex;
-  align-items: stretch;
-  gap: 0.5rem;
-}
-
-.matchup-projected-score__team {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 0;
-  align-items: center;
-  gap: 0.4rem;
-  border-radius: 8px;
-  background: var(--sheet-panel-2);
-  padding: 0.4rem 0.55rem;
-}
-
-.matchup-projected-score__team-abbr {
-  flex: 1 1 auto;
-  overflow: hidden;
-  color: var(--sheet-muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.matchup-projected-score__team--away .matchup-projected-score__team-pts { color: var(--sheet-away); }
-.matchup-projected-score__team--home .matchup-projected-score__team-pts { color: var(--sheet-home); }
-
-.matchup-projected-score__team-pts {
-  flex: 0 0 auto;
-  font-size: 1.1rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 .matchup-projected-score__total {
@@ -332,9 +296,11 @@
   font-weight: 800;
 }
 
-.matchup-projected-score__lean {
-  color: var(--sheet-muted);
-  font-weight: 700;
+.matchup-projected-score__indicator {
+  border-radius: 5px;
+  padding: 0.05rem 0.4rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
 }
 
 .matchup-projected-score__disclaimer {
@@ -366,7 +332,6 @@
     margin-bottom: 0;
     max-width: 6.5rem;
   }
-  .matchup-projected-score__teams { flex: 1 1 auto; max-width: 22rem; }
   .matchup-projected-score__total { flex: 0 0 auto; margin-top: 0; min-width: 11rem; }
   .matchup-projected-score__vs-market {
     flex: 1 1 auto;

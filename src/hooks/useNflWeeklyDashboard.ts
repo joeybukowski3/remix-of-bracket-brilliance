@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNflCurrentRating2026, NFL_CURRENT_RATING_SEASON } from "@/hooks/useNflCurrentRating2026";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
+import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
 import { fantasyRowsFromArtifact } from "@/lib/fantasy/weeklyDashboardFantasyAdapter";
@@ -13,6 +14,7 @@ export function useNflWeeklyDashboard(search: string) {
   const season = useNflSeasonData(NFL_CURRENT_RATING_SEASON);
   const market = useNflMatchupMarket();
   const projections = useNflMatchupProjections();
+  const totals = useNflMatchupTotals();
   const ratings = useNflCurrentRating2026();
   const weekSelection = useMemo(
     () => resolveNflWeekSelection(season.data?.games ?? [], { search }),
@@ -33,13 +35,14 @@ export function useNflWeeklyDashboard(search: string) {
         teams: season.data.teams,
         marketArtifact: market.artifact,
         projectionsArtifact: projections.artifact,
+        totalsArtifact: totals.artifact,
         currentRatings: ratings.data?.teams ?? null,
         fantasyRows,
       });
-    }, [season.data, weekSelection.week, market.artifact, projections.artifact, ratings.data, fantasyRows],
+    }, [season.data, weekSelection.week, market.artifact, projections.artifact, totals.artifact, ratings.data, fantasyRows],
   );
 
   const fantasyContextErrors = fantasy.status === "error" || fantasy.status === "missing" ? [fantasy.error.message] : [];
 
-  return { dashboard, weekSelection, season, market, projections, ratings, fantasy: { ...fantasy, contextErrors: fantasyContextErrors } };
+  return { dashboard, weekSelection, season, market, projections, totals, ratings, fantasy: { ...fantasy, contextErrors: fantasyContextErrors } };
 }

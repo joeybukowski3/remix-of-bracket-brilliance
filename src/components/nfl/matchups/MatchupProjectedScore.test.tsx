@@ -1,32 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { render, screen } from "@testing-library/react";
 import MatchupProjectedScore from "@/components/nfl/matchups/MatchupProjectedScore";
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
-import type { NflMatchup } from "@/lib/nfl/matchups";
 import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
-
-const team = (abbr: string, teamName: string, slug: string) => ({
-  abbr,
-  teamName,
-  slug,
-  division: "AFC East",
-  conference: "AFC",
-  powerRank: 5,
-  overallPct: 6.8,
-});
-
-const MATCHUP = {
-  gameId: "2026_01_NE_SEA",
-  slug: "new-england-patriots-at-seattle-seahawks",
-  week: 1,
-  season: 2026,
-  kickoffUtc: "2026-09-10T00:20:00.000Z",
-  stadium: "Lumen Field",
-  spread: null,
-  away: team("ne", "New England Patriots", "new-england-patriots"),
-  home: team("sea", "Seattle Seahawks", "seattle-seahawks"),
-} as unknown as NflMatchup;
 
 function totalProjection(overrides: Partial<TeamTotalProjection> = {}): TeamTotalProjection {
   return {
@@ -36,9 +12,9 @@ function totalProjection(overrides: Partial<TeamTotalProjection> = {}): TeamTota
     kickoffUtc: "2026-09-10T00:20:00.000Z",
     homeTeam: "sea",
     awayTeam: "ne",
-    homeExpectedPoints: 22.122430036037450,
-    awayExpectedPoints: 24.875959106783746,
-    projectedGameTotal: 46.998389142821196,
+    homeExpectedPoints: 22.1,
+    awayExpectedPoints: 24.9,
+    projectedGameTotal: 48.5,
     modelVersion: "jkb-nfl-total-ridge-v1.0.0",
     predictionTimestamp: "2026-09-04T17:58:46.030Z",
     status: "projected",
@@ -57,7 +33,7 @@ function market(overrides: Partial<MarketCurrentGame> = {}): MarketCurrentGame {
     neutralSite: false,
     spread: { home: -3.5, away: 3.5 },
     moneyline: { home: -198, away: 164 },
-    total: 44.5,
+    total: 48.5,
     rawSpreadLine: -3.5,
     ...overrides,
   };
@@ -65,89 +41,110 @@ function market(overrides: Partial<MarketCurrentGame> = {}): MarketCurrentGame {
 
 function renderCard(props: Partial<React.ComponentProps<typeof MatchupProjectedScore>> = {}) {
   return render(
-    <MemoryRouter>
-      <MatchupProjectedScore
-        matchup={MATCHUP}
-        totalProjection={totalProjection()}
-        market={market()}
-        loading={false}
-        {...props}
-      />
-    </MemoryRouter>
+    <MatchupProjectedScore totalProjection={totalProjection()} market={market()} loading={false} {...props} />
   );
 }
 
 describe("MatchupProjectedScore", () => {
-  it("labels the card as a JKB projection", () => {
-    renderCard();
-    expect(screen.getByText("JKB Projected Score")).toBeInTheDocument();
-  });
-
-  it("shows each team's expected points to one decimal place", () => {
-    renderCard();
-    expect(screen.getByText("24.9")).toBeInTheDocument(); // away (NE)
-    expect(screen.getByText("22.1")).toBeInTheDocument(); // home (SEA)
-  });
-
-  it("shows both team abbreviations prominently, not only the combined total", () => {
-    renderCard();
-    expect(screen.getByText("NE")).toBeInTheDocument();
-    expect(screen.getByText("SEA")).toBeInTheDocument();
-  });
-
-  it("shows the JKB projected game total to one decimal place, clearly labelled", () => {
+  it("labels the card JKB Projected Total and shows the combined total", () => {
     renderCard();
     expect(screen.getByText("JKB Projected Total")).toBeInTheDocument();
-    expect(screen.getAllByText("47.0").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("48.5").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("never implies the figures are Vegas implied team totals", () => {
+  it("never renders individual team projected scores", () => {
+    renderCard({
+      totalProjection: totalProjection({ homeExpectedPoints: 22.1, awayExpectedPoints: 24.9, projectedGameTotal: 47.0 }),
+    });
+    expect(screen.queryByText("22.1")).not.toBeInTheDocument();
+    expect(screen.queryByText("24.9")).not.toBeInTheDocument();
+    expect(screen.queryByText("NE")).not.toBeInTheDocument();
+    expect(screen.queryByText("SEA")).not.toBeInTheDocument();
+  });
+
+  it("shows the market total", () => {
+    renderCard({ market: market({ total: 47.5 }) });
+    expect(screen.getByText("Market Total")).toBeInTheDocument();
+    expect(screen.getByText("47.5")).toBeInTheDocument();
+  });
+
+  it("computes Slight Lean Over: JKB 48.9 vs market 48.5 => Slight Lean Over +0.4", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 48.9 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("+0.4")).toBeInTheDocument();
+    expect(screen.getByText("Slight Lean Over")).toBeInTheDocument();
+  });
+
+  it("computes Slight Lean Under: JKB 48.1 vs market 48.5 => Slight Lean Under -0.4", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 48.1 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("−0.4")).toBeInTheDocument();
+    expect(screen.getByText("Slight Lean Under")).toBeInTheDocument();
+  });
+
+  it("computes Moderate Lean Over: JKB 50.0 vs market 48.5 => Moderate Lean Over +1.5", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 50.0 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("+1.5")).toBeInTheDocument();
+    expect(screen.getByText("Moderate Lean Over")).toBeInTheDocument();
+  });
+
+  it("computes Moderate Lean Under: JKB 46.0 vs market 48.5 => Moderate Lean Under -2.5", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 46.0 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("−2.5")).toBeInTheDocument();
+    expect(screen.getByText("Moderate Lean Under")).toBeInTheDocument();
+  });
+
+  it("computes Strong Lean Over: JKB 51.1 vs market 48.5 => Strong Lean Over +2.6", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 51.1 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("+2.6")).toBeInTheDocument();
+    const indicator = screen.getByText("Strong Lean Over");
+    expect(indicator).toBeInTheDocument();
+    expect(indicator.className).toContain("emerald-700");
+    expect(indicator.className).toContain("text-white");
+  });
+
+  it("computes Strong Lean Under: JKB 45.8 vs market 48.5 => Strong Lean Under -2.7", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 45.8 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("−2.7")).toBeInTheDocument();
+    const indicator = screen.getByText("Strong Lean Under");
+    expect(indicator).toBeInTheDocument();
+    expect(indicator.className).toContain("rose-700");
+    expect(indicator.className).toContain("text-white");
+  });
+
+  it("uses progressively stronger shades for Slight vs Moderate Over, with the full label always visible", () => {
+    const { rerender } = renderCard({
+      totalProjection: totalProjection({ projectedGameTotal: 48.9 }),
+      market: market({ total: 48.5 }),
+    });
+    expect(screen.getByText("Slight Lean Over").className).toContain("emerald-50");
+    rerender(
+      <MatchupProjectedScore
+        totalProjection={totalProjection({ projectedGameTotal: 50.0 })}
+        market={market({ total: 48.5 })}
+        loading={false}
+      />
+    );
+    expect(screen.getByText("Moderate Lean Over").className).toContain("emerald-100");
+  });
+
+  it("computes EVEN: JKB 48.5 vs market 48.5 => EVEN 0.0", () => {
+    renderCard({ totalProjection: totalProjection({ projectedGameTotal: 48.5 }), market: market({ total: 48.5 }) });
+    expect(screen.getByText("0.0")).toBeInTheDocument();
+    expect(screen.getByText("EVEN")).toBeInTheDocument();
+  });
+
+  it("shows N/A for market total, difference and indicator when there is no market total, but still shows the JKB total", () => {
+    renderCard({ market: market({ total: null }) });
+    expect(screen.getByText("48.5")).toBeInTheDocument();
+    const naValues = screen.getAllByText("N/A");
+    expect(naValues.length).toBe(3); // Market Total, Difference, Indicator
+  });
+
+  it("never labels the comparison a bet, pick, edge, EV, confidence or recommendation", () => {
     renderCard();
-    expect(screen.getByText(/not a vegas implied team total/i)).toBeInTheDocument();
-  });
-
-  describe("Vegas comparison", () => {
-    it("shows Vegas Total, JKB Total and JKB Difference when a market total exists", () => {
-      renderCard();
-      expect(screen.getByText("Vegas Total")).toBeInTheDocument();
-      expect(screen.getByText("44.5")).toBeInTheDocument();
-      expect(screen.getByText("JKB Total")).toBeInTheDocument();
-      expect(screen.getByText("JKB Difference")).toBeInTheDocument();
-    });
-
-    it("signs a positive difference and adds an OVER LEAN label past the threshold", () => {
-      renderCard({ market: market({ total: 44.5 }) }); // 47.0 - 44.5 = +2.5
-      expect(screen.getByText(/\+2\.5/)).toBeInTheDocument();
-      expect(screen.getByText(/OVER LEAN/)).toBeInTheDocument();
-    });
-
-    it("signs a negative difference and adds an UNDER LEAN label past the threshold", () => {
-      renderCard({
-        totalProjection: totalProjection({ projectedGameTotal: 40, homeExpectedPoints: 20, awayExpectedPoints: 20 }),
-        market: market({ total: 44.5 }),
-      });
-      expect(screen.getByText(/−4\.5/)).toBeInTheDocument();
-      expect(screen.getByText(/UNDER LEAN/)).toBeInTheDocument();
-    });
-
-    it("never labels the comparison +EV, edge, confidence or probability", () => {
-      renderCard();
-      const text = document.body.textContent?.toLowerCase() ?? "";
-      for (const banned of ["+ev", "edge %", "confidence", "probability"]) {
-        expect(text).not.toContain(banned);
-      }
-    });
-
-    it("hides the comparison entirely when there is no Vegas total", () => {
-      renderCard({ market: market({ total: null }) });
-      expect(screen.queryByText("Vegas Total")).not.toBeInTheDocument();
-      expect(screen.queryByText("JKB Difference")).not.toBeInTheDocument();
-    });
-
-    it("hides the comparison entirely when there is no market at all", () => {
-      renderCard({ market: null });
-      expect(screen.queryByText("Vegas Total")).not.toBeInTheDocument();
-    });
+    const text = document.body.textContent?.toLowerCase() ?? "";
+    for (const banned of ["bet", "pick", "edge", "+ev", "confidence", "recommendation"]) {
+      expect(text).not.toContain(banned);
+    }
   });
 
   describe("missing/unavailable JKB projection", () => {
@@ -165,7 +162,7 @@ describe("MatchupProjectedScore", () => {
 
     it("still labels the card even when the projection is unavailable", () => {
       renderCard({ totalProjection: null });
-      expect(screen.getByText("JKB Projected Score")).toBeInTheDocument();
+      expect(screen.getByText("JKB Projected Total")).toBeInTheDocument();
     });
   });
 });

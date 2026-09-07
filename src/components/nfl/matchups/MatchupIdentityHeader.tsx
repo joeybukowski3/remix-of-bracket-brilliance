@@ -204,7 +204,6 @@ export default function MatchupIdentityHeader({
       )}
 
       <MatchupProjectedScore
-        matchup={matchup}
         totalProjection={totalProjection}
         market={market}
         loading={totalProjectionLoading}
