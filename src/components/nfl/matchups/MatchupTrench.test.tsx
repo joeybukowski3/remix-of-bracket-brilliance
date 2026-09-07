@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupTrenches from "@/components/nfl/matchups/MatchupTrenches";
 import MatchupUnitComparison from "@/components/nfl/matchups/MatchupUnitComparison";
@@ -129,15 +129,31 @@ describe("preseason — 2025 only", () => {
 
   it("labels each side of a battle with its team and role", () => {
     renderTrenches(resolveTrenchPeriods(0, 0));
-    // The possession the row belongs to establishes which unit each side is.
+    // The possession the row belongs to establishes which unit each side is,
+    // but the away team's label always comes first (left column) regardless
+    // of which side is on offense for that possession.
     const passRush = screen.getByRole("img", {
       name: /Pass Block vs Pass Rush.*New England Patriots offense.*Seattle Seahawks defense/,
     });
     expect(passRush).toBeInTheDocument();
     const runStop = screen.getAllByRole("img", {
-      name: /Run Block vs Run Stop.*Seattle Seahawks offense.*New England Patriots defense/,
+      name: /Run Block vs Run Stop.*New England Patriots defense.*Seattle Seahawks offense/,
     });
     expect(runStop.length).toBeGreaterThan(0);
+  });
+
+  it("keeps NE (away) left and SEA (home) right across both reciprocal possessions", () => {
+    renderTrenches(resolveTrenchPeriods(0, 0));
+    // NE-ball possession: NE offense vs SEA defense — NE left, SEA right.
+    const neBall = screen.getByRole("img", { name: /Pass Block vs Pass Rush.*New England Patriots offense/ });
+    expect(neBall).toHaveAttribute("aria-label", expect.stringContaining("New England Patriots offense"));
+    // SEA-ball possession: SEA offense vs NE defense — NE STILL left, SEA STILL right.
+    // Rows render away-ball possession first, then home-ball, so index 1 is SEA's ball.
+    const seaBall = screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })[1];
+    const label = seaBall.getAttribute("aria-label") ?? "";
+    expect(label.indexOf("New England Patriots")).toBeLessThan(label.indexOf("Seattle Seahawks"));
+    expect(label).toContain("New England Patriots defense");
+    expect(label).toContain("Seattle Seahawks offense");
   });
 });
 
@@ -253,6 +269,9 @@ describe("offense vs defense pairings", () => {
         />
       </MemoryRouter>
     );
+    // "Pass Block vs Pass Rush" lives in the Passing group tab, not the
+    // Overall tab shown by default.
+    fireEvent.click(screen.getByRole("tab", { name: "Passing" }));
     // Each pairing renders one row per period, the same season on both sides.
     const rows = screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ });
     expect(rows.some((r) => /2025 Season/.test(r.getAttribute("aria-label") ?? ""))).toBe(true);

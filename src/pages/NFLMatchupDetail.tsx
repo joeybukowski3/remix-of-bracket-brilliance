@@ -61,11 +61,11 @@ import {
 } from "@/lib/nfl/matchupSampleWindow";
 import "@/components/nfl/matchups/nflMatchupSheet.css";
 import MatchupAvailabilityPanel from "@/components/nfl/matchups/MatchupAvailabilityPanel";
+import MatchupBookSays from "@/components/nfl/matchups/MatchupBookSays";
 import MatchupComparisonPanel from "@/components/nfl/matchups/MatchupComparisonPanel";
 import MatchupDataControls from "@/components/nfl/matchups/MatchupDataControls";
 import MatchupExplainer from "@/components/nfl/matchups/MatchupExplainer";
 import MatchupIdentityHeader from "@/components/nfl/matchups/MatchupIdentityHeader";
-import MatchupMarketContext from "@/components/nfl/matchups/MatchupMarketContext";
 import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile";
 import MatchupMobileStickyHeader from "@/components/nfl/matchups/MatchupMobileStickyHeader";
 import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
@@ -498,43 +498,45 @@ export default function NFLMatchupDetail() {
           onOpenCategory={navigation.openCategory}
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
-          unitBattles={
-            isLegacyObserved ? <MatchupUnitBattles
-              matchup={matchup}
-              resolver={metricResolver}
-              successRate={successRate}
-              trench={trench}
-            /> : undefined
-          }
-          periodComparison={
-            isLegacyObserved && successArtifact && successRate ? (
-              <MatchupPeriodComparison
+          coaching={
+            isLegacyObserved ? (
+              <MatchupCoaching
                 matchup={matchup}
-                successRate={successRate}
-                note={describeSuccessPeriods([...successRate.periods])}
+                artifact={coachingRatings.artifact}
+                loading={coachingRatings.loading}
               />
             ) : undefined
           }
-        >
-          {isLegacyObserved && <><MatchupMarketContext matchup={matchup} projection={projection} />
+        />
 
-          <div className="grid grid-cols-1 items-start gap-2 @[1080px]:grid-cols-2">
-            <MatchupTrenches
-              matchup={matchup}
-              trench={trench}
-              note={trench ? describeTrenchPeriods(trench.periods) : undefined}
-            />
+        {isLegacyObserved && successArtifact && successRate && (
+          <MatchupPeriodComparison
+            matchup={matchup}
+            successRate={successRate}
+            note={describeSuccessPeriods([...successRate.periods])}
+          />
+        )}
 
-            <MatchupMarketProfile matchup={matchup} market={market} />
+        {isLegacyObserved && (
+          <MatchupUnitBattles
+            matchup={matchup}
+            resolver={metricResolver}
+            successRate={successRate}
+            trench={trench}
+          />
+        )}
 
-            <MatchupCoaching
-              matchup={matchup}
-              artifact={coachingRatings.artifact}
-              loading={coachingRatings.loading}
-            />
-          </div>
-          </>}
-        </MatchupComparisonPanel>
+        {isLegacyObserved && (
+          <MatchupTrenches
+            matchup={matchup}
+            trench={trench}
+            note={trench ? describeTrenchPeriods(trench.periods) : undefined}
+          />
+        )}
+
+        {isLegacyObserved && (
+          <MatchupBookSays matchup={matchup} market={market} projection={projection} />
+        )}
       </div>
 
       <div {...panelProps("availability")}>

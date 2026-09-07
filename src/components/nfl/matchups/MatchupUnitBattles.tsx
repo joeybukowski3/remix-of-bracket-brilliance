@@ -3,6 +3,7 @@ import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import { MATCHUP_GROUP_BAND, MATCHUP_PANEL_CAPTION, MATCHUP_PANEL_TITLE } from "@/components/nfl/matchups/matchupTypography";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
+import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
 import {
@@ -225,6 +226,7 @@ function PossessionPanel({
   resolver,
   successRate,
   trench,
+  activeGroup,
 }: {
   awayTeam: NflMatchupTeam;
   homeTeam: NflMatchupTeam;
@@ -233,6 +235,8 @@ function PossessionPanel({
   resolver: NflMatchupMetricResolver;
   successRate?: MatchupSuccessRateConfig;
   trench?: MatchupTrenchConfig;
+  /** Which UNIT_BATTLE_GROUPS id the group tabs currently show. */
+  activeGroup: string;
 }) {
   /**
    * Columns are keyed by SIDE, not by role: the away team is always the left
@@ -263,7 +267,7 @@ function PossessionPanel({
       </div>
 
       <div>
-        {UNIT_BATTLE_GROUPS.map((group) => (
+        {UNIT_BATTLE_GROUPS.filter((group) => group.id === activeGroup).map((group) => (
           <div key={group.id}>
             <h4 className={MATCHUP_GROUP_BAND}>{group.label}</h4>
             {group.pairings.map((pairing) => (
@@ -300,12 +304,18 @@ export default function MatchupUnitBattles({
   trench?: MatchupTrenchConfig;
 }) {
   const [side, setSide] = useState<PossessionSide>("away-ball");
+  const [activeGroup, setActiveGroup] = useState<string>(UNIT_BATTLE_GROUPS[0].id);
   const { away, home } = matchup;
 
   const options = [
     { value: "away-ball" as const, label: `${away.abbr.toUpperCase()} Ball`, shortLabel: `${away.abbr.toUpperCase()} Ball` },
     { value: "home-ball" as const, label: `${home.abbr.toUpperCase()} Ball`, shortLabel: `${home.abbr.toUpperCase()} Ball` },
   ];
+
+  const groupTabs: MatchupTabDef[] = UNIT_BATTLE_GROUPS.map((group) => ({
+    id: group.id,
+    label: group.label,
+  }));
 
   return (
     <MatchupSection
@@ -324,6 +334,14 @@ export default function MatchupUnitBattles({
         />
       }
     >
+      <MatchupTabStrip
+        tabs={groupTabs}
+        activeId={activeGroup}
+        onSelect={setActiveGroup}
+        ariaLabel="Unit by unit groups"
+        className="mb-2"
+      />
+
       <div className="space-y-2">
         <div className={side === "away-ball" ? "" : "hidden lg:block"}>
           <PossessionPanel
@@ -333,6 +351,7 @@ export default function MatchupUnitBattles({
             resolver={resolver}
             successRate={successRate}
             trench={trench}
+            activeGroup={activeGroup}
           />
         </div>
         <div className={side === "home-ball" ? "" : "hidden lg:block"}>
@@ -343,6 +362,7 @@ export default function MatchupUnitBattles({
             resolver={resolver}
             successRate={successRate}
             trench={trench}
+            activeGroup={activeGroup}
           />
         </div>
       </div>

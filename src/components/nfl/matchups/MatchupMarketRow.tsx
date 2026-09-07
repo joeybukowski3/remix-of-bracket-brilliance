@@ -1,4 +1,5 @@
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
+import { MATCHUP_COMPACT_ROW_MAX_WIDTH } from "@/components/nfl/matchups/matchupTypography";
 import { rankCellClass } from "@/lib/nfl/rankTier";
 import { MARKET_PERIOD_LABELS, type MarketPeriodKey } from "@/lib/nfl/marketData";
 import { METRIC_NA, type NflMatchupMetricValue } from "@/lib/nfl/matchupMetrics";
@@ -84,6 +85,7 @@ export default function MatchupMarketRow({
 }) {
   return (
     <div className="border-b border-slate-100 py-1.5 last:border-0">
+      <div className={MATCHUP_COMPACT_ROW_MAX_WIDTH}>
       <div className="mb-0.5 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (
           <>
@@ -129,6 +131,7 @@ export default function MatchupMarketRow({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
