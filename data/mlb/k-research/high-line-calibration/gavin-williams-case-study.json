@@ -1,0 +1,176 @@
+{
+ "studyId": "mlb-k-high-line-calibration-v1",
+ "section": "gavin-williams-2026-09-06-case-study",
+ "generatedAt": "2026-09-06T20:42:24.971Z",
+ "market": {
+  "line": 7.5,
+  "oddsOver": "-158",
+  "oddsUnder": "+124",
+  "book": "fanduel",
+  "capturedAt": "2026-09-06T17:10:49.948Z",
+  "slateDate": "2026-09-06"
+ },
+ "pitcher": {
+  "seasonKRatePct": 33,
+  "seasonKPer9": 12,
+  "seasonWhiffRatePct": 32.3,
+  "recentKRate": 0.392,
+  "recentKPer9": 14.625,
+  "last3KRate": 0.45,
+  "last5KRate": 0.3679,
+  "handedness": "R",
+  "recentStarts": [
+   {
+    "date": "2026-09-01",
+    "opponent": "TOR",
+    "ip": "7.0",
+    "k": 13,
+    "bf": 25,
+    "pitches": 97
+   },
+   {
+    "date": "2026-08-25",
+    "opponent": "LAA",
+    "ip": "1.1",
+    "k": 3,
+    "bf": 11,
+    "pitches": 62
+   },
+   {
+    "date": "2026-08-20",
+    "opponent": "SF",
+    "ip": "5.2",
+    "k": 11,
+    "bf": 24,
+    "pitches": 96
+   },
+   {
+    "date": "2026-08-14",
+    "opponent": "SD",
+    "ip": "4.1",
+    "k": 5,
+    "bf": 24,
+    "pitches": 91
+   },
+   {
+    "date": "2026-08-08",
+    "opponent": "CWS",
+    "ip": "5.2",
+    "k": 7,
+    "bf": 22,
+    "pitches": 102
+   }
+  ],
+  "recentIpAverage": 4.8,
+  "recentIpMedian": 5.667,
+  "recentBfAverage": 21.2,
+  "recentPitchAverage": 89.6,
+  "homeSeasonKRatePct": 34.07202216066482,
+  "homeLastFiveKRatePct": 43.47826086956522
+ },
+ "workload": {
+  "modelVersion": "mlb-k-workload-v2",
+  "expectedPitchLimit": 87.23,
+  "projectedBF": 21.775,
+  "projectedInnings": 4.946,
+  "bfPerInning": 4.4025,
+  "recentPitchAverage": 87.71,
+  "recentBfAverage": 20.76,
+  "recentIpAverage": 4.83,
+  "confidenceGrade": "A",
+  "flags": [
+   "HAND_SPLIT_UNAVAILABLE"
+  ],
+  "note": "Projected innings 4.946 is essentially the mean of the last five starts (72 outs / 5 = 4.8 IP). One 1.1 IP start on 2026-08-25 pulls that mean down 0.87 IP below the 5.67 IP median of the other four."
+ },
+ "opponentDet": {
+  "seasonKRate": 0.2278,
+  "recentKRateRaw": 0.2703,
+  "recentKRateAfterModelRegression": 0.242675,
+  "projectedLineupKRatePct": 22.4889,
+  "vsRhpKRate": null,
+  "opponentEnvironmentRate": 0.2313468125,
+  "leagueAnchor": 0.2208,
+  "last10AvgOpposingStarterKs": 5.7,
+  "last10AvgTeamKs": 10.1,
+  "last10OpposingStarterKPerInning": 1.1325,
+  "note": "DET raw recent K rate 0.2703 vs season 0.2278 -- a +4.25 point short-term shift. The model regresses recent 35/65 back to season, so the environment input only moves to 0.2427, and the matchup adjustment that survives is +0.0079 K rate, worth +0.17 Ks."
+ },
+ "projection": {
+  "pitcherSkillRate": 0.3126867395160947,
+  "pitcherSkillRateShrunk": 0.2713,
+  "shrinkageAlpha": 0.55,
+  "kRateLostToShrinkage": 0.0413,
+  "ksLostToShrinkage": 0.9,
+  "opponentEnvironmentRate": 0.2313468125,
+  "matchupAdjustment": 0.007910109375000002,
+  "matchupAdjustmentClamped": false,
+  "projectedKRate": 0.2792478161088521,
+  "projectedBF": 21.775,
+  "projectedInnings": 4.946,
+  "productionProjectedKs": 6.080621195770253,
+  "legacyProjectedKs": 6.4,
+  "workloadOnlyProjectedKs": 7,
+  "teamAdjustedProjectedKs": 7,
+  "candidateProjectedKs": 7,
+  "edgeToLine": -1.419,
+  "recommendedSide": "under"
+ },
+ "sensitivity": {
+  "note": "Re-evaluates the published formula at alternative projected innings. Nothing in the model is changed; the K rate is held at its archived value and only workload varies.",
+  "kRateUsed": 0.2792,
+  "kRateIfNoSkillShrinkage": 0.3206,
+  "inningsNeededToReachLine_currentKRate": 6.101,
+  "inningsNeededToReachLine_noShrinkage": 5.314,
+  "sweep": [
+   {
+    "innings": 4.8,
+    "projectedBF": 21.132,
+    "projectedKs_currentModel": 5.901,
+    "projectedKs_ifNoSkillShrinkage": 6.775,
+    "beatsLine_currentModel": false,
+    "beatsLine_ifNoSkillShrinkage": false
+   },
+   {
+    "innings": 5,
+    "projectedBF": 22.013,
+    "projectedKs_currentModel": 6.147,
+    "projectedKs_ifNoSkillShrinkage": 7.057,
+    "beatsLine_currentModel": false,
+    "beatsLine_ifNoSkillShrinkage": false
+   },
+   {
+    "innings": 5.5,
+    "projectedBF": 24.214,
+    "projectedKs_currentModel": 6.762,
+    "projectedKs_ifNoSkillShrinkage": 7.763,
+    "beatsLine_currentModel": false,
+    "beatsLine_ifNoSkillShrinkage": true
+   },
+   {
+    "innings": 6,
+    "projectedBF": 26.415,
+    "projectedKs_currentModel": 7.376,
+    "projectedKs_ifNoSkillShrinkage": 8.469,
+    "beatsLine_currentModel": false,
+    "beatsLine_ifNoSkillShrinkage": true
+   },
+   {
+    "innings": 6.5,
+    "projectedBF": 28.617,
+    "projectedKs_currentModel": 7.991,
+    "projectedKs_ifNoSkillShrinkage": 9.174,
+    "beatsLine_currentModel": true,
+    "beatsLine_ifNoSkillShrinkage": true
+   },
+   {
+    "innings": 7,
+    "projectedBF": 30.818,
+    "projectedKs_currentModel": 8.606,
+    "projectedKs_ifNoSkillShrinkage": 9.88,
+    "beatsLine_currentModel": true,
+    "beatsLine_ifNoSkillShrinkage": true
+   }
+  ]
+ }
+}
