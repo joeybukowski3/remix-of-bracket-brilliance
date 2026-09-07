@@ -1,0 +1,20 @@
+{
+  "study": "mlb-k-archive-outcome-repair-and-workload-dispersion-v1",
+  "generatedAt": "2026-09-07T10:16:16.566Z",
+  "branch": "research/mlb-k-high-line-calibration",
+  "inputs": {
+    "archive": "data/mlb/k-research/high-line-calibration/pregame-archive.json",
+    "seasonBfIndex": "data/mlb/k-research/high-line-calibration/shrinkage-experiment/season-bf-index.json"
+  },
+  "productionFilesRead": [
+    "src/lib/mlb/kProjectionV2.ts",
+    "scripts/mlb-k/compute-workload-projection.mjs",
+    "scripts/lib/mlb-k-props-v2-shadow-core.mjs"
+  ],
+  "productionFilesWritten": [],
+  "publicArtifactsWritten": [],
+  "ssAlphaK": 125,
+  "cleanN": 944,
+  "excludedN": 14,
+  "determinism": "No randomness anywhere in this study: every estimator, bucket and split is a pure function of the archive."
+}

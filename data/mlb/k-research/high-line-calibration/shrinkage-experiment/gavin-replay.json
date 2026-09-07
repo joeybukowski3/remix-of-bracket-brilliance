@@ -1,0 +1,71 @@
+{
+  "studyId": "mlb-k-high-line-calibration-v2-shrinkage",
+  "section": "gavin-williams-replay",
+  "generatedAt": "2026-09-07T09:26:27.901Z",
+  "note": "Case study only. No candidate was tuned to this row.",
+  "row": {
+    "slateDate": "2026-09-06",
+    "pitcher": "Gavin Williams",
+    "team": "CLE",
+    "opponent": "DET",
+    "kLine": 7.5,
+    "oddsOver": "-158",
+    "oddsUnder": "+124",
+    "archivedProjectedKs": 6.0806,
+    "pitcherSkillRate": 0.312687,
+    "leagueAnchor": 0.2208,
+    "matchupAdjustment": 0.00791,
+    "projectedBF": 21.775,
+    "projectedInnings": 4.946,
+    "seasonBattersFaced": 657,
+    "skillPercentile": 0.9802,
+    "skillExcessZ": 2.0419,
+    "actualKs": 0
+  },
+  "replays": [
+    {
+      "candidate": "const-0.55-production",
+      "family": "constant",
+      "label": "Production alpha 0.55",
+      "alpha": 0.55,
+      "shrunkKRate": 0.271338,
+      "projectedKRate": 0.279248,
+      "projectedKs": 6.0806,
+      "edgeVsLine": -1.4194,
+      "direction": "under"
+    },
+    {
+      "candidate": "ss-k125",
+      "family": "sample-size",
+      "label": "alpha = BF / (BF + 125)",
+      "alpha": 0.8402,
+      "shrunkKRate": 0.297999,
+      "projectedKRate": 0.305909,
+      "projectedKs": 6.6612,
+      "edgeVsLine": -0.8388,
+      "direction": "under"
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "family": "skill-continuous",
+      "label": "alpha = 0.55 + 0.1 * max(0, z), z = (skill - league) / 0.045",
+      "alpha": 0.7542,
+      "shrunkKRate": 0.2901,
+      "projectedKRate": 0.29801,
+      "projectedKs": 6.4892,
+      "edgeVsLine": -1.0108,
+      "direction": "under"
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "family": "combined",
+      "label": "alpha = BF/(BF+150) + 0.05 * max(0, z)",
+      "alpha": 0.9162,
+      "shrunkKRate": 0.304989,
+      "projectedKRate": 0.312899,
+      "projectedKs": 6.8134,
+      "edgeVsLine": -0.6866,
+      "direction": "under"
+    }
+  ]
+}

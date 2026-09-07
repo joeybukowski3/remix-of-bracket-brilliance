@@ -1,0 +1,903 @@
+{
+  "study": "mlb-k-archive-outcome-repair-and-workload-dispersion-v1",
+  "generatedAt": "2026-09-07T10:16:16.565Z",
+  "pipelineMap": {
+    "producer": "scripts/mlb-k/compute-workload-projection.mjs (WORKLOAD_MODEL_VERSION mlb-k-workload-v2)",
+    "consumer": "scripts/lib/mlb-k-props-v2-shadow-core.mjs -> src/lib/mlb/kProjectionV2.ts",
+    "recentStartsUsed": "last 5 starts, oldest first at source; recency weights index+1 so the newest start carries the most weight",
+    "pitchLimit": "clamp(0.72*recentPitchWeightedMean + 0.28*leagueStarterPitches, 55, 115); weights flip to 0.45/0.55 with <3 samples",
+    "battersFaced": "clamp(0.65*(pitchLimit / max(3.2, opponentPitchesPerPA)) + 0.35*recentBfWeightedMean, 12, 30)",
+    "innings": "clamp(0.7*recentIpWeightedMean + 0.3*(expectedBF*leagueOutsPerBF/3), 3, 8.5)",
+    "opponentAdjustment": "opponentPitchesPerPA = 0.75*season + 0.25*recent14, defaulting to league 3.9, floored at 3.2 in the divisor",
+    "roleLogic": "reliever if >=3 appearances, <=1 start and >=70% relief; opener if >=2 starts and recency-weighted starter IP <= 2.5; else starter. Each role carries its own pitch/BF/IP clamps.",
+    "confidence": "0.5*completeness + 0.2*min(1, samples/5) + 0.15*(any K rate) + 0.15*(opponent PPA present), graded A-D; A/B are public-eligible",
+    "fallbacks": "kProjectionV2 falls back projectedInnings -> BF/bfPerInning -> mean of last 5 start IP (needs >=3); projectedBF -> innings*bfPerInning -> mean of last 5 start BF (needs >=3)",
+    "shrinkageAndSmoothing": "three stacked shrinkages toward league or toward a pitch-derived anchor: 0.28 on pitches, 0.65 on the pitch-derived BF, 0.3 on the BF-derived innings, each followed by a hard clamp",
+    "shortOutingTreatment": "NONE. A 1-inning injury exit enters the recency-weighted mean at full weight, and as the newest start it carries the LARGEST weight of the five.",
+    "lastStartUse": "the most recent start is weighted 5/15 of the recent term in every one of pitches, BF and IP"
+  },
+  "bfCalibration": {
+    "n": 944,
+    "projected": {
+      "n": 944,
+      "mean": 21.8979,
+      "median": 22.3615,
+      "sd": 2.794,
+      "p10": 19.263,
+      "p25": 21.166,
+      "p50": 22.362,
+      "p75": 23.457,
+      "p90": 24.319,
+      "p95": 24.9,
+      "min": 4.55,
+      "max": 26.922
+    },
+    "actual": {
+      "n": 944,
+      "mean": 22.3644,
+      "median": 23,
+      "sd": 4.0165,
+      "p10": 18,
+      "p25": 21,
+      "p50": 23,
+      "p75": 25,
+      "p90": 27,
+      "p95": 27.85,
+      "min": 1,
+      "max": 34
+    },
+    "sdRatio": 0.6956,
+    "mae": 2.8136,
+    "rmse": 3.8058,
+    "signedError": -0.4665,
+    "correlation": 0.4303
+  },
+  "ipCalibration": {
+    "n": 944,
+    "projected": {
+      "n": 944,
+      "mean": 5.221,
+      "median": 5.335,
+      "sd": 0.8058,
+      "p10": 4.369,
+      "p25": 4.846,
+      "p50": 5.335,
+      "p75": 5.712,
+      "p90": 6.078,
+      "p95": 6.26,
+      "min": 0.969,
+      "max": 7.045
+    },
+    "actual": {
+      "n": 944,
+      "mean": 5.3171,
+      "median": 5.3333,
+      "sd": 1.2697,
+      "p10": 3.767,
+      "p25": 4.667,
+      "p50": 5.333,
+      "p75": 6,
+      "p90": 7,
+      "p95": 7,
+      "min": 0.333,
+      "max": 9
+    },
+    "sdRatio": 0.6347,
+    "mae": 0.9317,
+    "rmse": 1.2312,
+    "signedError": -0.096,
+    "correlation": 0.3681
+  },
+  "dispersionChecks": [
+    {
+      "target": "battersFaced (production)",
+      "n": 944,
+      "sdPrediction": 2.794,
+      "sdActual": 4.0165,
+      "sdRatio": 0.6956,
+      "correlation": 0.4303,
+      "attainableSd": 1.7281,
+      "sdVsAttainable": 1.6168,
+      "calibrationSlope": 0.6185,
+      "verdict": "over-dispersed"
+    },
+    {
+      "target": "innings (production)",
+      "n": 944,
+      "sdPrediction": 0.8058,
+      "sdActual": 1.2697,
+      "sdRatio": 0.6347,
+      "correlation": 0.3681,
+      "attainableSd": 0.4673,
+      "sdVsAttainable": 1.7244,
+      "calibrationSlope": 0.5799,
+      "verdict": "over-dispersed"
+    },
+    {
+      "target": "strikeouts (production alpha=0.55 replay)",
+      "n": 944,
+      "sdPrediction": 0.8872,
+      "sdActual": 2.4234,
+      "sdRatio": 0.3661,
+      "correlation": 0.3929,
+      "attainableSd": 0.9522,
+      "sdVsAttainable": 0.9317,
+      "calibrationSlope": 1.0733,
+      "verdict": "consistent with a healthy conditional mean"
+    },
+    {
+      "target": "strikeouts (ss-k125)",
+      "n": 944,
+      "sdPrediction": 0.9894,
+      "sdActual": 2.4234,
+      "sdRatio": 0.4083,
+      "correlation": 0.4167,
+      "attainableSd": 1.0099,
+      "sdVsAttainable": 0.9797,
+      "calibrationSlope": 1.0207,
+      "verdict": "consistent with a healthy conditional mean"
+    },
+    {
+      "target": "strikeouts (as shipped, era-mixed)",
+      "n": 944,
+      "sdPrediction": 1.1888,
+      "sdActual": 2.4234,
+      "sdRatio": 0.4906,
+      "correlation": 0.407,
+      "attainableSd": 0.9863,
+      "sdVsAttainable": 1.2054,
+      "calibrationSlope": 0.8296,
+      "verdict": "over-dispersed"
+    }
+  ],
+  "competitorDispersion": [
+    {
+      "estimator": "model",
+      "target": "battersFaced (model)",
+      "n": 944,
+      "sdPrediction": 2.794,
+      "sdActual": 4.0165,
+      "sdRatio": 0.6956,
+      "correlation": 0.4303,
+      "attainableSd": 1.7281,
+      "sdVsAttainable": 1.6168,
+      "calibrationSlope": 0.6185,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "seasonPerStart",
+      "target": "battersFaced (seasonPerStart)",
+      "n": 933,
+      "sdPrediction": 2.4628,
+      "sdActual": 3.9561,
+      "sdRatio": 0.6225,
+      "correlation": 0.4524,
+      "attainableSd": 1.7897,
+      "sdVsAttainable": 1.3761,
+      "calibrationSlope": 0.7267,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last3Mean",
+      "target": "battersFaced (last3Mean)",
+      "n": 923,
+      "sdPrediction": 3.0155,
+      "sdActual": 3.8907,
+      "sdRatio": 0.775,
+      "correlation": 0.4011,
+      "attainableSd": 1.5604,
+      "sdVsAttainable": 1.9325,
+      "calibrationSlope": 0.5175,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5Mean",
+      "target": "battersFaced (last5Mean)",
+      "n": 923,
+      "sdPrediction": 2.7257,
+      "sdActual": 3.8907,
+      "sdRatio": 0.7006,
+      "correlation": 0.4169,
+      "attainableSd": 1.6222,
+      "sdVsAttainable": 1.6803,
+      "calibrationSlope": 0.5951,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5Median",
+      "target": "battersFaced (last5Median)",
+      "n": 923,
+      "sdPrediction": 2.7952,
+      "sdActual": 3.8907,
+      "sdRatio": 0.7184,
+      "correlation": 0.4005,
+      "attainableSd": 1.5581,
+      "sdVsAttainable": 1.7939,
+      "calibrationSlope": 0.5574,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5RecencyWeighted",
+      "target": "battersFaced (last5RecencyWeighted)",
+      "n": 923,
+      "sdPrediction": 2.8058,
+      "sdActual": 3.8907,
+      "sdRatio": 0.7212,
+      "correlation": 0.4252,
+      "attainableSd": 1.6544,
+      "sdVsAttainable": 1.696,
+      "calibrationSlope": 0.5896,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5Ewma",
+      "target": "battersFaced (last5Ewma)",
+      "n": 923,
+      "sdPrediction": 2.8002,
+      "sdActual": 3.8907,
+      "sdRatio": 0.7197,
+      "correlation": 0.4257,
+      "attainableSd": 1.6565,
+      "sdVsAttainable": 1.6905,
+      "calibrationSlope": 0.5915,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5TrimmedMean",
+      "target": "battersFaced (last5TrimmedMean)",
+      "n": 923,
+      "sdPrediction": 2.7002,
+      "sdActual": 3.8907,
+      "sdRatio": 0.694,
+      "correlation": 0.4192,
+      "attainableSd": 1.6308,
+      "sdVsAttainable": 1.6558,
+      "calibrationSlope": 0.6039,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5WinsorizedMean",
+      "target": "battersFaced (last5WinsorizedMean)",
+      "n": 923,
+      "sdPrediction": 2.688,
+      "sdActual": 3.8907,
+      "sdRatio": 0.6909,
+      "correlation": 0.4182,
+      "attainableSd": 1.627,
+      "sdVsAttainable": 1.6521,
+      "calibrationSlope": 0.6053,
+      "verdict": "over-dispersed"
+    },
+    {
+      "estimator": "last5ShortExcludedMean",
+      "target": "battersFaced (last5ShortExcludedMean)",
+      "n": 923,
+      "sdPrediction": 2.6271,
+      "sdActual": 3.8907,
+      "sdRatio": 0.6752,
+      "correlation": 0.4325,
+      "attainableSd": 1.6828,
+      "sdVsAttainable": 1.5611,
+      "calibrationSlope": 0.6406,
+      "verdict": "over-dispersed"
+    }
+  ],
+  "probabilisticFindings": {
+    "leagueMeanRecentBfSd": 3.1114,
+    "sdOfPitcherRecentBfSd": 1.6103,
+    "n": 944,
+    "pointEstimate": {
+      "n": 944,
+      "mae": 1.7691,
+      "rmse": 2.2284,
+      "signedError": 0.0234,
+      "sdProjectedKs": 0.8872,
+      "meanProjectedKs": 4.8614,
+      "p75ProjectedKs": 5.3869,
+      "p90ProjectedKs": 5.8774,
+      "p95ProjectedKs": 6.1628,
+      "maxProjectedKs": 7.6012,
+      "pctAtLeast7": 0.74,
+      "pctAtLeast8": 0,
+      "highLineN": 52,
+      "highLineSignedError": -1.4088,
+      "highLineMae": 2.0811,
+      "line75N": 41,
+      "line75SignedError": -1.2501,
+      "line75PctUnder": 97.6,
+      "line85N": 11,
+      "line85SignedError": -2.0005,
+      "line85PctUnder": 100,
+      "lowMidLineN": 800,
+      "lowMidLineMae": 1.7082,
+      "lowMidLineSignedError": 0.1775,
+      "lowLineN": 587,
+      "lowLineMae": 1.6451,
+      "pctUnderAll": 44.2,
+      "directionalHitRate": 54.08,
+      "directionalRecord": "510-433-1",
+      "directionalHitRateHighLine": 50,
+      "directionalRecordHighLine": "26-26"
+    },
+    "integratedClamped": {
+      "n": 944,
+      "mae": 1.763,
+      "rmse": 2.2214,
+      "signedError": 0.0427,
+      "sdProjectedKs": 0.8248,
+      "meanProjectedKs": 4.8806,
+      "p75ProjectedKs": 5.3837,
+      "p90ProjectedKs": 5.8769,
+      "p95ProjectedKs": 6.1628,
+      "maxProjectedKs": 7.5891,
+      "pctAtLeast7": 0.74,
+      "pctAtLeast8": 0,
+      "highLineN": 52,
+      "highLineSignedError": -1.4142,
+      "highLineMae": 2.0827,
+      "line75N": 41,
+      "line75SignedError": -1.2566,
+      "line75PctUnder": 97.6,
+      "line85N": 11,
+      "line85SignedError": -2.0019,
+      "line85PctUnder": 100,
+      "lowMidLineN": 800,
+      "lowMidLineMae": 1.7007,
+      "lowMidLineSignedError": 0.2007,
+      "lowLineN": 587,
+      "lowLineMae": 1.6364,
+      "pctUnderAll": 43.1,
+      "directionalHitRate": 53.87,
+      "directionalRecord": "508-435-1",
+      "directionalHitRateHighLine": 50,
+      "directionalRecordHighLine": "26-26"
+    },
+    "integratedUnclamped": {
+      "n": 944,
+      "mae": 1.7691,
+      "rmse": 2.2284,
+      "signedError": 0.0234,
+      "sdProjectedKs": 0.8872,
+      "meanProjectedKs": 4.8614,
+      "p75ProjectedKs": 5.3869,
+      "p90ProjectedKs": 5.8774,
+      "p95ProjectedKs": 6.1628,
+      "maxProjectedKs": 7.6012,
+      "pctAtLeast7": 0.74,
+      "pctAtLeast8": 0,
+      "highLineN": 52,
+      "highLineSignedError": -1.4088,
+      "highLineMae": 2.0811,
+      "line75N": 41,
+      "line75SignedError": -1.2501,
+      "line75PctUnder": 97.6,
+      "line85N": 11,
+      "line85SignedError": -2.0005,
+      "line85PctUnder": 100,
+      "lowMidLineN": 800,
+      "lowMidLineMae": 1.7082,
+      "lowMidLineSignedError": 0.1775,
+      "lowLineN": 587,
+      "lowLineMae": 1.6451,
+      "pctUnderAll": 44.2,
+      "directionalHitRate": 54.08,
+      "directionalRecord": "510-433-1",
+      "directionalHitRateHighLine": 50,
+      "directionalRecordHighLine": "26-26"
+    },
+    "maxAbsShiftFromClampTruncation": 1.6773,
+    "maxAbsShiftUnclamped": 0,
+    "quantileWorkload": {
+      "p25Bf": 19.797,
+      "p50Bf": 21.898,
+      "p75Bf": 23.999
+    },
+    "note": "With a constant K rate, E[K] = rate * E[BF] exactly, so integrating over workload uncertainty cannot move the central estimate. The only movement observed comes from the starter BF clamp truncating the workload distribution. Workload uncertainty belongs in an uncertainty band, not in the expected-K point estimate."
+  },
+  "shortStart": {
+    "lastStartUnder2IpN": 16,
+    "sensitivity": [
+      {
+        "estimator": "model",
+        "n": 16,
+        "meanPrediction": 15.8048,
+        "meanActualBF": 16.375,
+        "mae": 4.4816,
+        "rmse": 5.2974,
+        "signedError": -0.5702,
+        "sdPrediction": 5.374
+      },
+      {
+        "estimator": "seasonPerStart",
+        "n": 16,
+        "meanPrediction": 17.0074,
+        "meanActualBF": 16.375,
+        "mae": 2.804,
+        "rmse": 4.1306,
+        "signedError": 0.6324,
+        "sdPrediction": 6.8399
+      },
+      {
+        "estimator": "last3Mean",
+        "n": 15,
+        "meanPrediction": 15.2,
+        "meanActualBF": 16.8667,
+        "mae": 3.6222,
+        "rmse": 4.7321,
+        "signedError": -1.6667,
+        "sdPrediction": 4.8743
+      },
+      {
+        "estimator": "last5Mean",
+        "n": 15,
+        "meanPrediction": 16.4278,
+        "meanActualBF": 16.8667,
+        "mae": 2.9922,
+        "rmse": 4.2291,
+        "signedError": -0.4389,
+        "sdPrediction": 5.4859
+      },
+      {
+        "estimator": "last5Median",
+        "n": 15,
+        "meanPrediction": 18.1667,
+        "meanActualBF": 16.8667,
+        "mae": 3.4333,
+        "rmse": 4.5479,
+        "signedError": 1.3,
+        "sdPrediction": 6.5073
+      },
+      {
+        "estimator": "last5RecencyWeighted",
+        "n": 15,
+        "meanPrediction": 15.0533,
+        "meanActualBF": 16.8667,
+        "mae": 3.6978,
+        "rmse": 4.7453,
+        "signedError": -1.8133,
+        "sdPrediction": 4.8619
+      },
+      {
+        "estimator": "last5Ewma",
+        "n": 15,
+        "meanPrediction": 14.8158,
+        "meanActualBF": 16.8667,
+        "mae": 3.8334,
+        "rmse": 4.9046,
+        "signedError": -2.0508,
+        "sdPrediction": 4.6325
+      },
+      {
+        "estimator": "last5TrimmedMean",
+        "n": 15,
+        "meanPrediction": 18.0278,
+        "meanActualBF": 16.8667,
+        "mae": 3.2944,
+        "rmse": 4.5996,
+        "signedError": 1.1611,
+        "sdPrediction": 6.6404
+      },
+      {
+        "estimator": "last5WinsorizedMean",
+        "n": 15,
+        "meanPrediction": 17.7733,
+        "meanActualBF": 16.8667,
+        "mae": 3.152,
+        "rmse": 4.4893,
+        "signedError": 0.9067,
+        "sdPrediction": 6.3185
+      },
+      {
+        "estimator": "last5ShortExcludedMean",
+        "n": 15,
+        "meanPrediction": 18.3644,
+        "meanActualBF": 16.8667,
+        "mae": 3.2756,
+        "rmse": 4.5508,
+        "signedError": 1.4978,
+        "sdPrediction": 6.8138
+      }
+    ],
+    "gavinWilliams": [
+      {
+        "slateDate": "2026-07-23",
+        "kLine": 7.5,
+        "recentStartsBf": "",
+        "recentStartsIp": "6|7|4.67|5|5",
+        "lastStartIp": 6,
+        "lastStartUnder2Ip": false,
+        "projectedBF": 23.343,
+        "robustBF": 23.343,
+        "seasonBfPerStart": 24.25,
+        "actualBF": 23,
+        "projectedKs": 6.759,
+        "actualKs": 11
+      },
+      {
+        "slateDate": "2026-08-02",
+        "kLine": 6.5,
+        "recentStartsBf": "24|23|25|26|20",
+        "recentStartsIp": "7|7|6|7|4.67",
+        "lastStartIp": 7,
+        "lastStartUnder2Ip": false,
+        "projectedBF": 23.757,
+        "robustBF": 23.757,
+        "seasonBfPerStart": 24.182,
+        "actualBF": 19,
+        "projectedKs": 6.993,
+        "actualKs": 10
+      },
+      {
+        "slateDate": "2026-08-08",
+        "kLine": 7.5,
+        "recentStartsBf": "19|24|23|25|26",
+        "recentStartsIp": "5.67|7|7|6|7",
+        "lastStartIp": 5.67,
+        "lastStartUnder2Ip": false,
+        "projectedBF": 23.378,
+        "robustBF": 23.378,
+        "seasonBfPerStart": 23.957,
+        "actualBF": 22,
+        "projectedKs": 7.643,
+        "actualKs": 7
+      },
+      {
+        "slateDate": "2026-08-14",
+        "kLine": 6.5,
+        "recentStartsBf": "22|19|24|23|25",
+        "recentStartsIp": "5.67|5.67|7|7|6",
+        "lastStartIp": 5.67,
+        "lastStartUnder2Ip": false,
+        "projectedBF": 23.362,
+        "robustBF": 23.362,
+        "seasonBfPerStart": 23.875,
+        "actualBF": 24,
+        "projectedKs": 7.26,
+        "actualKs": 5
+      },
+      {
+        "slateDate": "2026-08-20",
+        "kLine": 7.5,
+        "recentStartsBf": "24|22|19|24|23",
+        "recentStartsIp": "4.33|5.67|5.67|7|7",
+        "lastStartIp": 4.33,
+        "lastStartUnder2Ip": false,
+        "projectedBF": 23.469,
+        "robustBF": 23.469,
+        "seasonBfPerStart": 23.88,
+        "actualBF": 24,
+        "projectedKs": 7.151,
+        "actualKs": 11
+      },
+      {
+        "slateDate": "2026-08-25",
+        "kLine": 7.5,
+        "recentStartsBf": "24|24|22|19|24",
+        "recentStartsIp": "5.67|4.33|5.67|5.67|7",
+        "lastStartIp": 5.67,
+        "lastStartUnder2Ip": false,
+        "projectedBF": 23.249,
+        "robustBF": 23.249,
+        "seasonBfPerStart": 23.885,
+        "actualBF": 11,
+        "projectedKs": 7.654,
+        "actualKs": 3
+      },
+      {
+        "slateDate": "2026-09-01",
+        "kLine": 6.5,
+        "recentStartsBf": "11|24|24|22|19",
+        "recentStartsIp": "1.33|5.67|4.33|5.67|5.67",
+        "lastStartIp": 1.33,
+        "lastStartUnder2Ip": true,
+        "projectedBF": 21.458,
+        "robustBF": 22.246,
+        "seasonBfPerStart": 23.407,
+        "actualBF": 25,
+        "projectedKs": 6.139,
+        "actualKs": 13
+      }
+    ]
+  },
+  "naiveBaselines": {
+    "battersFaced": {
+      "commonN": 923,
+      "coverage": [
+        {
+          "estimator": "model",
+          "definedN": 944
+        },
+        {
+          "estimator": "seasonPerStart",
+          "definedN": 933
+        },
+        {
+          "estimator": "last3Mean",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5Mean",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5Median",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5RecencyWeighted",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5Ewma",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5TrimmedMean",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5WinsorizedMean",
+          "definedN": 923
+        },
+        {
+          "estimator": "last5ShortExcludedMean",
+          "definedN": 923
+        }
+      ],
+      "table": [
+        {
+          "estimator": "model",
+          "n": 923,
+          "mae": 2.7474,
+          "rmse": 3.6636,
+          "signedError": -0.4001,
+          "sdPrediction": 2.4408,
+          "sdActual": 3.8907,
+          "sdRatio": 0.6273,
+          "correlation": 0.4117
+        },
+        {
+          "estimator": "seasonPerStart",
+          "n": 923,
+          "mae": 2.6839,
+          "rmse": 3.6042,
+          "signedError": -0.2664,
+          "sdPrediction": 2.3723,
+          "sdActual": 3.8907,
+          "sdRatio": 0.6097,
+          "correlation": 0.4243
+        },
+        {
+          "estimator": "last3Mean",
+          "n": 923,
+          "mae": 2.9144,
+          "rmse": 3.8553,
+          "signedError": -0.2438,
+          "sdPrediction": 3.0155,
+          "sdActual": 3.8907,
+          "sdRatio": 0.775,
+          "correlation": 0.4011
+        },
+        {
+          "estimator": "last5Mean",
+          "n": 923,
+          "mae": 2.7896,
+          "rmse": 3.7107,
+          "signedError": -0.2448,
+          "sdPrediction": 2.7257,
+          "sdActual": 3.8907,
+          "sdRatio": 0.7006,
+          "correlation": 0.4169
+        },
+        {
+          "estimator": "last5Median",
+          "n": 923,
+          "mae": 2.7909,
+          "rmse": 3.7716,
+          "signedError": 0.0108,
+          "sdPrediction": 2.7952,
+          "sdActual": 3.8907,
+          "sdRatio": 0.7184,
+          "correlation": 0.4005
+        },
+        {
+          "estimator": "last5RecencyWeighted",
+          "n": 923,
+          "mae": 2.8042,
+          "rmse": 3.7095,
+          "signedError": -0.2214,
+          "sdPrediction": 2.8058,
+          "sdActual": 3.8907,
+          "sdRatio": 0.7212,
+          "correlation": 0.4252
+        },
+        {
+          "estimator": "last5Ewma",
+          "n": 923,
+          "mae": 2.8017,
+          "rmse": 3.7063,
+          "signedError": -0.2225,
+          "sdPrediction": 2.8002,
+          "sdActual": 3.8907,
+          "sdRatio": 0.7197,
+          "correlation": 0.4257
+        },
+        {
+          "estimator": "last5TrimmedMean",
+          "n": 923,
+          "mae": 2.7327,
+          "rmse": 3.6888,
+          "signedError": -0.0147,
+          "sdPrediction": 2.7002,
+          "sdActual": 3.8907,
+          "sdRatio": 0.694,
+          "correlation": 0.4192
+        },
+        {
+          "estimator": "last5WinsorizedMean",
+          "n": 923,
+          "mae": 2.7432,
+          "rmse": 3.6885,
+          "signedError": -0.0621,
+          "sdPrediction": 2.688,
+          "sdActual": 3.8907,
+          "sdRatio": 0.6909,
+          "correlation": 0.4182
+        },
+        {
+          "estimator": "last5ShortExcludedMean",
+          "n": 923,
+          "mae": 2.7277,
+          "rmse": 3.631,
+          "signedError": -0.0302,
+          "sdPrediction": 2.6271,
+          "sdActual": 3.8907,
+          "sdRatio": 0.6752,
+          "correlation": 0.4325
+        }
+      ]
+    },
+    "innings": {
+      "commonN": 933,
+      "coverage": [
+        {
+          "estimator": "model",
+          "definedN": 944
+        },
+        {
+          "estimator": "last3Mean",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5Mean",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5Median",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5RecencyWeighted",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5Ewma",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5TrimmedMean",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5WinsorizedMean",
+          "definedN": 933
+        },
+        {
+          "estimator": "last5ShortExcludedMean",
+          "definedN": 933
+        }
+      ],
+      "table": [
+        {
+          "estimator": "model",
+          "n": 933,
+          "mae": 0.9276,
+          "rmse": 1.2226,
+          "signedError": -0.0828,
+          "sdPrediction": 0.7518,
+          "sdActual": 1.2625,
+          "sdRatio": 0.5955,
+          "correlation": 0.3527
+        },
+        {
+          "estimator": "last3Mean",
+          "n": 933,
+          "mae": 0.9887,
+          "rmse": 1.2863,
+          "signedError": -0.0549,
+          "sdPrediction": 0.9214,
+          "sdActual": 1.2625,
+          "sdRatio": 0.7298,
+          "correlation": 0.3393
+        },
+        {
+          "estimator": "last5Mean",
+          "n": 933,
+          "mae": 0.9453,
+          "rmse": 1.2479,
+          "signedError": -0.0584,
+          "sdPrediction": 0.8238,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6525,
+          "correlation": 0.3446
+        },
+        {
+          "estimator": "last5Median",
+          "n": 933,
+          "mae": 0.9414,
+          "rmse": 1.2768,
+          "signedError": 0.0457,
+          "sdPrediction": 0.8585,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6801,
+          "correlation": 0.3234
+        },
+        {
+          "estimator": "last5RecencyWeighted",
+          "n": 933,
+          "mae": 0.957,
+          "rmse": 1.2511,
+          "signedError": -0.0526,
+          "sdPrediction": 0.8563,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6783,
+          "correlation": 0.3528
+        },
+        {
+          "estimator": "last5Ewma",
+          "n": 933,
+          "mae": 0.9564,
+          "rmse": 1.2519,
+          "signedError": -0.0528,
+          "sdPrediction": 0.8532,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6758,
+          "correlation": 0.3507
+        },
+        {
+          "estimator": "last5TrimmedMean",
+          "n": 933,
+          "mae": 0.9377,
+          "rmse": 1.2469,
+          "signedError": 0.0151,
+          "sdPrediction": 0.8201,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6496,
+          "correlation": 0.343
+        },
+        {
+          "estimator": "last5WinsorizedMean",
+          "n": 933,
+          "mae": 0.9403,
+          "rmse": 1.2453,
+          "signedError": -0.0043,
+          "sdPrediction": 0.8183,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6481,
+          "correlation": 0.3441
+        },
+        {
+          "estimator": "last5ShortExcludedMean",
+          "n": 933,
+          "mae": 0.9397,
+          "rmse": 1.2434,
+          "signedError": 0.0395,
+          "sdPrediction": 0.8024,
+          "sdActual": 1.2625,
+          "sdRatio": 0.6356,
+          "correlation": 0.3413
+        }
+      ]
+    }
+  }
+}

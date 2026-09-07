@@ -1,0 +1,437 @@
+{
+ "studyId": "mlb-k-high-line-calibration-v1",
+ "section": "shrinkage-era-split-and-counterfactual",
+ "generatedAt": "2026-09-06T20:41:11.262Z",
+ "shrinkageLandedOn": "2026-09-02",
+ "constantsReplayed": {
+  "SHRINKAGE_ALPHA": 0.55,
+  "OPPONENT_MATCHUP_MULTIPLIER": 0.75,
+  "MIN_K_RATE": 0.1,
+  "MAX_K_RATE": 0.4
+ },
+ "replayCheck": {
+  "eraBRows": 39,
+  "maxAbsReplayError": 0,
+  "meanAbsReplayError": 0,
+  "verdict": "REPLAY_MATCHES"
+ },
+ "eraTable": [
+  {
+   "era": "A_pre_shrinkage",
+   "n": 919,
+   "dateRange": "2026-07-23..2026-09-01",
+   "sdProjectedKRate": 0.0467,
+   "sdProjectedKs": 1.254,
+   "sdActualKs": 2.428,
+   "sdMarketLine": 1.49,
+   "pctProjectedAtLeast7": 3.59,
+   "p90ProjectedKs": 6.335,
+   "pctUnderAll": 45,
+   "highLineN": 47,
+   "pctUnderHighLine": 83
+  },
+  {
+   "era": "B_alpha_0.55",
+   "n": 39,
+   "dateRange": "2026-09-02..2026-09-06",
+   "sdProjectedKRate": 0.0298,
+   "sdProjectedKs": 1.061,
+   "sdActualKs": 2.937,
+   "sdMarketLine": 1.636,
+   "pctProjectedAtLeast7": 0,
+   "p90ProjectedKs": 6.31,
+   "pctUnderAll": 46.2,
+   "highLineN": 7,
+   "pctUnderHighLine": 100
+  }
+ ],
+ "counterfactualBuckets": [
+  {
+   "bucket": "<=3.5",
+   "n": 256,
+   "asIs": {
+    "n": 256,
+    "meanProjection": 3.784,
+    "meanLine": 2.902,
+    "meanActual": 3.664,
+    "meanProjMinusLine": 0.882,
+    "pctUnder": 22.7,
+    "pctOver": 77,
+    "meanSignedError": 0.12,
+    "mae": 1.672,
+    "underSignal": {
+     "WIN": 28,
+     "LOSS": 30,
+     "PUSH": 0,
+     "decided": 58,
+     "hitRate": 48.28
+    },
+    "overSignal": {
+     "WIN": 119,
+     "LOSS": 77,
+     "PUSH": 1,
+     "decided": 196,
+     "hitRate": 60.71
+    }
+   },
+   "currentModelReplay": {
+    "n": 256,
+    "meanProjection": 4.047,
+    "meanLine": 2.902,
+    "meanActual": 3.664,
+    "meanProjMinusLine": 1.144,
+    "pctUnder": 10.2,
+    "pctOver": 89.8,
+    "meanSignedError": 0.382,
+    "mae": 1.662,
+    "underSignal": {
+     "WIN": 11,
+     "LOSS": 15,
+     "PUSH": 0,
+     "decided": 26,
+     "hitRate": 42.31
+    },
+    "overSignal": {
+     "WIN": 135,
+     "LOSS": 94,
+     "PUSH": 1,
+     "decided": 229,
+     "hitRate": 58.95
+    }
+   }
+  },
+  {
+   "bucket": "4.5",
+   "n": 339,
+   "asIs": {
+    "n": 339,
+    "meanProjection": 4.574,
+    "meanLine": 4.5,
+    "meanActual": 4.386,
+    "meanProjMinusLine": 0.074,
+    "pctUnder": 41.9,
+    "pctOver": 58.1,
+    "meanSignedError": 0.187,
+    "mae": 1.708,
+    "underSignal": {
+     "WIN": 74,
+     "LOSS": 68,
+     "PUSH": 0,
+     "decided": 142,
+     "hitRate": 52.11
+    },
+    "overSignal": {
+     "WIN": 86,
+     "LOSS": 111,
+     "PUSH": 0,
+     "decided": 197,
+     "hitRate": 43.65
+    }
+   },
+   "currentModelReplay": {
+    "n": 339,
+    "meanProjection": 4.697,
+    "meanLine": 4.5,
+    "meanActual": 4.386,
+    "meanProjMinusLine": 0.197,
+    "pctUnder": 30.7,
+    "pctOver": 69.3,
+    "meanSignedError": 0.311,
+    "mae": 1.658,
+    "underSignal": {
+     "WIN": 60,
+     "LOSS": 44,
+     "PUSH": 0,
+     "decided": 104,
+     "hitRate": 57.69
+    },
+    "overSignal": {
+     "WIN": 110,
+     "LOSS": 125,
+     "PUSH": 0,
+     "decided": 235,
+     "hitRate": 46.81
+    }
+   }
+  },
+  {
+   "bucket": "5.5",
+   "n": 215,
+   "asIs": {
+    "n": 215,
+    "meanProjection": 5.394,
+    "meanLine": 5.5,
+    "meanActual": 5.493,
+    "meanProjMinusLine": -0.106,
+    "pctUnder": 55.3,
+    "pctOver": 44.7,
+    "meanSignedError": -0.099,
+    "mae": 1.928,
+    "underSignal": {
+     "WIN": 66,
+     "LOSS": 53,
+     "PUSH": 0,
+     "decided": 119,
+     "hitRate": 55.46
+    },
+    "overSignal": {
+     "WIN": 47,
+     "LOSS": 49,
+     "PUSH": 0,
+     "decided": 96,
+     "hitRate": 48.96
+    }
+   },
+   "currentModelReplay": {
+    "n": 215,
+    "meanProjection": 5.252,
+    "meanLine": 5.5,
+    "meanActual": 5.493,
+    "meanProjMinusLine": -0.248,
+    "pctUnder": 71.2,
+    "pctOver": 28.8,
+    "meanSignedError": -0.241,
+    "mae": 1.905,
+    "underSignal": {
+     "WIN": 87,
+     "LOSS": 66,
+     "PUSH": 0,
+     "decided": 153,
+     "hitRate": 56.86
+    },
+    "overSignal": {
+     "WIN": 34,
+     "LOSS": 28,
+     "PUSH": 0,
+     "decided": 62,
+     "hitRate": 54.84
+    }
+   }
+  },
+  {
+   "bucket": "6.5",
+   "n": 94,
+   "asIs": {
+    "n": 94,
+    "meanProjection": 6.234,
+    "meanLine": 6.5,
+    "meanActual": 6.17,
+    "meanProjMinusLine": -0.266,
+    "pctUnder": 71.3,
+    "pctOver": 28.7,
+    "meanSignedError": 0.063,
+    "mae": 2.201,
+    "underSignal": {
+     "WIN": 40,
+     "LOSS": 27,
+     "PUSH": 0,
+     "decided": 67,
+     "hitRate": 59.7
+    },
+    "overSignal": {
+     "WIN": 11,
+     "LOSS": 16,
+     "PUSH": 0,
+     "decided": 27,
+     "hitRate": 40.74
+    }
+   },
+   "currentModelReplay": {
+    "n": 94,
+    "meanProjection": 5.779,
+    "meanLine": 6.5,
+    "meanActual": 6.17,
+    "meanProjMinusLine": -0.721,
+    "pctUnder": 96.8,
+    "pctOver": 3.2,
+    "meanSignedError": -0.391,
+    "mae": 2.182,
+    "underSignal": {
+     "WIN": 54,
+     "LOSS": 37,
+     "PUSH": 0,
+     "decided": 91,
+     "hitRate": 59.34
+    },
+    "overSignal": {
+     "WIN": 1,
+     "LOSS": 2,
+     "PUSH": 0,
+     "decided": 3,
+     "hitRate": 33.33
+    }
+   }
+  },
+  {
+   "bucket": "7.5",
+   "n": 43,
+   "asIs": {
+    "n": 43,
+    "meanProjection": 6.837,
+    "meanLine": 7.5,
+    "meanActual": 7.14,
+    "meanProjMinusLine": -0.663,
+    "pctUnder": 86,
+    "pctOver": 14,
+    "meanSignedError": -0.302,
+    "mae": 2.154,
+    "underSignal": {
+     "WIN": 20,
+     "LOSS": 17,
+     "PUSH": 0,
+     "decided": 37,
+     "hitRate": 54.05
+    },
+    "overSignal": {
+     "WIN": 2,
+     "LOSS": 4,
+     "PUSH": 0,
+     "decided": 6,
+     "hitRate": 33.33
+    }
+   },
+   "currentModelReplay": {
+    "n": 43,
+    "meanProjection": 6.238,
+    "meanLine": 7.5,
+    "meanActual": 7.14,
+    "meanProjMinusLine": -1.262,
+    "pctUnder": 97.7,
+    "pctOver": 2.3,
+    "meanSignedError": -0.902,
+    "mae": 2.185,
+    "underSignal": {
+     "WIN": 23,
+     "LOSS": 19,
+     "PUSH": 0,
+     "decided": 42,
+     "hitRate": 54.76
+    },
+    "overSignal": {
+     "WIN": 0,
+     "LOSS": 1,
+     "PUSH": 0,
+     "decided": 1,
+     "hitRate": 0
+    }
+   }
+  },
+  {
+   "bucket": "8.5+",
+   "n": 11,
+   "asIs": {
+    "n": 11,
+    "meanProjection": 7.91,
+    "meanLine": 8.682,
+    "meanActual": 8.727,
+    "meanProjMinusLine": -0.772,
+    "pctUnder": 81.8,
+    "pctOver": 18.2,
+    "meanSignedError": -0.817,
+    "mae": 2.245,
+    "underSignal": {
+     "WIN": 4,
+     "LOSS": 5,
+     "PUSH": 0,
+     "decided": 9,
+     "hitRate": 44.44
+    },
+    "overSignal": {
+     "WIN": 1,
+     "LOSS": 1,
+     "PUSH": 0,
+     "decided": 2,
+     "hitRate": 50
+    }
+   },
+   "currentModelReplay": {
+    "n": 11,
+    "meanProjection": 6.727,
+    "meanLine": 8.682,
+    "meanActual": 8.727,
+    "meanProjMinusLine": -1.955,
+    "pctUnder": 100,
+    "pctOver": 0,
+    "meanSignedError": -2,
+    "mae": 2.429,
+    "underSignal": {
+     "WIN": 5,
+     "LOSS": 6,
+     "PUSH": 0,
+     "decided": 11,
+     "hitRate": 45.45
+    },
+    "overSignal": {
+     "WIN": 0,
+     "LOSS": 0,
+     "PUSH": 0,
+     "decided": 0,
+     "hitRate": null
+    }
+   }
+  }
+ ],
+ "counterfactualOverall": {
+  "n": 958,
+  "archived": {
+   "sdProjectedKs": 1.247,
+   "pctAtLeast7": 3.44,
+   "pctAtLeast8": 1.15,
+   "pctUnder": 45.1,
+   "mae": 1.822,
+   "meanSignedError": 0.059,
+   "allSignal": {
+    "WIN": 498,
+    "LOSS": 458,
+    "PUSH": 1,
+    "decided": 956,
+    "hitRate": 52.09
+   }
+  },
+  "currentModelReplay": {
+   "sdProjectedKs": 0.913,
+   "pctAtLeast7": 0.73,
+   "pctAtLeast8": 0,
+   "pctUnder": 44.6,
+   "mae": 1.799,
+   "meanSignedError": 0.056,
+   "allSignal": {
+    "WIN": 520,
+    "LOSS": 437,
+    "PUSH": 1,
+    "decided": 957,
+    "hitRate": 54.34
+   }
+  },
+  "sdActualKs": 2.452,
+  "regReplaySignedErrorOnLine": {
+   "n": 958,
+   "slope": -0.2061,
+   "slopeStdError": 0.0486,
+   "tStat": -4.24
+  },
+  "regArchivedSignedErrorOnLine": {
+   "n": 958,
+   "slope": -0.0548,
+   "slopeStdError": 0.0492,
+   "tStat": -1.11
+  },
+  "highLineReplay": {
+   "n": 54,
+   "meanSignedError": -1.126,
+   "ci": [
+    -1.845,
+    -0.386
+   ],
+   "pctUnder": 98.1,
+   "underSignal": {
+    "WIN": 28,
+    "LOSS": 25,
+    "PUSH": 0,
+    "decided": 53,
+    "hitRate": 52.83
+   }
+  },
+  "corrShrinkageCostVsLine": 0.5314
+ }
+}

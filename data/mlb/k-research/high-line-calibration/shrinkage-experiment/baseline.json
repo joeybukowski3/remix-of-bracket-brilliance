@@ -1,0 +1,233 @@
+{
+  "studyId": "mlb-k-high-line-calibration-v2-shrinkage",
+  "section": "baseline-freeze",
+  "generatedAt": "2026-09-07T09:26:27.364Z",
+  "productionAlpha": 0.55,
+  "productionSource": "src/lib/mlb/kProjectionV2.ts (read only; NOT modified)",
+  "dataIntegrity": {
+    "archiveRows": 1186,
+    "leakageSafeRows": 958,
+    "replayableRows": 958,
+    "clampedMatchupRows": 0,
+    "seasonBfCoverage": 958,
+    "seasonBfMissing": 0,
+    "seasonBfZero": 17,
+    "percentileFallbackRows": 93,
+    "slates": 44,
+    "dateRange": "2026-07-23..2026-09-06",
+    "seasonBfQuantiles": {
+      "min": 0,
+      "p10": 82.4,
+      "p50": 427,
+      "p90": 578,
+      "max": 784
+    },
+    "marketReference": {
+      "pctLinesAtLeast7": 5.64,
+      "pctLinesAtLeast8point5": 1.15,
+      "sdMarketLine": 1.4975,
+      "pctActualAtLeast7": 21.71,
+      "pctActualAtLeast8": 13.47
+    }
+  },
+  "expectations": {
+    "n": 958,
+    "mae": 1.799,
+    "signedError": 0.056,
+    "sdProjectedKs": 0.913,
+    "pctAtLeast7": 0.73,
+    "pctAtLeast8": 0,
+    "highLineSignedError": -1.126,
+    "line75PctUnder": 97.7,
+    "line85PctUnder": 100
+  },
+  "checks": [
+    {
+      "metric": "n",
+      "expected": 958,
+      "actual": 958,
+      "delta": 0,
+      "tolerance": 0,
+      "ok": true
+    },
+    {
+      "metric": "mae",
+      "expected": 1.799,
+      "actual": 1.7987,
+      "delta": 0.0003,
+      "tolerance": 0.002,
+      "ok": true
+    },
+    {
+      "metric": "signedError",
+      "expected": 0.056,
+      "actual": 0.0562,
+      "delta": 0.0002,
+      "tolerance": 0.002,
+      "ok": true
+    },
+    {
+      "metric": "sdProjectedKs",
+      "expected": 0.913,
+      "actual": 0.9129,
+      "delta": 0.0001,
+      "tolerance": 0.002,
+      "ok": true
+    },
+    {
+      "metric": "pctAtLeast7",
+      "expected": 0.73,
+      "actual": 0.73,
+      "delta": 0,
+      "tolerance": 0.002,
+      "ok": true
+    },
+    {
+      "metric": "pctAtLeast8",
+      "expected": 0,
+      "actual": 0,
+      "delta": 0,
+      "tolerance": 0.002,
+      "ok": true
+    },
+    {
+      "metric": "highLineSignedError",
+      "expected": -1.126,
+      "actual": -1.1257,
+      "delta": 0.0003,
+      "tolerance": 0.002,
+      "ok": true
+    },
+    {
+      "metric": "line75PctUnder",
+      "expected": 97.7,
+      "actual": 97.7,
+      "delta": 0,
+      "tolerance": 0.06,
+      "ok": true
+    },
+    {
+      "metric": "line85PctUnder",
+      "expected": 100,
+      "actual": 100,
+      "delta": 0,
+      "tolerance": 0.06,
+      "ok": true
+    }
+  ],
+  "reproduced": true,
+  "metrics": {
+    "n": 958,
+    "mae": 1.7987,
+    "rmse": 2.2702,
+    "signedError": 0.0562,
+    "sdProjectedKs": 0.9129,
+    "meanProjectedKs": 4.8464,
+    "p75ProjectedKs": 5.3873,
+    "p90ProjectedKs": 5.8817,
+    "p95ProjectedKs": 6.1646,
+    "maxProjectedKs": 7.6012,
+    "pctAtLeast7": 0.73,
+    "pctAtLeast8": 0,
+    "highLineN": 54,
+    "highLineSignedError": -1.1257,
+    "highLineMae": 2.2349,
+    "line75N": 43,
+    "line75SignedError": -0.9019,
+    "line75PctUnder": 97.7,
+    "line85N": 11,
+    "line85SignedError": -2.0005,
+    "line85PctUnder": 100,
+    "lowMidLineN": 810,
+    "lowMidLineMae": 1.7251,
+    "lowMidLineSignedError": 0.1869,
+    "lowLineN": 595,
+    "lowLineMae": 1.66,
+    "pctUnderAll": 44.6,
+    "directionalHitRate": 54.34,
+    "directionalRecord": "520-437-1",
+    "directionalHitRateHighLine": 51.85,
+    "directionalRecordHighLine": "28-26"
+  },
+  "alphaSummary": {
+    "meanAlpha": 0.55,
+    "p10Alpha": 0.55,
+    "p50Alpha": 0.55,
+    "p90Alpha": 0.55,
+    "minAlpha": 0.55,
+    "maxAlpha": 0.55
+  },
+  "highLineSignedErrorCi": {
+    "mean": -1.1257,
+    "lower": -1.8453,
+    "upper": -0.3857
+  },
+  "lineBuckets": [
+    {
+      "bucket": "<=3.5",
+      "n": 256,
+      "meanLine": 2.902,
+      "meanActual": 3.664,
+      "meanProjected": 4.047,
+      "signedError": 0.382,
+      "mae": 1.662,
+      "pctUnder": 10.2,
+      "hitRate": 57.25
+    },
+    {
+      "bucket": "4.5",
+      "n": 339,
+      "meanLine": 4.5,
+      "meanActual": 4.386,
+      "meanProjected": 4.697,
+      "signedError": 0.311,
+      "mae": 1.658,
+      "pctUnder": 30.7,
+      "hitRate": 50.15
+    },
+    {
+      "bucket": "5.5",
+      "n": 215,
+      "meanLine": 5.5,
+      "meanActual": 5.493,
+      "meanProjected": 5.252,
+      "signedError": -0.241,
+      "mae": 1.905,
+      "pctUnder": 71.2,
+      "hitRate": 56.28
+    },
+    {
+      "bucket": "6.5",
+      "n": 94,
+      "meanLine": 6.5,
+      "meanActual": 6.17,
+      "meanProjected": 5.779,
+      "signedError": -0.391,
+      "mae": 2.182,
+      "pctUnder": 96.8,
+      "hitRate": 58.51
+    },
+    {
+      "bucket": "7.5",
+      "n": 43,
+      "meanLine": 7.5,
+      "meanActual": 7.14,
+      "meanProjected": 6.238,
+      "signedError": -0.902,
+      "mae": 2.185,
+      "pctUnder": 97.7,
+      "hitRate": 53.49
+    },
+    {
+      "bucket": "8.5+",
+      "n": 11,
+      "meanLine": 8.682,
+      "meanActual": 8.727,
+      "meanProjected": 6.727,
+      "signedError": -2,
+      "mae": 2.429,
+      "pctUnder": 100,
+      "hitRate": 45.45
+    }
+  ]
+}

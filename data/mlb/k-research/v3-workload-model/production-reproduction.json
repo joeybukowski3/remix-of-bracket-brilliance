@@ -1,0 +1,199 @@
+{
+  "study": "mlb-k-projection-v3-workload-model",
+  "section": "production-config-reproduction",
+  "generatedAt": "2026-09-07T15:28:27.368Z",
+  "note": "Re-runs the clean historical sample using the FROZEN V3_PRODUCTION_CONFIG from scripts/lib/mlb-k-v3-production-adapter.mjs, so the shipped configuration and the validated configuration are proven to be the same model rather than assumed to be.",
+  "n": 933,
+  "productionMetrics": {
+    "n": 933,
+    "mae": 1.7721,
+    "rmse": 2.2298,
+    "signedError": 0.0332,
+    "sdProjectedKs": 0.8452,
+    "meanProjectedKs": 4.8864,
+    "p75ProjectedKs": 5.3911,
+    "p90ProjectedKs": 5.8808,
+    "p95ProjectedKs": 6.1669,
+    "maxProjectedKs": 7.6012,
+    "pctAtLeast7": 0.75,
+    "pctAtLeast8": 0,
+    "highLineN": 52,
+    "highLineSignedError": -1.4088,
+    "highLineMae": 2.0811,
+    "line75N": 41,
+    "line75SignedError": -1.2501,
+    "line75PctUnder": 97.6,
+    "line85N": 11,
+    "line85SignedError": -2.0005,
+    "line85PctUnder": 100,
+    "lowMidLineN": 789,
+    "lowMidLineMae": 1.7109,
+    "lowMidLineSignedError": 0.1912,
+    "lowLineN": 576,
+    "lowLineMae": 1.6476,
+    "pctUnderAll": 43.8,
+    "directionalHitRate": 53.86,
+    "directionalRecord": "502-430-1",
+    "directionalHitRateHighLine": 50,
+    "directionalRecordHighLine": "26-26"
+  },
+  "v3Metrics": {
+    "n": 933,
+    "mae": 1.7669,
+    "rmse": 2.2031,
+    "signedError": 0.1787,
+    "sdProjectedKs": 0.8603,
+    "meanProjectedKs": 5.0318,
+    "p75ProjectedKs": 5.5217,
+    "p90ProjectedKs": 6.1565,
+    "p95ProjectedKs": 6.5436,
+    "maxProjectedKs": 8.4466,
+    "pctAtLeast7": 2.25,
+    "pctAtLeast8": 0.54,
+    "highLineN": 52,
+    "highLineSignedError": -0.8895,
+    "highLineMae": 1.9818,
+    "line75N": 41,
+    "line75SignedError": -0.7453,
+    "line75PctUnder": 92.7,
+    "line85N": 11,
+    "line85SignedError": -1.4272,
+    "line85PctUnder": 100,
+    "lowMidLineN": 789,
+    "lowMidLineMae": 1.7109,
+    "lowMidLineSignedError": 0.3025,
+    "lowLineN": 576,
+    "lowLineMae": 1.6424,
+    "pctUnderAll": 35.6,
+    "directionalHitRate": 52.04,
+    "directionalRecord": "485-447-1",
+    "directionalHitRateHighLine": 50,
+    "directionalRecordHighLine": "26-26"
+  },
+  "workload": {
+    "ipN": 933,
+    "ipMae": 0.9044,
+    "ipSigned": 0.0251,
+    "ipRmse": 1.1968,
+    "bfN": 933,
+    "bfMae": 2.6144,
+    "bfSigned": 0.1495,
+    "bfCorrelation": 0.4463
+  },
+  "researchTargets": {
+    "mae": 1.7669,
+    "rmse": 2.2031,
+    "highLineSignedError": -0.8895,
+    "highLineMae": 1.9818,
+    "line75PctUnder": 92.7,
+    "lowMidLineMae": 1.7109,
+    "directionalHitRate": 52.04,
+    "ipMae": 0.9044,
+    "bfMae": 2.6144,
+    "bfCorrelation": 0.4463,
+    "productionHitRate": 53.86
+  },
+  "tolerance": {
+    "metric": 0.005,
+    "rate": 0.2
+  },
+  "checks": [
+    {
+      "key": "overall MAE",
+      "actual": 1.7669,
+      "target": 1.7669,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "overall RMSE",
+      "actual": 2.2031,
+      "target": 2.2031,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "high-line signed error",
+      "actual": -0.8895,
+      "target": -0.8895,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "high-line MAE",
+      "actual": 1.9818,
+      "target": 1.9818,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "7.5 %Under",
+      "actual": 92.7,
+      "target": 92.7,
+      "tol": 0.2,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "<=5.5 MAE",
+      "actual": 1.7109,
+      "target": 1.7109,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "v3 directional hit rate",
+      "actual": 52.04,
+      "target": 52.04,
+      "tol": 0.2,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "production directional hit rate",
+      "actual": 53.86,
+      "target": 53.86,
+      "tol": 0.2,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "workload IP MAE",
+      "actual": 0.9044,
+      "target": 0.9044,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "workload BF MAE",
+      "actual": 2.6144,
+      "target": 2.6144,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    },
+    {
+      "key": "workload BF correlation",
+      "actual": 0.4463,
+      "target": 0.4463,
+      "tol": 0.005,
+      "delta": 0,
+      "pass": true
+    }
+  ],
+  "reproduced": true,
+  "directionalHitRateWarning": {
+    "production": 53.86,
+    "v3": 52.04,
+    "deltaPoints": -1.82,
+    "productionRecord": "502-430-1",
+    "v3Record": "485-447-1",
+    "statement": "v3 wins fewer directional calls than production on this sample. This is a known, reported caution carried forward from the research pass, not a hidden result, and it is the single strongest argument for a shadow period before any promotion."
+  }
+}

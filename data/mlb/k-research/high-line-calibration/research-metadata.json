@@ -1,0 +1,144 @@
+{
+ "study_id": "mlb-k-high-line-calibration-v1",
+ "title": "Is the JKB MLB strikeout model structurally biased toward UNDER on high Vegas K lines?",
+ "question": "Are JKB strikeout projections systematically compressed below high market lines (especially 7.5+), and if so is the miss driven by projected workload, pitcher K-rate regression, opponent K-environment adjustment, recent-form shrinkage, or upper-tail calibration?",
+ "date": "2026-09-06",
+ "status": "COMPLETE_DIAGNOSIS_NO_MODEL_CHANGE",
+ "article_status": "DRAFT_READY",
+ "dataset": {
+  "source": "git-archived pregame revisions of public/data/mlb/k-props-v2-shadow.json (193 revisions), joined to outcomes harvested from later revisions of public/data/mlb/strikeout-prop-details.json (175 revisions) and the independently graded public/data/mlb/top-k-performance.json (134 revisions)",
+  "date_range": "2026-07-23 to 2026-09-06",
+  "distinct_slate_dates": 46,
+  "pregame_rows": 1186,
+  "graded_rows": 999,
+  "leakage_safe_rows": 958,
+  "rows_with_actual_batters_faced": 950,
+  "high_line_rows_line_ge_7": 54,
+  "leakage_controls": [
+   "Only the last artifact revision whose own slateDate equals the row slateDate is kept, so every projection is a pregame snapshot.",
+   "Rows whose snapshot commit date post-dates the slate date are dropped.",
+   "Outcomes are never reconstructed from the projection; they come from independent start-log and grading artifacts.",
+   "Market lines are used exactly as archived pregame; no line is imputed."
+  ]
+ },
+ "methodology": [
+  "Trace the production K projection path and confirm which artifact field is displayed.",
+  "Extract a pregame archive from git history and join independent outcomes.",
+  "Bucket by market K line and report projection-minus-line, signed error, MAE/RMSE, direction frequency and directional W/L.",
+  "Regress projection-minus-line and signed error on the market line; bootstrap confidence intervals with a deterministic fixed-seed resampler.",
+  "Decompose projection error exactly into a workload term projRate*(projBF-actualBF) and a K-rate term actualBF*(projRate-actualRate).",
+  "Split the archive by pitcher-skill shrinkage era and replay the current production formula over the full history using archived pregame inputs only.",
+  "Test forward predictive value of pitcher recent-form windows and opponent K-environment windows against next-start outcomes.",
+  "Test whether the market line carries residual information after conditioning on the JKB projection.",
+  "Measure upper-tail compression against both the market line and the outcome distribution."
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "signal": "STRONG",
+   "claim": "The high-line UNDER bias is real in the model now in production, and it was created by the pitcher-skill shrinkage constant deployed on 2026-09-02.",
+   "evidence": "Replaying the current alpha=0.55 formula over all 958 leakage-safe rows drives the 7.5 bucket to 97.7% UNDER (archived 86.0%) and the 8.5+ bucket to 100% UNDER, with mean signed error -0.902 and -2.00 Ks. Regression of signed error on market line goes from slope -0.055 (t=-1.11, not significant) under the pre-shrinkage model to slope -0.206 (t=-4.24) under the current model. High-line mean signed error -1.126 Ks, bootstrap CI [-1.845, -0.386]."
+  },
+  {
+   "id": "F2",
+   "signal": "STRONG",
+   "claim": "At high lines the miss is a K-RATE miss, not a workload miss.",
+   "evidence": "In the 7.5 bucket the exact decomposition gives workload error +0.093 Ks (CI [-0.278, +0.518], spans zero) against K-rate error -0.714 Ks (CI [-1.324, -0.043]). Projected BF 23.32 vs actual 22.46-23.12 and projected IP 5.73 vs actual 5.84: workload is well calibrated for high-line starters. Projected K rate 0.304 vs actual 0.338."
+  },
+  {
+   "id": "F3",
+   "signal": "STRONG",
+   "claim": "Upper-tail compression is severe and the current calibration makes it worse.",
+   "evidence": "Archived projections: SD 1.247 vs market line SD 1.498 vs actual SD 2.452; 3.44% of projections reach 7 Ks against 21.71% of actual outcomes. Replaying the current formula collapses SD to 0.913, projections reaching 7 Ks to 0.73%, and projections reaching 8 Ks to 0.00% across 958 games in which 13.47% of outcomes were 8 or more. Projected-K-rate SD falls from 0.047 to 0.028 against an actual K-rate SD of 0.105."
+  },
+  {
+   "id": "F4",
+   "signal": "STRONG",
+   "claim": "At market lines of 7 or higher the model's recommendation is a constant, not a prediction.",
+   "evidence": "Under the current formula 98.1% of line>=7 rows are UNDER and no row projects 8 Ks. The 8.5+ bucket goes 100% UNDER and grades 5-6 (45.5%), below a coin flip, so the one-sided output carries no directional information in that bucket."
+  },
+  {
+   "id": "F5",
+   "signal": "MODERATE",
+   "claim": "The market line carries information the model is missing, but it is in the line-minus-projection gap, not in the line level.",
+   "evidence": "Regression of residual (actual minus JKB) on the market line alone: slope 0.055, t=1.11, not significant. Regression on line-minus-projection: slope 0.353, t=5.76, r=0.183. Roughly a third of the gap between the market line and the JKB projection is realised in the outcome."
+  },
+  {
+   "id": "F6",
+   "signal": "MODERATE",
+   "claim": "Gavin Williams on 2026-09-06 is directionally representative of the high-line failure mode but overstates the workload component.",
+   "evidence": "Shrinkage cost him 0.90 projected Ks (skill rate 0.3127 shrunk to 0.2713 across 21.775 BF). He needs 6.10 IP to reach 7.5 under the current model but only 5.31 IP without shrinkage; his last-five median start is 5.67 IP, which clears the line unshrunk and misses it shrunk. His projected 4.95 IP is depressed by a single 1.1 IP start on 2026-08-25, but league-wide the workload term at 7.5 is not significant."
+  }
+ ],
+ "negative_findings": [
+  {
+   "id": "N1",
+   "claim": "Recent form is NOT underweighted. Weighting it more heavily would make the model worse.",
+   "evidence": "Forward correlation with next-start K rate: season K% 0.290 beats last-3 0.251 and last-5 0.246; the model's blended pitcher skill rate 0.304 beats all single windows. Among line>=7 rows last-5 K rate correlates NEGATIVELY with next-start K rate (-0.106) while season is +0.099."
+  },
+  {
+   "id": "N2",
+   "claim": "The opponent recent-K adjustment is NOT too slow. Reacting faster to short-term opponent K shifts would make the model worse.",
+   "evidence": "Forward correlation with next-start K rate: opponent SEASON K rate 0.173 beats raw opponent recent K rate 0.104 and projected lineup K rate 0.139. The model's blended opponent environment (0.169) already tracks the best single signal."
+  },
+  {
+   "id": "N3",
+   "claim": "Workload projection is NOT the primary root cause and is better than naive recent-start averages.",
+   "evidence": "Model projected BF correlates 0.404 with actual BF against 0.311 for a last-3-start BF average; projected IP 0.356 against 0.323 for last-3 IP. The workload error term is small and not significant in the 6.5 and 7.5 buckets."
+  },
+  {
+   "id": "N4",
+   "claim": "The UNDER lean at high lines was NOT losing money under the pre-shrinkage model, and the shrinkage improved bulk accuracy.",
+   "evidence": "Archived UNDER signal graded 20-17 (54.1%) at 7.5 and 40-27 (59.7%) at 6.5. The market itself shades high lines to the Over: only 40.4% of 6.5 and 44.2% of 7.5 outcomes went over. Replaying the current formula over the full archive improves overall MAE from 1.822 to 1.799 and directional hit rate from 52.09% to 54.34%."
+  },
+  {
+   "id": "N5",
+   "claim": "The opponent matchup term is effectively inert and is not a driver in either direction.",
+   "evidence": "Matchup adjustment SD 0.0082 against a clamp of +/-0.035, and the clamp was hit on 0 of 1186 archived rows. Mean adjustment for line>=7.5 rows is +0.0048 K rate, worth about 0.11 Ks."
+  }
+ ],
+ "signal_classifications": {
+  "pitcher_k_rate_shrinkage_upper_tail": "STRONG -- primary root cause",
+  "upper_tail_variance_compression": "STRONG -- primary root cause, same mechanism",
+  "one_sided_recommendation_at_high_lines": "STRONG -- consequence, and the operationally visible symptom",
+  "market_line_minus_projection_gap": "MODERATE -- real missing information, not yet actionable as an input",
+  "workload_projection": "WEAK -- accurate at high lines league-wide; case-specific outlier sensitivity only",
+  "opponent_recent_k_window": "NULL -- current regression is correct",
+  "pitcher_recent_form_weight": "NULL -- current weight is correct, more recency would hurt",
+  "opponent_matchup_multiplier_and_clamp": "NULL for bias; NOTE that the term is nearly inert"
+ },
+ "limitations": [
+  "The graded archive spans 46 days of a single season (2026-07-23 to 2026-09-06), not multiple seasons.",
+  "Only 54 leakage-safe rows have a market line of 7 or higher and only 11 have 8.5+, so every high-line bucket estimate is wide.",
+  "Only 39 graded rows were generated by the current alpha=0.55 model in the wild; the high-line evidence for the current model rests on a counterfactual replay, not on live results. The replay reproduces archived Era B projections to 0 error, so the formula reconstruction is exact, but it inherits Era A input distributions.",
+  "Actual batters faced are present for 950 of 958 rows; the 8 rows without it are excluded from the decomposition only.",
+  "Directional records are counts of the model's own side, not wagers. No ROI is claimed: the archived odds are a single pregame capture and there is no immutable entry-price contract, so price-sensitive returns cannot be validated.",
+  "Opponent handedness-split K rate was null on every archived row, so that component never contributed and its value is untested.",
+  "Actual pitch counts are sparse in the archive, so the pitch-limit component of workload was not separately validated."
+ ],
+ "model_decision": "NO PRODUCTION CHANGE MADE. Evidence is sufficient to open a controlled shadow experiment on upper-tail calibration of the pitcher-skill shrinkage, and sufficient to rule out workload, recent-form weighting and opponent-window responsiveness as the root cause.",
+ "implementation_status": "RESEARCH_ONLY_UNCOMMITTED",
+ "artifacts": [
+  "data/mlb/k-research/high-line-calibration/pregame-archive.json",
+  "data/mlb/k-research/high-line-calibration/summary.json",
+  "data/mlb/k-research/high-line-calibration/line-buckets.csv",
+  "data/mlb/k-research/high-line-calibration/exact-lines.csv",
+  "data/mlb/k-research/high-line-calibration/workload-decomposition.csv",
+  "data/mlb/k-research/high-line-calibration/opponent-window-analysis.csv",
+  "data/mlb/k-research/high-line-calibration/legacy-vs-v2.csv",
+  "data/mlb/k-research/high-line-calibration/diagnostic-slices.csv",
+  "data/mlb/k-research/high-line-calibration/outcome-calibration.csv",
+  "data/mlb/k-research/high-line-calibration/shrinkage-era-counterfactual.json",
+  "data/mlb/k-research/high-line-calibration/shrinkage-counterfactual-buckets.csv",
+  "data/mlb/k-research/high-line-calibration/shrinkage-eras.csv",
+  "data/mlb/k-research/high-line-calibration/gavin-williams-case-study.json"
+ ],
+ "scripts": [
+  "scripts/research/mlb-k-extract-history.mjs",
+  "scripts/research/mlb-k-high-line-analysis.mjs",
+  "scripts/research/mlb-k-shrinkage-era-counterfactual.mjs",
+  "scripts/research/mlb-k-gavin-case-study.mjs",
+  "scripts/research/lib/mlb-k-research-helpers.mjs",
+  "scripts/research/lib/mlb-k-research-helpers.test.mjs"
+ ]
+}

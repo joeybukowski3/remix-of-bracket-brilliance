@@ -1,0 +1,73 @@
+{
+  "study": "mlb-k-projection-v3-workload-model",
+  "title": "Revised MLB strikeout workload model (v3): neutral IP baseline, workload regime, site and opponent-SP effects",
+  "generatedAt": "2026-09-07T11:53:40.219Z",
+  "branch": "research/mlb-k-high-line-calibration",
+  "status": "IMPLEMENTED_AND_VALIDATED_PASS_NO_PROMOTION",
+  "inputs": {
+    "archive": "data/mlb/k-research/high-line-calibration/pregame-archive.json",
+    "seasonBfIndex": "data/mlb/k-research/high-line-calibration/shrinkage-experiment/season-bf-index.json",
+    "venueSplitIndex": "data/mlb/k-research/v3-workload-model/venue-split-index.json",
+    "startLog": "data/mlb/k-research/v3-workload-model/start-log.json"
+  },
+  "newModelFiles": [
+    "scripts/mlb-k/mlb-k-workload-v3-core.mjs",
+    "scripts/mlb-k/mlb-k-opponent-sp-workload-v3.mjs",
+    "scripts/mlb-k/compute-workload-projection-v3.mjs",
+    "scripts/lib/mlb-k-projection-v3.mjs"
+  ],
+  "productionFilesRead": [
+    "src/lib/mlb/kProjectionV2.ts",
+    "scripts/mlb-k/compute-workload-projection.mjs"
+  ],
+  "productionFilesWritten": [],
+  "publicArtifactsWritten": [],
+  "cleanN": 933,
+  "excludedN": 14,
+  "ssAlphaK": 125,
+  "vegasUsedInModelMath": false,
+  "vegasUsage": "Evaluation and bucketing only. No projection function in any v3 module reads kLine, oddsOver or oddsUnder; an enforced test passes a market line into the model and asserts the output is byte-identical.",
+  "determinism": "No randomness anywhere: every estimator, weight, bucket and split is a pure function of the archive and the start log. Re-running any script reproduces its artifacts exactly.",
+  "leakageControls": [
+    "Only pregame artifact revisions contribute inputs; a revision whose commit date post-dates its own slate is rejected at extraction.",
+    "Every workload window reads starts strictly before the slate date.",
+    "The league starter IP/start and BF/IP levels are EXPANDING means over starts before the slate, never full-sample constants.",
+    "The opponent league-centring constants are likewise expanding and computed before the slate.",
+    "All grid selection is scored on a development window; the validation window is reported but never used to choose.",
+    "Rolling-origin folds assert temporal order before scoring."
+  ],
+  "verdict": "PASS",
+  "criteria": [
+    {
+      "key": "overall K MAE better or equal",
+      "pass": true,
+      "detail": "D 1.7669 vs A 1.7721"
+    },
+    {
+      "key": "workload/IP calibration better",
+      "pass": true,
+      "detail": "IP MAE 0.9044 vs 0.9276; BF MAE 2.6144 vs 2.7565"
+    },
+    {
+      "key": "materially reduced high-line under-bias",
+      "pass": true,
+      "detail": "D -0.8895 vs A -1.4088 over n=52"
+    },
+    {
+      "key": "no meaningful degradation at lines <=5.5",
+      "pass": true,
+      "detail": "D 1.7109 vs A 1.7109"
+    },
+    {
+      "key": "directional hit rate not degraded (informational)",
+      "informational": true,
+      "pass": false,
+      "detail": "D 52.04% (485-447-1) vs A 53.86% (502-430-1)"
+    },
+    {
+      "key": "stable across temporal folds",
+      "pass": true,
+      "detail": "each rolling-origin fold within 0.10 K MAE of production"
+    }
+  ]
+}

@@ -20,12 +20,23 @@
  * posted caption all agree" checkable rather than hopeful.
  */
 import { buildStrikeoutPropDetailKey } from "./mlb-strikeout-prop-details-core.mjs";
+import { validateV3ForProduction } from "./mlb-k-v3-projection-validator.mjs";
 
 /** Which projection actually produced `effectiveProjectedKs`. */
 export const K_PROJECTION_SOURCE = Object.freeze({
+  V3: "v3",
   V2: "v2",
   LEGACY_FALLBACK: "legacy-fallback",
   UNAVAILABLE: "unavailable",
+});
+
+/**
+ * The model that produced each source, published so a downstream surface can
+ * say which model it is showing without re-deriving it from the source string.
+ */
+export const K_PROJECTION_MODEL_VERSION = Object.freeze({
+  [K_PROJECTION_SOURCE.V3]: "mlb-k-projection-v3",
+  [K_PROJECTION_SOURCE.V2]: "mlb-k-projection-v2-production",
 });
 
 /** Why V2 was not used (or, for `unavailable`, why nothing could be used). */
@@ -73,12 +84,34 @@ export const PUBLISHED_PROJECTION_DECIMALS = 1;
  * Rounding happens here so the published value can never differ between two
  * surfaces that round it at different moments.
  */
+/**
+ * A projection fit to publish: finite and strictly positive, or null.
+ *
+ * FULL PRECISION IS PUBLISHED DELIBERATELY. This used to round to
+ * PUBLISHED_PROJECTION_DECIMALS before publishing, which meant a projection of
+ * 5.46 was stored as 5.5 and then compared against a 5.5 line as an exact tie --
+ * turning a real UNDER edge into a "neutral" push, and inventing direction
+ * flips that no model produced. Rounding is a PRESENTATION concern: every
+ * display surface already formats to one decimal itself (`toFixed(1)`,
+ * `numOrDash(x, 1)`), so publishing full precision changes nothing a reader
+ * sees while letting side and edge logic compare the numbers the models
+ * actually produced.
+ *
+ * PUBLISHED_PROJECTION_DECIMALS is retained and exported for callers that want
+ * the display convention; it no longer gates what is stored.
+ */
 function toUsableProjection(value) {
   const parsed = toFiniteNumber(value);
   if (parsed == null || parsed <= 0) return null;
-  const factor = 10 ** PUBLISHED_PROJECTION_DECIMALS;
-  const rounded = Math.round(parsed * factor) / factor;
-  return rounded > 0 ? rounded : null;
+  return parsed;
+}
+
+/** The display convention, applied at presentation time rather than at write time. */
+export function roundProjectionForDisplay(value, decimals = PUBLISHED_PROJECTION_DECIMALS) {
+  const parsed = toFiniteNumber(value);
+  if (parsed == null) return null;
+  const factor = 10 ** decimals;
+  return Math.round(parsed * factor) / factor;
 }
 
 function isValidSlateDate(value) {
@@ -301,17 +334,69 @@ export function resolveKProjection({
     const v2ProjectedKs = toFiniteNumber(v2Row?.v2?.projectedStrikeouts);
     const confidence = typeof v2Row?.v2?.confidence === "string" ? v2Row.v2.confidence : null;
     const modelVersion = typeof v2Row?.v2?.modelVersion === "string" ? v2Row.v2.modelVersion : null;
+    const v3ProjectedKs = toFiniteNumber(v2Row?.v3?.projectedKs);
 
     if (v2RejectionReason == null) {
+      /**
+       * V3 PROMOTION. V3 is preferred over V2 only when the whole V2 path has
+       * already been accepted -- same artifact, same slate, same matched row --
+       * AND the row's own v3 block passes the production gate. That ordering is
+       * deliberate: every identity, staleness and slate check that protects V2
+       * protects V3 too, and V3 adds one more gate on top rather than replacing
+       * any of them.
+       *
+       * A rejected V3 is not a failure. Openers, relievers and pitchers with no
+       * usable game log are refused BY DESIGN, because the model was validated
+       * on starters only; those rows keep the V2 projection they have always
+       * had, with `v3RejectionReason` recording why.
+       */
+      const v3Verdict = validateV3ForProduction(v2Row?.v3);
+      if (v3Verdict.ok) {
+        return {
+          effectiveProjectedKs: toUsableProjection(v3ProjectedKs),
+          legacyProjectedKs,
+          v2ProjectedKs,
+          v3ProjectedKs,
+          /**
+           * The workload the published strikeout number was actually built
+           * from. Publishing V3's strikeouts on top of V2's innings would make
+           * the row internally inconsistent -- projectedKs would no longer be
+           * projectedKRate x projectedBF -- and `kPropStatus` and the game
+           * top-props eligibility gate both read projectedIP, so the mismatch
+           * would silently change which props qualify.
+           */
+          projectedInnings: toFiniteNumber(v2Row?.v3?.finalProjectedIP),
+          projectedBattersFaced: toFiniteNumber(v2Row?.v3?.projectedBF),
+          projectedKRate: toFiniteNumber(v2Row?.v3?.projectedKRate),
+          workloadSource: K_PROJECTION_SOURCE.V3,
+          source: K_PROJECTION_SOURCE.V3,
+          fallbackReason: null,
+          v2RejectionReason: null,
+          v3RejectionReason: null,
+          confidence,
+          modelVersion: K_PROJECTION_MODEL_VERSION[K_PROJECTION_SOURCE.V3],
+          v2ModelVersion: modelVersion,
+          matchedBy,
+        };
+      }
+
       return {
         effectiveProjectedKs: toUsableProjection(v2ProjectedKs),
         legacyProjectedKs,
         v2ProjectedKs,
+        v3ProjectedKs,
+        // V2 was published, so V2's own workload travels with it.
+        projectedInnings: toFiniteNumber(v2Row?.v2?.projectedInnings),
+        projectedBattersFaced: toFiniteNumber(v2Row?.v2?.projectedBattersFaced),
+        projectedKRate: toFiniteNumber(v2Row?.v2?.projectedKRate),
+        workloadSource: K_PROJECTION_SOURCE.V2,
         source: K_PROJECTION_SOURCE.V2,
         fallbackReason: null,
         v2RejectionReason: null,
+        v3RejectionReason: v3Verdict.reason,
         confidence,
         modelVersion,
+        v2ModelVersion: modelVersion,
         matchedBy,
       };
     }
@@ -321,11 +406,20 @@ export function resolveKProjection({
         effectiveProjectedKs: legacyProjectedKs,
         legacyProjectedKs,
         v2ProjectedKs,
+        v3ProjectedKs,
+        // Legacy carries its own stored IP; nothing here overrides it.
+        projectedInnings: null,
+        projectedBattersFaced: null,
+        projectedKRate: null,
+        workloadSource: K_PROJECTION_SOURCE.LEGACY_FALLBACK,
         source: K_PROJECTION_SOURCE.LEGACY_FALLBACK,
         fallbackReason: v2RejectionReason,
         v2RejectionReason,
+        // V3 was never reached: the V2 path failed first.
+        v3RejectionReason: null,
         confidence,
         modelVersion,
+        v2ModelVersion: modelVersion,
         matchedBy,
       };
     }
@@ -334,6 +428,13 @@ export function resolveKProjection({
       effectiveProjectedKs: null,
       legacyProjectedKs: null,
       v2ProjectedKs,
+      v3ProjectedKs,
+      v3RejectionReason: null,
+      v2ModelVersion: modelVersion,
+      projectedInnings: null,
+      projectedBattersFaced: null,
+      projectedKRate: null,
+      workloadSource: K_PROJECTION_SOURCE.UNAVAILABLE,
       source: K_PROJECTION_SOURCE.UNAVAILABLE,
       // Nothing is publishable because the last-resort legacy value is
       // itself unusable; `v2RejectionReason` still records why V2 was refused.
@@ -391,6 +492,31 @@ export function applyResolvedKProjection(legacyRow, resolved) {
   const effective = resolved.effectiveProjectedKs;
   const kAdjustment = kLine != null && effective != null ? Math.round((effective - kLine) * 5) : 0;
 
+  /**
+   * The workload that belongs to the PUBLISHED projection.
+   *
+   * A model's strikeout number and its innings must travel together: several
+   * downstream gates (`kPropStatus` INSUFFICIENT_DATA, the game top-props
+   * `projectedIP > 3.0` eligibility rule) read projectedIP, so leaving V2's
+   * innings under a V3 strikeout projection would change which props qualify
+   * for reasons unrelated to either model.
+   *
+   * Only a model-sourced workload overrides the stored value. Legacy and
+   * unavailable rows keep the innings the payload already carried, which is the
+   * legacy projection's own -- overriding those with null would erase data the
+   * legacy fail-safe depends on.
+   */
+  const storedIp = toFiniteNumber(legacyRow?.projectedIP);
+  const resolvedIp = toFiniteNumber(resolved.projectedInnings);
+  const resolvedBf = toFiniteNumber(resolved.projectedBattersFaced);
+  const resolvedKRate = toFiniteNumber(resolved.projectedKRate);
+  const usesModelWorkload =
+    resolvedIp != null &&
+    (resolved.workloadSource === K_PROJECTION_SOURCE.V3 || resolved.workloadSource === K_PROJECTION_SOURCE.V2);
+
+  const projectedIP = usesModelWorkload ? resolvedIp : storedIp;
+  const projectedIPSource = usesModelWorkload ? resolved.workloadSource : "legacy-stored";
+
   // The stored legacy number is written back exactly as it was found, not as
   // the resolver's "usable" reading of it: an unusable legacy value (0/NaN)
   // is still the honest record of what legacy produced, and re-running this
@@ -404,10 +530,27 @@ export function applyResolvedKProjection(legacyRow, resolved) {
     effectiveProjectedKs: effective,
     legacyProjectedKs: storedLegacy,
     v2ProjectedKs: resolved.v2ProjectedKs,
+    v3ProjectedKs: resolved.v3ProjectedKs ?? null,
+
+    // ---- workload that matches the published projection ----
+    projectedIP,
+    effectiveProjectedIP: projectedIP,
+    projectedBF: usesModelWorkload ? resolvedBf : toFiniteNumber(legacyRow?.projectedBF),
+    projectedKRate: usesModelWorkload ? resolvedKRate : toFiniteNumber(legacyRow?.projectedKRate),
+    // Provenance, so a reader never has to infer which model an innings figure
+    // came from. `legacy-stored` means the payload's own value was kept.
+    resolvedProjectionModel: resolved.modelVersion ?? null,
+    resolvedProjectedIPSource: projectedIPSource,
+    resolvedProjectedBFSource: usesModelWorkload ? resolved.workloadSource : "legacy-stored",
+
     projectionSource: resolved.source,
     projectionFallbackReason: resolved.fallbackReason,
+    v3RejectionReason: resolved.v3RejectionReason ?? null,
     v2Confidence: resolved.confidence,
+    // Retains the historical field name and meaning: the model that produced
+    // the PUBLISHED projection. `v2ModelVersion` is v3's version when v3 won.
     v2ModelVersion: resolved.modelVersion,
+    projectionModelVersion: resolved.modelVersion,
     kAdjustment,
   };
 }
@@ -425,18 +568,26 @@ export function resolveKProjectionsForPayload({
   const index = buildV2RowIndex(artifact);
   const fallbackReasons = {};
   const confidenceCounts = {};
+  const v3RejectionReasons = {};
+  let v3Rows = 0;
   let v2Rows = 0;
   let legacyFallbackRows = 0;
   let unavailableRows = 0;
 
   const rows = pitchers.map((legacyRow) => {
     const resolved = resolveKProjection({ legacyRow, artifact, index, publicSlateDate, artifactValid });
-    if (resolved.source === K_PROJECTION_SOURCE.V2) v2Rows += 1;
+    if (resolved.source === K_PROJECTION_SOURCE.V3) v3Rows += 1;
+    else if (resolved.source === K_PROJECTION_SOURCE.V2) v2Rows += 1;
     else if (resolved.source === K_PROJECTION_SOURCE.LEGACY_FALLBACK) legacyFallbackRows += 1;
     else unavailableRows += 1;
 
     const reason = resolved.v2RejectionReason ?? resolved.fallbackReason;
     if (reason) fallbackReasons[reason] = (fallbackReasons[reason] ?? 0) + 1;
+    // Why a V2-sourced row did not reach V3. Counted separately from the V2
+    // fallback reasons so "V3 declined an opener" never reads as "V2 failed".
+    if (resolved.v3RejectionReason) {
+      v3RejectionReasons[resolved.v3RejectionReason] = (v3RejectionReasons[resolved.v3RejectionReason] ?? 0) + 1;
+    }
     if (resolved.confidence) {
       confidenceCounts[resolved.confidence] = (confidenceCounts[resolved.confidence] ?? 0) + 1;
     }
@@ -449,10 +600,12 @@ export function resolveKProjectionsForPayload({
     resolutions: rows.map((entry) => entry.resolved),
     diagnostics: {
       totalRows: rows.length,
+      v3Rows,
       v2Rows,
       legacyFallbackRows,
       unavailableRows,
       fallbackReasons,
+      v3RejectionReasons,
       confidenceCounts,
       ambiguousStableIds: [...index.duplicateStableIds],
       ambiguousMatchups: [...index.duplicateMatchups],
