@@ -10,9 +10,9 @@
     },
     "baseModel": "nfl-power-v0.3.1",
     "guideCalibrationWeight": 0.15,
-    "guideCalibrationCap": 3.0,
-    "luckAdjustmentCap": 4.0,
-    "projectionAdjustmentCap": 8.0,
+    "guideCalibrationCap": 3,
+    "luckAdjustmentCap": 4,
+    "projectionAdjustmentCap": 8,
     "sosAffectsRating": false,
     "luckCoverageTeams": [
       "BAL",
@@ -24,8 +24,16 @@
       "LV",
       "PIT"
     ],
-    "offseasonSnapshotVerifiedThrough": "2026-06-23",
-    "status": "beta — complete 32-team luck transcription and August roster/injury refresh recommended before final publication"
+    "offseasonSnapshotVerifiedThrough": "2026-09-07",
+    "status": "week-1 final — post-preseason 32-team forward-looking review complete (2026 VSiN NFL Betting Guide 2.0, pp. 29-45, ingested 2026-09-07). Remaining known gaps: the detailed luck panel is still transcribed only for _meta.luckCoverageTeams, and returningInjuryAdjustment is populated only where a concrete prior-season return was verified (it is not a league-wide neutral zero).",
+    "reviewFlags": {
+      "bal": "STRUCTURAL BASE-WINDOW REVIEW CANDIDATE. BAL's jkbV03Rating base is 2025-only (2025 net-EPA rank 16), while both the 2026 Projection lens (0.6/0.4 2025/2024 blend; BAL 2024 net-EPA rank 1) and Steve Makinen's post-preseason VSiN rating (28.5, third overall) place BAL far higher. The only concrete post-preseason information about BAL is negative (center). The disagreement is therefore about the base window, not about forward-looking inputs, and was deliberately NOT closed with a synthetic upward personnel/coaching adjustment. Revisit when the base-window methodology is reviewed.",
+      "jax": "UNRESOLVED BENCHMARK OUTLIER. JKB rates JAX materially higher than both the VSiN post-preseason power rating (24.0, ~17th) and the 2026 Projection composite (~16th). The post-preseason review of VSiN 2.0 p35 found no concrete football evidence — no material injury, suspension, or personnel loss — supporting a downgrade, so none was applied. Rating disagreement alone is not grounds for a change."
+    },
+    "reviewSources": [
+      "2026 VSiN NFL Betting Guide 2.0 (post-preseason), p29 Steve Makinen power ratings — INDEPENDENT BENCHMARK ONLY, never an additive input",
+      "2026 VSiN NFL Betting Guide 2.0 (post-preseason), pp30-45 team previews — primary source for the personnel/injury/coaching review"
+    ]
   },
   "teams": [
     {
@@ -44,10 +52,10 @@
         "guideRating": 77.3,
         "guideCalibrationAdjustment": -0.53,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": 2.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Myles Garrett + Trent McDuffie additions more than offset Jared Verse departure."
     },
@@ -56,7 +64,7 @@
       "team": "Seattle Seahawks",
       "abbr": "sea",
       "division": "NFC West",
-      "rating2025Adjusted": 75.0,
+      "rating2025Adjusted": 75,
       "projectionAdjustment2026": -0.5,
       "rating2026": 74.5,
       "sosRank": 14,
@@ -67,65 +75,19 @@
         "guideRating": 78.5,
         "guideCalibrationAdjustment": 0.62,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": -0.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Kenneth Walker departure creates a small downgrade; elite 2025 baseline remains."
     },
     {
       "rank": 3,
-      "team": "New England Patriots",
-      "abbr": "ne",
-      "division": "AFC East",
-      "rating2025Adjusted": 65.9,
-      "projectionAdjustment2026": 2.5,
-      "rating2026": 68.4,
-      "sosRank": 13,
-      "sosAvgOpponentRating": 50.9,
-      "confidence": "Medium",
-      "components": {
-        "jkbV03Rating": 65.744,
-        "guideRating": 67.0,
-        "guideCalibrationAdjustment": 0.19,
-        "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 2.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
-      },
-      "notes": "A.J. Brown + Romeo Doubs materially raise the receiving ceiling."
-    },
-    {
-      "rank": 4,
-      "team": "Houston Texans",
-      "abbr": "hou",
-      "division": "AFC South",
-      "rating2025Adjusted": 67.5,
-      "projectionAdjustment2026": 0.0,
-      "rating2026": 67.5,
-      "sosRank": 20,
-      "sosAvgOpponentRating": 50.0,
-      "confidence": "Medium",
-      "components": {
-        "jkbV03Rating": 68.385,
-        "guideRating": 62.8,
-        "guideCalibrationAdjustment": -0.84,
-        "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
-      },
-      "notes": "JKB remains higher than the guide; no forced offseason adjustment."
-    },
-    {
-      "rank": 5,
       "team": "Buffalo Bills",
       "abbr": "buf",
       "division": "AFC East",
-      "rating2025Adjusted": 66.0,
+      "rating2025Adjusted": 66,
       "projectionAdjustment2026": 1.5,
       "rating2026": 67.5,
       "sosRank": 19,
@@ -133,23 +95,46 @@
       "confidence": "Medium",
       "components": {
         "jkbV03Rating": 65.859,
-        "guideRating": 67.0,
+        "guideRating": 67,
         "guideCalibrationAdjustment": 0.17,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": 1.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "D.J. Moore addition; Joe Brady promotion treated as continuity, not a bonus."
     },
     {
-      "rank": 6,
+      "rank": 4,
+      "team": "New England Patriots",
+      "abbr": "ne",
+      "division": "AFC East",
+      "rating2025Adjusted": 65.9,
+      "projectionAdjustment2026": 1,
+      "rating2026": 66.9,
+      "sosRank": 13,
+      "sosAvgOpponentRating": 50.9,
+      "confidence": "Medium",
+      "components": {
+        "jkbV03Rating": 65.744,
+        "guideRating": 67,
+        "guideCalibrationAdjustment": 0.19,
+        "luckAverageRank": null,
+        "luckAdjustment": 0,
+        "personnelAdjustment": 1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
+      },
+      "notes": "Personnel credit rebalanced (VSiN 2.0 p31): the prior +2.5 counted the A.J. Brown and Romeo Doubs inflow without the offsetting Stefon Diggs (85-1,013) and Kayshon Boutte (33-551-6) outflow."
+    },
+    {
+      "rank": 5,
       "team": "Jacksonville Jaguars",
       "abbr": "jax",
       "division": "AFC South",
       "rating2025Adjusted": 66.7,
-      "projectionAdjustment2026": 0.0,
+      "projectionAdjustment2026": 0,
       "rating2026": 66.7,
       "sosRank": 22,
       "sosAvgOpponentRating": 49.5,
@@ -159,12 +144,35 @@
         "guideRating": 73.2,
         "guideCalibrationAdjustment": 1.14,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": 0,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
-      "notes": "Guide strongly corroborates JKB strength; no major verified offseason adjustment applied."
+      "notes": "Guide strongly corroborates JKB strength; no major verified offseason adjustment applied. UNRESOLVED BENCHMARK OUTLIER: see _meta.reviewFlags.jax — JKB rates JAX materially higher than both VSiN and the 2026 Projection lens, but the post-preseason review found no concrete football evidence supporting a downgrade, so none was applied."
+    },
+    {
+      "rank": 6,
+      "team": "Houston Texans",
+      "abbr": "hou",
+      "division": "AFC South",
+      "rating2025Adjusted": 67.5,
+      "projectionAdjustment2026": -1,
+      "rating2026": 66.5,
+      "sosRank": 20,
+      "sosAvgOpponentRating": 50,
+      "confidence": "Medium",
+      "components": {
+        "jkbV03Rating": 68.385,
+        "guideRating": 62.8,
+        "guideCalibrationAdjustment": -0.84,
+        "luckAverageRank": null,
+        "luckAdjustment": 0,
+        "personnelAdjustment": -1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
+      },
+      "notes": "Post-preseason review (VSiN 2.0 p34): Jayden Higgins tore his ACL, removing the intended WR2 behind Nico Collins, net of the Kayshon Boutte and David Montgomery additions. Elite DeMeco Ryans defense unchanged."
     },
     {
       "rank": 7,
@@ -179,13 +187,13 @@
       "confidence": "Medium-High",
       "components": {
         "jkbV03Rating": 58.654,
-        "guideRating": 65.0,
+        "guideRating": 65,
         "guideCalibrationAdjustment": 0.95,
         "luckAverageRank": 14.6,
         "luckAdjustment": -0.49,
         "personnelAdjustment": 1.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Jaylen Waddle upgrade; guide/luck inputs temper an otherwise strong 2025 baseline."
     },
@@ -195,7 +203,7 @@
       "abbr": "phi",
       "division": "NFC East",
       "rating2025Adjusted": 62.2,
-      "projectionAdjustment2026": -2.0,
+      "projectionAdjustment2026": -2,
       "rating2026": 60.2,
       "sosRank": 24,
       "sosAvgOpponentRating": 48.9,
@@ -205,21 +213,44 @@
         "guideRating": 62.8,
         "guideCalibrationAdjustment": 0.11,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": -2.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": -2,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "A.J. Brown departure is a material offensive downgrade."
     },
     {
       "rank": 9,
+      "team": "Detroit Lions",
+      "abbr": "det",
+      "division": "NFC North",
+      "rating2025Adjusted": 59.6,
+      "projectionAdjustment2026": 0,
+      "rating2026": 59.6,
+      "sosRank": 30,
+      "sosAvgOpponentRating": 46,
+      "confidence": "Medium",
+      "components": {
+        "jkbV03Rating": 59.89,
+        "guideRating": 58,
+        "guideCalibrationAdjustment": -0.28,
+        "luckAverageRank": null,
+        "luckAdjustment": 0,
+        "personnelAdjustment": 0,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
+      },
+      "notes": "Stable roster/coaching baseline in the verified move set."
+    },
+    {
+      "rank": 10,
       "team": "Indianapolis Colts",
       "abbr": "ind",
       "division": "AFC South",
       "rating2025Adjusted": 60.1,
-      "projectionAdjustment2026": 0.0,
-      "rating2026": 60.1,
+      "projectionAdjustment2026": -1.5,
+      "rating2026": 58.6,
       "sosRank": 26,
       "sosAvgOpponentRating": 48.4,
       "confidence": "Medium",
@@ -228,35 +259,12 @@
         "guideRating": 61.3,
         "guideCalibrationAdjustment": 0.22,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": -2,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0.5
       },
-      "notes": "Guide broadly corroborates JKB; no major verified offseason adjustment applied."
-    },
-    {
-      "rank": 10,
-      "team": "Detroit Lions",
-      "abbr": "det",
-      "division": "NFC North",
-      "rating2025Adjusted": 59.6,
-      "projectionAdjustment2026": 0.0,
-      "rating2026": 59.6,
-      "sosRank": 30,
-      "sosAvgOpponentRating": 46.0,
-      "confidence": "Medium",
-      "components": {
-        "jkbV03Rating": 59.89,
-        "guideRating": 58.0,
-        "guideCalibrationAdjustment": -0.28,
-        "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
-      },
-      "notes": "Stable roster/coaching baseline in the verified move set."
+      "notes": "Post-preseason review (VSiN 2.0 p34): Daniel Jones opens the season off an Achilles tear, Michael Pittman Jr. was traded to Pittsburgh and replaced late by 34-year-old Keenan Allen, and Charvarius Ward is not 100% with a back injury. Justin Walley's return from a torn ACL is credited separately as returningInjuryAdjustment."
     },
     {
       "rank": 11,
@@ -264,7 +272,7 @@
       "abbr": "kc",
       "division": "AFC West",
       "rating2025Adjusted": 58.7,
-      "projectionAdjustment2026": -1.0,
+      "projectionAdjustment2026": -1,
       "rating2026": 57.7,
       "sosRank": 15,
       "sosAvgOpponentRating": 50.7,
@@ -273,11 +281,11 @@
         "jkbV03Rating": 56.47,
         "guideRating": 60.3,
         "guideCalibrationAdjustment": 0.57,
-        "luckAverageRank": 23.0,
+        "luckAverageRank": 23,
         "luckAdjustment": 1.68,
-        "personnelAdjustment": -1.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "personnelAdjustment": -1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Positive luck/regression signal, but Walker gain is outweighed by McDuffie loss."
     },
@@ -287,7 +295,7 @@
       "abbr": "sf",
       "division": "NFC West",
       "rating2025Adjusted": 55.9,
-      "projectionAdjustment2026": 1.0,
+      "projectionAdjustment2026": 1,
       "rating2026": 56.9,
       "sosRank": 4,
       "sosAvgOpponentRating": 52.4,
@@ -297,10 +305,10 @@
         "guideRating": 52.7,
         "guideCalibrationAdjustment": -0.56,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 1.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": 1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Mike Evans addition creates a modest offensive upgrade."
     },
@@ -310,7 +318,7 @@
       "abbr": "lac",
       "division": "AFC West",
       "rating2025Adjusted": 56.4,
-      "projectionAdjustment2026": 0.0,
+      "projectionAdjustment2026": 0,
       "rating2026": 56.4,
       "sosRank": 7,
       "sosAvgOpponentRating": 51.9,
@@ -319,11 +327,11 @@
         "jkbV03Rating": 55.432,
         "guideRating": 54.2,
         "guideCalibrationAdjustment": -0.18,
-        "luckAverageRank": 21.0,
+        "luckAverageRank": 21,
         "luckAdjustment": 1.16,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "personnelAdjustment": 0,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Positive regression signal; no major verified personnel delta in the selective move set."
     },
@@ -343,10 +351,10 @@
         "guideRating": 56.1,
         "guideCalibrationAdjustment": -0.13,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": -0.75,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Romeo Doubs and Malik Willis departures create a modest depth/skill downgrade."
     },
@@ -366,10 +374,10 @@
         "guideRating": 54.1,
         "guideCalibrationAdjustment": 0.13,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": 2.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Kyler Murray addition materially improves the quarterback outlook."
     },
@@ -379,10 +387,10 @@
       "abbr": "bal",
       "division": "AFC North",
       "rating2025Adjusted": 53.4,
-      "projectionAdjustment2026": 1.5,
-      "rating2026": 54.9,
+      "projectionAdjustment2026": 1,
+      "rating2026": 54.4,
       "sosRank": 27,
-      "sosAvgOpponentRating": 48.0,
+      "sosAvgOpponentRating": 48,
       "confidence": "Medium-High",
       "components": {
         "jkbV03Rating": 53.115,
@@ -390,11 +398,11 @@
         "guideCalibrationAdjustment": -0.54,
         "luckAverageRank": 19.8,
         "luckAdjustment": 0.85,
-        "personnelAdjustment": 1.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "personnelAdjustment": 1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
-      "notes": "Trey Hendrickson addition; new Jesse Minter staff held neutral pending evidence."
+      "notes": "Trey Hendrickson addition, reduced for the center position: Danny Pinter's season-ending patellar injury leaves Ethan Pocic or Jovaughn Gwyn behind the departed Tyler Linderbaum (VSiN 2.0 p32). New Jesse Minter staff still held neutral pending evidence. STRUCTURAL REVIEW FLAG: see _meta.reviewFlags.bal — BAL's 2025-only base differs materially from the multi-year 2026 Projection and VSiN views; that gap is a base-window question and was deliberately NOT closed with a synthetic upward adjustment."
     },
     {
       "rank": 17,
@@ -412,38 +420,15 @@
         "guideRating": 57.4,
         "guideCalibrationAdjustment": 0.73,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": -1.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "D.J. Moore departure is a meaningful offensive downgrade."
     },
     {
       "rank": 18,
-      "team": "Atlanta Falcons",
-      "abbr": "atl",
-      "division": "NFC South",
-      "rating2025Adjusted": 46.6,
-      "projectionAdjustment2026": 3.0,
-      "rating2026": 49.6,
-      "sosRank": 29,
-      "sosAvgOpponentRating": 46.3,
-      "confidence": "Medium-Low",
-      "components": {
-        "jkbV03Rating": 46.228,
-        "guideRating": 48.9,
-        "guideCalibrationAdjustment": 0.4,
-        "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 2.5,
-        "coachAdjustment": 0.5,
-        "returningInjuryAdjustment": 0.0
-      },
-      "notes": "Tua addition plus small Kevin Stefanski coaching credit."
-    },
-    {
-      "rank": 19,
       "team": "Pittsburgh Steelers",
       "abbr": "pit",
       "division": "AFC North",
@@ -459,20 +444,20 @@
         "guideCalibrationAdjustment": -0.15,
         "luckAverageRank": 11.6,
         "luckAdjustment": -1.26,
-        "personnelAdjustment": 0.0,
+        "personnelAdjustment": 0,
         "coachAdjustment": -0.25,
-        "returningInjuryAdjustment": 0.0
+        "returningInjuryAdjustment": 0
       },
       "notes": "Strong 2025 luck signal creates regression pressure; small coaching-transition penalty."
     },
     {
-      "rank": 20,
+      "rank": 19,
       "team": "Tampa Bay Buccaneers",
       "abbr": "tb",
       "division": "NFC South",
       "rating2025Adjusted": 48.8,
-      "projectionAdjustment2026": -1.0,
-      "rating2026": 47.8,
+      "projectionAdjustment2026": -0.5,
+      "rating2026": 48.3,
       "sosRank": 25,
       "sosAvgOpponentRating": 48.8,
       "confidence": "Medium",
@@ -481,42 +466,42 @@
         "guideRating": 44.6,
         "guideCalibrationAdjustment": -0.74,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": -1.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": -1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0.5
       },
-      "notes": "Mike Evans departure creates a modest offensive downgrade."
+      "notes": "Mike Evans departure downgrade retained; returning-injury credit added for a healthy Bucky Irving after the cleanest camp in the division, with no major injuries on either side of the ball (VSiN 2.0 p43)."
+    },
+    {
+      "rank": 20,
+      "team": "Atlanta Falcons",
+      "abbr": "atl",
+      "division": "NFC South",
+      "rating2025Adjusted": 46.6,
+      "projectionAdjustment2026": 0.5,
+      "rating2026": 47.1,
+      "sosRank": 29,
+      "sosAvgOpponentRating": 46.3,
+      "confidence": "Medium-Low",
+      "components": {
+        "jkbV03Rating": 46.228,
+        "guideRating": 48.9,
+        "guideCalibrationAdjustment": 0.4,
+        "luckAverageRank": null,
+        "luckAdjustment": 0,
+        "personnelAdjustment": 0,
+        "coachAdjustment": 0.5,
+        "returningInjuryAdjustment": 0
+      },
+      "notes": "Post-preseason review (VSiN 2.0 p42): the preseason invalidated the Tua-addition premise behind the prior +2.5 — Tua did not seize the starting job and Michael Penix Jr. was too banged up for meaningful reps. Jalon Walker's torn ACL and James Pearce Jr.'s eight-game suspension further thin the pass rush. Kevin Stefanski coaching credit retained."
     },
     {
       "rank": 21,
-      "team": "New Orleans Saints",
-      "abbr": "no",
-      "division": "NFC South",
-      "rating2025Adjusted": 43.2,
-      "projectionAdjustment2026": 0.0,
-      "rating2026": 43.2,
-      "sosRank": 31,
-      "sosAvgOpponentRating": 44.7,
-      "confidence": "Medium",
-      "components": {
-        "jkbV03Rating": 43.528,
-        "guideRating": 41.2,
-        "guideCalibrationAdjustment": -0.35,
-        "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
-      },
-      "notes": "No major verified offseason adjustment in the selective move set."
-    },
-    {
-      "rank": 22,
       "team": "New York Giants",
       "abbr": "nyg",
       "division": "NFC East",
-      "rating2025Adjusted": 43.0,
+      "rating2025Adjusted": 43,
       "projectionAdjustment2026": -0.5,
       "rating2026": 42.5,
       "sosRank": 12,
@@ -527,43 +512,43 @@
         "guideRating": 42.7,
         "guideCalibrationAdjustment": -0.05,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": -1.5,
-        "coachAdjustment": 1.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 1,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Dexter Lawrence loss partially offset by John Harbaugh coaching upgrade."
     },
     {
-      "rank": 23,
-      "team": "Carolina Panthers",
-      "abbr": "car",
+      "rank": 22,
+      "team": "New Orleans Saints",
+      "abbr": "no",
       "division": "NFC South",
-      "rating2025Adjusted": 39.8,
-      "projectionAdjustment2026": 0.0,
-      "rating2026": 39.8,
-      "sosRank": 8,
-      "sosAvgOpponentRating": 51.8,
+      "rating2025Adjusted": 43.2,
+      "projectionAdjustment2026": -0.75,
+      "rating2026": 42.45,
+      "sosRank": 31,
+      "sosAvgOpponentRating": 44.7,
       "confidence": "Medium",
       "components": {
-        "jkbV03Rating": 40.759,
-        "guideRating": 34.2,
-        "guideCalibrationAdjustment": -0.98,
+        "jkbV03Rating": 43.528,
+        "guideRating": 41.2,
+        "guideCalibrationAdjustment": -0.35,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": -0.75,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
-      "notes": "No major verified offseason adjustment in the selective move set."
+      "notes": "Post-preseason review (VSiN 2.0 p43): Alvin Kamara will miss at least a month and rookie WR Jordyn Tyson — the intended WR2 behind Chris Olave — was injured in camp, net of the Travis Etienne Jr. addition and the Rashid Shaheed trade."
     },
     {
-      "rank": 24,
+      "rank": 23,
       "team": "Dallas Cowboys",
       "abbr": "dal",
       "division": "NFC East",
       "rating2025Adjusted": 38.5,
-      "projectionAdjustment2026": 0.0,
+      "projectionAdjustment2026": 0,
       "rating2026": 38.5,
       "sosRank": 9,
       "sosAvgOpponentRating": 51.5,
@@ -573,12 +558,35 @@
         "guideRating": 44.5,
         "guideCalibrationAdjustment": 1.06,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": 0,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Guide is notably more favorable than JKB, so the capped calibration raises the baseline modestly."
+    },
+    {
+      "rank": 24,
+      "team": "Carolina Panthers",
+      "abbr": "car",
+      "division": "NFC South",
+      "rating2025Adjusted": 39.8,
+      "projectionAdjustment2026": -1.5,
+      "rating2026": 38.3,
+      "sosRank": 8,
+      "sosAvgOpponentRating": 51.8,
+      "confidence": "Medium",
+      "components": {
+        "jkbV03Rating": 40.759,
+        "guideRating": 34.2,
+        "guideCalibrationAdjustment": -0.98,
+        "luckAverageRank": null,
+        "luckAdjustment": 0,
+        "personnelAdjustment": -1.5,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
+      },
+      "notes": "Post-preseason review (VSiN 2.0 p42): both starting tackles are compromised — Ikem Ekwonu on the PUP list and Taylor Moton diagnosed with a blood clot in his lung — with the offensive line struggling badly in joint practices, and Nic Scourton lost for the season from an already-thin back seven."
     },
     {
       "rank": 25,
@@ -586,7 +594,7 @@
       "abbr": "cle",
       "division": "AFC North",
       "rating2025Adjusted": 37.7,
-      "projectionAdjustment2026": -1.0,
+      "projectionAdjustment2026": -1,
       "rating2026": 36.7,
       "sosRank": 32,
       "sosAvgOpponentRating": 44.2,
@@ -597,9 +605,9 @@
         "guideCalibrationAdjustment": 1.08,
         "luckAverageRank": 22.8,
         "luckAdjustment": 1.63,
-        "personnelAdjustment": -1.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "personnelAdjustment": -1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Garrett-to-Verse edge swap is a net downgrade; positive 2025 regression partially offsets it."
     },
@@ -609,7 +617,7 @@
       "abbr": "cin",
       "division": "AFC North",
       "rating2025Adjusted": 35.7,
-      "projectionAdjustment2026": 0.0,
+      "projectionAdjustment2026": 0,
       "rating2026": 35.7,
       "sosRank": 28,
       "sosAvgOpponentRating": 46.7,
@@ -620,9 +628,9 @@
         "guideCalibrationAdjustment": 0.36,
         "luckAverageRank": 15.2,
         "luckAdjustment": -0.34,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "personnelAdjustment": 0,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Dexter Lawrence addition offsets Trey Hendrickson departure; luck signal slightly negative."
     },
@@ -632,20 +640,20 @@
       "abbr": "ari",
       "division": "NFC West",
       "rating2025Adjusted": 37.6,
-      "projectionAdjustment2026": -3.0,
+      "projectionAdjustment2026": -3,
       "rating2026": 34.6,
       "sosRank": 1,
-      "sosAvgOpponentRating": 54.0,
+      "sosAvgOpponentRating": 54,
       "confidence": "Medium-Low",
       "components": {
         "jkbV03Rating": 39.01,
         "guideRating": 29.3,
         "guideCalibrationAdjustment": -1.46,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": -3.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": -3,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Kyler Murray departure is a major downgrade; new staff receives no automatic bonus."
     },
@@ -655,8 +663,8 @@
       "abbr": "wsh",
       "division": "NFC East",
       "rating2025Adjusted": 33.5,
-      "projectionAdjustment2026": 0.0,
-      "rating2026": 33.5,
+      "projectionAdjustment2026": -1,
+      "rating2026": 32.5,
       "sosRank": 3,
       "sosAvgOpponentRating": 52.9,
       "confidence": "Medium",
@@ -665,12 +673,12 @@
         "guideRating": 28.4,
         "guideCalibrationAdjustment": -0.9,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "luckAdjustment": 0,
+        "personnelAdjustment": -1,
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
-      "notes": "Guide is lower than JKB; no speculative offseason adjustment added."
+      "notes": "Post-preseason review (VSiN 2.0 p39): Laremy Tunsil (left tackle) and Jer'Zhan Newton both suffered season-ending injuries, throwing both lines into flux, net of the Stefon Diggs addition. Newton's loss is partly mitigated by the switch to a 3-4."
     },
     {
       "rank": 29,
@@ -685,13 +693,13 @@
       "confidence": "Medium-Low",
       "components": {
         "jkbV03Rating": 34.28,
-        "guideRating": 32.0,
+        "guideRating": 32,
         "guideCalibrationAdjustment": -0.34,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": -3.5,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Tua, Jaylen Waddle and Minkah Fitzpatrick losses outweigh Malik Willis addition."
     },
@@ -712,9 +720,9 @@
         "guideCalibrationAdjustment": 0.49,
         "luckAverageRank": 25.4,
         "luckAdjustment": 2.3,
-        "personnelAdjustment": -2.0,
+        "personnelAdjustment": -2,
         "coachAdjustment": 0.25,
-        "returningInjuryAdjustment": 0.0
+        "returningInjuryAdjustment": 0
       },
       "notes": "Geno Smith loss outweighs modest Kubiak coaching credit; positive regression helps."
     },
@@ -734,10 +742,10 @@
         "guideRating": 22.7,
         "guideCalibrationAdjustment": -0.19,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
-        "personnelAdjustment": 0.0,
+        "luckAdjustment": 0,
+        "personnelAdjustment": 0,
         "coachAdjustment": 0.5,
-        "returningInjuryAdjustment": 0.0
+        "returningInjuryAdjustment": 0
       },
       "notes": "Small Robert Saleh coaching upgrade; otherwise baseline retained."
     },
@@ -748,7 +756,7 @@
       "division": "AFC East",
       "rating2025Adjusted": 16.3,
       "projectionAdjustment2026": 2.8,
-      "rating2026": 19.0,
+      "rating2026": 19,
       "sosRank": 17,
       "sosAvgOpponentRating": 50.5,
       "confidence": "Medium-Low",
@@ -757,10 +765,10 @@
         "guideRating": 16.4,
         "guideCalibrationAdjustment": 0.02,
         "luckAverageRank": null,
-        "luckAdjustment": 0.0,
+        "luckAdjustment": 0,
         "personnelAdjustment": 2.75,
-        "coachAdjustment": 0.0,
-        "returningInjuryAdjustment": 0.0
+        "coachAdjustment": 0,
+        "returningInjuryAdjustment": 0
       },
       "notes": "Geno Smith + Minkah Fitzpatrick provide a meaningful floor upgrade."
     }
