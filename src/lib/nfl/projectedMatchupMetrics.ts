@@ -4,12 +4,12 @@ import { getMetricDef, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMe
 import { formatMetricValue } from "@/lib/nfl/matchupMetricsData";
 import type { CanonicalNflTeam } from "@/lib/nfl/standings";
 
-export type MatchupComparisonLens = "observed" | "projection";
+export type MatchupComparisonLens = "observed" | "projection" | "blended" | "season2026" | "season2025";
 export const PROJECTED_MATCHUP_METRICS_PATH = "/data/nfl/2026/projected-matchup-metrics.json";
 export const PROJECTION_LENS_DESCRIPTION =
   "Forward-looking JKB team projections for the 2026 season. Projected metrics are distinct from observed 2025 and 2026 performance.";
 export const PROJECTION_RATING_NOTE =
-  "JKB Power Rating uses the canonical current 2026 rating, including its preseason anchor. Other metrics show N/A until a season projection is available.";
+  "JKB Power Rating uses the canonical current 2026 rating, including its preseason anchor. EPA and success-rate rows carry published 2026 projections; every other metric shows N/A until a season projection is available.";
 
 const metricKeys = new Set(MATCHUP_CATEGORIES.flatMap((category) =>
   category.metrics.flatMap((ref) => ref.kind === "metric" ? [ref.key] : [])

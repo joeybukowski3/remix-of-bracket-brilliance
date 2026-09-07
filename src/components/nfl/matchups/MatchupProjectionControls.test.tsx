@@ -13,6 +13,19 @@ function Controls() {
 }
 
 describe("2026 Projection filter", () => {
+  it("keeps all new lenses distinct and restores legacy Last 5 settings", () => {
+    render(<Controls />);
+    fireEvent.click(screen.getByRole("switch"));
+    fireEvent.click(screen.getByRole("tab", { name: "Last 5" }));
+    for (const label of ["2026 Blended", "2026 Projection", "2026 Season", "2025 Season"]) {
+      fireEvent.click(screen.getByRole("tab", { name: label }));
+      expect(screen.getByRole("tab", { name: label })).toHaveAttribute("aria-selected", "true");
+      expect(screen.queryByRole("switch")).toBeNull();
+      if (label === "2026 Blended") expect(screen.getByText(/fading the projection prior/)).toBeVisible();
+    }
+    fireEvent.click(screen.getByRole("tab", { name: "Last 5" }));
+    expect(screen.getByRole("status")).toHaveTextContent('"lens":"observed","window":"last5","includePriorSeason":false');
+  }, 15000);
   it("selects projections, hides historical controls and preserves all observed settings", () => {
     render(<Controls />);
     expect(screen.getByRole("tab", { name: "Season" })).toHaveAttribute("aria-selected", "true");

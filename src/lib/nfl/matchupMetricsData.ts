@@ -32,6 +32,8 @@ export type MatchupMetricsTeamWindow = {
   seasons: number[];
   through: { season: number; week: number; dateUtc: string | null };
   metrics: Record<string, MatchupMetricTuple>;
+  /** Optional additive producer field; legacy artifacts retain published precision. */
+  rawMetrics?: Record<string, number>;
 };
 
 export type MatchupMetricsWindow = {

@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "nfl-success-team-game-cache-v1",
+  "source": "nflverse (play-by-play, nflfastR success)",
+  "attribution": "Success data: nflverse / nflfastR",
+  "eligiblePlayFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1",
+  "requiredSourceColumns": [
+    "game_id",
+    "season",
+    "season_type",
+    "week",
+    "posteam",
+    "defteam",
+    "epa",
+    "success",
+    "pass",
+    "rush",
+    "two_point_attempt"
+  ],
+  "files": [
+    {
+      "season": 2019,
+      "filename": "success_team_game_2019.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2019.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 24679,
+      "sha256": "a7892df350b61a8dc35318ea5673f67c7638b678638e4e1236ac889ab1aa3e65",
+      "rowCount": 512,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 17992849,
+        "sha256": "b764668137052be23745953cbc33fa17e537a70c81e9b73785a19a15e7288216",
+        "rowCount": 47260,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    },
+    {
+      "season": 2020,
+      "filename": "success_team_game_2020.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2020.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 24690,
+      "sha256": "afdcb0fa781840e8e430585bcef6c801fec88c99dd8c4fb5dc2c80a1118033d9",
+      "rowCount": 512,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 18143553,
+        "sha256": "bc954b5780e325df4faa255fac092585c981a4de5d2f553a8a4e0a3c8b3a3cf2",
+        "rowCount": 47705,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    },
+    {
+      "season": 2021,
+      "filename": "success_team_game_2021.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2021.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 26218,
+      "sha256": "39e9bca03b21e1b697ec09795720a0c99e66cca969bce16863cd57fb8d6d3c51",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19022201,
+        "sha256": "e8743a568f99667a8bdcd29ba12224ee1782ad2b7916bee78ee335c099383739",
+        "rowCount": 49922,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    },
+    {
+      "season": 2022,
+      "filename": "success_team_game_2022.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 26139,
+      "sha256": "3fd2f9e90199abbca29eceb0473faa69675245faeb9073a017fbaabd4b142f88",
+      "rowCount": 542,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19093961,
+        "sha256": "0c69a71eb39498956c7b1d5c1ca52ce7fe679934a95d1af249facb5ea9829ea4",
+        "rowCount": 49434,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    },
+    {
+      "season": 2023,
+      "filename": "success_team_game_2023.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 26224,
+      "sha256": "3cd505de5a9402e173e67084a683a7c93c74ab520190751b64dbf7cac5b42df1",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19169807,
+        "sha256": "4649804ee0f0a40b41e51ec75a1ce921949d7fab5459213488656b92f78560e8",
+        "rowCount": 49665,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    },
+    {
+      "season": 2024,
+      "filename": "success_team_game_2024.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 26243,
+      "sha256": "06c6b501ab70ca10311663c520d58dd70d9589c0a5f22c58d1134cea02bcf92d",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19362351,
+        "sha256": "23370d5d10f8104d80d46a1fc5e61f4f6f5a3263fe96fe2dd629913cfcb08c06",
+        "rowCount": 49492,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    },
+    {
+      "season": 2025,
+      "filename": "success_team_game_2025.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-06",
+      "byteSize": 26226,
+      "sha256": "9678f4e7c42f6ed385e5f0041ec7a00244e4be22485a43020cd7a93b1234b772",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 19105296,
+        "sha256": "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978",
+        "rowCount": 48771,
+        "headerColumns": null
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_success",
+        "off_plays",
+        "pass_success",
+        "pass_plays",
+        "rush_success",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND success is present AND posteam is present AND two_point_attempt != 1"
+    }
+  ]
+}

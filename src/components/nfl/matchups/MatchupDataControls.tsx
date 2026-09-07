@@ -1,4 +1,5 @@
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
+import { BLENDED_LENS_DESCRIPTION, BLENDED_RATING_NOTE } from "@/lib/nfl/blendedMatchupMetrics";
 import { PROJECTION_LENS_DESCRIPTION, PROJECTION_RATING_NOTE, type MatchupComparisonLens } from "@/lib/nfl/projectedMatchupMetrics";
 import {
   describeSampleRule,
@@ -41,7 +42,7 @@ export default function MatchupDataControls({
        for the sections below it rather than as another content card. */
     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 shadow-sm sm:px-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
-        <div className="flex items-center justify-between gap-3 sm:justify-start">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <span
             id="matchup-data-window-label"
             className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800"
@@ -49,11 +50,19 @@ export default function MatchupDataControls({
             Data Window
           </span>
           <MatchupSegmentedControl
-            options={onLensChange ? [{ value: "projection", label: "2026 Projection" }, ...WINDOW_OPTIONS] : WINDOW_OPTIONS}
-            value={lens === "projection" ? "projection" : settings.window}
-            onChange={(window: NflDataWindow | "projection") => {
-              onLensChange?.(window === "projection" ? "projection" : "observed");
-              if (window !== "projection") onChange({ ...settings, window });
+            options={onLensChange ? [
+              { value: "projection", label: "2026 Projection" },
+              { value: "blended", label: "2026 Blended" },
+              { value: "season2026", label: "2026 Season" },
+              WINDOW_OPTIONS[1],
+              { value: "season2025", label: "2025 Season" },
+              WINDOW_OPTIONS[0],
+            ] : WINDOW_OPTIONS}
+            value={lens === "observed" ? settings.window : lens}
+            onChange={(window: NflDataWindow | MatchupComparisonLens) => {
+              const legacy = window === "season" || window === "last5";
+              onLensChange?.(legacy ? "observed" : window as MatchupComparisonLens);
+              if (legacy) onChange({ ...settings, window });
             }}
             ariaLabel="Data window"
           />
@@ -99,7 +108,9 @@ export default function MatchupDataControls({
       </div>
 
       <p className="mt-1.5 border-t border-emerald-200 pt-1.5 text-[11px] leading-4 text-emerald-900/80">
-        {lens === "projection" ? <>{PROJECTION_LENS_DESCRIPTION} {PROJECTION_RATING_NOTE}</> : <>
+        {lens === "blended" ? <>{BLENDED_LENS_DESCRIPTION} {BLENDED_RATING_NOTE}</> :
+        lens === "season2026" || lens === "season2025" ? <>Observed {lens === "season2026" ? "2026" : "2025"} regular-season performance only. No projected priors or other-season fallback.</> :
+        lens === "projection" ? <>{PROJECTION_LENS_DESCRIPTION} {PROJECTION_RATING_NOTE}</> : <>
         <span className="font-bold text-emerald-900">Active sample rule:</span>{" "}
         {describeSampleRule(settings)}{" "}
         <span className="text-slate-600">

@@ -116,6 +116,7 @@ export default function MatchupComparisonPanel({
   periodComparison,
   children,
   projection = false,
+  dedicatedLabel,
 }: {
   matchup: NflMatchup;
   categoryMetrics: Record<MatchupCategoryId, MatchupDisplayMetric[]>;
@@ -159,6 +160,7 @@ export default function MatchupComparisonPanel({
   /** Sections rendered beneath the statistical comparison row. */
   children?: React.ReactNode;
   projection?: boolean;
+  dedicatedLabel?: string;
 }) {
   const [open, setOpen] = useState<Partial<Record<MatchupCategoryId, boolean>>>(() => ({
     [MATCHUP_CATEGORIES[0].id]: true,
@@ -219,9 +221,9 @@ export default function MatchupComparisonPanel({
       <div className="grid grid-cols-1 items-start gap-2 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
         <MatchupSectionCard
           eyebrow="Metric by metric"
-          title={projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
+          title={dedicatedLabel ? `Statistical Comparison — ${dedicatedLabel}` : projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
           titleId="statistical-comparison-heading"
-          subtitle={projection
+          subtitle={dedicatedLabel ? "Rank 1 is best among teams with available values; N/A rows are excluded from category counts." : projection
             ? "Projected statistics only. Rank 1 is best among teams with available values; N/A rows are excluded from category counts."
             : "League rank out of 32 — 1 is best. Every row states its advantage in words."}
           bodyClassName="px-0 py-0 sm:px-0"
@@ -269,7 +271,7 @@ export default function MatchupComparisonPanel({
                     rightValue={metric.home.formatted}
                     leftRank={metric.away.rank}
                     rightRank={metric.home.rank}
-                    projected={projection && metric.key !== "team.overallRating"}
+                    projected={(projection || !!dedicatedLabel) && metric.key !== "team.overallRating"}
                     leftRawValue={metric.away.value}
                     rightRawValue={metric.home.value}
                     higherIsBetter={

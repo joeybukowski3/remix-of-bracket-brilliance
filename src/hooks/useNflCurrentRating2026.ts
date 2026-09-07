@@ -11,6 +11,14 @@ type State = {
   loading: boolean;
   error: string | null;
   data: CurrentRatingBoard | null;
+  provenance?: CurrentRatingSourceProvenance;
+};
+
+export type CurrentRatingSourceProvenance = {
+  projectedVersion: string;
+  projectedCutoff: string;
+  observedVersion: string;
+  observedGeneratedAt: string;
 };
 
 /**
@@ -52,7 +60,12 @@ export function useNflCurrentRating2026(): State {
         preseasonV03,
         performanceAnalytics: performance.data,
       });
-      return { loading: false, error: null, data: board };
+      return { loading: false, error: null, data: board, provenance: {
+        projectedVersion: v04.data.modelVersion,
+        projectedCutoff: v04.data.offseasonSnapshotVerifiedThrough,
+        observedVersion: performance.data.schemaVersion,
+        observedGeneratedAt: performance.data._meta.generatedAt,
+      } };
     } catch (error) {
       return {
         loading: false,

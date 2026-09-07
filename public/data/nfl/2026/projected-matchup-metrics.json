@@ -1,0 +1,1836 @@
+{
+  "schemaVersion": "nfl-projected-matchup-metrics-v1",
+  "season": 2026,
+  "horizon": "regular-season",
+  "generatedAt": "2026-09-06T17:48:30.329Z",
+  "asOf": "2026-01-05T01:20:00.000Z",
+  "projectionVersion": "nfl-projected-comparison-v1.0",
+  "metrics": {
+    "off.epaPerPlay": {
+      "source": "data/nfl/nflverse/epa-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.55 (offense-passing)",
+      "definition": "Projected 2026 raw EPA per play (sum EPA / sum eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "off.epaPerPass": {
+      "source": "data/nfl/nflverse/epa-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.55 (offense-passing)",
+      "definition": "Projected 2026 raw EPA per play (sum EPA / sum eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "off.epaPerRush": {
+      "source": "data/nfl/nflverse/epa-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.45 (offense-rushing)",
+      "definition": "Projected 2026 raw EPA per play (sum EPA / sum eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "off.successRate": {
+      "source": "data/nfl/nflverse/success-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.55 (offense-passing)",
+      "definition": "Projected 2026 raw success rate in percent (successful eligible plays / eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "off.passSuccessRate": {
+      "source": "data/nfl/nflverse/success-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.55 (offense-passing)",
+      "definition": "Projected 2026 raw success rate in percent (successful eligible plays / eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "off.rushSuccessRate": {
+      "source": "data/nfl/nflverse/success-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.45 (offense-rushing)",
+      "definition": "Projected 2026 raw success rate in percent (successful eligible plays / eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "def.epaPerPlayAllowed": {
+      "source": "data/nfl/nflverse/epa-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.3 (defense-passing)",
+      "definition": "Projected 2026 raw EPA per play (sum EPA / sum eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "def.epaPerPassAllowed": {
+      "source": "data/nfl/nflverse/epa-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.3 (defense-passing)",
+      "definition": "Projected 2026 raw EPA per play (sum EPA / sum eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "def.epaPerRushAllowed": {
+      "source": "data/nfl/nflverse/epa-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.2 (defense-rushing)",
+      "definition": "Projected 2026 raw EPA per play (sum EPA / sum eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "def.successRateAllowed": {
+      "source": "data/nfl/nflverse/success-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.3 (defense-passing)",
+      "definition": "Projected 2026 raw success rate in percent (successful eligible plays / eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "def.passSuccessRateAllowed": {
+      "source": "data/nfl/nflverse/success-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.3 (defense-passing)",
+      "definition": "Projected 2026 raw success rate in percent (successful eligible plays / eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    },
+    "def.rushSuccessRateAllowed": {
+      "source": "data/nfl/nflverse/success-team-game (nflverse / nflfastR)",
+      "producer": "scripts/generate-nfl-projected-matchup-metrics.mjs",
+      "modelVersion": "nfl-projected-comparison-v1.0; 0.6/0.4 2025/2024 blend, k=0.2 (defense-rushing)",
+      "definition": "Projected 2026 raw success rate in percent (successful eligible plays / eligible plays), opponent-unadjusted, defined as the observed lens defines it.",
+      "opponentAdjusted": false,
+      "dependsOnPowerRating": false
+    }
+  },
+  "teams": [
+    {
+      "teamId": "nfl-buf",
+      "abbr": "buf",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.09491484351007008,
+          "rank": 1
+        },
+        "off.epaPerPass": {
+          "value": 0.16778480949117114,
+          "rank": 1
+        },
+        "off.epaPerRush": {
+          "value": -0.016214086519537138,
+          "rank": 2
+        },
+        "off.successRate": {
+          "value": 46.58654727639646,
+          "rank": 2
+        },
+        "off.passSuccessRate": {
+          "value": 48.51909275901824,
+          "rank": 6
+        },
+        "off.rushSuccessRate": {
+          "value": 43.33739943689622,
+          "rank": 2
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.008642051428394887,
+          "rank": 11
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.04623785751516093,
+          "rank": 8
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.0551407688843431,
+          "rank": 25
+        },
+        "def.successRateAllowed": {
+          "value": 44.116248056464755,
+          "rank": 12
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.02107740439859,
+          "rank": 10
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.06011046398624,
+          "rank": 19
+        }
+      }
+    },
+    {
+      "teamId": "nfl-mia",
+      "abbr": "mia",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.009671114433021299,
+          "rank": 25
+        },
+        "off.epaPerPass": {
+          "value": 0.040813011328803994,
+          "rank": 25
+        },
+        "off.epaPerRush": {
+          "value": -0.08368303999782248,
+          "rank": 27
+        },
+        "off.successRate": {
+          "value": 43.618966280028886,
+          "rank": 23
+        },
+        "off.passSuccessRate": {
+          "value": 45.87047302973647,
+          "rank": 21
+        },
+        "off.rushSuccessRate": {
+          "value": 40.35314837138153,
+          "rank": 22
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.023252050979013537,
+          "rank": 23
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.07847487927286292,
+          "rank": 23
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.061542434373738006,
+          "rank": 17
+        },
+        "def.successRateAllowed": {
+          "value": 44.899598211622504,
+          "rank": 25
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.44693910923205,
+          "rank": 31
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.95121030661607,
+          "rank": 18
+        }
+      }
+    },
+    {
+      "teamId": "nfl-ne",
+      "abbr": "ne",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.03919520415860438,
+          "rank": 9
+        },
+        "off.epaPerPass": {
+          "value": 0.12376203680039606,
+          "rank": 5
+        },
+        "off.epaPerRush": {
+          "value": -0.08951638406836751,
+          "rank": 29
+        },
+        "off.successRate": {
+          "value": 45.223648093808166,
+          "rank": 10
+        },
+        "off.passSuccessRate": {
+          "value": 49.04453122608608,
+          "rank": 3
+        },
+        "off.rushSuccessRate": {
+          "value": 39.45980378479862,
+          "rank": 29
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.013148615495886012,
+          "rank": 17
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06245208450115006,
+          "rank": 18
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.060999921528172414,
+          "rank": 19
+        },
+        "def.successRateAllowed": {
+          "value": 44.63713262490656,
+          "rank": 23
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.688596984615344,
+          "rank": 19
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.3332982630293,
+          "rank": 22
+        }
+      }
+    },
+    {
+      "teamId": "nfl-nyj",
+      "abbr": "nyj",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.03672718214033221,
+          "rank": 29
+        },
+        "off.epaPerPass": {
+          "value": -0.007121951386593536,
+          "rank": 29
+        },
+        "off.epaPerRush": {
+          "value": -0.08281887812197278,
+          "rank": 26
+        },
+        "off.successRate": {
+          "value": 42.78990579166713,
+          "rank": 28
+        },
+        "off.passSuccessRate": {
+          "value": 43.91187473209553,
+          "rank": 30
+        },
+        "off.rushSuccessRate": {
+          "value": 40.92415779042033,
+          "rank": 20
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.0424570139448284,
+          "rank": 30
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.1096920660619671,
+          "rank": 32
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.05574355834513923,
+          "rank": 23
+        },
+        "def.successRateAllowed": {
+          "value": 44.60545154797744,
+          "rank": 21
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.677835955483914,
+          "rank": 18
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.35977556281341,
+          "rank": 23
+        }
+      }
+    },
+    {
+      "teamId": "nfl-bal",
+      "abbr": "bal",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.06196130029097493,
+          "rank": 5
+        },
+        "off.epaPerPass": {
+          "value": 0.11052900646691821,
+          "rank": 7
+        },
+        "off.epaPerRush": {
+          "value": -0.01190351624602691,
+          "rank": 1
+        },
+        "off.successRate": {
+          "value": 45.550524255106524,
+          "rank": 8
+        },
+        "off.passSuccessRate": {
+          "value": 47.902477308579286,
+          "rank": 10
+        },
+        "off.rushSuccessRate": {
+          "value": 42.25175148952819,
+          "rank": 5
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.012982952232784456,
+          "rank": 16
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06903752012806545,
+          "rank": 19
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07599980887000497,
+          "rank": 2
+        },
+        "def.successRateAllowed": {
+          "value": 43.86192251006955,
+          "rank": 9
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.183097789902284,
+          "rank": 11
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.216893691134466,
+          "rank": 2
+        }
+      }
+    },
+    {
+      "teamId": "nfl-cin",
+      "abbr": "cin",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.03367987270666011,
+          "rank": 12
+        },
+        "off.epaPerPass": {
+          "value": 0.07301231980032215,
+          "rank": 13
+        },
+        "off.epaPerRush": {
+          "value": -0.043189013312165035,
+          "rank": 7
+        },
+        "off.successRate": {
+          "value": 45.85673140240078,
+          "rank": 5
+        },
+        "off.passSuccessRate": {
+          "value": 47.999709585803686,
+          "rank": 8
+        },
+        "off.rushSuccessRate": {
+          "value": 41.66677967349109,
+          "rank": 10
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.03882679232914099,
+          "rank": 28
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.08690575803223449,
+          "rank": 26
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.043871996530027824,
+          "rank": 29
+        },
+        "def.successRateAllowed": {
+          "value": 45.153825748687055,
+          "rank": 29
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.15841546111747,
+          "rank": 29
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.69730080695743,
+          "rank": 29
+        }
+      }
+    },
+    {
+      "teamId": "nfl-cle",
+      "abbr": "cle",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.09136497935046432,
+          "rank": 32
+        },
+        "off.epaPerPass": {
+          "value": -0.0865068123314195,
+          "rank": 32
+        },
+        "off.epaPerRush": {
+          "value": -0.08810846696885068,
+          "rank": 28
+        },
+        "off.successRate": {
+          "value": 39.738565809733245,
+          "rank": 32
+        },
+        "off.passSuccessRate": {
+          "value": 40.98707317893659,
+          "rank": 32
+        },
+        "off.rushSuccessRate": {
+          "value": 38.32553879636989,
+          "rank": 30
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.0024658622954358833,
+          "rank": 7
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.03962505541974878,
+          "rank": 7
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06462760035695227,
+          "rank": 13
+        },
+        "def.successRateAllowed": {
+          "value": 43.36657518426781,
+          "rank": 3
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.58171087886354,
+          "rank": 7
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.36364207959943,
+          "rank": 4
+        }
+      }
+    },
+    {
+      "teamId": "nfl-pit",
+      "abbr": "pit",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.009287344286385179,
+          "rank": 22
+        },
+        "off.epaPerPass": {
+          "value": 0.05272123945192083,
+          "rank": 23
+        },
+        "off.epaPerRush": {
+          "value": -0.05457897222460147,
+          "rank": 12
+        },
+        "off.successRate": {
+          "value": 43.488609639848924,
+          "rank": 25
+        },
+        "off.passSuccessRate": {
+          "value": 45.104506365522134,
+          "rank": 24
+        },
+        "off.rushSuccessRate": {
+          "value": 41.17450984030492,
+          "rank": 18
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.012663570747175725,
+          "rank": 15
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.057019669467706646,
+          "rank": 12
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.0590195261524831,
+          "rank": 20
+        },
+        "def.successRateAllowed": {
+          "value": 44.28308801011143,
+          "rank": 15
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.40560033789492,
+          "rank": 14
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.898752523680926,
+          "rank": 17
+        }
+      }
+    },
+    {
+      "teamId": "nfl-hou",
+      "abbr": "hou",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.005007817163965875,
+          "rank": 24
+        },
+        "off.epaPerPass": {
+          "value": 0.055676780880926646,
+          "rank": 21
+        },
+        "off.epaPerRush": {
+          "value": -0.09374353982809257,
+          "rank": 30
+        },
+        "off.successRate": {
+          "value": 42.35283308360842,
+          "rank": 29
+        },
+        "off.passSuccessRate": {
+          "value": 45.29572652684049,
+          "rank": 22
+        },
+        "off.rushSuccessRate": {
+          "value": 38.27420420252636,
+          "rank": 31
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.015583021518154362,
+          "rank": 2
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.026699647680012865,
+          "rank": 2
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07524075869500335,
+          "rank": 4
+        },
+        "def.successRateAllowed": {
+          "value": 43.02249808242325,
+          "rank": 2
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 44.760548255858005,
+          "rank": 2
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.49383396058278,
+          "rank": 6
+        }
+      }
+    },
+    {
+      "teamId": "nfl-ind",
+      "abbr": "ind",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.02368410472099986,
+          "rank": 13
+        },
+        "off.epaPerPass": {
+          "value": 0.055375196805359995,
+          "rank": 22
+        },
+        "off.epaPerRush": {
+          "value": -0.030579239849291347,
+          "rank": 3
+        },
+        "off.successRate": {
+          "value": 44.299608373369466,
+          "rank": 17
+        },
+        "off.passSuccessRate": {
+          "value": 45.91333313569487,
+          "rank": 20
+        },
+        "off.rushSuccessRate": {
+          "value": 41.76118122558809,
+          "rank": 9
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.01336574827938442,
+          "rank": 18
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06990977724517751,
+          "rank": 20
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06976083830868028,
+          "rank": 9
+        },
+        "def.successRateAllowed": {
+          "value": 44.452071223647344,
+          "rank": 18
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.875974574823644,
+          "rank": 23
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.81007907466491,
+          "rank": 16
+        }
+      }
+    },
+    {
+      "teamId": "nfl-jax",
+      "abbr": "jax",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.013805434152221572,
+          "rank": 19
+        },
+        "off.epaPerPass": {
+          "value": 0.06374293159045714,
+          "rank": 17
+        },
+        "off.epaPerRush": {
+          "value": -0.06350433856561019,
+          "rank": 19
+        },
+        "off.successRate": {
+          "value": 43.777624471613386,
+          "rank": 21
+        },
+        "off.passSuccessRate": {
+          "value": 46.15781551357223,
+          "rank": 19
+        },
+        "off.rushSuccessRate": {
+          "value": 40.24966126896268,
+          "rank": 25
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.011897379388624257,
+          "rank": 14
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06060597773261999,
+          "rank": 13
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06368990232166089,
+          "rank": 15
+        },
+        "def.successRateAllowed": {
+          "value": 44.153464127424634,
+          "rank": 13
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.419143050991444,
+          "rank": 15
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.5226907921341,
+          "rank": 7
+        }
+      }
+    },
+    {
+      "teamId": "nfl-ten",
+      "abbr": "ten",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.06574826071110254,
+          "rank": 30
+        },
+        "off.epaPerPass": {
+          "value": -0.040373965966622335,
+          "rank": 31
+        },
+        "off.epaPerRush": {
+          "value": -0.09483209925570416,
+          "rank": 31
+        },
+        "off.successRate": {
+          "value": 41.3508254846373,
+          "rank": 31
+        },
+        "off.passSuccessRate": {
+          "value": 42.80581962006578,
+          "rank": 31
+        },
+        "off.rushSuccessRate": {
+          "value": 39.47259671172748,
+          "rank": 28
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.035421245269312604,
+          "rank": 26
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.0938082769426606,
+          "rank": 30
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.05575650442589121,
+          "rank": 22
+        },
+        "def.successRateAllowed": {
+          "value": 44.44520749773212,
+          "rank": 17
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.06691280741994,
+          "rank": 26
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.64224585099254,
+          "rank": 8
+        }
+      }
+    },
+    {
+      "teamId": "nfl-den",
+      "abbr": "den",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.02010976532688063,
+          "rank": 15
+        },
+        "off.epaPerPass": {
+          "value": 0.07189211156413892,
+          "rank": 14
+        },
+        "off.epaPerRush": {
+          "value": -0.06408178353394225,
+          "rank": 20
+        },
+        "off.successRate": {
+          "value": 43.78280444581855,
+          "rank": 20
+        },
+        "off.passSuccessRate": {
+          "value": 45.2786825680502,
+          "rank": 23
+        },
+        "off.rushSuccessRate": {
+          "value": 41.336566301120904,
+          "rank": 17
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.012116236341542807,
+          "rank": 3
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.030146443289363556,
+          "rank": 3
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07478039988942395,
+          "rank": 5
+        },
+        "def.successRateAllowed": {
+          "value": 42.674347914264764,
+          "rank": 1
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 44.60894167587951,
+          "rank": 1
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 39.95028466406305,
+          "rank": 1
+        }
+      }
+    },
+    {
+      "teamId": "nfl-kc",
+      "abbr": "kc",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.03549936528672068,
+          "rank": 11
+        },
+        "off.epaPerPass": {
+          "value": 0.08833876805877285,
+          "rank": 11
+        },
+        "off.epaPerRush": {
+          "value": -0.05838694754498763,
+          "rank": 16
+        },
+        "off.successRate": {
+          "value": 45.14854280144114,
+          "rank": 11
+        },
+        "off.passSuccessRate": {
+          "value": 47.163478401054654,
+          "rank": 12
+        },
+        "off.rushSuccessRate": {
+          "value": 41.53380341570867,
+          "rank": 11
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.009685322550152503,
+          "rank": 12
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06202613186717077,
+          "rank": 15
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.069461847530387,
+          "rank": 10
+        },
+        "def.successRateAllowed": {
+          "value": 44.20788194145708,
+          "rank": 14
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.52726194941461,
+          "rank": 16
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.66147177252058,
+          "rank": 9
+        }
+      }
+    },
+    {
+      "teamId": "nfl-lv",
+      "abbr": "lv",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.0862093676860564,
+          "rank": 31
+        },
+        "off.epaPerPass": {
+          "value": -0.029200939716577112,
+          "rank": 30
+        },
+        "off.epaPerRush": {
+          "value": -0.164905394921274,
+          "rank": 32
+        },
+        "off.successRate": {
+          "value": 41.7198838094178,
+          "rank": 30
+        },
+        "off.passSuccessRate": {
+          "value": 44.81991687804651,
+          "rank": 28
+        },
+        "off.rushSuccessRate": {
+          "value": 37.04532260161619,
+          "rank": 32
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.017751870665882047,
+          "rank": 22
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.07611721064961424,
+          "rank": 22
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06668851234247629,
+          "rank": 11
+        },
+        "def.successRateAllowed": {
+          "value": 44.33072634632543,
+          "rank": 16
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.78172787401763,
+          "rank": 20
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.73651920442448,
+          "rank": 13
+        }
+      }
+    },
+    {
+      "teamId": "nfl-lac",
+      "abbr": "lac",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.010460048671343574,
+          "rank": 21
+        },
+        "off.epaPerPass": {
+          "value": 0.061229417934678586,
+          "rank": 18
+        },
+        "off.epaPerRush": {
+          "value": -0.06766511711715045,
+          "rank": 21
+        },
+        "off.successRate": {
+          "value": 43.658202711195095,
+          "rank": 22
+        },
+        "off.passSuccessRate": {
+          "value": 46.21800602184207,
+          "rank": 18
+        },
+        "off.rushSuccessRate": {
+          "value": 39.86863024506367,
+          "rank": 27
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.00999795014937465,
+          "rank": 5
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.03276136963423986,
+          "rank": 4
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07241170357681331,
+          "rank": 8
+        },
+        "def.successRateAllowed": {
+          "value": 43.58505120662733,
+          "rank": 7
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.41860938762359,
+          "rank": 5
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.75872062575429,
+          "rank": 14
+        }
+      }
+    },
+    {
+      "teamId": "nfl-dal",
+      "abbr": "dal",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.022273403974016292,
+          "rank": 14
+        },
+        "off.epaPerPass": {
+          "value": 0.06993579035149673,
+          "rank": 15
+        },
+        "off.epaPerRush": {
+          "value": -0.056816979598097984,
+          "rank": 14
+        },
+        "off.successRate": {
+          "value": 44.63741364671285,
+          "rank": 14
+        },
+        "off.passSuccessRate": {
+          "value": 46.296740565695835,
+          "rank": 15
+        },
+        "off.rushSuccessRate": {
+          "value": 41.79776241544459,
+          "rank": 8
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.047753524862811696,
+          "rank": 32
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.0936628017934937,
+          "rank": 29
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.037305128969223625,
+          "rank": 32
+        },
+        "def.successRateAllowed": {
+          "value": 45.187401237548784,
+          "rank": 30
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.05796576120216,
+          "rank": 25
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.80629376670834,
+          "rank": 30
+        }
+      }
+    },
+    {
+      "teamId": "nfl-nyg",
+      "abbr": "nyg",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.0007275995439517523,
+          "rank": 23
+        },
+        "off.epaPerPass": {
+          "value": 0.043145612389844684,
+          "rank": 24
+        },
+        "off.epaPerRush": {
+          "value": -0.06333939668284114,
+          "rank": 18
+        },
+        "off.successRate": {
+          "value": 43.18472685079074,
+          "rank": 26
+        },
+        "off.passSuccessRate": {
+          "value": 45.01829825028422,
+          "rank": 25
+        },
+        "off.rushSuccessRate": {
+          "value": 40.44704183162815,
+          "rank": 21
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.03611824675342802,
+          "rank": 27
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.08071210055244181,
+          "rank": 24
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.040309049248600994,
+          "rank": 31
+        },
+        "def.successRateAllowed": {
+          "value": 45.0339411306978,
+          "rank": 27
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.814795789540966,
+          "rank": 21
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.891003537481524,
+          "rank": 31
+        }
+      }
+    },
+    {
+      "teamId": "nfl-phi",
+      "abbr": "phi",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.041780744156084494,
+          "rank": 8
+        },
+        "off.epaPerPass": {
+          "value": 0.09313341551196887,
+          "rank": 10
+        },
+        "off.epaPerRush": {
+          "value": -0.03434537547857038,
+          "rank": 4
+        },
+        "off.successRate": {
+          "value": 44.19990093394237,
+          "rank": 18
+        },
+        "off.passSuccessRate": {
+          "value": 46.228876372411655,
+          "rank": 17
+        },
+        "off.rushSuccessRate": {
+          "value": 41.38004888071379,
+          "rank": 16
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.009249431430278388,
+          "rank": 6
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.0378976535765327,
+          "rank": 6
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07599410112515038,
+          "rank": 3
+        },
+        "def.successRateAllowed": {
+          "value": 43.47783912274075,
+          "rank": 4
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.22375840648078,
+          "rank": 4
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.80716641555347,
+          "rank": 15
+        }
+      }
+    },
+    {
+      "teamId": "nfl-wsh",
+      "abbr": "wsh",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.047921408254338486,
+          "rank": 7
+        },
+        "off.epaPerPass": {
+          "value": 0.1008631541105329,
+          "rank": 8
+        },
+        "off.epaPerRush": {
+          "value": -0.03746677072772708,
+          "rank": 5
+        },
+        "off.successRate": {
+          "value": 45.8909746755551,
+          "rank": 4
+        },
+        "off.passSuccessRate": {
+          "value": 47.92891307220741,
+          "rank": 9
+        },
+        "off.rushSuccessRate": {
+          "value": 42.50306197227339,
+          "rank": 3
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.04352310674390793,
+          "rank": 31
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.09870684239306701,
+          "rank": 31
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.04637559601918695,
+          "rank": 28
+        },
+        "def.successRateAllowed": {
+          "value": 44.99161335567017,
+          "rank": 26
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.99664955941181,
+          "rank": 24
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.62105828809196,
+          "rank": 27
+        }
+      }
+    },
+    {
+      "teamId": "nfl-chi",
+      "abbr": "chi",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.015207728604734204,
+          "rank": 18
+        },
+        "off.epaPerPass": {
+          "value": 0.0589441792706545,
+          "rank": 19
+        },
+        "off.epaPerRush": {
+          "value": -0.05550732452165975,
+          "rank": 13
+        },
+        "off.successRate": {
+          "value": 43.87006559459399,
+          "rank": 19
+        },
+        "off.passSuccessRate": {
+          "value": 44.88068679209959,
+          "rank": 27
+        },
+        "off.rushSuccessRate": {
+          "value": 42.02280404349351,
+          "rank": 6
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.01691526853139495,
+          "rank": 21
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06244168423122306,
+          "rank": 16
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.05507094698509869,
+          "rank": 27
+        },
+        "def.successRateAllowed": {
+          "value": 44.805845372268834,
+          "rank": 24
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.860271718430816,
+          "rank": 22
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.46199864740539,
+          "rank": 24
+        }
+      }
+    },
+    {
+      "teamId": "nfl-det",
+      "abbr": "det",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.063756743361631,
+          "rank": 3
+        },
+        "off.epaPerPass": {
+          "value": 0.14033284370040278,
+          "rank": 3
+        },
+        "off.epaPerRush": {
+          "value": -0.04713236271270742,
+          "rank": 8
+        },
+        "off.successRate": {
+          "value": 45.72550821134972,
+          "rank": 6
+        },
+        "off.passSuccessRate": {
+          "value": 48.65819878418564,
+          "rank": 5
+        },
+        "off.rushSuccessRate": {
+          "value": 41.48728564279114,
+          "rank": 12
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.007220141927692122,
+          "rank": 10
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.04932565497045026,
+          "rank": 10
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06124108870912033,
+          "rank": 18
+        },
+        "def.successRateAllowed": {
+          "value": 43.77373763561847,
+          "rank": 8
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.70404052771176,
+          "rank": 8
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.66672749068424,
+          "rank": 10
+        }
+      }
+    },
+    {
+      "teamId": "nfl-gb",
+      "abbr": "gb",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.06416111055480551,
+          "rank": 2
+        },
+        "off.epaPerPass": {
+          "value": 0.15683427240735542,
+          "rank": 2
+        },
+        "off.epaPerRush": {
+          "value": -0.05761202555382412,
+          "rank": 15
+        },
+        "off.successRate": {
+          "value": 45.679716532717286,
+          "rank": 7
+        },
+        "off.passSuccessRate": {
+          "value": 48.35682058903158,
+          "rank": 7
+        },
+        "off.rushSuccessRate": {
+          "value": 41.91845018610666,
+          "rank": 7
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.010009183799260277,
+          "rank": 13
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.061749439593041945,
+          "rank": 14
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06667111386653286,
+          "rank": 12
+        },
+        "def.successRateAllowed": {
+          "value": 44.5135593335511,
+          "rank": 19
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.576903536723236,
+          "rank": 17
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.1460955648281,
+          "rank": 21
+        }
+      }
+    },
+    {
+      "teamId": "nfl-min",
+      "abbr": "min",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.016701529455248387,
+          "rank": 27
+        },
+        "off.epaPerPass": {
+          "value": 0.018265855438442766,
+          "rank": 27
+        },
+        "off.epaPerRush": {
+          "value": -0.06982852167309306,
+          "rank": 22
+        },
+        "off.successRate": {
+          "value": 44.43211432715376,
+          "rank": 16
+        },
+        "off.passSuccessRate": {
+          "value": 46.26013140814622,
+          "rank": 16
+        },
+        "off.rushSuccessRate": {
+          "value": 41.46550702721844,
+          "rank": 14
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.016190119718662667,
+          "rank": 1
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.023623706825704728,
+          "rank": 1
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07446492576952905,
+          "rank": 6
+        },
+        "def.successRateAllowed": {
+          "value": 43.480967897217496,
+          "rank": 5
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.21764185969481,
+          "rank": 3
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.73333770236304,
+          "rank": 12
+        }
+      }
+    },
+    {
+      "teamId": "nfl-atl",
+      "abbr": "atl",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.012490737888460028,
+          "rank": 20
+        },
+        "off.epaPerPass": {
+          "value": 0.058452755858104395,
+          "rank": 20
+        },
+        "off.epaPerRush": {
+          "value": -0.054175561106470135,
+          "rank": 11
+        },
+        "off.successRate": {
+          "value": 45.29887542355183,
+          "rank": 9
+        },
+        "off.passSuccessRate": {
+          "value": 47.14421734008907,
+          "rank": 13
+        },
+        "off.rushSuccessRate": {
+          "value": 42.37722013630629,
+          "rank": 4
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.016851448926276477,
+          "rank": 20
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.06244291236044186,
+          "rank": 17
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.056911862734596974,
+          "rank": 21
+        },
+        "def.successRateAllowed": {
+          "value": 44.62912487232428,
+          "rank": 22
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.39173292550269,
+          "rank": 13
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.569183769268804,
+          "rank": 25
+        }
+      }
+    },
+    {
+      "teamId": "nfl-car",
+      "abbr": "car",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.010905949177539403,
+          "rank": 26
+        },
+        "off.epaPerPass": {
+          "value": 0.019987692292392667,
+          "rank": 26
+        },
+        "off.epaPerRush": {
+          "value": -0.058402660367985235,
+          "rank": 17
+        },
+        "off.successRate": {
+          "value": 43.58411403042759,
+          "rank": 24
+        },
+        "off.passSuccessRate": {
+          "value": 44.97853773756778,
+          "rank": 26
+        },
+        "off.rushSuccessRate": {
+          "value": 41.40070207838582,
+          "rank": 15
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.0396527523229889,
+          "rank": 29
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.09071014912927337,
+          "rank": 28
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.043228553171770386,
+          "rank": 30
+        },
+        "def.successRateAllowed": {
+          "value": 45.06033009935512,
+          "rank": 28
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.12300036679548,
+          "rank": 27
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.65083811400081,
+          "rank": 28
+        }
+      }
+    },
+    {
+      "teamId": "nfl-no",
+      "abbr": "no",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": -0.03168836672751051,
+          "rank": 28
+        },
+        "off.epaPerPass": {
+          "value": 0.00032978284355948684,
+          "rank": 28
+        },
+        "off.epaPerRush": {
+          "value": -0.08017939261045648,
+          "rank": 25
+        },
+        "off.successRate": {
+          "value": 42.90135793602681,
+          "rank": 27
+        },
+        "off.passSuccessRate": {
+          "value": 44.78238886790068,
+          "rank": 29
+        },
+        "off.rushSuccessRate": {
+          "value": 39.996685115647374,
+          "rank": 26
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.0055328664404413076,
+          "rank": 9
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.05288880746157151,
+          "rank": 11
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06324395648315026,
+          "rank": 16
+        },
+        "def.successRateAllowed": {
+          "value": 43.927357135832885,
+          "rank": 10
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.77755801976748,
+          "rank": 9
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.10203517284243,
+          "rank": 20
+        }
+      }
+    },
+    {
+      "teamId": "nfl-tb",
+      "abbr": "tb",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.037245781389932175,
+          "rank": 10
+        },
+        "off.epaPerPass": {
+          "value": 0.0940965720838011,
+          "rank": 9
+        },
+        "off.epaPerRush": {
+          "value": -0.053229665659617384,
+          "rank": 10
+        },
+        "off.successRate": {
+          "value": 45.12336570566524,
+          "rank": 12
+        },
+        "off.passSuccessRate": {
+          "value": 47.4084412447712,
+          "rank": 11
+        },
+        "off.rushSuccessRate": {
+          "value": 41.47812154823274,
+          "rank": 13
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.015436134554311939,
+          "rank": 19
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.0707317222123206,
+          "rank": 21
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.07364238579242637,
+          "rank": 7
+        },
+        "def.successRateAllowed": {
+          "value": 44.586547809369314,
+          "rank": 20
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.27711616011942,
+          "rank": 30
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.23657057082792,
+          "rank": 3
+        }
+      }
+    },
+    {
+      "teamId": "nfl-ari",
+      "abbr": "ari",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.016290436016565293,
+          "rank": 16
+        },
+        "off.epaPerPass": {
+          "value": 0.0678957400895222,
+          "rank": 16
+        },
+        "off.epaPerRush": {
+          "value": -0.0743468134420998,
+          "rank": 23
+        },
+        "off.successRate": {
+          "value": 44.56739974097301,
+          "rank": 15
+        },
+        "off.passSuccessRate": {
+          "value": 47.03515301630389,
+          "rank": 14
+        },
+        "off.rushSuccessRate": {
+          "value": 40.268779092665056,
+          "rank": 24
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.032469732272556735,
+          "rank": 25
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.08766635550560785,
+          "rank": 27
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.05510898913514456,
+          "rank": 26
+        },
+        "def.successRateAllowed": {
+          "value": 45.52804958659565,
+          "rank": 32
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.90787434114917,
+          "rank": 32
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.56961145061179,
+          "rank": 26
+        }
+      }
+    },
+    {
+      "teamId": "nfl-lar",
+      "abbr": "lar",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.06354571245454514,
+          "rank": 4
+        },
+        "off.epaPerPass": {
+          "value": 0.12888375772236307,
+          "rank": 4
+        },
+        "off.epaPerRush": {
+          "value": -0.038472601187215946,
+          "rank": 6
+        },
+        "off.successRate": {
+          "value": 47.64475277348913,
+          "rank": 1
+        },
+        "off.passSuccessRate": {
+          "value": 49.6100732658091,
+          "rank": 1
+        },
+        "off.rushSuccessRate": {
+          "value": 44.06024294232779,
+          "rank": 1
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.003970345551411576,
+          "rank": 8
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.04888459365663793,
+          "rank": 9
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.06392796069906606,
+          "rank": 14
+        },
+        "def.successRateAllowed": {
+          "value": 44.04132230817751,
+          "rank": 11
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 46.287440597105984,
+          "rank": 12
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.67335294616124,
+          "rank": 11
+        }
+      }
+    },
+    {
+      "teamId": "nfl-sf",
+      "abbr": "sf",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.04998280079760527,
+          "rank": 6
+        },
+        "off.epaPerPass": {
+          "value": 0.11558147116558387,
+          "rank": 6
+        },
+        "off.epaPerRush": {
+          "value": -0.05097842885982046,
+          "rank": 9
+        },
+        "off.successRate": {
+          "value": 46.08018635022736,
+          "rank": 3
+        },
+        "off.passSuccessRate": {
+          "value": 49.370150670898184,
+          "rank": 2
+        },
+        "off.rushSuccessRate": {
+          "value": 41.1284702529816,
+          "rank": 19
+        },
+        "def.epaPerPlayAllowed": {
+          "value": 0.029392841810417156,
+          "rank": 24
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.08199184455536414,
+          "rank": 25
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.05570312677810956,
+          "rank": 24
+        },
+        "def.successRateAllowed": {
+          "value": 45.27646215081838,
+          "rank": 31
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 47.132752681510674,
+          "rank": 28
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 41.92748807938435,
+          "rank": 32
+        }
+      }
+    },
+    {
+      "teamId": "nfl-sea",
+      "abbr": "sea",
+      "metrics": {
+        "off.epaPerPlay": {
+          "value": 0.015264179012144578,
+          "rank": 17
+        },
+        "off.epaPerPass": {
+          "value": 0.08141892630272463,
+          "rank": 12
+        },
+        "off.epaPerRush": {
+          "value": -0.07505040096271048,
+          "rank": 24
+        },
+        "off.successRate": {
+          "value": 45.118470062280544,
+          "rank": 13
+        },
+        "off.passSuccessRate": {
+          "value": 48.7428601653125,
+          "rank": 4
+        },
+        "off.rushSuccessRate": {
+          "value": 40.27407804010072,
+          "rank": 23
+        },
+        "def.epaPerPlayAllowed": {
+          "value": -0.012049863826924922,
+          "rank": 4
+        },
+        "def.epaPerPassAllowed": {
+          "value": 0.03631525487038717,
+          "rank": 5
+        },
+        "def.epaPerRushAllowed": {
+          "value": -0.08084526275327553,
+          "rank": 1
+        },
+        "def.successRateAllowed": {
+          "value": 43.496954910560106,
+          "rank": 6
+        },
+        "def.passSuccessRateAllowed": {
+          "value": 45.54410811290519,
+          "rank": 6
+        },
+        "def.rushSuccessRateAllowed": {
+          "value": 40.41963901770717,
+          "rank": 5
+        }
+      }
+    }
+  ]
+}
