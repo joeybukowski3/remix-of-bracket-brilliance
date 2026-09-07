@@ -14,7 +14,14 @@ import type { MarketArtifact } from "@/lib/nfl/marketData";
 import type { ProjectionsArtifact } from "@/lib/nfl/projectionData";
 import { getNflRatingHeatClass } from "@/lib/nfl/ratingPresentation";
 import type { CanonicalNflTeam, NflGameRecord } from "@/lib/nfl/standings";
+import type { TeamTotalsArtifact } from "@/lib/nfl/totalsProjectionData";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
+
+const navigateMock = vi.hoisted(() => vi.fn());
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  return { ...actual, useNavigate: () => navigateMock };
+});
 
 function fixture<T>(path: string): T {
   return JSON.parse(readFileSync(join(process.cwd(), path), "utf8")) as T;
@@ -24,6 +31,7 @@ const games = fixture<{ games: NflGameRecord[] }>("public/data/nfl/2026/games.js
 const teams = fixture<{ teams: CanonicalNflTeam[] }>("public/data/nfl/teams.json").teams;
 const market = fixture<MarketArtifact>("public/data/nfl/matchup-market.json");
 const projections = fixture<ProjectionsArtifact>("public/data/nfl/matchup-projections.json");
+const totals = fixture<TeamTotalsArtifact>("public/data/nfl/team-totals.json");
 const ratings: CurrentRatingRow[] = teams.map((team, index) => ({
   abbr: team.abbr,
   team: team.name,
@@ -55,6 +63,7 @@ const dashboard = buildWeeklyDashboard({
   teams,
   marketArtifact: market,
   projectionsArtifact: projections,
+  totalsArtifact: totals,
   currentRatings: ratings,
   fantasyRows,
 });
@@ -84,12 +93,94 @@ describe("WeeklyCommandCenter", () => {
     expect(props.onWeekChange).toHaveBeenCalledWith(2);
   });
 
-  it("renders every game and canonical matchup links in desktop and mobile boards", () => {
+  it("renders every game with a canonical matchup link on mobile and an interactive row on desktop", () => {
     renderDashboard();
-    const openerLinks = screen.getAllByRole("link", { name: /New England Patriots at Seattle Seahawks matchup details/i });
-    expect(openerLinks.length).toBeGreaterThanOrEqual(2);
-    expect(openerLinks.every((link) => link.getAttribute("href") === "/nfl/matchups/new-england-patriots-at-seattle-seahawks")).toBe(true);
+    // Mobile board: the whole row is a real <Link>.
+    const mobileLink = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks matchup details/i });
+    expect(mobileLink.getAttribute("href")).toBe("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+    // Desktop board: the whole row is an interactive, keyboard-focusable element.
+    const desktopRow = screen.getByRole("button", { name: /New England Patriots at Seattle Seahawks matchup details/i });
+    expect(desktopRow.tagName).toBe("TR");
+    expect(desktopRow).toHaveAttribute("tabIndex", "0");
     expect(screen.getByRole("table")).toBeTruthy();
+  });
+
+  it("labels the market total column Mkt Total and adds a separate JKB Total column with a magnitude-aware lean chip", () => {
+    renderDashboard();
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Mkt Total" })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "JKB Total" })).toBeTruthy();
+    const row = screen.getByRole("button", { name: /New England Patriots at Seattle Seahawks matchup details/i });
+    expect(within(row).getByText("44.5")).toBeTruthy(); // Mkt Total
+    expect(within(row).getByText("48.9")).toBeTruthy(); // JKB Total
+    // 48.9 - 44.5 = +4.4, |4.4| > 2.5 -> Strong Lean Over
+    const chip = within(row).getByTestId("jkb-total-lean-chip");
+    expect(chip.textContent).toMatch(/Strong Lean Over \+4\.4/);
+  });
+
+  it("gives the desktop JKB Total chip a progressively stronger tone matching its lean tier", () => {
+    renderDashboard();
+    const row = screen.getByRole("button", { name: /New England Patriots at Seattle Seahawks matchup details/i });
+    const chip = within(row).getByTestId("jkb-total-lean-chip");
+    expect(chip.className).toContain("emerald-700");
+    expect(chip.className).toContain("text-white");
+  });
+
+  it("applies the same lean classification and color tier to the mobile board chip", () => {
+    renderDashboard();
+    const mobileLink = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks matchup details/i });
+    const chip = within(mobileLink).getByTestId("jkb-total-lean-chip");
+    expect(chip.textContent).toMatch(/Strong Lean Over/);
+    expect(chip.className).toContain("emerald-700");
+  });
+
+  describe("Weekly Game Board whole-row navigation (desktop)", () => {
+    function desktopRow() {
+      return screen.getByRole("button", { name: /New England Patriots at Seattle Seahawks matchup details/i });
+    }
+
+    it("navigates to the matchup page when clicking anywhere on the row", () => {
+      renderDashboard();
+      fireEvent.click(within(desktopRow()).getByText("New England Patriots"));
+      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+      expect(navigateMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("navigates on Enter when the row has focus", () => {
+      renderDashboard();
+      const row = desktopRow();
+      row.focus();
+      fireEvent.keyDown(row, { key: "Enter" });
+      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+    });
+
+    it("navigates on Space when the row has focus", () => {
+      renderDashboard();
+      const row = desktopRow();
+      row.focus();
+      fireEvent.keyDown(row, { key: " " });
+      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+    });
+
+    it("is keyboard-reachable and shows a pointer cursor", () => {
+      renderDashboard();
+      const row = desktopRow();
+      expect(row).toHaveAttribute("tabIndex", "0");
+      expect(row.className).toContain("cursor-pointer");
+    });
+
+    it("gives the row a visible focus-visible treatment", () => {
+      renderDashboard();
+      expect(desktopRow().className).toMatch(/focus-visible:outline/);
+    });
+
+    it("does not put the visual chevron affordance in the tab order (the row itself is the single interactive element)", () => {
+      renderDashboard();
+      const row = desktopRow();
+      const chevronHost = row.querySelector('[aria-hidden="true"]');
+      expect(chevronHost).not.toBeNull();
+      expect(chevronHost).not.toHaveAttribute("tabIndex");
+    });
   });
 
   it("renders Model vs Market gaps without pick or best-bet language", () => {

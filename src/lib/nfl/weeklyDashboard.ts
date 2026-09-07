@@ -18,6 +18,12 @@ import {
   type ProjectionsArtifact,
 } from "@/lib/nfl/projectionData";
 import type { CanonicalNflTeam, NflGameRecord } from "@/lib/nfl/standings";
+import {
+  compareTotalToMarket,
+  teamTotalFor,
+  type JkbTotalVsMarket,
+  type TeamTotalsArtifact,
+} from "@/lib/nfl/totalsProjectionData";
 import { NFL_PRESENTATION_TIME_ZONE } from "@/lib/nfl/weekSelection";
 
 export type WeeklyDashboardPosition = (typeof WEEKLY_RANKING_POSITIONS)[number];
@@ -66,6 +72,14 @@ export type WeeklyDashboardGame = {
   formattedComparison: string;
   modelLeanTeam: WeeklyDashboardTeam | null;
   absoluteModelMarketGap: number | null;
+  /**
+   * JKB projected combined game total vs. the market total. Null only when
+   * there is no JKB total projection at all — a missing market total still
+   * returns the JKB total with vegasTotal/difference/indicator null, per
+   * compareTotalToMarket's contract, so the market-total half degrades to
+   * N/A independently rather than hiding the whole cell.
+   */
+  total: JkbTotalVsMarket | null;
 };
 
 export type WeeklyDashboardFantasyLeader = {
@@ -87,6 +101,7 @@ export type WeeklyDashboardDiagnostics = {
   missingMarketGameIds: string[];
   missingProjectionGameIds: string[];
   missingRatingTeamAbbrs: string[];
+  missingTotalsGameIds: string[];
 };
 
 export type WeeklyDashboard = {
@@ -113,6 +128,7 @@ export type BuildWeeklyDashboardInput = {
   teams: readonly CanonicalNflTeam[];
   marketArtifact?: MarketArtifact | null;
   projectionsArtifact?: ProjectionsArtifact | null;
+  totalsArtifact?: TeamTotalsArtifact | null;
   currentRatings?: readonly CurrentRatingRow[] | null;
   fantasyRows?: Partial<Record<WeeklyDashboardPosition, readonly WeeklyRankingRow[]>>;
 };
@@ -206,6 +222,7 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
   const unresolvedTeamGameIds: string[] = [];
   const missingMarketGameIds: string[] = [];
   const missingProjectionGameIds: string[] = [];
+  const missingTotalsGameIds: string[] = [];
   const missingRatingTeamAbbrs = new Set<string>();
   let malformedGameCount = 0;
   const dashboardGames: WeeklyDashboardGame[] = [];
@@ -237,9 +254,12 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
     const home = toTeam(homeIdentity, homeRating);
     const market = currentMarketFor(input.marketArtifact ?? null, game.gameId);
     const projection = projectionFor(input.projectionsArtifact ?? null, game.gameId);
+    const totalProjection = teamTotalFor(input.totalsArtifact ?? null, game.gameId);
     if (!market) missingMarketGameIds.push(game.gameId);
     if (!projection) missingProjectionGameIds.push(game.gameId);
+    if (!totalProjection) missingTotalsGameIds.push(game.gameId);
     const comparison = compareToMarket(projection, market);
+    const total = compareTotalToMarket(totalProjection, market);
     const leanAbbr = comparison?.leansToward?.toLowerCase() ?? null;
     const modelLeanTeam = leanAbbr === away.abbr ? away : leanAbbr === home.abbr ? home : null;
     const matchupSlug = buildMatchupSlug(away.slug, home.slug, game.neutralSite === true);
@@ -275,6 +295,7 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
         comparison?.difference != null && Number.isFinite(comparison.difference)
           ? Math.abs(comparison.difference)
           : null,
+      total,
     });
   }
 
@@ -328,6 +349,7 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
       missingMarketGameIds: missingMarketGameIds.sort(),
       missingProjectionGameIds: missingProjectionGameIds.sort(),
       missingRatingTeamAbbrs: [...missingRatingTeamAbbrs].sort(),
+      missingTotalsGameIds: missingTotalsGameIds.sort(),
     },
   };
 }

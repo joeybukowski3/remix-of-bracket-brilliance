@@ -18,7 +18,7 @@ export default function NFL() {
   if (data.season.error) return <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-5 text-sm font-semibold text-red-800">The NFL schedule is unavailable. Other NFL pages remain accessible from the section navigation.</div>;
   if (!data.dashboard) return <p className="rounded-lg border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">No regular-season schedule is available yet.</p>;
 
-  const artifactErrors = [data.market.error, data.projections.error, data.ratings.error, ...data.fantasy.contextErrors]
+  const artifactErrors = [data.market.error, data.projections.error, data.totals.error, data.ratings.error, ...data.fantasy.contextErrors]
     .filter((error): error is string => Boolean(error));
   return (
     <WeeklyCommandCenter
