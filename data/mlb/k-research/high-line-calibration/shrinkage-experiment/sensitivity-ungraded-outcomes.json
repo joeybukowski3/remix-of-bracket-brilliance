@@ -1,0 +1,406 @@
+{
+  "studyId": "mlb-k-high-line-calibration-v2-shrinkage",
+  "section": "sensitivity-ungraded-outcomes",
+  "generatedAt": "2026-09-07T09:26:28.261Z",
+  "defect": "actualKs = 0 with actualBF = 0 is an unsettled slate recorded as a zero, not a 0-strikeout start. Inherited from the v1 archive extraction; not introduced by this study.",
+  "excludedRows": [
+    {
+      "slateDate": "2026-09-04",
+      "pitcher": "Logan Allen",
+      "kLine": 3.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Ian Seymour",
+      "kLine": 5.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Bryan Woo",
+      "kLine": 6.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Paul Skenes",
+      "kLine": 6.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Walbert Ureña",
+      "kLine": 4.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Andrew Alvarez",
+      "kLine": 3.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Gavin Williams",
+      "kLine": 7.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    },
+    {
+      "slateDate": "2026-09-06",
+      "pitcher": "Payton Tolle",
+      "kLine": 7.5,
+      "actualKs": 0,
+      "actualBF": 0,
+      "actualsSource": "top-k-grading"
+    }
+  ],
+  "excludedCount": 8,
+  "excludedHighLineCount": 2,
+  "comparison": [
+    {
+      "candidate": "const-0.55-production",
+      "withUngraded": {
+        "n": 958,
+        "mae": 1.7987,
+        "signedError": 0.0562,
+        "highLineN": 54,
+        "highLineSignedError": -1.1257,
+        "directionalHitRate": 54.34
+      },
+      "ungradedExcluded": {
+        "n": 950,
+        "mae": 1.7715,
+        "signedError": 0.0143,
+        "highLineN": 52,
+        "highLineSignedError": -1.4088,
+        "directionalHitRate": 54.27
+      }
+    },
+    {
+      "candidate": "ss-k125",
+      "withUngraded": {
+        "n": 958,
+        "mae": 1.787,
+        "signedError": 0.1007,
+        "highLineN": 54,
+        "highLineSignedError": -0.7067,
+        "directionalHitRate": 54.44
+      },
+      "ungradedExcluded": {
+        "n": 950,
+        "mae": 1.7582,
+        "signedError": 0.0577,
+        "highLineN": 52,
+        "highLineSignedError": -0.9906,
+        "directionalHitRate": 54.37
+      }
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "withUngraded": {
+        "n": 958,
+        "mae": 1.7996,
+        "signedError": 0.1116,
+        "highLineN": 54,
+        "highLineSignedError": -0.7393,
+        "directionalHitRate": 54.34
+      },
+      "ungradedExcluded": {
+        "n": 950,
+        "mae": 1.7715,
+        "signedError": 0.0693,
+        "highLineN": 52,
+        "highLineSignedError": -1.0179,
+        "directionalHitRate": 54.27
+      }
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "withUngraded": {
+        "n": 958,
+        "mae": 1.7889,
+        "signedError": 0.1275,
+        "highLineN": 54,
+        "highLineSignedError": -0.5724,
+        "directionalHitRate": 53.92
+      },
+      "ungradedExcluded": {
+        "n": 950,
+        "mae": 1.7598,
+        "signedError": 0.0845,
+        "highLineN": 52,
+        "highLineSignedError": -0.8546,
+        "directionalHitRate": 53.85
+      }
+    }
+  ],
+  "splitWithoutUngraded": [
+    {
+      "candidate": "const-0.55-production",
+      "devN": 612,
+      "devMae": 1.8189,
+      "devHighLineN": 34,
+      "devHighLineSignedError": -1.7285,
+      "devDirectionalHitRate": 55.32,
+      "valN": 338,
+      "valMae": 1.6858,
+      "valHighLineN": 18,
+      "valHighLineSignedError": -0.805,
+      "valDirectionalHitRate": 52.37
+    },
+    {
+      "candidate": "ss-k125",
+      "devN": 612,
+      "devMae": 1.7953,
+      "devHighLineN": 34,
+      "devHighLineSignedError": -1.2791,
+      "devDirectionalHitRate": 55.48,
+      "valN": 338,
+      "valMae": 1.6911,
+      "valHighLineN": 18,
+      "valHighLineSignedError": -0.4456,
+      "valDirectionalHitRate": 52.37
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "devN": 612,
+      "devMae": 1.8142,
+      "devHighLineN": 34,
+      "devHighLineSignedError": -1.3194,
+      "devDirectionalHitRate": 55.16,
+      "valN": 338,
+      "valMae": 1.6941,
+      "valHighLineN": 18,
+      "valHighLineSignedError": -0.4483,
+      "valDirectionalHitRate": 52.66
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "devN": 612,
+      "devMae": 1.796,
+      "devHighLineN": 34,
+      "devHighLineSignedError": -1.1359,
+      "devDirectionalHitRate": 55.16,
+      "valN": 338,
+      "valMae": 1.6944,
+      "valHighLineN": 18,
+      "valHighLineSignedError": -0.3234,
+      "valDirectionalHitRate": 51.48
+    }
+  ],
+  "allFoldsWithoutUngraded": [
+    {
+      "candidate": "const-0.55-production",
+      "fold": 1,
+      "testRange": "2026-08-04..2026-08-11",
+      "n": 202,
+      "mae": 1.8248,
+      "highLineN": 11,
+      "highLineSignedError": -1.1488,
+      "directionalHitRate": 52.48
+    },
+    {
+      "candidate": "const-0.55-production",
+      "fold": 2,
+      "testRange": "2026-08-12..2026-08-19",
+      "n": 195,
+      "mae": 1.7965,
+      "highLineN": 4,
+      "highLineSignedError": -1.1484,
+      "directionalHitRate": 49.74
+    },
+    {
+      "candidate": "const-0.55-production",
+      "fold": 3,
+      "testRange": "2026-08-20..2026-08-29",
+      "n": 192,
+      "mae": 1.5822,
+      "highLineN": 11,
+      "highLineSignedError": -0.8284,
+      "directionalHitRate": 54.17
+    },
+    {
+      "candidate": "const-0.55-production",
+      "fold": 4,
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.734,
+      "highLineN": 6,
+      "highLineSignedError": -0.6177,
+      "directionalHitRate": 52.63
+    },
+    {
+      "candidate": "ss-k125",
+      "fold": 1,
+      "testRange": "2026-08-04..2026-08-11",
+      "n": 202,
+      "mae": 1.8112,
+      "highLineN": 11,
+      "highLineSignedError": -0.6476,
+      "directionalHitRate": 51.98
+    },
+    {
+      "candidate": "ss-k125",
+      "fold": 2,
+      "testRange": "2026-08-12..2026-08-19",
+      "n": 195,
+      "mae": 1.7777,
+      "highLineN": 4,
+      "highLineSignedError": -0.586,
+      "directionalHitRate": 49.74
+    },
+    {
+      "candidate": "ss-k125",
+      "fold": 3,
+      "testRange": "2026-08-20..2026-08-29",
+      "n": 192,
+      "mae": 1.5742,
+      "highLineN": 11,
+      "highLineSignedError": -0.4433,
+      "directionalHitRate": 54.17
+    },
+    {
+      "candidate": "ss-k125",
+      "fold": 4,
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.7509,
+      "highLineN": 6,
+      "highLineSignedError": -0.2991,
+      "directionalHitRate": 53.68
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "fold": 1,
+      "testRange": "2026-08-04..2026-08-11",
+      "n": 202,
+      "mae": 1.8065,
+      "highLineN": 11,
+      "highLineSignedError": -0.683,
+      "directionalHitRate": 53.47
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "fold": 2,
+      "testRange": "2026-08-12..2026-08-19",
+      "n": 195,
+      "mae": 1.8017,
+      "highLineN": 4,
+      "highLineSignedError": -0.5663,
+      "directionalHitRate": 48.72
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "fold": 3,
+      "testRange": "2026-08-20..2026-08-29",
+      "n": 192,
+      "mae": 1.5923,
+      "highLineN": 11,
+      "highLineSignedError": -0.4804,
+      "directionalHitRate": 54.69
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "fold": 4,
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.7445,
+      "highLineN": 6,
+      "highLineSignedError": -0.2182,
+      "directionalHitRate": 51.58
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "fold": 1,
+      "testRange": "2026-08-04..2026-08-11",
+      "n": 202,
+      "mae": 1.8087,
+      "highLineN": 11,
+      "highLineSignedError": -0.4796,
+      "directionalHitRate": 51.98
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "fold": 2,
+      "testRange": "2026-08-12..2026-08-19",
+      "n": 195,
+      "mae": 1.7789,
+      "highLineN": 4,
+      "highLineSignedError": -0.3666,
+      "directionalHitRate": 49.74
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "fold": 3,
+      "testRange": "2026-08-20..2026-08-29",
+      "n": 192,
+      "mae": 1.5784,
+      "highLineN": 11,
+      "highLineSignedError": -0.3216,
+      "directionalHitRate": 53.13
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "fold": 4,
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.7561,
+      "highLineN": 6,
+      "highLineSignedError": -0.1642,
+      "directionalHitRate": 52.63
+    }
+  ],
+  "finalFoldWithoutUngraded": [
+    {
+      "candidate": "const-0.55-production",
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.734,
+      "highLineN": 6,
+      "highLineSignedError": -0.6177,
+      "directionalHitRate": 52.63
+    },
+    {
+      "candidate": "ss-k125",
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.7509,
+      "highLineN": 6,
+      "highLineSignedError": -0.2991,
+      "directionalHitRate": 53.68
+    },
+    {
+      "candidate": "cont-slope0.1",
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.7445,
+      "highLineN": 6,
+      "highLineSignedError": -0.2182,
+      "directionalHitRate": 51.58
+    },
+    {
+      "candidate": "comb-k150-u0.05",
+      "testRange": "2026-08-30..2026-09-06",
+      "n": 95,
+      "mae": 1.7561,
+      "highLineN": 6,
+      "highLineSignedError": -0.1642,
+      "directionalHitRate": 52.63
+    }
+  ]
+}

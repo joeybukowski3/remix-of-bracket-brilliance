@@ -1,0 +1,172 @@
+{
+  "studyId": "mlb-k-high-line-calibration-v2-shrinkage",
+  "section": "forward-shadow-plan",
+  "generatedAt": "2026-09-07T09:26:28.354Z",
+  "status": "NOT_READY",
+  "candidate": "ss-k125",
+  "productionChange": "NONE. This plan is a proposal only; PITCHER_SKILL_SHRINKAGE_ALPHA stays 0.55.",
+  "whyNotReadyNow": [
+    "Gates 3 and 4 (dispersion, % projected >= 7) are unreachable for ANY alpha in [0,1]: at alpha = 1 the sd of projected Ks is 1.2225 and % >= 7 is 3.97%. Reaching sd 1.4 needs alpha near 1.25, which is skill inflation rather than shrinkage. No shrinkage structure can clear them.",
+    "The upper tail is capped jointly by rate compression AND workload compression. An 8-K projection needs a K rate near .358 at a median projected workload, above the .296 that is the 95th percentile of the UNSHRUNK skill rate. Alpha alone cannot reach it.",
+    "High-line sample counts are small: 54 rows at line >= 7 pooled (52 after removing ungraded rows), 20 in validation, 11 at 8.5+. No 8.5+ claim in this study should be treated as settled.",
+    "The v1 archive carries 8 ungraded rows recorded as 0 strikeouts on 0 batters faced, 2 of them at line 7.5. They should be repaired before any forward shadow is scored against this archive."
+  ],
+  "design": {
+    "durationSlates": 60,
+    "durationCalendar": "approximately 10-12 weeks of MLB slates, or one full season segment",
+    "minimumTotalRows": 1500,
+    "minimumHighLineRows": 120,
+    "minimum75PlusRows": 100,
+    "minimum85PlusRows": 30,
+    "rationale": "The pooled archive carries 54 rows at line >= 7. Doubling that to ~120 is the smallest sample at which a 0.4-K shift in high-line signed error has a bootstrap CI that can exclude zero, given the observed per-row error sd of roughly 2.2 Ks.",
+    "method": "Run the candidate alpha alongside production on every slate, writing a shadow-only column. Production Projected K continues to be served from alpha = 0.55 throughout."
+  },
+  "metricsToMonitor": [
+    "overall MAE and RMSE",
+    "overall signed error",
+    "sd of projected Ks",
+    "% projected >= 7 and >= 8",
+    "signed error at line >= 7, at 7.5 and at 8.5+",
+    "% Under at 7.5 and 8.5+",
+    "directional hit rate overall and at line >= 7",
+    "MAE at lines <= 5.5",
+    "signed error in the bottom skill quartile (over-projection guard)",
+    "rolling 20-slate high-line signed error, to detect the sign flip seen in fold 4"
+  ],
+  "promotionGates": {
+    "note": "ALL must hold on the forward shadow window alone, not pooled with this archive.",
+    "g1": "overall MAE <= production MAE over the same forward window",
+    "g2": "signed error at line >= 7 improves toward zero by >= 25% in absolute terms, with a bootstrap 95% CI that does not cross the production point estimate in the wrong direction",
+    "g3": "signed error at line >= 7 stays within +/-0.5 Ks of zero, i.e. no overshoot into over-projection",
+    "g4": "MAE at lines <= 5.5 no worse than production + 0.02",
+    "g5": "directional hit rate overall no worse than production - 1.0pp",
+    "g6": "signed error in the bottom skill quartile no worse than production + 0.15",
+    "g7": "at least 120 rows at line >= 7 and 30 rows at 8.5+ accumulated before any gate is scored"
+  },
+  "rollbackConditions": [
+    "signed error at line >= 7 exceeds +0.75 Ks (over-projection) on any trailing 20-slate window",
+    "overall MAE exceeds production MAE by more than 0.03 on any trailing 20-slate window",
+    "directional hit rate falls more than 2.0pp below production on any trailing 20-slate window",
+    "% projected >= 8 exceeds 3.0% on any trailing 20-slate window",
+    "season BF coverage falls below 95% of rows, i.e. the fail-closed fallback is carrying the model",
+    "MAE at lines <= 5.5 exceeds production + 0.05 on any trailing 20-slate window"
+  ],
+  "foldStability": {
+    "baseline": [
+      {
+        "candidate": "const-0.55-production",
+        "fold": 1,
+        "trainRange": "2026-07-23..2026-08-03",
+        "testRange": "2026-08-04..2026-08-11",
+        "n": 202,
+        "mae": 1.8248,
+        "signedError": 0.0116,
+        "sdProjectedKs": 0.8427,
+        "highLineN": 11,
+        "highLineSignedError": -1.1488,
+        "pctAtLeast7": 0.99,
+        "directionalHitRate": 52.48
+      },
+      {
+        "candidate": "const-0.55-production",
+        "fold": 2,
+        "trainRange": "2026-07-23..2026-08-11",
+        "testRange": "2026-08-12..2026-08-19",
+        "n": 195,
+        "mae": 1.7965,
+        "signedError": 0.0236,
+        "sdProjectedKs": 0.8803,
+        "highLineN": 4,
+        "highLineSignedError": -1.1484,
+        "pctAtLeast7": 0.51,
+        "directionalHitRate": 49.74
+      },
+      {
+        "candidate": "const-0.55-production",
+        "fold": 3,
+        "trainRange": "2026-07-23..2026-08-19",
+        "testRange": "2026-08-20..2026-08-29",
+        "n": 192,
+        "mae": 1.5822,
+        "signedError": 0.2701,
+        "sdProjectedKs": 0.9272,
+        "highLineN": 11,
+        "highLineSignedError": -0.8284,
+        "pctAtLeast7": 0.52,
+        "directionalHitRate": 54.17
+      },
+      {
+        "candidate": "const-0.55-production",
+        "fold": 4,
+        "trainRange": "2026-07-23..2026-08-29",
+        "testRange": "2026-08-30..2026-09-06",
+        "n": 103,
+        "mae": 1.9896,
+        "signedError": 0.0555,
+        "sdProjectedKs": 1.0227,
+        "highLineN": 8,
+        "highLineSignedError": 1.0956,
+        "pctAtLeast7": 0,
+        "directionalHitRate": 53.4
+      }
+    ],
+    "candidate": [
+      {
+        "candidate": "ss-k125",
+        "fold": 1,
+        "trainRange": "2026-07-23..2026-08-03",
+        "testRange": "2026-08-04..2026-08-11",
+        "n": 202,
+        "mae": 1.8112,
+        "signedError": 0.0366,
+        "sdProjectedKs": 0.9649,
+        "highLineN": 11,
+        "highLineSignedError": -0.6476,
+        "pctAtLeast7": 1.98,
+        "directionalHitRate": 51.98
+      },
+      {
+        "candidate": "ss-k125",
+        "fold": 2,
+        "trainRange": "2026-07-23..2026-08-11",
+        "testRange": "2026-08-12..2026-08-19",
+        "n": 195,
+        "mae": 1.7777,
+        "signedError": 0.0859,
+        "sdProjectedKs": 0.9211,
+        "highLineN": 4,
+        "highLineSignedError": -0.586,
+        "pctAtLeast7": 1.54,
+        "directionalHitRate": 49.74
+      },
+      {
+        "candidate": "ss-k125",
+        "fold": 3,
+        "trainRange": "2026-07-23..2026-08-19",
+        "testRange": "2026-08-20..2026-08-29",
+        "n": 192,
+        "mae": 1.5742,
+        "signedError": 0.3001,
+        "sdProjectedKs": 0.9998,
+        "highLineN": 11,
+        "highLineSignedError": -0.4433,
+        "pctAtLeast7": 2.08,
+        "directionalHitRate": 54.17
+      },
+      {
+        "candidate": "ss-k125",
+        "fold": 4,
+        "trainRange": "2026-07-23..2026-08-29",
+        "testRange": "2026-08-30..2026-09-06",
+        "n": 103,
+        "mae": 2.0193,
+        "signedError": 0.1151,
+        "sdProjectedKs": 1.1192,
+        "highLineN": 8,
+        "highLineSignedError": 1.4443,
+        "pctAtLeast7": 2.91,
+        "directionalHitRate": 54.37
+      }
+    ]
+  }
+}

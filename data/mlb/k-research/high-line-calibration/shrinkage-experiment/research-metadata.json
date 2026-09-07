@@ -1,0 +1,111 @@
+{
+  "studyId": "mlb-k-high-line-calibration-v2-shrinkage",
+  "parentStudy": "mlb-k-high-line-calibration-v1",
+  "section": "shrinkage-experiment-metadata",
+  "generatedAt": "2026-09-07T09:26:28.355Z",
+  "shadowExperimentOnly": true,
+  "productionFilesModified": [],
+  "productionArtifactsModified": [],
+  "productionConstantsChanged": [],
+  "scripts": [
+    "scripts/research/mlb-k-extract-season-bf.mjs",
+    "scripts/research/mlb-k-shrinkage-experiment.mjs",
+    "scripts/research/lib/mlb-k-shrinkage-helpers.mjs",
+    "scripts/research/lib/mlb-k-shrinkage-metrics.mjs",
+    "scripts/research/lib/mlb-k-shrinkage-helpers.test.mjs"
+  ],
+  "dataIntegrity": {
+    "archiveRows": 1186,
+    "leakageSafeRows": 958,
+    "replayableRows": 958,
+    "clampedMatchupRows": 0,
+    "seasonBfCoverage": 958,
+    "seasonBfMissing": 0,
+    "seasonBfZero": 17,
+    "percentileFallbackRows": 93,
+    "slates": 44,
+    "dateRange": "2026-07-23..2026-09-06",
+    "seasonBfQuantiles": {
+      "min": 0,
+      "p10": 82.4,
+      "p50": 427,
+      "p90": 578,
+      "max": 784
+    },
+    "marketReference": {
+      "pctLinesAtLeast7": 5.64,
+      "pctLinesAtLeast8point5": 1.15,
+      "sdMarketLine": 1.4975,
+      "pctActualAtLeast7": 21.71,
+      "pctActualAtLeast8": 13.47
+    }
+  },
+  "splitDesign": {
+    "method": "leakage-safe temporal split by slate date, 60% of distinct dates to development",
+    "totalSlates": 44,
+    "developmentSlates": 26,
+    "validationSlates": 18,
+    "cutoffDate": "2026-08-17",
+    "developmentRange": "2026-07-23..2026-08-17",
+    "validationRange": "2026-08-18..2026-09-06",
+    "developmentRows": 612,
+    "validationRows": 346,
+    "developmentHighLineRows": 34,
+    "validationHighLineRows": 20,
+    "development75Rows": 27,
+    "validation75Rows": 16,
+    "development85Rows": 7,
+    "validation85Rows": 4,
+    "leakageGuard": {
+      "ok": true,
+      "violations": [],
+      "maxTrainDate": "2026-08-17"
+    },
+    "rollingOriginFolds": [
+      {
+        "fold": 1,
+        "trainRange": "2026-07-23..2026-08-03",
+        "testRange": "2026-08-04..2026-08-11",
+        "testRows": 202,
+        "testHighLineRows": 11
+      },
+      {
+        "fold": 2,
+        "trainRange": "2026-07-23..2026-08-11",
+        "testRange": "2026-08-12..2026-08-19",
+        "testRows": 195,
+        "testHighLineRows": 4
+      },
+      {
+        "fold": 3,
+        "trainRange": "2026-07-23..2026-08-19",
+        "testRange": "2026-08-20..2026-08-29",
+        "testRows": 192,
+        "testHighLineRows": 11
+      },
+      {
+        "fold": 4,
+        "trainRange": "2026-07-23..2026-08-29",
+        "testRange": "2026-08-30..2026-09-06",
+        "testRows": 103,
+        "testHighLineRows": 8
+      }
+    ]
+  },
+  "familyVerdicts": {
+    "sample-size": "PROMISING",
+    "skill-piecewise": "FAIL",
+    "skill-continuous": "FAIL",
+    "skill-logistic": "FAIL",
+    "combined": "PROMISING"
+  },
+  "bestOverall": "ss-k125",
+  "status": "NOT_READY",
+  "marketLineUsage": "evaluation and bucketing only; enforced by a test that no alpha helper reads kLine or odds",
+  "leakageControls": [
+    "pregame archive rows only (snapshot date <= slate date)",
+    "season BF read from pregame strikeout-prop-details snapshots, verified monotone non-decreasing per pitcher",
+    "skill percentile pool restricted to slates on or before the row's own slate, outcomes never included",
+    "temporal split and rolling folds cut on slate date, guarded by assertTemporalOrder"
+  ]
+}
