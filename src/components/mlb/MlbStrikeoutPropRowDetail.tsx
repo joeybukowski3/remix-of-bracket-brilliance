@@ -159,13 +159,11 @@ function OpponentGameTeamCell({ team, starterName, site }: { team: string | null
   if (!team) return <span>{DASH}</span>;
   if (!starterName) return <TeamCell team={team} site={site} />;
   return (
-    <span className="flex min-w-0 items-center gap-1">
-      <MlbTeamLogo team={team} size={14} />
-      <span className="min-w-0 leading-tight">
-        <span className="flex min-w-0 items-center gap-1">
-          <span className="truncate font-semibold text-slate-700">{splitDisplayName(starterName).last}</span>
-          <HomeAwayBadge site={site} />
-        </span>
+    <span className="flex min-w-0 items-center gap-1.5">
+      <HomeAwayBadge site={site} />
+      <MlbTeamLogo team={team} size={14} className="shrink-0" />
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate font-semibold text-slate-700">{splitDisplayName(starterName).last}</span>
         <span className="block truncate text-[9px] font-medium text-slate-400">{team}</span>
       </span>
     </span>
