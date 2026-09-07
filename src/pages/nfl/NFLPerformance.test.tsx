@@ -30,6 +30,7 @@ const OVERVIEW = {
     latest_grade_timestamp: null,
   },
 };
+const SIDES = { performanceMeta: {}, summary: { graded_games: 0 }, buckets: {}, rows: [] };
 const TOTALS = { performanceMeta: {}, summary: { graded_games: 0 }, buckets: {}, rows: [] };
 const PROPS = { performanceMeta: {}, summary: { graded_starter_props: 0 }, coverage: { total_cohort_rows: 0, gradeable_rows: 0 }, rows: [] };
 const HEALTH = { performanceMeta: {}, totals: {}, props: {}, sides: {}, workflow: { generated_at_by_artifact: {} } };
@@ -55,6 +56,7 @@ describe("NFLPerformance route", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("overview.json")) return Promise.resolve(jsonResponse(OVERVIEW));
+      if (url.includes("sides.json")) return Promise.resolve(jsonResponse(SIDES));
       if (url.includes("totals.json")) return Promise.resolve(jsonResponse(TOTALS));
       if (url.includes("props.json")) return Promise.resolve(jsonResponse(PROPS));
       return Promise.resolve(jsonResponse(HEALTH));

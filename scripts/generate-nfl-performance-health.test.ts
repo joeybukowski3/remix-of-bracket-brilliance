@@ -17,7 +17,7 @@ describe("buildPerformanceHealthArtifact", () => {
     expect(["HEALTHY", "DEGRADED", "STALE", "NOT_AVAILABLE"]).toContain(artifact.totals.status);
     expect(["HEALTHY", "DEGRADED", "STALE", "NOT_AVAILABLE"]).toContain(artifact.props.status);
     expect(["HEALTHY", "DEGRADED", "STALE", "NOT_AVAILABLE"]).toContain(artifact.sides.status);
-    expect(artifact.sides.public_performance_view_status).toBe("NOT_IMPLEMENTED");
+    expect(["HEALTHY", "STALE", "NOT_AVAILABLE"]).toContain(artifact.sides.public_performance_view_status);
   });
 
   it("is deterministic: building twice from the same inputs yields identical output", () => {

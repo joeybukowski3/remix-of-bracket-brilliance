@@ -4,7 +4,10 @@ import {
   buildTrenchesContext,
   buildYppContext,
   buildPregameGameContext,
+  buildCoachingContext,
   NOT_IMPLEMENTED_COACHING_CONTEXT,
+  SOURCE_UNAVAILABLE_COACHING_CONTEXT,
+  type CoachRatingSnapshot,
   type EpaPriorSeasonWindow,
   type MetricsPriorSeasonWindow,
   type TrenchSeasonData,
@@ -114,15 +117,85 @@ describe("buildTrenchesContext", () => {
   });
 });
 
+const SNAPSHOT: CoachRatingSnapshot = {
+  rating_version: "coaching-v1.0.0",
+  season: 2024,
+  week: 5,
+  generated_from_cutoff: "2024-10-03T00:15:00.000Z",
+  source_timestamp: "2026-09-06T00:00:00.000Z",
+  coaches: [
+    {
+      coach_id: "sean-mcvay", coach: "Sean McVay", team: "lar", coaching_rating: 59,
+      career_wl: "102-63", tenure_wl: "102-63", season_wl: "2-2",
+      career_ats: "89-72-4", tenure_ats: "89-72-4", season_ats: "2-2", recent_ats: "9-7-1",
+      tenure_year: 8, small_sample: false, first_year: false, interim: false,
+    },
+    {
+      coach_id: "kyle-shanahan", coach: "Kyle Shanahan", team: "sf", coaching_rating: 51,
+      career_wl: "91-72", tenure_wl: "70-45", season_wl: "3-1",
+      career_ats: "83-79-1", tenure_ats: "60-53-1", season_ats: "2-2", recent_ats: "8-8-1",
+      tenure_year: 8, small_sample: false, first_year: false, interim: false,
+    },
+    {
+      coach_id: "jerod-mayo", coach: "Jerod Mayo", team: "ne", coaching_rating: 50,
+      career_wl: "0-0", tenure_wl: "0-0", season_wl: "0-0",
+      career_ats: "0-0", tenure_ats: "0-0", season_ats: "0-0", recent_ats: "0-0",
+      tenure_year: 1, small_sample: true, first_year: true, interim: false,
+    },
+  ],
+};
+
 describe("coaching context", () => {
-  it("is always the explicit NOT_IMPLEMENTED null contract", () => {
-    expect(NOT_IMPLEMENTED_COACHING_CONTEXT).toEqual({
-      home_coaching_rating: null,
-      away_coaching_rating: null,
-      coaching_advantage_team: null,
-      coaching_differential: null,
-      coaching_context_status: "NOT_IMPLEMENTED",
+  it("NOT_IMPLEMENTED alias is the SOURCE_UNAVAILABLE contract", () => {
+    expect(NOT_IMPLEMENTED_COACHING_CONTEXT).toBe(SOURCE_UNAVAILABLE_COACHING_CONTEXT);
+    expect(SOURCE_UNAVAILABLE_COACHING_CONTEXT.coaching_context_status).toBe("SOURCE_UNAVAILABLE");
+    expect(SOURCE_UNAVAILABLE_COACHING_CONTEXT.home_coaching_rating).toBeNull();
+  });
+
+  it("SOURCE_UNAVAILABLE when no snapshot is supplied (no silent current-ratings fallback)", () => {
+    const ctx = buildCoachingContext({ snapshot: null, homeTeam: "lar", awayTeam: "sf" });
+    expect(ctx.coaching_context_status).toBe("SOURCE_UNAVAILABLE");
+  });
+
+  it("SOURCE_UNAVAILABLE when the snapshot cutoff is later than kickoff (would leak)", () => {
+    const ctx = buildCoachingContext({
+      snapshot: SNAPSHOT, homeTeam: "lar", awayTeam: "sf",
+      gameKickoffUtc: "2024-10-02T00:00:00.000Z",
     });
+    expect(ctx.coaching_context_status).toBe("SOURCE_UNAVAILABLE");
+  });
+
+  it("COACH_UNRATED when one team's coach is absent from the snapshot", () => {
+    const ctx = buildCoachingContext({ snapshot: SNAPSHOT, homeTeam: "lar", awayTeam: "atl" });
+    expect(ctx.coaching_context_status).toBe("COACH_UNRATED");
+    expect(ctx.home_coaching_rating).toBe(59);
+    expect(ctx.away_coaching_rating).toBeNull();
+    expect(ctx.coaching_advantage_team).toBeNull();
+  });
+
+  it("OK with HOME advantage, differential, and ATS context present but never weighted", () => {
+    const ctx = buildCoachingContext({
+      snapshot: SNAPSHOT, homeTeam: "lar", awayTeam: "sf",
+      gameKickoffUtc: "2024-10-06T17:00:00.000Z",
+    });
+    expect(ctx.coaching_context_status).toBe("OK");
+    expect(ctx.coaching_differential).toBe(8);
+    expect(ctx.coaching_advantage_team).toBe("home");
+    expect(ctx.home_coach_context?.career_ats).toBe("89-72-4");
+    expect(ctx.rating_version).toBe("coaching-v1.0.0");
+    expect(ctx.pregame_cutoff).toBe("2024-10-03T00:15:00.000Z");
+  });
+
+  it("EVEN when |differential| <= 4", () => {
+    const ctx = buildCoachingContext({ snapshot: SNAPSHOT, homeTeam: "sf", awayTeam: "ne" });
+    expect(ctx.coaching_context_status).toBe("OK");
+    expect(ctx.coaching_advantage_team).toBe("even");
+    expect(ctx.away_coach_context?.first_year).toBe(true);
+  });
+
+  it("AWAY advantage when the away coach is materially higher", () => {
+    const ctx = buildCoachingContext({ snapshot: SNAPSHOT, homeTeam: "ne", awayTeam: "lar" });
+    expect(ctx.coaching_advantage_team).toBe("away");
   });
 });
 
@@ -139,6 +212,17 @@ describe("buildPregameGameContext", () => {
     expect(ctx.epa.provenance_status).toBe("available");
     expect(ctx.ypp.provenance_status).toBe("available");
     expect(ctx.trenches.provenance_status).toBe("available");
-    expect(ctx.coaching.coaching_context_status).toBe("NOT_IMPLEMENTED");
+    expect(ctx.coaching.coaching_context_status).toBe("SOURCE_UNAVAILABLE");
+  });
+
+  it("wires a supplied coaching snapshot into the coaching family", () => {
+    const ctx = buildPregameGameContext({
+      epaWindow: null, yppWindow: null, trenchSeasonData: null, trenchSeasonKey: null,
+      homeTeam: "lar", awayTeam: "sf",
+      coachingSnapshot: SNAPSHOT,
+      gameKickoffUtc: "2024-10-06T17:00:00.000Z",
+    });
+    expect(ctx.coaching.coaching_context_status).toBe("OK");
+    expect(ctx.coaching.coaching_advantage_team).toBe("home");
   });
 });

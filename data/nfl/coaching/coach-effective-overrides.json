@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-coach-effective-overrides-v1",
+    "purpose": "Smallest safe identity override for a current-season head-coach change (firing / interim promotion) that games.csv does not yet reflect. Applied ONLY from the effective (season, week) forward; never rewrites earlier weeks. Once games.csv confirms the assignment, canonical history remains the source of truth and the entry can be removed. Do NOT enumerate all 32 coaches here.",
+    "modelVersion": "coaching-v1.0.0",
+    "notes": [
+      "ANALYSIS CONTEXT ONLY — not an input to Sides/Totals model math.",
+      "An override coach carries the league-average prior (rating 50) with an empty NFL-HC record until games.csv provides real history.",
+      "kind: 'interim' | 'permanent'."
+    ]
+  },
+  "schemaVersion": "nfl-coach-effective-overrides-v1",
+  "overrides": []
+}

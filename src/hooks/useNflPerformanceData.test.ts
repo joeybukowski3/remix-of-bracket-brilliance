@@ -14,6 +14,7 @@ const OVERVIEW = {
 };
 const TOTALS = { performanceMeta: {}, summary: {}, buckets: {}, rows: [] };
 const PROPS = { performanceMeta: {}, summary: {}, coverage: {}, rows: [] };
+const SIDES = { performanceMeta: {}, summary: {}, buckets: {}, rows: [] };
 
 function jsonResponse(body: unknown): Response {
   return { ok: true, status: 200, json: async () => body } as Response;
@@ -29,6 +30,7 @@ describe("useNflPerformanceData", () => {
       const url = String(input);
       if (url.includes("health.json")) return Promise.reject(new Error("network"));
       if (url.includes("overview.json")) return Promise.resolve(jsonResponse(OVERVIEW));
+      if (url.includes("sides.json")) return Promise.resolve(jsonResponse(SIDES));
       if (url.includes("totals.json")) return Promise.resolve(jsonResponse(TOTALS));
       if (url.includes("props.json")) return Promise.resolve(jsonResponse(PROPS));
       return Promise.reject(new Error(`unexpected ${url}`));
@@ -49,6 +51,7 @@ describe("useNflPerformanceData", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("overview.json")) return Promise.resolve(jsonResponse({ nonsense: true }));
+      if (url.includes("sides.json")) return Promise.resolve(jsonResponse(SIDES));
       if (url.includes("totals.json")) return Promise.resolve(jsonResponse(TOTALS));
       if (url.includes("props.json")) return Promise.resolve(jsonResponse(PROPS));
       return Promise.resolve(jsonResponse({ totals: {}, props: {}, sides: {} }));

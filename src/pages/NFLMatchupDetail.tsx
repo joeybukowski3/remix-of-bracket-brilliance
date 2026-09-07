@@ -6,6 +6,7 @@ import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
+import { useNflCoachingRatings } from "@/hooks/useNflCoachingRatings";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
@@ -75,6 +76,7 @@ import MatchupThemeToggle from "@/components/nfl/matchups/MatchupThemeToggle";
 import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupTabRow from "@/components/nfl/matchups/MatchupTabRow";
 import MatchupTrenches from "@/components/nfl/matchups/MatchupTrenches";
+import MatchupCoaching from "@/components/nfl/matchups/MatchupCoaching";
 import MatchupUnitBattles from "@/components/nfl/matchups/MatchupUnitBattles";
 import { buildCompletedSeasonSosReferences } from "@/components/nfl/matchups/completedSeasonSosReference";
 import { useMatchupTheme } from "@/components/nfl/matchups/matchupTheme";
@@ -130,6 +132,7 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: an ESPN outage leaves only the trench rows
   // unavailable.
   const { artifact: trenchArtifact } = useNflTrenchMetrics();
+  const coachingRatings = useNflCoachingRatings();
   // Independent optional enrichment: a missing or not-yet-published injury
   // artifact leaves only the Availability tab in an unavailable state.
   const { artifact: injuryArtifact } = useNflMatchupInjuries();
@@ -523,6 +526,12 @@ export default function NFLMatchupDetail() {
             />
 
             <MatchupMarketProfile matchup={matchup} market={market} />
+
+            <MatchupCoaching
+              matchup={matchup}
+              artifact={coachingRatings.artifact}
+              loading={coachingRatings.loading}
+            />
           </div>
           </>}
         </MatchupComparisonPanel>

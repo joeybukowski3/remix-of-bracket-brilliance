@@ -34,22 +34,21 @@ export type PropsOverviewInput = {
 } | null;
 
 /**
- * WU3 spread evaluation summary shape, as already produced by
- * scripts/lib/nfl-evaluation-materializer.ts (data/nfl/prediction-
- * evaluations/jkb-football-evaluation-v1/summary/<season>.json). Only the
- * fields overview.json actually surfaces are declared here -- everything
- * else on that file is out of scope for this thin summary.
+ * WU6 canonical sides performance artifact summary shape, as produced by
+ * scripts/lib/nfl-sides-performance.ts (public/data/nfl/performance/sides.json).
+ * Only the fields overview.json surfaces are declared here.
  */
-export type SpreadEvaluationSummaryInput = {
-  metrics: {
-    by_prediction_type: {
-      spread: {
-        n: number;
-        mae: number | null;
-        market_comparison: { comparable_n: number; jkb_mae: number | null; market_mae: number | null; jkb_minus_market_mae: number | null };
-        winner_accuracy: { accuracy: number | null; total: number };
-      };
-    };
+export type SidesOverviewInput = {
+  performanceMeta: { latestOutcomeTimestamp: string | null };
+  summary: {
+    graded_games: number;
+    margin_mae: number | null;
+    mean_signed_error: number | null;
+    ats_directional_hit_rate: number | null;
+    correlation_projected_actual_margin: number | null;
+    average_abs_jkb_market_difference: number | null;
+    winner_accuracy: { accuracy: number | null; total: number };
+    market_comparison: { comparable_n: number; jkb_mae: number | null; market_mae: number | null; jkb_minus_market_mae: number | null };
   };
 } | null;
 
@@ -77,6 +76,10 @@ export type OverviewSidesSection = {
   status: FamilyAvailabilityStatus;
   graded_games: number;
   spread_mae: number | null;
+  bias: number | null;
+  correlation: number | null;
+  ats_directional_hit_rate: number | null;
+  average_abs_jkb_market_difference: number | null;
   market_direction_metric: {
     comparable_n: number;
     jkb_mae: number | null;
@@ -128,37 +131,45 @@ export function buildOverviewPropsSection(props: PropsOverviewInput, latestGrade
 }
 
 /**
- * Sides are already live in production (jkb-power-number-v1.0.0) but their
- * canonical evaluation summary is only read here, never recomputed. When the
- * summary file itself is unreadable (or the season being asked for has no
- * summary yet), this returns AVAILABLE_BUT_NOT_MATERIALIZED rather than
- * fabricating a zero/placeholder metric -- see WU4 spec Part 11.
+ * WU6: sides now has a dedicated canonical artifact
+ * (public/data/nfl/performance/sides.json). This reads that summary
+ * verbatim -- it never recomputes a metric and never falls back to the thin
+ * WU3 evaluation-summary shortcut. When sides.json is missing, this returns
+ * NOT_AVAILABLE rather than fabricating a zero/placeholder metric.
  */
-export function buildOverviewSidesSection(spread: SpreadEvaluationSummaryInput, latestGradeTimestamp: string | null): OverviewSidesSection {
-  if (spread == null) {
+export function buildOverviewSidesSection(sides: SidesOverviewInput, latestGradeTimestamp: string | null): OverviewSidesSection {
+  if (sides == null) {
     return {
-      status: "AVAILABLE_BUT_NOT_MATERIALIZED",
+      status: "NOT_AVAILABLE",
       graded_games: 0,
       spread_mae: null,
+      bias: null,
+      correlation: null,
+      ats_directional_hit_rate: null,
+      average_abs_jkb_market_difference: null,
       market_direction_metric: null,
       winner_accuracy: null,
       latest_grade_timestamp: null,
-      note: "No spread evaluation summary file found for the requested season.",
+      note: "No canonical sides.json performance artifact found.",
     };
   }
-  const spreadMetrics = spread.metrics.by_prediction_type.spread;
+  const s = sides.summary;
   return {
     status: "AVAILABLE",
-    graded_games: spreadMetrics.n,
-    spread_mae: spreadMetrics.mae,
+    graded_games: s.graded_games,
+    spread_mae: s.margin_mae,
+    bias: s.mean_signed_error,
+    correlation: s.correlation_projected_actual_margin,
+    ats_directional_hit_rate: s.ats_directional_hit_rate,
+    average_abs_jkb_market_difference: s.average_abs_jkb_market_difference,
     market_direction_metric: {
-      comparable_n: spreadMetrics.market_comparison.comparable_n,
-      jkb_mae: spreadMetrics.market_comparison.jkb_mae,
-      market_mae: spreadMetrics.market_comparison.market_mae,
-      jkb_minus_market_mae: spreadMetrics.market_comparison.jkb_minus_market_mae,
+      comparable_n: s.market_comparison.comparable_n,
+      jkb_mae: s.market_comparison.jkb_mae,
+      market_mae: s.market_comparison.market_mae,
+      jkb_minus_market_mae: s.market_comparison.jkb_minus_market_mae,
     },
-    winner_accuracy: spreadMetrics.winner_accuracy.accuracy,
+    winner_accuracy: s.winner_accuracy.accuracy,
     latest_grade_timestamp: latestGradeTimestamp,
-    note: "Thin summary of the canonical WU3 spread evaluation dataset (jkb-power-number-v1.0.0). Full Sides performance support (rows/buckets/detail context) is not yet materialized into a dedicated sides.json.",
+    note: "Canonical summary of public/data/nfl/performance/sides.json (jkb-power-number-v1.0.0). Row-level detail, buckets and pregame context live in that artifact.",
   };
 }

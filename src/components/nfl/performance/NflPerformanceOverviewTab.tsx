@@ -65,7 +65,7 @@ export default function NflPerformanceOverviewTab({
           <StatRow label="Graded games" value={formatCount(sides.graded_games)} />
           <StatRow label="Spread MAE" value={formatMetric(sides.spread_mae)} />
           <StatRow label="Winner accuracy" value={formatPercent(sides.winner_accuracy)} />
-          <StatRow label="JKB − market MAE" value={formatMetric(sides.market_direction_metric.jkb_minus_market_mae)} />
+          <StatRow label="JKB − market MAE" value={formatMetric(sides.market_direction_metric?.jkb_minus_market_mae ?? null)} />
           {sides.latest_grade_timestamp && (
             <p className="mt-2 text-[10px] text-slate-400">Latest grade: {formatNflMetadataTimestamp(sides.latest_grade_timestamp)}</p>
           )}

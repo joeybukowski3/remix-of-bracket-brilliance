@@ -5,6 +5,7 @@
  * state, so they assert presentation and zero-state handling only -- the
  * fetch layer is covered separately in useNflPerformanceData.test.ts.
  */
+import { coachingContextFixture } from "@/lib/nfl/performance/__fixtures__/coaching";
 import { describe, expect, it } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -19,8 +20,10 @@ import type {
   NflPerformanceHealthArtifact,
   NflPerformanceOverviewArtifact,
   NflPropsPerformanceArtifact,
+  NflSidesPerformanceArtifact,
   NflTotalsPerformanceArtifact,
   PropsPerformanceRow,
+  SidesPerformanceRow,
   TotalsPerformanceRow,
 } from "@/types/nfl/performance";
 
@@ -46,10 +49,160 @@ const zeroOverview: NflPerformanceOverviewArtifact = {
     status: "AVAILABLE",
     graded_games: 0,
     spread_mae: null,
+    bias: null,
+    correlation: null,
+    ats_directional_hit_rate: null,
+    average_abs_jkb_market_difference: null,
     market_direction_metric: { comparable_n: 0, jkb_mae: null, market_mae: null, jkb_minus_market_mae: null },
     winner_accuracy: null,
     latest_grade_timestamp: null,
   },
+};
+
+const zeroSides: NflSidesPerformanceArtifact = {
+  schemaVersion: "nfl-sides-performance-v1",
+  performanceMeta: {
+    schemaVersion: "nfl-sides-performance-v1",
+    generatedAt: "2026-09-05T12:00:00.000Z",
+    seasons: [2026],
+    modelVersions: ["jkb-power-number-v1.0.0"],
+    liveModelVersion: "jkb-power-number-v1.0.0",
+    gradedGames: 0,
+    latestPredictionTimestamp: "2026-09-04T16:17:22.667Z",
+    latestOutcomeTimestamp: null,
+    marketCoverageCount: 0,
+    contextCoverage: { trenches: 0, ypp: 0, epa: 0, coaching: 0 },
+  },
+  summary: {
+    graded_games: 0,
+    margin_mae: null,
+    margin_rmse: null,
+    margin_median_absolute_error: null,
+    mean_signed_error: null,
+    correlation_projected_actual_margin: null,
+    directional_wins: 0,
+    directional_losses: 0,
+    directional_pushes: 0,
+    directional_neutral: 0,
+    ats_directional_hit_rate: null,
+    average_abs_jkb_market_difference: null,
+    winner_accuracy: { correct: 0, total: 0, accuracy: null },
+    market_comparison: { comparable_n: 0, jkb_mae: null, market_mae: null, jkb_minus_market_mae: null },
+  },
+  buckets: {
+    by_week: [],
+    by_jkb_market_difference_bucket: [],
+    by_market_spread_bucket: [],
+    by_favorite_underdog: [],
+    by_jkb_ats_side: [],
+  },
+  rows: [],
+  exclusions: { missing: 0, model_version_mismatch: 0, not_resolved: 272 },
+};
+
+const sidesRow: SidesPerformanceRow = {
+  season: 2026,
+  week: 1,
+  game_id: "2026_01_AAA_BBB",
+  kickoff_time: "2026-09-07T17:00:00.000Z",
+  away_team: "aaa",
+  home_team: "bbb",
+  projected_home_margin: 6,
+  projected_spread_line: -6,
+  projected_spread_team: "bbb",
+  home_power_number: 5.8,
+  away_power_number: 4.3,
+  home_field_adjustment: 2,
+  model_version: "jkb-power-number-v1.0.0",
+  fitted_model_hash: null,
+  prediction_timestamp: "2026-09-04T16:17:22.667Z",
+  market_spread: -3,
+  market_implied_home_margin: 3,
+  market_team_orientation: "home_line",
+  market_provider: "the-odds-api/draftkings",
+  market_snapshot_timestamp: "2026-09-04T12:00:00.000Z",
+  market_snapshot_ref: "hash-dk-0123456789",
+  market_observation_id: "obs-dk",
+  jkb_minus_market: 3,
+  actual_home_points: 27,
+  actual_away_points: 17,
+  actual_margin: 10,
+  game_completion_status: "final",
+  resolution_status: "resolved",
+  signed_margin_error: -4,
+  absolute_margin_error: 4,
+  squared_margin_error: 16,
+  jkb_ats_side: "home",
+  jkb_supports_team: "bbb",
+  projected_winner: "home",
+  actual_winner: "home",
+  projected_winner_correct: true,
+  ats_result: "WIN",
+  jkb_market_difference_bucket: "3-4",
+  market_spread_bucket: "3-7",
+  favorite_underdog: "favorite",
+  context: {
+    epa: {
+      metric: "off.epaPerPlay",
+      window: "prior-season-full",
+      home_epa_value: null,
+      away_epa_value: null,
+      epa_advantage_team: null,
+      epa_differential: null,
+      source_season: null,
+      source_timestamp: null,
+      provenance_status: "unavailable",
+    },
+    ypp: {
+      metric: "off.yardsPerPlay",
+      window: "prior-season-full",
+      home_ypp: null,
+      away_ypp: null,
+      ypp_advantage_team: null,
+      ypp_differential: null,
+      source_season: null,
+      source_timestamp: null,
+      provenance_status: "unavailable",
+    },
+    trenches: {
+      metric: "espn_trench_composite",
+      window: "prior_season_through_week_18",
+      home_trenches_value: null,
+      away_trenches_value: null,
+      trenches_advantage_team: null,
+      trenches_differential: null,
+      source_season: null,
+      source_timestamp: null,
+      provenance_status: "unavailable",
+    },
+    coaching: coachingContextFixture(),
+  },
+  provenance: {
+    prediction_id_ref: "pred-1",
+    market_snapshot_ref: "hash-dk-0123456789",
+    market_observation_id: "obs-dk",
+    outcome_source_state_hash: "state-hash-0123456789",
+  },
+};
+
+const sidesWithRow: NflSidesPerformanceArtifact = {
+  ...zeroSides,
+  performanceMeta: { ...zeroSides.performanceMeta, gradedGames: 1, latestOutcomeTimestamp: "2026-09-08T03:00:00.000Z", marketCoverageCount: 1 },
+  summary: {
+    ...zeroSides.summary,
+    graded_games: 1,
+    margin_mae: 4,
+    margin_rmse: 4,
+    margin_median_absolute_error: 4,
+    mean_signed_error: -4,
+    directional_wins: 1,
+    ats_directional_hit_rate: 1,
+    average_abs_jkb_market_difference: 3,
+    winner_accuracy: { correct: 1, total: 1, accuracy: 1 },
+    market_comparison: { comparable_n: 1, jkb_mae: 4, market_mae: 7, jkb_minus_market_mae: -3 },
+  },
+  rows: [sidesRow],
+  exclusions: { missing: 0, model_version_mismatch: 0, not_resolved: 0 },
 };
 
 const totalsRow: TotalsPerformanceRow = {
@@ -121,13 +274,7 @@ const totalsRow: TotalsPerformanceRow = {
       source_timestamp: null,
       provenance_status: "unavailable",
     },
-    coaching: {
-      home_coaching_rating: null,
-      away_coaching_rating: null,
-      coaching_advantage_team: null,
-      coaching_differential: null,
-      coaching_context_status: "NOT_IMPLEMENTED",
-    },
+    coaching: coachingContextFixture(),
   },
   provenance: { home_prediction_id_ref: "pred-home-1", away_prediction_id_ref: "pred-away-1" },
 };
@@ -298,9 +445,12 @@ const degradedHealth: NflPerformanceHealthArtifact = {
     status: "HEALTHY",
     latest_spread_prediction_timestamp: "2026-09-04T16:17:22.667Z",
     latest_spread_evaluation_timestamp: "2026-09-05T09:32:43.533Z",
+    latest_sides_artifact_generation_timestamp: "2026-09-05T12:00:00.000Z",
     model_versions_seen: ["jkb-power-number-v1.0.0"],
     unresolved_final_games: 0,
-    public_performance_view_status: "NOT_IMPLEMENTED",
+    sides_artifact_graded_games: 0,
+    sides_artifact_age_ms: 1000,
+    public_performance_view_status: "HEALTHY",
   },
   workflow: { generated_at_by_artifact: {} },
 };
@@ -313,10 +463,28 @@ describe("NflPerformanceOverviewTab", () => {
 });
 
 describe("NflPerformanceSidesTab", () => {
-  it("renders the zero-state and the dedicated-artifact note when no sides are graded", () => {
-    render(<MemoryRouter><NflPerformanceSidesTab state={loaded(zeroOverview)} /></MemoryRouter>);
+  it("renders the zero-state and the sign-convention note when no sides are graded", () => {
+    render(<MemoryRouter><NflPerformanceSidesTab state={loaded(zeroSides)} /></MemoryRouter>);
     expect(screen.getByText("No graded results yet")).toBeInTheDocument();
-    expect(screen.getByTestId("nfl-sides-drilldown-note")).toHaveTextContent(/dedicated sides performance artifact/i);
+    expect(screen.getByTestId("nfl-sides-artifact-note")).toHaveTextContent(/home margin/i);
+  });
+
+  it("renders a graded fixture row, the KPI strip, and toggles the detail drawer", () => {
+    render(<MemoryRouter><NflPerformanceSidesTab state={loaded(sidesWithRow)} /></MemoryRouter>);
+    expect(screen.getByText("ATS Directional Hit Rate")).toBeInTheDocument();
+    const list = screen.getByTestId("nfl-sides-mobile-list");
+    const expander = within(list).getByRole("button");
+    expect(expander).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(expander);
+    expect(expander).toHaveAttribute("aria-expanded", "true");
+    expect(within(list).getByTestId("nfl-sides-coaching-panel")).toBeInTheDocument();
+  });
+
+  it("filters rows by ATS result", () => {
+    render(<MemoryRouter><NflPerformanceSidesTab state={loaded(sidesWithRow)} /></MemoryRouter>);
+    expect(screen.getByTestId("nfl-sides-mobile-list")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /LOSS/ }));
+    expect(screen.getByText(/No games match the current filters\./)).toBeInTheDocument();
   });
 });
 
@@ -328,7 +496,7 @@ describe("NflPerformanceTotalsTab", () => {
     expect(expander).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(expander);
     expect(within(list).getByRole("button")).toHaveAttribute("aria-expanded", "true");
-    expect(within(list).getByText(/AAA/)).toBeInTheDocument();
+    expect(within(list).getAllByText(/AAA/).length).toBeGreaterThan(0);
   });
 });
 

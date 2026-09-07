@@ -75,57 +75,71 @@ describe("buildOverviewPropsSection", () => {
   });
 });
 
+function sidesInput(overrides: Partial<{
+  graded_games: number;
+  margin_mae: number | null;
+  mean_signed_error: number | null;
+  ats_directional_hit_rate: number | null;
+  correlation_projected_actual_margin: number | null;
+  average_abs_jkb_market_difference: number | null;
+  winner_accuracy: { accuracy: number | null; total: number };
+  market_comparison: { comparable_n: number; jkb_mae: number | null; market_mae: number | null; jkb_minus_market_mae: number | null };
+}> = {}) {
+  return {
+    performanceMeta: { latestOutcomeTimestamp: null },
+    summary: {
+      graded_games: 0,
+      margin_mae: null,
+      mean_signed_error: null,
+      ats_directional_hit_rate: null,
+      correlation_projected_actual_margin: null,
+      average_abs_jkb_market_difference: null,
+      winner_accuracy: { accuracy: null, total: 0 },
+      market_comparison: { comparable_n: 0, jkb_mae: null, market_mae: null, jkb_minus_market_mae: null },
+      ...overrides,
+    },
+  };
+}
+
 describe("buildOverviewSidesSection", () => {
-  it("reports AVAILABLE_BUT_NOT_MATERIALIZED without fabricating a metric when no spread summary exists", () => {
+  it("reports NOT_AVAILABLE without fabricating a metric when no sides.json exists", () => {
     const section = buildOverviewSidesSection(null, null);
-    expect(section.status).toBe("AVAILABLE_BUT_NOT_MATERIALIZED");
+    expect(section.status).toBe("NOT_AVAILABLE");
     expect(section.graded_games).toBe(0);
     expect(section.spread_mae).toBeNull();
     expect(section.market_direction_metric).toBeNull();
     expect(section.winner_accuracy).toBeNull();
   });
 
-  it("thin-summarizes the canonical spread evaluation metrics verbatim, including a zero-n season", () => {
-    const section = buildOverviewSidesSection(
-      {
-        metrics: {
-          by_prediction_type: {
-            spread: {
-              n: 0,
-              mae: null,
-              market_comparison: { comparable_n: 0, jkb_mae: null, market_mae: null, jkb_minus_market_mae: null },
-              winner_accuracy: { accuracy: null, total: 0 },
-            },
-          },
-        },
-      },
-      null,
-    );
+  it("summarizes the canonical sides.json metrics verbatim, including a zero-n season", () => {
+    const section = buildOverviewSidesSection(sidesInput(), null);
     expect(section.status).toBe("AVAILABLE");
     expect(section.graded_games).toBe(0);
     expect(section.market_direction_metric).toEqual({ comparable_n: 0, jkb_mae: null, market_mae: null, jkb_minus_market_mae: null });
   });
 
-  it("passes through non-zero spread metrics unchanged", () => {
+  it("passes through non-zero sides metrics unchanged", () => {
     const section = buildOverviewSidesSection(
-      {
-        metrics: {
-          by_prediction_type: {
-            spread: {
-              n: 40,
-              mae: 3.9,
-              market_comparison: { comparable_n: 35, jkb_mae: 3.9, market_mae: 4.1, jkb_minus_market_mae: -0.2 },
-              winner_accuracy: { accuracy: 0.62, total: 40 },
-            },
-          },
-        },
-      },
+      sidesInput({
+        graded_games: 40,
+        margin_mae: 3.9,
+        mean_signed_error: -0.4,
+        ats_directional_hit_rate: 0.55,
+        correlation_projected_actual_margin: 0.61,
+        average_abs_jkb_market_difference: 1.8,
+        winner_accuracy: { accuracy: 0.62, total: 40 },
+        market_comparison: { comparable_n: 35, jkb_mae: 3.9, market_mae: 4.1, jkb_minus_market_mae: -0.2 },
+      }),
       "2026-10-01T00:00:00.000Z",
     );
     expect(section).toMatchObject({
       status: "AVAILABLE",
       graded_games: 40,
       spread_mae: 3.9,
+      bias: -0.4,
+      correlation: 0.61,
+      ats_directional_hit_rate: 0.55,
+      average_abs_jkb_market_difference: 1.8,
       winner_accuracy: 0.62,
       latest_grade_timestamp: "2026-10-01T00:00:00.000Z",
     });

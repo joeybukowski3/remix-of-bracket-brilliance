@@ -36,6 +36,7 @@ export default function NFLPerformance() {
 
   const lastUpdated = [
     data.overview.data?.performanceMeta.generatedAt,
+    data.sides.data?.performanceMeta.generatedAt,
     data.totals.data?.performanceMeta.generatedAt,
     data.props.data?.performanceMeta.generatedAt,
     data.health.data?.performanceMeta.generatedAt,
@@ -63,7 +64,7 @@ export default function NFLPerformance() {
 
       <div className="pt-4" role="tabpanel" aria-label={tab}>
         {tab === "overview" && <NflPerformanceOverviewTab state={data.overview} />}
-        {tab === "sides" && <NflPerformanceSidesTab state={data.overview} />}
+        {tab === "sides" && <NflPerformanceSidesTab state={data.sides} />}
         {tab === "totals" && <NflPerformanceTotalsTab state={data.totals} />}
         {tab === "props" && <NflPerformancePropsTab state={data.props} />}
         {tab === "game-log" && <NflPerformanceGameLogTab />}

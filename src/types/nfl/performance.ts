@@ -54,13 +54,46 @@ export type TrenchesContext = {
   provenance_status: "available" | "unavailable";
 };
 
-export type CoachingContext = {
-  home_coaching_rating: null;
-  away_coaching_rating: null;
-  coaching_advantage_team: null;
-  coaching_differential: null;
-  coaching_context_status: "NOT_IMPLEMENTED";
+/**
+ * Coaching Rating v1 — ANALYSIS CONTEXT ONLY. Mirrors CoachRecordContext /
+ * CoachingContext in scripts/lib/nfl-game-context.ts. The rating and every
+ * record below are diagnostic/segmentation; none of them is a Sides/Totals
+ * model input, and ATS is displayed as historical context only (it is NOT
+ * weighted in the rating).
+ */
+export type CoachingContextStatus = "OK" | "COACH_UNRATED" | "SOURCE_UNAVAILABLE";
+
+export type CoachRecordContext = {
+  career_wl: string;
+  tenure_wl: string;
+  season_wl: string;
+  career_ats: string;
+  tenure_ats: string;
+  season_ats: string;
+  recent_ats: string;
+  small_sample: boolean;
+  tenure_year: number | null;
+  first_year: boolean;
+  interim: boolean;
 };
+
+export type CoachingContext = {
+  home_coach: string | null;
+  away_coach: string | null;
+  home_coaching_rating: number | null;
+  away_coaching_rating: number | null;
+  coaching_differential: number | null;
+  coaching_advantage_team: TeamAdvantage | null;
+  home_coach_context: CoachRecordContext | null;
+  away_coach_context: CoachRecordContext | null;
+  rating_version: string | null;
+  source_timestamp: string | null;
+  pregame_cutoff: string | null;
+  coaching_context_status: CoachingContextStatus;
+};
+
+/** |differential| <= this -> EVEN (frozen Coaching Rating v1 even_threshold). */
+export const COACHING_EVEN_THRESHOLD = 4;
 
 export type PregameGameContext = {
   epa: EpaContext;
@@ -99,12 +132,16 @@ export type NflOverviewSides = {
   status: NflPerformanceFamilyStatus;
   graded_games: number;
   spread_mae: number | null;
+  bias: number | null;
+  correlation: number | null;
+  ats_directional_hit_rate: number | null;
+  average_abs_jkb_market_difference: number | null;
   market_direction_metric: {
     comparable_n: number;
     jkb_mae: number | null;
     market_mae: number | null;
     jkb_minus_market_mae: number | null;
-  };
+  } | null;
   winner_accuracy: number | null;
   latest_grade_timestamp: string | null;
   note?: string;
@@ -221,6 +258,116 @@ export type NflTotalsPerformanceArtifact = {
     missing_away: number;
     model_version_mismatch: number;
     fitted_hash_mismatch: number;
+    not_resolved: number;
+  };
+};
+
+// ---------------------------------------------------------------------------
+// Sides (spread)
+// ---------------------------------------------------------------------------
+
+export type AtsSide = "home" | "away" | "pick";
+export type AtsResult = "WIN" | "LOSS" | "PUSH" | "NEUTRAL";
+export type FavoriteUnderdog = "favorite" | "underdog" | "pick";
+
+export type SidesPerformanceRow = {
+  season: number;
+  week: number;
+  game_id: string;
+  kickoff_time: string;
+  away_team: string;
+  home_team: string;
+  projected_home_margin: number;
+  projected_spread_line: number;
+  projected_spread_team: string | null;
+  home_power_number: number | null;
+  away_power_number: number | null;
+  home_field_adjustment: number | null;
+  model_version: string;
+  fitted_model_hash: string | null;
+  prediction_timestamp: string;
+  market_spread: number | null;
+  market_implied_home_margin: number | null;
+  market_team_orientation: "home_line";
+  market_provider: string | null;
+  market_snapshot_timestamp: string | null;
+  market_snapshot_ref: string | null;
+  market_observation_id: string | null;
+  jkb_minus_market: number | null;
+  actual_home_points: number;
+  actual_away_points: number;
+  actual_margin: number;
+  game_completion_status: "final" | "not_final" | "missing";
+  resolution_status: string;
+  signed_margin_error: number;
+  absolute_margin_error: number;
+  squared_margin_error: number;
+  jkb_ats_side: AtsSide | null;
+  jkb_supports_team: string | null;
+  projected_winner: "home" | "away" | "pick";
+  actual_winner: "home" | "away" | "pick";
+  projected_winner_correct: boolean;
+  ats_result: AtsResult | null;
+  jkb_market_difference_bucket: string | null;
+  market_spread_bucket: string | null;
+  favorite_underdog: FavoriteUnderdog | null;
+  context: PregameGameContext;
+  provenance: {
+    prediction_id_ref: string;
+    market_snapshot_ref: string | null;
+    market_observation_id: string | null;
+    outcome_source_state_hash: string | null;
+  };
+};
+
+export type SidesSummaryMetrics = {
+  graded_games: number;
+  margin_mae: number | null;
+  margin_rmse: number | null;
+  margin_median_absolute_error: number | null;
+  mean_signed_error: number | null;
+  correlation_projected_actual_margin: number | null;
+  directional_wins: number;
+  directional_losses: number;
+  directional_pushes: number;
+  directional_neutral: number;
+  ats_directional_hit_rate: number | null;
+  average_abs_jkb_market_difference: number | null;
+  winner_accuracy: { correct: number; total: number; accuracy: number | null };
+  market_comparison: {
+    comparable_n: number;
+    jkb_mae: number | null;
+    market_mae: number | null;
+    jkb_minus_market_mae: number | null;
+  };
+};
+
+export type NflSidesPerformanceArtifact = {
+  schemaVersion: string;
+  performanceMeta: {
+    schemaVersion: string;
+    generatedAt: string;
+    seasons: number[];
+    modelVersions: string[];
+    liveModelVersion: string;
+    gradedGames: number;
+    latestPredictionTimestamp: string | null;
+    latestOutcomeTimestamp: string | null;
+    marketCoverageCount: number;
+    contextCoverage: { trenches: number; ypp: number; epa: number; coaching: number };
+  };
+  summary: SidesSummaryMetrics;
+  buckets: {
+    by_week: BucketRollup[];
+    by_jkb_market_difference_bucket: BucketRollup[];
+    by_market_spread_bucket: BucketRollup[];
+    by_favorite_underdog: BucketRollup[];
+    by_jkb_ats_side: BucketRollup[];
+  };
+  rows: SidesPerformanceRow[];
+  exclusions: {
+    missing: number;
+    model_version_mismatch: number;
     not_resolved: number;
   };
 };
@@ -388,9 +535,34 @@ export type NflSidesHealth = {
   status: NflHealthStatus;
   latest_spread_prediction_timestamp: string | null;
   latest_spread_evaluation_timestamp: string | null;
+  latest_sides_artifact_generation_timestamp: string | null;
   model_versions_seen: string[];
   unresolved_final_games: number;
+  sides_artifact_graded_games: number;
+  sides_artifact_age_ms: number | null;
   public_performance_view_status: NflHealthStatus;
+};
+
+/**
+ * Coaching Rating v1 operational status. Small-sample and first-year coaches
+ * are a normal, expected state and never a failure -- only a missing/stale
+ * current-ratings artifact, unrated teams, or zero historical snapshot
+ * coverage move this off HEALTHY.
+ */
+export type NflCoachingHealth = {
+  status: NflHealthStatus;
+  rating_version: string | null;
+  artifact_generated_at: string | null;
+  source_cutoff: string | null;
+  current_coach_count: number;
+  unrated_coach_count: number;
+  small_sample_coach_count: number;
+  first_year_count: number;
+  historical_snapshot_coverage: number;
+  latest_snapshot_season: number | null;
+  latest_snapshot_week: number | null;
+  stale_after_hours: number;
+  public_artifact_age_ms: number | null;
 };
 
 export type NflPerformanceHealthArtifact = {
@@ -399,5 +571,7 @@ export type NflPerformanceHealthArtifact = {
   totals: NflTotalsHealth;
   props: NflPropsHealth;
   sides: NflSidesHealth;
+  /** Absent on health artifacts generated before Coaching Rating v1 landed. */
+  coaching?: NflCoachingHealth;
   workflow: { generated_at_by_artifact: Record<string, string> };
 };

@@ -146,6 +146,56 @@ jobs:
             npm run nfl:starter-prop-evaluations -- --season=2026 --week="${week}"
           done
 
+      # Phase C -- Coaching Rating v1 display/context refresh. ANALYSIS
+      # CONTEXT ONLY: none of these steps touch Sides/Totals model math, and
+      # ATS is never a rating input. Ordered foundation -> snapshots ->
+      # ratings -> analysis-metadata, and BEFORE the derived performance
+      # artifacts below so sides/totals pick up this run's coaching join.
+      # continue-on-error on every step, same rationale as the derived
+      # performance pipeline -- core results ingestion / grading above must
+      # never fail because coaching display generation fails.
+      - name: Generate NFL coaching foundation
+        id: coaching-foundation
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-foundation
+
+      - name: Generate NFL coaching rating snapshots
+        id: coaching-snapshots
+        if: steps.coaching-foundation.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-snapshots
+
+      - name: Generate NFL current coaching ratings
+        id: coaching-ratings
+        if: steps.coaching-foundation.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-ratings
+
+      - name: Generate NFL coaching analysis metadata
+        id: coaching-analysis-metadata
+        if: steps.coaching-ratings.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:coaching-analysis-metadata
+
+      # WU6 -- canonical sides (spread) performance artifact. Reads only the
+      # already-canonical jkb-power-number spread predictions + the outcome
+      # resolver + the predictions' own embedded market_snapshot_refs; writes
+      # no model output and grades nothing itself (see
+      # scripts/generate-nfl-sides-performance.ts's docblock). Runs first in
+      # the performance-artifact chain so overview/health downstream reflect
+      # this run's regeneration. Safe when gradedGames=0. continue-on-error,
+      # same rationale as every derived-artifact step -- never blocks the
+      # load-bearing commit below.
+      - name: Generate NFL sides performance artifact
+        id: sides-performance
+        continue-on-error: true
+        shell: bash
+        run: npm run nfl:sides-performance
+
       # WU4 -- canonical totals performance artifact. Reads only already-
       # canonical WU1 predictions + the outcome resolver + betting-lines
       # history; writes no model output and grades nothing itself (see
@@ -169,10 +219,9 @@ jobs:
         shell: bash
         run: npm run nfl:props-performance
 
-      # WU4 -- thin cross-family overview rollup. Reads only totals.json,
-      # props.json, and the already-canonical WU3 spread evaluation summary;
-      # runs after both of the family artifacts above so it always reflects
-      # this run's own regeneration.
+      # WU4/WU6 -- thin cross-family overview rollup. Reads only sides.json,
+      # totals.json and props.json; runs after all three family artifacts
+      # above so it always reflects this run's own regeneration.
       - name: Generate NFL performance overview artifact
         id: performance-overview
         continue-on-error: true
@@ -193,7 +242,7 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations' 'data/nfl/starter-prop-evaluations' 'public/data/nfl/performance')" ]; then
+          if [ -z "$(git status --porcelain --untracked-files=all -- 'public/data/nfl/*/games.json' 'public/data/nfl/*/results.json' 'data/nfl/nflverse/player-week-stats' 'data/nfl/nflverse/play-volume-team-game' 'data/nfl/prediction-outcomes' 'data/nfl/prediction-evaluations' 'data/nfl/starter-prop-evaluations' 'public/data/nfl/performance' 'public/data/nfl/coaching-ratings.json' 'data/nfl/coaching')" ]; then
             echo "No NFL source or prediction-outcome changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -220,6 +269,7 @@ jobs:
             // each generation step above runs continue-on-error, so a bug in one
             // must never fail this whole job over an artifact that was never written.
             const expectedSchemaByFile = {
+              'public/data/nfl/performance/sides.json': 'nfl-sides-performance-v1',
               'public/data/nfl/performance/totals.json': 'nfl-totals-performance-v1',
               'public/data/nfl/performance/props.json': 'nfl-props-performance-v1',
               'public/data/nfl/performance/overview.json': 'nfl-performance-overview-v1',
@@ -300,11 +350,28 @@ jobs:
             echo "::warning::WU4 starter-prop-evaluation regrade failed or was skipped; not staging data/nfl/starter-prop-evaluations this run."
           fi
 
+          # Phase C: Coaching Rating v1 display/context artifacts, staged
+          # only when their own generation step actually succeeded this run.
+          # ANALYSIS CONTEXT ONLY -- never a Sides/Totals model input.
+          if [ "${{ steps.coaching-foundation.outcome }}" = "success" ]; then
+            git add -- data/nfl/coaching/coach-history.json data/nfl/coaching/coach-game-context 2>/dev/null || true
+          fi
+          if [ "${{ steps.coaching-snapshots.outcome }}" = "success" ]; then
+            git add -- data/nfl/coaching/rating-snapshots
+          fi
+          if [ "${{ steps.coaching-ratings.outcome }}" = "success" ] && [ -f public/data/nfl/coaching-ratings.json ]; then
+            git add -- public/data/nfl/coaching-ratings.json
+          fi
+          if [ "${{ steps.coaching-analysis-metadata.outcome }}" = "success" ] && [ -f data/nfl/coaching/coaching-analysis-metadata.json ]; then
+            git add -- data/nfl/coaching/coaching-analysis-metadata.json
+          fi
+
           # WU4: public performance artifacts, staged only when their own
           # generation step actually succeeded this run -- each is
           # independent (a props.json bug must never block staging an
           # already-good totals.json, and vice versa).
           declare -A performance_steps=(
+            [public/data/nfl/performance/sides.json]='${{ steps.sides-performance.outcome }}'
             [public/data/nfl/performance/totals.json]='${{ steps.totals-performance.outcome }}'
             [public/data/nfl/performance/props.json]='${{ steps.props-performance.outcome }}'
             [public/data/nfl/performance/overview.json]='${{ steps.performance-overview.outcome }}'

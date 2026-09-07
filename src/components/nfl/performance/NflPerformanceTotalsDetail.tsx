@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 import { formatMetric, formatSigned } from "@/lib/nfl/performance/format";
+import NflCoachingComparison from "@/components/nfl/coaching/NflCoachingComparison";
+import { COACHING_EVEN_THRESHOLD } from "@/lib/nfl/performance/coachingPresentation";
 import type { TotalsPerformanceRow } from "@/types/nfl/performance";
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
@@ -21,6 +23,20 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
+/**
+ * Rating gap magnitude only -- "Rating gap 8" / "Rating gap 2 (Even)". No
+ * direction, no team, and deliberately never an Over/Under lean: the rating
+ * differential says nothing about scoring, and rendering it as a total
+ * direction would invent a signal the model does not have.
+ */
+function ratingGapLabel(coaching: TotalsPerformanceRow["context"]["coaching"]): string {
+  if (coaching.coaching_context_status === "SOURCE_UNAVAILABLE") return "—";
+  const diff = coaching.coaching_differential;
+  if (diff == null) return "—";
+  const gap = Math.abs(Math.round(diff));
+  return gap <= COACHING_EVEN_THRESHOLD ? `Rating gap ${gap} (Even)` : `Rating gap ${gap}`;
+}
+
 function advantageLabel(team: "home" | "away" | "even" | null): string {
   if (team == null) return "—";
   if (team === "even") return "Even";
@@ -29,9 +45,12 @@ function advantageLabel(team: "home" | "away" | "even" | null): string {
 
 /**
  * Full diagnostic breakdown for one totals row -- projection / market /
- * result / matchup context / provenance. Coaching is always rendered as
- * "Not implemented" rather than omitted, per spec section 9: no fake
- * coaching values, but the row should exist so the schema reads as complete.
+ * result / matchup context / coaching / provenance.
+ *
+ * The coaching block here is deliberately context-only: it shows both coaches,
+ * their ratings and the rating gap, and NEVER an over/under lean, arrow or any
+ * other implication about total direction. Coaching Rating v1 is not an input
+ * to the totals model.
  */
 export default function NflPerformanceTotalsDetail({ row }: { row: TotalsPerformanceRow }) {
   const { context } = row;
@@ -93,8 +112,23 @@ export default function NflPerformanceTotalsDetail({ row }: { row: TotalsPerform
               : "Unavailable"
           }
         />
-        <Field label="Coaching rating" value="Not implemented" />
       </DetailSection>
+
+      <section data-testid="nfl-totals-coaching-panel">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Coaching context</h4>
+          <span className="text-[12px] font-bold tabular-nums tracking-wide text-slate-900" data-testid="nfl-totals-coaching-gap">
+            {ratingGapLabel(context.coaching)}
+          </span>
+        </div>
+        <NflCoachingComparison
+          className="mt-1.5"
+          coaching={context.coaching}
+          homeTeam={row.home_team}
+          awayTeam={row.away_team}
+          showHeading={false}
+        />
+      </section>
 
       <DetailSection title="Provenance">
         <Field label="Fitted hash" value={row.fitted_model_hash ? `${row.fitted_model_hash.slice(0, 10)}…` : "—"} />
