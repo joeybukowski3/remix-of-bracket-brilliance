@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import MatchupCategoryAdvantageChip, {
   categoryAdvantageLeadText,
 } from "@/components/nfl/matchups/MatchupCategoryAdvantageChip";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
-import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
+import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
+import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
+import { cn } from "@/lib/utils";
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import {
   MATCHUP_CATEGORIES,
@@ -20,6 +23,17 @@ import {
 } from "@/lib/nfl/matchupCategoryAdvantage";
 import { summariseCategoryAdvantages } from "@/lib/nfl/matchupCategorySummary";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+
+/**
+ * The Statistical Comparison tab set: every registry category plus one
+ * presentation-only "coaching" tab. "coaching" is deliberately not part of
+ * `MatchupCategoryId` — that registry is also read by the Overview tab's
+ * Category Advantage table, and Coaching has no counted metrics, only a
+ * relocated standalone card.
+ */
+type StatComparisonTabId = MatchupCategoryId | "coaching";
+
+const COACHING_TAB_ID: StatComparisonTabId = "coaching";
 
 /** How long the arrival highlight stays on the destination group. */
 const JUMP_HIGHLIGHT_MS = 1100;
@@ -91,14 +105,20 @@ function CategoryAdvantageMeta({
 }
 
 /**
- * Team Comparison: every category the Overview table counts, in the same order,
- * reading the same registry.
+ * Statistical Comparison: every category the Overview table counts, plus a
+ * Coaching / Sideline tab, in a single tabbed container — one category
+ * visible at a time.
  *
  * Arriving at a category — by selecting an Overview row, by a direct visit to
- * `#comparison-{id}`, or by Back — expands that group, positions its heading
+ * `#comparison-{id}`, or by Back — selects that tab, positions its panel
  * clear of both sticky layers, applies a brief restrained highlight and moves
- * focus onto the accordion trigger, so keyboard and screen-reader users land
+ * focus onto the tab trigger, so keyboard and screen-reader users land
  * exactly where a pointer user does.
+ *
+ * Every category's panel stays mounted (only visually hidden), the same way
+ * the accordion this replaced kept every group's anchor in the DOM — the jump
+ * effect below depends on the destination panel already existing the instant
+ * it runs.
  *
  * The focus call is deferred to the next frame. Doing it synchronously worked
  * on click and silently failed on a direct hash load, because the destination
@@ -112,9 +132,7 @@ export default function MatchupComparisonPanel({
   pendingCategory,
   navigationToken,
   scheduleContext,
-  unitBattles,
-  periodComparison,
-  children,
+  coaching,
   projection = false,
   dedicatedLabel,
 }: {
@@ -128,7 +146,7 @@ export default function MatchupComparisonPanel({
   categoryResults: Record<MatchupCategoryId, CategoryAdvantageResult>;
   /**
    * The page's existing category navigation, reused verbatim by the snapshot
-   * strip so a tile runs the same expand/scroll/focus sequence as an Overview
+   * strip so a tile runs the same select/scroll/focus sequence as an Overview
    * row. Omit it and the strip is not rendered at all, rather than rendering
    * tiles that lead nowhere.
    */
@@ -138,39 +156,28 @@ export default function MatchupComparisonPanel({
   /** Changes on every navigation so a repeat jump re-runs the sequence. */
   navigationToken: number;
   /**
-   * Strength-of-schedule context, rendered above the comparison grid.
+   * Strength-of-schedule context, rendered above the tab strip.
    *
    * Purely informational and structurally inert: it sits in its own row and no
    * value, colour or ordering below it depends on its presence or its state.
    */
-  scheduleContext?: React.ReactNode;
+  scheduleContext?: ReactNode;
   /**
-   * Unit Matchups, rendered above the comparison grid so each offense is read
-   * against the defense it actually faces before the same-side, vs-league-average
-   * table below it. Its own data sources stay with the page.
+   * Coaching / Sideline content for its own tab — the existing standalone
+   * `MatchupCoaching` card, relocated verbatim. Optional so a caller that has
+   * no coaching data yet simply omits the tab's content, not the tab.
    */
-  unitBattles?: React.ReactNode;
-  /**
-   * Success Rate by Period, paired beside Statistical Comparison once the
-   * surrounding container is wide enough for both to stay readable. Kept as
-   * its own prop rather than folded into `children` so this component can
-   * place it in the same row without guessing at children order.
-   */
-  periodComparison?: React.ReactNode;
-  /** Sections rendered beneath the statistical comparison row. */
-  children?: React.ReactNode;
+  coaching?: ReactNode;
   projection?: boolean;
   dedicatedLabel?: string;
 }) {
-  const [open, setOpen] = useState<Partial<Record<MatchupCategoryId, boolean>>>(() => ({
-    [MATCHUP_CATEGORIES[0].id]: true,
-  }));
-  const [highlighted, setHighlighted] = useState<MatchupCategoryId | null>(null);
-  const triggerRefs = useRef(new Map<MatchupCategoryId, HTMLButtonElement>());
+  const [activeTab, setActiveTab] = useState<StatComparisonTabId>(MATCHUP_CATEGORIES[0].id);
+  const [highlighted, setHighlighted] = useState<StatComparisonTabId | null>(null);
+  const triggerRefs = useRef(new Map<StatComparisonTabId, HTMLButtonElement>());
 
   useEffect(() => {
     if (!pendingCategory) return;
-    setOpen((current) => ({ ...current, [pendingCategory]: true }));
+    setActiveTab(pendingCategory);
     setHighlighted(pendingCategory);
 
     const destination = document.getElementById(getMatchupCategory(pendingCategory).hash);
@@ -202,6 +209,15 @@ export default function MatchupComparisonPanel({
     matchup.home.teamName
   );
 
+  const tabs: MatchupTabDef[] = [
+    ...MATCHUP_CATEGORIES.map((category) => ({
+      id: category.id,
+      label: category.label,
+      triggerId: matchupCategoryTriggerId(category.id),
+    })),
+    { id: COACHING_TAB_ID, label: "Coaching / Sideline", triggerId: "comparison-coaching-tab" },
+  ];
+
   return (
     <div className="matchup-comparison-density @container space-y-2">
       {categorySummary && (
@@ -218,105 +234,116 @@ export default function MatchupComparisonPanel({
 
       {scheduleContext}
 
-      <div className="grid grid-cols-1 items-start gap-2 @[1020px]:grid-cols-[minmax(520px,58%)_minmax(440px,42%)]">
-        <MatchupSectionCard
-          eyebrow="Metric by metric"
-          title={dedicatedLabel ? `Statistical Comparison — ${dedicatedLabel}` : projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
-          titleId="statistical-comparison-heading"
-          subtitle={dedicatedLabel ? "Rank 1 is best among teams with available values; N/A rows are excluded from category counts." : projection
-            ? "Projected statistics only. Rank 1 is best among teams with available values; N/A rows are excluded from category counts."
-            : "League rank out of 32 — 1 is best. Every row states its advantage in words."}
-          bodyClassName="px-0 py-0 sm:px-0"
-        >
-          {MATCHUP_CATEGORIES.map((category) => {
-            const rows = categoryMetrics[category.id] ?? [];
-            // Optional-chained for the same reason `categoryMetrics` is: a
-            // category with no resolved result renders without a meta chip
-            // rather than taking the whole panel down.
-            const result = categoryResults?.[category.id];
-            return (
-              <MatchupCollapsibleGroup
-                key={category.id}
-                id={category.hash}
-                triggerId={matchupCategoryTriggerId(category.id)}
-                title={category.label}
-                meta={
-                  result ? (
-                    <CategoryAdvantageMeta
-                      result={result}
-                      categoryLabel={category.label}
-                      away={matchup.away}
-                      home={matchup.home}
-                    />
-                  ) : undefined
-                }
-                open={open[category.id] === true}
-                highlighted={highlighted === category.id}
-                triggerRef={(node) => {
-                  if (node) triggerRefs.current.set(category.id, node);
-                  else triggerRefs.current.delete(category.id);
-                }}
-                onToggle={() =>
-                  setOpen((current) => ({ ...current, [category.id]: !current[category.id] }))
-                }
-              >
-                <ComparisonSideHeader matchup={matchup} />
-                {rows.map((metric) => (
-                  <NflHeadToHeadMetricRow
-                    key={metric.key}
-                    label={metric.label}
-                    shortLabel={metric.shortLabel}
-                    help={metric.help}
-                    leftValue={metric.away.formatted}
-                    rightValue={metric.home.formatted}
-                    leftRank={metric.away.rank}
-                    rightRank={metric.home.rank}
-                    projected={(projection || !!dedicatedLabel) && metric.key !== "team.overallRating"}
-                    leftRawValue={metric.away.value}
-                    rightRawValue={metric.home.value}
-                    higherIsBetter={
-                      metric.direction === "higher-is-better"
-                        ? true
-                        : metric.direction === "lower-is-better"
-                          ? false
-                          : null
-                    }
-                    comparison={metric.comparison}
-                    leftTeamName={matchup.away.teamName}
-                    rightTeamName={matchup.home.teamName}
-                    leftTeamAbbr={matchup.away.abbr}
-                    rightTeamAbbr={matchup.home.abbr}
+      <MatchupSectionCard
+        eyebrow="Metric by metric"
+        title={dedicatedLabel ? `Statistical Comparison — ${dedicatedLabel}` : projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
+        titleId="statistical-comparison-heading"
+        subtitle={dedicatedLabel ? "Rank 1 is best among teams with available values; N/A rows are excluded from category counts." : projection
+          ? "Projected statistics only. Rank 1 is best among teams with available values; N/A rows are excluded from category counts."
+          : "League rank out of 32 — 1 is best. Every row states its advantage in words."}
+        bodyClassName="px-0 py-0 sm:px-0"
+      >
+        <MatchupTabStrip
+          tabs={tabs}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as StatComparisonTabId)}
+          ariaLabel="Statistical comparison categories"
+          triggerRef={(id, node) => {
+            const tabId = id as StatComparisonTabId;
+            if (node) triggerRefs.current.set(tabId, node);
+            else triggerRefs.current.delete(tabId);
+          }}
+        />
+
+        {MATCHUP_CATEGORIES.map((category) => {
+          const rows = categoryMetrics[category.id] ?? [];
+          // Optional-chained for the same reason `categoryMetrics` is: a
+          // category with no resolved result renders without a meta chip
+          // rather than taking the whole panel down.
+          const result = categoryResults?.[category.id];
+          return (
+            <div
+              key={category.id}
+              id={category.hash}
+              role="tabpanel"
+              aria-labelledby={matchupCategoryTriggerId(category.id)}
+              hidden={activeTab !== category.id}
+              className={cn(
+                MATCHUP_SECTION_SCROLL_MT,
+                "px-2.5 pb-2 pt-2 sm:px-3 motion-safe:transition-colors motion-safe:duration-700",
+                highlighted === category.id && "bg-sky-50"
+              )}
+            >
+              <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-slate-600">
+                {result && (
+                  <CategoryAdvantageMeta
+                    result={result}
+                    categoryLabel={category.label}
+                    away={matchup.away}
+                    home={matchup.home}
                   />
-                ))}
-              </MatchupCollapsibleGroup>
-            );
-          })}
-
-          {/* One compact, collapsed-by-default legend beneath every category,
-              rather than a raised card repeated in view. Rank colours stay
-              reachable; the numeric rank on every badge carries the signal
-              without it. */}
-          <details className="group border-t border-slate-200 p-3 sm:p-4">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
-              <span className="inline-block transition-transform group-open:rotate-90">▸</span>
-              Rank tier colours
-            </summary>
-            <div className="mt-2">
-              <MatchupRankLegend />
-              <p className="mt-2 text-[11px] leading-4 text-slate-600">
-                Colour is secondary — every value carries its numeric rank and every row states the
-                advantage in words.
-              </p>
+                )}
+              </div>
+              <ComparisonSideHeader matchup={matchup} />
+              {rows.map((metric) => (
+                <NflHeadToHeadMetricRow
+                  key={metric.key}
+                  label={metric.label}
+                  shortLabel={metric.shortLabel}
+                  help={metric.help}
+                  leftValue={metric.away.formatted}
+                  rightValue={metric.home.formatted}
+                  leftRank={metric.away.rank}
+                  rightRank={metric.home.rank}
+                  projected={(projection || !!dedicatedLabel) && metric.key !== "team.overallRating"}
+                  leftRawValue={metric.away.value}
+                  rightRawValue={metric.home.value}
+                  higherIsBetter={
+                    metric.direction === "higher-is-better"
+                      ? true
+                      : metric.direction === "lower-is-better"
+                        ? false
+                        : null
+                  }
+                  comparison={metric.comparison}
+                  leftTeamName={matchup.away.teamName}
+                  rightTeamName={matchup.home.teamName}
+                  leftTeamAbbr={matchup.away.abbr}
+                  rightTeamAbbr={matchup.home.abbr}
+                />
+              ))}
             </div>
-          </details>
-        </MatchupSectionCard>
+          );
+        })}
 
-        {periodComparison}
-      </div>
+        <div
+          id="comparison-coaching"
+          role="tabpanel"
+          aria-labelledby="comparison-coaching-tab"
+          hidden={activeTab !== COACHING_TAB_ID}
+          className={cn(MATCHUP_SECTION_SCROLL_MT, "px-2.5 pb-2 pt-2 sm:px-3")}
+        >
+          {coaching}
+        </div>
 
-      {unitBattles}
-
-      {children}
+        {/* One compact, collapsed-by-default legend beneath the tab panels,
+            rather than a raised card repeated in view. Rank colours stay
+            reachable; the numeric rank on every badge carries the signal
+            without it. */}
+        <details className="group border-t border-slate-200 p-3 sm:p-4">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
+            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+            Rank tier colours
+          </summary>
+          <div className="mt-2">
+            <MatchupRankLegend />
+            <p className="mt-2 text-[11px] leading-4 text-slate-600">
+              Colour is secondary — every value carries its numeric rank and every row states the
+              advantage in words.
+            </p>
+          </div>
+        </details>
+      </MatchupSectionCard>
     </div>
   );
 }

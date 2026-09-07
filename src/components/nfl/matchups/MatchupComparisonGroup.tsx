@@ -1,4 +1,5 @@
 import MatchupComparisonRow from "@/components/nfl/matchups/MatchupComparisonRow";
+import { MATCHUP_COMPACT_ROW_MAX_WIDTH } from "@/components/nfl/matchups/matchupTypography";
 import {
   toSideValue,
   type NflMatchupMetricDef,
@@ -6,20 +7,28 @@ import {
 } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 
-/** Sticky-free column header naming each side of the comparison. */
+/**
+ * Sticky-free column header naming each side of the comparison.
+ *
+ * Capped and centred with `MATCHUP_COMPACT_ROW_MAX_WIDTH` so the header lines
+ * up with the bounded rows beneath it instead of stretching to the section's
+ * full width, which was pushing the two team labels far apart from "Metric".
+ */
 export function ComparisonHeader({ matchup }: { matchup: NflMatchup }) {
   return (
-    <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 border-b border-slate-200 pb-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
-      <div className="truncate text-right text-[10px] font-bold uppercase tracking-wide text-slate-600">
-        <span className="sm:hidden">{matchup.away.abbr.toUpperCase()}</span>
-        <span className="hidden sm:inline">{matchup.away.teamName}</span>
-      </div>
-      <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
-        Metric
-      </div>
-      <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
-        <span className="sm:hidden">{matchup.home.abbr.toUpperCase()}</span>
-        <span className="hidden sm:inline">{matchup.home.teamName}</span>
+    <div className={MATCHUP_COMPACT_ROW_MAX_WIDTH}>
+      <div className="grid grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-end gap-1.5 border-b border-slate-200 pb-1.5 sm:grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] sm:gap-2">
+        <div className="truncate text-right text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          <span className="sm:hidden">{matchup.away.abbr.toUpperCase()}</span>
+          <span className="hidden sm:inline">{matchup.away.teamName}</span>
+        </div>
+        <div className="text-center text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">
+          Metric
+        </div>
+        <div className="truncate text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          <span className="sm:hidden">{matchup.home.abbr.toUpperCase()}</span>
+          <span className="hidden sm:inline">{matchup.home.teamName}</span>
+        </div>
       </div>
     </div>
   );

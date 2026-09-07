@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join, resolve as resolvePath } from "node:path";
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupUnitComparison from "@/components/nfl/matchups/MatchupUnitComparison";
 import MatchupUnitBattles from "@/components/nfl/matchups/MatchupUnitBattles";
@@ -163,9 +163,13 @@ describe("offense vs defense battles", () => {
         <MatchupUnitBattles matchup={MATCHUP} resolver={epaResolver(settings("season", true))} />
       </MemoryRouter>
     );
-    for (const label of ["EPA / Play", "EPA / Pass", "EPA / Rush"]) {
-      expect(screen.getAllByText(label).length, label).toBeGreaterThan(0);
-    }
+    // "EPA / Play" lives in the Overall group tab (shown by default); "EPA /
+    // Pass" and "EPA / Rush" live in the Passing and Rushing group tabs.
+    expect(screen.getAllByText("EPA / Play").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("tab", { name: "Passing" }));
+    expect(screen.getAllByText("EPA / Pass").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("tab", { name: "Rushing" }));
+    expect(screen.getAllByText("EPA / Rush").length).toBeGreaterThan(0);
   });
 
   it("pairs each offense against the opposing defense without declaring a winner", () => {
