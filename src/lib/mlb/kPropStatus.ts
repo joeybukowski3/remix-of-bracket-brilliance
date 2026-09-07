@@ -43,6 +43,17 @@ const CRITICAL_WORKLOAD_FLAGS = new Set([
   "PITCHER_RECENT_K_RATE_MISSING",
   "PITCHER_SEASON_K_RATE_MISSING",
   "RECENT_PITCH_COUNTS_MISSING",
+  // The workload model classified this probable starter's own appearance
+  // history as reliever/opener (e.g. a bullpen arm making his first career
+  // start), so the projection was built under that role's IP/BF caps rather
+  // than the validated starter model -- v3 also declines these rows outright
+  // (ROLE_OUT_OF_V3_SCOPE_*) and falls back to v2. The workload-completeness
+  // score alone can still land on a confident-looking grade (A/B) here,
+  // because it measures whether *some* appearance data exists, not whether
+  // it matches the role actually being projected -- see the Jonah Tong case
+  // audited in research/mlb-k-high-line-calibration.
+  "RELIEVER_WORKLOAD_CAP",
+  "OPENER_WORKLOAD_CAP",
 ]);
 
 const REASON_LABELS: Record<string, string> = {
@@ -62,6 +73,8 @@ const REASON_LABELS: Record<string, string> = {
   RECENT_PITCH_COUNTS_MISSING: "Missing pitch count history",
   LEGACY_CANDIDATE_DIVERGENCE: "Projection/workload mismatch",
   LOW_K_LINE: "K line below starter threshold",
+  RELIEVER_WORKLOAD_CAP: "Role mismatch (relief history, starting today)",
+  OPENER_WORKLOAD_CAP: "Role mismatch (opener history, starting today)",
 };
 
 // Below this line, a K prop is presumed to belong to a reliever, opener,
