@@ -15,7 +15,13 @@ import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
 import { teamTotalFor } from "@/lib/nfl/totalsProjectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
+import { useNflProjectedMatchupMetrics } from "@/hooks/useNflProjectedMatchupMetrics";
+import { createProjectedMatchupMetricResolver, PROJECTION_LENS_DESCRIPTION, type MatchupComparisonLens } from "@/lib/nfl/projectedMatchupMetrics";
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
+import { BLENDED_LENS_DESCRIPTION, BLENDED_RATING_NOTE, COMPARISON_STAT_KEYS, createBlendedMatchupMetrics, createSeasonComparisonMetrics } from "@/lib/nfl/blendedMatchupMetrics";
+import { comparisonCompletedGames } from "@/lib/nfl/comparisonCompletedGames";
+import { createObservedComparisonResolver } from "@/lib/nfl/observedComparisonMetrics";
+import { getProjectionBlendWeights } from "@/lib/nfl/projectionBlendPolicy";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
@@ -150,7 +156,7 @@ export default function NFLMatchupDetail() {
   // OVR/OFF/DEF all come from the universal current-rating board -- the same
   // canonical source every current-rating surface on the site reads, so this
   // page can never show a different rating than /nfl or a team dashboard.
-  const { data: currentRating } = useNflCurrentRating2026();
+  const { data: currentRating, provenance: ratingProvenance } = useNflCurrentRating2026();
   // Presentation-only completed-season strength-of-schedule reference. Loaded
   // from the prior season's canonical results/teams, entirely separate from the
   // 2026 rating and projection inputs — it adjusts nothing on the page.
@@ -159,6 +165,25 @@ export default function NFLMatchupDetail() {
   const [sampleSettings, setSampleSettings] = useState<NflMatchupSampleSettings>(
     DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS
   );
+  const [comparisonLens, setComparisonLens] = useState<MatchupComparisonLens>("observed");
+  const isProjection = comparisonLens === "projection";
+  const isBlended = comparisonLens === "blended";
+  const isLegacyObserved = comparisonLens === "observed";
+  const dedicatedLabel = isBlended ? "2026 Blended" : comparisonLens === "season2026" ? "2026 Season" : comparisonLens === "season2025" ? "2025 Season" : undefined;
+  const projectedMetrics = useNflProjectedMatchupMetrics(isProjection || isBlended, data?.teams);
+  const projectedResolver = useMemo(
+    () => createProjectedMatchupMetricResolver(projectedMetrics.artifact),
+    [projectedMetrics.artifact]
+  );
+  const completed = useMemo(() => comparisonCompletedGames(data), [data]);
+  const observedSources = useMemo(() => ({ conventional: metricsArtifact, epa: epaArtifact, success: successArtifact, trench: trenchArtifact }),
+    [metricsArtifact, epaArtifact, successArtifact, trenchArtifact]);
+  const observed2026 = useMemo(() => createObservedComparisonResolver(observedSources, 2026), [observedSources]);
+  const blended = useMemo(() => createBlendedMatchupMetrics({ teams: data?.teams ?? [], projected: projectedMetrics.artifact,
+    observed: observed2026, completed, currentRating, ratingProvenance }), [data?.teams, projectedMetrics.artifact, observed2026, completed, currentRating, ratingProvenance]);
+  const seasonResolver = useMemo(() => createSeasonComparisonMetrics(data?.teams ?? [],
+    createObservedComparisonResolver(observedSources, comparisonLens === "season2025" ? 2025 : 2026)),
+    [data?.teams, observedSources, comparisonLens]);
   const navigation = useMatchupNavigation();
   const { theme, setTheme } = useMatchupTheme();
   // The sticky team-orientation bar exists only at the compact breakpoint; on
@@ -309,6 +334,8 @@ export default function NFLMatchupDetail() {
     if (!matchup) return { categoryMetrics: metrics, categoryResults: results };
 
     const sources: MatchupMetricSources = {
+      dedicated: dedicatedLabel ? { resolve: isBlended ? blended.resolve : seasonResolver, label: dedicatedLabel } : undefined,
+      projected: isProjection ? projectedResolver : undefined,
       resolver: metricResolver,
       successRate,
       trench,
@@ -320,7 +347,7 @@ export default function NFLMatchupDetail() {
       results[category.id] = categoryResultFrom(category.id, rows);
     }
     return { categoryMetrics: metrics, categoryResults: results };
-  }, [matchup, metricResolver, successRate, trench, modelRatings]);
+  }, [matchup, metricResolver, successRate, trench, modelRatings, isProjection, projectedResolver, dedicatedLabel, isBlended, blended, seasonResolver]);
 
   usePageSeo({
     title: matchup
@@ -397,6 +424,8 @@ export default function NFLMatchupDetail() {
       )}
 
       <div {...panelProps("overview")} className="space-y-2">
+        {isProjection && <p className="text-sm text-slate-700"><strong>2026 Projection:</strong> {PROJECTION_LENS_DESCRIPTION}</p>}
+        {dedicatedLabel && <p className="text-sm text-slate-700"><strong>{dedicatedLabel}:</strong> {isBlended ? BLENDED_LENS_DESCRIPTION : "Observed regular-season performance only."}</p>}
         <MatchupOverviewPanel
           matchup={matchup}
           categoryResults={categoryResults}
@@ -418,7 +447,7 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         />
-        <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />
+        {isLegacyObserved && <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />}
       </div>
 
       <div {...panelProps("comparison")} className="space-y-2">
@@ -426,9 +455,43 @@ export default function NFLMatchupDetail() {
           settings={sampleSettings}
           onChange={setSampleSettings}
           sampleLabel={sample?.label}
+          lens={comparisonLens}
+          onLensChange={setComparisonLens}
         />
+        {isProjection && <p role="status" className="text-sm text-slate-600">
+          {projectedMetrics.loading ? "Loading projected statistics…" : projectedMetrics.error ?? (
+            projectedMetrics.artifact
+              ? `2026 Projection · ${projectedMetrics.artifact.projectionVersion} · As of ${projectedMetrics.artifact.asOf.slice(0, 10)}. Ranks cover teams with available projections; missing values are not ranked.`
+              : "Season-stat projections are not yet published. JKB Power Rating remains available; other rows show N/A."
+          )}
+        </p>}
+        {isBlended && <div className="space-y-1 text-sm text-slate-600" data-testid="blended-provenance">
+          <p>{[matchup.away, matchup.home].map((team) => {
+            const count = completed?.byTeam.get(team.abbr)?.length;
+            if (count == null) return `${team.abbr.toUpperCase()}: completed-game sample unavailable`;
+            const weights = getProjectionBlendWeights(count);
+            return `${team.abbr.toUpperCase()}: ${Math.round(weights.projectionWeight * 100)}% projection / ${Math.round(weights.observedWeight * 100)}% observed (${count} completed games)`;
+          }).join(" · ")}. Generic statistical weights; Power Rating follows its own model.</p>
+          <p role="status">{projectedMetrics.loading ? "Loading projected statistics…" : projectedMetrics.error ?? (!projectedMetrics.artifact ? "Season-stat projections are not yet published; required missing inputs show N/A." : `Projection version: ${projectedMetrics.artifact.projectionVersion}.` )}</p>
+          <details>
+            <summary className="cursor-pointer">Sources, sample checks and coverage</summary>
+            <p>{BLENDED_RATING_NOTE} Its composed board has no aggregate version or timestamp; input versions are nfl-power-v0.4-beta, nfl-power-v0.3.1 and nfl-performance-v1.</p>
+            <p>Rating prior verified through: {ratingProvenance?.projectedCutoff ?? "unavailable"}; live performance generated: {ratingProvenance?.observedGeneratedAt ?? "unavailable"}.</p>
+            <p>Projection cutoff: {projectedMetrics.artifact?.asOf ?? "unavailable"}; generated: {projectedMetrics.artifact?.generatedAt ?? "unavailable"}. Results: {completed?.source ?? "unavailable"}, generated {completed?.generatedAt ?? "unavailable"}.</p>
+            <p>Observed feeds refresh independently. Required observed samples must match final 2026 game IDs. Ranks cover available teams only; missing teams are excluded.</p>
+            {[matchup.away, matchup.home].map((team) => <div key={team.abbr}>
+              <p>{team.abbr.toUpperCase()} Power Rating: {blended.provenance(team.abbr, "team.overallRating")?.issue ?? "Canonical model value; no second blend."}</p>
+              <ul className="list-disc pl-5">{COMPARISON_STAT_KEYS.map((key) => {
+                const record = blended.provenance(team.abbr, key);
+                return <li key={key}>{key}: {record?.issue ?? `${record?.availableTeams} available teams`}{record?.observed && `; ${record.observed.source} (${record.observed.version}), generated ${record.observed.generatedAt}, through ${record.observed.cutoff ?? "game IDs only"}, ${record.observed.precision} precision`}</li>;
+              })}</ul>
+            </div>)}
+          </details>
+        </div>}
 
         <MatchupComparisonPanel
+          projection={isProjection}
+          dedicatedLabel={dedicatedLabel}
           matchup={matchup}
           categoryMetrics={categoryMetrics}
           categoryResults={categoryResults}
@@ -436,15 +499,15 @@ export default function NFLMatchupDetail() {
           pendingCategory={navigation.category}
           navigationToken={navigation.token}
           unitBattles={
-            <MatchupUnitBattles
+            isLegacyObserved ? <MatchupUnitBattles
               matchup={matchup}
               resolver={metricResolver}
               successRate={successRate}
               trench={trench}
-            />
+            /> : undefined
           }
           periodComparison={
-            successArtifact && successRate ? (
+            isLegacyObserved && successArtifact && successRate ? (
               <MatchupPeriodComparison
                 matchup={matchup}
                 successRate={successRate}
@@ -453,7 +516,7 @@ export default function NFLMatchupDetail() {
             ) : undefined
           }
         >
-          <MatchupMarketContext matchup={matchup} projection={projection} />
+          {isLegacyObserved && <><MatchupMarketContext matchup={matchup} projection={projection} />
 
           <div className="grid grid-cols-1 items-start gap-2 @[1080px]:grid-cols-2">
             <MatchupTrenches
@@ -470,6 +533,7 @@ export default function NFLMatchupDetail() {
               loading={coachingRatings.loading}
             />
           </div>
+          </>}
         </MatchupComparisonPanel>
       </div>
 
@@ -493,9 +557,9 @@ export default function NFLMatchupDetail() {
       </div>
 
       {/* Stated once for the whole page, beneath every tab. */}
-      <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>
+      {isLegacyObserved && <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>}
 
-      {successArtifact && successRate && (
+      {isLegacyObserved && successArtifact && successRate && (
         <p className="text-[11px] leading-5 text-slate-400">
           {describeSuccessPeriods([...successRate.periods])} Success rate data: RBSDM.
         </p>

@@ -19,6 +19,12 @@ JKB is building one football modeling platform for game spreads, game totals, pa
 
 ## Governing principles
 
+### Team Comparison projection lens
+
+The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.
+
+The distinct `2026 Blended` lens composes that projected-stat contract with observed 2026 full-season values at runtime. Comparison policy `nfl-comparison-blend-v1` uses each team's final REG results count: projection weights 100/80/60/40/20/0 percent at 0/1/2/3/4/5+ games. This is a configurable initial comparison policy, not a backtested model conclusion. Required observed game IDs must exactly match that team's final 2026 results; missing required inputs fail closed. Raw values are blended before competition ranking over available teams. Current Power Rating is explicitly model-managed and bypasses this policy, retaining its existing six-game fade and canonical rank. Explicit `2026 Season` and `2025 Season` choices contain observed statistics only; existing Season/historical-blend and Last 5 policies are retained unchanged. See the linked comparison contract for precision, source-freshness limitations and future out-of-sample validation requirements.
+
 - Production predictions **MUST** have an unambiguous UTC prediction timestamp, model name and model version.
 - Archived production predictions **MUST NOT** be retroactively overwritten. Corrections create a new snapshot or an explicit correction event linked to the original.
 - Historical backtests **MUST** be labeled as backtests or historical replays and **MUST NOT** be represented as true production predictions.

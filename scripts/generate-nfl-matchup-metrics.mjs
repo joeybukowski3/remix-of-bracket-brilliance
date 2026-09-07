@@ -184,6 +184,7 @@ function main() {
           seasons: [...new Set(selected.map((g) => g.season))].sort(),
           through: { season: last.season, week: last.week, dateUtc: last.dateUtc },
           metrics: {},
+          rawMetrics: {},
         };
         for (const key of MATCHUP_METRIC_KEYS) rawByMetric[key][team] = values[key];
       }
@@ -194,6 +195,7 @@ function main() {
         for (const [team, raw] of Object.entries(rawByMetric[key])) {
           if (raw === null || raw === undefined || !Number.isFinite(raw)) continue;
           perTeam[team].metrics[key] = [roundTo(raw, MATCHUP_METRIC_DEFS[key].decimals), ranks[team] ?? null];
+          perTeam[team].rawMetrics[key] = raw;
         }
       }
 
