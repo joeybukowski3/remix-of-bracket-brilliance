@@ -6,6 +6,7 @@
  * model input.
  */
 import type { NflProjectionMarket } from "./projectionOutput";
+import type { IndividualYardageHistoryContext } from "@/lib/nfl/history/contracts";
 
 export type NflYardageGameResult = "W" | "L" | "T" | null;
 
@@ -77,6 +78,8 @@ export type NflYardageHistoryArtifact = {
   week: number;
   players: Record<string, NflYardagePlayerHistory>;
   teamDefense: Record<string, NflYardageOpponentHistory>;
+  /** Additive v2 context. Legacy logs retain their original cohort semantics. */
+  individualContext?: IndividualYardageHistoryContext;
 };
 
 export function playerHistoryKey(playerId: string, market: NflProjectionMarket): string {

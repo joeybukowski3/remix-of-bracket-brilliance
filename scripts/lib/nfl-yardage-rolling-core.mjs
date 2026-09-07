@@ -14,24 +14,29 @@ export const DEFAULT_TRAILING_GAMES = 10;
 /**
  * @param {Map<string, number>} perGameByKey - key `${entity}|${season}|${week}` -> one game's value.
  * @param {number} [windowSize]
+ * @param {Map<string, string> | null} [kickoffByKey] Optional exact chronology for cutoff-aware consumers. Missing dates fail closed; equal kickoffs never enter each other's reference.
  * @returns {Map<string, { avg: number | null, gamesIncluded: number }>} same keys -> pregame trailing average.
  */
-export function buildTrailingPregameAverage(perGameByKey, windowSize = DEFAULT_TRAILING_GAMES) {
+export function buildTrailingPregameAverage(perGameByKey, windowSize = DEFAULT_TRAILING_GAMES, kickoffByKey = null) {
   const byEntity = new Map();
   for (const [key, value] of perGameByKey) {
     const [entity, seasonStr, weekStr] = key.split("|");
     const season = Number(seasonStr);
     const week = Number(weekStr);
     const list = byEntity.get(entity) ?? [];
-    list.push({ season, week, value });
+    const kickoff = kickoffByKey ? Date.parse(kickoffByKey.get(key)) : null;
+    if (kickoffByKey && !Number.isFinite(kickoff)) continue;
+    list.push({ season, week, value, kickoff });
     byEntity.set(entity, list);
   }
 
   const out = new Map();
   for (const [entity, games] of byEntity) {
-    const sorted = [...games].sort((a, b) => a.season - b.season || a.week - b.week);
+    const sorted = [...games].sort((a, b) => (kickoffByKey ? a.kickoff - b.kickoff : 0) || a.season - b.season || a.week - b.week);
     sorted.forEach((game, index) => {
-      const prior = sorted.slice(Math.max(0, index - windowSize), index);
+      const prior = kickoffByKey
+        ? sorted.slice(0, index).filter((g) => g.kickoff < game.kickoff).slice(-windowSize)
+        : sorted.slice(Math.max(0, index - windowSize), index);
       const avg = prior.length > 0 ? prior.reduce((sum, g) => sum + g.value, 0) / prior.length : null;
       out.set(`${entity}|${game.season}|${game.week}`, { avg, gamesIncluded: prior.length });
     });

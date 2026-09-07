@@ -104,6 +104,9 @@ are explicitly provisional presentation thresholds, not model thresholds.
 
 ## Research/context adapter
 
+WU6A.1 adds a domain/data-only [historical context foundation](nfl-dfs-history.md).
+It does not yet change this page's UI or its published projection/rank behavior.
+
 The optional companion artifact is
 `public/data/fantasy/weekly-research/<season>/week-<NN>.json`, loaded by
 [`useWeeklyFantasyResearchArtifact.ts`](../../src/hooks/useWeeklyFantasyResearchArtifact.ts).

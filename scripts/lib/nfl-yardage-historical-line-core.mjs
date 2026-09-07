@@ -13,6 +13,9 @@
  */
 import { APPROVED_SPORTSBOOKS, isApprovedSportsbook } from "./nfl-book-classification.mjs";
 
+/** Provenance label for the existing selection rules; not a closing-line claim. */
+export const HISTORICAL_LINE_SELECTION_POLICY_VERSION = "approved-final-pre-kickoff-v1";
+
 /**
  * @typedef {object} ArchiveObservation
  * @property {string} observedAt - ISO timestamp.

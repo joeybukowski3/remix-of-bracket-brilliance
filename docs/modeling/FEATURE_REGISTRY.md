@@ -4,6 +4,13 @@ Status values: **production input**, **research/diagnostic**, **eligibility/prov
 
 ## Implemented load-bearing features
 
+WU6A.1 adds comparison-only historical yardage context, not a model input:
+entering-game trailing-ten recorded-player averages and aggregate defensive
+positional allowance, with exact kickoff cutoffs and reference sample sizes.
+See [NFL DFS historical context](../features/nfl-dfs-history.md) for cohort,
+missing-data and reconstructed-source timing limitations. Canonical weekly FPA
+is passed through unchanged; no scoring, projection or rank formula changes.
+
 | Feature | Definition | Source | Availability timing | Window/transformation | Models | Leakage risk | Status/notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Current OVR | Blend of preseason v0.4 rating and full-season live Performance Rating by team games played | v0.4, v0.3.1, Team Performance Analytics | After completed games and source refresh | Fixed 0-6+ game ramp; clamp 1-99 | Spread | Mutable aggregates lack prediction-level cutoff/hash | production input |

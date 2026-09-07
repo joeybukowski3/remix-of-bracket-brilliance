@@ -16,7 +16,9 @@
  * historical dump -- see AGENTS performance guidance for this page.
  *
  * Usage:
- *   node scripts/generate-nfl-yardage-history.mjs [--season 2026] [--dry-run]
+ *   node scripts/generate-nfl-yardage-history.mjs [--season=2026] [--as-of=<UTC>] [--dry-run]
+ * The additive individualContext reads available 2022..target-season caches.
+ * Legacy logs retain their original 2022-2025 sources and leader cohort.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -25,6 +27,7 @@ import { parseCsv, buildNflverseTeamMap } from "./lib/nfl-schedules-results-core
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
 import { normalizeEpaTeamGameRows, TRAILING_GAMES } from "./lib/nfl-epa-week-rank-core.mjs";
 import { parseMarketArchiveJsonl, indexArchiveByTarget } from "./lib/nfl-yardage-historical-line-core.mjs";
+import { buildIndividualYardageHistory, normalizeIndividualHistoryStatRows } from "./lib/nfl-individual-yardage-history.mjs";
 import {
   normalizeHistoryStatRows,
   buildGameLookup,
@@ -43,7 +46,7 @@ const ARCHIVE_FILE = join(ROOT, "data", "nfl", "props", "market-archive", "nfl-y
 const STAT_SEASONS = [2022, 2023, 2024, 2025];
 const EPA_SEASONS = [2020, 2021, 2022, 2023, 2024, 2025];
 
-export const YARDAGE_HISTORY_SCHEMA_VERSION = "nfl-yardage-history-v1";
+export const YARDAGE_HISTORY_SCHEMA_VERSION = "nfl-yardage-history-v2";
 
 const MARKET_TO_CANONICAL = { passing: "passingYards", rushing: "rushingYards", receiving: "receivingYards" };
 const MARKET_TO_POSITION_SLICE = (market, playerPosition) => {
@@ -53,13 +56,16 @@ const MARKET_TO_POSITION_SLICE = (market, playerPosition) => {
 };
 
 function parseArgs(argv) {
-  const args = { season: 2026, dryRun: false };
-  for (const raw of argv.slice(2)) {
+  const args = { season: 2026, dryRun: false, asOf: null };
+  for (let i = 2; i < argv.length; i++) {
+    const raw = argv[i];
     if (raw === "--dry-run") args.dryRun = true;
-    else if (raw.startsWith("--season")) args.season = Number(raw.split("=")[1] ?? argv[argv.indexOf(raw) + 1]);
-    else if (raw === "--season") continue;
+    else if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
+    else if (raw === "--season") args.season = Number(argv[++i]);
+    else if (raw.startsWith("--as-of=")) args.asOf = raw.slice(8);
     else throw new Error(`Unknown argument: ${raw}`);
   }
+  if (!Number.isInteger(args.season) || args.season < 2022) throw new Error("Invalid season");
   return args;
 }
 
@@ -70,13 +76,13 @@ function stripGsisPrefix(playerId) {
   return String(playerId ?? "").replace(/^gsis:/, "");
 }
 
-function loadAllStatRows() {
+function loadAllStatRows(seasons = STAT_SEASONS, normalize = normalizeHistoryStatRows) {
   const out = [];
-  for (const season of STAT_SEASONS) {
+  for (const season of seasons) {
     const path = join(STATS_DIR, `stats_player_week_${season}.csv`);
     if (!existsSync(path)) continue;
     const rows = parseCsv(readFileSync(path, "utf-8"));
-    out.push(...normalizeHistoryStatRows(rows, season));
+    out.push(...normalize(rows, season));
   }
   return out;
 }
@@ -117,7 +123,8 @@ function main() {
   const rows = projections.rows.filter((r) => r.week === week);
   if (rows.length === 0) throw new Error(`no projection rows for season ${season} week ${week} -- refusing to write an empty artifact`);
 
-  const { games, results } = loadGamesAndResults([...STAT_SEASONS, season]);
+  const contextSeasons = Array.from({ length: season - 2022 + 1 }, (_, i) => 2022 + i);
+  const { games, results } = loadGamesAndResults(contextSeasons);
   const gameLookup = buildGameLookup(games, results, canonicalToNflverseAbbr);
 
   const allStatRows = loadAllStatRows();
@@ -127,6 +134,17 @@ function main() {
   const archiveText = existsSync(ARCHIVE_FILE) ? readFileSync(ARCHIVE_FILE, "utf-8") : "";
   const archiveObservations = parseMarketArchiveJsonl(archiveText);
   const archiveIndex = indexArchiveByTarget(archiveObservations);
+
+  const targetGames = games.filter((game) => game.season === season && game.week === week);
+  if (!targetGames.length || targetGames.some((game) => !Number.isFinite(Date.parse(game.dateUtc)))) throw new Error("Target week requires dated canonical games");
+  const firstKickoff = Math.min(...targetGames.map((game) => Date.parse(game.dateUtc)));
+  const asOf = args.asOf ?? new Date(Math.min(Date.now(), firstKickoff)).toISOString();
+  if (Date.parse(asOf) > firstKickoff || Date.parse(asOf) > Date.now()) throw new Error("asOf must not exceed first target kickoff or current time");
+  const individualContext = buildIndividualYardageHistory({
+    season, week, asOf, targetGameIds: targetGames.map((game) => game.gameId), requests: rows,
+    statRows: loadAllStatRows(contextSeasons, normalizeIndividualHistoryStatRows),
+    gameLookup, canonicalToNflverseAbbr, archiveIndex,
+  });
 
   const players = {};
   const teamDefense = {};
@@ -212,6 +230,7 @@ function main() {
     week,
     players,
     teamDefense,
+    individualContext,
     provenance: {
       generatedAt: new Date().toISOString(),
       playersBuilt,
@@ -219,10 +238,13 @@ function main() {
       archiveObservations: archiveObservations.length,
       statSeasons: STAT_SEASONS,
       epaSeasons: EPA_SEASONS,
+      individualContextStatSeasons: contextSeasons.filter((year) => existsSync(join(STATS_DIR, `stats_player_week_${year}.csv`))),
     },
   };
 
   console.log(`[nfl:yardage-history] season ${season} week ${week}: ${playersBuilt} player logs, ${opponentLogsBuilt} opponent-defense logs`);
+  console.log(`[nfl:yardage-history] individual context asOf=${asOf}; ${Object.keys(individualContext.players).length} player logs, ${Object.keys(individualContext.defenseMatchups).length} individual matchup logs; ${JSON.stringify(individualContext.diagnostics)}`);
+  console.log(`[nfl:yardage-history] individual context compact bytes=${Buffer.byteLength(JSON.stringify(individualContext))}; available stat seasons=${artifact.provenance.individualContextStatSeasons.join(",")}`);
 
   if (args.dryRun) {
     console.log("[nfl:yardage-history] dry run; nothing written");
