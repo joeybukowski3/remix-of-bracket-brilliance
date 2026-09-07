@@ -1,0 +1,322 @@
+{
+  "study": "mlb-k-projection-v3-workload-model",
+  "generatedAt": "2026-09-07T11:53:42.862Z",
+  "selectionRule": "Deterministic and outcome-blind: the largest v3-minus-v2 projected batters-faced move down, the median absolute move, and the largest move up, with pitcherId as a tie-break. Outcomes are shown but were not used to choose the rows.",
+  "cases": [
+    {
+      "label": "largest v3 workload move DOWN vs v2",
+      "bfShiftVsV2": -2.6878,
+      "identity": {
+        "pitcher": "Ronel Blanco",
+        "pitcherId": 669854,
+        "slateDate": "2026-07-26",
+        "team": "HOU",
+        "opponent": "CWS",
+        "pitcherIsHome": false,
+        "handedness": "R",
+        "gamePk": 824572
+      },
+      "workload": {
+        "seasonIPPerStart": 4.6667,
+        "last10IPPerStart": 4.6667,
+        "last5IPPerStart": 4.6667,
+        "last10RawIPPerStart": 4.6667,
+        "last5RawIPPerStart": 4.6667,
+        "neutralIP": 4.9465,
+        "currentRegimeAdjustment": 0,
+        "siteAdjustment": 0,
+        "opponentAdjustment": 0,
+        "finalProjectedIP": 4.9465,
+        "v2ProjectedInnings": 5.842
+      },
+      "regime": {
+        "evidence": 0,
+        "gap": 0,
+        "consistency": 0,
+        "sample": 0.2,
+        "magnitude": 0,
+        "shiftedWeights": {
+          "season": 0.3,
+          "last10": 0.45,
+          "last5": 0.25
+        }
+      },
+      "site": {
+        "isHome": false,
+        "siteIPPerStart": null,
+        "siteGames": null,
+        "rawDelta": null,
+        "shrink": 0,
+        "adjustment": 0
+      },
+      "opponent": {
+        "team": "CWS",
+        "opponentSeasonDelta": 0.0321,
+        "opponentL10Delta": -0.0706,
+        "opponentL5Delta": -0.0378,
+        "opponentSeasonMedianDelta": -0.4533,
+        "opponentOverExpectedRate": 0.5023,
+        "opponentOverExpectedRateL10": 0.5725,
+        "opponentOverExpectedRateL5": 0.6586,
+        "opponentUnderExpectedRate": 0.4977,
+        "opponentRawMeanStarterIP": 5.0323,
+        "opponentSeasonRawDelta": 0.15,
+        "opponentRawOverExpectedRate": 0.5023,
+        "leagueCentreMeanDelta": 0.1178,
+        "leagueCentreOverRate": 0.5652,
+        "observations": 31,
+        "weightSum": 27.8723,
+        "reliability": 0.777,
+        "consistencyScale": 0.5,
+        "blendedDelta": -0.0127,
+        "capped": false,
+        "adjustment": 0
+      },
+      "battersFaced": {
+        "expectedBFPerIP": 4.1919,
+        "projectedBattersFaced": 20.7352,
+        "v2ProjectedBattersFaced": 23.423
+      },
+      "kRate": {
+        "rawPitcherSkillRate": 0.3652,
+        "leagueAnchor": 0.2261,
+        "seasonBattersFaced": 19,
+        "sampleSizeAlpha": 0.1319,
+        "alphaSource": "sample-size",
+        "productionAlpha": 0.55,
+        "shrunkSkillRateV3": 0.2445,
+        "shrunkSkillRateV2": 0.3026,
+        "opponentEnvironmentRate": 0.2326,
+        "matchupAdjustment": 0.0049,
+        "finalKRateV3": 0.2494,
+        "finalKRateV2": 0.3075
+      },
+      "final": {
+        "projectedKsV3": 5.1704,
+        "projectedKsV2Replay": 7.2023,
+        "projectedKsV2AsShipped": 8.6681,
+        "marketLine": 4.5,
+        "oddsOver": "-165",
+        "oddsUnder": "+129",
+        "edgeVsLine": 0.6704,
+        "direction": "over",
+        "actualKs": 4,
+        "actualIP": 5.333333333333333,
+        "actualBF": 22
+      },
+      "flags": [
+        "LOW_RECENT_START_SAMPLE",
+        "SITE_SPLIT_UNAVAILABLE"
+      ]
+    },
+    {
+      "label": "median absolute v3 workload move",
+      "bfShiftVsV2": -0.6014,
+      "identity": {
+        "pitcher": "Eury Pérez",
+        "pitcherId": 691587,
+        "slateDate": "2026-08-16",
+        "team": "MIA",
+        "opponent": "CIN",
+        "pitcherIsHome": false,
+        "handedness": "R",
+        "gamePk": 824477
+      },
+      "workload": {
+        "seasonIPPerStart": 5.5556,
+        "last10IPPerStart": 6.0595,
+        "last5IPPerStart": 6.2556,
+        "last10RawIPPerStart": 6,
+        "last5RawIPPerStart": 6.2,
+        "neutralIP": 5.8899,
+        "currentRegimeAdjustment": 0.0366,
+        "siteAdjustment": 0,
+        "opponentAdjustment": 0,
+        "finalProjectedIP": 5.9264,
+        "v2ProjectedInnings": 6.072
+      },
+      "regime": {
+        "evidence": 0.3877,
+        "gap": 0.504,
+        "consistency": 0.6667,
+        "sample": 0.6923,
+        "magnitude": 0.8399,
+        "shiftedWeights": {
+          "season": 0.2302,
+          "last10": 0.4949,
+          "last5": 0.2749
+        }
+      },
+      "site": {
+        "isHome": false,
+        "siteIPPerStart": 5.2424,
+        "siteGames": 11,
+        "rawDelta": -0.3131,
+        "shrink": 0.7333,
+        "adjustment": 0
+      },
+      "opponent": {
+        "team": "CIN",
+        "opponentSeasonDelta": 0.1204,
+        "opponentL10Delta": 0.0616,
+        "opponentL5Delta": 0.3155,
+        "opponentSeasonMedianDelta": 0.2667,
+        "opponentOverExpectedRate": 0.5764,
+        "opponentOverExpectedRateL10": 0.6608,
+        "opponentOverExpectedRateL5": 0.6482,
+        "opponentUnderExpectedRate": 0.4236,
+        "opponentRawMeanStarterIP": 5.3194,
+        "opponentSeasonRawDelta": 0.2057,
+        "opponentRawOverExpectedRate": 0.5986,
+        "leagueCentreMeanDelta": 0.0853,
+        "leagueCentreOverRate": 0.5627,
+        "observations": 48,
+        "weightSum": 45.1041,
+        "reliability": 0.8494,
+        "consistencyScale": 0.6529,
+        "blendedDelta": 0.1418,
+        "capped": false,
+        "adjustment": 0
+      },
+      "battersFaced": {
+        "expectedBFPerIP": 3.974,
+        "projectedBattersFaced": 23.5516,
+        "v2ProjectedBattersFaced": 24.153
+      },
+      "kRate": {
+        "rawPitcherSkillRate": 0.2654,
+        "leagueAnchor": 0.2355,
+        "seasonBattersFaced": 471,
+        "sampleSizeAlpha": 0.7903,
+        "alphaSource": "sample-size",
+        "productionAlpha": 0.55,
+        "shrunkSkillRateV3": 0.2592,
+        "shrunkSkillRateV2": 0.252,
+        "opponentEnvironmentRate": 0.2571,
+        "matchupAdjustment": 0.0161,
+        "finalKRateV3": 0.2753,
+        "finalKRateV2": 0.2681
+      },
+      "final": {
+        "projectedKsV3": 6.4838,
+        "projectedKsV2Replay": 6.4759,
+        "projectedKsV2AsShipped": 6.8008,
+        "marketLine": 6.5,
+        "oddsOver": "-116",
+        "oddsUnder": "-110",
+        "edgeVsLine": -0.0162,
+        "direction": "under",
+        "actualKs": 5,
+        "actualIP": 6,
+        "actualBF": 23
+      },
+      "flags": []
+    },
+    {
+      "label": "largest v3 workload move UP vs v2",
+      "bfShiftVsV2": 14.4239,
+      "identity": {
+        "pitcher": "Daniel Lynch IV",
+        "pitcherId": 663738,
+        "slateDate": "2026-08-12",
+        "team": "KC",
+        "opponent": "LAD",
+        "pitcherIsHome": false,
+        "handedness": "L",
+        "gamePk": 823916
+      },
+      "workload": {
+        "seasonIPPerStart": 1.6667,
+        "last10IPPerStart": 1.6667,
+        "last5IPPerStart": 1.6667,
+        "last10RawIPPerStart": 1.6667,
+        "last5RawIPPerStart": 1.6667,
+        "neutralIP": 4.0011,
+        "currentRegimeAdjustment": 0,
+        "siteAdjustment": 0,
+        "opponentAdjustment": 0,
+        "finalProjectedIP": 4.0011,
+        "v2ProjectedInnings": 1.14
+      },
+      "regime": {
+        "evidence": 0,
+        "gap": 0,
+        "consistency": 0,
+        "sample": 0.2,
+        "magnitude": 0,
+        "shiftedWeights": {
+          "season": 0.3,
+          "last10": 0.45,
+          "last5": 0.25
+        }
+      },
+      "site": {
+        "isHome": false,
+        "siteIPPerStart": null,
+        "siteGames": null,
+        "rawDelta": null,
+        "shrink": 0,
+        "adjustment": 0
+      },
+      "opponent": {
+        "team": "LAD",
+        "opponentSeasonDelta": -0.062,
+        "opponentL10Delta": 0.4034,
+        "opponentL5Delta": 0.616,
+        "opponentSeasonMedianDelta": -0.1673,
+        "opponentOverExpectedRate": 0.5002,
+        "opponentOverExpectedRateL10": 0.7117,
+        "opponentOverExpectedRateL5": 0.8018,
+        "opponentUnderExpectedRate": 0.4998,
+        "opponentRawMeanStarterIP": 5.1597,
+        "opponentSeasonRawDelta": 0.0276,
+        "opponentRawOverExpectedRate": 0.523,
+        "leagueCentreMeanDelta": 0.0896,
+        "leagueCentreOverRate": 0.5609,
+        "observations": 48,
+        "weightSum": 43.9788,
+        "reliability": 0.8461,
+        "consistencyScale": 0.5005,
+        "blendedDelta": 0.2132,
+        "capped": false,
+        "adjustment": 0
+      },
+      "battersFaced": {
+        "expectedBFPerIP": 4.8183,
+        "projectedBattersFaced": 19.2789,
+        "v2ProjectedBattersFaced": 4.855
+      },
+      "kRate": {
+        "rawPitcherSkillRate": 0.2057,
+        "leagueAnchor": 0.2143,
+        "seasonBattersFaced": 10,
+        "sampleSizeAlpha": 0.0741,
+        "alphaSource": "sample-size",
+        "productionAlpha": 0.55,
+        "shrunkSkillRateV3": 0.2137,
+        "shrunkSkillRateV2": 0.2096,
+        "opponentEnvironmentRate": 0.2039,
+        "matchupAdjustment": -0.0078,
+        "finalKRateV3": 0.2059,
+        "finalKRateV2": 0.2018
+      },
+      "final": {
+        "projectedKsV3": 3.9694,
+        "projectedKsV2Replay": 0.9797,
+        "projectedKsV2AsShipped": 0.9609,
+        "marketLine": 1.5,
+        "oddsOver": "-180",
+        "oddsUnder": "+135",
+        "edgeVsLine": 2.4694,
+        "direction": "over",
+        "actualKs": 3,
+        "actualIP": 2.3333333333333335,
+        "actualBF": 10
+      },
+      "flags": [
+        "LOW_RECENT_START_SAMPLE",
+        "SITE_SPLIT_UNAVAILABLE"
+      ]
+    }
+  ]
+}

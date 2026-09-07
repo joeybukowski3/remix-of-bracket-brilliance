@@ -3,11 +3,19 @@ import { K_PROP_EXCLUDED_STATUSES, resolveKPropStatus, type KPropStatusInput } f
 
 export type KPropDirection = "over" | "under" | "neutral";
 
+/**
+ * Tolerance for calling a projection equal to the line. Sized for binary
+ * floating-point representation error only -- never to swallow a real edge.
+ */
+export const PROJECTION_EDGE_EPSILON = 1e-9;
+
 export type KPropEdgeInfo = {
   projectedKs: number | null;
   kLine: number | null;
-  /** projectedKs - kLine. Null when either input is missing/invalid -- never a fabricated 0. */
+  /** projectedKs - kLine, rounded to 2dp for display. Null when either input is missing/invalid -- never a fabricated 0. */
   projectionEdge: number | null;
+  /** The unrounded difference that actually decides `direction`. */
+  rawProjectionEdge?: number | null;
   /** Math.abs(projectionEdge). Null under the same conditions as projectionEdge. */
   absoluteProjectionEdge: number | null;
   /** Which side the projection favors. "neutral" when the values are equal, missing, or invalid. */
@@ -35,13 +43,30 @@ export function getProjectionEdgeInfo(row: Pick<PitcherStrikeoutTeamRow, "projec
     return { projectedKs, kLine, projectionEdge: null, absoluteProjectionEdge: null, direction: "neutral", isValid: false };
   }
 
-  const projectionEdge = Number((projectedKs - kLine).toFixed(2));
-  const direction: KPropDirection = projectionEdge > 0 ? "over" : projectionEdge < 0 ? "under" : "neutral";
+  /**
+   * Direction is decided on the RAW difference, never on a rounded one.
+   *
+   * Rounding first was the bug this replaces: a projection of 5.46 against a
+   * 5.5 line rounds to a 0.0 edge and reads as a push, even though the model
+   * is clearly UNDER. The reported `projectionEdge` is still rounded to two
+   * decimals because that is a display value, but it can no longer decide the
+   * side.
+   *
+   * EPSILON exists only to absorb binary floating-point representation error,
+   * so that a projection that is genuinely equal to the line (5.5 vs 5.5)
+   * reads as a push rather than as a spurious 4e-16 edge. It is far smaller
+   * than any real projection difference.
+   */
+  const rawEdge = projectedKs - kLine;
+  const direction: KPropDirection =
+    rawEdge > PROJECTION_EDGE_EPSILON ? "over" : rawEdge < -PROJECTION_EDGE_EPSILON ? "under" : "neutral";
+  const projectionEdge = Number(rawEdge.toFixed(2));
 
   return {
     projectedKs,
     kLine,
     projectionEdge,
+    rawProjectionEdge: rawEdge,
     absoluteProjectionEdge: Math.abs(projectionEdge),
     direction,
     isValid: true,

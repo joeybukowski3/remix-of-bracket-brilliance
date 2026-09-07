@@ -1,5 +1,6 @@
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
+import { getProjectionEdgeInfo } from "@/lib/mlb/kPropValueSorting";
 
 export type KBestBetSide = "over" | "under";
 
@@ -69,7 +70,18 @@ export function buildKPropBestBets(rows: PitcherStrikeoutTeamRow[], maxPerSide =
     if (resolveKPropStatus(row).status !== "VALID") continue;
     const projectedKs = resolveProjectedKs(row);
     if (row.kLine == null || projectedKs == null || !Number.isFinite(row.kLine)) continue;
-    const projectionEdge = Number((projectedKs - row.kLine).toFixed(1));
+    /**
+     * The edge comes from the ONE canonical helper the table and every other
+     * surface use, so a card can never disagree with the table about which
+     * side a projection favours.
+     *
+     * This previously rounded the edge to one decimal before the 0.4 gate
+     * below, which quietly made the real threshold 0.35 -- a 0.35 edge rounded
+     * up to 0.4 and qualified. The gate now means what it says.
+     */
+    const edgeInfo = getProjectionEdgeInfo(row);
+    if (!edgeInfo.isValid || edgeInfo.rawProjectionEdge == null) continue;
+    const projectionEdge = edgeInfo.rawProjectionEdge;
 
     if (projectionEdge >= 0.4 && row.kOddsOver) {
       const valueScore = Number((

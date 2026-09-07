@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  PROJECTION_EDGE_EPSILON,
   getProjectionEdgeInfo,
   selectTopProjectedKRows,
   selectTopSocialKRows,
@@ -32,6 +33,50 @@ function makeRow(overrides: Partial<PitcherStrikeoutTeamRow>): PitcherStrikeoutT
     ...overrides,
   };
 }
+
+describe("getProjectionEdgeInfo: full-precision side", () => {
+  /**
+   * These pin the fix for rounding-induced pushes: the side must come from the
+   * raw difference, never from a value that has been rounded for display.
+   */
+  it("calls a sub-0.05 under edge UNDER, not a push", () => {
+    // 5.46 vs 5.5 rounds to 5.5 at one decimal, which used to read as neutral.
+    const info = getProjectionEdgeInfo(makeRow({ projectedKs: 5.46, kLine: 5.5 }));
+    expect(info.direction).toBe("under");
+    expect(info.rawProjectionEdge).toBeCloseTo(-0.04, 10);
+  });
+
+  it("calls a sub-0.05 over edge OVER, not a push", () => {
+    const info = getProjectionEdgeInfo(makeRow({ projectedKs: 5.543, kLine: 5.5 }));
+    expect(info.direction).toBe("over");
+  });
+
+  it("treats an exact line as a genuine push", () => {
+    const info = getProjectionEdgeInfo(makeRow({ projectedKs: 5.5, kLine: 5.5 }));
+    expect(info.direction).toBe("neutral");
+    expect(info.rawProjectionEdge).toBe(0);
+  });
+
+  it("absorbs floating-point representation error into a push", () => {
+    // 0.1 + 0.2 - 0.3 is ~5.5e-17, not a real edge.
+    const info = getProjectionEdgeInfo(makeRow({ projectedKs: 5.5 + (0.1 + 0.2 - 0.3), kLine: 5.5 }));
+    expect(Math.abs(info.rawProjectionEdge ?? 1)).toBeLessThan(PROJECTION_EDGE_EPSILON);
+    expect(info.direction).toBe("neutral");
+  });
+
+  it("does not absorb a real edge just above epsilon", () => {
+    const over = getProjectionEdgeInfo(makeRow({ projectedKs: 5.5 + 1e-6, kLine: 5.5 }));
+    const under = getProjectionEdgeInfo(makeRow({ projectedKs: 5.5 - 1e-6, kLine: 5.5 }));
+    expect(over.direction).toBe("over");
+    expect(under.direction).toBe("under");
+  });
+
+  it("reports a display-rounded edge while deciding on the raw one", () => {
+    const info = getProjectionEdgeInfo(makeRow({ projectedKs: 5.4649, kLine: 5.5 }));
+    expect(info.projectionEdge).toBe(-0.04); // 2dp, for display
+    expect(info.direction).toBe("under"); // decided on the raw value
+  });
+});
 
 describe("getProjectionEdgeInfo", () => {
   it("computes edge and direction=over when projectedKs is above the line", () => {

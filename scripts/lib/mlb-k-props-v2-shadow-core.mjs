@@ -1,11 +1,18 @@
 import { buildStrikeoutPropDetailKey } from "./mlb-strikeout-prop-details-core.mjs";
+import { buildV3Projection } from "./mlb-k-v3-production-adapter.mjs";
 import { outsToDecimalInnings } from "./mlb-baseball-innings.mjs";
 import {
   summarizeOpponentLastFiveVsStarters,
   summarizePitcherLastFiveStarts,
 } from "./mlb-k-recent-averages.mjs";
 
-export const K_PROPS_V2_SHADOW_SCHEMA_VERSION = 1;
+/**
+ * Bumped to 2 when the versioned v3 block was added alongside v2. The change is
+ * PURELY ADDITIVE: every field that existed at schema 1 is still present, still
+ * computed the same way, and still carries the same value. v2 remains the
+ * production authority -- see the `v3` block comment on the row builder.
+ */
+export const K_PROPS_V2_SHADOW_SCHEMA_VERSION = 2;
 export const K_PROPS_V2_SHADOW_MODE = "shadow";
 
 function compareRows(a, b) {
@@ -254,6 +261,36 @@ function buildV2Input({ rawPitcher, workloadRow, lineupSummary, pitcherRecentSum
   };
 }
 
+/**
+ * League starter workload levels for this slate, derived from the workload
+ * artifact's own rows. Used only as the prior a thin-record pitcher is shrunk
+ * toward, so a pitcher one start into a season is not taken at face value.
+ *
+ * These are levels across the slate's listed starters, not a lookahead: every
+ * input is a pregame projection or a completed prior start.
+ */
+function buildLeagueWorkloadLevels(workloadPayload) {
+  const rows = Array.isArray(workloadPayload?.pitchers) ? workloadPayload.pitchers : [];
+  const ipValues = [];
+  let bfTotal = 0;
+  let ipTotal = 0;
+  for (const row of rows) {
+    const ip = toFiniteNumber(row?.inputs?.recentIpAverage);
+    const bf = toFiniteNumber(row?.inputs?.recentBfAverage);
+    if (ip != null && ip > 0) {
+      ipValues.push(ip);
+      if (bf != null && bf > 0) {
+        bfTotal += bf;
+        ipTotal += ip;
+      }
+    }
+  }
+  return {
+    leagueIpPerStart: ipValues.length ? average(ipValues) : null,
+    leagueBfPerIp: ipTotal > 0 ? bfTotal / ipTotal : null,
+  };
+}
+
 function buildComparison(legacy, v2, market) {
   return {
     v2MinusLegacyKs:
@@ -289,6 +326,7 @@ export function buildKPropsShadowArtifact({
     addWarning(warnings, `Strikeout detail date ${detailsPayload.date} does not match slate date ${slateDate}.`);
   }
 
+  const leagueWorkloadLevels = buildLeagueWorkloadLevels(workloadPayload);
   const workloadIndex = indexByPitcherAndTeam(workloadPayload?.pitchers ?? []);
   const lineupIndex = buildLineupIndex(rawPayload?.batters ?? []);
   const detailsIndex = buildDetailsIndex(detailsPayload?.details ?? []);
@@ -311,6 +349,24 @@ export function buildKPropsShadowArtifact({
       isHome,
     });
     const v2 = projectStrikeoutsV2(v2Input);
+    /**
+     * v3 runs alongside v2 and never replaces it. It reuses v2's own K-rate
+     * output (pitcherSkillRate, opponentEnvironmentRate, matchupAdjustment) and
+     * changes exactly two things: projected workload, and the shrinkage alpha.
+     * Nothing downstream reads this block yet -- the production authority is
+     * still `legacy`/`v2` as resolved by scripts/resolve-mlb-k-production-projection.mjs.
+     */
+    const v3 = buildV3Projection({
+      detail,
+      workloadRow,
+      v2,
+      slateDate,
+      pitcherIsHome: isHome === true,
+      opponent: normalizeTeam(rawPitcher?.opponent),
+      leagueContext: workloadPayload?.leagueContext ?? null,
+      leagueIpPerStart: leagueWorkloadLevels.leagueIpPerStart,
+      leagueBfPerIp: leagueWorkloadLevels.leagueBfPerIp,
+    });
     const legacy = {
       projectedIP: toFiniteNumber(rawPitcher?.legacyProjectedIP ?? rawPitcher?.projectedIP),
       projectedK9: toFiniteNumber(rawPitcher?.legacyProjectedK9 ?? rawPitcher?.projectedK9),
@@ -365,6 +421,7 @@ export function buildKPropsShadowArtifact({
         fallbacks: v2.fallbacks,
         warnings: v2.warnings,
       },
+      v3,
       comparison: buildComparison(legacy, v2, market),
       inputs: {
         v2Input,
@@ -405,6 +462,16 @@ export function buildKPropsShadowArtifact({
     missingWorkloadRows: rows.filter((row) => row.inputs.workload == null).length,
     missingOpponentRows: rows.filter((row) => row.inputs.opponent == null || row.inputs.opponent.seasonKRate == null).length,
     missingLineupRows: rows.filter((row) => row.inputs.lineup.hitterCount === 0).length,
+    v3ComputedRows: rows.filter((row) => row.v3?.projectedKs != null).length,
+    v3DeclinedOutOfScopeRows: rows.filter((row) =>
+      (row.v3?.flags ?? []).some((flag) => String(flag).startsWith("ROLE_OUT_OF_V3_SCOPE_")),
+    ).length,
+    v3MissingLast10WindowRows: rows.filter((row) =>
+      (row.v3?.flags ?? []).includes("LAST10_WINDOW_UNAVAILABLE_USING_LAST5"),
+    ).length,
+    v3AlphaFallbackRows: rows.filter((row) =>
+      (row.v3?.flags ?? []).includes("SHRINKAGE_ALPHA_FELL_BACK_TO_PRODUCTION"),
+    ).length,
     warnings,
   };
 

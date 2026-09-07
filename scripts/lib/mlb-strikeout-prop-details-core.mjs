@@ -197,6 +197,14 @@ export function buildPitcherDetails(starts, { pitcherId = null, season = null } 
     .filter((row) => season == null || row.season == null || row.season === season)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const recentStarts = currentSeasonStarts.slice(0, 5);
+  /**
+   * The v3 workload model (scripts/mlb-k/compute-workload-projection-v3.mjs)
+   * needs a ten-start window on top of the five this artifact has always
+   * carried. Emitted as a NEW field: `recentStarts` and everything derived from
+   * it are untouched, so every existing consumer -- including the v2 projection
+   * path -- sees exactly what it saw before.
+   */
+  const last10Starts = currentSeasonStarts.slice(0, 10);
   const warnings = [];
   if (duplicateKeys.length) warnings.push("DUPLICATE_GAME_LOG");
   if (!currentSeasonStarts.length) warnings.push("NO_MATCHING_GAME_LOG");
@@ -204,6 +212,7 @@ export function buildPitcherDetails(starts, { pitcherId = null, season = null } 
   if (currentSeasonStarts.some((row) => row.site == null)) warnings.push("MISSING_SITE");
   return {
     recentStarts,
+    last10Starts,
     recentSummary: buildPitcherLastFiveSummary(recentStarts),
     venueSplits: {
       home: buildPitcherVenueSplit("home", currentSeasonStarts),
@@ -212,6 +221,9 @@ export function buildPitcherDetails(starts, { pitcherId = null, season = null } 
     diagnostics: {
       recentStartsRequested: 5,
       recentStartsFound: recentStarts.length,
+      last10StartsRequested: 10,
+      last10StartsFound: last10Starts.length,
+      seasonStartsFound: currentSeasonStarts.length,
       rowsWithHitsAllowed: recentStarts.filter((row) => row.hitsAllowed != null).length,
       rowsWithWalksAllowed: recentStarts.filter((row) => row.walksAllowed != null).length,
       rowsWithPitchCount: recentStarts.filter((row) => row.pitchCount != null).length,
@@ -303,6 +315,8 @@ export function buildStrikeoutPropDetail({
     gameDate: slateDate ?? null,
     pitcherLastFiveStarts: pitcherDetails.recentStarts,
     pitcherRecentStarts: pitcherDetails.recentStarts,
+    /** v3 workload input. Additive: nothing else reads this field. */
+    pitcherLast10Starts: pitcherDetails.last10Starts,
     pitcherLastFiveSummary: pitcherDetails.recentSummary,
     pitcherVenueSplits: pitcherDetails.venueSplits,
     opponentLastFiveGames: normalizedOpponentLastFiveGames,
