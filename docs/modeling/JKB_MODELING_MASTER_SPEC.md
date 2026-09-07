@@ -94,6 +94,8 @@ WU4B consumes the WU4A pool for the receiving VOLUME leg only. Per team-game the
 
 ### WU1 production archive implementation
 
+WU6B.1 adds [weekly fantasy projection capture](FANTASY_PROJECTION_ARCHIVE.md) under the same NFL archive root and shared persistence primitives. Its separate evidence schema retains unresolved and late observations; existing WU1 IDs and WU2/WU3 grading remain unchanged. It freezes published JKB Full PPR values without changing projection/scoring methodology or scheduling.
+
 Forward production records use `jkb-football-prediction-v1` and partition under `data/nfl/predictions/<season>/<week>/<model-name>.jsonl`. Shared source and fitted-model manifests are content-addressed under the adjacent `manifests/` directories. `scripts/lib/nfl-production-prediction-archive.ts` is the only writer/validator; generators do not implement local append rules. Material-state SHA-256 identities make exact reruns idempotent and preserve changed same-game/player states. Archive persistence is fail-closed before live artifact replacement. See [Prediction Archive Schema](PREDICTION_ARCHIVE_SCHEMA.md) for the exact identity, manifest, market-cutoff, and storage contracts.
 
 The two production workflows persist only regex-validated WU1 partition and manifest filenames alongside their existing live artifacts. They retain the shared generated-data concurrency lock and established commit/rebase/push retry behavior; an unexpected path under the archive root fails closed instead of being staged.

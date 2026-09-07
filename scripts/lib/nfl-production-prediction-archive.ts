@@ -256,7 +256,7 @@ export function finalizePredictionSnapshot(draft: PredictionSnapshotDraft): Pred
   return record;
 }
 
-function atomicWrite(path: string, text: string): void {
+export function atomicWrite(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
   const temporary = `${path}.${process.pid}.tmp`;
   try {
@@ -266,6 +266,40 @@ function atomicWrite(path: string, text: string): void {
     if (existsSync(temporary)) unlinkSync(temporary);
     throw error;
   }
+}
+
+/** Shared immutable event persistence for archive extensions. First observation wins. */
+export function appendArchiveEvents<T>(options: {
+  path: string; records: readonly T[]; id: (record: T) => string;
+  state: (record: T) => JsonValue; validate: (record: T) => void; dryRun?: boolean;
+}): { records: T[]; appended: number; duplicates: number } {
+  const existing = existsSync(options.path)
+    ? readFileSync(options.path, "utf8").split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line) as T) : [];
+  [...existing, ...options.records].forEach(options.validate);
+  const byId = new Map(existing.map(row => [options.id(row), row]));
+  if (byId.size !== existing.length) throw new Error("Duplicate IDs in archive");
+  const additions: T[] = [];
+  let duplicates = 0;
+  for (const record of options.records) {
+    const previous = byId.get(options.id(record));
+    if (previous) {
+      if (canonicalJson(options.state(previous)) !== canonicalJson(options.state(record))) throw new Error("Archive event ID collision");
+      duplicates++;
+    } else {
+      byId.set(options.id(record), record);
+      additions.push(record);
+    }
+  }
+  const records = [...existing, ...additions];
+  if (additions.length && !options.dryRun) atomicWrite(options.path, records.map(row => canonicalJson(row as JsonValue)).join("\n") + "\n");
+  return { records, appended: additions.length, duplicates };
+}
+
+/** Content-addressed manifests are never replaced, even on retries. */
+export function writeArchiveManifest(path: string, value: JsonValue, dryRun = false): void {
+  if (existsSync(path)) {
+    if (canonicalJson(JSON.parse(readFileSync(path, "utf8"))) !== canonicalJson(value)) throw new Error(`Archive manifest collision: ${path}`);
+  } else if (!dryRun) atomicWrite(path, canonicalJson(value) + "\n");
 }
 
 function safeModelFileName(modelName: string): string {
@@ -303,26 +337,11 @@ export function archiveProductionPredictions(options: {
   let duplicates = 0;
   const files: string[] = [];
   for (const [path, incoming] of grouped) {
-    const existing = existsSync(path) ? readFileSync(path, "utf8").split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as PredictionSnapshotV1) : [];
-    existing.forEach(validatePredictionSnapshot);
-    const byId = new Map(existing.map((record) => [record.prediction_id, record]));
-    const additions: PredictionSnapshotV1[] = [];
-    for (const record of incoming) {
-      const previous = byId.get(record.prediction_id);
-      if (previous) {
-        if (canonicalJson(identityState(previous)) !== canonicalJson(identityState(record))) throw new Error(`prediction_id collision for ${record.prediction_id}`);
-        duplicates += 1;
-        continue;
-      }
-      byId.set(record.prediction_id, record);
-      additions.push(record);
-    }
-    if (additions.length > 0) {
-      const all = [...existing, ...additions];
-      atomicWrite(path, `${all.map((record) => canonicalJson(record as unknown as JsonValue)).join("\n")}\n`);
-      appended += additions.length;
-      files.push(path);
-    }
+    const write = appendArchiveEvents<PredictionSnapshotV1>({ path, records: incoming, id: record => record.prediction_id,
+      state: identityState, validate: validatePredictionSnapshot });
+    appended += write.appended;
+    duplicates += write.duplicates;
+    if (write.appended) files.push(path);
   }
   return { appended, duplicates, files };
 }
