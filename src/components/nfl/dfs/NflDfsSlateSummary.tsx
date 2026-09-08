@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { DfsEnrichedSlateAnalysis } from "@/lib/nfl/dfs/slateAnalyzer";
-import { NFL_CLASSIC_DST_SCORING, NFL_CLASSIC_OFFENSIVE_SCORING, NFL_CLASSIC_ROSTER, NFL_CLASSIC_SALARY_CAP } from "@/lib/nfl/dfs/nflClassicRules";
+import { NFL_CLASSIC_DST_SCORING, NFL_CLASSIC_OFFENSIVE_SCORING, NFL_CLASSIC_ROSTER, NFL_CLASSIC_RULES, NFL_CLASSIC_SALARY_CAP } from "@/lib/nfl/dfs/nflClassicRules";
 import { FULL_PPR_SCORING } from "@/lib/fantasy/weekly/scoring";
 import { DFS_PROJECTION_SOURCE } from "@/lib/nfl/dfs/slateAnalyzer";
 import { formatDfsPercent, formatDfsTimestamp } from "@/lib/nfl/dfs/presentation";
@@ -121,9 +121,10 @@ export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSla
               <strong className="font-bold text-slate-900">DST scoring:</strong> sack +{NFL_CLASSIC_DST_SCORING.sack} &middot; INT +{NFL_CLASSIC_DST_SCORING.interception} &middot;
               {" "}fumble rec +{NFL_CLASSIC_DST_SCORING.fumbleRecovery} &middot; safety +{NFL_CLASSIC_DST_SCORING.safety} &middot; TD +6, points-allowed tiers apply.
             </p>
-            {NFL_CLASSIC_SALARY_CAP == null && (
-              <p className="italic text-slate-500">Salary cap is not shown -- no verified value is available.</p>
-            )}
+            <p>
+              <strong className="font-bold text-slate-900">Salary cap:</strong> ${NFL_CLASSIC_SALARY_CAP.toLocaleString("en-US")}{" "}
+              <span className="text-slate-500">({NFL_CLASSIC_RULES.salaryCapSource})</span>
+            </p>
           </div>
         )}
       </div>
@@ -166,7 +167,7 @@ export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSla
               </table>
             </div>
             <p className="text-slate-500">
-              DraftKings also awards its own DST points; JKB publishes no DST projection, so DST rows show DraftKings context only.
+              DraftKings also awards its own DST points. JKB publishes no DST fantasy-point projection; DST rows show a separate matchup composite with component coverage.
             </p>
           </div>
         )}

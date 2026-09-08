@@ -10,6 +10,7 @@ const mockResearch = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks/useWeeklyFantasyProjectionArtifact", () => ({ useWeeklyFantasyProjectionArtifact: mockProjection }));
 vi.mock("@/hooks/useWeeklyFantasyResearchArtifact", () => ({ useWeeklyFantasyResearchArtifact: mockResearch }));
+vi.mock("@/hooks/useDfsLineupContext", () => ({ useDfsLineupContext: () => null }));
 vi.mock("@/hooks/useNflSeasonData", () => ({
   useNflSeasonData: () => ({
     loading: false,
@@ -79,6 +80,8 @@ describe("NFLDfsContestAnalyzer page", () => {
 
     await waitFor(() => expect(screen.getByText(/JKB Week 1 \(2026\)/)).toBeInTheDocument());
     expect(screen.getByText("Derek Sample")).toBeInTheDocument();
-    expect(screen.getByText(/JKB Full PPR|input as of/i)).toBeInTheDocument();
+    // The generated-lineup methodology also names the JKB Full PPR authority,
+    // so this provenance assertion is no longer unique across the page.
+    expect(screen.getAllByText(/JKB Full PPR|input as of/i).length).toBeGreaterThan(0);
   });
 });

@@ -42,12 +42,13 @@ describe("NflDfsSlateSummary", () => {
     expect(screen.getByText(/input as of/i)).toBeInTheDocument();
   });
 
-  it("shows the roster structure and scoring provenance under Contest Rules without a salary cap", () => {
+  it("shows the roster structure, scoring provenance and the verified salary cap under Contest Rules", () => {
     render(<NflDfsSlateSummary analysis={buildAnalysis()} season={2026} week={1} />);
     fireEvent.click(screen.getByText("Contest Rules -- NFL Classic"));
     expect(screen.getByText(/2 RB/)).toBeInTheDocument();
     expect(screen.getByText(/Full PPR/)).toBeInTheDocument();
-    expect(screen.getByText(/salary cap is not shown/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/\$50,000/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Official DraftKings NFL rules/i)).toBeInTheDocument();
   });
 
   it("has a compact, collapsed-by-default DK-vs-JKB scoring disclosure that explains the key differences", () => {

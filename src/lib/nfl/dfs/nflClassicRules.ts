@@ -1,14 +1,17 @@
-// NFL Classic lineup/scoring rules — informational metadata only.
+// NFL Classic lineup/scoring rules -- informational metadata only.
 // This contract does not calculate player projections, points, or value. It
-// exists so the future DFS analyzer has a single, versioned source of truth
-// for the rules a user is drafting against.
+// exists so the DFS analyzer and the WU8 lineup optimizer have a single,
+// versioned source of truth for the rules a user is drafting against.
 //
-// The DraftKings salary-cap dollar amount is intentionally omitted: the
-// source screenshots this contract was built from do not prove a cap value,
-// and no repository evidence was found for one. Do not hardcode $50,000 or
-// any other figure here without that evidence.
+// v2 adds the DraftKings NFL Classic salary cap. The v1 header refused to
+// encode a cap because the original screenshots did not prove one. That
+// evidence gap was closed by a dedicated salary-cap audit against the
+// official DraftKings NFL rules; see NFL_CLASSIC_SALARY_CAP_SOURCE and
+// docs/features/nfl-dfs-lineup-intelligence.md. Consumers -- including the
+// optimizer -- MUST read the cap from this contract and must never hardcode
+// a cap value of their own.
 
-export const NFL_CLASSIC_RULES_VERSION = "nfl-classic-rules-v1" as const;
+export const NFL_CLASSIC_RULES_VERSION = "nfl-classic-rules-v2" as const;
 
 export const NFL_CLASSIC_RULES_SOURCE = "User-supplied DraftKings NFL Classic lineup/scoring rules; informational only" as const;
 
@@ -78,10 +81,16 @@ export const NFL_CLASSIC_DST_SCORING = {
 } as const;
 
 /**
- * Intentionally unknown. The supplied source material does not prove a
- * salary-cap dollar amount, so none is encoded here. See file header.
+ * Verified DraftKings NFL Classic salary cap, in whole dollars.
+ *
+ * Encoded only because a dedicated audit confirmed the figure against the
+ * official DraftKings NFL rules. Do not change this value, or add a second
+ * cap constant elsewhere, without re-running that verification.
  */
-export const NFL_CLASSIC_SALARY_CAP = null;
+export const NFL_CLASSIC_SALARY_CAP = 50_000 as const;
+
+export const NFL_CLASSIC_SALARY_CAP_SOURCE =
+  "Official DraftKings NFL rules (Classic salary-cap contests, $50,000 cap), confirmed by the WU8 salary-cap audit on 2026-09-07" as const;
 
 export const NFL_CLASSIC_RULES = {
   version: NFL_CLASSIC_RULES_VERSION,
@@ -90,6 +99,7 @@ export const NFL_CLASSIC_RULES = {
   offensiveScoring: NFL_CLASSIC_OFFENSIVE_SCORING,
   dstScoring: NFL_CLASSIC_DST_SCORING,
   salaryCap: NFL_CLASSIC_SALARY_CAP,
+  salaryCapSource: NFL_CLASSIC_SALARY_CAP_SOURCE,
 } as const;
 
 export type NflClassicRules = typeof NFL_CLASSIC_RULES;

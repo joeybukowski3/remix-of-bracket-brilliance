@@ -1,5 +1,7 @@
 # Prediction Archive Schema
 
+WU6B.1 extends this framework with [Fantasy Projection Archive](FANTASY_PROJECTION_ARCHIVE.md): shared persistence/source manifests, a separate immutable evidence schema, observation runs and player/game prekickoff selections. Rejected/late fantasy evidence does not weaken WU1 production validation below.
+
 Status: implemented for forward production spread, passing, rushing, and receiving predictions in Work Unit 1, with append-only outcome resolution implemented in Work Unit 2, automated 2026 postgame refresh/persistence implemented in WU2.5, and the deterministic evaluation materializer implemented in Work Unit 3 (2026-09-02, see [Evaluation Dataset Schema](EVALUATION_DATASET_SCHEMA.md)). WU4A (2026-09-02) adds a backwards-compatible `team_opportunity` prediction type (one row per team per game: projected plays, dropback rate, pass attempts, rush attempts). WU4C.1 (2026-09-02, operational) wires `team_opportunity` through WU2 outcome resolution, WU3 evaluation materialization, and the scheduled production workflows -- see below. The NFL total model (2026-09-04) adds a backwards-compatible `team_total` prediction type (one row per team per game: projected team points) additively wired the same way -- see "`team_total` outcome resolution and evaluation" below.
 
 ### `team_total` outcome resolution and evaluation (NFL projected game total, 2026-09-04)

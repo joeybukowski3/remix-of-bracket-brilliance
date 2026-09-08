@@ -1,5 +1,29 @@
 # JKB Football Modeling Master Specification
 
+WU6C adds [NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md)
+as an additive downstream consumer: versioned offensive optimizer eligibility
+and a separate weighted DST matchup composite. Canonical fantasy projections
+and all DFS rank/value populations remain unchanged. The linked contract owns
+thresholds, source freshness, role/usage limitations, DST weights, missing-data
+coverage, and future historical calibration. No optimizer, reviewer, model
+formula, prediction archive or workflow changes are part of WU6C.
+
+WU8 adds generated lineups on top of that layer: an exact, deterministic,
+browser-local lineup optimizer plus nfl-dfs-lineup-objective-v1, the three
+preset-lineup objectives. It is additive and downstream only. Canonical fantasy
+projections, optimizer-eligibility policy, DFS rank/value populations, the DST
+matchup composite and the DraftKings parser are all unchanged, and every
+uploaded player remains visible on the board. The objective weights are
+transparent product heuristics for selection, explicitly **not** calibrated DFS
+expected-value coefficients; no lineup is asserted to be EV-optimal, and no
+historical score-to-outcome calibration is claimed. The canonical NFL Classic
+rules contract moves to nfl-classic-rules-v2, adding the verified $50,000
+DraftKings salary cap with its source; the optimizer consumes the cap, roster
+shape and minimum-distinct-games rule from that contract. No model formula,
+prediction archive or workflow changes are part of WU8. The linked contract owns
+weights, feature definitions, normalization, missing-data coverage,
+tie-breaking, the double-counting audit and the future calibration plan.
+
 Status: initial governing specification, reconstructed from repository state at `2b2b2b56d4d233816f3b2f5398bfe99505b5ee26` on 2026-09-02.
 
 This document is the required entry point for work on JKB NFL spreads, totals, passing, rushing, receiving, prediction archives, market comparison, outcome resolution, features, evaluation, or model versions. Detailed contracts live in:
@@ -24,6 +48,15 @@ JKB is building one football modeling platform for game spreads, game totals, pa
 The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.
 
 The distinct `2026 Blended` lens composes that projected-stat contract with observed 2026 full-season values at runtime. Comparison policy `nfl-comparison-blend-v1` uses each team's final REG results count: projection weights 100/80/60/40/20/0 percent at 0/1/2/3/4/5+ games. This is a configurable initial comparison policy, not a backtested model conclusion. Required observed game IDs must exactly match that team's final 2026 results; missing required inputs fail closed. Raw values are blended before competition ranking over available teams. Current Power Rating is explicitly model-managed and bypasses this policy, retaining its existing six-game fade and canonical rank. Explicit `2026 Season` and `2025 Season` choices contain observed statistics only; existing Season/historical-blend and Last 5 policies are retained unchanged. See the linked comparison contract for precision, source-freshness limitations and future out-of-sample validation requirements.
+
+WU6A.1 historical DFS context is a comparison-only data extension, documented in
+[NFL DFS historical context](../features/nfl-dfs-history.md). It reuses the
+trailing-average and historical-line authorities, adds a distinct individual
+appearance cohort, and labels its source timing as event-time reconstruction.
+It does not change model features, projections, prediction archives or scoring.
+
+WU6A.2 adds static index/position delivery and DFS historical presentation only;
+the same linked feature document owns its schemas, lazy loading and sample labels.
 
 - Production predictions **MUST** have an unambiguous UTC prediction timestamp, model name and model version.
 - Archived production predictions **MUST NOT** be retroactively overwritten. Corrections create a new snapshot or an explicit correction event linked to the original.
@@ -84,6 +117,8 @@ WU4B consumes the WU4A pool for the receiving VOLUME leg only. Per team-game the
 **Rushing** WU4B (RB + WR-TE pool + share allocation, plus an S5A calibration for the demonstrated dominant-RB1 under-projection and rookie/no-history over-projection biases) is validated on the same folds but **not promoted**: whether a team-changed player's current sourced depth rank should outweigh their old-team usage share cannot be settled on historical folds, because pre-2026 depth rank is itself usage-derived. It awaits forward 2026 evidence. QB designed rushing stays on v1 because WU4A's rush pool excludes scrambles (~40-50% of a mobile QB's rush volume).
 
 ### WU1 production archive implementation
+
+WU6B.1 adds [weekly fantasy projection capture](FANTASY_PROJECTION_ARCHIVE.md) under the same NFL archive root and shared persistence primitives. Its separate evidence schema retains unresolved and late observations; existing WU1 IDs and WU2/WU3 grading remain unchanged. It freezes published JKB Full PPR values without changing projection/scoring methodology or scheduling.
 
 Forward production records use `jkb-football-prediction-v1` and partition under `data/nfl/predictions/<season>/<week>/<model-name>.jsonl`. Shared source and fitted-model manifests are content-addressed under the adjacent `manifests/` directories. `scripts/lib/nfl-production-prediction-archive.ts` is the only writer/validator; generators do not implement local append rules. Material-state SHA-256 identities make exact reruns idempotent and preserve changed same-game/player states. Archive persistence is fail-closed before live artifact replacement. See [Prediction Archive Schema](PREDICTION_ARCHIVE_SCHEMA.md) for the exact identity, manifest, market-cutoff, and storage contracts.
 

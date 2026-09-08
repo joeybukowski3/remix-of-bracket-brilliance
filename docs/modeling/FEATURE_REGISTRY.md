@@ -1,8 +1,49 @@
 # Football Feature Registry
 
+## WU6C DFS Downstream Policies
+
+[NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md) owns
+`nfl-dfs-optimizer-eligibility-v1` and `nfl-dfs-dst-matchup-v1`. Eligibility combines
+published fantasy points, fresh sourced roles, production carries/targets and
+current availability. DST combines opponent points (35%), canonical OFF (25%),
+defensive pass-rush matchup (20%), and historical DST PPG (20%, unavailable), with
+explicit coverage and slate-local normalization. These are downstream product
+policies, not new canonical fantasy/yardage model features or calibrated point
+projections. The linked contract owns thresholds, timing and fallback rules.
+
+## WU8 DFS Lineup Objective Policy
+
+[NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md) also owns
+nfl-dfs-lineup-objective-v1, the three preset-lineup objectives (Ceiling, Floor,
+Balanced JKB). Each is a hand-chosen weighting of existing published values --
+JKB projected points, matchup edges (EPA/success/trenches), market implied team
+total, explosive-play evidence, projected usage plus role certainty, prior
+per-game workload, the DraftKings Avg PPG benchmark and salary efficiency -- each
+normalized to a within-position (or across-team) midrank percentile. DST
+contributes the WU6C DST matchup percentile only; no DST fantasy projection is
+created. These are downstream product heuristics for lineup selection, **not**
+calibrated DFS expected-value coefficients and not new canonical model features.
+No projection, rank or eligibility value is modified. Opponent fantasy points
+allowed is deliberately excluded from the matchup term because it is already
+inside the canonical projection; the implied-team-total overlap is retained as
+documented deliberate emphasis. The linked contract owns exact weights, feature
+definitions, the 70% minimum coverage rule, tie-breaking and limitations. The
+canonical NFL Classic rules contract is versioned nfl-classic-rules-v2 with the
+verified $50,000 salary cap and its source.
+
 Status values: **production input**, **research/diagnostic**, **eligibility/provenance**, **comparison only**, or **available unused**. “Window” describes the implemented source window; player encoders generally coalesce `seasonPrior -> priorSeason -> train mean`, while snapshots also expose `last3`.
 
 ## Implemented load-bearing features
+
+WU6A.1 adds comparison-only historical yardage context, not a model input:
+entering-game trailing-ten recorded-player averages and aggregate defensive
+positional allowance, with exact kickoff cutoffs and reference sample sizes.
+See [NFL DFS historical context](../features/nfl-dfs-history.md) for cohort,
+missing-data and reconstructed-source timing limitations. Canonical weekly FPA
+is passed through unchanged; no scoring, projection or rank formula changes.
+WU6A.2 exposes these comparison-only fields on DFS with a small static index and
+lazy position detail; it introduces no new load-bearing model features. Transport
+and presentation contracts are in the same historical-context feature document.
 
 | Feature | Definition | Source | Availability timing | Window/transformation | Models | Leakage risk | Status/notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -1,5 +1,7 @@
 # Fantasy weekly projections & rankings
 
+WU6B.1 adds [immutable projection capture](../modeling/FANTASY_PROJECTION_ARCHIVE.md) of this authority's published values. The manual archive command preserves source timestamps, resolves canonical kickoffs and derives pregame selections; no formula, role, ranking, scoring or scheduling change.
+
 CURRENT methodology authority for the JoeKnowsBall **weekly** fantasy football
 system: the weekly point projection, the weekly ordinal ranking, and the research
 context shown beside them. Subject to the authority hierarchy in

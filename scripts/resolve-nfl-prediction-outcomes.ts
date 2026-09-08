@@ -67,7 +67,8 @@ export function loadArchivedPredictions(root: string, season: number | null, wee
     for (const weekName of weekNames) {
       const weekDir = join(seasonDir, weekName);
       if (!existsSync(weekDir)) continue;
-      for (const file of readdirSync(weekDir).filter((name) => name.endsWith(".jsonl")).sort()) {
+      // Fantasy capture events include unresolved/postkickoff evidence; WU6B.3 owns their outcomes.
+      for (const file of readdirSync(weekDir).filter((name) => name.endsWith(".jsonl") && name !== "jkb-weekly-fantasy.jsonl").sort()) {
         for (const line of readFileSync(join(weekDir, file), "utf8").split(/\r?\n/).filter(Boolean)) {
           const record = JSON.parse(line) as PredictionSnapshotV1;
           validatePredictionSnapshot(record);
