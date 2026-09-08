@@ -1,10 +1,10 @@
 {
   "date": "2026-09-08",
-  "generatedAt": "2026-09-08T17:59:01.517Z",
+  "generatedAt": "2026-09-08T18:39:29.083Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features three hitter-friendly parks with elevated park factors (Citizens Bank 1.17, Dodger Stadium 1.1, Camden Yards 1.1) and favorable lefty matchups for Ohtani against Lodolo. Painter's debut for PHI and Kremer's fly-ball tendencies create additional power spots in PHI and DET, while warm weather and short fences in BAL amplify fly-ball outcomes.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over recent HR form, elevating Ohtani to the top spot despite zero last-7 homers due to elite underlying metrics and a 79.3 opposing pitcher HR rate."
+    "slateOverview": "Dodger Stadium (1.1) and Citizens Bank Park (1.17) are the two strongest HR environments on the slate, with Nick Lodolo and Andrew Painter both allowing elevated HR/FB rates to opposing lineups. Warm, dry conditions in LA and Philly should amplify fly-ball carry, while the rest of the slate plays in neutral or pitcher-friendly parks.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability, which is why Ohtani and Alvarez sit at the top despite modest recent power numbers."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
         "HH=51.5%"
       ],
       "bullets": [
-        "barrel=15.8%",
+        "hrScore=72.5",
         "park=1.1"
       ],
       "hrOddsYes": "+300",
@@ -37,7 +37,7 @@
         "HH=53.1%"
       ],
       "bullets": [
-        "barrel=16.1%",
+        "hrScore=70.9",
         "park=1.17"
       ],
       "hrOddsYes": "+260",
@@ -56,11 +56,11 @@
         "HH=57%"
       ],
       "bullets": [
-        "HH=57%",
+        "hrScore=66.6",
         "park=1.1"
       ],
-      "hrOddsYes": "+288",
-      "marketImpliedProbability": 0.25773195876288657,
+      "hrOddsYes": "+291",
+      "marketImpliedProbability": 0.2557544757033248,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -97,8 +97,8 @@
         "HR score 62.4 (#5)",
         "Pitcher HR VS 48.4 at park 1.03"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -115,7 +115,7 @@
         "HH=47.9%"
       ],
       "bullets": [
-        "barrel=15.3%",
+        "hrScore=64.3",
         "park=0.95"
       ],
       "hrOddsYes": "+400",
@@ -134,11 +134,11 @@
         "HH=50.6%"
       ],
       "bullets": [
-        "barrel=12.9%",
+        "hrScore=62.4",
         "park=1.03"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -153,7 +153,7 @@
         "HH=47.3%"
       ],
       "bullets": [
-        "barrel=13.7%",
+        "hrScore=62.3",
         "park=0.88"
       ],
       "hrOddsYes": "+375",
@@ -212,7 +212,7 @@
         "HH=46.2%"
       ],
       "bullets": [
-        "barrel=13.1%",
+        "hrScore=62.1",
         "park=1.1"
       ],
       "hrOddsYes": "+750",
@@ -231,7 +231,7 @@
         "HH=50.2%"
       ],
       "bullets": [
-        "barrel=17.2%",
+        "hrScore=62",
         "park=1.17"
       ],
       "hrOddsYes": "+248",
