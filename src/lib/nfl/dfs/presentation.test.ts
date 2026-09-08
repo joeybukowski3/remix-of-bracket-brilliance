@@ -1,5 +1,13 @@
+import { historyFixture } from "./__fixtures__/historyFactory";
+import { buildMatchupEdges, buildMetric, buildResearchContext } from "./__fixtures__/researchFactory";
+import { selectFantasyMatchupEdges, type NflOffenseMatchupEdges } from "@/lib/nfl/matchupEdges";
+import { buildDstRow } from "./optimizer/__fixtures__/optimizerRowFactory";
 import { describe, expect, it } from "vitest";
 import {
+  buildDfsDstDisplayEdges,
+  dfsMatchupValue,
+  dfsSortValue,
+  type DfsSortKey,
   describeDfsDiagnostic,
   filterDfsRows,
   formatDfsPointsPer1k,
@@ -213,4 +221,68 @@ describe("Rank Diff sign semantics", () => {
     ];
     expect(sortDfsRows(rows, "rankDiff").map((r) => r.dkId)).toEqual(["b", "c", "a"]);
   });
+});
+
+
+describe("new analytical sorting and matchup presentation", () => {
+  const lowEdges = buildMatchupEdges();
+  lowEdges.epa.rankDifference = -5; lowEdges.success.rankDifference = -9; lowEdges.trenches.rankDifference = -3;
+  const highEdges = buildMatchupEdges();
+  highEdges.epa.rankDifference = 5; highEdges.success.rankDifference = 9; highEdges.trenches.rankDifference = 3;
+  const low = row({ dkId: "lo", playerName: "Alpha", position: "QB", team: "ari", jkbWeeklyPositionRank: 1,
+    research: { status: "available", matchupGrade: null, matchupEdges: lowEdges, context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 10, rank: 2 }), opponentFpaLast5: buildMetric({ value: 30 }) }) } });
+  const high = row({ dkId: "hi", playerName: "Zulu", position: "QB", team: "wsh", jkbWeeklyPositionRank: 9,
+    research: { status: "available", matchupGrade: null, matchupEdges: highEdges, context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 30, rank: 5 }), opponentFpaLast5: buildMetric({ value: 10 }) }) } });
+  const missing = row({ dkId: "na", playerName: "Missing", position: "QB", jkbWeeklyPositionRank: null });
+  it.each(["weeklyRank", "fpaSeason", "fpaLast5", "epa", "success", "trenches", "matchup"] as DfsSortKey[])("sorts %s in both directions with missing last", key => {
+    const expected = Number(dfsSortValue(low, key)) < Number(dfsSortValue(high, key)) ? [low, high] : [high, low];
+    expect(sortDfsRows([missing, high, low], key, "asc")).toEqual([...expected, missing]);
+    expect(sortDfsRows([missing, high, low], key, "desc")).toEqual([...expected].reverse().concat(missing));
+  });
+  it.each(["player", "teamOpp"] as DfsSortKey[])("sorts %s alphabetically", key => {
+    expect(sortDfsRows([high, low], key, "asc")).toEqual([low, high]);
+    expect(sortDfsRows([high, low], key, "desc")).toEqual([high, low]);
+  });
+  it.each(["QB", "RB", "WR", "TE"] as const)("preserves the canonical %s trench selection", position => {
+    const edges: NflOffenseMatchupEdges = { passProtectionEdge: highEdges.trenches, runBlockingEdge: lowEdges.trenches, passEpaEdge: highEdges.epa, rushEpaEdge: lowEdges.epa, passSuccessEdge: highEdges.success, rushSuccessEdge: lowEdges.success };
+    const selected = selectFantasyMatchupEdges(position, edges);
+    const player = { ...low, position, research: { ...low.research!, matchupEdges: selected } };
+    expect(dfsMatchupValue(player, "trenches")).toBe(position === "RB" ? -3 : 3);
+    expect(dfsMatchupValue(player, "epa")).toBe(position === "RB" ? -5 : 5);
+  });
+  it("joins DST only to the exact opponent passing pair and rejects conflicting copies", () => {
+    const dst = buildDstRow({ dkId: "d", team: "no", gameKey: "g", salary: 3000, percentile: 70 });
+    dst.opponent = "DET";
+    dst.team = "NO";
+    const edges = buildMatchupEdges();
+    for (const key of ["epa", "success", "trenches"] as const) {
+      edges[key] = { ...edges[key], rankDifference: 7, offenseRank: 3, defenseRank: 10,
+        offense: { team: "det", rank: 3, value: 1, formattedValue: "1", label: "Pass offense" },
+        defense: { team: "no", rank: 10, value: 1, formattedValue: "1", label: "Pass defense" } };
+    }
+    const joined = buildDfsDstDisplayEdges([dst], [{ matchupEdges: edges }, { matchupEdges: edges }]);
+    expect(dfsMatchupValue(dst, "epa", { dstEdges: joined })).toBe(-7);
+    expect(buildDfsDstDisplayEdges([{ ...dst, opponent: "kc" }], [{ matchupEdges: edges }]).size).toBe(0);
+    expect(buildDfsDstDisplayEdges([dst], [{ matchupEdges: { ...edges, mode: "rush" } }]).size).toBe(0);
+    expect(buildDfsDstDisplayEdges([dst], [{ matchupEdges: edges }, { matchupEdges: { ...edges, epa: { ...edges.epa, rankDifference: 8 } } }]).size).toBe(0);
+    expect(dfsMatchupValue(dst, "trenches")).toBeNull();
+  });
+  it("sorts DST score and rank separately", () => {
+    const a = buildDstRow({ dkId: "a", team: "no", gameKey: "g", salary: 3000, percentile: 70 });
+    const b = buildDstRow({ dkId: "b", team: "det", gameKey: "g", salary: 3000, percentile: 80 });
+    a.dstMatchup!.dstMatchupRank = 2; b.dstMatchup!.dstMatchupRank = 1;
+    expect(sortDfsRows([a, b], "dstScore", "desc")[0]).toBe(b);
+    expect(sortDfsRows([a, b], "dstRank", "asc")[0]).toBe(b);
+  });
+});
+
+
+it("sorts DEF VS AVG by the same canonical history summary displayed in the board", () => {
+  const { index } = historyFixture();
+  index.defenseDeltas["kc:passing:QB"] = [-10, -20];
+  const a = row({ dkId: "a", playerName: "A", position: "QB", opponent: "det" });
+  const b = row({ dkId: "b", playerName: "B", position: "QB", opponent: "kc" });
+  const missing = row({ dkId: "c", playerName: "C", position: "QB", opponent: "nyg" });
+  expect(sortDfsRows([b, missing, a], "defenseAvg", "desc", { historyIndex: index })).toEqual([a, b, missing]);
+  expect(sortDfsRows([a, missing, b], "defenseAvg", "asc", { historyIndex: index })).toEqual([b, a, missing]);
 });

@@ -78,6 +78,8 @@ describe("NFLDfsContestAnalyzer page", () => {
     const input = screen.getByLabelText(/choose draftkings salary csv/i);
     fireEvent.change(input, { target: { files: [makeFile(MATCHING_CSV)] } });
 
+    await waitFor(() => expect(screen.getByRole("button", { name: /Optimizer Notes/ })).toBeInTheDocument(), { timeout: 5000 });
+    fireEvent.click(screen.getByRole("button", { name: /Optimizer Notes/ }));
     await waitFor(() => expect(screen.getByText(/JKB Week 1 \(2026\)/)).toBeInTheDocument());
     expect(screen.getByText("Derek Sample")).toBeInTheDocument();
     // The generated-lineup methodology also names the JKB Full PPR authority,

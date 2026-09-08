@@ -220,8 +220,11 @@ rejected: the roster has only five position groups and one linear budget, so
 plain DP is exact here, costs no bundle weight, needs no WASM or worker
 bootstrap, and is directly testable against a brute-force oracle. Generation is
 synchronous on the main thread and completes in roughly 100 ms for all three
-strategies on a full ~800-row slate, so no Web Worker is used; a previously
-generated set is discarded whenever the slate or as-of timestamp changes.
+strategies on a full ~800-row slate, so no Web Worker is used. Generated results are snapshots retained across
+background analysis and as-of clock refreshes. A material uploaded-slate change,
+selected season/week change, explicit regeneration, or leaving/reloading the page
+invalidates the previous snapshot. See [DFS UI and stability](nfl-dfs-ui-stability.md)
+for the lifecycle regression and presentation-source mapping.
 
 Constraints enforced: exactly 9 slots (1 QB, 2 RB, 3 WR, 1 TE, 1 FLEX from
 RB/WR/TE, 1 DST); total salary at or under the canonical cap; no duplicate

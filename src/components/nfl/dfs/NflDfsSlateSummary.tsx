@@ -51,6 +51,7 @@ const SCORING_COMPARISON: ReadonlyArray<{ label: string; dk: string; jkb: string
 ];
 
 export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSlateSummaryProps) {
+  const [notesOpen, setNotesOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [scoringOpen, setScoringOpen] = useState(false);
   const { summary, compatibility } = analysis;
@@ -61,7 +62,11 @@ export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSla
   return (
     <section className="space-y-2" aria-label="Slate summary">
       <div className={cn("rounded-lg border px-3 py-2", readiness.className)}>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold">
+        <button type="button" aria-expanded={notesOpen} onClick={() => setNotesOpen(open => !open)} className="flex w-full items-center justify-between gap-2 rounded text-left text-xs font-bold focus-visible:ring-2 focus-visible:ring-sky-500">
+          <span>Optimizer Notes · {readiness.label}</span><ChevronDown aria-hidden className={cn("h-4 w-4", notesOpen && "rotate-180")} />
+        </button>
+        {notesOpen && <>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold">
           <span className="rounded border border-current px-1.5 py-0.5 text-[10px] uppercase tracking-wide">{readiness.label}</span>
           <span>NFL Classic</span>
           <span>{summary.gamesPresent.length} Games</span>
@@ -91,6 +96,7 @@ export default function NflDfsSlateSummary({ analysis, season, week }: NflDfsSla
             ))}
           </ul>
         )}
+        </>}
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white">

@@ -8,6 +8,10 @@
 // should calibrate them once real uploaded-slate data exists. Centralized
 // here specifically so no threshold value is hardcoded inside JSX.
 
+import { normalizeNflTeamAbbr } from "@/lib/nfl/identity/identity";
+import type { DfsHistoryIndex } from "./historyDelivery";
+import { defenseSummary } from "./historyDelivery";
+import type { FantasyMatchupEdges } from "@/lib/nfl/matchupEdges";
 import type { WeeklyHeatTone } from "@/lib/fantasy/weekly/researchPresentation";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
 
@@ -132,12 +136,27 @@ export type DfsBoardView = "VALUE" | "QB" | "RB" | "WR" | "TE" | "DST";
 
 export type DfsDirectionFilter = "all" | "jkb-higher" | "dk-higher" | "agreement";
 
-export type DfsSortKey = "rankDiff" | "proj" | "pts1k" | "salary" | "dkPosRank" | "jkbSlateRank";
+export type DfsSortKey = "player" | "teamOpp" | "rankDiff" | "proj" | "pts1k" | "salary" | "dkPosRank" | "jkbSlateRank"
+  | "weeklyRank" | "matchup" | "fpaSeason" | "fpaLast5" | "epa" | "success" | "trenches" | "defenseAvg" | "dstRank" | "dstScore";
+export type DfsSortDirection = "asc" | "desc";
+export type DfsDisplayContext = { historyIndex?: DfsHistoryIndex | null; dstEdges?: ReadonlyMap<string, FantasyMatchupEdges> };
+
+/** Read the already position-selected research edge. DST reverses the opponent's passing perspective. */
+export function dfsMatchupValue(row: DfsEnrichedAnalyzerRow, key: "epa" | "success" | "trenches", context: DfsDisplayContext = {}): number | null {
+  if (row.kind === "offense") return row.research?.status === "available" ? row.research.matchupEdges?.[key].rankDifference ?? null : null;
+  const value = context.dstEdges?.get(row.dkId)?.[key].rankDifference;
+  return value == null ? null : -value;
+}
+
+export function defaultDfsSortDirection(key: DfsSortKey): DfsSortDirection {
+  return ["player", "teamOpp", "dkPosRank", "jkbSlateRank", "weeklyRank", "dstRank", "matchup"].includes(key) ? "asc" : "desc";
+}
 
 export type DfsTableFilters = {
   view: DfsBoardView;
   search: string;
   availableOnly: boolean;
+  optimizerEligibleOnly?: boolean;
   direction: DfsDirectionFilter;
   sortKey: DfsSortKey;
 };
@@ -158,37 +177,65 @@ function matchesDirection(row: DfsEnrichedAnalyzerRow, direction: DfsDirectionFi
 
 export function filterDfsRows(
   rows: readonly DfsEnrichedAnalyzerRow[],
-  { search, availableOnly, direction }: Pick<DfsTableFilters, "search" | "availableOnly" | "direction">,
+  { search, availableOnly, optimizerEligibleOnly, direction }: Pick<DfsTableFilters, "search" | "availableOnly" | "optimizerEligibleOnly" | "direction">,
 ): DfsEnrichedAnalyzerRow[] {
   const query = search.trim().toLowerCase();
   return rows.filter((row) => {
     if (query && !row.playerName.toLowerCase().includes(query)) return false;
     if (availableOnly && (row.dkStatus === "OUT" || row.dkStatus === "IR")) return false;
+    if (optimizerEligibleOnly && (row.kind === "offense" ? row.optimizerEligibility !== "eligible" : row.dstMatchup?.dstMatchupScore == null)) return false;
     if (!matchesDirection(row, direction)) return false;
     return true;
   });
 }
 
-const SORT_ACCESSORS: Record<DfsSortKey, (row: DfsEnrichedAnalyzerRow) => number | null> = {
-  rankDiff: (row) => row.posRankDiff,
-  proj: (row) => row.projectedFantasyPoints,
-  pts1k: (row) => row.pointsPer1k,
-  salary: (row) => row.salary,
-  dkPosRank: (row) => row.dkPositionSalaryRank,
-  jkbSlateRank: (row) => row.jkbSlatePositionRank,
-};
+export function dfsSortValue(row: DfsEnrichedAnalyzerRow, key: DfsSortKey, context: DfsDisplayContext = {}): number | string | null {
+  const research = row.research?.status === "available" ? row.research : null;
+  switch (key) {
+    case "player": return row.playerName;
+    case "teamOpp": return `${row.team}/${row.opponent ?? ""}`;
+    case "rankDiff": return row.posRankDiff;
+    case "proj": return row.projectedFantasyPoints;
+    case "pts1k": return row.pointsPer1k;
+    case "salary": return row.salary;
+    case "dkPosRank": return row.dkPositionSalaryRank;
+    case "jkbSlateRank": return row.jkbSlatePositionRank;
+    case "weeklyRank": return row.jkbWeeklyPositionRank;
+    case "matchup": return research?.context?.opponentFpaSeason.rank ?? null;
+    case "fpaSeason": return research?.context?.opponentFpaSeason.value ?? null;
+    case "fpaLast5": return research?.context?.opponentFpaLast5.value ?? null;
+    case "epa": case "success": case "trenches": return dfsMatchupValue(row, key, context);
+    case "defenseAvg": return defenseSummary(context.historyIndex ?? null, row).mean;
+    case "dstRank": return row.kind === "dst" ? row.dstMatchup?.dstMatchupRank ?? null : null;
+    case "dstScore": return row.kind === "dst" ? row.dstMatchup?.dstMatchupScore ?? null : null;
+  }
+}
 
-/** Nulls always sort last, regardless of direction. */
-export function sortDfsRows(rows: readonly DfsEnrichedAnalyzerRow[], sortKey: DfsSortKey): DfsEnrichedAnalyzerRow[] {
-  const accessor = SORT_ACCESSORS[sortKey];
-  const ascending = sortKey === "dkPosRank" || sortKey === "jkbSlateRank";
+/** Nulls always sort last; ties retain a deterministic identity order. */
+export function sortDfsRows(rows: readonly DfsEnrichedAnalyzerRow[], sortKey: DfsSortKey, direction = defaultDfsSortDirection(sortKey), context: DfsDisplayContext = {}): DfsEnrichedAnalyzerRow[] {
   return [...rows].sort((a, b) => {
-    const left = accessor(a);
-    const right = accessor(b);
-    if (left == null && right == null) return a.playerName.localeCompare(b.playerName);
+    const left = dfsSortValue(a, sortKey, context);
+    const right = dfsSortValue(b, sortKey, context);
+    if (left == null && right == null) return a.playerName.localeCompare(b.playerName) || a.dkId.localeCompare(b.dkId);
     if (left == null) return 1;
     if (right == null) return -1;
-    const diff = ascending ? left - right : right - left;
-    return diff !== 0 ? diff : a.playerName.localeCompare(b.playerName);
+    const diff = typeof left === "string" && typeof right === "string" ? left.localeCompare(right) : Number(left) - Number(right);
+    return (direction === "asc" ? diff : -diff) || a.playerName.localeCompare(b.playerName) || a.dkId.localeCompare(b.dkId);
   });
+}
+
+/** Exact selected-week team pair; repeated player copies must agree. No cross-week or substitute metric. */
+export function buildDfsDstDisplayEdges(rows: readonly DfsEnrichedAnalyzerRow[], researchRows: readonly { matchupEdges: FantasyMatchupEdges }[]): Map<string, FantasyMatchupEdges> {
+  const result = new Map<string, FantasyMatchupEdges>();
+  for (const row of rows) {
+    if (row.kind !== "dst" || row.identityStatus !== "resolved" || row.identityConflict || !row.canonicalGameId || !row.opponent) continue;
+    const candidates = researchRows.map(entry => entry.matchupEdges).filter(edges => {
+      const components = [edges.epa, edges.success, edges.trenches];
+      return edges.mode === "pass" && components.some(edge => edge.offense && edge.defense)
+        && components.every(edge => (!edge.offense || normalizeNflTeamAbbr(edge.offense.team) === normalizeNflTeamAbbr(row.opponent)) && (!edge.defense || normalizeNflTeamAbbr(edge.defense.team) === normalizeNflTeamAbbr(row.team)));
+    });
+    const signatures = new Set(candidates.map(edges => JSON.stringify(edges)));
+    if (signatures.size === 1) result.set(row.dkId, candidates[0]);
+  }
+  return result;
 }

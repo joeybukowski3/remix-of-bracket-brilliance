@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import NflDfsGeneratedLineups from "./NflDfsGeneratedLineups";
 import { buildDstRow, buildOffensiveRow, type OffensiveFixture } from "@/lib/nfl/dfs/optimizer/__fixtures__/optimizerRowFactory";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
@@ -96,7 +96,7 @@ describe("NflDfsGeneratedLineups", () => {
     renderPanel(slate());
     await generate();
     const dstRow = within(panel()).getByText("DST").closest("tr") as HTMLElement;
-    expect(within(dstRow).getByText(/no JKB proj/i)).toBeInTheDocument();
+    expect(within(dstRow).getAllByText("—")).toHaveLength(2);
   });
 
   it("exposes the v1 weights from policy for every strategy in the methodology disclosure", async () => {
@@ -136,5 +136,78 @@ describe("NflDfsGeneratedLineups", () => {
     expect(await screen.findByText(/could not be built/i)).toBeInTheDocument();
     expect(screen.getByText(/eligible TE candidate/i)).toBeInTheDocument();
     expect(screen.queryByText("RB1")).not.toBeInTheDocument();
+  });
+});
+
+
+afterEach(() => vi.useRealTimers());
+describe("generated lineup snapshot lifecycle", () => {
+  it("survives data arrival and the minute timer cycle, preserving generation values", async () => {
+    vi.useFakeTimers();
+    const original = slate();
+    original.rows[0].jkbWeeklyPositionRank = 3;
+    const { rerender } = render(<NflDfsGeneratedLineups analysis={original} projectionRows={[]} asOf="2026-09-07T23:55:00Z" slateKey="2026/1" />);
+    fireEvent.click(screen.getByRole("button", { name: "Generate Lineups" }));
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(screen.getByRole("tabpanel")).toBeInTheDocument();
+    expect(within(panel()).getByText("QB3")).toBeInTheDocument();
+    await act(async () => vi.advanceTimersByTime(10_000));
+    const refreshed = { rows: original.rows.map(row => row.kind === "offense" ? { ...row, jkbWeeklyPositionRank: 99, optimizerEligibility: "unknown" as const } : row) };
+    rerender(<NflDfsGeneratedLineups analysis={refreshed} projectionRows={[]} asOf="2026-09-07T23:56:00Z" slateKey="2026/1" />);
+    await act(async () => vi.advanceTimersByTime(60_000));
+    expect(screen.getByRole("tabpanel")).toBeInTheDocument();
+    expect(within(panel()).getByText("QB3")).toBeInTheDocument();
+    expect(within(panel()).queryByText("QB99")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate Lineups" }));
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
+    expect(screen.getByText(/could not be built/i)).toBeInTheDocument();
+  });
+
+  it.each(["salary", "week", "removal"])("invalidates on %s change and does not resurrect an old result", async change => {
+    vi.useFakeTimers();
+    const original = slate();
+    const props = { analysis: original, projectionRows: [], asOf: "2026-09-07T23:55:00Z", slateKey: "2026/1" };
+    const { rerender } = render(<NflDfsGeneratedLineups {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Generate Lineups" }));
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(screen.getByRole("tabpanel")).toBeInTheDocument();
+    const changed = change === "removal" ? original.rows.slice(1) : original.rows.map((row, i) => i === 0 && change === "salary" ? { ...row, salary: row.salary + 100 } : row);
+    rerender(<NflDfsGeneratedLineups {...props} analysis={{ rows: changed }} slateKey={change === "week" ? "2026/2" : "2026/1"} />);
+    expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
+    rerender(<NflDfsGeneratedLineups {...props} />);
+    expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
+  });
+
+  it("keeps identical reuploads/reordering, renders canonical logos and sorts weekly ranks", async () => {
+    const original = slate();
+    original.rows[0].team = "nyg";
+    original.rows[0].opponent = "dal";
+    original.rows[0].jkbWeeklyPositionRank = 3;
+    original.rows[1].jkbWeeklyPositionRank = 1;
+    const props = { analysis: original, projectionRows: [], asOf: "2026-09-07T23:55:00Z" };
+    const { rerender } = render(<NflDfsGeneratedLineups {...props} />);
+    await generate();
+    rerender(<NflDfsGeneratedLineups {...props} analysis={{ rows: [...original.rows].reverse() }} />);
+    const roster = within(panel()).getByRole("table", { name: "Generated lineup roster" });
+    const qb = within(roster).getByText("QB3").closest("tr")!;
+    expect(qb.querySelector('[data-team-logo="NYG"] img')).toHaveAttribute("src", expect.stringContaining("NYG"));
+    expect(qb.querySelector('[data-opponent-logo="DAL"] img')).toHaveAttribute("src", expect.stringContaining("dal"));
+    fireEvent.click(within(roster).getByRole("button", { name: "JKB RK" }));
+    expect(within(roster).getByRole("columnheader", { name: "JKB RK" })).toHaveAttribute("aria-sort", "ascending");
+    expect(within(roster).getAllByRole("row")[1]).toHaveTextContent("RB1");
+  });
+
+  it("cancels pending generation on slate replacement and unmount", async () => {
+    vi.useFakeTimers();
+    const props = { analysis: slate(), projectionRows: [], asOf: "2026-09-07T23:55:00Z" };
+    const { rerender, unmount } = render(<NflDfsGeneratedLineups {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Generate Lineups" }));
+    rerender(<NflDfsGeneratedLineups {...props} analysis={{ rows: [] }} />);
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(screen.queryByRole("tabpanel")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Generate Lineups" }));
+    unmount();
+    await act(async () => vi.advanceTimersByTime(1));
   });
 });

@@ -17,11 +17,15 @@ import { WEEKLY_RANKINGS_SEASON } from "@/lib/fantasy/weeklyRankings";
 import { getSeoMeta } from "@/lib/seo";
 import { assessDfsSlateCompatibility } from "@/lib/nfl/dfs/artifactCompatibility";
 import { isDraftKingsOffensiveRow, resolveOffensiveIdentity } from "@/lib/nfl/dfs/identity";
+import { joinWeeklyFantasyResearchRows } from "@/lib/fantasy/weekly/researchJoin";
+import { buildDfsDstDisplayEdges } from "@/lib/nfl/dfs/presentation";
 import { assessDfsResearch } from "@/lib/nfl/dfs/research";
 import { buildDfsSlateAnalysis, enrichDfsSlateAnalysis } from "@/lib/nfl/dfs/slateAnalyzer";
+import type { CanonicalNflTeam } from "@/lib/nfl/standings";
 import type { DraftKingsNflClassicParseResult } from "@/lib/nfl/dfs/contracts";
 import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 
+const EMPTY_TEAMS: CanonicalNflTeam[] = [];
 const EMPTY_PROJECTION_ROWS: readonly WeeklyFantasyProjectionProductionRow[] = [];
 
 export default function NFLDfsContestAnalyzer() {
@@ -31,7 +35,7 @@ export default function NFLDfsContestAnalyzer() {
   const [searchParams, setSearchParams] = useSearchParams();
   const season = useNflSeasonData(WEEKLY_RANKINGS_SEASON);
   const games = season.data?.games;
-  const teams = season.data?.teams ?? [];
+  const teams = season.data?.teams ?? EMPTY_TEAMS;
   const weekSelection = useMemo(() => resolveNflWeekSelection(games ?? [], { search: searchParams }), [games, searchParams]);
   const weeks = weekSelection.availableWeeks;
   const week = weekSelection.week;
@@ -78,6 +82,10 @@ export default function NFLDfsContestAnalyzer() {
     return attachDfsLineupContext(enrichDfsSlateAnalysis(analysis, researchAssessment, compatibility), lineupContext, { season: WEEKLY_RANKINGS_SEASON, week: selectedWeek, asOf: analysisAsOf });
   }, [parseResult, projectionRows, teams, researchArtifact, projectionArtifact, games, selectedWeek, lineupContext, analysisAsOf]);
 
+  const dstEdges = useMemo(() => buildDfsDstDisplayEdges(enrichedAnalysis?.rows ?? [],
+    joinWeeklyFantasyResearchRows(projectionRows, researchArtifact?.season === WEEKLY_RANKINGS_SEASON && researchArtifact.week === selectedWeek ? researchArtifact : null).rows),
+    [enrichedAnalysis, researchArtifact, selectedWeek, projectionRows]);
+
   if (week === null) {
     return (
       <>
@@ -123,8 +131,8 @@ export default function NFLDfsContestAnalyzer() {
       {enrichedAnalysis && (
         <>
           <NflDfsSlateSummary analysis={enrichedAnalysis} season={WEEKLY_RANKINGS_SEASON} week={selectedWeek} />
-          <NflDfsGeneratedLineups analysis={enrichedAnalysis} projectionRows={projectionRows} asOf={analysisAsOf} />
-          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} />
+          <NflDfsGeneratedLineups analysis={enrichedAnalysis} projectionRows={projectionRows} asOf={analysisAsOf} slateKey={`${WEEKLY_RANKINGS_SEASON}/${selectedWeek}`} />
+          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} dstEdges={dstEdges} projectionRows={projectionRows} />
         </>
       )}
     </div>

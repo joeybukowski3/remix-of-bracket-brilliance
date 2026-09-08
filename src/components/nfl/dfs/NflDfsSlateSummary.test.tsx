@@ -26,6 +26,7 @@ function buildAnalysis() {
 describe("NflDfsSlateSummary", () => {
   it("shows game/team/row counts and coverage percentages", () => {
     render(<NflDfsSlateSummary analysis={buildAnalysis()} season={2026} week={1} />);
+    fireEvent.click(screen.getByRole("button", { name: /Optimizer Notes/ }));
     expect(screen.getByText(/1 Games/)).toBeInTheDocument();
     expect(screen.getByText(/1 Teams/)).toBeInTheDocument();
     expect(screen.getByText(/1 Entries/)).toBeInTheDocument();
@@ -34,11 +35,13 @@ describe("NflDfsSlateSummary", () => {
 
   it("shows a READY_WITH_WARNINGS state when research is unavailable", () => {
     render(<NflDfsSlateSummary analysis={buildAnalysis()} season={2026} week={1} />);
-    expect(screen.getByText("Ready with warnings")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ready with warnings/ })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(/input as of/i)).not.toBeInTheDocument();
   });
 
   it("shows generatedAt/inputAsOf timestamps", () => {
     render(<NflDfsSlateSummary analysis={buildAnalysis()} season={2026} week={1} />);
+    fireEvent.click(screen.getByRole("button", { name: /Optimizer Notes/ }));
     expect(screen.getByText(/input as of/i)).toBeInTheDocument();
   });
 
