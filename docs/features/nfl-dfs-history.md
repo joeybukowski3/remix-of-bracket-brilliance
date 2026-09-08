@@ -133,11 +133,14 @@ different index/detail asOf or excluded targets, wrong position/market/lookup
 identity, duplicate row IDs, target/future rows and post-kickoff archived lines.
 It never re-slices a bounded context or substitutes an older week's artifact.
 
-Main table and mobile cards show canonical Season and L5 FPA values/ranks/source
-seasons, plus DEF VS AVG mean and above/valid count. FPA sample sizes and rank
-pools are in tooltips. The shared `summarizeHistoryDeltas` is the only summary
-authority. DST displays N/A for both signals. History availability has no effect
-on projections, ranks, readiness, filters or player usability.
+Desktop and mobile use one compact scrollable table with separate sortable
+FPA SZN and FPA L5 columns, showing canonical values and ranks. Source seasons,
+sample sizes and rank pools are in tooltips. DEF VS AVG displays and sorts the
+existing mean; above/valid counts remain in expanded history. The shared
+`summarizeHistoryDeltas` remains the only summary authority. DST omits these
+offensive-history columns. History availability changes only the historical
+cells and their display sort; it does not change projections, ranks, readiness,
+eligibility or player usability. See [DFS UI/stability](nfl-dfs-ui-stability.md).
 
 Expanded weekly research stays visible above Player Last 10 / Opponent Last 10
 tabs. Player rows show date, opponent, home/away, actual yardage, entering-game

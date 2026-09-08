@@ -1,0 +1,163 @@
+diff --git a/src/components/nfl/dfs/NflDfsGeneratedLineups.tsx b/src/components/nfl/dfs/NflDfsGeneratedLineups.tsx
+index 7ce22732..c3c30788 100644
+--- a/src/components/nfl/dfs/NflDfsGeneratedLineups.tsx
++++ b/src/components/nfl/dfs/NflDfsGeneratedLineups.tsx
+@@ -1,4 +1,8 @@
+-import { Fragment, useState } from "react";
++import { Fragment, useMemo, useState } from "react";
++import { FantasyPlayerIdentity, FantasyOpponentIdentity } from "@/components/fantasy/FantasyTable";
++import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW } from "@/components/ui/dense-table";
++import { DfsHeatLegend, DfsHeatValue, DfsPositionBadge, DfsSortButton } from "./DfsTableCells";
++import { DFS_POSITION_ACCENT, dfsValueStyles, dfsWeeklyRankStyle } from "@/lib/nfl/dfs/tablePresentation";
+ import { ChevronDown } from "lucide-react";
+ import { cn } from "@/lib/utils";
+ import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
+@@ -96,9 +100,21 @@ function PlayerReasoning({ slot }: { slot: GeneratedLineupSlotPlayer }) {
+   );
+ }
+ 
+-function LineupCard({ lineup }: { lineup: GeneratedLineup }) {
++function LineupCard({ lineup, rows, projectionRows }: { lineup: GeneratedLineup; rows: readonly DfsEnrichedAnalyzerRow[]; projectionRows: readonly WeeklyFantasyProjectionProductionRow[] }) {
+   const [expanded, setExpanded] = useState<string | null>(null);
+   const [methodologyOpen, setMethodologyOpen] = useState(false);
++  const [weeklySort, setWeeklySort] = useState<"asc" | "desc" | null>(null);
++  const rowById = useMemo(() => new Map(rows.map(row => [row.dkId, row])), [rows]);
++  const projectionStyles = useMemo(() => dfsValueStyles(rows, row => row.projectedFantasyPoints), [rows]);
++  const benchmarkStyles = useMemo(() => dfsValueStyles(rows, row => row.dkAvgPointsPerGame, true), [rows]);
++  const slots = useMemo(() => weeklySort == null ? lineup.slots : [...lineup.slots].sort((a, b) => {
++    const left = rowById.get(a.dkId)?.jkbWeeklyPositionRank;
++    const right = rowById.get(b.dkId)?.jkbWeeklyPositionRank;
++    if (left == null && right == null) return 0;
++    if (left == null) return 1;
++    if (right == null) return -1;
++    return weeklySort === "asc" ? left - right : right - left;
++  }), [lineup.slots, weeklySort, rowById]);
+ 
+   return (
+     <div role="tabpanel" aria-label={lineup.strategyLabel} className="space-y-3">
+@@ -127,58 +143,39 @@ function LineupCard({ lineup }: { lineup: GeneratedLineup }) {
+         ))}
+       </dl>
+ 
+-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+-        <table className="w-full min-w-[36rem] border-collapse text-left text-[11px]">
+-          <thead>
+-            <tr className="uppercase tracking-wide text-slate-500">
+-              <th scope="col" className="px-3 py-2 font-black">Slot</th>
+-              <th scope="col" className="px-3 py-2 font-black">Player</th>
+-              <th scope="col" className="px-3 py-2 font-black">Matchup</th>
+-              <th scope="col" className="px-3 py-2 text-right font-black">Salary</th>
+-              <th scope="col" className="px-3 py-2 text-right font-black">JKB Proj</th>
+-              <th scope="col" className="px-3 py-2 text-right font-black">DK Avg PPG</th>
+-              <th scope="col" className="px-3 py-2 text-right font-black">Score</th>
+-            </tr>
+-          </thead>
+-          <tbody>
+-            {lineup.slots.map((slot) => (
+-              <Fragment key={slot.dkId}>
+-                <tr className="border-t border-slate-100">
+-                  <td className="px-3 py-2 font-black text-slate-500">{slot.slot}</td>
+-                  <td className="px-3 py-2">
+-                    <button
+-                      type="button"
+-                      onClick={() => setExpanded((current) => (current === slot.dkId ? null : slot.dkId))}
+-                      aria-expanded={expanded === slot.dkId}
+-                      className="text-left font-bold text-slate-900 underline decoration-dotted underline-offset-2"
+-                    >
+-                      {slot.playerName}
+-                    </button>
+-                    <span className="block text-[10px] text-slate-500">
+-                      {slot.team.toUpperCase()} {slot.position}
+-                      {slot.roleContext ? " · " + slot.roleContext.roleClass : ""}
+-                    </span>
+-                  </td>
+-                  <td className="px-3 py-2 text-slate-600">{slot.opponent ? "vs " + slot.opponent.toUpperCase() : "N/A"}</td>
+-                  <td className="px-3 py-2 text-right font-bold tabular-nums text-slate-900">{money(slot.salary)}</td>
+-                  <td className="px-3 py-2 text-right tabular-nums text-slate-900">
+-                    {slot.projectedFantasyPoints == null ? <span className="text-slate-400">no JKB proj</span> : num(slot.projectedFantasyPoints, 2)}
+-                  </td>
+-                  <td className="px-3 py-2 text-right tabular-nums text-slate-600">{num(slot.dkAvgPointsPerGame, 1)}</td>
+-                  <td className="px-3 py-2 text-right font-bold tabular-nums text-slate-900">{num(slot.strategyScore.score, 1)}</td>
+-                </tr>
+-                {expanded === slot.dkId && (
+-                  <tr>
+-                    <td colSpan={7} className="p-0">
+-                      <PlayerReasoning slot={slot} />
+-                    </td>
+-                  </tr>
+-                )}
+-              </Fragment>
+-            ))}
+-          </tbody>
++      <DenseTableScroller label="Generated lineup roster" className="rounded-lg border border-slate-200 bg-white">
++        <table className="w-full min-w-[48rem] border-collapse whitespace-nowrap text-left text-[11px]" aria-label="Generated lineup roster">
++          <thead><tr className={DENSE_TABLE_HEAD_ROW}>
++            {["Slot", "Player", "Matchup", "Salary", "JKB RK", "JKB Proj", "DK Avg PPG", "Score"].map(label => <th key={label} scope="col"
++              aria-sort={label === "JKB RK" ? weeklySort === "asc" ? "ascending" : weeklySort === "desc" ? "descending" : "none" : undefined}
++              className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
++              {label === "JKB RK" ? <DfsSortButton label={label} active={weeklySort != null} direction={weeklySort ?? "asc"} onClick={() => setWeeklySort(current => current === "asc" ? "desc" : "asc")} /> : label}
++            </th>)}
++          </tr></thead>
++          <tbody>{slots.map(slot => {
++            const row = rowById.get(slot.dkId);
++            const position = slot.slot === "FLEX" ? "FLEX" : slot.position;
++            return <Fragment key={slot.dkId}>
++              <tr className={DENSE_TABLE_ROW}>
++                <td className={cn("border-l-2 px-2 py-1.5", DFS_POSITION_ACCENT[position])}><DfsPositionBadge position={position} label={slot.slot} /></td>
++                <td className="px-2 py-1.5"><button type="button" onClick={() => setExpanded(current => current === slot.dkId ? null : slot.dkId)} aria-expanded={expanded === slot.dkId}
++                  className="rounded text-left underline decoration-dotted underline-offset-2 focus-visible:ring-2 focus-visible:ring-sky-500">
++                  <FantasyPlayerIdentity player={slot.playerName} team={slot.team} compact />
++                </button></td>
++                <td className="px-2 py-1.5">{slot.opponent ? <FantasyOpponentIdentity opponent={slot.opponent} homeAway={row?.homeAway ?? "neutral"} compact /> : "—"}</td>
++                <td className="px-2 py-1.5 text-right font-bold tabular-nums">{money(slot.salary)}</td>
++                <td className="px-2 py-1.5 text-right"><DfsHeatValue style={row ? dfsWeeklyRankStyle(row, projectionRows) : undefined}>{row?.jkbWeeklyPositionRank == null ? "—" : `${slot.position}${row.jkbWeeklyPositionRank}`}</DfsHeatValue></td>
++                <td className="px-2 py-1.5 text-right"><DfsHeatValue style={projectionStyles.get(slot.dkId)}>{slot.projectedFantasyPoints == null ? "—" : num(slot.projectedFantasyPoints, 2)}</DfsHeatValue></td>
++                <td className="px-2 py-1.5 text-right"><DfsHeatValue style={benchmarkStyles.get(slot.dkId)}>{slot.dkAvgPointsPerGame == null ? "—" : num(slot.dkAvgPointsPerGame, 1)}</DfsHeatValue></td>
++                <td className="px-2 py-1.5 text-right font-bold tabular-nums" title="Weighted strategy score, not a percentile or fantasy-point projection">{num(slot.strategyScore.score, 1)}</td>
++              </tr>
++              {expanded === slot.dkId && <tr><td colSpan={8} className="whitespace-normal p-0"><PlayerReasoning slot={slot} /></td></tr>}
++            </Fragment>;
++          })}</tbody>
+         </table>
+-      </div>
++      </DenseTableScroller>
++      <DfsHeatLegend />
++      <p className="text-[10px] text-slate-500">Projection and DK benchmark colors compare the uploaded position pool. DK sample window is unspecified; benchmark heat is muted. Score is a weighted heuristic, so it is shown without percentile heat.</p>
+ 
+       <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+         <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">Why this lineup scored well</p>
+@@ -220,11 +217,12 @@ export type NflDfsGeneratedLineupsProps = {
+   analysis: { rows: DfsEnrichedAnalyzerRow[] } | null;
+   projectionRows: readonly WeeklyFantasyProjectionProductionRow[];
+   asOf: string;
++  slateKey?: string;
+ };
+ 
+-export default function NflDfsGeneratedLineups({ analysis, projectionRows, asOf }: NflDfsGeneratedLineupsProps) {
++export default function NflDfsGeneratedLineups({ analysis, projectionRows, asOf, slateKey }: NflDfsGeneratedLineupsProps) {
+   const [active, setActive] = useState<LineupStrategy>("ceiling");
+-  const optimizer = useNflDfsOptimizer({ rows: analysis?.rows ?? null, projectionRows, asOf });
++  const optimizer = useNflDfsOptimizer({ rows: analysis?.rows ?? null, projectionRows, asOf, slateKey });
+ 
+   if (!analysis) return null;
+ 
+@@ -280,7 +278,7 @@ export default function NflDfsGeneratedLineups({ analysis, projectionRows, asOf
+             ))}
+           </div>
+ 
+-          {lineup && <LineupCard lineup={lineup} />}
++          {lineup && optimizer.snapshot && <LineupCard key={`${result.asOf}/${active}`} lineup={lineup} rows={optimizer.snapshot.rows} projectionRows={optimizer.snapshot.projectionRows} />}
+ 
+           {blocked && (
+             <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+@@ -300,8 +298,8 @@ export default function NflDfsGeneratedLineups({ analysis, projectionRows, asOf
+           <p className="text-[10px] text-slate-500">
+             Candidate pool: {result.candidatePool.offenseEligible} optimizer-eligible offensive rows,{" "}
+             {result.candidatePool.dstWithUsableContext} DST with usable matchup context, from{" "}
+-            {result.candidatePool.uploadedRows} uploaded rows. Every uploaded player remains visible on the board above.
+-            Generated in {result.elapsedMs} ms.
++            {result.candidatePool.uploadedRows} uploaded rows. The board below can show every uploaded player.
++            Generated in {result.elapsedMs} ms. Snapshot as of {result.asOf}; regenerate to use refreshed analysis.
+           </p>
+         </>
+       )}

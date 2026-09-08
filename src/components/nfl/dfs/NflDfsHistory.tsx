@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { DenseTableScroller } from "@/components/ui/dense-table";
+import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller } from "@/components/ui/dense-table";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
+import { NflYardageHomeAwayPill, NflYardageVsAverageCell } from "@/components/nfl/yardage-review/NflYardageHistoryCells";
+import { weeklyHeatStyle, weeklyRankHeatTone } from "@/lib/shared/jkbHeat";
+import { DfsHeatValue } from "./DfsTableCells";
 import { adaptDfsFantasyPointsAllowed } from "@/lib/nfl/dfs/history";
 import { defenseSummary, dfsHistoryLoader, historyKeys, historyNumber, historySigned, summarizeHistoryRows,
   type DfsHistoryDetail, type DfsHistoryIndex, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
@@ -9,25 +12,21 @@ export const HISTORY_NOTE = "Historical averages are reconstructed using only ga
 export const DEF_AVG_HELP = "Average yardage allowed by this defense versus each opposing player's own entering-game trailing-10 average. QB: passing; RB: rushing; WR/TE: receiving. Above/below counts use valid comparisons only.";
 export const FPA_HELP = "Canonical weekly research fantasy points allowed to this position: Season and Last 5 (L5), with source season, games and rank. Prior-season samples are labeled explicitly.";
 
-export function FpaSignal({ row }: { row: DfsEnrichedAnalyzerRow }) {
-  if (row.kind === "dst") return <>N/A</>;
+export function FpaSignal({ row, period }: { row: DfsEnrichedAnalyzerRow; period: "season" | "last5" }) {
   const fpa = adaptDfsFantasyPointsAllowed(row.research ?? null);
-  return <div className="text-[10px] tabular-nums leading-tight" title={FPA_HELP}>
-    {([['Season', fpa.opponentFpaSeason], ['L5', fpa.opponentFpaLast5]] as const).map(([label, metric]) =>
-      <div key={label} title={`${label}: ${metric?.sampleSize ?? 0} games; rank ${metric?.rank ?? "unavailable"} of ${metric?.poolSize ?? 0}`}>
-        <span className="text-slate-500">{label} </span><strong>{historyNumber(metric?.value)}</strong>
-        {metric?.value != null && <span> {metric.rank == null ? "" : `#${metric.rank}`} <span className="text-slate-500">({metric.sampleSeason ?? "mixed seasons"})</span></span>}
-      </div>)}
-  </div>;
+  const metric = period === "season" ? fpa.opponentFpaSeason : fpa.opponentFpaLast5;
+  return <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(metric?.rank, metric?.poolSize))}
+    title={`${period === "season" ? "Season" : "Last 5"}: ${metric?.sampleSeason ?? "mixed seasons"}; ${metric?.sampleSize ?? 0} games; rank ${metric?.rank ?? "unavailable"} of ${metric?.poolSize ?? 0}`}>
+    {metric?.value == null ? "—" : <>{historyNumber(metric.value)}{metric.rank != null && <span className="ml-1 text-[10px] opacity-80">#{metric.rank}</span>}</>}
+  </DfsHeatValue>;
 }
 
 export function DefenseSignal({ row, index, loading }: { row: DfsEnrichedAnalyzerRow; index: DfsHistoryIndex | null; loading: boolean }) {
   if (row.kind === "dst") return <>N/A</>;
   const summary = defenseSummary(index, row);
-  return <div className="text-[10px] leading-tight" title={`${DEF_AVG_HELP} ${HISTORY_NOTE}`}>
-    {loading ? "Loading…" : !index ? "History unavailable" : !summary.comparisonCount ? "No historical sample" : <>
-      <strong className="tabular-nums">{historySigned(summary.mean)}</strong>
-      <div>{summary.aboveCount}/{summary.comparisonCount} Above</div>
+  return <div className="whitespace-nowrap text-[11px] leading-tight" title={`${DEF_AVG_HELP} ${HISTORY_NOTE}`}>
+    {loading ? "Loading…" : !index ? "—" : !summary.comparisonCount ? "—" : <>
+      <NflYardageVsAverageCell diff={summary.mean} />
     </>}
   </div>;
 }
@@ -67,18 +66,18 @@ export default function NflDfsHistory({ row, target, index }: { row: DfsEnriched
         <span>Archived lines: {summary.over} over / {summary.under} under / {summary.push} push ({summary.lines}/{rows.length} available)</span>
       </div>
       <DenseTableScroller label={`${view === "player" ? "Player" : "Opponent"} Last 10 yardage`} className="max-w-full overflow-x-auto rounded border border-slate-200 bg-white">
-        <table className="w-full min-w-[600px] border-collapse text-left text-[10px] tabular-nums">
-          <thead className="bg-slate-100 text-slate-600"><tr>{["Date", ...(view === "player" ? ["Opp", "H/A"] : ["Opposing player", "Team"]), "Yards", view === "player" ? "Pos. allowance" : "Player avg", "Δ Yds", "Archived line", "O/U"].map((label) => <th scope="col" key={label} className="px-2 py-2">{label}</th>)}</tr></thead>
+        <table className="w-full min-w-[600px] border-collapse whitespace-nowrap text-left text-[11px] tabular-nums">
+          <thead><tr className={DENSE_TABLE_HEAD_ROW}>{["Date", ...(view === "player" ? ["Opp", "H/A"] : ["Opposing player", "Team"]), "Yards", view === "player" ? "Pos. allowance" : "Player avg", "Δ Yds", "Archived line", "O/U"].map((label) => <th scope="col" key={label} className="whitespace-nowrap px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">{label}</th>)}</tr></thead>
           <tbody>{rows.map((game) => {
             const player = "actualMinusOpponentAllowance" in game;
             const line = game.historicalSportsbookLine;
-            return <tr key={game.rowId} className="border-t border-slate-100">
+            return <tr key={game.rowId} className={DENSE_TABLE_ROW}>
               <td className="whitespace-nowrap px-2 py-1.5">{game.dateUtc.slice(0, 10)}</td>
               <td className="px-2 py-1.5">{player ? game.opponent.toUpperCase() : game.playerName}</td>
-              <td className="px-2 py-1.5">{player ? game.homeAway : game.team.toUpperCase()}</td>
+              <td className="px-2 py-1.5">{player ? <NflYardageHomeAwayPill homeAway={game.homeAway === "home" || game.homeAway === "away" ? game.homeAway : null} /> : game.team.toUpperCase()}</td>
               <td className="px-2 py-1.5 font-bold">{historyNumber(game.actualYards)}</td>
               <td className="px-2 py-1.5" title={`${player ? game.opponentPregamePositionalAllowanceSampleSize : game.playerReferenceSampleSize} prior games`}>{historyNumber(player ? game.opponentPregamePositionalAllowance : game.playerPregameTrailing10Average)}</td>
-              <td className="px-2 py-1.5 font-semibold">{historySigned(player ? game.actualMinusOpponentAllowance : game.actualMinusPlayerAverage)}</td>
+              <td className="px-2 py-1.5 font-semibold">{<NflYardageVsAverageCell diff={player ? game.actualMinusOpponentAllowance : game.actualMinusPlayerAverage} />}</td>
               <td className="px-2 py-1.5" title={line ? `${line.bookmaker}; observed ${line.observedAt}; selected pre-kickoff observation` : "No archived line"}>{line ? <>{historyNumber(line.point)} <span className="text-slate-500">{line.bookmaker}</span></> : "—"}</td>
               <td className="px-2 py-1.5">{game.lineResult === "unavailable" ? "—" : game.lineResult}</td>
             </tr>;

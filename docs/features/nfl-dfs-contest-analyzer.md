@@ -105,7 +105,7 @@ ranking.
   DraftKings-scoring projection or optimized lineup claim.
 
 The UI supplies Value Board, QB/RB/WR/TE/DST tabs, search, availability and
-direction filters, sorting, status badges, compact cards/table rows, expandable
+direction filters, sorting, status badges, compact horizontally scrollable table rows, expandable
 research, and a slate summary with projection/research coverage and readiness.
 [`presentation.ts`](../../src/lib/nfl/dfs/presentation.ts) only filters, sorts,
 formats, and colors already-computed analyzer rows. Its Rank Diff heat bands
@@ -186,3 +186,13 @@ board, and no lineup is presented as calibrated or EV-optimal. See
 [NFL DFS Lineup Intelligence](nfl-dfs-lineup-intelligence.md) for the objective
 policy, weights, normalization, missing-data behavior and limitations, and
 [WU8 Week 1 validation](nfl-dfs-wu8-week1-validation.md) for the real-slate run.
+
+
+## Compact UI and snapshot lifecycle
+
+The [DFS UI/stability contract](nfl-dfs-ui-stability.md) documents persisted
+in-page generation snapshots, sortable analytical columns, opt-in optimizer
+eligibility filtering, canonical source mapping, compact DST presentation, and
+collapsed Optimizer Notes. These are presentation changes; projection formulas,
+optimizer objectives, eligibility policies, roster construction and cap logic
+remain unchanged.

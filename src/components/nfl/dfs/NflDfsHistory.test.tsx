@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import NflDfsHistory, { DefenseSignal, FpaSignal } from "./NflDfsHistory";
 import NflDfsAnalyzerTable from "./NflDfsAnalyzerTable";
@@ -18,26 +18,26 @@ describe("DFS historical UI", () => {
     const research = { status: "available" as const, matchupEdges: null, matchupGrade: null,
       context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 22.8, rank: 27, sampleSeason: 2025, sampleSize: 17 }),
         opponentFpaLast5: buildMetric({ value: 19.4, rank: 20, sampleSeason: 2025, sampleSize: 5 }) }) };
-    render(<FpaSignal row={{ ...row, research }} />);
+    render(<><FpaSignal row={{ ...row, research }} period="season" /><FpaSignal row={{ ...row, research }} period="last5" /></>);
     expect(screen.getByText("22.8")).toBeVisible();
     expect(screen.getByText("19.4")).toBeVisible();
-    expect(screen.getAllByText("(2025)")).toHaveLength(2);
+    expect(screen.getAllByTitle(/2025;.*games/)).toHaveLength(2);
     expect(screen.getByText(/#27/)).toBeVisible();
-    expect(screen.getByText("L5")).toBeVisible();
+    expect(screen.getByTitle(/Last 5: 2025; 5 games/)).toBeVisible();
   });
   it("keeps null FPA and DST unavailable", () => {
-    const { container, rerender } = render(<FpaSignal row={row} />);
-    expect(container).toHaveTextContent("Season —L5 —");
+    const { container, rerender } = render(<FpaSignal row={row} period="season" />);
+    expect(container).toHaveTextContent("—");
     const dst = { ...row, kind: "dst", position: "DST", canonicalTeamId: "nfl-no", projectedFantasyPoints: null, projectionSource: null,
       jkbWeeklyPositionRank: null, jkbSlatePositionRank: null, jkbOverallSlateProjectionRank: null, dkOverallSalaryRank: null,
       posRankDiff: null, overallRankDiff: null, pointsPer1k: null } as DfsEnrichedAnalyzerRow;
-    rerender(<><FpaSignal row={dst} /><DefenseSignal row={dst} index={historyFixture().index} loading={false} /></>);
-    expect(container.textContent).toBe("N/AN/A");
+    rerender(<><FpaSignal row={dst} period="last5" /><DefenseSignal row={dst} index={historyFixture().index} loading={false} /></>);
+    expect(container.textContent).toBe("—N/A");
   });
   it("renders valid defense denominator separately from equal and missing", () => {
     render(<DefenseSignal row={row} index={historyFixture().index} loading={false} />);
     expect(screen.getByText("+1.7")).toBeVisible();
-    expect(screen.getByText("1/3 Above")).toBeVisible();
+    expect(screen.getByText("+1.7")).toHaveAttribute("data-result", "over");
   });
   it("renders player baseline/sign/line/push and switches to individual opponent rows", async () => {
     const { index, detail } = historyFixture();
@@ -45,7 +45,7 @@ describe("DFS historical UI", () => {
     render(<NflDfsHistory row={row} target={historyTarget} index={index} />);
     const table = await screen.findByRole("table");
     expect(table).toHaveTextContent("230.0");
-    expect(table).toHaveTextContent("+20.0");
+    expect(table).toHaveTextContent("+20");
     expect(table).toHaveTextContent("DraftKings");
     expect(table).toHaveTextContent("push");
     expect(screen.getByTitle(/observed 2025-12-28T17/)).toBeVisible();
@@ -53,7 +53,7 @@ describe("DFS historical UI", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Opponent Last 10" }));
     expect(table).toHaveTextContent("Player Two");
     expect(table).toHaveTextContent("240.0");
-    expect(table).toHaveTextContent("-5.0");
+    expect(table).toHaveTextContent("-5");
     expect(screen.getByText("1/3 above own player average")).toBeVisible();
     expect(screen.getByText(/1 below · 1 equal · 1 missing comparison/)).toBeVisible();
     expect(screen.getAllByTitle("No archived line")).toHaveLength(3);
@@ -91,11 +91,11 @@ describe("DFS historical UI", () => {
     vi.spyOn(dfsHistoryLoader, "index").mockResolvedValue(index);
     const load = vi.spyOn(dfsHistoryLoader, "detail").mockResolvedValue(detail);
     render(<NflDfsAnalyzerTable rows={[row]} historyTarget={historyTarget} />);
-    await screen.findByText("1/3 Above");
+    await screen.findByText("+1.7");
     expect(load).not.toHaveBeenCalled();
-    expect(screen.getByText(compact ? "FPA TO POSITION" : "FPA")).toBeVisible();
-    expect(screen.getByText("DEF VS AVG")).toBeVisible();
-    const control = compact ? within(screen.getByRole("listitem")).getAllByRole("button")[0] : screen.getByRole("button", { name: "Expand Player One" });
+    expect(screen.getByRole("columnheader", { name: "FPA SZN" })).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "DEF VS AVG" })).toBeVisible();
+    const control = screen.getByRole("button", { name: "Expand Player One" });
     fireEvent.click(control);
     await screen.findByRole("region", { name: "Historical yardage context" });
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));

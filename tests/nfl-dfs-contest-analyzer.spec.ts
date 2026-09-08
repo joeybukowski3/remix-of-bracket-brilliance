@@ -9,7 +9,7 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
 // Uses this workspace's dist and the same analytics-blocking fixture. No mocks
 // of application data or behavior; browser requests read actual built artifacts.
 test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(new Date("2026-09-07T23:55:00Z"));
+  await page.clock.install({ time: new Date("2026-09-07T23:55:00Z") });
   if (process.env.PLAYWRIGHT_DFS_LOCAL_DIST !== "1") return;
   const root = resolve("dist");
   await page.route(`${BASE_URL}/**`, async (route) => {
@@ -63,6 +63,9 @@ test("NFL DFS analyzer completes the DraftKings upload journey without console e
   // Slate summary + readiness
   const summary = page.getByRole("region", { name: "Slate summary" });
   await expect(summary).toBeVisible();
+  const notes = summary.getByRole("button", { name: /Optimizer Notes/ });
+  await expect(notes).toHaveAttribute("aria-expanded", "false");
+  await notes.click();
   await expect(summary).toContainText("NFL Classic");
   await expect(summary).toContainText("2 Games");
   await expect(summary).toContainText(/JKB Week 1/);
@@ -96,9 +99,13 @@ test("NFL DFS analyzer completes the DraftKings upload journey without console e
   await expect(lineupPanel).toContainText("8 offensive slots; DST has no JKB projection");
   await expect(lineupPanel).toContainText("DraftKings benchmark, not consensus");
   for (const slot of ["QB", "RB1", "RB2", "WR1", "WR2", "WR3", "TE", "FLEX", "DST"]) {
-    await expect(lineupPanel.getByRole("cell", { name: slot, exact: true })).toBeVisible();
+    await expect(lineupPanel.locator("tbody tr > td:first-child").filter({ hasText: new RegExp(`^${slot}$`) })).toBeVisible();
   }
-  await expect(lineupPanel.getByRole("row", { name: /DST/ }).last()).toContainText(/no JKB proj/i);
+  await expect(lineupPanel.getByRole("row", { name: /DST/ }).last()).toContainText("—");
+  // Advance the real page interval: the generation snapshot survives analysisAsOf refresh.
+  await page.clock.fastForward(61_000);
+  await expect(lineupPanel).toBeVisible();
+  await expect(lineups.getByRole("button", { name: "Regenerate Lineups" })).toBeVisible();
   await lineups.getByText(/Generated-lineup methodology and limitations/i).click();
   await expect(lineups).toContainText(/transparent product heuristics/i);
   await expect(lineups).toContainText(/not calibrated DFS/i);
@@ -119,19 +126,22 @@ test("NFL DFS analyzer completes the DraftKings upload journey without console e
   const goffRow = tableRegion.getByRole("row", { name: /Jared Goff/ });
   await expect(goffRow).toBeVisible();
   await expect(goffRow).toContainText(/[+-]\d|E/); // a real Rank Diff value
-  await expect(page.getByRole("columnheader", { name: "FPA", exact: true })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "FPA SZN", exact: true })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "DEF VS AVG" })).toBeVisible();
-  await expect(goffRow).toContainText(/\d\/\d+ Above/);
+  await expect(tableRegion.getByRole("columnheader", { name: "FPA L5", exact: true })).toBeVisible();
   expect(historyRequests).toHaveLength(1);
   expect(historyRequests[0]).toContain("week-01/index.json");
 
   // Position tab + expand a player -> research area
   await tableRegion.getByRole("tab", { name: "RB" }).click();
   const gibbsRow = tableRegion.getByRole("row", { name: /Jahmyr Gibbs/ });
-  await expect(gibbsRow).toContainText("Optimizer: Eligible");
+  await expect(gibbsRow).not.toContainText("Optimizer:");
+  await expect(gibbsRow).toHaveCSS("white-space", "nowrap");
+  expect(await gibbsRow.evaluate(row => row.getBoundingClientRect().height)).toBeLessThanOrEqual(40);
   await gibbsRow.getByRole("button", { name: /Expand Jahmyr Gibbs/ }).click();
   await expect(page.getByText("Season PPG", { exact: true })).toBeVisible();
-  await expect(page.getByText("Opp Allowed (Season)", { exact: true })).toBeVisible();
+  await expect(tableRegion.getByRole("columnheader", { name: "TRENCHES" })).toBeVisible();
+  await expect(page.getByText("Role Sources and Timing", { exact: true })).toHaveCount(0);
   const history = page.getByRole("region", { name: "Historical yardage context" });
   await expect(history.getByRole("table")).toBeVisible();
   await expect(history).toContainText("entire position group");
@@ -152,52 +162,45 @@ test("NFL DFS analyzer completes the DraftKings upload journey without console e
   // DST tab -> no fabricated JKB metrics
   await tableRegion.getByRole("tab", { name: "DST" }).click();
   const chiefsRow = tableRegion.getByRole("row", { name: /Chiefs/ });
-  await expect(chiefsRow).toContainText(/No JKB DST projection/i);
-  await expect(chiefsRow).toContainText(/DST Matchup Rank \d/);
-  await expect(chiefsRow).toContainText("Coverage 80%");
+  await expect(chiefsRow).not.toContainText(/No JKB DST projection|Coverage/i);
+  await expect(tableRegion.getByRole("columnheader", { name: "DST Matchup RK" })).toBeVisible();
+  await expect(tableRegion.getByRole("columnheader", { name: "DST Score" })).toBeVisible();
+  expect(await chiefsRow.evaluate(row => row.getBoundingClientRect().height)).toBeLessThanOrEqual(40);
+  const dstCells = chiefsRow.getByRole("cell");
+  for (const index of [6, 7, 8]) await expect(dstCells.nth(index)).toHaveText(/^[+-]?\d+$/);
+  await tableRegion.screenshot({ path: testInfo.outputPath("dfs-dst-board.png") });
+  for (const name of ["EPA ADV", "SUCCESS ADV", "TRENCHES"]) await expect(tableRegion.getByRole("columnheader", { name })).toBeVisible();
 
   await page.screenshot({ path: testInfo.outputPath("dfs-desktop.png"), fullPage: true });
   expect(pageErrors, `page errors:\n${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleErrors, `console errors:\n${consoleErrors.join("\n")}`).toEqual([]);
 });
 
-test("NFL DFS analyzer mobile cards carry the core comparison fields", async ({ page }, testInfo) => {
+test("NFL DFS analyzer mobile tables preserve compact comparisons and readable lineups", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${BASE_URL}/nfl/dfs?week=1`);
   await upload(page);
-
-  await expect(page.getByRole("table")).toHaveCount(0);
   const tableRegion = page.getByRole("region", { name: "DFS analyzer table" });
   await tableRegion.getByRole("tab", { name: "QB" }).click();
-
-  const card = page.getByRole("listitem").filter({ hasText: "Jared Goff" });
-  await expect(card).toBeVisible();
-  await expect(card).toContainText("$"); // salary
-  await expect(card).toContainText(/DK QB\d/); // DK positional rank
-  await expect(card).toContainText(/JKB QB\d/); // JKB slate rank
-  await expect(card).toContainText(/Proj \d/); // projection
-  await expect(card).toContainText("Optimizer: Eligible");
-  await expect(card).toContainText(/[+-]\d|E/); // Rank Diff
-  await expect(card).toContainText("FPA TO POSITION");
-  await expect(card).toContainText("DEF VS AVG");
-  await expect(card).toContainText(/\d\/\d+ Above/);
-
-  await card.getByRole("button").first().click();
-  await expect(card).toContainText(/JKB Week RK/);
-  await expect(card).toContainText(/JKB Pts\/\$1K/);
-  const history = card.getByRole("region", { name: "Historical yardage context" });
+  const row = tableRegion.getByRole("row", { name: /Jared Goff/ });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("$");
+  await expect(row).toContainText(/QB\d/);
+  await expect(row).not.toContainText("Optimizer:");
+  await expect(tableRegion.getByRole("checkbox", { name: "Optimizer Eligible" })).toBeVisible();
+  for (const name of ["FPA SZN", "FPA L5", "EPA ADV", "SUCCESS ADV", "TRENCHES"]) {
+    await expect(tableRegion.getByRole("columnheader", { name })).toBeAttached();
+  }
+  await row.getByRole("button", { name: "Expand Jared Goff" }).click();
+  const history = page.getByRole("region", { name: "Historical yardage context" });
   await expect(history.getByRole("table")).toBeVisible();
   await history.getByRole("tab", { name: "Opponent Last 10" }).click();
   await expect(history.getByRole("table")).toContainText("Player avg");
-  await expect(history.getByTitle("No archived line").first()).toHaveText("—");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-
-  // Generated lineups stay usable on a phone: no horizontal page overflow.
   const lineups = page.getByRole("region", { name: "Generated Lineups" });
-  await lineups.getByRole("button", { name: /Generate Lineups/i }).click();
+  await lineups.getByRole("button", { name: "Generate Lineups" }).click();
   await expect(lineups.getByRole("tabpanel")).toContainText("Salary used");
   await expect(lineups.getByRole("tabpanel")).toContainText("8 offensive slots; DST has no JKB projection");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-
   await page.screenshot({ path: testInfo.outputPath("dfs-mobile.png"), fullPage: true });
 });

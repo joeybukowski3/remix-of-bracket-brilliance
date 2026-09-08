@@ -24,6 +24,12 @@ prediction archive or workflow changes are part of WU8. The linked contract owns
 weights, feature definitions, normalization, missing-data coverage,
 tie-breaking, the double-counting audit and the future calibration plan.
 
+The [DFS UI/stability pass](../features/nfl-dfs-ui-stability.md) changes only
+in-page generation lifetime and presentation. It consumes existing positional
+research edges and weekly ranks, with explicit defense-perspective display for
+DST. No model output, formula, eligibility threshold, optimizer objective,
+roster rule or salary-cap calculation changes.
+
 Status: initial governing specification, reconstructed from repository state at `2b2b2b56d4d233816f3b2f5398bfe99505b5ee26` on 2026-09-02.
 
 This document is the required entry point for work on JKB NFL spreads, totals, passing, rushing, receiving, prediction archives, market comparison, outcome resolution, features, evaluation, or model versions. Detailed contracts live in:
