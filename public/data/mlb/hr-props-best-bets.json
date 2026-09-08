@@ -1,10 +1,10 @@
 {
   "date": "2026-09-08",
-  "generatedAt": "2026-09-08T12:12:03.387Z",
+  "generatedAt": "2026-09-08T16:46:40.090Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Dodger Stadium and Citizens Bank Park are the two strongest HR environments on the slate, with Ohtani and Schwarber both facing lefties in hitter-friendly parks. Nick Lodolo and Andrew Painter are the only two starters with sub-2.00 HR/9 allowed this season, but their fly-ball tendencies and the elevated park factors still create exploitable edges for the top-ranked bats.",
-    "modelNote": "The model is overweighting barrel rate and opposing pitcher HR vulnerability, which is why Ohtani and Alvarez sit 1-2 despite facing two of the better starters on the board."
+    "slateOverview": "Dodger Stadium (1.1) and Citizens Bank Park (1.17) are the two strongest HR environments on the slate, with Ohtani and Alvarez both facing fly-ball prone lefties in Lodolo and Painter. Camden Yards (1.1) and Comerica (0.95) round out the favorable parks, while Petco (0.89) and loanDepot (0.88) suppress power. Warm, dry conditions are expected across the East and Midwest, amplifying fly-ball carry.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability, which is why Ohtani (72.5) and Alvarez (70.9) sit atop the board despite recent HR droughts."
   },
   "bestBets": [
     {
@@ -18,11 +18,11 @@
         "HH=51.5%"
       ],
       "bullets": [
-        "hrScore=73.1",
+        "hrScore=72.5",
         "park=1.1"
       ],
-      "hrOddsYes": "+316",
-      "marketImpliedProbability": 0.2403846153846154,
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,11 +37,11 @@
         "HH=53.1%"
       ],
       "bullets": [
-        "hrScore=70.1",
+        "hrScore=70.9",
         "park=1.17"
       ],
-      "hrOddsYes": "+235",
-      "marketImpliedProbability": 0.29850746268656714,
+      "hrOddsYes": "+260",
+      "marketImpliedProbability": 0.2777777777777778,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -56,11 +56,11 @@
         "HH=57%"
       ],
       "bullets": [
-        "hrScore=66.8",
+        "hrScore=66.6",
         "park=1.1"
       ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
+      "hrOddsYes": "+288",
+      "marketImpliedProbability": 0.25773195876288657,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -75,7 +75,7 @@
         "Hard Hit%=47.9"
       ],
       "bullets": [
-        "HR score 63.4 (#4)",
+        "HR score 64.3 (#4)",
         "Pitcher HR VS 57.0 at park 0.95"
       ],
       "hrOddsYes": "+400",
@@ -84,21 +84,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "ATL",
+      "opposingPitcher": "AJ Smith-Shawver",
       "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=50.2",
-        "Pitcher HR VS=46.6"
+        "Hard Hit%=50.6",
+        "Pitcher HR VS=48.4"
       ],
       "bullets": [
-        "HR score 62.8 (#5)",
-        "Pitcher HR VS 46.6 at park 1.17"
+        "HR score 62.4 (#5)",
+        "Pitcher HR VS 48.4 at park 1.03"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -115,7 +115,7 @@
         "HH=47.9%"
       ],
       "bullets": [
-        "hrScore=63.4",
+        "hrScore=64.3",
         "park=0.95"
       ],
       "hrOddsYes": "+400",
@@ -124,21 +124,40 @@
       "hrValueEdge": null
     },
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "HOU",
-      "opposingPitcher": "Hayden Wesneski",
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "ATL",
+      "opposingPitcher": "AJ Smith-Shawver",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=17.2%",
-        "HH=50.2%"
+        "barrel=12.9%",
+        "HH=50.6%"
       ],
       "bullets": [
-        "hrScore=62.8",
-        "park=1.17"
+        "hrScore=62.4",
+        "park=1.03"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Heriberto Hernández",
+      "team": "MIA",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=13.7%",
+        "HH=47.3%"
+      ],
+      "bullets": [
+        "hrScore=62.2",
+        "park=0.88"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,13 +166,53 @@
       "team": "LAD",
       "opponent": "CIN",
       "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=79.3",
+        "Hard Hit%=46.2"
+      ],
+      "bullets": [
+        "HR score 62.1 (#7)",
+        "Pitcher HR VS 79.3 at park 1.10"
+      ],
+      "hrOddsYes": "+750",
+      "marketImpliedProbability": 0.11764705882352941,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "HOU",
+      "opposingPitcher": "Hayden Wesneski",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Hard Hit%=50.2",
+        "Pitcher HR VS=46.6"
+      ],
+      "bullets": [
+        "HR score 62.0 (#8)",
+        "Pitcher HR VS 46.6 at park 1.17"
+      ],
+      "hrOddsYes": "+248",
+      "marketImpliedProbability": 0.28735632183908044,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 7,
       "topStats": [
         "barrel=13.1%",
         "HH=46.2%"
       ],
       "bullets": [
-        "hrScore=62.7",
+        "hrScore=62.1",
         "park=1.1"
       ],
       "hrOddsYes": "+750",
@@ -162,80 +221,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Heriberto Hernández",
-      "team": "MIA",
-      "opponent": "NYM",
-      "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=70.3",
-        "Hard Hit%=47.3"
-      ],
-      "bullets": [
-        "HR score 62.3 (#7)",
-        "Pitcher HR VS 70.3 at park 0.88"
-      ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "ATL",
-      "opposingPitcher": "AJ Smith-Shawver",
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "HOU",
+      "opposingPitcher": "Hayden Wesneski",
       "hrScoreRank": 8,
       "topStats": [
-        "Hard Hit%=50.6",
-        "Pitcher HR VS=48.4"
+        "barrel=17.2%",
+        "HH=50.2%"
       ],
       "bullets": [
-        "HR score 60.9 (#8)",
-        "Pitcher HR VS 48.4 at park 1.03"
+        "hrScore=62",
+        "park=1.17"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Heriberto Hernández",
-      "team": "MIA",
-      "opponent": "NYM",
-      "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=13.7%",
-        "HH=47.3%"
-      ],
-      "bullets": [
-        "hrScore=62.3",
-        "park=0.88"
-      ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "ATL",
-      "opposingPitcher": "AJ Smith-Shawver",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=12.9%",
-        "HH=50.6%"
-      ],
-      "bullets": [
-        "hrScore=60.9",
-        "park=1.03"
-      ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
+      "hrOddsYes": "+248",
+      "marketImpliedProbability": 0.28735632183908044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,17 +244,17 @@
       "team": "LAD",
       "opponent": "CIN",
       "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 13,
+      "hrScoreRank": 14,
       "topStats": [
         "Pitcher HR VS=79.3",
         "Hard Hit%=41.4"
       ],
       "bullets": [
-        "HR score 58.8 (#13)",
+        "HR score 58.2 (#14)",
         "Pitcher HR VS 79.3 at park 1.10"
       ],
-      "hrOddsYes": "+600",
-      "marketImpliedProbability": 0.14285714285714285,
+      "hrOddsYes": "+575",
+      "marketImpliedProbability": 0.14814814814814814,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
