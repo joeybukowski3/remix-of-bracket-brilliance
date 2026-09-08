@@ -1,10 +1,10 @@
 {
   "date": "2026-09-08",
-  "generatedAt": "2026-09-08T16:46:40.090Z",
+  "generatedAt": "2026-09-08T17:59:01.517Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Dodger Stadium (1.1) and Citizens Bank Park (1.17) are the two strongest HR environments on the slate, with Ohtani and Alvarez both facing fly-ball prone lefties in Lodolo and Painter. Camden Yards (1.1) and Comerica (0.95) round out the favorable parks, while Petco (0.89) and loanDepot (0.88) suppress power. Warm, dry conditions are expected across the East and Midwest, amplifying fly-ball carry.",
-    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability, which is why Ohtani (72.5) and Alvarez (70.9) sit atop the board despite recent HR droughts."
+    "slateOverview": "Today's slate features three hitter-friendly parks with elevated park factors (Citizens Bank 1.17, Dodger Stadium 1.1, Camden Yards 1.1) and favorable lefty matchups for Ohtani against Lodolo. Painter's debut for PHI and Kremer's fly-ball tendencies create additional power spots in PHI and DET, while warm weather and short fences in BAL amplify fly-ball outcomes.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over recent HR form, elevating Ohtani to the top spot despite zero last-7 homers due to elite underlying metrics and a 79.3 opposing pitcher HR rate."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
         "HH=51.5%"
       ],
       "bullets": [
-        "hrScore=72.5",
+        "barrel=15.8%",
         "park=1.1"
       ],
       "hrOddsYes": "+300",
@@ -37,7 +37,7 @@
         "HH=53.1%"
       ],
       "bullets": [
-        "hrScore=70.9",
+        "barrel=16.1%",
         "park=1.17"
       ],
       "hrOddsYes": "+260",
@@ -56,7 +56,7 @@
         "HH=57%"
       ],
       "bullets": [
-        "hrScore=66.6",
+        "HH=57%",
         "park=1.1"
       ],
       "hrOddsYes": "+288",
@@ -115,7 +115,7 @@
         "HH=47.9%"
       ],
       "bullets": [
-        "hrScore=64.3",
+        "barrel=15.3%",
         "park=0.95"
       ],
       "hrOddsYes": "+400",
@@ -134,7 +134,7 @@
         "HH=50.6%"
       ],
       "bullets": [
-        "hrScore=62.4",
+        "barrel=12.9%",
         "park=1.03"
       ],
       "hrOddsYes": "+320",
@@ -153,7 +153,7 @@
         "HH=47.3%"
       ],
       "bullets": [
-        "hrScore=62.2",
+        "barrel=13.7%",
         "park=0.88"
       ],
       "hrOddsYes": "+375",
@@ -212,7 +212,7 @@
         "HH=46.2%"
       ],
       "bullets": [
-        "hrScore=62.1",
+        "barrel=13.1%",
         "park=1.1"
       ],
       "hrOddsYes": "+750",
@@ -231,30 +231,11 @@
         "HH=50.2%"
       ],
       "bullets": [
-        "hrScore=62",
+        "barrel=17.2%",
         "park=1.17"
       ],
       "hrOddsYes": "+248",
       "marketImpliedProbability": 0.28735632183908044,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Freddie Freeman",
-      "team": "LAD",
-      "opponent": "CIN",
-      "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 14,
-      "topStats": [
-        "Pitcher HR VS=79.3",
-        "Hard Hit%=41.4"
-      ],
-      "bullets": [
-        "HR score 58.2 (#14)",
-        "Pitcher HR VS 79.3 at park 1.10"
-      ],
-      "hrOddsYes": "+575",
-      "marketImpliedProbability": 0.14814814814814814,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -271,6 +252,25 @@
       "bullets": [
         "HR score 54.9 (#24)",
         "Pitcher HR VS 70.3 at park 0.88"
+      ],
+      "hrOddsYes": "+600",
+      "marketImpliedProbability": 0.14285714285714285,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Freddie Freeman",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 14,
+      "topStats": [
+        "Pitcher HR VS=79.3",
+        "Hard Hit%=41.4"
+      ],
+      "bullets": [
+        "HR score 58.2 (#14)",
+        "Pitcher HR VS 79.3 at park 1.10"
       ],
       "hrOddsYes": "+575",
       "marketImpliedProbability": 0.14814814814814814,
