@@ -21,9 +21,11 @@
  */
 import { buildStrikeoutPropDetailKey } from "./mlb-strikeout-prop-details-core.mjs";
 import { validateV3ForProduction } from "./mlb-k-v3-projection-validator.mjs";
+import { validateV4ForProduction } from "./mlb-k-v4-projection-validator.mjs";
 
 /** Which projection actually produced `effectiveProjectedKs`. */
 export const K_PROJECTION_SOURCE = Object.freeze({
+  V4: "v4",
   V3: "v3",
   V2: "v2",
   LEGACY_FALLBACK: "legacy-fallback",
@@ -35,6 +37,7 @@ export const K_PROJECTION_SOURCE = Object.freeze({
  * say which model it is showing without re-deriving it from the source string.
  */
 export const K_PROJECTION_MODEL_VERSION = Object.freeze({
+  [K_PROJECTION_SOURCE.V4]: "mlb-k-projection-v4",
   [K_PROJECTION_SOURCE.V3]: "mlb-k-projection-v3",
   [K_PROJECTION_SOURCE.V2]: "mlb-k-projection-v2-production",
 });
@@ -52,6 +55,15 @@ export const K_PROJECTION_FALLBACK_REASON = Object.freeze({
 
 /** Only these confidence grades may promote V2 to production. */
 export const V2_PRODUCTION_CONFIDENCE = Object.freeze(new Set(["high", "medium"]));
+
+/**
+ * V3 was the production authority from 2026-09-07 until V4 replaced it on
+ * 2026-09-08. Its resolution branch is retained verbatim behind this flag so a
+ * rollback is a one-line change rather than a revert, but it is OFF: V3's
+ * measured signed strikeout error (+0.178 over 933 graded starts) is four
+ * times V2's, so V2 is the healthier fallback when V4 declines a row.
+ */
+export const V3_IS_PRODUCTION_AUTHORITY = false;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -336,9 +348,61 @@ export function resolveKProjection({
     const modelVersion = typeof v2Row?.v2?.modelVersion === "string" ? v2Row.v2.modelVersion : null;
     const v3ProjectedKs = toFiniteNumber(v2Row?.v3?.projectedKs);
 
+    const v4ProjectedKs = toFiniteNumber(v2Row?.v4?.projectedKs);
+
     if (v2RejectionReason == null) {
       /**
-       * V3 PROMOTION. V3 is preferred over V2 only when the whole V2 path has
+       * V4 PROMOTION (2026-09-08).
+       *
+       * V4 is preferred over everything else when the whole V2 path has
+       * already been accepted -- same artifact, same slate, same matched row --
+       * AND the row's own v4 block passes its production gate. That ordering is
+       * deliberate and unchanged from how V3 was promoted: every identity,
+       * staleness and slate check that protects V2 protects V4 too, and V4 adds
+       * one more gate on top rather than replacing any of them.
+       *
+       * WHY V2, NOT V3, IS THE FALLBACK. V3 remains computed and published in
+       * k-props-v2-shadow.json for comparison and rollback, but it is no longer
+       * in the authority chain. On the 933-start graded archive V3 carries a
+       * +0.178 signed strikeout error and sits above the market line 64.4% of
+       * the time, against V2's +0.041 and 55.3%. Falling back to the more
+       * biased of the two available models would defeat the point of the
+       * change, so a rejected V4 falls through to V2.
+       *
+       * A rejected V4 is not a failure. Openers and relievers are refused BY
+       * DESIGN -- the model was developed and validated on starters only --
+       * and those rows keep the V2 projection they have always had, with
+       * `v4RejectionReason` recording why.
+       */
+      const v4Verdict = validateV4ForProduction(v2Row?.v4);
+      if (v4Verdict.ok) {
+        return {
+          effectiveProjectedKs: toUsableProjection(v4ProjectedKs),
+          legacyProjectedKs,
+          v2ProjectedKs,
+          v3ProjectedKs,
+          v4ProjectedKs,
+          // The workload the published strikeout number was actually built
+          // from, for the same internal-consistency reason as the V3 path.
+          projectedInnings: toFiniteNumber(v2Row?.v4?.finalProjectedIP),
+          projectedBattersFaced: toFiniteNumber(v2Row?.v4?.projectedBattersFaced),
+          projectedKRate: toFiniteNumber(v2Row?.v4?.projectedKRate),
+          projectedKPerInning: toFiniteNumber(v2Row?.v4?.finalProjectedKPerIP),
+          workloadSource: K_PROJECTION_SOURCE.V4,
+          source: K_PROJECTION_SOURCE.V4,
+          fallbackReason: null,
+          v2RejectionReason: null,
+          v3RejectionReason: null,
+          v4RejectionReason: null,
+          confidence,
+          modelVersion: K_PROJECTION_MODEL_VERSION[K_PROJECTION_SOURCE.V4],
+          v2ModelVersion: modelVersion,
+          matchedBy,
+        };
+      }
+
+      /**
+       * LEGACY V3 PROMOTION PATH, RETAINED BUT DISABLED. V3 is preferred over V2 only when the whole V2 path has
        * already been accepted -- same artifact, same slate, same matched row --
        * AND the row's own v3 block passes the production gate. That ordering is
        * deliberate: every identity, staleness and slate check that protects V2
@@ -351,7 +415,7 @@ export function resolveKProjection({
        * had, with `v3RejectionReason` recording why.
        */
       const v3Verdict = validateV3ForProduction(v2Row?.v3);
-      if (v3Verdict.ok) {
+      if (V3_IS_PRODUCTION_AUTHORITY && v3Verdict.ok) {
         return {
           effectiveProjectedKs: toUsableProjection(v3ProjectedKs),
           legacyProjectedKs,
@@ -394,6 +458,8 @@ export function resolveKProjection({
         fallbackReason: null,
         v2RejectionReason: null,
         v3RejectionReason: v3Verdict.reason,
+        v4RejectionReason: v4Verdict.reason,
+        v4ProjectedKs,
         confidence,
         modelVersion,
         v2ModelVersion: modelVersion,
@@ -512,7 +578,9 @@ export function applyResolvedKProjection(legacyRow, resolved) {
   const resolvedKRate = toFiniteNumber(resolved.projectedKRate);
   const usesModelWorkload =
     resolvedIp != null &&
-    (resolved.workloadSource === K_PROJECTION_SOURCE.V3 || resolved.workloadSource === K_PROJECTION_SOURCE.V2);
+    (resolved.workloadSource === K_PROJECTION_SOURCE.V4
+      || resolved.workloadSource === K_PROJECTION_SOURCE.V3
+      || resolved.workloadSource === K_PROJECTION_SOURCE.V2);
 
   const projectedIP = usesModelWorkload ? resolvedIp : storedIp;
   const projectedIPSource = usesModelWorkload ? resolved.workloadSource : "legacy-stored";
@@ -531,6 +599,7 @@ export function applyResolvedKProjection(legacyRow, resolved) {
     legacyProjectedKs: storedLegacy,
     v2ProjectedKs: resolved.v2ProjectedKs,
     v3ProjectedKs: resolved.v3ProjectedKs ?? null,
+    v4ProjectedKs: resolved.v4ProjectedKs ?? null,
 
     // ---- workload that matches the published projection ----
     projectedIP,
@@ -546,6 +615,10 @@ export function applyResolvedKProjection(legacyRow, resolved) {
     projectionSource: resolved.source,
     projectionFallbackReason: resolved.fallbackReason,
     v3RejectionReason: resolved.v3RejectionReason ?? null,
+    v4RejectionReason: resolved.v4RejectionReason ?? null,
+    // Present only on a V4-sourced row: the second half of V4's product form,
+    // exposed so a reader can verify projectedKs = projectedIP x this.
+    projectedKPerInning: toFiniteNumber(resolved.projectedKPerInning) ?? null,
     v2Confidence: resolved.confidence,
     // Retains the historical field name and meaning: the model that produced
     // the PUBLISHED projection. `v2ModelVersion` is v3's version when v3 won.
@@ -569,6 +642,8 @@ export function resolveKProjectionsForPayload({
   const fallbackReasons = {};
   const confidenceCounts = {};
   const v3RejectionReasons = {};
+  const v4RejectionReasons = {};
+  let v4Rows = 0;
   let v3Rows = 0;
   let v2Rows = 0;
   let legacyFallbackRows = 0;
@@ -576,7 +651,8 @@ export function resolveKProjectionsForPayload({
 
   const rows = pitchers.map((legacyRow) => {
     const resolved = resolveKProjection({ legacyRow, artifact, index, publicSlateDate, artifactValid });
-    if (resolved.source === K_PROJECTION_SOURCE.V3) v3Rows += 1;
+    if (resolved.source === K_PROJECTION_SOURCE.V4) v4Rows += 1;
+    else if (resolved.source === K_PROJECTION_SOURCE.V3) v3Rows += 1;
     else if (resolved.source === K_PROJECTION_SOURCE.V2) v2Rows += 1;
     else if (resolved.source === K_PROJECTION_SOURCE.LEGACY_FALLBACK) legacyFallbackRows += 1;
     else unavailableRows += 1;
@@ -587,6 +663,10 @@ export function resolveKProjectionsForPayload({
     // fallback reasons so "V3 declined an opener" never reads as "V2 failed".
     if (resolved.v3RejectionReason) {
       v3RejectionReasons[resolved.v3RejectionReason] = (v3RejectionReasons[resolved.v3RejectionReason] ?? 0) + 1;
+    }
+    // Why a V2-eligible row did not reach V4 (openers/relievers, mostly).
+    if (resolved.v4RejectionReason) {
+      v4RejectionReasons[resolved.v4RejectionReason] = (v4RejectionReasons[resolved.v4RejectionReason] ?? 0) + 1;
     }
     if (resolved.confidence) {
       confidenceCounts[resolved.confidence] = (confidenceCounts[resolved.confidence] ?? 0) + 1;
@@ -600,6 +680,8 @@ export function resolveKProjectionsForPayload({
     resolutions: rows.map((entry) => entry.resolved),
     diagnostics: {
       totalRows: rows.length,
+      v4Rows,
+      v4RejectionReasons,
       v3Rows,
       v2Rows,
       legacyFallbackRows,

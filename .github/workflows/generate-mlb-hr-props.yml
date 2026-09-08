@@ -499,6 +499,20 @@ jobs:
         continue-on-error: true
         run: node scripts/generate-mlb-strikeout-prop-details.mjs
 
+      # Rolling league-wide completed-start log. K Projection V4 builds its
+      # opposing-starter BASELINES from this file -- the denominator that turns
+      # "starters averaged 4.3 IP against MIN" into "relative to what those
+      # pitchers normally do". Cheap and incremental: it merges the completed
+      # starts already present in today's details artifact, with no API call and
+      # no git history scan. Must run AFTER the details step and BEFORE the V2/
+      # V3/V4 shadow artifact. continue-on-error because a stale log only makes
+      # V4's opponent factors neutral, which is a degraded projection rather
+      # than a broken one.
+      - name: Update rolling K start log
+        id: update_k_start_log
+        continue-on-error: true
+        run: npm run mlb:k-start-log
+
       - name: Generate K projection V2 shadow artifact
         id: generate_k_props_v2_shadow
         continue-on-error: true

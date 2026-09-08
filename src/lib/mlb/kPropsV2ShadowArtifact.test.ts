@@ -142,7 +142,8 @@ describe("buildKPropsShadowArtifact", () => {
     // 2 since the additive v3 block was introduced. Every schema-1 field is
     // still present and still carries the same value; the assertions below on
     // legacy and v2 are what enforce that.
-    expect(artifact.schemaVersion).toBe(2);
+    // 3 since the additive `v4` block joined legacy/v2/v3 on every row.
+    expect(artifact.schemaVersion).toBe(3);
     expect(artifact.projectionMode).toBe("shadow");
     expect(artifact.slateDate).toBe("2026-07-23");
     expect(artifact.rows).toHaveLength(2);
