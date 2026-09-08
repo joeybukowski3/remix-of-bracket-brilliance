@@ -1,5 +1,6 @@
 import { buildStrikeoutPropDetailKey } from "./mlb-strikeout-prop-details-core.mjs";
 import { buildV3Projection } from "./mlb-k-v3-production-adapter.mjs";
+import { buildV4Projection } from "./mlb-k-v4-production-adapter.mjs";
 import { outsToDecimalInnings } from "./mlb-baseball-innings.mjs";
 import {
   summarizeOpponentLastFiveVsStarters,
@@ -12,7 +13,7 @@ import {
  * computed the same way, and still carries the same value. v2 remains the
  * production authority -- see the `v3` block comment on the row builder.
  */
-export const K_PROPS_V2_SHADOW_SCHEMA_VERSION = 2;
+export const K_PROPS_V2_SHADOW_SCHEMA_VERSION = 3;
 export const K_PROPS_V2_SHADOW_MODE = "shadow";
 
 function compareRows(a, b) {
@@ -308,6 +309,14 @@ export function buildKPropsShadowArtifact({
   detailsPayload = null,
   sourceIntegrity = null,
   projectStrikeoutsV2,
+  /**
+   * V4 inputs. Both are optional: when either is absent V4 still projects, but
+   * with a NEUTRAL opponent factor (no baselines) and/or no wRC+ term, which
+   * the row's own warnings record. A missing input must degrade V4, never
+   * fail the artifact that legacy/v2/v3 also depend on.
+   */
+  startLog = [],
+  wrcTable = null,
   generatedAt = new Date().toISOString(),
 } = {}) {
   if (typeof projectStrikeoutsV2 !== "function") {
@@ -367,6 +376,21 @@ export function buildKPropsShadowArtifact({
       leagueIpPerStart: leagueWorkloadLevels.leagueIpPerStart,
       leagueBfPerIp: leagueWorkloadLevels.leagueBfPerIp,
     });
+    /**
+     * K Projection V4. Projects innings and strikeouts-per-inning separately
+     * and multiplies them, with opponent adjustments measured RELATIVE to what
+     * the opposing starters those teams faced normally do. Emitted alongside
+     * legacy/v2/v3; which block reaches the public payload is decided by
+     * scripts/resolve-mlb-k-production-projection.mjs, never here.
+     */
+    const v4 = buildV4Projection({
+      detail,
+      v2Row: { pitcher: { opponent: normalizeTeam(rawPitcher?.opponent), handedness: v2Input.pitcher.handedness }, v2, v3, inputs: { v2Input } },
+      workloadRow,
+      startLog,
+      wrcTable,
+      slateDate,
+    });
     const legacy = {
       projectedIP: toFiniteNumber(rawPitcher?.legacyProjectedIP ?? rawPitcher?.projectedIP),
       projectedK9: toFiniteNumber(rawPitcher?.legacyProjectedK9 ?? rawPitcher?.projectedK9),
@@ -407,6 +431,7 @@ export function buildKPropsShadowArtifact({
       },
       market,
       legacy,
+      v4,
       v2: {
         modelVersion: v2.modelVersion,
         projectedStrikeouts: v2.projectedStrikeouts,
@@ -462,6 +487,11 @@ export function buildKPropsShadowArtifact({
     missingWorkloadRows: rows.filter((row) => row.inputs.workload == null).length,
     missingOpponentRows: rows.filter((row) => row.inputs.opponent == null || row.inputs.opponent.seasonKRate == null).length,
     missingLineupRows: rows.filter((row) => row.inputs.lineup.hitterCount === 0).length,
+    v4ComputedRows: rows.filter((row) => row.v4?.projectedKs != null).length,
+    v4DeclinedOutOfScopeRows: rows.filter((row) =>
+      (row.v4?.warnings ?? []).some((flag) => String(flag).startsWith("ROLE_OUT_OF_V4_SCOPE_")),
+    ).length,
+    v4NeutralOpponentRows: rows.filter((row) => row.v4?.projectedKs != null && (row.v4?.opponentUsableGames ?? 0) === 0).length,
     v3ComputedRows: rows.filter((row) => row.v3?.projectedKs != null).length,
     v3DeclinedOutOfScopeRows: rows.filter((row) =>
       (row.v3?.flags ?? []).some((flag) => String(flag).startsWith("ROLE_OUT_OF_V3_SCOPE_")),

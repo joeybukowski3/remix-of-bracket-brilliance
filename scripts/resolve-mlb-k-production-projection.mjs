@@ -80,6 +80,7 @@ export function resolveProductionProjection({ rawPath = RAW_PATH, v2Path = V2_PA
     artifactValid,
   });
   const v3Rows = diagnostics.v3Rows ?? 0;
+  const v4Rows = diagnostics.v4Rows ?? 0;
 
   // The generator (generate-mlb-hr-props-with-k-shadow.mjs) stamps the payload
   // with generically named `kProjectionMode` / `kProjectionModelVersion` that
@@ -101,12 +102,16 @@ export function resolveProductionProjection({ rawPath = RAW_PATH, v2Path = V2_PA
     ...payloadRest,
     pitchers,
     // Truthful top-level description of the value in `pitchers[].projectedKs`.
-    kProjectionMode: v3Rows > 0 ? "v3-production" : "v2-production",
+    kProjectionMode: v4Rows > 0 ? "v4-production" : v3Rows > 0 ? "v3-production" : "v2-production",
     // The model behind the MAJORITY of published rows, so this field stays a
     // truthful one-line answer to "what produced pitchers[].projectedKs?".
     // Per-row provenance is always in pitchers[].projectionModelVersion.
     kProjectionModelVersion:
-      v3Rows > 0 ? "mlb-k-projection-v3" : v2ModelVersion ?? K_PRODUCTION_PROJECTION_MODEL,
+      v4Rows > 0
+        ? "mlb-k-projection-v4"
+        : v3Rows > 0
+          ? "mlb-k-projection-v3"
+          : v2ModelVersion ?? K_PRODUCTION_PROJECTION_MODEL,
     kProjectionResolver: K_PRODUCTION_PROJECTION_MODEL,
     kProjectionLegacyRole: "per-row-fallback",
     // The workload-team-k-v3 layer stays a shadow comparison feed only.
@@ -114,14 +119,15 @@ export function resolveProductionProjection({ rawPath = RAW_PATH, v2Path = V2_PA
     kWorkloadProjectionModelVersion: workloadProjectionModelVersion,
     kProductionProjection: {
       model: K_PRODUCTION_PROJECTION_MODEL,
-      displayedProjection: v3Rows > 0 ? "v3-production" : "v2-production",
+      displayedProjection: v4Rows > 0 ? "v4-production" : v3Rows > 0 ? "v3-production" : "v2-production",
       displayedProjectionSummary:
         "hr-props-raw.json pitchers[].projectedKs is the resolved production K projection: " +
-        "K Projection V3 (mlb-k-projection-v3) where the row's V3 block passes the production gate, " +
-        "K Projection V2.2 (mlb-k-projection-v2-production) where it does not -- openers, relievers and " +
-        "pitchers with no usable game log are refused by V3 by design -- and the legacy IP x K9 / 9 " +
-        "projection as a per-row fail-safe fallback only. pitchers[].projectionSource records which " +
-        "produced each row.",
+        "K Projection V4 (mlb-k-projection-v4, projected IP x projected K/IP with opponent-relative " +
+        "starter adjustments) where the row's V4 block passes the production gate, " +
+        "K Projection V2.2 (mlb-k-projection-v2-production) where it does not -- openers and relievers " +
+        "are refused by V4 by design -- and the legacy IP x K9 / 9 projection as a per-row fail-safe " +
+        "fallback only. V3 remains computed in k-props-v2-shadow.json for comparison but is no longer " +
+        "in the authority chain. pitchers[].projectionSource records which produced each row.",
       v2ModelVersion,
       v2SlateDate: artifact?.slateDate ?? null,
       v2GeneratedAt: artifact?.generatedAt ?? null,
@@ -140,7 +146,7 @@ export function main() {
   const d = updated.kProductionProjection;
   if (d.note) console.warn(`[k-production] ${d.note} Falling back to legacy for every row.`);
   console.log(
-    `[k-production] slate=${updated.date} rows=${d.totalRows} v3=${d.v3Rows ?? 0} v2=${d.v2Rows} legacyFallback=${d.legacyFallbackRows} unavailable=${d.unavailableRows}`,
+    `[k-production] slate=${updated.date} rows=${d.totalRows} v4=${d.v4Rows ?? 0} v3=${d.v3Rows ?? 0} v2=${d.v2Rows} legacyFallback=${d.legacyFallbackRows} unavailable=${d.unavailableRows}`,
   );
   const reasons = Object.entries(d.fallbackReasons ?? {});
   if (reasons.length) {
@@ -149,6 +155,10 @@ export function main() {
   const v3Reasons = Object.entries(d.v3RejectionReasons ?? {});
   if (v3Reasons.length) {
     console.log(`[k-production] v3 not used: ${v3Reasons.map(([k, v]) => `${k}=${v}`).join(", ")}`);
+  }
+  const v4Reasons = Object.entries(d.v4RejectionReasons ?? {});
+  if (v4Reasons.length) {
+    console.log(`[k-production] v4 not used: ${v4Reasons.map(([k, v]) => `${k}=${v}`).join(", ")}`);
   }
   return updated;
 }

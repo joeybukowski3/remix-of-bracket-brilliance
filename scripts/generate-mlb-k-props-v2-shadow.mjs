@@ -16,6 +16,8 @@ const DETAILS_PATH = path.join(DATA_DIR, "strikeout-prop-details.json");
 const ODDS_PATH = path.join(DATA_DIR, "mlb-odds.json");
 const OUTPUT_PATH = path.join(DATA_DIR, "k-props-v2-shadow.json");
 const V2_SOURCE_PATH = path.join(ROOT, "src", "lib", "mlb", "kProjectionV2.ts");
+const START_LOG_PATH = path.join(DATA_DIR, "k-start-log.json");
+const WRC_PATH = path.join(DATA_DIR, "team-wrc-plus.json");
 
 function readJson(filePath, required = true) {
   if (!existsSync(filePath)) {
@@ -61,12 +63,18 @@ export async function generateKPropsV2ShadowArtifact({
   detailsPath = DETAILS_PATH,
   oddsPath = ODDS_PATH,
   outputPath = OUTPUT_PATH,
+  startLogPath = START_LOG_PATH,
+  wrcPath = WRC_PATH,
   write = true,
 } = {}) {
   const rawPayload = readJson(rawPath, true);
   const workloadPayload = readJson(workloadPath, false);
   const detailsPayload = readJson(detailsPath, false);
   const oddsPayload = readJson(oddsPath, false);
+  // V4 inputs. Optional by design: a missing start log leaves V4's opponent
+  // factors neutral rather than failing the artifact legacy/v2/v3 share.
+  const startLogPayload = readJson(startLogPath, false);
+  const wrcTable = readJson(wrcPath, false);
   const sourceIntegrity = assertKPropsV2SourceIntegrity({
     rawPayload,
     workloadPayload,
@@ -81,6 +89,8 @@ export async function generateKPropsV2ShadowArtifact({
     detailsPayload,
     sourceIntegrity,
     projectStrikeoutsV2,
+    startLog: startLogPayload?.starts ?? [],
+    wrcTable,
   });
   assertValidKPropsV2ShadowArtifact(artifact);
 

@@ -145,6 +145,42 @@ import {
   resolveKProjection,
 } from "./mlb-k-production-projection.mjs";
 
+/**
+ * A V4 block mirroring the V3 block's numbers.
+ *
+ * V4 replaced V3 as the production authority on 2026-09-08, so the fixtures
+ * carry both. Deriving V4 from V3 keeps every numeric assertion below unchanged
+ * while the resolver now selects V4 -- the point of these tests is the
+ * SELECTION contract, not the arithmetic of either model. A V3 block that
+ * declines (opener/reliever) produces a V4 block that declines too, so the
+ * fallback cases still exercise the V2 path they were written for.
+ */
+const mirrorV4 = (v3Block) => {
+  const declined = v3Block == null
+    || v3Block.projectedKs == null
+    || (v3Block.flags ?? []).some((flag) => String(flag).startsWith("ROLE_OUT_OF_V3_SCOPE_"));
+  if (declined) {
+    return {
+      modelVersion: "mlb-k-projection-v4",
+      projectedKs: null,
+      finalProjectedIP: null,
+      finalProjectedKPerIP: null,
+      confidence: "insufficient",
+      warnings: ["ROLE_OUT_OF_V4_SCOPE_OPENER"],
+    };
+  }
+  return {
+    modelVersion: "mlb-k-projection-v4",
+    projectedKs: v3Block.projectedKs,
+    finalProjectedIP: v3Block.finalProjectedIP,
+    finalProjectedKPerIP: v3Block.finalProjectedIP > 0 ? v3Block.projectedKs / v3Block.finalProjectedIP : null,
+    projectedBattersFaced: v3Block.projectedBF,
+    projectedKRate: v3Block.projectedKRate,
+    confidence: "high",
+    warnings: [],
+  };
+};
+
 /** A minimal artifact shaped exactly like k-props-v2-shadow.json. */
 const buildArtifact = (v3Block, v2Overrides = {}) => ({
   schemaVersion: 2,
@@ -166,6 +202,7 @@ const buildArtifact = (v3Block, v2Overrides = {}) => ({
         ...v2Overrides,
       },
       v3: v3Block,
+      v4: mirrorV4(v3Block),
     },
   ],
 });
@@ -184,14 +221,22 @@ const legacyRow = {
 const resolve = (artifact) =>
   resolveKProjection({ legacyRow, artifact, publicSlateDate: "2026-09-06", artifactValid: true });
 
-describe("production authority: v3 -> v2 -> legacy", () => {
-  it("uses v3 when the block passes the gate", () => {
+describe("production authority: v4 -> v2 -> legacy", () => {
+  it("uses v4 when the block passes the gate", () => {
     const out = resolve(buildArtifact(validBlock()));
-    assert.strictEqual(out.source, K_PROJECTION_SOURCE.V3);
+    assert.strictEqual(out.source, K_PROJECTION_SOURCE.V4);
     // Full precision is published; display rounding happens at presentation.
     assert.ok(Math.abs(out.effectiveProjectedKs - 0.3059 * 22.86) < 1e-9);
-    assert.strictEqual(out.modelVersion, "mlb-k-projection-v3");
-    assert.strictEqual(out.v3RejectionReason, null);
+    assert.strictEqual(out.modelVersion, "mlb-k-projection-v4");
+    assert.strictEqual(out.v4RejectionReason, null);
+  });
+
+  it("does NOT fall back to v3: a declined v4 goes straight to v2", () => {
+    const artifact = buildArtifact(validBlock());
+    artifact.rows[0].v4.warnings = ["ROLE_OUT_OF_V4_SCOPE_RELIEVER"];
+    const out = resolveKProjection({ legacyRow, artifact, publicSlateDate: "2026-09-06", artifactValid: true });
+    assert.strictEqual(out.source, K_PROJECTION_SOURCE.V2, "v3 is retained for comparison but is not authority");
+    assert.strictEqual(out.effectiveProjectedKs, 6.08);
   });
 
   it("keeps v2 and records why when v3 declines an opener", () => {
@@ -233,8 +278,8 @@ describe("production authority: v3 -> v2 -> legacy", () => {
 
   it("publishes both projections plus provenance on the row", () => {
     const row = applyResolvedKProjection(legacyRow, resolve(buildArtifact(validBlock())));
-    assert.strictEqual(row.projectionSource, "v3");
-    assert.strictEqual(row.projectionModelVersion, "mlb-k-projection-v3");
+    assert.strictEqual(row.projectionSource, "v4");
+    assert.strictEqual(row.projectionModelVersion, "mlb-k-projection-v4");
     // v3ProjectedKs is the raw model value; only the published projection rounds.
     assert.ok(Math.abs(row.v3ProjectedKs - 0.3059 * 22.86) < 1e-6);
     assert.strictEqual(row.v2ProjectedKs, 6.08);
@@ -279,15 +324,15 @@ describe("production authority: v3 -> v2 -> legacy", () => {
 describe("resolved workload travels with the published projection", () => {
   const v3Block = validBlock({ finalProjectedIP: 5.5884, projectedBF: 22.8779 });
 
-  it("publishes v3 innings, BF and rate when v3 is selected", () => {
+  it("publishes the selected model's innings, BF and rate", () => {
     const row = applyResolvedKProjection(legacyRow, resolve(buildArtifact(v3Block)));
-    assert.strictEqual(row.projectionSource, "v3");
+    assert.strictEqual(row.projectionSource, "v4");
     assert.strictEqual(row.projectedIP, 5.5884);
     assert.strictEqual(row.projectedBF, 22.8779);
     assert.strictEqual(row.projectedKRate, v3Block.projectedKRate);
-    assert.strictEqual(row.resolvedProjectedIPSource, "v3");
-    assert.strictEqual(row.resolvedProjectedBFSource, "v3");
-    assert.strictEqual(row.resolvedProjectionModel, "mlb-k-projection-v3");
+    assert.strictEqual(row.resolvedProjectedIPSource, "v4");
+    assert.strictEqual(row.resolvedProjectedBFSource, "v4");
+    assert.strictEqual(row.resolvedProjectionModel, "mlb-k-projection-v4");
   });
 
   it("keeps the published row internally consistent: Ks == rate x BF", () => {
@@ -305,7 +350,7 @@ describe("resolved workload travels with the published projection", () => {
     assert.strictEqual(row.resolvedProjectionModel, "mlb-k-projection-v2-production");
   });
 
-  it("an opener keeps v2 innings BELOW the v3 starter floor, which v3 could not express", () => {
+  it("an opener keeps v2 innings BELOW the starter floor, which v3/v4 could not express", () => {
     const opener = validBlock({ flags: ["ROLE_OUT_OF_V3_SCOPE_OPENER"], projectedKs: null });
     const artifact = buildArtifact(opener);
     artifact.rows[0].v2.projectedInnings = 1.182;
