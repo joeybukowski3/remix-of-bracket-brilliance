@@ -1,5 +1,10 @@
 # NFL DraftKings DFS Contest Analyzer
 
+WU6C adds [NFL DFS Lineup Intelligence](nfl-dfs-lineup-intelligence.md): downstream
+offensive eligibility, separate DST matchup ranks/scores/percentiles, source and
+reason disclosure, and a visible versioned methodology panel. Eligibility never
+changes uploaded-row visibility or existing projection/rank/value metrics.
+
 The current read-only slate analyzer for a user-supplied DraftKings NFL Classic
 salary CSV. The fantasy projection and ranking authority remains
 [Fantasy weekly projections](../models/fantasy-weekly-projections.md), rendered
@@ -56,8 +61,11 @@ rescales, or substitutes projections.
 This is **not a DraftKings scoring projection**. The details panel compares the
 informational DK rules in
 [`nflClassicRules.ts`](../../src/lib/nfl/dfs/nflClassicRules.ts) with canonical
-JKB Full PPR scoring so users can see the mismatch. The DK salary cap remains
-unknown because no verified repository source establishes it.
+JKB Full PPR scoring so users can see the mismatch. As of WU8 the contract is
+versioned nfl-classic-rules-v2 and carries the verified $50,000 DraftKings
+Classic salary cap together with its source string; the Contest Rules panel
+shows both. The WU8 lineup optimizer consumes the cap from this contract and
+never hardcodes one.
 
 Offensive identity resolution in
 [`identity.ts`](../../src/lib/nfl/dfs/identity.ts) uses conservative normalized
@@ -69,7 +77,8 @@ metrics rather than one row winning silently.
 
 DST resolves only by canonical normalized team abbreviation and checks game
 participation context. The weekly fantasy artifact has no DST projection, so
-DST rows show DK salary/status/team context and positional salary rank only;
+DST rows show DK salary/status/team context, positional salary rank, and WU6C
+DST matchup score/percentile/rank with component coverage;
 JKB projection, JKB ranks, Rank Diff, and points/$1K remain unavailable.
 
 ## Slate analysis outputs
@@ -165,3 +174,15 @@ outputs but never becomes a second fantasy model.
   and [`nfl-dfs-contest-analyzer.spec.ts`](../../tests/nfl-dfs-contest-analyzer.spec.ts):
   page wiring and end-to-end desktop/mobile behavior. The browser spec uses the
   repository analytics-blocking Playwright fixture.
+
+## Generated lineups (WU8)
+
+Once a slate is analyzed, a Generated Lineups section offers three deterministic
+preset lineups -- Highest Ceiling, Highest Floor and Balanced JKB -- built
+entirely in the browser from the uploaded slate. They are a downstream selection
+layer: projections, ranks, Rank Diff, Pts/$1K, optimizer eligibility and the DST
+matchup composite are all unchanged, every uploaded player stays visible on the
+board, and no lineup is presented as calibrated or EV-optimal. See
+[NFL DFS Lineup Intelligence](nfl-dfs-lineup-intelligence.md) for the objective
+policy, weights, normalization, missing-data behavior and limitations, and
+[WU8 Week 1 validation](nfl-dfs-wu8-week1-validation.md) for the real-slate run.

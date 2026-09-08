@@ -1,9 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import NflDfsUploadPanel from "@/components/nfl/dfs/NflDfsUploadPanel";
 import NflDfsSlateSummary from "@/components/nfl/dfs/NflDfsSlateSummary";
 import NflDfsAnalyzerTable from "@/components/nfl/dfs/NflDfsAnalyzerTable";
+import NflDfsLineupMethodology from "@/components/nfl/dfs/NflDfsLineupIntelligence";
+import NflDfsGeneratedLineups from "@/components/nfl/dfs/NflDfsGeneratedLineups";
+import { useDfsLineupContext } from "@/hooks/useDfsLineupContext";
+import { attachDfsLineupContext } from "@/lib/nfl/dfs/lineupContext";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
@@ -35,6 +39,12 @@ export default function NFLDfsContestAnalyzer() {
 
   const projection = useWeeklyFantasyProjectionArtifact(WEEKLY_RANKINGS_SEASON, selectedWeek);
   const research = useWeeklyFantasyResearchArtifact(WEEKLY_RANKINGS_SEASON, selectedWeek);
+  const lineupContext = useDfsLineupContext(WEEKLY_RANKINGS_SEASON, selectedWeek);
+  const [analysisAsOf, setAnalysisAsOf] = useState(() => new Date().toISOString());
+  useEffect(() => {
+    const timer = window.setInterval(() => setAnalysisAsOf(new Date().toISOString()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const historyTarget = useMemo(() => {
     const kickoffs = (games ?? []).filter((game) => game.season === WEEKLY_RANKINGS_SEASON && game.week === selectedWeek).map((game) => Date.parse(game.dateUtc)).filter(Number.isFinite);
@@ -65,8 +75,8 @@ export default function NFLDfsContestAnalyzer() {
       canonicalGames: games ?? [],
       offensiveIdentityResolutions: offensiveResolutions,
     });
-    return enrichDfsSlateAnalysis(analysis, researchAssessment, compatibility);
-  }, [parseResult, projectionRows, teams, researchArtifact, projectionArtifact, games, selectedWeek]);
+    return attachDfsLineupContext(enrichDfsSlateAnalysis(analysis, researchAssessment, compatibility), lineupContext, { season: WEEKLY_RANKINGS_SEASON, week: selectedWeek, asOf: analysisAsOf });
+  }, [parseResult, projectionRows, teams, researchArtifact, projectionArtifact, games, selectedWeek, lineupContext, analysisAsOf]);
 
   if (week === null) {
     return (
@@ -107,11 +117,13 @@ export default function NFLDfsContestAnalyzer() {
         </p>
       )}
 
-      <NflDfsUploadPanel onResult={setParseResult} />
+      <NflDfsUploadPanel onResult={(result) => { setAnalysisAsOf(new Date().toISOString()); setParseResult(result); }} />
+      <NflDfsLineupMethodology />
 
       {enrichedAnalysis && (
         <>
           <NflDfsSlateSummary analysis={enrichedAnalysis} season={WEEKLY_RANKINGS_SEASON} week={selectedWeek} />
+          <NflDfsGeneratedLineups analysis={enrichedAnalysis} projectionRows={projectionRows} asOf={analysisAsOf} />
           <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} />
         </>
       )}

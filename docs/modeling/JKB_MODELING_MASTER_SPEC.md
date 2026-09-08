@@ -1,5 +1,29 @@
 # JKB Football Modeling Master Specification
 
+WU6C adds [NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md)
+as an additive downstream consumer: versioned offensive optimizer eligibility
+and a separate weighted DST matchup composite. Canonical fantasy projections
+and all DFS rank/value populations remain unchanged. The linked contract owns
+thresholds, source freshness, role/usage limitations, DST weights, missing-data
+coverage, and future historical calibration. No optimizer, reviewer, model
+formula, prediction archive or workflow changes are part of WU6C.
+
+WU8 adds generated lineups on top of that layer: an exact, deterministic,
+browser-local lineup optimizer plus nfl-dfs-lineup-objective-v1, the three
+preset-lineup objectives. It is additive and downstream only. Canonical fantasy
+projections, optimizer-eligibility policy, DFS rank/value populations, the DST
+matchup composite and the DraftKings parser are all unchanged, and every
+uploaded player remains visible on the board. The objective weights are
+transparent product heuristics for selection, explicitly **not** calibrated DFS
+expected-value coefficients; no lineup is asserted to be EV-optimal, and no
+historical score-to-outcome calibration is claimed. The canonical NFL Classic
+rules contract moves to nfl-classic-rules-v2, adding the verified $50,000
+DraftKings salary cap with its source; the optimizer consumes the cap, roster
+shape and minimum-distinct-games rule from that contract. No model formula,
+prediction archive or workflow changes are part of WU8. The linked contract owns
+weights, feature definitions, normalization, missing-data coverage,
+tie-breaking, the double-counting audit and the future calibration plan.
+
 Status: initial governing specification, reconstructed from repository state at `2b2b2b56d4d233816f3b2f5398bfe99505b5ee26` on 2026-09-02.
 
 This document is the required entry point for work on JKB NFL spreads, totals, passing, rushing, receiving, prediction archives, market comparison, outcome resolution, features, evaluation, or model versions. Detailed contracts live in:

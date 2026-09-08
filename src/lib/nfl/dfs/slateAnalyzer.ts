@@ -11,6 +11,8 @@ import type { CanonicalNflTeam, NflGameRecord } from "@/lib/nfl/standings";
 import type { DraftKingsParsedGameInfo, ValidatedDraftKingsNflClassicRow } from "@/lib/nfl/dfs/contracts";
 import type { DfsGameMatch, DfsSlateCompatibility, DfsTeamMismatchStatus } from "@/lib/nfl/dfs/artifactCompatibility";
 import type { DfsPlayerResearch, DfsResearchAssessment } from "@/lib/nfl/dfs/research";
+import type { DfsRoleContext, EligibilityReason, OptimizerEligibility } from "./roleContext";
+import type { DstMatchup } from "./dstMatchup";
 import {
   findDuplicateDstCanonicalIdentities,
   findDuplicateOffensiveCanonicalIdentities,
@@ -363,6 +365,10 @@ export function buildDfsSlateAnalysis(input: BuildDfsSlateAnalysisInput): DfsSla
 // ---------------------------------------------------------------------------
 
 export type DfsEnrichedOffensiveRow = DfsAnalyzerOffensiveRow & {
+  slateEligible?: true;
+  optimizerEligibility?: OptimizerEligibility;
+  roleContext?: DfsRoleContext;
+  eligibilityReasons?: EligibilityReason[];
   research: DfsPlayerResearch | null;
   teamMismatchStatus: DfsTeamMismatchStatus | "none";
   opponent: string | null;
@@ -371,6 +377,8 @@ export type DfsEnrichedOffensiveRow = DfsAnalyzerOffensiveRow & {
 };
 
 export type DfsEnrichedDstRow = DfsAnalyzerDstRow & {
+  slateEligible?: true;
+  dstMatchup?: DstMatchup;
   /** DST never carries research -- there is no fantasy research authority for team defense. */
   research: null;
   /** DST identity resolves directly from TeamAbbrev; there is no name-based team-mismatch concept. */

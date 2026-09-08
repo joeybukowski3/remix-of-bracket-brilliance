@@ -34,6 +34,7 @@ import { matchupGradeHeatClass, weeklyHeatStyle } from "@/lib/fantasy/weekly/res
 import { cn } from "@/lib/utils";
 
 import NflDfsHistory, { FpaSignal, DefenseSignal, FPA_HELP, DEF_AVG_HELP } from "./NflDfsHistory";
+import { DfsEligibilityIndicator, DfsDstIndicator, DfsIntelligenceDetail } from "./NflDfsLineupIntelligence";
 import { dfsHistoryLoader, historyCoverage, type DfsHistoryIndex, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
 
 const BOARD_VIEWS: readonly DfsBoardView[] = ["VALUE", "QB", "RB", "WR", "TE", "DST"];
@@ -252,8 +253,8 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnaly
           <table className="w-full min-w-[860px] border-collapse text-[11px]">
             <thead className={stickyDenseHeader("bg-slate-50")}>
               <tr className={DENSE_TABLE_HEAD_ROW}>
-                {["Player", "Team/Opp", "Salary", "DK Pos RK", "JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Matchup", "FPA", "DEF VS AVG", ""].map((label) => (
-                  <th key={label} title={label === "FPA" ? FPA_HELP : label === "DEF VS AVG" ? DEF_AVG_HELP : undefined} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-left font-black uppercase tracking-wide text-slate-500")}>
+                {["Player", "Team/Opp", "Salary", "DK Pos RK", ...(isDst ? ["DST Matchup"] : ["JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K"]), "Matchup", "FPA", "DEF VS AVG", ""].map((label) => (
+                  <th key={label} colSpan={label === "DST Matchup" ? 5 : 1} title={label === "FPA" ? FPA_HELP : label === "DEF VS AVG" ? DEF_AVG_HELP : undefined} scope="col" className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1.5 text-left font-black uppercase tracking-wide text-slate-500")}>
                     {label}
                   </th>
                 ))}
@@ -268,6 +269,7 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnaly
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5")}>
                         <FantasyPlayerIdentity player={row.playerName} team={row.team} compact />
                         <StatusBadge status={row.dkStatus} />
+                        <DfsEligibilityIndicator row={row} />
                         <IdentityWarning row={row} />
                       </td>
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 font-bold text-slate-700")}>
@@ -276,8 +278,8 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnaly
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 font-bold tabular-nums text-slate-900")}>{formatDfsSalary(row.salary)}</td>
                       <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 tabular-nums")}>{formatDfsRank(row.dkPositionSalaryRank)}</td>
                       {isDst ? (
-                        <td colSpan={5} className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 text-[10px] font-semibold italic text-slate-400")}>
-                          No JKB DST projection — DraftKings context only
+                        <td colSpan={5} className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1.5 text-[10px] font-semibold text-slate-700")}>
+                          <DfsDstIndicator row={row} />
                         </td>
                       ) : (
                         <>
@@ -302,6 +304,7 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnaly
                     {expanded && (
                       <tr>
                         <td colSpan={13} className="border-b border-slate-100 bg-slate-50/60 px-3 py-2">
+                          <DfsIntelligenceDetail row={row} />
                           <ResearchDetail row={row} />
                           <NflDfsHistory key={row.dkId} row={row} target={historyTarget} index={historyIndex} />
                         </td>
@@ -337,6 +340,8 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnaly
                     <span className="text-[10px] font-bold text-slate-500">{isDst ? "No JKB proj" : `Proj ${formatDfsProjection(row.kind === "offense" ? row.projectedFantasyPoints : null)}`}</span>
                   </div>
                 </button>
+                <DfsEligibilityIndicator row={row} />
+                {isDst && <DfsDstIndicator row={row} />}
                 <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-1.5">
                   <div><span className="text-[9px] font-bold text-slate-500" title={FPA_HELP}>FPA TO POSITION</span><FpaSignal row={row} /></div>
                   <div><span className="text-[9px] font-bold text-slate-500" title={DEF_AVG_HELP}>DEF VS AVG</span><DefenseSignal row={row} index={historyIndex} loading={historyLoading} /></div>
@@ -349,6 +354,7 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget }: NflDfsAnaly
                         JKB Week RK {formatDfsRank(row.kind === "offense" ? row.jkbWeeklyPositionRank : null)} &middot; JKB Pts/$1K {formatDfsPointsPer1k(row.kind === "offense" ? row.pointsPer1k : null)}
                       </p>
                     )}
+                    <DfsIntelligenceDetail row={row} />
                     <ResearchDetail row={row} />
                     <NflDfsHistory key={row.dkId} row={row} target={historyTarget} index={historyIndex} />
                   </div>

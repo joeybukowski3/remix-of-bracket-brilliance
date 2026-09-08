@@ -76,13 +76,14 @@ describe("NFL Classic rules contract", () => {
     ]);
   });
 
-  it("does not encode an unproven salary cap value", () => {
-    expect(NFL_CLASSIC_SALARY_CAP).toBeNull();
-    expect(NFL_CLASSIC_RULES.salaryCap).toBeNull();
+  it("encodes the verified DraftKings NFL Classic salary cap with its source", () => {
+    expect(NFL_CLASSIC_SALARY_CAP).toBe(50_000);
+    expect(NFL_CLASSIC_RULES.salaryCap).toBe(50_000);
+    expect(NFL_CLASSIC_RULES.salaryCapSource).toMatch(/DraftKings/);
     expect(NFL_CLASSIC_RULES).not.toHaveProperty("salaryCapAmount");
   });
 
   it("is versioned so downstream consumers can detect rule changes", () => {
-    expect(NFL_CLASSIC_RULES.version).toBe("nfl-classic-rules-v1");
+    expect(NFL_CLASSIC_RULES.version).toBe("nfl-classic-rules-v2");
   });
 });
