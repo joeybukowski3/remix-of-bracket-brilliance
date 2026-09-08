@@ -189,161 +189,112 @@
 .matchup-team-identity__record { color: var(--sheet-muted) !important; font-size: 0.66rem !important; }
 .matchup-team-identity > span { width: 3.4rem !important; height: 3.4rem !important; background: transparent !important; }
 
-.matchup-market-band {
+/*
+ * Unified Spread / Total / Moneyline grid — shared by mobile and desktop.
+ * Each column stacks the market figure, the JKB figure and the difference,
+ * replacing the former market band + separate projected-total card.
+ */
+.matchup-market-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--sheet-border);
 }
-
-.matchup-market-band__label {
-  display: none;
-}
-
-.matchup-market-band > div:not(.matchup-market-band__label) {
+.matchup-market-col {
   min-width: 0;
-  border: 0 !important;
-  border-right: 1px solid var(--sheet-border-soft) !important;
-  border-radius: 0 !important;
-  padding: 0.55rem 0.35rem !important;
-  background: var(--sheet-panel-2) !important;
+  border-right: 1px solid var(--sheet-border-soft);
+  padding: 0.5rem 0.3rem;
   text-align: center;
 }
-
-.matchup-market-band > div:nth-last-child(-n+2) {
-  background: color-mix(in srgb, var(--sheet-model) 10%, var(--sheet-panel)) !important;
-}
-
-.matchup-market-band > div:nth-child(6) { grid-column: 1 / span 2; }
-.matchup-market-band > div:nth-child(7) { grid-column: 3; }
-.matchup-market-band > div > div:first-child { color: var(--sheet-muted) !important; font-size: 0.56rem !important; }
-.matchup-market-band > div > div:nth-child(2) { justify-content: center; margin-top: 0.25rem !important; }
-.matchup-market-band > div > div:nth-child(2) > div > div:first-child {
-  color: var(--sheet-text) !important;
-  font-size: 0.92rem !important;
-  white-space: nowrap;
-}
-.matchup-market-band > div:nth-last-child(-n+2) > div:nth-child(2) > div > div:first-child { color: var(--sheet-model) !important; }
-.matchup-market-band > div > div:nth-child(2) > div > div:nth-child(2) { color: var(--sheet-muted) !important; font-size: 0.55rem !important; }
-
-/*
- * JKB Projected Total — combined-total-only model-vs-market card beneath the
- * market band. Deliberately a sibling of .matchup-market-band rather than an
- * added cell inside it: that grid's CSS is hand-tuned to an exact 7-child
- * count via nth-child selectors, so a new independent block avoids any risk
- * of disturbing the existing spread/total/moneyline layout. Individual
- * team-level projected points are never rendered here — see
- * MatchupProjectedScore.tsx.
- */
-.matchup-projected-score {
-  border-top: 1px solid var(--sheet-border);
-  padding: 0.55rem 0.7rem 0.6rem;
-  background: color-mix(in srgb, var(--sheet-model) 6%, var(--sheet-panel));
-}
-
-.matchup-projected-score__label {
-  margin-bottom: 0.35rem;
-  color: var(--sheet-model);
-  font-size: 0.62rem;
+.matchup-market-col:last-child { border-right: 0; }
+.matchup-market-col__title {
+  color: var(--sheet-muted);
+  font-size: 0.56rem;
   font-weight: 850;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
-
-.matchup-projected-score__total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--sheet-model) 12%, var(--sheet-panel));
-  padding: 0.35rem 0.6rem;
+.matchup-market-col__market {
+  margin-top: 0.3rem;
+  overflow: hidden;
+  color: var(--sheet-text);
+  font-size: 0.88rem;
+  font-weight: 900;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
-
-.matchup-projected-score__total-label {
+.matchup-market-col__jkb {
+  margin-top: 0.3rem;
   color: var(--sheet-model);
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   font-weight: 800;
+  white-space: nowrap;
+}
+.matchup-market-col__jkb-label {
+  margin-right: 0.2rem;
+  font-size: 0.52rem;
+  font-weight: 850;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  opacity: 0.85;
 }
-
-.matchup-projected-score__total-value {
-  color: var(--sheet-model);
-  font-size: 1rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
-
-.matchup-projected-score__vs-market {
-  margin-top: 0.4rem;
-  border-top: 1px dashed var(--sheet-border-soft);
-  padding-top: 0.35rem;
-}
-
-.matchup-projected-score__vs-market-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.08rem 0;
-  color: var(--sheet-muted);
+.matchup-market-col__diff {
+  margin-top: 0.15rem;
   font-size: 0.68rem;
-  font-weight: 650;
+  font-weight: 850;
 }
-
-.matchup-projected-score__vs-market-row--diff {
-  color: var(--sheet-text);
-  font-weight: 800;
-}
-
-.matchup-projected-score__indicator {
+.matchup-market-col__diff--positive { color: var(--sheet-model); }
+.matchup-market-col__diff--negative { color: var(--sheet-away); }
+.matchup-market-col__diff--neutral { color: var(--sheet-muted); }
+.matchup-market-col__diff--unavailable { color: var(--sheet-faint); }
+.matchup-market-col__indicator {
+  display: inline-block;
+  margin-top: 0.25rem;
   border-radius: 5px;
   padding: 0.05rem 0.4rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
 }
-
-.matchup-projected-score__disclaimer {
-  margin-top: 0.35rem;
-  color: var(--sheet-faint);
-  font-size: 0.6rem;
-  line-height: 0.85rem;
+.matchup-market-col__pick-label {
+  margin-top: 0.3rem;
+  color: var(--sheet-model);
+  font-size: 0.52rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-
-.matchup-projected-score--unavailable {
-  background: var(--sheet-panel-2);
+.matchup-market-col__pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  color: var(--sheet-text);
+  font-size: 0.78rem;
+  font-weight: 850;
 }
-
-.matchup-projected-score__unavailable-copy {
+.matchup-market-col__pick--unavailable { color: var(--sheet-faint); font-weight: 700; }
+.matchup-market-grid__unpriced {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--sheet-border-soft);
+  padding: 0.45rem 0.6rem;
   color: var(--sheet-muted);
-  font-size: 0.7rem;
-  font-weight: 650;
+  font-size: 0.64rem;
+  line-height: 0.9rem;
+}
+.matchup-market-grid__loading {
+  padding: 0.3rem 0.6rem;
+  color: var(--sheet-muted);
+  font-size: 0.64rem;
 }
 
 @media (min-width: 640px) {
-  .matchup-projected-score {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.55rem 1.1rem;
-  }
-  .matchup-projected-score__label {
-    flex: 0 0 auto;
-    margin-bottom: 0;
-    max-width: 6.5rem;
-  }
-  .matchup-projected-score__total { flex: 0 0 auto; margin-top: 0; min-width: 11rem; }
-  .matchup-projected-score__vs-market {
-    flex: 1 1 auto;
-    margin-top: 0;
-    border-top: none;
-    border-left: 1px dashed var(--sheet-border-soft);
-    padding-top: 0;
-    padding-left: 0.9rem;
-  }
-  .matchup-projected-score__vs-market-row { justify-content: flex-start; gap: 0.4rem; }
-  .matchup-projected-score__vs-market-row span:first-child { min-width: 5.5rem; color: var(--sheet-faint); }
-  .matchup-projected-score__disclaimer { display: none; }
+  .matchup-market-col { padding: 0.7rem 0.6rem; }
+  .matchup-market-col__title { font-size: 0.64rem; }
+  .matchup-market-col__market { font-size: 1.15rem; }
+  .matchup-market-col__jkb { font-size: 0.9rem; }
+  .matchup-market-col__diff { font-size: 0.76rem; }
+  .matchup-market-col__pick { font-size: 0.95rem; }
 }
 
 .matchup-panel-label,
@@ -524,6 +475,55 @@
   font-weight: 800;
 }
 
+/* Two-sided "{AWAY} OFFENSE ↔ {HOME} OFFENSE" lever toggle (Unit by Unit). */
+.matchup-unit-lever {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.matchup-unit-lever__side {
+  border: 1px solid var(--sheet-border-soft);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  color: var(--sheet-muted);
+  background: var(--sheet-panel-2);
+  font-size: 0.58rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.matchup-unit-lever__side:focus-visible { outline: 2px solid #4da3d9; outline-offset: 2px; }
+.matchup-unit-lever__side--away.is-active { border-color: var(--sheet-away); background: var(--sheet-away); color: #fff; }
+.matchup-unit-lever__side--home.is-active { border-color: var(--sheet-home); background: var(--sheet-home); color: #fff; }
+.matchup-unit-lever__track {
+  position: relative;
+  width: 1.9rem;
+  height: 0.85rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--sheet-border-soft);
+  border-radius: 999px;
+  background: var(--sheet-panel-2);
+}
+.matchup-unit-lever__thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--sheet-away);
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+.matchup-unit-lever__thumb.is-home {
+  transform: translateX(1.05rem);
+  background: var(--sheet-home);
+}
+@media (prefers-reduced-motion: reduce) {
+  .matchup-unit-lever__thumb { transition: none; }
+}
+
 .matchup-explainer { border-color: var(--sheet-border) !important; background: var(--sheet-panel) !important; }
 .matchup-explainer summary::-webkit-details-marker { display: none; }
 .matchup-explainer[open] summary svg { transform: rotate(180deg); }
@@ -640,27 +640,6 @@ body.nfl-matchup-route[data-nfl-matchup-theme="dark"] > #root > div > header spa
     font-size: 0.72rem;
     text-align: left;
   }
-  .matchup-market-band {
-    grid-template-columns: 7.5rem repeat(3, minmax(7rem, 1fr)) 6.5rem minmax(9rem, 1.15fr) minmax(9rem, 1fr);
-  }
-  .matchup-market-band__label {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0 1rem;
-    color: var(--sheet-text);
-    background: var(--sheet-panel-2);
-    font-size: 0.78rem;
-    font-weight: 850;
-    line-height: 1.05rem;
-    text-transform: uppercase;
-  }
-  .matchup-market-band__label span { color: var(--sheet-muted); font-size: 0.64rem; }
-  .matchup-market-band__label--model { color: var(--sheet-model); text-align: center; }
-  .matchup-market-band__label--model span { color: var(--sheet-model); }
-  .matchup-market-band > div:nth-child(6), .matchup-market-band > div:nth-child(7) { grid-column: auto; }
-  .matchup-market-band > div:not(.matchup-market-band__label) { padding: 0.55rem 0.6rem !important; }
-
   .matchup-overview__top {
     display: contents;
   }

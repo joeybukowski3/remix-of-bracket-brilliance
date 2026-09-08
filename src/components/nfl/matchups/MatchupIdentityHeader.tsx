@@ -1,21 +1,10 @@
 import { Link } from "react-router-dom";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
-import MatchupProjectedScore from "@/components/nfl/matchups/MatchupProjectedScore";
-import {
-  formatMoneyline,
-  formatSpread,
-  formatTotal,
-  hasAnyMarket,
-  type MarketCurrentGame,
-} from "@/lib/nfl/marketData";
+import MatchupMarketSummaryGrid from "@/components/nfl/matchups/MatchupMarketSummaryGrid";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
-import {
-  compareToMarket,
-  formatModelVsMarketDifference,
-  formatProjectedSpread,
-  type GameProjection,
-} from "@/lib/nfl/projectionData";
+import type { MarketCurrentGame } from "@/lib/nfl/marketData";
+import type { GameProjection } from "@/lib/nfl/projectionData";
 import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 
@@ -66,50 +55,6 @@ function TeamIdentity({
   );
 }
 
-/** One market figure. An unpriced field reads as a muted N/A, never as a line. */
-function MarketCell({
-  label,
-  value,
-  detail,
-  crest,
-  accentClass = "border-l-slate-400",
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-  /** Optional inline crest. Presentation only — names no new figure. */
-  crest?: React.ReactNode;
-  accentClass?: string;
-}) {
-  const unavailable = value === NA;
-  return (
-    <div
-      className={`min-w-0 rounded-[10px] border border-slate-300 border-l-[5px] bg-slate-50 px-4 py-3 ${
-        unavailable ? "border-l-slate-300" : accentClass
-      }`}
-    >
-      <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-500">
-        {label}
-      </div>
-      <div className="mt-1.5 flex items-center gap-2.5">
-        {crest}
-        <div className="min-w-0">
-          <div
-            className={`text-[24px] font-black leading-none tracking-[-0.02em] tabular-nums ${
-              unavailable ? "text-slate-400" : "text-slate-900"
-            }`}
-          >
-            {value}
-          </div>
-          {detail && !unavailable && (
-            <div className="mt-1 text-[12px] font-medium text-slate-500">{detail}</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /**
  * Matchup identity and current market — shared above the tabs on every tab.
  *
@@ -121,43 +66,17 @@ function MarketCell({
 export default function MatchupIdentityHeader({
   matchup,
   market,
-  projection,
-  totalProjection,
+  projection = null,
+  totalProjection = null,
   totalProjectionLoading = false,
 }: {
   matchup: NflMatchup;
   market: MarketCurrentGame | null;
-  projection: GameProjection | null;
-  totalProjection: TeamTotalProjection | null;
+  projection?: GameProjection | null;
+  totalProjection?: TeamTotalProjection | null;
   totalProjectionLoading?: boolean;
 }) {
   const { away, home } = matchup;
-  const priced = hasAnyMarket(market);
-
-  const awaySpread = formatSpread(market?.spread.away ?? null);
-  const homeSpread = formatSpread(market?.spread.home ?? null);
-  // The favourite carries the negative number; showing that side keeps the
-  // strip to one line without implying the other side is unpriced.
-  const favouredIsHome = (market?.spread.home ?? 0) < 0;
-  const spreadValue = !priced
-    ? NA
-    : favouredIsHome
-      ? `${home.abbr.toUpperCase()} ${homeSpread}`
-      : `${away.abbr.toUpperCase()} ${awaySpread}`;
-
-  const awayMl = formatMoneyline(market?.moneyline.away ?? null);
-  const homeMl = formatMoneyline(market?.moneyline.home ?? null);
-  const moneylineValue = !priced
-    ? NA
-    : favouredIsHome
-      ? `${home.abbr.toUpperCase()} ${homeMl}`
-      : `${away.abbr.toUpperCase()} ${awayMl}`;
-  const moneylineDetail = !priced
-    ? undefined
-    : favouredIsHome
-      ? `${away.abbr.toUpperCase()} ${awayMl}`
-      : `${home.abbr.toUpperCase()} ${homeMl}`;
-  const comparison = compareToMarket(projection, market);
 
   return (
     <section
@@ -181,33 +100,15 @@ export default function MatchupIdentityHeader({
         </div>
       </div>
 
-      {priced ? (
-        <div className="matchup-market-band">
-          <div className="matchup-market-band__label">Market <span>(Vegas)</span></div>
-          <MarketCell label="Spread" value={spreadValue} />
-          <MarketCell label="Total" value={formatTotal(market?.total)} />
-          <MarketCell label="Moneyline" value={moneylineValue} detail={moneylineDetail} />
-          <div className="matchup-market-band__label matchup-market-band__label--model">JKB <span>Model</span></div>
-          <MarketCell label="Projected Spread" value={formatProjectedSpread(projection)} />
-          <MarketCell label="Model vs Market" value={formatModelVsMarketDifference(comparison)} />
-        </div>
-      ) : (
-        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-          <p className="text-[12px] font-bold text-slate-700">
-            No market line published for this game yet.
-          </p>
-          <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-            Spread, moneyline and total are each sourced independently and none has been priced.
-            Nothing is estimated in their place.
-          </p>
-        </div>
-      )}
-
-      <MatchupProjectedScore
-        totalProjection={totalProjection}
+      <MatchupMarketSummaryGrid
+        matchup={matchup}
         market={market}
-        loading={totalProjectionLoading}
+        projection={projection}
+        totalProjection={totalProjection}
       />
+      {totalProjectionLoading && !totalProjection && (
+        <p className="matchup-market-grid__loading">Loading JKB projection…</p>
+      )}
     </section>
   );
 }
