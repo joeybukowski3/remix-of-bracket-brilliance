@@ -94,7 +94,17 @@ export const MATCHUP_GROUP_BAND =
  * Side columns narrow below `sm`, where 230px would not fit at all.
  */
 export const MATCHUP_UNIT_ROW_GRID =
-  "mx-auto grid w-full max-w-[1080px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[minmax(72px,0.7fr)_minmax(0,1.25fr)_minmax(72px,0.7fr)] sm:gap-x-0";
+  "mx-auto grid w-full max-w-[680px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[minmax(72px,0.7fr)_minmax(0,1.25fr)_minmax(72px,0.7fr)] sm:gap-x-0";
+
+/**
+ * Bounded, centred width for the dense compact rows that do not go through
+ * `MATCHUP_UNIT_ROW_GRID` — the Market Profile header and its period rows.
+ * Without a cap these rows stretch the full section width, pushing the two
+ * team columns far apart with a large dead gap around the centred metric
+ * label. The outer section/card can still span the page; only this inner
+ * value/metric/value unit is capped.
+ */
+export const MATCHUP_COMPACT_ROW_MAX_WIDTH = "mx-auto w-full max-w-[420px] sm:max-w-[560px]";
 
 /** Statistical Comparison is the narrower of the two. Reference: 780 / 190. */
 export const MATCHUP_STAT_ROW_GRID =

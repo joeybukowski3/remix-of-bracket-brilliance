@@ -348,7 +348,7 @@ describe("category rows", () => {
       );
 
       const trigger = document.getElementById(matchupCategoryTriggerId(id));
-      expect(trigger).toHaveAttribute("aria-expanded", "true");
+      expect(trigger).toHaveAttribute("aria-selected", "true");
       await waitFor(() => expect(document.activeElement).toBe(trigger));
     }
   );
@@ -369,7 +369,7 @@ describe("category rows", () => {
       "true"
     );
     const trigger = document.getElementById(matchupCategoryTriggerId("trenches"));
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
@@ -387,7 +387,7 @@ describe("category rows", () => {
       )
     );
     const trigger = document.getElementById(matchupCategoryTriggerId("rushing"));
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(trigger).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
@@ -774,7 +774,7 @@ describe("category snapshot", () => {
         expect(window.location.hash).toBe(`#${category.hash}`);
       });
       const trigger = document.getElementById(matchupCategoryTriggerId(id));
-      expect(trigger).toHaveAttribute("aria-expanded", "true");
+      expect(trigger).toHaveAttribute("aria-selected", "true");
       await waitFor(() => expect(trigger).toHaveFocus());
     },
     HEAVY_RENDER_TIMEOUT_MS

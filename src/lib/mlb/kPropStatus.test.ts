@@ -205,6 +205,82 @@ describe("resolveKPropStatus", () => {
       expect(result.reasons).not.toContain("LOW_K_LINE");
     });
   });
+
+  describe("role-mismatch workload caps (probable starter classified as reliever/opener from career history)", () => {
+    // Jonah Tong, 2026-09-07: three relief appearances all season (0 starts),
+    // then his first career MLB start. classifyWorkloadRole reads only career
+    // appearance history, so a probable starter with zero prior starts gets
+    // graded "reliever" and workload-capped (RELIEVER_WORKLOAD_CAP), even
+    // though he's confirmed starting today. Completeness alone still grades
+    // B/A because his relief appearances are individually well-formed --
+    // without this rule the row renders as a normal, confident projection.
+    it("Jonah Tong fixture: reliever-history debut starter with a confident-looking grade is downgraded to LOW_CONFIDENCE", () => {
+      const tong = makeRow({
+        pitcher: "Jonah Tong",
+        kLine: 4.5,
+        workloadRole: "reliever",
+        projectedIP: 3,
+        projectedKs: 2,
+        projectedK9: 6,
+        workloadConfidenceGrade: "B",
+        workloadConfidenceScore: 0.72,
+        workloadFlags: ["RELIEVER_PROFILE", "RELIEVER_WORKLOAD_CAP"],
+      });
+      const result = resolveKPropStatus(tong);
+      expect(result.status).toBe("LOW_CONFIDENCE");
+      expect(result.reasons).toContain("RELIEVER_WORKLOAD_CAP");
+    });
+
+    it("an opener-workload-capped probable starter is also downgraded to LOW_CONFIDENCE even with a good grade", () => {
+      const result = resolveKPropStatus(makeRow({
+        workloadRole: "opener",
+        workloadConfidenceGrade: "A",
+        workloadFlags: ["OPENER_WORKLOAD_CAP"],
+      }));
+      expect(result.status).toBe("LOW_CONFIDENCE");
+      expect(result.reasons).toContain("OPENER_WORKLOAD_CAP");
+    });
+
+    it("combines with a D grade to produce INSUFFICIENT_DATA rather than double-counting as LOW_CONFIDENCE", () => {
+      const result = resolveKPropStatus(makeRow({
+        kLine: 4.5,
+        workloadRole: "reliever",
+        workloadConfidenceGrade: "D",
+        workloadFlags: ["RELIEVER_WORKLOAD_CAP"],
+      }));
+      expect(result.status).toBe("INSUFFICIENT_DATA");
+    });
+
+    it("does not flag a normal starter with a clean grade and no role-cap flags", () => {
+      const result = resolveKPropStatus(makeRow({
+        workloadRole: "starter",
+        workloadConfidenceGrade: "A",
+        workloadFlags: [],
+      }));
+      expect(result.status).toBe("VALID");
+    });
+
+    it("market line/odds do not affect the role-mismatch classification", () => {
+      const cheapOdds = resolveKPropStatus(makeRow({
+        kLine: 4.5,
+        workloadRole: "reliever",
+        workloadConfidenceGrade: "B",
+        workloadFlags: ["RELIEVER_WORKLOAD_CAP"],
+        kOddsOver: "-500",
+        kOddsUnder: "+350",
+      }));
+      const richOdds = resolveKPropStatus(makeRow({
+        kLine: 4.5,
+        workloadRole: "reliever",
+        workloadConfidenceGrade: "B",
+        workloadFlags: ["RELIEVER_WORKLOAD_CAP"],
+        kOddsOver: "-105",
+        kOddsUnder: "-115",
+      }));
+      expect(cheapOdds.status).toBe("LOW_CONFIDENCE");
+      expect(richOdds.status).toBe("LOW_CONFIDENCE");
+    });
+  });
 });
 
 describe("describeKPropStatusReason", () => {

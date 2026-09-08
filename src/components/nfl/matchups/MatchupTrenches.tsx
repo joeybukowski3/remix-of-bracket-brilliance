@@ -26,18 +26,27 @@ import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
  * Periods are always aligned across the pairing — a 2025 blocking value is never
  * shown against a 2026 rush value. No trench score, percentage edge or projected
  * sacks is derived.
+ *
+ * Columns are keyed by SIDE, not by role, matching every other comparison table
+ * on the page: the away team is always the left column and the home team always
+ * the right, whichever team happens to be on offense for this possession. Only
+ * `awayIsOffense` decides which metric key (and role label) each side reads —
+ * never which column it renders in.
  */
 function TrenchBattle({
-  offenseTeam,
-  defenseTeam,
+  awayTeam,
+  homeTeam,
+  awayIsOffense,
   offenseKey,
   defenseKey,
   label,
   help,
   trench,
 }: {
-  offenseTeam: NflMatchupTeam;
-  defenseTeam: NflMatchupTeam;
+  awayTeam: NflMatchupTeam;
+  homeTeam: NflMatchupTeam;
+  /** Which side has the ball for this possession. Decides roles, never columns. */
+  awayIsOffense: boolean;
   offenseKey: string;
   defenseKey: string;
   label: string;
@@ -45,17 +54,22 @@ function TrenchBattle({
   trench?: MatchupTrenchConfig;
 }) {
   const periods = trench?.periods ?? [];
+  const awayMetricKey = awayIsOffense ? offenseKey : defenseKey;
+  const homeMetricKey = awayIsOffense ? defenseKey : offenseKey;
 
   const awayValues = trench
-    ? collectTrenchPeriodValues(trench.resolve, offenseTeam.abbr, offenseKey, periods)
+    ? collectTrenchPeriodValues(trench.resolve, awayTeam.abbr, awayMetricKey, periods)
     : {};
   const homeValues = trench
-    ? collectTrenchPeriodValues(trench.resolve, defenseTeam.abbr, defenseKey, periods)
+    ? collectTrenchPeriodValues(trench.resolve, homeTeam.abbr, homeMetricKey, periods)
     : {};
 
   // A missing artifact or an unavailable season still renders the row, with N/A
   // values and a neutral rail — never a hidden pairing or a fabricated winner.
   const periodList: (typeof periods[number] | null)[] = periods.length > 0 ? [...periods] : [null];
+
+  const awayRoleLabel = awayIsOffense ? "offense" : "defense";
+  const homeRoleLabel = awayIsOffense ? "defense" : "offense";
 
   return (
     <>
@@ -78,10 +92,10 @@ function TrenchBattle({
             rightRawValue={null}
             higherIsBetter
             comparison={deriveMetricComparisonFromRanks(leftRank, rightRank)}
-            leftTeamName={`${offenseTeam.teamName} offense`}
-            rightTeamName={`${defenseTeam.teamName} defense`}
-            leftTeamAbbr={offenseTeam.abbr}
-            rightTeamAbbr={defenseTeam.abbr}
+            leftTeamName={`${awayTeam.teamName} ${awayRoleLabel}`}
+            rightTeamName={`${homeTeam.teamName} ${homeRoleLabel}`}
+            leftTeamAbbr={awayTeam.abbr}
+            rightTeamAbbr={homeTeam.abbr}
           />
         );
       })}
@@ -116,9 +130,9 @@ export default function MatchupTrenches({
   const { away, home } = matchup;
 
   const possessions = [
-    { key: "away", offense: away, defense: home },
-    { key: "home", offense: home, defense: away },
-  ];
+    { key: "away", awayIsOffense: true, offense: away, defense: home },
+    { key: "home", awayIsOffense: false, offense: home, defense: away },
+  ] as const;
 
   return (
     <MatchupSection
@@ -128,26 +142,33 @@ export default function MatchupTrenches({
       bodyClassName="matchup-dense-section-body"
     >
       <div className="space-y-2.5">
-        {possessions.map(({ key, offense, defense }) => (
+        {possessions.map(({ key, awayIsOffense, offense, defense }) => (
           <div key={key}>
+            {/*
+              The crests and role labels below always place `away` on the left
+              and `home` on the right — the same orientation the rows beneath
+              enforce — even though the offense/defense roles swap between the
+              two possessions.
+            */}
             <h3 className="matchup-trenches__possession mb-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
               <span className="sr-only">{offense.teamName} has the ball</span>
               <span aria-hidden className="flex items-center gap-1.5">
-                <NflTeamCrest team={offense} side={key === "away" ? "away" : "home"} size={24} />
-                <span><span className="sm:hidden">{offense.abbr.toUpperCase()}</span><span className="hidden sm:inline">{offense.teamName}</span> offense</span>
+                <NflTeamCrest team={away} side="away" size={24} />
+                <span><span className="sm:hidden">{away.abbr.toUpperCase()}</span><span className="hidden sm:inline">{away.teamName}</span> {awayIsOffense ? "offense" : "defense"}</span>
               </span>
               <span aria-hidden className="text-slate-400">vs</span>
               <span aria-hidden className="flex flex-row-reverse items-center gap-1.5 text-right">
-                <NflTeamCrest team={defense} side={key === "away" ? "home" : "away"} size={24} />
-                <span><span className="sm:hidden">{defense.abbr.toUpperCase()}</span><span className="hidden sm:inline">{defense.teamName}</span> defense</span>
+                <NflTeamCrest team={home} side="home" size={24} />
+                <span><span className="sm:hidden">{home.abbr.toUpperCase()}</span><span className="hidden sm:inline">{home.teamName}</span> {awayIsOffense ? "defense" : "offense"}</span>
               </span>
             </h3>
             <div className="grid gap-1.5">
               {TRENCH_BATTLES.map((battle) => (
                 <TrenchBattle
                   key={battle.id}
-                  offenseTeam={offense}
-                  defenseTeam={defense}
+                  awayTeam={away}
+                  homeTeam={home}
+                  awayIsOffense={awayIsOffense}
                   offenseKey={battle.offenseKey}
                   defenseKey={battle.defenseKey}
                   label={battle.label}

@@ -54,6 +54,19 @@ describe("NflPlatformLayout", () => {
     expect(screen.queryByText("Explore the NFL section")).toBeNull();
   });
 
+  it("shows the shared desktop rail on matchup detail routes, not wrapped in an extra hidden div", () => {
+    renderNflRoute("/nfl/matchups/dallas-cowboys-at-ny-giants");
+    const nav = screen.getByRole("navigation", { name: "NFL sitemap" });
+    // Previously matchup detail wrapped <NflSectionSidebar /> in its own
+    // `<div className="hidden">`, on top of the sidebar's own responsive
+    // `hidden xl:block` class. Assert that extra wrapper is gone: the
+    // <aside>'s parent must not be a bare `className="hidden"` div.
+    const aside = nav.closest("aside");
+    expect(aside).toBeTruthy();
+    expect(aside?.parentElement?.className.trim()).not.toBe("hidden");
+    expect(screen.getByRole("button", { name: /NFL Menu/i }).closest(".hidden")).toBeNull();
+  });
+
   it("opens the active route category automatically and marks the active link", () => {
     renderNflRoute("/nfl/guide/regression");
     expect(screen.getByRole("button", { name: /Team Intelligence/i }).getAttribute("aria-expanded")).toBe("true");

@@ -1,10 +1,10 @@
 {
   "date": "2026-09-07",
-  "generatedAt": "2026-09-07T15:47:08.730Z",
+  "generatedAt": "2026-09-07T19:23:48.351Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a pronounced home-run environment at Citizens Bank Park (1.17) and Camden Yards (1.10), while Petco (0.89) and Oracle (0.85) suppress power. Irvin and McGreevy are both right-handers allowing elevated HR/FB rates, and the weather is neutral across the board, so the edge is strictly park-plus-pitcher.",
-    "modelNote": "The model is overweighting barrel rate and park factor for the top two names, then layering in recent home-run volume and opposing-pitcher vulnerability to separate the next tier."
+    "slateOverview": "Petco Park and Oracle Park suppress power but Tatis and Devers still top the board on elite barrel and hard-hit rates against Irvin and McGreevy. Citizens Bank Park (1.17) and Camden Yards (1.10) inflate fly-ball distance, boosting Schwarber and Alonso despite tougher righty arms. Warm, low-wind conditions across the East Coast add a slight tailwind to the top-five HR scores.",
+    "modelNote": "The model is overweighting barrel rate and recent HR volume while discounting park suppression when xBA and exit velo remain elite, pushing Tatis to the top despite Petco."
   },
   "bestBets": [
     {
@@ -37,11 +37,11 @@
         "HH=51.7%"
       ],
       "bullets": [
-        "hrScore=73.1",
+        "hrScore=73.2",
         "park=0.85"
       ],
-      "hrOddsYes": "+424",
-      "marketImpliedProbability": 0.19083969465648856,
+      "hrOddsYes": "+402",
+      "marketImpliedProbability": 0.199203187250996,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,34 +52,15 @@
       "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=63.3",
+        "Pitcher HR VS=62.9",
         "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 67.8 (#3)",
-        "Pitcher HR VS 63.3 at park 1.17"
+        "HR score 70.2 (#3)",
+        "Pitcher HR VS 62.9 at park 1.17"
       ],
-      "hrOddsYes": "+240",
-      "marketImpliedProbability": 0.29411764705882354,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "AZ",
-      "opposingPitcher": "Derek Law",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=56.5",
-        "Hard Hit%=50.9"
-      ],
-      "bullets": [
-        "HR score 65.8 (#4)",
-        "Pitcher HR VS 56.5 at park 0.96"
-      ],
-      "hrOddsYes": "+443",
-      "marketImpliedProbability": 0.1841620626151013,
+      "hrOddsYes": "+245",
+      "marketImpliedProbability": 0.2898550724637681,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -88,17 +69,36 @@
       "team": "BAL",
       "opponent": "CLE",
       "opposingPitcher": "Joey Cantillo",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "Hard Hit%=57.3",
-        "Pitcher HR VS=51.3"
+        "Pitcher HR VS=50.9"
       ],
       "bullets": [
-        "HR score 65.6 (#5)",
-        "Pitcher HR VS 51.3 at park 1.10"
+        "HR score 65.4 (#4)",
+        "Pitcher HR VS 50.9 at park 1.10"
       ],
-      "hrOddsYes": "+407",
-      "marketImpliedProbability": 0.19723865877712032,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Bobby Witt Jr.",
+      "team": "KC",
+      "opponent": "AZ",
+      "opposingPitcher": "Derek Law",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=63.3",
+        "Hard Hit%=50.9"
+      ],
+      "bullets": [
+        "HR score 64.6 (#5)",
+        "Pitcher HR VS 63.3 at park 0.96"
+      ],
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -115,11 +115,30 @@
         "HH=50%"
       ],
       "bullets": [
-        "hrScore=67.8",
+        "hrScore=70.2",
         "park=1.17"
       ],
-      "hrOddsYes": "+240",
-      "marketImpliedProbability": 0.29411764705882354,
+      "hrOddsYes": "+245",
+      "marketImpliedProbability": 0.2898550724637681,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "CLE",
+      "opposingPitcher": "Joey Cantillo",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=14%",
+        "HH=57.3%"
+      ],
+      "bullets": [
+        "hrScore=65.4",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,17 +147,17 @@
       "team": "KC",
       "opponent": "AZ",
       "opposingPitcher": "Derek Law",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=12%",
         "HH=50.9%"
       ],
       "bullets": [
-        "hrScore=65.8",
+        "hrScore=64.6",
         "park=0.96"
       ],
-      "hrOddsYes": "+443",
-      "marketImpliedProbability": 0.1841620626151013,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,15 +168,15 @@
       "opposingPitcher": "Robert Gasser",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=13.3%",
-        "HH=49%"
+        "Hard Hit%=49.0",
+        "Pitcher HR VS=43.4"
       ],
       "bullets": [
-        "hrScore=64.5",
-        "park=1.1"
+        "HR score 64.4 (#6)",
+        "Pitcher HR VS 43.4 at park 1.10"
       ],
-      "hrOddsYes": "+389",
-      "marketImpliedProbability": 0.20449897750511248,
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -168,15 +187,15 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=74.3",
+        "Pitcher HR VS=73.9",
         "Hard Hit%=37.7"
       ],
       "bullets": [
-        "HR score 63.9 (#7)",
-        "Pitcher HR VS 74.3 at park 0.95"
+        "HR score 64.2 (#7)",
+        "Pitcher HR VS 73.9 at park 0.95"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
+      "hrOddsYes": "+625",
+      "marketImpliedProbability": 0.13793103448275862,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -187,15 +206,15 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=74.3",
+        "Pitcher HR VS=73.9",
         "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 62.1 (#8)",
-        "Pitcher HR VS 74.3 at park 0.95"
+        "HR score 62.3 (#8)",
+        "Pitcher HR VS 73.9 at park 0.95"
       ],
-      "hrOddsYes": "+543",
-      "marketImpliedProbability": 0.15552099533437014,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -212,11 +231,11 @@
         "HH=37.7%"
       ],
       "bullets": [
-        "hrScore=63.9",
+        "hrScore=64.2",
         "park=0.95"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
+      "hrOddsYes": "+625",
+      "marketImpliedProbability": 0.13793103448275862,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -231,11 +250,30 @@
         "HH=50%"
       ],
       "bullets": [
-        "hrScore=62.1",
+        "hrScore=62.3",
         "park=0.95"
       ],
-      "hrOddsYes": "+543",
-      "marketImpliedProbability": 0.15552099533437014,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Heriberto Hernández",
+      "team": "MIA",
+      "opponent": "NYM",
+      "opposingPitcher": "Jonah Tong",
+      "hrScoreRank": 24,
+      "topStats": [
+        "Hard Hit%=47.5",
+        "Pitcher HR VS=38.4"
+      ],
+      "bullets": [
+        "HR score 53.0 (#24)",
+        "Pitcher HR VS 38.4 at park 0.88"
+      ],
+      "hrOddsYes": "+725",
+      "marketImpliedProbability": 0.12121212121212122,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,36 +282,17 @@
       "team": "BOS",
       "opponent": "LAA",
       "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 23,
+      "hrScoreRank": 14,
       "topStats": [
-        "Pitcher HR VS=74.3",
+        "Pitcher HR VS=73.9",
         "Hard Hit%=39.8"
       ],
       "bullets": [
-        "HR score 54.6 (#23)",
-        "Pitcher HR VS 74.3 at park 0.95"
+        "HR score 57.5 (#14)",
+        "Pitcher HR VS 73.9 at park 0.95"
       ],
       "hrOddsYes": "+650",
       "marketImpliedProbability": 0.13333333333333333,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "BOS",
-      "opposingPitcher": "Brayan Bello",
-      "hrScoreRank": 18,
-      "topStats": [
-        "Pitcher HR VS=55.7",
-        "Hard Hit%=45.2"
-      ],
-      "bullets": [
-        "HR score 57.0 (#18)",
-        "Pitcher HR VS 55.7 at park 0.95"
-      ],
-      "hrOddsYes": "+600",
-      "marketImpliedProbability": 0.14285714285714285,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }

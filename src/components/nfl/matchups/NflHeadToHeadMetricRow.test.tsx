@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
 import MatchupComparisonPanel from "@/components/nfl/matchups/MatchupComparisonPanel";
@@ -235,7 +235,7 @@ function buildCategoryData(sources: MatchupMetricSources) {
 }
 
 describe("Team Comparison panel with head-to-head rows", () => {
-  it("keeps the category lead-count summary on each accordion trigger", () => {
+  it("keeps the category lead-count summary in each tab panel", () => {
     const { metrics, results } = buildCategoryData({ resolver: leadingResolver });
 
     render(
@@ -250,14 +250,17 @@ describe("Team Comparison panel with head-to-head rows", () => {
       </MemoryRouter>
     );
 
-    // Offense: away leads every comparable row, so its trigger reads "Leads N of N".
+    // Offense: away leads every comparable row, so its panel reads "Leads N of N".
+    // Its tab is selected first so the panel is not `hidden`.
+    fireEvent.click(screen.getByRole("tab", { name: "Offense" }));
     const offense = results.offense;
     expect(offense.result).toBe("away");
-    const trigger = document.getElementById("comparison-offense-trigger");
-    expect(trigger?.textContent).toContain(`Leads ${offense.awayLeads} of ${offense.eligible}`);
+    const panel = document.getElementById("comparison-offense");
+    expect(panel?.textContent).toContain(`Leads ${offense.awayLeads} of ${offense.eligible}`);
 
     // The first category is open by default and renders head-to-head rails.
-    const openPanel = document.getElementById("comparison-overall-panel");
+    fireEvent.click(screen.getByRole("tab", { name: "Overall Quality" }));
+    const openPanel = document.getElementById("comparison-overall");
     expect(within(openPanel as HTMLElement).getAllByRole("img", { name: /comparison rail/i }).length)
       .toBeGreaterThan(0);
   });
