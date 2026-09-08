@@ -77,7 +77,7 @@ export default function MatchupDataControls({
             role="switch"
             aria-checked={blendOn}
             onClick={() => onChange({ ...settings, includePriorSeason: !blendOn })}
-            className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+            className={`inline-flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
               blendOn
                 ? "border-emerald-500 bg-white text-emerald-800"
                 : "border-slate-300 bg-white text-slate-600"
@@ -85,15 +85,23 @@ export default function MatchupDataControls({
           >
             <span
               aria-hidden
-              className={`h-2 w-2 rounded-full ${blendOn ? "bg-emerald-600" : "bg-slate-400"}`}
+              className={`h-2 w-2 shrink-0 rounded-full ${blendOn ? "bg-emerald-600" : "bg-slate-400"}`}
             />
-            Include 2025 Last 8
+            {/* Full copy from `sm` up; a short label on mobile keeps this
+                control to a single line at 320px. */}
+            <span className="sm:hidden">2025 Last 8</span>
+            <span className="hidden sm:inline">Include 2025 Last 8</span>
             <span className="tabular-nums">{blendOn ? "ON" : "OFF"}</span>
           </button>
         </div>}
 
+        {/* Sample and the active-sample-rule sentence below are desktop-only
+            presentation: their behaviour (the sample controls above) is
+            unchanged on mobile, but the raw sample count and rule text are
+            not shown there — mobile users read the Data Window / Historical
+            Blend selections themselves as self-explanatory. */}
         {sampleLabel && lens === "observed" && (
-          <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="hidden items-center gap-2 sm:flex sm:ml-auto">
             <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800">
               Sample
             </span>
@@ -107,18 +115,23 @@ export default function MatchupDataControls({
         )}
       </div>
 
-      <p className="mt-1.5 border-t border-emerald-200 pt-1.5 text-[11px] leading-4 text-emerald-900/80">
-        {lens === "blended" ? <>{BLENDED_LENS_DESCRIPTION} {BLENDED_RATING_NOTE}</> :
-        lens === "season2026" || lens === "season2025" ? <>Observed {lens === "season2026" ? "2026" : "2025"} regular-season performance only. No projected priors or other-season fallback.</> :
-        lens === "projection" ? <>{PROJECTION_LENS_DESCRIPTION} {PROJECTION_RATING_NOTE}</> : <>
-        <span className="font-bold text-emerald-900">Active sample rule:</span>{" "}
-        {describeSampleRule(settings)}{" "}
-        <span className="text-slate-600">
-          Conventional team stats respond to these controls. The Joe Knows Ball power baseline in
-          the header is a separate preseason model and is unaffected.
-        </span>
-        </>}
-      </p>
+      {lens !== "observed" && (
+        <p className="mt-1.5 border-t border-emerald-200 pt-1.5 text-[11px] leading-4 text-emerald-900/80">
+          {lens === "blended" ? <>{BLENDED_LENS_DESCRIPTION} {BLENDED_RATING_NOTE}</> :
+          lens === "season2026" || lens === "season2025" ? <>Observed {lens === "season2026" ? "2026" : "2025"} regular-season performance only. No projected priors or other-season fallback.</> :
+          <>{PROJECTION_LENS_DESCRIPTION} {PROJECTION_RATING_NOTE}</>}
+        </p>
+      )}
+      {lens === "observed" && (
+        <p className="mt-1.5 hidden border-t border-emerald-200 pt-1.5 text-[11px] leading-4 text-emerald-900/80 sm:block">
+          <span className="font-bold text-emerald-900">Active sample rule:</span>{" "}
+          {describeSampleRule(settings)}{" "}
+          <span className="text-slate-600">
+            Conventional team stats respond to these controls. The Joe Knows Ball power baseline in
+            the header is a separate preseason model and is unaffected.
+          </span>
+        </p>
+      )}
     </div>
   );
 }

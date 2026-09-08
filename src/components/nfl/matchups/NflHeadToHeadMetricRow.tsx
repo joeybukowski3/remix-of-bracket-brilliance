@@ -1,10 +1,12 @@
 import { useId, useState } from "react";
+import CompactMatchupMetricRow from "@/components/nfl/matchups/CompactMatchupMetricRow";
 import MatchupRankBadge from "@/components/nfl/matchups/MatchupRankBadge";
 import NflComparisonRail from "@/components/nfl/matchups/NflComparisonRail";
 import { describeMetricAdvantage } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { METRIC_NA } from "@/lib/nfl/matchupMetrics";
 import type { MetricComparison } from "@/lib/nfl/matchupCategoryAdvantage";
 import { cn } from "@/lib/utils";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 
 /**
  * Generic compact head-to-head row for the Team Comparison tab.
@@ -111,6 +113,7 @@ export default function NflHeadToHeadMetricRow({
 }: NflHeadToHeadMetricRowProps) {
   const helpId = useId();
   const [helpOpen, setHelpOpen] = useState(false);
+  const isMobile = useIsCompactLayout("(max-width: 639px)");
 
   const neutral = higherIsBetter === null;
   const advantage = describeMetricAdvantage(comparison, leftTeamAbbr, rightTeamAbbr);
@@ -134,6 +137,38 @@ export default function NflHeadToHeadMetricRow({
       "block text-[15px] font-extrabold leading-none tabular-nums sm:text-[17px]",
       value === METRIC_NA ? "text-slate-400" : "text-slate-900"
     );
+
+  const rail = (
+    <NflComparisonRail
+      ariaLabel={railLabel}
+      input={{
+        leftValue: leftRawValue,
+        rightValue: rightRawValue,
+        leftRank,
+        rightRank,
+        higherIsBetter,
+        comparison,
+      }}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <div className="nfl-h2h-row border-b border-slate-100 py-1.5 last:border-0">
+        <CompactMatchupMetricRow
+          label={shortLabel ?? label}
+          sublabel={contextLabel}
+          away={{ formatted: leftValue, rank: leftRank, accessibleName: leftTeamName }}
+          home={{ formatted: rightValue, rank: rightRank, accessibleName: rightTeamName }}
+          winner={comparison}
+          advantageText={advantage}
+          help={help}
+          className="sm:hidden"
+        />
+        <div className="mt-1 px-2">{rail}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="nfl-h2h-row border-b border-slate-100 py-2.5 last:border-0">
@@ -196,19 +231,7 @@ export default function NflHeadToHeadMetricRow({
         </div>
       </div>
 
-      <div className="mt-2">
-        <NflComparisonRail
-          ariaLabel={railLabel}
-          input={{
-            leftValue: leftRawValue,
-            rightValue: rightRawValue,
-            leftRank,
-            rightRank,
-            higherIsBetter,
-            comparison,
-          }}
-        />
-      </div>
+      <div className="mt-2">{rail}</div>
 
       {help && (
         <div
