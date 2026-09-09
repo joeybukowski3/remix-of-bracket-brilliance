@@ -49,6 +49,13 @@ data/cfb/research/derived/
 # Reproducible NFL performance-model backtest caches (analysis-only, non-production)
 data/nfl/backtest-2026/
 
+# JKB TD Score calibration study — the full per-field player-game dataset
+# (~50-130MB, regenerate via
+# `npx tsx scripts/research/build-nfl-td-calibration-dataset.ts`). The committed
+# artifact is the compact gzipped `calibration-dataset.jsonl.gz` plus the JSON
+# summary/results/model files in that directory.
+data/nfl/research/td-calibration/player-game-dataset.jsonl
+
 # Reproducible MLB Projected K research inputs and daily workflow snapshots.
 # Daily snapshots are uploaded as compressed workflow artifacts; raw StatsAPI
 # history is reacquirable and manifest/hash verified. Neither belongs in Git.
