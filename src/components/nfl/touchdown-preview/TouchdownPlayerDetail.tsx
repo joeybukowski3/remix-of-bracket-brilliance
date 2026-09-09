@@ -1,5 +1,6 @@
 import TeamLogo from "@/components/TeamLogo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
+import { sportsbookDisplayName } from "@/lib/nfl/bettingLinesView";
 import {
   computeOpponentHistoryAverages,
   computePlayerHistoryAverages,
@@ -14,6 +15,12 @@ import type { TouchdownPreviewPlayer, TouchdownWindowKey } from "@/lib/nfl/touch
 import { cn } from "@/lib/utils";
 
 const number = (value: number | null, digits = 1) => value == null ? "N/A" : value.toFixed(digits);
+const fmtOdds = (value: number) => (value > 0 ? `+${value}` : `${value}`);
+const fmtUpdatedAt = (value: string | null | undefined) => {
+  if (!value) return "N/A";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "N/A" : parsed.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+};
 const score = (a: number | null, b: number | null) => a == null || b == null ? "N/A" : `${a}–${b}`;
 const badge = (homeAway: "home" | "away") => <span className={`rounded px-1 py-0.5 text-[9px] font-bold uppercase ${homeAway === "home" ? "bg-sky-100 text-sky-800" : "bg-slate-200 text-slate-700"}`}>{homeAway === "home" ? "H" : "A"}</span>;
 
@@ -60,7 +67,10 @@ export default function TouchdownPlayerDetail({ player, window }: { player: Touc
     ["RZ Share", metrics.rzOpportunityShare == null ? "N/A" : `${(metrics.rzOpportunityShare * 100).toFixed(1)}%`, metrics.components.teamUsage.percentile],
     ["Goal-Line Share", metrics.goalLineOpportunityShare == null ? "N/A" : `${(metrics.goalLineOpportunityShare * 100).toFixed(1)}%`, metrics.components.teamUsage.percentile],
     ["Team Implied Pts", number(metrics.impliedTeamPoints), metrics.components.impliedTeamPoints.percentile],
-    ["Anytime TD Odds", player.anytimeTdOdds == null ? "Unavailable" : String(player.anytimeTdOdds), null],
+    ["Anytime TD Odds", player.anytimeTdOdds == null ? "Unavailable" : fmtOdds(player.anytimeTdOdds), null],
+    ["Book", player.anytimeTdBook == null ? "Unavailable" : sportsbookDisplayName(player.anytimeTdBook), null],
+    ["Market Implied %", player.marketImpliedProbability == null ? "Unavailable" : `${(player.marketImpliedProbability * 100).toFixed(1)}%`, null],
+    ["Odds Updated", player.oddsUpdatedAt == null ? "Unavailable" : fmtUpdatedAt(player.oddsUpdatedAt), null],
   ] as const;
   return <div className="bg-slate-50 px-2 py-2.5 sm:px-4" data-testid="touchdown-player-detail">
     <section aria-labelledby={`additional-${player.playerId}`}>

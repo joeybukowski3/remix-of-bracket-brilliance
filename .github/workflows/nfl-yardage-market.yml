@@ -43,26 +43,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # The script itself is fail-safe: it exits 0 (non-fatal) whenever
-      # PARLAYAPI is unset or the live fetch fails, and only ever appends to
-      # the archive / overwrites the current-snapshot and QA artifacts when
-      # it successfully produced new data -- so a failed or empty run never
-      # destroys the last-known-good market state.
+      # Both scripts are fail-safe: they exit 0 (non-fatal) whenever
+      # PARLAYAPI is unset or the live fetch fails, and only ever append to
+      # their archive / overwrite their current-snapshot artifact when they
+      # successfully produced new data -- so a failed or empty run never
+      # destroys either market's last-known-good state. Each is one ParlayAPI
+      # props request (~3 request credits observed live per call).
       - name: Fetch NFL yardage market (ParlayAPI)
         run: npm run nfl:yardage-market
         env:
           PARLAYAPI: ${{ secrets.PARLAYAPI }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
+      - name: Fetch NFL anytime-TD market (ParlayAPI)
+        run: npm run nfl:anytime-td-market
+        env:
+          PARLAYAPI: ${{ secrets.PARLAYAPI }}
+
       - name: Detect meaningful data changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- 'public/data/nfl/nfl-yardage-market.json' 'data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl')" ]; then
-            echo "No NFL yardage market changes."
+          if [ -z "$(git status --porcelain -- 'public/data/nfl/nfl-yardage-market.json' 'data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl' 'public/data/nfl/nfl-anytime-td-market.json' 'data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl')" ]; then
+            echo "No NFL market changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "NFL yardage market changes detected."
+            echo "NFL market changes detected."
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -71,7 +77,7 @@ jobs:
         shell: bash
         run: |
           node -e "
-            const { readFileSync } = require('fs');
+            const { readFileSync, existsSync } = require('fs');
             const file = 'public/data/nfl/nfl-yardage-market.json';
             const parsed = JSON.parse(readFileSync(file, 'utf8'));
             if (parsed.schemaVersion !== 'nfl-yardage-market-v1') {
@@ -79,6 +85,16 @@ jobs:
             }
             console.log('Generated NFL yardage market artifact is valid.');
             console.log('Coverage gate:', JSON.stringify(parsed.coverage?.readinessGate?.overallReady));
+
+            const tdFile = 'public/data/nfl/nfl-anytime-td-market.json';
+            if (existsSync(tdFile)) {
+              const tdParsed = JSON.parse(readFileSync(tdFile, 'utf8'));
+              if (tdParsed.schemaVersion !== 'nfl-anytime-td-market-v1') {
+                throw new Error(\`\${tdFile} has unexpected schemaVersion \${tdParsed.schemaVersion}\`);
+              }
+              console.log('Generated NFL anytime-TD market artifact is valid.');
+              console.log('Canonical anytime-TD quotes:', tdParsed.qa?.playersWithCanonicalQuote);
+            }
           "
 
       - name: Commit and push refreshed data
@@ -89,14 +105,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/nfl/nfl-yardage-market.json data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl
+          git add public/data/nfl/nfl-yardage-market.json data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl public/data/nfl/nfl-anytime-td-market.json data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl
 
           if git diff --cached --quiet; then
-            echo "No staged NFL yardage market changes."
+            echo "No staged NFL market changes."
             exit 0
           fi
 
-          git commit -m "data(nfl): refresh yardage market $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+          git commit -m "data(nfl): refresh yardage and anytime-TD market $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
           pushed=false
           for attempt in 1 2 3 4 5; do
