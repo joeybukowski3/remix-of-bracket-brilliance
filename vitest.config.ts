@@ -129,6 +129,11 @@ export default defineConfig({
       // NFL Coaching Rating v1 Phase C -- current-season adapter + per-game snapshot selection.
       "scripts/lib/nfl-coach-rating-current-adapter.test.ts",
       "scripts/lib/nfl-coaching-snapshot-source.test.ts",
+      // WalterFootball private research dashboard -- page parser, normalizer, diff.
+      "scripts/lib/walter/parseGamePage.test.mjs",
+      "scripts/lib/walter/normalizeGame.test.mjs",
+      "scripts/lib/walter/diffCapture.test.mjs",
+      "scripts/lib/walter/storage.test.mjs",
     ],
   },
   resolve: {
