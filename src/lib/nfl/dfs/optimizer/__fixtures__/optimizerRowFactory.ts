@@ -27,6 +27,13 @@ export type OffensiveFixture = {
   roleClass?: DfsRoleContext["roleClass"];
   roleCertainty?: DfsRoleContext["roleCertainty"];
   researchAvailable?: boolean;
+  /**
+   * Defaults to 9 -- comfortably inside every DFS_POSITION_RANK_CAPS cap, and
+   * intentionally above 3 so it never collides with a rendered RB1/RB2/WR1/
+   * WR2/WR3 roster-slot label in tests that assert on that text.
+   */
+  jkbWeeklyPositionRank?: number | null;
+  dkStatus?: string | null;
 };
 
 function metric(value: number | null, sampleSize = 5): WeeklyResearchMetric {
@@ -101,13 +108,13 @@ export function buildOffensiveRow(fixture: OffensiveFixture): DfsEnrichedOffensi
     game: null,
     gameInfoRaw: fixture.gameKey,
     dkAvgPointsPerGame: fixture.dkAvgPointsPerGame === undefined ? 10 : fixture.dkAvgPointsPerGame,
-    dkStatus: null,
+    dkStatus: fixture.dkStatus === undefined ? null : fixture.dkStatus,
     identityStatus: "resolved",
     playerId: "gsis:" + fixture.dkId,
     identityConflict: false,
     projectedFantasyPoints: fixture.projectedFantasyPoints,
     projectionSource: "JKB Full PPR",
-    jkbWeeklyPositionRank: null,
+    jkbWeeklyPositionRank: fixture.jkbWeeklyPositionRank === undefined ? 9 : fixture.jkbWeeklyPositionRank,
     jkbSlatePositionRank: null,
     jkbOverallSlateProjectionRank: null,
     dkPositionSalaryRank: 1,

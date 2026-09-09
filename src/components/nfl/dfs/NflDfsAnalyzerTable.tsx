@@ -171,7 +171,9 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, pro
             return <Fragment key={row.dkId}>
               <tr data-dfs-player-row={row.dkId} className={cn(DENSE_TABLE_ROW, "group")}>
                 <td className={cn(FANTASY_TABLE_BODY_CELL, "border-l-2 px-2 py-1", DFS_POSITION_ACCENT[row.position])}><div className="flex items-center gap-1.5">
-                  <DfsPositionBadge position={row.position} /><FantasyPlayerIdentity player={row.playerName} team={row.team} compact />
+                  <DfsPositionBadge position={row.position} /><FantasyPlayerIdentity player={row.playerName} team={row.team} compact
+                    onNameClick={isDst ? undefined : () => setExpandedDkId(expanded ? null : row.dkId)}
+                    nameExpanded={expanded} nameAriaLabel={`${expanded ? "Collapse" : "Expand"} details for ${row.playerName}`} />
                   {status && <span className={cn("rounded border px-1 text-[9px] font-bold", DFS_STATUS_BADGE_CLASSES[status.tone])}>{status.label}</span>}
                   {warning && <span title={warning} aria-label={warning} className="text-[10px] font-semibold text-amber-800">Check identity</span>}
                 </div></td>

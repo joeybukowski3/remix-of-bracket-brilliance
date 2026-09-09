@@ -14,6 +14,7 @@ import { defenseSummary } from "./historyDelivery";
 import type { FantasyMatchupEdges } from "@/lib/nfl/matchupEdges";
 import type { WeeklyHeatTone } from "@/lib/fantasy/weekly/researchPresentation";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
+import { isDfsCandidatePoolPlayer } from "@/lib/nfl/dfs/dfsPlayerPool";
 
 /** V1 provisional Rank Diff heat bands. Recalibrate in WU5 against real slate distributions. */
 const RANK_DIFF_BANDS: ReadonlyArray<{ min: number; tone: WeeklyHeatTone }> = [
@@ -161,10 +162,17 @@ export type DfsTableFilters = {
   sortKey: DfsSortKey;
 };
 
+/**
+ * Board rows always pass through the canonical DFS practical-pool gate first
+ * -- the same rule the optimizer candidate pool and generated-lineup
+ * validation use -- so the board never shows a player the optimizer could not
+ * select. See dfsPlayerPool.ts.
+ */
 export function selectDfsBoardRows(rows: readonly DfsEnrichedAnalyzerRow[], view: DfsBoardView): DfsEnrichedAnalyzerRow[] {
-  if (view === "VALUE") return rows.filter((row) => row.kind === "offense");
-  if (view === "DST") return rows.filter((row) => row.kind === "dst");
-  return rows.filter((row) => row.position === view);
+  const pool = rows.filter(isDfsCandidatePoolPlayer);
+  if (view === "VALUE") return pool.filter((row) => row.kind === "offense");
+  if (view === "DST") return pool.filter((row) => row.kind === "dst");
+  return pool.filter((row) => row.position === view);
 }
 
 function matchesDirection(row: DfsEnrichedAnalyzerRow, direction: DfsDirectionFilter): boolean {
