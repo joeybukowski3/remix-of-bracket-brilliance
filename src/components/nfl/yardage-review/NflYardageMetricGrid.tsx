@@ -18,7 +18,7 @@ export default function NflYardageMetricGrid({ rows }: { rows: readonly NflYarda
           <div
             key={metric.key}
             className={cn(
-              "flex items-baseline justify-between gap-2 px-2 py-1.5 text-[11px]",
+              "flex items-baseline justify-between gap-2 px-2 py-1.5 text-[11px] md:px-1.5 md:py-1",
               index % 2 === 1 && "bg-slate-50",
               index > 0 && "border-t border-slate-100",
             )}

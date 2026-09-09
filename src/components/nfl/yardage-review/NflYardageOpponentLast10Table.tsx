@@ -10,12 +10,13 @@ import {
   buildOpponentLast10Summary,
   buildOpponentLast10FooterAverages,
   computeVsAverageDiff,
-  formatOpposingOffenseContext,
   formatSignedDiff,
+  lookupOpponentGameTimeTeam,
 } from "@/lib/nfl/props/review/yardageHistoryView";
 import { historicalOffRankHeatTone, currentOffenseRankHeatTone } from "@/lib/nfl/props/review/yardageHeat";
 import { DenseTableScroller } from "@/components/ui/dense-table";
 import { cn } from "@/lib/utils";
+import { TeamLogo } from "./NflYardageReviewTeamCell";
 import {
   NflYardageActualYardsCell,
   NflYardageGameScoreCell,
@@ -25,6 +26,39 @@ import {
   NflYardageVegasLineCell,
   NflYardageVsAverageCell,
 } from "./NflYardageHistoryCells";
+
+/**
+ * Opp Player cell: name plus the offensive player's own GAME-TIME team logo --
+ * resolved from that specific historical game via `teamByGame` (see
+ * `buildOpponentGameTimeTeamByGame`/`lookupOpponentGameTimeTeam` in
+ * yardageHistoryView.ts), never the player's CURRENT team. A player can have
+ * changed teams since a historical game, so substituting their present-day
+ * team would misrepresent who they played for that week; the logo is omitted
+ * (never guessed) whenever the artifact doesn't carry that game's own
+ * historical identity. The redundant "vs SEA" / "@ SEA" secondary line that
+ * used to sit under the name is gone -- the table's own heading already
+ * states the defense/opponent context ("SEA Defense -- Last 10 vs WR"), so
+ * repeating it per row added nothing.
+ */
+function OppPlayerCell({
+  gameId,
+  playerId,
+  playerName,
+  teamByGame,
+}: {
+  gameId: string | null;
+  playerId: string;
+  playerName: string;
+  teamByGame: ReadonlyMap<string, string>;
+}) {
+  const team = lookupOpponentGameTimeTeam(teamByGame, gameId, playerId);
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      {team && <TeamLogo abbr={team} size="sm" />}
+      <span className="truncate" title={playerName}>{playerName}</span>
+    </span>
+  );
+}
 
 /** `compact` (the side-by-side desktop comparison) drops the year -- "Sep 8" -- to save column width; the full single-table view keeps "Sep 8, 2025". */
 function fmtDate(dateUtc: string | null, compact: boolean): string {
@@ -55,6 +89,8 @@ function fmtVegasAvg(value: number | null): string {
  */
 export type NflYardageOpponentCurrentMatchup = {
   playerName: string;
+  /** The offensive player's own team, for the same logo treatment as the historical rows' Opp Player cell -- this is always known outright (it's `row.team`), never resolved via the best-effort lookup. */
+  teamAbbr: string;
   /** The DEFENSE's own home/away status for this upcoming game -- same convention as `game.homeAway` below. */
   homeAway: "home" | "away";
   offenseRank: number | null;
@@ -92,6 +128,8 @@ function mobileScoreCell(market: NflProjectionMarket, stat: NflYardagePassingSta
   return String((stat as NflYardageReceivingStatBlock).recTds);
 }
 
+const EMPTY_TEAM_BY_GAME: ReadonlyMap<string, string> = new Map();
+
 export default function NflYardageOpponentLast10Table({
   opponentAbbr,
   position,
@@ -99,6 +137,7 @@ export default function NflYardageOpponentLast10Table({
   currentLine,
   currentMatchup,
   compact = false,
+  teamByGame,
 }: {
   opponentAbbr: string;
   position: string;
@@ -108,7 +147,10 @@ export default function NflYardageOpponentLast10Table({
   currentMatchup?: NflYardageOpponentCurrentMatchup | null;
   /** Tighter padding/headers/date format for the side-by-side desktop comparison, plus folding the Home/Away column into the player-name cell (mirroring the Player table's Opponent column) so the two tables fit without each forcing its own horizontal scroll. Mobile presentation is unaffected. */
   compact?: boolean;
+  /** Game-time (never current-week) team lookup for the Opp Player logo -- see OppPlayerCell and `buildOpponentGameTimeTeamByGame`. Defaults to empty (no logos) so this component still works standalone, e.g. in isolation in tests. */
+  teamByGame?: ReadonlyMap<string, string>;
 }) {
+  const resolvedTeamByGame = teamByGame ?? EMPTY_TEAM_BY_GAME;
   if (!history || history.games.length === 0) {
     return (
       <div className="rounded-md border border-slate-200 bg-white px-3 py-4 text-[11px] text-slate-400">
@@ -169,7 +211,10 @@ export default function NflYardageOpponentLast10Table({
               <tr className="border-b-2 border-violet-200 bg-violet-50/70">
                 <td className="px-1 py-1.5 font-semibold uppercase tracking-wide text-violet-700">This Wk</td>
                 <td className="px-1 py-1.5 text-slate-600">
-                  <span className="block truncate" title={currentMatchup.playerName}>{currentMatchup.playerName}</span>
+                  <span className="flex min-w-0 items-center gap-1">
+                    <TeamLogo abbr={currentMatchup.teamAbbr} size="sm" />
+                    <span className="truncate" title={currentMatchup.playerName}>{currentMatchup.playerName}</span>
+                  </span>
                 </td>
                 <td className="px-1 py-1.5 text-center text-slate-400">—</td>
                 <td className="px-1 py-1.5 text-center text-slate-400">—</td>
@@ -183,11 +228,7 @@ export default function NflYardageOpponentLast10Table({
               <tr key={`m-${game.gameId ?? `${game.season}-${game.week}`}-${game.opponentPlayerId}`} className="border-b border-slate-100 last:border-b-0">
                 <td className="px-1 py-1.5 tabular-nums text-slate-600">{fmtDate(game.dateUtc, false)}</td>
                 <td className="px-1 py-1.5 text-slate-800">
-                  <span className="block truncate" title={game.opponentPlayerName}>{game.opponentPlayerName}</span>
-                  {/* Where THAT offense played against this defense -- derived from the defense's own canonical homeAway field, never a display-string guess. */}
-                  {formatOpposingOffenseContext(game.homeAway, opponentAbbr) && (
-                    <span className="block text-[8px] font-medium text-slate-400">{formatOpposingOffenseContext(game.homeAway, opponentAbbr)}</span>
-                  )}
+                  <OppPlayerCell gameId={game.gameId} playerId={game.opponentPlayerId} playerName={game.opponentPlayerName} teamByGame={resolvedTeamByGame} />
                 </td>
                 <td className="px-1 py-1.5 text-center tabular-nums text-slate-700">{mobileVolumeCell(market, game.stat)}</td>
                 <td className="px-1 py-1.5 text-center"><NflYardageActualYardsCell actualYards={game.yardsAllowed} currentLine={currentLine} /></td>
@@ -231,7 +272,10 @@ export default function NflYardageOpponentLast10Table({
               <tr className="border-b-2 border-violet-200 bg-violet-50/60">
                 <td className={cn("px-2 py-1.5 font-semibold uppercase tracking-wide text-[10px] text-violet-700", compact && "px-1.5 py-1")}>{label.thisWeek}</td>
                 <td className={cn("px-2 py-1.5 text-slate-600", compact && "px-1.5 py-1")}>
-                  <span className={cn(compact && "mr-1.5")}>{currentMatchup.playerName}</span>
+                  <span className={cn("inline-flex min-w-0 items-center gap-1", compact && "mr-1.5")}>
+                    <TeamLogo abbr={currentMatchup.teamAbbr} size="sm" />
+                    <span className="truncate">{currentMatchup.playerName}</span>
+                  </span>
                   {compact && <NflYardageHomeAwayPill homeAway={currentMatchup.homeAway} />}
                 </td>
                 {!compact && <td className="px-2 py-1.5"><NflYardageHomeAwayPill homeAway={currentMatchup.homeAway} /></td>}
@@ -257,15 +301,10 @@ export default function NflYardageOpponentLast10Table({
                 <tr key={`${game.gameId ?? `${game.season}-${game.week}`}-${game.opponentPlayerId}`} className="border-b border-slate-100 last:border-b-0">
                   <td className={cn("px-2 py-1.5 tabular-nums text-slate-600", compact && "px-1.5 py-1")}>{fmtDate(game.dateUtc, compact)}</td>
                   <td className={cn("px-2 py-1.5 text-slate-800", compact && "px-1.5 py-1")}>
-                    <span className={cn("block", compact && "inline")}>{game.opponentPlayerName}</span>
-                    {compact ? (
-                      <NflYardageHomeAwayPill homeAway={game.homeAway} />
-                    ) : (
-                      /* Where THAT offense played against this defense -- derived from the defense's own canonical homeAway field, never a display-string guess. */
-                      formatOpposingOffenseContext(game.homeAway, opponentAbbr) && (
-                        <span className="block text-[9px] font-medium text-slate-400">{formatOpposingOffenseContext(game.homeAway, opponentAbbr)}</span>
-                      )
-                    )}
+                    <span className={cn("inline-flex", compact && "mr-1.5")}>
+                      <OppPlayerCell gameId={game.gameId} playerId={game.opponentPlayerId} playerName={game.opponentPlayerName} teamByGame={resolvedTeamByGame} />
+                    </span>
+                    {compact && <NflYardageHomeAwayPill homeAway={game.homeAway} />}
                   </td>
                   {!compact && <td className="px-2 py-1.5"><NflYardageHomeAwayPill homeAway={game.homeAway} /></td>}
                   <td className={cn("px-2 py-1.5", compact && "px-1.5 py-1")}>

@@ -16,7 +16,7 @@
  * at the very bottom -- never before the Last 10 analysis, on any screen
  * size.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatYardsAllowed } from "@/lib/nfl/productionAllowedData";
@@ -40,7 +40,13 @@ import {
   type NflYardageDetailMarketContext,
 } from "@/lib/nfl/props/review/playerDetailView";
 import { useNflYardageHistory } from "@/hooks/useNflYardageHistory";
-import { lookupPlayerHistory, lookupOpponentHistory, lookupCurrentWeekEpaRank, resolvePositionSlice } from "@/lib/nfl/props/review/yardageHistoryView";
+import {
+  lookupPlayerHistory,
+  lookupOpponentHistory,
+  lookupCurrentWeekEpaRank,
+  resolvePositionSlice,
+  buildOpponentGameTimeTeamByGame,
+} from "@/lib/nfl/props/review/yardageHistoryView";
 import NflYardageReviewTeamCell from "./NflYardageReviewTeamCell";
 import NflYardagePlayerLast10Table, { type NflYardagePlayerCurrentMatchup } from "./NflYardagePlayerLast10Table";
 import NflYardageOpponentLast10Table, { type NflYardageOpponentCurrentMatchup } from "./NflYardageOpponentLast10Table";
@@ -85,7 +91,7 @@ function MarketContextRow({ market }: { market: NflYardageDetailMarketContext })
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-slate-300 bg-white p-2.5">
+    <div className="rounded-md border border-slate-300 bg-white p-2.5 md:p-2">
       <h4 className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">{title}</h4>
       {children}
     </div>
@@ -123,7 +129,7 @@ function CollapsibleSection({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className={cn(
-          "flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500",
+          "flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 md:px-2.5 md:py-1.5",
           headerTone,
           open ? "rounded-t-[calc(0.375rem-2px)] border-b-2 border-slate-300" : "rounded-[calc(0.375rem-2px)]",
         )}
@@ -131,7 +137,7 @@ function CollapsibleSection({
         <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate-700">{title}</h3>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-500 transition-transform", !open && "-rotate-90")} aria-hidden="true" />
       </button>
-      {open && <div className="p-3">{children}</div>}
+      {open && <div className="p-3 md:p-2.5">{children}</div>}
     </div>
   );
 }
@@ -198,6 +204,7 @@ function Last10Tabs({
   historyError,
   playerCurrentMatchup,
   opponentCurrentMatchup,
+  teamByGame,
 }: {
   row: NflCurrentWeekProjectionRow;
   playerHistory: ReturnType<typeof lookupPlayerHistory>;
@@ -206,6 +213,7 @@ function Last10Tabs({
   historyError: boolean;
   playerCurrentMatchup: NflYardagePlayerCurrentMatchup | null;
   opponentCurrentMatchup: NflYardageOpponentCurrentMatchup | null;
+  teamByGame: ReadonlyMap<string, string>;
 }) {
   const [active, setActive] = useState<"player" | "opponent">("player");
   // Distinct, restrained per-tab color identity -- sky for Player, light violet/purple for Opponent.
@@ -269,6 +277,7 @@ function Last10Tabs({
               history={opponentHistory}
               currentLine={currentLine}
               currentMatchup={opponentCurrentMatchup}
+              teamByGame={teamByGame}
             />
           ))}
       </div>
@@ -311,8 +320,9 @@ function Last10Comparison(props: {
   historyError: boolean;
   playerCurrentMatchup: NflYardagePlayerCurrentMatchup | null;
   opponentCurrentMatchup: NflYardageOpponentCurrentMatchup | null;
+  teamByGame: ReadonlyMap<string, string>;
 }) {
-  const { row, playerHistory, opponentHistory, currentLine, historyError, playerCurrentMatchup, opponentCurrentMatchup } = props;
+  const { row, playerHistory, opponentHistory, currentLine, historyError, playerCurrentMatchup, opponentCurrentMatchup, teamByGame } = props;
 
   return (
     <div>
@@ -340,6 +350,7 @@ function Last10Comparison(props: {
               history={opponentHistory}
               currentLine={currentLine}
               currentMatchup={opponentCurrentMatchup}
+              teamByGame={teamByGame}
               compact
             />
           )}
@@ -373,6 +384,17 @@ export default function NflYardageReviewDetailPanel({
   const opponentHistory = lookupOpponentHistory(history.data, row.opponent, row.market, row.position);
   const currentLine = marketInfo.available ? marketInfo.line : null;
 
+  // Opp Player logo source for the Opponent Last 10 table -- each historical opposing player's
+  // OWN game-time team, from the same already-fetched history artifact's additive
+  // `individualContext.defenseMatchups` block. Never the player's current team (see
+  // `buildOpponentGameTimeTeamByGame`'s doc comment) -- a stale/legacy artifact predating that
+  // field, or a game/player it doesn't cover, simply yields an empty map, and the table renders
+  // no logo for those rows rather than guessing.
+  const teamByGame = useMemo(
+    () => buildOpponentGameTimeTeamByGame(history.data, row.opponent, row.market, resolvePositionSlice(row.market, row.position)),
+    [history.data, row.opponent, row.market, row.position],
+  );
+
   // "This week" reference rows for the two Last-10 tables -- rank context
   // only, sourced from `yardage-history.json`'s `currentWeekEpaRanks`
   // (`buildPregameRollingEpaAt` in nfl-epa-week-rank-core.mjs), the EXACT
@@ -391,6 +413,7 @@ export default function NflYardageReviewDetailPanel({
   const opponentCurrentMatchup: NflYardageOpponentCurrentMatchup | null = teamCurrentWeekRank
     ? {
         playerName: row.playerName,
+        teamAbbr: row.team,
         // The DEFENSE's (row.opponent's) own home/away for this game is the inverse of the player's team's.
         homeAway: row.homeAway === "home" ? "away" : "home",
         offenseRank: teamCurrentWeekRank.offenseRank,
@@ -402,7 +425,7 @@ export default function NflYardageReviewDetailPanel({
     // site's amber "warning" tone (that stays reserved for the Projection Preview notice and Notes
     // card); this is `yellow-50` at partial opacity, restrained enough that metric colors and table
     // text still read cleanly on top of it.
-    <div className="space-y-3 border-y-2 border-slate-300 bg-yellow-50/60 p-3 text-[11px] shadow-inner">
+    <div className="space-y-3 border-y-2 border-slate-300 bg-yellow-50/60 p-3 text-[11px] shadow-inner md:space-y-2.5 md:p-2.5">
       {/* Mobile-only compact context header -- on desktop this context already lives in the row's own columns. */}
       <div className="md:hidden">
         <p className="text-[13px] font-bold text-slate-900">{row.playerName}</p>
@@ -423,12 +446,13 @@ export default function NflYardageReviewDetailPanel({
         historyError={Boolean(history.error)}
         playerCurrentMatchup={playerCurrentMatchup}
         opponentCurrentMatchup={opponentCurrentMatchup}
+        teamByGame={teamByGame}
       />
 
       <CollapsibleSection title="Projection Details" tone="slate" defaultOpen={false}>
         <div className="space-y-3">
           <CollapsibleSection title="Show the Work" tone="sky" defaultOpen={false}>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:gap-2 lg:grid-cols-4">
               <Card title="1. Projected Yards">
                 <div className="space-y-0.5">
                   <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Projected Yards</span><span className="font-semibold tabular-nums text-slate-900">{fmt1(projection.projectedYards)}</span></div>
