@@ -1,4 +1,26 @@
-import type { TouchdownPreviewPlayer, TouchdownWindowKey } from "./types";
+import { normalizeNflTeamAbbr } from "@/lib/nfl/identity/identity";
+import type { TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowKey } from "./types";
+
+/** Canonical, order-independent matchup key for two teams, e.g. `ne` + `sea` -> `"ne@sea"`. */
+export function touchdownMatchupKey(teamA: string, teamB: string): string {
+  const normalized = [teamA, teamB].map((team) => normalizeNflTeamAbbr(team) ?? team.trim().toLowerCase());
+  return [...normalized].sort().join("@");
+}
+
+/** Human-readable matchup label from a `touchdownMatchupKey` value, e.g. `"ne@sea"` -> `"ne @ sea"`. */
+export function formatTouchdownMatchupLabel(matchupKey: string): string {
+  return matchupKey.replace("@", " @ ");
+}
+
+/** Position-specific opponent "TD allowed" label. QBs almost never record receiving TDs, so the QB
+ * figure is effectively rushing TD allowance -- the label makes that explicit rather than implying
+ * passing TDs are counted (they never are; see aggregateScorerTouchdownsByPosition). */
+export const OPPONENT_POSITION_TD_ALLOWED_LABEL: Record<TouchdownPosition, string> = {
+  QB: "QB Rush TD Allowed",
+  RB: "RB TD Allowed",
+  WR: "WR TD Allowed",
+  TE: "TE TD Allowed",
+};
 
 export type TouchdownSortKey = "player" | "team" | "score" | "tdPerGame" | "tdLast5" | "usage" | "teamUsage" | "rz" | "inside10" | "goalLine" | "rzShare" | "goalLineShare" | "implied" | "oppOpportunities" | "oppPositionTds";
 export type TouchdownSort = { key: TouchdownSortKey; direction: "asc" | "desc" };
