@@ -137,6 +137,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         icon: "📏",
         status: "beta",
       },
+      {
+        to: "/nfl/td-scorer",
+        label: "TD Scorer",
+        shortLabel: "TD Scorer",
+        description: "Current-week touchdown scorer rankings from the relative JKB TD Score.",
+        icon: "🎯",
+        status: "beta",
+      },
     ],
   },
   {

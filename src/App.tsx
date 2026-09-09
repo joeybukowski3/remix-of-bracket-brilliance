@@ -53,6 +53,7 @@ import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import NFLAnalytics from "./pages/NFLAnalytics";
 import NFLYardagePropsReview from "./pages/nfl/NFLYardagePropsReview";
+import NFLTouchdownScorer from "./pages/nfl/NFLTouchdownScorer";
 import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
 import NFLPerformance from "./pages/nfl/NFLPerformance";
 import FantasyFootball from "./pages/FantasyFootball";
@@ -169,6 +170,7 @@ const App = () => (
             <Route path="performance" element={<Navigate to="/nfl/performance/overview" replace />} />
             <Route path="performance/:tab" element={<NFLPerformance />} />
             <Route path="yardage-props-review" element={<NFLYardagePropsReview />} />
+            <Route path="td-scorer" element={<NFLTouchdownScorer />} />
             <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />

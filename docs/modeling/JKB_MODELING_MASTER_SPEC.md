@@ -1,5 +1,7 @@
 # JKB Football Modeling Master Specification
 
+The additive [NFL TD Scorer Preview V1](../features/nfl-touchdown-scorer-preview.md) defines `jkb-td-score-v1.0.0`, a transparent relative player rating over a fixed current-week candidate population. Its seven weighted components, full-population percentile normalization, position adjustments, 20-opportunity TD-conversion prior, compact PBP cache, missing-data contract, and non-probability product language are owned by that specification. It does not change any yardage, spread, total, fantasy, or DFS production model and does not create a sportsbook edge or prediction archive.
+
 WU6C adds [NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md)
 as an additive downstream consumer: versioned offensive optimizer eligibility
 and a separate weighted DST matchup composite. Canonical fantasy projections
