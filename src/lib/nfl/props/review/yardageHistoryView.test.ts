@@ -15,6 +15,8 @@ import {
   formatGameScore,
   formatSignedDiff,
   lookupCurrentWeekEpaRank,
+  buildOpponentGameTimeTeamByGame,
+  lookupOpponentGameTimeTeam,
 } from "./yardageHistoryView";
 import type {
   NflYardagePlayerHistoryGame,
@@ -260,5 +262,84 @@ describe("buildOpponentLast10FooterAverages", () => {
     expect(footer.oppPlayerYpgAvg).toBeCloseTo(190, 5);
     expect(footer.yardsAllowedAvg).toBeCloseTo(205, 5);
     expect(footer.vsPlayerAvgAvg).toBeCloseTo((60 + -30) / 2, 5);
+  });
+});
+
+describe("buildOpponentGameTimeTeamByGame / lookupOpponentGameTimeTeam", () => {
+  function artifactWithDefenseMatchup(overrides: Record<string, unknown> = {}) {
+    return baseArtifact({
+      individualContext: {
+        schemaVersion: "nfl-individual-yardage-history-v1",
+        season: 2026,
+        week: 1,
+        asOf: "2026-09-07T00:00:00Z",
+        lastN: 10,
+        targetGameIds: [],
+        cohortPolicy: "individual-recorded-offensive-appearances-v1",
+        referencePolicy: "entering-game-trailing-10-recorded-games-v1",
+        temporalQuality: "event-time-reconstructed",
+        players: {},
+        defenseMatchups: {
+          "sea:passing:QB": [
+            {
+              rowId: "2025_18_ARI_SEA:gsis:00-1:passing",
+              gameId: "2025_18_ARI_SEA",
+              season: 2025,
+              week: 18,
+              dateUtc: "2026-01-04T21:25:00.000Z",
+              playerId: "gsis:00-1",
+              playerName: "Test Opp QB",
+              team: "ari",
+              opponent: "sea",
+              homeAway: "away",
+              position: "QB",
+              market: "passing",
+              actualYards: 245,
+              historicalSportsbookLine: null,
+              lineResult: "unavailable",
+              temporalQuality: "event-time-reconstructed",
+              comparison: "individual-player-vs-own-pregame-average",
+              playerPregameTrailing10Average: null,
+              playerReferenceSampleSize: 0,
+              actualMinusPlayerAverage: null,
+              missingReferenceReason: "no-prior-player-reference",
+            },
+          ],
+        },
+        diagnostics: { excludedCutoff: 0, missingGame: 0, noRecordedAppearance: 0, duplicateIdentity: 0, missingYardage: 0 },
+        ...overrides,
+      },
+    } as Partial<NflYardageHistoryArtifact>);
+  }
+
+  it("resolves the opposing player's GAME-TIME team for the matching game/player", () => {
+    const artifact = artifactWithDefenseMatchup();
+    const teamByGame = buildOpponentGameTimeTeamByGame(artifact, "sea", "passing", "QB");
+    expect(lookupOpponentGameTimeTeam(teamByGame, "2025_18_ARI_SEA", "00-1")).toBe("ari");
+  });
+
+  it("returns null (never a guess) for a game/player the artifact does not cover", () => {
+    const artifact = artifactWithDefenseMatchup();
+    const teamByGame = buildOpponentGameTimeTeamByGame(artifact, "sea", "passing", "QB");
+    expect(lookupOpponentGameTimeTeam(teamByGame, "2025_17_SF_SEA", "00-1")).toBeNull();
+    expect(lookupOpponentGameTimeTeam(teamByGame, "2025_18_ARI_SEA", "00-999")).toBeNull();
+  });
+
+  it("returns an empty map, never throws, when individualContext is absent entirely (older/legacy artifact)", () => {
+    const artifact = baseArtifact();
+    expect(() => buildOpponentGameTimeTeamByGame(artifact, "sea", "passing", "QB")).not.toThrow();
+    const teamByGame = buildOpponentGameTimeTeamByGame(artifact, "sea", "passing", "QB");
+    expect(teamByGame.size).toBe(0);
+    expect(lookupOpponentGameTimeTeam(teamByGame, "2025_18_ARI_SEA", "00-1")).toBeNull();
+  });
+
+  it("returns an empty map when the artifact itself is null", () => {
+    expect(buildOpponentGameTimeTeamByGame(null, "sea", "passing", "QB").size).toBe(0);
+  });
+
+  it("never falls back to a different defense/market/position's matchup rows", () => {
+    const artifact = artifactWithDefenseMatchup();
+    const teamByGame = buildOpponentGameTimeTeamByGame(artifact, "sea", "rushing", "RB");
+    expect(teamByGame.size).toBe(0);
   });
 });

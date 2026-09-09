@@ -15,6 +15,7 @@ import type {
 } from "../types/yardageHistory";
 import { playerHistoryKey, opponentHistoryKey } from "../types/yardageHistory";
 import { formatRankOrdinal } from "@/components/nfl/matchups/rankOrdinal";
+import { canonicalPlayerId } from "@/lib/nfl/identity/identity";
 
 export function resolvePositionSlice(market: NflProjectionMarket, playerPosition: string): string {
   if (market === "passing") return "QB";
@@ -40,6 +41,49 @@ export function lookupOpponentHistory(
   if (!artifact) return null;
   const position = resolvePositionSlice(market, playerPosition);
   return artifact.teamDefense[opponentHistoryKey(opponentAbbr, market, position)] ?? null;
+}
+
+/**
+ * Game-time team identity for each opposing player in an Opponent Last-10 table,
+ * keyed by `${gameId}:${canonical playerId}` -- sourced from the SAME
+ * `yardage-history.json` artifact's additive `individualContext.defenseMatchups`
+ * block (`DefenseIndividualMatchupRow.team`, built from that season/week's own
+ * `stats_player_week` row -- see `nfl-individual-yardage-history.mjs`), never
+ * from the current-week projection universe. A player's team can change between
+ * a historical game and the current week (trades, signings); substituting their
+ * CURRENT team for a historical row would misrepresent that game, so this only
+ * ever returns a team when the artifact actually carries that game's own
+ * historical identity. `individualContext` is optional/additive (older/legacy
+ * `yardage-history.json` artifacts predate it) -- when absent, or when a
+ * specific game/player has no matching row (position-group coverage gaps,
+ * missing stat rows, etc.), the map simply omits that entry; callers must
+ * render no logo rather than guess.
+ */
+export function buildOpponentGameTimeTeamByGame(
+  artifact: NflYardageHistoryArtifact | null | undefined,
+  opponentAbbr: string,
+  market: NflProjectionMarket,
+  position: string,
+): ReadonlyMap<string, string> {
+  const rows = artifact?.individualContext?.defenseMatchups[opponentHistoryKey(opponentAbbr, market, position)];
+  const map = new Map<string, string>();
+  if (!rows) return map;
+  for (const row of rows) {
+    if (row.gameId) map.set(`${row.gameId}:${row.playerId}`, row.team);
+  }
+  return map;
+}
+
+/** Looks up one opposing player's game-time team from the map `buildOpponentGameTimeTeamByGame` returns. */
+export function lookupOpponentGameTimeTeam(
+  teamByGame: ReadonlyMap<string, string>,
+  gameId: string | null,
+  opponentPlayerId: string,
+): string | null {
+  if (!gameId) return null;
+  const canonicalId = canonicalPlayerId(opponentPlayerId);
+  if (!canonicalId) return null;
+  return teamByGame.get(`${gameId}:${canonicalId}`) ?? null;
 }
 
 /**
