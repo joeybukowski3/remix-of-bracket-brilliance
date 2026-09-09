@@ -4,6 +4,16 @@ export type TouchdownPosition = "QB" | "RB" | "WR" | "TE";
 export type TouchdownWindowKey = "2025" | "2026" | "last8";
 export type TouchdownSampleState = "available" | "zero" | "missing";
 
+/**
+ * Per-player anytime-TD market state. "unavailable" covers both "no
+ * approved-book quote exists for this player" and "no market artifact was
+ * ever produced" -- either way there is nothing real to show. "suspended"
+ * means a quote was resolved but this game's kickoff has already passed, so
+ * the odds are frozen/stale rather than live. Odds are presentation only;
+ * this state never affects JKB TD Score.
+ */
+export type TouchdownOddsSourceState = "available" | "unavailable" | "suspended";
+
 export type TouchdownPlayerGame = {
   gameId: string;
   season: number;
@@ -57,7 +67,13 @@ export type TouchdownCandidateInput = {
   impliedTeamPoints: number | null;
   playerGames: readonly TouchdownPlayerGame[] | null;
   opponentGames: readonly TouchdownOpponentGame[] | null;
+  /** Sportsbook context only -- see TouchdownOddsSourceState. Never a model input. */
   anytimeTdOdds?: number | null;
+  anytimeTdBook?: string | null;
+  /** Vig-inclusive sportsbook-implied probability (0-1), NOT devigged. Never "fair" or "JKB" probability. */
+  marketImpliedProbability?: number | null;
+  oddsUpdatedAt?: string | null;
+  oddsSourceState?: TouchdownOddsSourceState;
 };
 
 export type TouchdownMetric = {
@@ -117,7 +133,8 @@ export type TouchdownPreviewArtifact = {
     playerWeekStats: "available" | "missing";
     touchdownContext: "available" | "missing";
     marketImpliedPoints: "available" | "partial" | "missing";
-    anytimeTdOdds: "unsupported";
+    /** "unsupported" = no anytime-TD market artifact has ever been produced; otherwise reflects join coverage across this week's candidates. */
+    anytimeTdOdds: "available" | "partial" | "missing" | "unsupported";
   };
   methodology: {
     normalization: string;

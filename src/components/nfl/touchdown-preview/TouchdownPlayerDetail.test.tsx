@@ -36,13 +36,14 @@ function opponentGame(overrides: Partial<TouchdownOpponentGame> = {}): Touchdown
   };
 }
 
-function player(position: TouchdownPosition, opts: { playerHistory?: TouchdownPlayerGame[]; opponentHistory?: TouchdownOpponentGame[]; metrics?: Partial<TouchdownWindowMetrics>; anytimeTdOdds?: number | null } = {}): TouchdownPreviewPlayer {
+function player(position: TouchdownPosition, opts: { playerHistory?: TouchdownPlayerGame[]; opponentHistory?: TouchdownOpponentGame[]; metrics?: Partial<TouchdownWindowMetrics>; anytimeTdOdds?: number | null; anytimeTdBook?: string | null; marketImpliedProbability?: number | null; oddsUpdatedAt?: string | null } = {}): TouchdownPreviewPlayer {
   const metrics = windowMetrics(opts.metrics);
   const playerHistory = opts.playerHistory ?? [playerGame()];
   const opponentHistory = opts.opponentHistory ?? [opponentGame()];
   return {
     playerId: "gsis:1", playerName: "Test Player", team: "ne", opponent: "sea", homeAway: "away", position, gameId: "2026_01_NE_SEA", kickoff: null,
-    impliedTeamPoints: 25, anytimeTdOdds: opts.anytimeTdOdds ?? null,
+    impliedTeamPoints: 25, anytimeTdOdds: opts.anytimeTdOdds ?? null, anytimeTdBook: opts.anytimeTdBook ?? null,
+    marketImpliedProbability: opts.marketImpliedProbability ?? null, oddsUpdatedAt: opts.oddsUpdatedAt ?? null,
     windows: { 2025: metrics, 2026: { ...metrics, sampleState: "zero", sampleGames: 0, jkbTdScore: null }, last8: metrics },
     playerHistory, opponentHistory,
   };
@@ -194,5 +195,13 @@ describe("TouchdownPlayerDetail Additional Stats context", () => {
     const oddsRow = within(section).getByText("Anytime TD Odds").closest("div") as HTMLElement;
     expect(within(oddsRow).getByText("Unavailable")).toBeInTheDocument();
     expect(within(oddsRow).queryByText(/pctile/)).not.toBeInTheDocument();
+  });
+
+  it("renders the selected book and market implied probability when odds are available", () => {
+    render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsUpdatedAt: "2026-09-09T16:13:25Z" })} window="2025" />);
+    const section = screen.getByText("Additional stats").closest("section") as HTMLElement;
+    expect(within(within(section).getByText("Anytime TD Odds").closest("div") as HTMLElement).getByText("+160")).toBeInTheDocument();
+    expect(within(within(section).getByText("Book").closest("div") as HTMLElement).getByText("DraftKings")).toBeInTheDocument();
+    expect(within(within(section).getByText("Market Implied %").closest("div") as HTMLElement).getByText("38.5%")).toBeInTheDocument();
   });
 });
