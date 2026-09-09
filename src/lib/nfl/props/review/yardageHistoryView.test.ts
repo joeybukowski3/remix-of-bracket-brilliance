@@ -14,8 +14,26 @@ import {
   formatOpponentDisplay,
   formatGameScore,
   formatSignedDiff,
+  lookupCurrentWeekEpaRank,
 } from "./yardageHistoryView";
-import type { NflYardagePlayerHistoryGame, NflYardageOpponentHistoryGame } from "../types/yardageHistory";
+import type {
+  NflYardagePlayerHistoryGame,
+  NflYardageOpponentHistoryGame,
+  NflYardageHistoryArtifact,
+} from "../types/yardageHistory";
+
+function baseArtifact(overrides: Partial<NflYardageHistoryArtifact> = {}): NflYardageHistoryArtifact {
+  return {
+    _meta: { generatedAt: "2026-08-26T00:00:00Z", source: "test", season: 2026, week: 1, notes: [] },
+    schemaVersion: "nfl-yardage-history-v1",
+    season: 2026,
+    week: 1,
+    players: {},
+    teamDefense: {},
+    currentWeekEpaRanks: {},
+    ...overrides,
+  };
+}
 
 function playerGame(overrides: Partial<NflYardagePlayerHistoryGame> = {}): NflYardagePlayerHistoryGame {
   return {
@@ -196,6 +214,38 @@ describe("buildPlayerLast10FooterAverages", () => {
   it("Vegas Line average is null (rendered as —) when zero historical lines exist", () => {
     const footer = buildPlayerLast10FooterAverages([playerGame({ vegasLine: null })]);
     expect(footer.vegasLineAvg).toBeNull();
+  });
+});
+
+describe("lookupCurrentWeekEpaRank", () => {
+  it("returns the rank for a valid currentWeekEpaRanks entry", () => {
+    const artifact = baseArtifact({
+      currentWeekEpaRanks: {
+        sea: { defenseRank: 3, defenseRankPoolSize: 32, offenseRank: null, offenseRankPoolSize: null },
+      },
+    });
+    expect(lookupCurrentWeekEpaRank(artifact, "sea")).toEqual({
+      defenseRank: 3,
+      defenseRankPoolSize: 32,
+      offenseRank: null,
+      offenseRankPoolSize: null,
+    });
+  });
+
+  it("returns null, never throws, when the team key is missing from currentWeekEpaRanks", () => {
+    const artifact = baseArtifact({ currentWeekEpaRanks: { sea: { defenseRank: 3, defenseRankPoolSize: 32, offenseRank: null, offenseRankPoolSize: null } } });
+    expect(lookupCurrentWeekEpaRank(artifact, "ne")).toBeNull();
+  });
+
+  it("returns null, never throws, when the artifact is on the older schema (currentWeekEpaRanks absent entirely)", () => {
+    const artifact = baseArtifact() as Partial<NflYardageHistoryArtifact>;
+    delete artifact.currentWeekEpaRanks;
+    expect(() => lookupCurrentWeekEpaRank(artifact as NflYardageHistoryArtifact, "sea")).not.toThrow();
+    expect(lookupCurrentWeekEpaRank(artifact as NflYardageHistoryArtifact, "sea")).toBeNull();
+  });
+
+  it("returns null when the artifact itself is null", () => {
+    expect(lookupCurrentWeekEpaRank(null, "sea")).toBeNull();
   });
 });
 

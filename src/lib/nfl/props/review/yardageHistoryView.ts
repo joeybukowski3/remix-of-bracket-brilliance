@@ -52,7 +52,7 @@ export function lookupCurrentWeekEpaRank(
   artifact: NflYardageHistoryArtifact | null,
   teamAbbr: string,
 ): NflYardageCurrentWeekEpaRank | null {
-  if (!artifact) return null;
+  if (!artifact || !artifact.currentWeekEpaRanks) return null;
   return artifact.currentWeekEpaRanks[teamAbbr] ?? null;
 }
 
