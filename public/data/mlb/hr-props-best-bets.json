@@ -1,10 +1,10 @@
 {
   "date": "2026-09-09",
-  "generatedAt": "2026-09-09T12:24:27.847Z",
+  "generatedAt": "2026-09-09T16:48:43.816Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium’s 1.18 park factor and Tomoyuki Sugano’s 86.3 HR/600 rate create a massive boost for the Yankees trio of Judge, Rice, and García Jr., while Camden Yards (1.10) and a lefty matchup give Alonso a secondary edge. Petco’s 0.89 factor and Kauffman’s 0.96 suppress power elsewhere, leaving only Tatis and Witt as viable road options.",
-    "modelNote": "The model is heavily weighting park factor and opposing-pitcher HR rate, which is why the top three scores all belong to the Yankees stack despite modest recent HR totals."
+    "slateOverview": "Yankee Stadium (1.18) and Camden Yards (1.11) are the only two parks above neutral today, and the model is heavily overweighting the three Yankees facing Sugano in the hitter-friendly Bronx. The Coors-like conditions in New York plus Sugano’s 86.3 HR/100 rate create the clearest edge, while Gallen and Matthews in neutral parks keep KC and DET bats in the middle of the slate.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR rate over recent HR form, which is why Judge, Rice, and García Jr. occupy the top three spots despite zero homers in the last seven days."
   },
   "bestBets": [
     {
@@ -15,14 +15,14 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrel=21.5%",
-        "HH=57.6%"
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "barrel=21.5%"
+        "barrel=21.5%",
+        "park=1.18"
       ],
-      "hrOddsYes": "+200",
-      "marketImpliedProbability": 0.3333333333333333,
+      "hrOddsYes": "+219",
+      "marketImpliedProbability": 0.31347962382445144,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -34,14 +34,14 @@
       "hrScoreRank": 2,
       "topStats": [
         "barrel=14.3%",
-        "HH=48.6%"
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "HH=48.6%"
+        "barrel=14.3%",
+        "park=1.18"
       ],
-      "hrOddsYes": "+260",
-      "marketImpliedProbability": 0.2777777777777778,
+      "hrOddsYes": "+243",
+      "marketImpliedProbability": 0.2915451895043732,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -53,33 +53,14 @@
       "hrScoreRank": 3,
       "topStats": [
         "barrel=12.1%",
-        "HH=46.5%"
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "barrel=12.1%"
+        "barrel=12.1%",
+        "park=1.18"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "WSH",
-      "opposingPitcher": "Jackson Kent",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=56.7",
-        "Hard Hit%=54.2"
-      ],
-      "bullets": [
-        "HR score 70.6 (#4)",
-        "Pitcher HR VS 56.7 at park 0.89"
-      ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+356",
+      "marketImpliedProbability": 0.21929824561403508,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -88,57 +69,76 @@
       "team": "KC",
       "opponent": "AZ",
       "opposingPitcher": "Zac Gallen",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "Pitcher HR VS=83.2",
         "Hard Hit%=50.7"
       ],
       "bullets": [
-        "HR score 70.4 (#5)",
+        "HR score 70.4 (#4)",
         "Pitcher HR VS 83.2 at park 0.96"
       ],
       "hrOddsYes": "+525",
       "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
       "player": "Fernando Tatis Jr.",
       "team": "SD",
       "opponent": "WSH",
       "opposingPitcher": "Jackson Kent",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "barrel=12.6%",
-        "HH=54.2%"
+        "Pitcher HR VS=56.7",
+        "Hard Hit%=54.2"
       ],
       "bullets": [
-        "park=0.89",
-        "HH=54.2%"
+        "HR score 70.3 (#5)",
+        "Pitcher HR VS 56.7 at park 0.89"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
+      "hrOddsYes": "+473",
+      "marketImpliedProbability": 0.17452006980802792,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Bobby Witt Jr.",
       "team": "KC",
       "opponent": "AZ",
       "opposingPitcher": "Zac Gallen",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=12%",
-        "HH=50.7%"
+        "park=0.96"
       ],
       "bullets": [
-        "park=0.96",
-        "barrel=12%"
+        "barrel=12%",
+        "park=0.96"
       ],
       "hrOddsYes": "+525",
       "marketImpliedProbability": 0.16,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "WSH",
+      "opposingPitcher": "Jackson Kent",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=12.6%",
+        "park=0.89"
+      ],
+      "bullets": [
+        "barrel=12.6%",
+        "park=0.89"
+      ],
+      "hrOddsYes": "+473",
+      "marketImpliedProbability": 0.17452006980802792,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -153,11 +153,11 @@
         "Pitcher HR VS=49.4"
       ],
       "bullets": [
-        "HR score 66.9 (#7)",
+        "HR score 66.5 (#7)",
         "Pitcher HR VS 49.4 at park 1.10"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+339",
+      "marketImpliedProbability": 0.22779043280182232,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -171,14 +171,14 @@
       "hrScoreRank": 7,
       "topStats": [
         "barrel=14%",
-        "HH=56.9%"
+        "park=1.1"
       ],
       "bullets": [
-        "park=1.1",
-        "HH=56.9%"
+        "barrel=14%",
+        "park=1.1"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+339",
+      "marketImpliedProbability": 0.22779043280182232,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -190,14 +190,14 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrel=15.8%",
-        "HH=55.5%"
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "barrel=15.8%"
+        "barrel=15.8%",
+        "park=1.18"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
+      "hrOddsYes": "+249",
+      "marketImpliedProbability": 0.28653295128939826,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -206,17 +206,17 @@
       "team": "PIT",
       "opponent": "CWS",
       "opposingPitcher": "Davis Martin",
-      "hrScoreRank": 15,
+      "hrScoreRank": 16,
       "topStats": [
         "Pitcher HR VS=55.3",
         "Hard Hit%=47.1"
       ],
       "bullets": [
-        "HR score 60.3 (#15)",
+        "HR score 60.0 (#16)",
         "Pitcher HR VS 55.3 at park 1.07"
       ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
+      "hrOddsYes": "+670",
+      "marketImpliedProbability": 0.12987012987012986,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -231,11 +231,11 @@
         "Pitcher HR VS=29.3"
       ],
       "bullets": [
-        "HR score 59.4 (#18)",
+        "HR score 59.2 (#18)",
         "Pitcher HR VS 29.3 at park 1.10"
       ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
+      "hrOddsYes": "+571",
+      "marketImpliedProbability": 0.14903129657228018,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
