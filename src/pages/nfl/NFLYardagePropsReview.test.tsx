@@ -192,6 +192,7 @@ function yardageHistoryArtifact() {
         ],
       },
     },
+    currentWeekEpaRanks: {},
   };
 }
 
@@ -341,14 +342,18 @@ describe("NFLYardagePropsReview", () => {
     const expandButtons = screen.getAllByRole("button", { name: /expand details for drake maye/i });
     expandButtons[0].click();
 
-    // Player Last 10 renders immediately (default-active tab); Opponent Last 10 needs its tab selected.
+    // Within the narrow/mobile single-active-tab switcher, Player Last 10 renders immediately
+    // (default-active tab) and Opponent Last 10 needs its tab selected -- the wide-desktop
+    // side-by-side comparison (a separate DOM subtree, shown/hidden by CSS breakpoint only)
+    // always renders both, so this scopes to the tab switcher's own root.
     await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
+    const tabSwitcher = screen.getByRole("tablist", { name: "Last 10 history" }).parentElement as HTMLElement;
+    expect(within(tabSwitcher).queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
 
     const opponentTabs = screen.getAllByRole("tab", { name: "Opponent Last 10" });
     opponentTabs[0].click();
-    await waitFor(() => expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(tabSwitcher).getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
+    expect(within(tabSwitcher).queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
 
     // Show the Work lives collapsed inside "Projection Details" at the bottom, below Last 10.
     const projectionDetailsButtons = screen.getAllByRole("button", { name: "Projection Details" });
@@ -402,7 +407,11 @@ describe("NFLYardagePropsReview", () => {
     screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
 
     await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
+    // Scoped to the narrow/mobile single-active-tab switcher -- the wide-desktop side-by-side
+    // comparison (a separate DOM subtree, shown/hidden by CSS breakpoint only) always renders
+    // both tables regardless of this tab state.
+    const tabSwitcher = screen.getByRole("tablist", { name: "Last 10 history" }).parentElement as HTMLElement;
+    expect(within(tabSwitcher).queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
 
     const playerTab = screen.getAllByRole("tab", { name: "Player Last 10" })[0];
     const opponentTab = screen.getAllByRole("tab", { name: "Opponent Last 10" })[0];
@@ -410,13 +419,13 @@ describe("NFLYardagePropsReview", () => {
     expect(opponentTab).toHaveAttribute("aria-selected", "false");
 
     opponentTab.click();
-    await waitFor(() => expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(tabSwitcher).getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
+    expect(within(tabSwitcher).queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
     expect(opponentTab).toHaveAttribute("aria-selected", "true");
 
     playerTab.click();
-    await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(tabSwitcher).getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
+    expect(within(tabSwitcher).queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
   });
 
   it("Projection Details (Show the Work / Role & Provenance / Notes) is collapsed by default, below Last 10, and preserves every field when opened", async () => {
@@ -976,9 +985,13 @@ describe("NFLYardagePropsReview Last 10 tab colors and compact metric grid", () 
     expect(screen.getAllByText("Yards / Attempt").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Team Pass Success Rate").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Pass vs Defense Edge").length).toBeGreaterThan(0);
-    // Never the old (incorrect) opponent-allowed framing.
-    expect(screen.queryByText(/Season Pass Yds Allowed/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/EPA Pass Allowed/)).not.toBeInTheDocument();
+    // Never the old (incorrect) opponent-allowed framing -- scoped to the narrow/mobile
+    // single-active-tab switcher, since the md+ side-by-side comparison (a separate DOM
+    // subtree, shown/hidden by CSS breakpoint only) always renders both grids regardless
+    // of this tab state.
+    const tabSwitcher = screen.getByRole("tablist", { name: "Stats" }).parentElement as HTMLElement;
+    expect(within(tabSwitcher).queryByText(/Season Pass Yds Allowed/)).not.toBeInTheDocument();
+    expect(within(tabSwitcher).queryByText(/EPA Pass Allowed/)).not.toBeInTheDocument();
 
     // Last 10/Last 5 Yds/Gm come from Drake Maye's own history-log game (actualYards 191), not the
     // opponent's yards-allowed fixture value (which this fixture leaves empty/unset entirely).
@@ -1149,8 +1162,12 @@ describe("NFLYardagePropsReview Player Stats / Opponent Stats tabs", () => {
     // Never invented -- no such field is loaded anywhere on this page.
     expect(screen.queryByText(/Yards\s*\/\s*Attempt Allowed/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Sack|Pressure/i)).not.toBeInTheDocument();
-    // The player-oriented tab's rows are gone while Opponent Stats is active.
-    expect(screen.queryByText("Last 10 Pass Yds/Gm")).not.toBeInTheDocument();
+    // The player-oriented tab's rows are gone while Opponent Stats is active -- scoped to the
+    // narrow/mobile single-active-tab switcher, since the md+ side-by-side comparison (a
+    // separate DOM subtree, shown/hidden by CSS breakpoint only) always renders both grids
+    // regardless of this tab state.
+    const tabSwitcher = statsTablist.parentElement as HTMLElement;
+    expect(within(tabSwitcher).queryByText("Last 10 Pass Yds/Gm")).not.toBeInTheDocument();
   });
 
   it("the Stats tab and the Last-10 history tab track state independently", async () => {
@@ -1163,6 +1180,45 @@ describe("NFLYardagePropsReview Player Stats / Opponent Stats tabs", () => {
     // Both switched independently -- neither reset the other.
     expect(within(screen.getByRole("tablist", { name: "Stats" })).getByRole("tab", { name: "Opponent Stats" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getAllByText("Season Pass Yds Allowed/Gm").length).toBeGreaterThan(0);
+  });
+
+  it("renders Player Stats and Opponent Stats side by side under headings, without selecting either tab", async () => {
+    await expandDrakeMaye();
+
+    // Headings from the always-rendered `md:grid` side-by-side block -- distinct from the
+    // narrow/mobile tab switcher's <button role="tab"> elements of the same name.
+    const playerHeading = screen.getByRole("heading", { name: "Player Stats" });
+    const opponentHeading = screen.getByRole("heading", { name: "Opponent Stats" });
+    expect(playerHeading).toBeInTheDocument();
+    expect(opponentHeading).toBeInTheDocument();
+
+    // Neither tab has been clicked (Opponent Stats is not even the default) -- proving both
+    // grids rendered from the side-by-side block, not the tab switcher.
+    const opponentTab = within(screen.getByRole("tablist", { name: "Stats" })).getByRole("tab", { name: "Opponent Stats" });
+    expect(opponentTab).toHaveAttribute("aria-selected", "false");
+
+    // Both grids' own content is present at the same time, confirming they aren't gated by tab state.
+    expect(screen.getAllByText("Last 10 Pass Yds/Gm").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Season Pass Yds Allowed/Gm").length).toBeGreaterThan(0);
+  });
+
+  it("the side-by-side heading row sits in its own container, a sibling of (not nested inside) the mobile tab switcher", async () => {
+    await expandDrakeMaye();
+
+    const sideBySideContainer = screen.getByRole("heading", { name: "Player Stats" }).closest("div")?.parentElement as HTMLElement;
+    const tabSwitcher = screen.getByRole("tablist", { name: "Stats" }).parentElement as HTMLElement;
+    expect(sideBySideContainer).not.toBe(tabSwitcher);
+    expect(within(sideBySideContainer).queryByRole("tablist", { name: "Stats" })).not.toBeInTheDocument();
+  });
+
+  it("renders the expanded detail panel outside the horizontally-scrolling comparison table region", async () => {
+    await expandDrakeMaye();
+
+    const detailHeading = screen.getByRole("heading", { name: "Player Stats" });
+    // The comparison table's own horizontally-scrolling region (role="region", from NflTableScroller) --
+    // the detail panel must not be nested inside it, or it would inherit that table's forced
+    // `min-w-[1120px]` width and be clipped/require horizontal scroll regardless of viewport.
+    expect(detailHeading.closest('[role="region"]')).toBeNull();
   });
 });
 
@@ -1223,8 +1279,8 @@ describe("NFLYardagePropsReview Player Last 10 added columns by market", () => {
   });
 });
 
-describe("NFLYardagePropsReview Opponent Last 10 home/away context", () => {
-  it("shows @/vs + opponent abbreviation under the opposing player's name when the historical record has homeAway", async () => {
+describe("NFLYardagePropsReview Opponent Last 10 Opp Player cell", () => {
+  it("shows the opposing player's name without a redundant vs/@ opponent line -- the table heading already states the defense/opponent context", async () => {
     stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
     renderPage();
 
@@ -1233,9 +1289,312 @@ describe("NFLYardagePropsReview Opponent Last 10 home/away context", () => {
     await waitFor(() => expect(screen.getAllByRole("tab", { name: "Opponent Last 10" }).length).toBeGreaterThan(0));
     screen.getAllByRole("tab", { name: "Opponent Last 10" })[0].click();
 
-    // Fixture: sea:passing:QB game has homeAway "home" (the defense, SEA, hosted) -- so the visiting
-    // offense ("Test Opp QB") played @ SEA.
+    // Fixture: sea:passing:QB game has homeAway "home" (the defense, SEA, hosted) -- the visiting
+    // offense's name ("Test Opp QB") still renders, but the old secondary "@ SEA" line (redundant
+    // with the "SEA Defense -- Last 1 vs QB" heading right above it) is gone. Scoped to the
+    // Opponent Last 10 table's own region -- the collapsed row itself legitimately shows an
+    // unrelated "@ SEA" (the player's own opponent context), which this must not collide with.
     await waitFor(() => expect(screen.getAllByText("Test Opp QB").length).toBeGreaterThan(0));
-    expect(screen.getAllByText("@ SEA").length).toBeGreaterThan(0);
+    const regions = screen.getAllByRole("region", { name: /SEA defense last 1 vs QB/i });
+    for (const region of regions) {
+      expect(within(region).queryByText("@ SEA")).not.toBeInTheDocument();
+      expect(within(region).queryByText("vs SEA")).not.toBeInTheDocument();
+    }
+    expect(screen.getAllByText(/SEA Defense — Last \d+ vs QB/).length).toBeGreaterThan(0);
+  });
+
+  it("renders the opposing player's own GAME-TIME team logo when the history artifact's individualContext carries it, and omits it (never guessing the player's current team) otherwise", async () => {
+    // "Test Opp QB" (opponentPlayerId "00-1", game "2025_18_ARI_SEA" in the sea:passing:QB fixture
+    // below) has a matching individualContext.defenseMatchups row for that exact game, saying it
+    // played for "ari" THAT week -- the genuine, leakage-safe game-time identity this feature is
+    // supposed to use. "Test Opp RB" (the sea:rushing:RB fixture's opposing player) has no such
+    // row, so its team is unresolvable and no logo should render for it -- not even a guess from
+    // this week's projection universe (this fixture's `passingRow()` is "ne", never "sea"'s
+    // opponent, so there is nothing to accidentally leak in from there either).
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("yardage-history.json")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              ...yardageHistoryArtifact(),
+              individualContext: {
+                schemaVersion: "nfl-individual-yardage-history-v1",
+                season: 2026,
+                week: 1,
+                asOf: "2026-09-07T00:00:00Z",
+                lastN: 10,
+                targetGameIds: [],
+                cohortPolicy: "individual-recorded-offensive-appearances-v1",
+                referencePolicy: "entering-game-trailing-10-recorded-games-v1",
+                temporalQuality: "event-time-reconstructed",
+                players: {},
+                defenseMatchups: {
+                  "sea:passing:QB": [
+                    {
+                      rowId: "2025_18_ARI_SEA:gsis:00-1:passing",
+                      gameId: "2025_18_ARI_SEA",
+                      season: 2025,
+                      week: 18,
+                      dateUtc: "2026-01-04T21:25:00.000Z",
+                      playerId: "gsis:00-1",
+                      playerName: "Test Opp QB",
+                      team: "ari",
+                      opponent: "sea",
+                      homeAway: "away",
+                      position: "QB",
+                      market: "passing",
+                      actualYards: 245,
+                      historicalSportsbookLine: null,
+                      lineResult: "unavailable",
+                      temporalQuality: "event-time-reconstructed",
+                      comparison: "individual-player-vs-own-pregame-average",
+                      playerPregameTrailing10Average: null,
+                      playerReferenceSampleSize: 0,
+                      actualMinusPlayerAverage: null,
+                      missingReferenceReason: "no-prior-player-reference",
+                    },
+                  ],
+                },
+                diagnostics: { excludedCutoff: 0, missingGame: 0, noRecordedAppearance: 0, duplicateIdentity: 0, missingYardage: 0 },
+              },
+            }),
+        } as Response);
+      }
+      if (url.includes("yardage-projections.json")) {
+        const rushingRow = {
+          ...passingRow(),
+          market: "rushing",
+          position: "RB",
+          playerName: "Rhamondre Stevenson",
+          playerId: "gsis:00-0037toa",
+          projectedCarries: 15,
+          projectedYardsPerCarry: 4.1,
+          diagnostics: { gamesWithCarriesPriorThisSeason: 5, recentTeamTopCarryShareConcentration: 0.7 },
+          featureSnapshot: {
+            carriesPerGame: { seasonPrior: 15.2, last3: 14.8, priorSeason: null },
+            carryShare: { seasonPrior: 0.55, last3: 0.52, priorSeason: null },
+            rollingYardsPerCarry: { seasonPrior: 4.3, last3: 4.1, priorSeason: null },
+            teamRushAttemptsPerGame: { seasonPrior: 27.0, last3: 26.5, priorSeason: null },
+            teamDropbackRate: { seasonPrior: 0.6, last3: 0.59, priorSeason: null },
+            teamPassRateOverExpected: { seasonPrior: 0.02, last3: 0.01, priorSeason: null },
+            opponentRushAttemptsAllowedPerGame: { seasonPrior: 26.0, last3: 25.4, priorSeason: null },
+            market: { spread: -2.5, total: 45, impliedTeamTotal: 23.75, isDome: false },
+          },
+        };
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow(), rushingRow as never])) } as Response);
+      }
+      if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
+      if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
+      if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
+      if (url.includes("matchup-production-allowed.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyProductionAllowedArtifact()) } as Response);
+      if (url.includes("teams.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyTeamsArtifact()) } as Response);
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+    await waitFor(() => expect(screen.getAllByRole("tab", { name: "Opponent Last 10" }).length).toBeGreaterThan(0));
+    screen.getAllByRole("tab", { name: "Opponent Last 10" })[0].click();
+
+    await waitFor(() => expect(screen.getAllByText("Test Opp QB").length).toBeGreaterThan(0));
+    const qbNameCell = screen.getAllByText("Test Opp QB")[0].closest("td") as HTMLElement;
+    // Decorative (`alt=""`), so queried directly rather than via role.
+    expect(qbNameCell.querySelector("img")).toBeInTheDocument();
+
+    // Switch markets to Rushing to exercise the RB fixture, which has no individualContext row.
+    screen.getAllByRole("button", { name: /collapse details for drake maye/i })[0].click();
+    screen.getAllByRole("button", { name: "Rushing" })[0].click();
+    await waitFor(() => expect(screen.getAllByText("Rhamondre Stevenson").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for rhamondre stevenson/i })[0].click();
+    await waitFor(() => expect(screen.getAllByRole("tab", { name: "Opponent Last 10" }).length).toBeGreaterThan(0));
+    screen.getAllByRole("tab", { name: "Opponent Last 10" })[0].click();
+    await waitFor(() => expect(screen.getAllByText("Test Opp RB").length).toBeGreaterThan(0));
+    const rbNameCell = screen.getAllByText("Test Opp RB")[0].closest("td") as HTMLElement;
+    expect(rbNameCell.querySelector("img")).not.toBeInTheDocument();
+  });
+});
+
+describe("NFLYardagePropsReview Last-10 current-matchup reference row and side-by-side desktop layout", () => {
+  /**
+   * Current-matchup ranks come from `yardage-history.json`'s
+   * `currentWeekEpaRanks` (the pregame trailing-10-game rank, apples-to-apples
+   * with the historical `oppDefRank`/`oppOffRank` fields), NOT from
+   * `matchup-epa.json`'s `epaEdge` (an 8-game blend, used only by the
+   * "Team Edge" card -- see the separate "vs Defense Edge" describe above).
+   * ne (Drake Maye's team) offense rank 9, sea (opponent) defense rank 3.
+   */
+  function stubFetchWithEpaRanks() {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("yardage-history.json")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              ...yardageHistoryArtifact(),
+              currentWeekEpaRanks: {
+                sea: { defenseRank: 3, defenseRankPoolSize: 32, offenseRank: null, offenseRankPoolSize: null },
+                ne: { defenseRank: null, defenseRankPoolSize: null, offenseRank: 9, offenseRankPoolSize: 32 },
+              },
+            }),
+        } as Response);
+      }
+      if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
+      if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
+      if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
+      if (url.includes("matchup-production-allowed.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyProductionAllowedArtifact()) } as Response);
+      if (url.includes("teams.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyTeamsArtifact()) } as Response);
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+  }
+
+  it("renders both Player Last 10 and Opponent Last 10 as a simultaneously-visible desktop comparison, without selecting any tab", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // Headings from the wide-desktop side-by-side block -- distinct from the tab-switcher's
+    // <button role="tab"> elements of the same name.
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Player Last 10" })).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Opponent Last 10" })).toBeInTheDocument();
+
+    // The Opponent Last 10 tab has not been clicked (still the default, unselected) -- proving
+    // the opponent table rendered from the always-visible desktop comparison, not the tab switcher.
+    const opponentTab = screen.getAllByRole("tab", { name: "Opponent Last 10" })[0];
+    expect(opponentTab).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("region", { name: /SEA defense last 1 vs QB/i })).toBeInTheDocument();
+  });
+
+  it("Player Last 10 shows a current-matchup reference row for this week's opponent with its current defensive rank", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // Two instances render: the tab-switcher's non-compact table ("This Week") and the always-visible
+    // side-by-side comparison's compact table ("Wk", per NflYardagePlayerLast10Table's `compact` prop).
+    const regions = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    for (const region of regions) {
+      expect(within(region).getByText(/^(This Week|Wk)$/)).toBeInTheDocument();
+      // row.homeAway is "away" for Drake Maye (NE) -- the current matchup row shows "@ SEA".
+      expect(within(region).getByText("@ SEA")).toBeInTheDocument();
+      // currentWeekEpaRanks.sea.defenseRank (SEA's pregame trailing-10-game EPA defense rank) = 3rd.
+      expect(within(region).getByText("3rd")).toBeInTheDocument();
+    }
+  });
+
+  it("Opponent Last 10 shows a current-matchup reference row for the opposing QB with the current offensive rank", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // The Opponent Last 10 tab is not the default-active tab, so only the always-visible side-by-side
+    // comparison's compact table renders here ("Wk", per NflYardageOpponentLast10Table's `compact` prop).
+    const region = await screen.findByRole("region", { name: /SEA defense last 1 vs QB/i });
+    expect(within(region).getByText("Wk")).toBeInTheDocument();
+    expect(within(region).getByText("Drake Maye")).toBeInTheDocument();
+    // currentWeekEpaRanks.ne.offenseRank (NE's pregame trailing-10-game EPA offense rank) = 9th.
+    expect(within(region).getByText("9th")).toBeInTheDocument();
+    // Defense (SEA) homeAway is the inverse of the player's team ("away") -- SEA is Home this week
+    // (the historical game row also happens to show "Home", so this asserts at least one, not exactly one).
+    expect(within(region).getAllByText("Home").length).toBeGreaterThan(0);
+  });
+
+  it("the current-matchup row's future result/stat fields render blank em dashes, never a fabricated zero", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    const [playerRegion] = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    const playerRow = within(playerRegion).getByText(/^(This Week|Wk)$/).closest("tr") as HTMLTableRowElement;
+    expect(playerRow.textContent).toContain("—");
+    expect(playerRow.textContent).not.toMatch(/\b0\b/);
+
+    // Compact-only instance (see the "Opponent Last 10 shows..." test above) -- "Wk", not "This Week".
+    const opponentRegion = await screen.findByRole("region", { name: /SEA defense last 1 vs QB/i });
+    const opponentRow = within(opponentRegion).getByText("Wk").closest("tr") as HTMLTableRowElement;
+    expect(opponentRow.textContent).toContain("—");
+    expect(opponentRow.textContent).not.toMatch(/\b0\b/);
+  });
+
+  it("existing historical Last-10 rows are unchanged by the current-matchup reference row", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // The pre-existing historical game (home vs MIA, actualYards 191, oppDefRank 14th) still
+    // renders alongside the new "This Week" reference row.
+    const [playerRegion] = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    expect(within(playerRegion).getByText("vs MIA")).toBeInTheDocument();
+    expect(within(playerRegion).getByText("14th")).toBeInTheDocument();
+    expect(within(playerRegion).getAllByText("191").length).toBeGreaterThan(0);
+  });
+});
+
+describe("NFLYardagePropsReview old-schema yardage-history artifact (regression: PR #312 currentWeekEpaRanks)", () => {
+  /**
+   * Reproduces a served/generated `yardage-history.json` predating PR #312's
+   * `currentWeekEpaRanks` field entirely (the key is absent, not an empty
+   * object) -- expanding a row must never crash `lookupCurrentWeekEpaRank`
+   * just because the artifact is on the older schema.
+   */
+  function stubFetchWithOldSchemaHistory() {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("yardage-history.json")) {
+        const artifact = yardageHistoryArtifact() as Record<string, unknown>;
+        delete artifact.currentWeekEpaRanks;
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(artifact) } as Response);
+      }
+      if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
+      if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
+      if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
+      if (url.includes("matchup-production-allowed.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyProductionAllowedArtifact()) } as Response);
+      if (url.includes("teams.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyTeamsArtifact()) } as Response);
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+  }
+
+  it("expanding a row never crashes the detail panel when currentWeekEpaRanks is absent from the artifact", async () => {
+    stubFetchWithOldSchemaHistory();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // The panel renders (no ErrorBoundary swallowing it) and the historical Last-10 content is intact.
+    const [playerRegion] = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    expect(within(playerRegion).getByText("vs MIA")).toBeInTheDocument();
+  });
+
+  it("falls back to the blank/em-dash current-matchup state instead of throwing when currentWeekEpaRanks is missing", async () => {
+    stubFetchWithOldSchemaHistory();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // No "This Week"/"Wk" current-matchup reference row is rendered at all -- the lookup
+    // returns null and the row is omitted, exactly as when the artifact hasn't resolved yet.
+    await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    expect(screen.queryByText("This Week")).not.toBeInTheDocument();
+    expect(screen.queryByText("Wk")).not.toBeInTheDocument();
   });
 });

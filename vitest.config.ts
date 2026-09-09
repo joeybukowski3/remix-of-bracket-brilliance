@@ -41,6 +41,8 @@ export default defineConfig({
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
       "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL Anytime TD market -- ParlayAPI canonical scorer-market pipeline.
+      "scripts/lib/nfl-anytime-td-selection.test.mjs",
       // NFL Yardage Player Detail v2 -- Last-10 history pipeline.
       "scripts/lib/nfl-epa-week-rank-core.test.mjs",
       "scripts/lib/nfl-yardage-rolling-core.test.mjs",
@@ -129,6 +131,11 @@ export default defineConfig({
       // NFL Coaching Rating v1 Phase C -- current-season adapter + per-game snapshot selection.
       "scripts/lib/nfl-coach-rating-current-adapter.test.ts",
       "scripts/lib/nfl-coaching-snapshot-source.test.ts",
+      // WalterFootball private research dashboard -- page parser, normalizer, diff.
+      "scripts/lib/walter/parseGamePage.test.mjs",
+      "scripts/lib/walter/normalizeGame.test.mjs",
+      "scripts/lib/walter/diffCapture.test.mjs",
+      "scripts/lib/walter/storage.test.mjs",
     ],
   },
   resolve: {

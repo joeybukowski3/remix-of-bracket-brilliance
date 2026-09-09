@@ -304,3 +304,90 @@ allowlist, implied-prob floor) or its confidence-source (BL-MLB-002); wiring
 `generate-mlb-k-plus-ev.mjs` into a workflow or otherwise reviving K +EV V1; or
 introducing any calibrated probability / edge / EV output (which additionally
 requires a documented `KS-008` gate).
+
+## Production projection: K Projection V4 (current authority, 2026-09-08)
+
+`hr-props-raw.json pitchers[].projectedKs` is resolved by
+`scripts/resolve-mlb-k-production-projection.mjs` in the order
+**V4 -> V2 -> legacy**. V3 is still computed and published in
+`k-props-v2-shadow.json` for comparison and rollback; it is not authority.
+Flip `V3_IS_PRODUCTION_AUTHORITY` in `scripts/lib/mlb-k-production-projection.mjs`
+to restore the V3 branch.
+
+### Shape
+
+    projectedKs = projectedIP x projectedKPerIP
+
+V2 and V3 both projected a K rate per batter faced and multiplied by projected
+batters faced, which made workload error propagate straight into the strikeout
+number. V4 separates the two and gives each its own matchup adjustment.
+
+### Innings
+
+    neutral   = 0.55*seasonIP/start + 0.30*last10 + 0.15*last5   (renormalized)
+    neutral   = clamp(neutral, seasonIP +/- 0.60)
+    anchored  = trust*neutral + (1-trust)*leagueIP,  trust = GS/(GS+3)
+    finalIP   = clamp(anchored * opponentIPFactor * wrcIPMultiplier, 2.5, 7.5)
+
+### Strikeouts per inning
+
+    neutral   = 0.55*seasonK/IP + 0.30*last10 + 0.15*last5       (renormalized)
+    neutral   = clamp(neutral, seasonK/IP +/- 0.15)
+    anchored  = trust*neutral + (1-trust)*leagueStarterKPerIP,  trust = IP/(IP+30)
+
+    environment = clamp(
+        0.60*(opponentStarterKFactor - 1)
+      + 0.25*(opponentKRateVsHand/leagueKRate - 1)
+      + 0.15*(opponentRecentKRate  /leagueKRate - 1), -0.15, +0.15)
+
+    finalKPerIP = clamp(anchored * (1+environment) * wrcKMultiplier * 0.9727, 0.35, 1.85)
+
+The three opponent strikeout signals are summed into ONE bounded deviation, not
+multiplied as three independent factors, because they measure the same
+underlying fact and would otherwise triple-count it.
+
+### Opponent-relative starter effects (the new idea)
+
+For each of the opponent's last 10 games, V4 compares what the opposing starter
+actually did against that offence with what that pitcher NORMALLY does
+(his own prior starts, excluding starts against this same opponent):
+
+    ipFactor    = sum(actual IP)  / sum(baseline IP/start)
+    kRateFactor = sum(actual K)   / sum(baseline K/IP * actual IP)
+
+The K factor is a per-INNING rate factor, conditional on the innings that
+happened, so innings suppression is never counted twice against the innings
+model. Both are shrunk toward 1.00 by
+`confidence = sampleTrust x baselineTrust` and hard-capped at +/-12%.
+
+Summed league-wide these factors average ~1.00 by construction, so they
+redistribute rather than inflate -- the property V3's workload term lacked.
+
+This matters. MIN's opposing starters averaged 4.27 IP over their last 10, which
+reads as heavy suppression; but those pitchers' own baselines average 4.51 IP
+(MIN kept drawing short-leash arms and one opener), so the relative innings
+factor is 1.01 -- while the strikeout-rate factor is a genuine 0.88.
+
+### Scope and calibration
+
+- STARTERS ONLY. Openers and relievers are declined with an explicit flag and
+  fall back to V2, which carries per-role limits.
+- `kPerIpCalibration = 0.9727` corrects a measured +0.022 K/IP upward bias in
+  every pregame strikeout-rate input in this repo. Fit on the development window
+  (2026-07-23..2026-08-17) only; re-derive with
+  `node scripts/research/mlb-k-v4-backtest.mjs --calibrate`.
+- NO MARKET INPUT. No V4 module reads kLine or odds; an enforced test passes a
+  line in and asserts the output is unchanged.
+
+### Modules
+
+| file | role |
+|---|---|
+| `scripts/mlb-k/mlb-k-projection-v4-core.mjs` | the two models + all weights/caps |
+| `scripts/mlb-k/mlb-k-opponent-starter-context.mjs` | opponent-relative IP/K factors |
+| `scripts/mlb-k/mlb-k-league-starter-index.mjs` | expanding starters-only league levels |
+| `scripts/mlb-k/compute-k-projection-v4.mjs` | orchestrator (shared by slate + backtest) |
+| `scripts/lib/mlb-k-v4-production-adapter.mjs` | production artifacts -> model inputs |
+| `scripts/lib/mlb-k-v4-projection-validator.mjs` | the production gate |
+| `scripts/update-mlb-k-start-log.mjs` | rolling start log for opposing-starter baselines |
+

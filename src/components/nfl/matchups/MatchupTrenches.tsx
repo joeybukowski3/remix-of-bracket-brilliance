@@ -150,15 +150,15 @@ export default function MatchupTrenches({
               enforce — even though the offense/defense roles swap between the
               two possessions.
             */}
-            <h3 className="matchup-trenches__possession mb-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+            <h3 className="matchup-trenches__possession mb-1.5 flex items-center justify-between gap-2 rounded-md border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-900">
               <span className="sr-only">{offense.teamName} has the ball</span>
               <span aria-hidden className="flex items-center gap-1.5">
-                <NflTeamCrest team={away} side="away" size={24} />
+                <NflTeamCrest team={away} side="away" size={22} />
                 <span><span className="sm:hidden">{away.abbr.toUpperCase()}</span><span className="hidden sm:inline">{away.teamName}</span> {awayIsOffense ? "offense" : "defense"}</span>
               </span>
-              <span aria-hidden className="text-slate-400">vs</span>
+              <span aria-hidden className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">vs</span>
               <span aria-hidden className="flex flex-row-reverse items-center gap-1.5 text-right">
-                <NflTeamCrest team={home} side="home" size={24} />
+                <NflTeamCrest team={home} side="home" size={22} />
                 <span><span className="sm:hidden">{home.abbr.toUpperCase()}</span><span className="hidden sm:inline">{home.teamName}</span> {awayIsOffense ? "defense" : "offense"}</span>
               </span>
             </h3>

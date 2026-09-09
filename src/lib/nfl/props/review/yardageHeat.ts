@@ -59,6 +59,16 @@ export function opponentDefenseRankHeatTone(rank: number | null | undefined): We
 }
 
 /**
+ * Current-week offense rank cells (the Opponent Last-10 table's "current
+ * matchup" reference row): rank 1 = strongest offense = most favorable to
+ * that offense, so no inversion -- the same "offense" perspective used
+ * site-wide (e.g. WeeklyFantasyRankingsTable's matchup quality tone).
+ */
+export function currentOffenseRankHeatTone(rank: number | null | undefined): WeeklyHeatTone {
+  return weeklyMatchupComponentHeatTone(rank ?? null, "offense");
+}
+
+/**
  * Edge is already the signed -31..31 (defenseRank - offenseRank) difference
  * -- positive favors the offense (see matchupEdges.ts). Reuses the exact
  * site-wide helper built for that convention.

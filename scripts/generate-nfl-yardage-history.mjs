@@ -27,7 +27,7 @@ import { gzipSync } from "node:zlib";
 import { buildDfsHistoryDelivery } from "./lib/nfl-dfs-history-delivery.mjs";
 import { parseCsv, buildNflverseTeamMap } from "./lib/nfl-schedules-results-core.mjs";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
-import { normalizeEpaTeamGameRows, TRAILING_GAMES } from "./lib/nfl-epa-week-rank-core.mjs";
+import { normalizeEpaTeamGameRows, buildPregameRollingEpaAt, rankTeamsAt, TRAILING_GAMES } from "./lib/nfl-epa-week-rank-core.mjs";
 import { parseMarketArchiveJsonl, indexArchiveByTarget } from "./lib/nfl-yardage-historical-line-core.mjs";
 import { buildIndividualYardageHistory, normalizeIndividualHistoryStatRows } from "./lib/nfl-individual-yardage-history.mjs";
 import {
@@ -133,6 +133,32 @@ function main() {
   const allStatRows = loadAllStatRows();
   const epaRows = loadAllEpaRows();
   const rollingIndexes = buildHistoryRollingIndexes(allStatRows, epaRows);
+
+  // This week's (not-yet-played) matchup ranks, using the EXACT SAME pregame
+  // trailing-10-game EPA/play methodology as the historical "Opp Def Rank" /
+  // "Opp Off Rank" columns above (buildPregameRollingEpaAt reuses
+  // trailingMeanBeforeCutoff -- see nfl-epa-week-rank-core.mjs -- and
+  // rankTeamsAt is the identical ranking function, unmodified). Distinct
+  // from the frozen Season/Last-5 matchup-epa.json artifact's "epaEdge" rank
+  // (an 8-game blend, not a 10-game trailing rank) used elsewhere in the
+  // review panel -- this is the only apples-to-apples current-week rank
+  // source for the Last-10 tables' "This Week" reference row.
+  const currentWeekEpaIndex = buildPregameRollingEpaAt(epaRows, season, week);
+  const currentWeekDefenseRanks = rankTeamsAt(currentWeekEpaIndex, season, week, "defense");
+  const currentWeekOffenseRanks = rankTeamsAt(currentWeekEpaIndex, season, week, "offense");
+  const currentWeekEpaRanks = {};
+  for (const canonicalAbbr of new Set(rows.flatMap((r) => [r.team, r.opponent]))) {
+    const nflverseAbbr = canonicalToNflverseAbbr.get(canonicalAbbr);
+    if (!nflverseAbbr) continue;
+    const defenseRank = currentWeekDefenseRanks.get(nflverseAbbr) ?? null;
+    const offenseRank = currentWeekOffenseRanks.get(nflverseAbbr) ?? null;
+    currentWeekEpaRanks[canonicalAbbr] = {
+      defenseRank,
+      defenseRankPoolSize: defenseRank != null ? currentWeekDefenseRanks.size : null,
+      offenseRank,
+      offenseRankPoolSize: offenseRank != null ? currentWeekOffenseRanks.size : null,
+    };
+  }
 
   const archiveText = existsSync(ARCHIVE_FILE) ? readFileSync(ARCHIVE_FILE, "utf-8") : "";
   const archiveObservations = parseMarketArchiveJsonl(archiveText);
@@ -240,6 +266,7 @@ function main() {
         "Vegas Line resolves only from an approved-sportsbook, final pre-kickoff observation in the yardage market archive; the archive only began collecting 2026-08-26, so every historical (pre-2026) game resolves to null -- never backfilled/estimated.",
         "Opponent Last-10 tables identify the 'opposing player' per historical game as that game's leader at the requested position by primary volume stat (attempts/carries/targets) -- a documented deterministic choice, not a random or fuzzy match.",
         "epa_team_game's Rams ('LAR') and Washington ('WSH') team codes are aliased to the stats_player_week/teams.json convention ('LA'/'WAS') before ranking (see EPA_TEAM_CODE_ALIAS in nfl-epa-week-rank-core.mjs) -- unaliased, every historical game for those two teams' Opp Def Rank / Opp Off Rank resolved to null despite abundant EPA history, a join-key mismatch rather than genuinely missing data.",
+        "currentWeekEpaRanks (keyed by canonical team abbr) is this week's not-yet-played matchup rank, computed with buildPregameRollingEpaAt -- the exact same pregame trailing-10-game EPA/play formula and rankTeamsAt ranking function as the historical Opp Def Rank / Opp Off Rank columns, evaluated at this week's (season, week) cutoff instead of a played game. Apples-to-apples with the historical columns; distinct from (and never sourced from) the frozen Season/Last-5 matchup-epa.json artifact's epaEdge rank used elsewhere in the review panel.",
         missingPregameRank.length > 0
           ? `${missingPregameRank.length} player market(s) had no pregame EPA rank for their most recent Last-10 game (first tracked game in the 2020-2025 EPA window) -- rendered as null, never fabricated.`
           : "Every built player's most recent Last-10 game had a resolvable pregame EPA rank.",
@@ -250,6 +277,7 @@ function main() {
     week,
     players,
     teamDefense,
+    currentWeekEpaRanks,
     individualContext,
     provenance: {
       generatedAt: new Date().toISOString(),

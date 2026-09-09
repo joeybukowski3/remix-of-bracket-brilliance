@@ -2,7 +2,6 @@ import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import { MATCHUP_GROUP_BAND, MATCHUP_PANEL_CAPTION, MATCHUP_PANEL_TITLE } from "@/components/nfl/matchups/matchupTypography";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
-import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
@@ -32,6 +31,56 @@ import {
 } from "@/lib/nfl/trenchMetricsData";
 
 type PossessionSide = "away-ball" | "home-ball";
+
+/**
+ * Two-sided lever toggle between "{AWAY} OFFENSE" and "{HOME} OFFENSE".
+ *
+ * Replaces the former "{AWAY} Ball" / "{HOME} Ball" segmented control with a
+ * single control that visually reads as a lever: the active side takes its
+ * team's away/home tone, and the thumb slides to the selected side. Purely
+ * presentational — it drives the same `PossessionSide` state the page
+ * already reads to decide which offense-vs-defense panel is showing.
+ */
+function MatchupUnitLever({
+  awayAbbr,
+  homeAbbr,
+  side,
+  onChange,
+  className = "",
+}: {
+  awayAbbr: string;
+  homeAbbr: string;
+  side: PossessionSide;
+  onChange: (next: PossessionSide) => void;
+  className?: string;
+}) {
+  const awayActive = side === "away-ball";
+  return (
+    <div className={`matchup-unit-lever ${className}`} role="tablist" aria-label="Possession view">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={awayActive}
+        onClick={() => onChange("away-ball")}
+        className={`matchup-unit-lever__side matchup-unit-lever__side--away ${awayActive ? "is-active" : ""}`}
+      >
+        {awayAbbr.toUpperCase()} Offense
+      </button>
+      <span className="matchup-unit-lever__track" aria-hidden>
+        <span className={`matchup-unit-lever__thumb ${awayActive ? "" : "is-home"}`} />
+      </span>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={!awayActive}
+        onClick={() => onChange("home-ball")}
+        className={`matchup-unit-lever__side matchup-unit-lever__side--home ${!awayActive ? "is-active" : ""}`}
+      >
+        {homeAbbr.toUpperCase()} Offense
+      </button>
+    </div>
+  );
+}
 
 /**
  * A pairing is descriptive when either side is context-only, in which case the
@@ -307,11 +356,6 @@ export default function MatchupUnitBattles({
   const [activeGroup, setActiveGroup] = useState<string>(UNIT_BATTLE_GROUPS[0].id);
   const { away, home } = matchup;
 
-  const options = [
-    { value: "away-ball" as const, label: `${away.abbr.toUpperCase()} Ball`, shortLabel: `${away.abbr.toUpperCase()} Ball` },
-    { value: "home-ball" as const, label: `${home.abbr.toUpperCase()} Ball`, shortLabel: `${home.abbr.toUpperCase()} Ball` },
-  ];
-
   const groupTabs: MatchupTabDef[] = UNIT_BATTLE_GROUPS.map((group) => ({
     id: group.id,
     label: group.label,
@@ -324,12 +368,11 @@ export default function MatchupUnitBattles({
       subtitle="Direct unit comparison, ranked by league position. No matchup score or projected advantage is derived."
       bodyClassName="matchup-dense-section-body"
       headerAside={
-        <MatchupSegmentedControl
-          options={options}
-          value={side}
+        <MatchupUnitLever
+          awayAbbr={away.abbr}
+          homeAbbr={home.abbr}
+          side={side}
           onChange={setSide}
-          ariaLabel="Possession view"
-          size="sm"
           className="lg:hidden"
         />
       }

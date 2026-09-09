@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
@@ -233,6 +233,67 @@ function buildCategoryData(sources: MatchupMetricSources) {
   }
   return { metrics, results };
 }
+
+/** Forces `useIsCompactLayout("(max-width: 639px)")` to true for one test. */
+function mockCompactViewport() {
+  const original = window.matchMedia;
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: query === "(max-width: 639px)",
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+  return () => {
+    window.matchMedia = original;
+  };
+}
+
+describe("NflHeadToHeadMetricRow on a compact (mobile) viewport", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("puts the metric label, both teams' values and both teams' ranks on one row, with the rail beneath", () => {
+    const restore = mockCompactViewport();
+    render(
+      <NflHeadToHeadMetricRow
+        {...baseProps}
+        label="Success Rate"
+        shortLabel="Success Rate"
+        leftValue="50.5%"
+        rightValue="45.8%"
+        leftRank={2}
+        rightRank={9}
+        leftRawValue={0.505}
+        rightRawValue={0.458}
+        higherIsBetter
+        comparison="away"
+      />
+    );
+    restore();
+
+    const row = document.querySelector("[data-compact-matchup-row]");
+    expect(row).toBeTruthy();
+    expect(within(row as HTMLElement).getByText("50.5%")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("2nd")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("45.8%")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("9th")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("Success Rate")).toBeInTheDocument();
+
+    // The "AWY advantage" wording is not repeated visibly — it's carried
+    // only for assistive technology, on the compact row and on the rail.
+    const advantageNodes = screen.getAllByText("AWY advantage");
+    for (const node of advantageNodes) {
+      expect(node.className).toContain("sr-only");
+    }
+
+    expect(screen.getByRole("img", { name: /comparison rail/i })).toBeInTheDocument();
+  });
+});
 
 describe("Team Comparison panel with head-to-head rows", () => {
   it("keeps the category lead-count summary in each tab panel", () => {

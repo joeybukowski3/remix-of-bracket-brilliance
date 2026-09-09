@@ -53,6 +53,7 @@ import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import NFLAnalytics from "./pages/NFLAnalytics";
 import NFLYardagePropsReview from "./pages/nfl/NFLYardagePropsReview";
+import NFLTouchdownScorer from "./pages/nfl/NFLTouchdownScorer";
 import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
 import NFLPerformance from "./pages/nfl/NFLPerformance";
 import FantasyFootball from "./pages/FantasyFootball";
@@ -89,7 +90,9 @@ import {
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
 const NflV03Review = lazy(() => import("./pages/NflV03Review"));
+const WalterResearch = lazy(() => import("./pages/WalterResearch"));
 const SixteenZeroPage = lazy(() => import("./features/sixteen-zero/SixteenZeroPage"));
+const StevePoolDashboard = lazy(() => import("./pages/StevePoolDashboard"));
 
 function LegacyScheduleRedirect() {
   const { gameId = "" } = useParams();
@@ -169,6 +172,7 @@ const App = () => (
             <Route path="performance" element={<Navigate to="/nfl/performance/overview" replace />} />
             <Route path="performance/:tab" element={<NFLPerformance />} />
             <Route path="yardage-props-review" element={<NFLYardagePropsReview />} />
+            <Route path="td-scorer" element={<NFLTouchdownScorer />} />
             <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
@@ -177,15 +181,33 @@ const App = () => (
             <Route path="guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
             <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           </Route>
-          <Route path="/fantasy-football" element={<FantasyFootball />} />
-          <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
-          <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
-          <Route path="/fantasy-football/draft-preview" element={<FantasyDraftPreview />} />
+          <Route element={<NflPlatformLayout />}>
+            <Route path="/fantasy-football" element={<FantasyFootball />} />
+            <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
+            <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
+            <Route path="/fantasy-football/draft-preview" element={<FantasyDraftPreview />} />
+          </Route>
           <Route
             path="/internal/jkb-nfl-v03-review-7f3c9a"
             element={
               <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading internal NFL review…</div>}>
                 <NflV03Review />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/walter"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading Walter research…</div>}>
+                <WalterResearch />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/steve"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-50 p-6 text-sm text-slate-600">Loading pool dashboard…</div>}>
+                <StevePoolDashboard />
               </Suspense>
             }
           />

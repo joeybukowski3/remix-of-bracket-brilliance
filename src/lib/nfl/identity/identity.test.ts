@@ -32,8 +32,11 @@ describe("canonical NFL identity", () => {
 
   it("normalizes known team aliases", () => {
     expect(normalizeNflTeamAbbr("LA")).toBe("lar");
+    expect(normalizeNflTeamAbbr("LAR")).toBe("lar");
     expect(normalizeNflTeamAbbr("JAC")).toBe("jax");
     expect(normalizeNflTeamAbbr("WAS")).toBe("wsh");
+    expect(normalizeNflTeamAbbr("WSH")).toBe("wsh");
+    expect(normalizeNflTeamAbbr("BUF")).toBe("buf");
   });
 
   it("normalizes both nflverse Cardinals team codes (AZ and ARI) to the same schedule-source abbreviation", () => {

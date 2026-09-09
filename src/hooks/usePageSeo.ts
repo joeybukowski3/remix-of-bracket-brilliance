@@ -12,6 +12,7 @@ interface PageSeoOptions {
   path?: string;
   canonical?: string;
   noindex?: boolean;
+  nofollow?: boolean;
   type?: "website" | "article";
   ogImage?: string;
   structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
@@ -72,6 +73,7 @@ export function usePageSeo({
   path = "/",
   canonical,
   noindex = false,
+  nofollow = false,
   type = "website",
   ogImage,
   structuredData,
@@ -99,7 +101,10 @@ export function usePageSeo({
     upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: fullTitle });
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
-    upsertMeta('meta[name="robots"]', { name: "robots", content: noindex ? "noindex, follow" : "index, follow, max-image-preview:large" });
+    const robotsIndex = noindex ? "noindex" : "index";
+    const robotsFollow = nofollow ? "nofollow" : "follow";
+    const robotsPreview = noindex ? "" : ", max-image-preview:large";
+    upsertMeta('meta[name="robots"]', { name: "robots", content: `${robotsIndex}, ${robotsFollow}${robotsPreview}` });
     upsertLink("canonical", canonicalUrl);
     clearStructuredData();
 
@@ -111,7 +116,7 @@ export function usePageSeo({
       script.textContent = JSON.stringify(item);
       document.head.appendChild(script);
     });
-  }, [canonical, description, noindex, path, structuredData, title, type]);
+  }, [canonical, description, nofollow, noindex, ogImage, path, structuredData, title, type]);
 }
 
 export { CANONICAL_BASE, SITE_NAME };

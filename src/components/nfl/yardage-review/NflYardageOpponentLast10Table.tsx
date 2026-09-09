@@ -3,11 +3,16 @@
  * Review detail panel. Market/position-specific column set, leakage-safe
  * historical fields sourced entirely from `yardage-history.json`. Column
  * configuration only; the shared `NflHistoryTable` (also used by the DFS
- * Calculator) owns the actual table shell/rendering.
+ * Calculator) owns the actual table shell/rendering, so this component
+ * never hand-rolls table markup of its own.
  *
- * No Fantasy Pts Allowed column: see NflYardagePlayerLast10Table.tsx --
- * `game.stat` is a single-market slice, never a full box score, so a
- * per-game DK total from it would misrepresent a partial score as full.
+ * No Fantasy Pts Allowed column: `game.stat` is a single-market slice,
+ * never a full box score, so a per-game DK total from it would misrepresent
+ * a partial score as full.
+ *
+ * No Vegas Line column: it was intentionally removed from the universal
+ * Yardage Last-10 presentation (the DFS Calculator keeps its own
+ * archived-line / O-U columns as an explicit DFS-specific exception).
  */
 import type { NflProjectionMarket } from "@/lib/nfl/props/types/projectionOutput";
 import type { NflYardageOpponentHistory, NflYardageOpponentHistoryGame, NflYardagePassingStatBlock, NflYardageRushingStatBlock, NflYardageReceivingStatBlock } from "@/lib/nfl/props/types/yardageHistory";
@@ -15,11 +20,12 @@ import {
   buildOpponentLast10Summary,
   buildOpponentLast10FooterAverages,
   computeVsAverageDiff,
-  formatOpposingOffenseContext,
   formatSignedDiff,
+  lookupOpponentGameTimeTeam,
 } from "@/lib/nfl/props/review/yardageHistoryView";
-import { historicalOffRankHeatTone } from "@/lib/nfl/props/review/yardageHeat";
+import { historicalOffRankHeatTone, currentOffenseRankHeatTone } from "@/lib/nfl/props/review/yardageHeat";
 import { NflHistoryTable, type NflHistoryColumn, type NflHistoryMobileColumn } from "@/components/nfl/history/NflHistoryTable";
+import { TeamLogo } from "./NflYardageReviewTeamCell";
 import {
   NflYardageActualYardsCell,
   NflYardageGameScoreCell,
@@ -29,9 +35,42 @@ import {
   NflYardageVsAverageCell,
 } from "./NflYardageHistoryCells";
 
-function fmtDate(dateUtc: string | null): string {
+/**
+ * Opp Player cell: name plus the offensive player's own GAME-TIME team logo --
+ * resolved from that specific historical game via `teamByGame` (see
+ * `buildOpponentGameTimeTeamByGame` / `lookupOpponentGameTimeTeam` in
+ * yardageHistoryView.ts), never the player's CURRENT team. A player can have
+ * changed teams since a historical game, so substituting their present-day
+ * team would misrepresent who they played for that week; the logo is omitted
+ * (never guessed) whenever the artifact doesn't carry that game's own
+ * historical identity. The redundant "vs SEA" / "@ SEA" secondary line that
+ * used to sit under the name is gone -- the table's own heading already
+ * states the defense/opponent context ("SEA Defense -- Last 10 vs WR").
+ */
+function OppPlayerCell({
+  gameId,
+  playerId,
+  playerName,
+  teamByGame,
+}: {
+  gameId: string | null;
+  playerId: string;
+  playerName: string;
+  teamByGame: ReadonlyMap<string, string>;
+}) {
+  const team = lookupOpponentGameTimeTeam(teamByGame, gameId, playerId);
+  return (
+    <span className="flex min-w-0 items-center gap-1">
+      {team && <TeamLogo abbr={team} size="sm" />}
+      <span className="truncate" title={playerName}>{playerName}</span>
+    </span>
+  );
+}
+
+/** `compact` (the side-by-side desktop comparison) drops the year -- "Sep 8" -- to save column width; the full single-table view keeps "Sep 8, 2025". */
+function fmtDate(dateUtc: string | null, compact: boolean): string {
   if (!dateUtc) return "N/A";
-  return new Date(dateUtc).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(dateUtc).toLocaleDateString(undefined, compact ? { month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
 }
 function fmt1(value: number | null): string {
   return value != null && Number.isFinite(value) ? value.toFixed(1) : "N/A";
@@ -39,6 +78,27 @@ function fmt1(value: number | null): string {
 function fmtAvgRank(value: number | null): string {
   return value != null && Number.isFinite(value) ? `${value.toFixed(1)} avg` : "N/A";
 }
+
+/**
+ * This week's upcoming matchup, rendered as a reference row above the
+ * historical games -- never a played game. `offenseRank` is the opposing
+ * player's team's pregame trailing-10-game EPA/play offense rank
+ * (`yardage-history.json`'s `currentWeekEpaRanks`, built by
+ * `buildPregameRollingEpaAt` in `nfl-epa-week-rank-core.mjs`) -- the EXACT
+ * SAME rank definition as `oppOffRank` on the historical games below, just
+ * evaluated at this week's cutoff instead of a played game. Deliberately
+ * NOT `opponentContext.epaEdge.offenseRank` (an 8-game blend from the
+ * frozen Season/Last-5 matchup-epa.json artifact) -- that would not be
+ * apples-to-apples with the historical column.
+ */
+export type NflYardageOpponentCurrentMatchup = {
+  playerName: string;
+  /** The offensive player's own team, for the same logo treatment as the historical rows' Opp Player cell -- this is always known outright (it's `row.team`), never resolved via the best-effort lookup. */
+  teamAbbr: string;
+  /** The DEFENSE's own home/away status for this upcoming game -- same convention as `game.homeAway` below. */
+  homeAway: "home" | "away";
+  offenseRank: number | null;
+};
 
 const MARKET_ALLOWED_LABEL: Record<NflProjectionMarket, string> = {
   passing: "Pass Yds Allowed",
@@ -72,6 +132,8 @@ function mobileScoreCell(market: NflProjectionMarket, stat: NflYardagePassingSta
   return String((stat as NflYardageReceivingStatBlock).recTds);
 }
 
+const EMPTY_TEAM_BY_GAME: ReadonlyMap<string, string> = new Map();
+
 function rowKey(game: NflYardageOpponentHistoryGame): string {
   return `${game.gameId ?? `${game.season}-${game.week}`}-${game.opponentPlayerId}`;
 }
@@ -81,12 +143,22 @@ export default function NflYardageOpponentLast10Table({
   position,
   history,
   currentLine,
+  currentMatchup,
+  compact = false,
+  teamByGame,
 }: {
   opponentAbbr: string;
   position: string;
   history: NflYardageOpponentHistory | null;
   currentLine: number | null;
+  /** This week's reference row -- omitted (not blanked) when no current-matchup context is available. */
+  currentMatchup?: NflYardageOpponentCurrentMatchup | null;
+  /** Tighter padding/headers/date format for the side-by-side desktop comparison. Mobile presentation is unaffected. */
+  compact?: boolean;
+  /** Game-time (never current-week) team lookup for the Opp Player logo -- see OppPlayerCell and `buildOpponentGameTimeTeamByGame`. Defaults to empty (no logos) so this component still works standalone, e.g. in isolation in tests. */
+  teamByGame?: ReadonlyMap<string, string>;
 }) {
+  const resolvedTeamByGame = teamByGame ?? EMPTY_TEAM_BY_GAME;
   if (!history || history.games.length === 0) {
     return (
       <div className="rounded-md border border-slate-200 bg-white px-3 py-4 text-[11px] text-slate-400">
@@ -98,48 +170,144 @@ export default function NflYardageOpponentLast10Table({
   const summary = buildOpponentLast10Summary(history.games, currentLine);
   const footer = buildOpponentLast10FooterAverages(history.games);
   const market = history.market;
+  const label = {
+    date: "Date",
+    thisWeek: compact ? "Wk" : "This Week",
+    offRank: compact ? "Off Rank" : "Opp Off Rank",
+    vsAvg: compact ? "VS AVG" : MARKET_VS_AVG_LABEL[market],
+    cmpAtt: compact ? "Cmp/Att" : "Cmp / Att Allowed",
+    tdInt: compact ? "TD/INT" : "TD / INT",
+    rushAtt: compact ? "Rush Att" : "Rush Att Allowed",
+    rushTd: compact ? "Rush TD" : "Rush TD Allowed",
+    tgtRec: compact ? "Tgt/Rec" : "Targets / Rec Allowed",
+    recTd: compact ? "Rec TD" : "Rec TD Allowed",
+    allowed: compact ? "Allowed" : MARKET_ALLOWED_LABEL[market],
+    score: compact ? "Score" : "Game Score",
+  };
+
+  const prefixDash = () => <span className="text-slate-400">—</span>;
 
   const mobileColumns: NflHistoryMobileColumn<NflYardageOpponentHistoryGame>[] = [
-    { key: "date", header: "Date", width: "w-[17%]", render: (game) => fmtDate(game.dateUtc) },
+    {
+      key: "date",
+      header: "Date",
+      width: "w-[17%]",
+      render: (game) => fmtDate(game.dateUtc, false),
+      prefixRender: currentMatchup ? () => <span className="font-semibold uppercase tracking-wide text-violet-700">This Wk</span> : undefined,
+    },
     {
       key: "opp",
       header: "Opp",
       width: "w-[24%]",
-      render: (game) => (
-        <>
-          <span className="block truncate" title={game.opponentPlayerName}>{game.opponentPlayerName}</span>
-          {formatOpposingOffenseContext(game.homeAway, opponentAbbr) && (
-            <span className="block text-[8px] font-medium text-slate-400">{formatOpposingOffenseContext(game.homeAway, opponentAbbr)}</span>
-          )}
-        </>
-      ),
+      render: (game) => <OppPlayerCell gameId={game.gameId} playerId={game.opponentPlayerId} playerName={game.opponentPlayerName} teamByGame={resolvedTeamByGame} />,
+      prefixRender: currentMatchup
+        ? () => (
+            <span className="flex min-w-0 items-center gap-1">
+              <TeamLogo abbr={currentMatchup.teamAbbr} size="sm" />
+              <span className="truncate" title={currentMatchup.playerName}>{currentMatchup.playerName}</span>
+            </span>
+          )
+        : undefined,
     },
-    { key: "volume", header: MARKET_MOBILE_VOLUME_LABEL[market], width: "w-[16%]", align: "center", render: (game) => mobileVolumeCell(market, game.stat) },
-    { key: "yds", header: "Yds", width: "w-[16%]", align: "center", render: (game) => <NflYardageActualYardsCell actualYards={game.yardsAllowed} currentLine={currentLine} /> },
-    { key: "score", header: MARKET_MOBILE_SCORE_LABEL[market], width: "w-[13%]", align: "center", render: (game) => mobileScoreCell(market, game.stat) },
-    { key: "rank", header: "Rk", width: "w-[14%]", align: "center", render: (game) => <NflYardageRankCell rank={game.oppOffRank} heatTone={historicalOffRankHeatTone(game.oppOffRank, game.oppOffRankPoolSize)} /> },
+    { key: "volume", header: MARKET_MOBILE_VOLUME_LABEL[market], width: "w-[16%]", align: "center", render: (game) => mobileVolumeCell(market, game.stat), prefixRender: currentMatchup ? prefixDash : undefined },
+    { key: "yds", header: "Yds", width: "w-[16%]", align: "center", render: (game) => <NflYardageActualYardsCell actualYards={game.yardsAllowed} currentLine={currentLine} />, prefixRender: currentMatchup ? prefixDash : undefined },
+    { key: "score", header: MARKET_MOBILE_SCORE_LABEL[market], width: "w-[13%]", align: "center", render: (game) => mobileScoreCell(market, game.stat), prefixRender: currentMatchup ? prefixDash : undefined },
+    {
+      key: "rank",
+      header: "Rk",
+      width: "w-[14%]",
+      align: "center",
+      render: (game) => <NflYardageRankCell rank={game.oppOffRank} heatTone={historicalOffRankHeatTone(game.oppOffRank, game.oppOffRankPoolSize)} />,
+      prefixRender: currentMatchup ? () => <NflYardageRankCell rank={currentMatchup.offenseRank} heatTone={currentOffenseRankHeatTone(currentMatchup.offenseRank)} /> : undefined,
+    },
   ];
 
+  const statColumns: NflHistoryColumn<NflYardageOpponentHistoryGame>[] =
+    market === "passing"
+      ? [
+          {
+            key: "cmpAttAllowed",
+            header: label.cmpAtt,
+            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardagePassingStatBlock).completions} / {(game.stat as NflYardagePassingStatBlock).attempts}</span>,
+            footer: <span className="tabular-nums">Avg {fmt1(footer.statAverages.completions)} / Avg {fmt1(footer.statAverages.attempts)}</span>,
+            prefixRender: currentMatchup ? prefixDash : undefined,
+          },
+          {
+            key: "tdIntAllowed",
+            header: label.tdInt,
+            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardagePassingStatBlock).passingTds} / {(game.stat as NflYardagePassingStatBlock).interceptions}</span>,
+            footer: <span className="tabular-nums">Avg {fmt1(footer.statAverages.passingTds)} / Avg {fmt1(footer.statAverages.interceptions)}</span>,
+            prefixRender: currentMatchup ? prefixDash : undefined,
+          },
+        ]
+      : market === "rushing"
+        ? [
+            {
+              key: "rushAttAllowed",
+              header: label.rushAtt,
+              render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageRushingStatBlock).rushAttempts}</span>,
+              footer: <span className="tabular-nums">{fmt1(footer.statAverages.rushAttempts)}</span>,
+              prefixRender: currentMatchup ? prefixDash : undefined,
+            },
+            {
+              key: "rushTdAllowed",
+              header: label.rushTd,
+              render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageRushingStatBlock).rushTds}</span>,
+              footer: <span className="tabular-nums">{fmt1(footer.statAverages.rushTds)}</span>,
+              prefixRender: currentMatchup ? prefixDash : undefined,
+            },
+          ]
+        : [
+            {
+              key: "targetsRecAllowed",
+              header: label.tgtRec,
+              render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageReceivingStatBlock).targets} / {(game.stat as NflYardageReceivingStatBlock).receptions}</span>,
+              footer: <span className="tabular-nums">Avg {fmt1(footer.statAverages.targets)} / Avg {fmt1(footer.statAverages.receptions)}</span>,
+              prefixRender: currentMatchup ? prefixDash : undefined,
+            },
+            {
+              key: "recTdAllowed",
+              header: label.recTd,
+              render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageReceivingStatBlock).recTds}</span>,
+              footer: <span className="tabular-nums">{fmt1(footer.statAverages.recTds)}</span>,
+              prefixRender: currentMatchup ? prefixDash : undefined,
+            },
+          ];
+
   const columns: NflHistoryColumn<NflYardageOpponentHistoryGame>[] = [
-    { key: "date", header: "Date", render: (game) => <span className="tabular-nums text-slate-600">{fmtDate(game.dateUtc)}</span> },
+    {
+      key: "date",
+      header: label.date,
+      render: (game) => <span className="tabular-nums text-slate-600">{fmtDate(game.dateUtc, compact)}</span>,
+      prefixRender: currentMatchup ? () => <span className="font-semibold uppercase tracking-wide text-[10px] text-violet-700">{label.thisWeek}</span> : undefined,
+    },
     {
       key: "opponent",
       header: OPPONENT_PLAYER_LABEL[market],
-      render: (game) => (
-        <>
-          <span className="block">{game.opponentPlayerName}</span>
-          {formatOpposingOffenseContext(game.homeAway, opponentAbbr) && (
-            <span className="block text-[9px] font-medium text-slate-400">{formatOpposingOffenseContext(game.homeAway, opponentAbbr)}</span>
-          )}
-        </>
-      ),
+      render: (game) => <OppPlayerCell gameId={game.gameId} playerId={game.opponentPlayerId} playerName={game.opponentPlayerName} teamByGame={resolvedTeamByGame} />,
+      prefixRender: currentMatchup
+        ? () => (
+            <span className="flex min-w-0 items-center gap-1 text-slate-600">
+              <TeamLogo abbr={currentMatchup.teamAbbr} size="sm" />
+              <span className="truncate">{currentMatchup.playerName}</span>
+            </span>
+          )
+        : undefined,
     },
-    { key: "homeAway", header: "Home/Away", render: (game) => <NflYardageHomeAwayPill homeAway={game.homeAway} /> },
+    {
+      key: "homeAway",
+      header: "Home/Away",
+      render: (game) => <NflYardageHomeAwayPill homeAway={game.homeAway} />,
+      prefixRender: currentMatchup ? () => <NflYardageHomeAwayPill homeAway={currentMatchup.homeAway} /> : undefined,
+    },
     {
       key: "oppOffRank",
-      header: "Opp Off Rank",
+      header: label.offRank,
       render: (game) => <NflYardageRankCell rank={game.oppOffRank} heatTone={historicalOffRankHeatTone(game.oppOffRank, game.oppOffRankPoolSize)} />,
       footer: <span className="tabular-nums">{fmtAvgRank(footer.oppOffRankAvg)}</span>,
+      prefixRender: currentMatchup
+        ? () => <NflYardageRankCell rank={currentMatchup.offenseRank} heatTone={currentOffenseRankHeatTone(currentMatchup.offenseRank)} />
+        : undefined,
     },
     {
       key: "oppPlayerYpg",
@@ -147,70 +315,26 @@ export default function NflYardageOpponentLast10Table({
       className: "border-l-2 border-slate-200 bg-slate-50/70 tabular-nums text-slate-700",
       render: (game) => fmt1(game.oppPlayerYpg),
       footer: <span className="tabular-nums bg-slate-100">{fmt1(footer.oppPlayerYpgAvg)}</span>,
+      prefixRender: currentMatchup ? prefixDash : undefined,
     },
     {
       key: "yardsAllowed",
-      header: MARKET_ALLOWED_LABEL[market],
+      header: label.allowed,
       className: "bg-slate-50/70",
       render: (game) => <NflYardageActualYardsCell actualYards={game.yardsAllowed} currentLine={currentLine} />,
       footer: <span className="tabular-nums bg-slate-100">{fmt1(footer.yardsAllowedAvg)}</span>,
+      prefixRender: currentMatchup ? prefixDash : undefined,
     },
     {
       key: "vsPlayerAvg",
-      header: MARKET_VS_AVG_LABEL[market],
+      header: label.vsAvg,
       className: "border-r-2 border-slate-200 bg-slate-50/70",
       render: (game) => <NflYardageVsAverageCell diff={computeVsAverageDiff(game.yardsAllowed, game.oppPlayerYpg)} />,
       footer: <span className="tabular-nums bg-slate-100">{formatSignedDiff(footer.vsPlayerAvgAvg)}</span>,
+      prefixRender: currentMatchup ? prefixDash : undefined,
     },
-    ...(market === "passing"
-      ? ([
-          {
-            key: "cmpAttAllowed",
-            header: "Cmp / Att Allowed",
-            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardagePassingStatBlock).completions} / {(game.stat as NflYardagePassingStatBlock).attempts}</span>,
-            footer: <span className="tabular-nums">Avg {fmt1(footer.statAverages.completions)} / Avg {fmt1(footer.statAverages.attempts)}</span>,
-          },
-          {
-            key: "tdIntAllowed",
-            header: "TD / INT",
-            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardagePassingStatBlock).passingTds} / {(game.stat as NflYardagePassingStatBlock).interceptions}</span>,
-            footer: <span className="tabular-nums">Avg {fmt1(footer.statAverages.passingTds)} / Avg {fmt1(footer.statAverages.interceptions)}</span>,
-          },
-        ] satisfies NflHistoryColumn<NflYardageOpponentHistoryGame>[])
-      : []),
-    ...(market === "rushing"
-      ? ([
-          {
-            key: "rushAttAllowed",
-            header: "Rush Att Allowed",
-            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageRushingStatBlock).rushAttempts}</span>,
-            footer: <span className="tabular-nums">{fmt1(footer.statAverages.rushAttempts)}</span>,
-          },
-          {
-            key: "rushTdAllowed",
-            header: "Rush TD Allowed",
-            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageRushingStatBlock).rushTds}</span>,
-            footer: <span className="tabular-nums">{fmt1(footer.statAverages.rushTds)}</span>,
-          },
-        ] satisfies NflHistoryColumn<NflYardageOpponentHistoryGame>[])
-      : []),
-    ...(market === "receiving"
-      ? ([
-          {
-            key: "targetsRecAllowed",
-            header: "Targets / Rec Allowed",
-            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageReceivingStatBlock).targets} / {(game.stat as NflYardageReceivingStatBlock).receptions}</span>,
-            footer: <span className="tabular-nums">Avg {fmt1(footer.statAverages.targets)} / Avg {fmt1(footer.statAverages.receptions)}</span>,
-          },
-          {
-            key: "recTdAllowed",
-            header: "Rec TD Allowed",
-            render: (game) => <span className="tabular-nums text-slate-700">{(game.stat as NflYardageReceivingStatBlock).recTds}</span>,
-            footer: <span className="tabular-nums">{fmt1(footer.statAverages.recTds)}</span>,
-          },
-        ] satisfies NflHistoryColumn<NflYardageOpponentHistoryGame>[])
-      : []),
-    { key: "gameScore", header: "Game Score", render: (game) => <NflYardageGameScoreCell score={game.gameScore} />, footer: <>—</> },
+    ...statColumns,
+    { key: "gameScore", header: label.score, render: (game) => <NflYardageGameScoreCell score={game.gameScore} />, footer: <>—</>, prefixRender: currentMatchup ? prefixDash : undefined },
   ];
 
   return (
@@ -226,7 +350,9 @@ export default function NflYardageOpponentLast10Table({
         mobileColumns={mobileColumns}
         footerLabel="Last 10 Avg"
         footerLabelColSpan={3}
-        minWidthClassName="min-w-[860px]"
+        compact={compact}
+        minWidthClassName={compact ? "min-w-[660px]" : "min-w-[860px]"}
+        prefixRow={currentMatchup ? { className: "border-b-2 border-violet-200 bg-violet-50/60", mobileClassName: "border-b-2 border-violet-200 bg-violet-50/70" } : null}
         scrollLabel={`${opponentAbbr.toUpperCase()} defense last ${history.games.length} vs ${position}`}
       />
     </div>

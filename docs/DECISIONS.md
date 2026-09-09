@@ -156,3 +156,46 @@ See `docs/ARCHITECTURE.md` for the observed evidence. Obtain current evidence or
 ## Adding decisions
 
 Add an entry only when a repository-level choice has been explicitly approved or is already established by authoritative evidence. Keep entries concise, link detailed feature or model documentation instead of copying it, and mark replaced entries **Superseded** rather than deleting them.
+
+## 2026-09-08 -- MLB K Projection V4 promoted to production authority
+
+**Decision.** `hr-props-raw.json pitchers[].projectedKs` now resolves from K
+Projection V4 (`mlb-k-projection-v4`). Fallback order is **V4 -> V2 -> legacy**.
+V3 remains computed and published in `k-props-v2-shadow.json` for comparison and
+rollback but is NO LONGER in the authority chain.
+
+**Why V4.** V4 projects innings and strikeouts-per-inning separately and
+multiplies them, and adjusts each by how an offence has treated opposing
+STARTERS *relative to what those pitchers normally do*, rather than by raw
+averages. Season is the anchor again (0.55/0.30/0.15 season/L10/L5) instead of
+V3's 0.70 recent weighting.
+
+**Why V2, not V3, is the fallback.** On the 933-start graded archive V3 carries a
++0.179 signed strikeout error and sits above the market line 64.4% of the time,
+against V2's +0.041 and 55.3%. Falling back to the more biased of the two would
+defeat the purpose of the change.
+
+**Measured (n=933 graded starts; validation window 2026-08-18..2026-09-05, n=331).**
+
+| model | K MAE | signed K | IP signed | % above line | directional |
+|---|---|---|---|---|---|
+| V2 | 1.783 | +0.041 | -0.096 | 55.3% | 51.86% |
+| V3 | 1.767 | +0.179 | +0.025 | 64.4% | 52.04% |
+| V4 | 1.779 | **-0.004** | **+0.004** | **50.2%** | 51.50% |
+
+Validation window only: V4 signed K **-0.011**, % above line **48.9%**,
+directional **51.96%** (best of the three out of sample).
+
+**Known, deliberate trade-off.** V4's K/IP carries a single league calibration
+constant (`kPerIpCalibration = 0.9727`) fit on the development window only
+(2026-07-23..2026-08-17) and validated out of sample. Every pregame strikeout-rate
+input in this repo sits about +0.022 K/IP above what starters actually realize --
+including V2's own implied K/IP -- so V2's healthy-looking signed error was two
+offsetting biases (rate too high, workload too low). V3 fixed the workload and
+exposed the rate bias. V4 corrects it explicitly rather than by cancellation.
+Re-derive with `node scripts/research/mlb-k-v4-backtest.mjs --calibrate`.
+
+**Also landed.** `public/data/mlb/k-start-log.json`, a rolling league-wide
+completed-start log appended daily from the details artifact (no API call, no git
+history scan). V4 needs it for opposing-starter baselines; without it V4's
+opponent factors degrade to neutral rather than failing.

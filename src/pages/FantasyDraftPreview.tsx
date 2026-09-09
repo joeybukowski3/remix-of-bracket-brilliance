@@ -1,7 +1,6 @@
 import { useDeferredValue, useEffect, useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronUp, Minus, Plus, Search, Star } from "lucide-react";
-import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import {
@@ -199,15 +198,13 @@ export default function FantasyDraftPreview() {
   const targetCountsByRound = useMemo(() => countTargetsByRound(targets), [targets]);
 
   return (
-    <SiteShell>
-      <div className="site-container pt-6">
-        <Link
-          to="/fantasy-football"
-          className="text-xs font-semibold text-sky-600 underline hover:text-sky-700"
-        >
-          ← Back to Fantasy Football
-        </Link>
-      </div>
+    <>
+      <Link
+        to="/fantasy-football"
+        className="text-xs font-semibold text-sky-600 underline hover:text-sky-700"
+      >
+        ← Back to Fantasy Football
+      </Link>
       <NflPageHeader
         eyebrow="Fantasy Football"
         title="Fantasy Draft Preview"
@@ -313,7 +310,7 @@ export default function FantasyDraftPreview() {
           onReset={handleResetTeam}
         />
       </div>
-    </SiteShell>
+    </>
   );
 }
 

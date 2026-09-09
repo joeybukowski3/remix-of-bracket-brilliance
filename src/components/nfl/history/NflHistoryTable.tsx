@@ -9,6 +9,14 @@
  * configuration (see `NflHistoryColumn`) describing its own domain-specific
  * fields. Visual style follows the Yardage Prop Preview's original table --
  * the preferred design -- which both consumers now share.
+ *
+ * Two optional presentation hooks keep the Yardage Prop Preview's newer
+ * behaviour on this shared shell rather than a bespoke `<table>`:
+ *   - `prefixRow` + per-column `prefixRender` render one non-data reference
+ *     row above the history rows (the Yardage "This Week" upcoming-matchup
+ *     row). Omitted entirely when `prefixRow` is not supplied.
+ *   - `compact` tightens desktop cell padding for the side-by-side
+ *     player/opponent comparison; mobile presentation is unaffected.
  */
 import type { ReactNode } from "react";
 import { DenseTableScroller } from "@/components/ui/dense-table";
@@ -21,6 +29,8 @@ export type NflHistoryColumn<TRow> = {
   render: (row: TRow) => ReactNode;
   /** Cell shown in the totals/averages footer row for this column; omitted columns render an empty footer cell. */
   footer?: ReactNode;
+  /** Cell shown in the optional `prefixRow` reference row for this column; omitted columns render an empty prefix cell. */
+  prefixRender?: () => ReactNode;
 };
 
 export type NflHistoryMobileColumn<TRow> = {
@@ -30,6 +40,16 @@ export type NflHistoryMobileColumn<TRow> = {
   width: string;
   align?: "left" | "center";
   render: (row: TRow) => ReactNode;
+  /** Cell shown in the optional `prefixRow` reference row for this column. */
+  prefixRender?: () => ReactNode;
+};
+
+/** Styling for the optional non-data reference row rendered above the history rows. */
+export type NflHistoryPrefixRow = {
+  /** Class on the desktop <tr>. */
+  className?: string;
+  /** Class on the compact mobile <tr>. */
+  mobileClassName?: string;
 };
 
 export function NflHistoryTable<TRow>({
@@ -43,6 +63,8 @@ export function NflHistoryTable<TRow>({
   scrollLabel,
   minWidthClassName = "min-w-[820px]",
   emptyMessage,
+  prefixRow,
+  compact = false,
 }: {
   title?: ReactNode;
   rows: readonly TRow[];
@@ -56,6 +78,10 @@ export function NflHistoryTable<TRow>({
   scrollLabel: string;
   minWidthClassName?: string;
   emptyMessage?: ReactNode;
+  /** When provided, one non-data reference row is rendered above the history rows using each column's `prefixRender`. */
+  prefixRow?: NflHistoryPrefixRow | null;
+  /** Tighten desktop cell padding for side-by-side comparison layouts. Mobile presentation is unaffected. */
+  compact?: boolean;
 }) {
   if (rows.length === 0) {
     return (
@@ -64,6 +90,8 @@ export function NflHistoryTable<TRow>({
       </div>
     );
   }
+
+  const cellPad = compact ? "px-1.5 py-1" : "px-2 py-1.5";
 
   return (
     <div className="space-y-2">
@@ -87,6 +115,15 @@ export function NflHistoryTable<TRow>({
               </tr>
             </thead>
             <tbody>
+              {prefixRow != null && (
+                <tr className={prefixRow.mobileClassName ?? "border-b-2 border-slate-300"}>
+                  {mobileColumns.map((column) => (
+                    <td key={column.key} className={`px-1 py-1.5 ${column.align === "center" ? "text-center" : ""}`}>
+                      {column.prefixRender?.() ?? null}
+                    </td>
+                  ))}
+                </tr>
+              )}
               {rows.map((row) => (
                 <tr key={`m-${rowKey(row)}`} className="border-b border-slate-100 last:border-b-0">
                   {mobileColumns.map((column) => (
@@ -109,17 +146,26 @@ export function NflHistoryTable<TRow>({
           <thead>
             <tr className="border-b-2 border-slate-300 bg-slate-200/70 text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
               {columns.map((column) => (
-                <th key={column.key} className={`px-2 py-1.5 ${column.className ?? ""}`}>
+                <th key={column.key} className={`${cellPad} ${column.className ?? ""}`}>
                   {column.header}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
+            {prefixRow != null && (
+              <tr className={prefixRow.className ?? "border-b-2 border-slate-300"}>
+                {columns.map((column) => (
+                  <td key={column.key} className={`${cellPad} ${column.className ?? ""}`}>
+                    {column.prefixRender?.() ?? null}
+                  </td>
+                ))}
+              </tr>
+            )}
             {rows.map((row) => (
               <tr key={rowKey(row)} className="border-b border-slate-100 last:border-b-0">
                 {columns.map((column) => (
-                  <td key={column.key} className={`px-2 py-1.5 ${column.className ?? ""}`}>
+                  <td key={column.key} className={`${cellPad} ${column.className ?? ""}`}>
                     {column.render(row)}
                   </td>
                 ))}
@@ -129,11 +175,11 @@ export function NflHistoryTable<TRow>({
           {footerLabel !== undefined && (
             <tfoot>
               <tr className="border-t-2 border-slate-400 bg-slate-200/60 font-bold text-slate-700">
-                <td className="px-2 py-1.5 uppercase tracking-wide text-[10px]" colSpan={footerLabelColSpan}>
+                <td className={`${cellPad} uppercase tracking-wide text-[10px]`} colSpan={footerLabelColSpan}>
                   {footerLabel}
                 </td>
                 {columns.slice(footerLabelColSpan).map((column) => (
-                  <td key={column.key} className={`px-2 py-1.5 ${column.className ?? ""}`}>
+                  <td key={column.key} className={`${cellPad} ${column.className ?? ""}`}>
                     {column.footer ?? null}
                   </td>
                 ))}
