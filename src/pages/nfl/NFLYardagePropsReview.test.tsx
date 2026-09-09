@@ -192,6 +192,7 @@ function yardageHistoryArtifact() {
         ],
       },
     },
+    currentWeekEpaRanks: {},
   };
 }
 
@@ -341,14 +342,18 @@ describe("NFLYardagePropsReview", () => {
     const expandButtons = screen.getAllByRole("button", { name: /expand details for drake maye/i });
     expandButtons[0].click();
 
-    // Player Last 10 renders immediately (default-active tab); Opponent Last 10 needs its tab selected.
+    // Within the narrow/mobile single-active-tab switcher, Player Last 10 renders immediately
+    // (default-active tab) and Opponent Last 10 needs its tab selected -- the wide-desktop
+    // side-by-side comparison (a separate DOM subtree, shown/hidden by CSS breakpoint only)
+    // always renders both, so this scopes to the tab switcher's own root.
     await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
+    const tabSwitcher = screen.getByRole("tablist", { name: "Last 10 history" }).parentElement as HTMLElement;
+    expect(within(tabSwitcher).queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
 
     const opponentTabs = screen.getAllByRole("tab", { name: "Opponent Last 10" });
     opponentTabs[0].click();
-    await waitFor(() => expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(tabSwitcher).getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
+    expect(within(tabSwitcher).queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
 
     // Show the Work lives collapsed inside "Projection Details" at the bottom, below Last 10.
     const projectionDetailsButtons = screen.getAllByRole("button", { name: "Projection Details" });
@@ -402,7 +407,11 @@ describe("NFLYardagePropsReview", () => {
     screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
 
     await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
+    // Scoped to the narrow/mobile single-active-tab switcher -- the wide-desktop side-by-side
+    // comparison (a separate DOM subtree, shown/hidden by CSS breakpoint only) always renders
+    // both tables regardless of this tab state.
+    const tabSwitcher = screen.getByRole("tablist", { name: "Last 10 history" }).parentElement as HTMLElement;
+    expect(within(tabSwitcher).queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
 
     const playerTab = screen.getAllByRole("tab", { name: "Player Last 10" })[0];
     const opponentTab = screen.getAllByRole("tab", { name: "Opponent Last 10" })[0];
@@ -410,13 +419,13 @@ describe("NFLYardagePropsReview", () => {
     expect(opponentTab).toHaveAttribute("aria-selected", "false");
 
     opponentTab.click();
-    await waitFor(() => expect(screen.getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(tabSwitcher).getAllByText(/SEA Defense — Last 1 vs QB/).length).toBeGreaterThan(0));
+    expect(within(tabSwitcher).queryByText(/Drake Maye — Last 1 Games/)).not.toBeInTheDocument();
     expect(opponentTab).toHaveAttribute("aria-selected", "true");
 
     playerTab.click();
-    await waitFor(() => expect(screen.getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
-    expect(screen.queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(tabSwitcher).getAllByText(/Drake Maye — Last 1 Games/).length).toBeGreaterThan(0));
+    expect(within(tabSwitcher).queryByText(/SEA Defense — Last 1 vs QB/)).not.toBeInTheDocument();
   });
 
   it("Projection Details (Show the Work / Role & Provenance / Notes) is collapsed by default, below Last 10, and preserves every field when opened", async () => {
@@ -1237,5 +1246,133 @@ describe("NFLYardagePropsReview Opponent Last 10 home/away context", () => {
     // offense ("Test Opp QB") played @ SEA.
     await waitFor(() => expect(screen.getAllByText("Test Opp QB").length).toBeGreaterThan(0));
     expect(screen.getAllByText("@ SEA").length).toBeGreaterThan(0);
+  });
+});
+
+describe("NFLYardagePropsReview Last-10 current-matchup reference row and side-by-side desktop layout", () => {
+  /**
+   * Current-matchup ranks come from `yardage-history.json`'s
+   * `currentWeekEpaRanks` (the pregame trailing-10-game rank, apples-to-apples
+   * with the historical `oppDefRank`/`oppOffRank` fields), NOT from
+   * `matchup-epa.json`'s `epaEdge` (an 8-game blend, used only by the
+   * "Team Edge" card -- see the separate "vs Defense Edge" describe above).
+   * ne (Drake Maye's team) offense rank 9, sea (opponent) defense rank 3.
+   */
+  function stubFetchWithEpaRanks() {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("yardage-history.json")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              ...yardageHistoryArtifact(),
+              currentWeekEpaRanks: {
+                sea: { defenseRank: 3, defenseRankPoolSize: 32, offenseRank: null, offenseRankPoolSize: null },
+                ne: { defenseRank: null, defenseRankPoolSize: null, offenseRank: 9, offenseRankPoolSize: 32 },
+              },
+            }),
+        } as Response);
+      }
+      if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
+      if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
+      if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
+      if (url.includes("matchup-production-allowed.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyProductionAllowedArtifact()) } as Response);
+      if (url.includes("teams.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyTeamsArtifact()) } as Response);
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+  }
+
+  it("renders both Player Last 10 and Opponent Last 10 as a simultaneously-visible desktop comparison, without selecting any tab", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // Headings from the wide-desktop side-by-side block -- distinct from the tab-switcher's
+    // <button role="tab"> elements of the same name.
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Player Last 10" })).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Opponent Last 10" })).toBeInTheDocument();
+
+    // The Opponent Last 10 tab has not been clicked (still the default, unselected) -- proving
+    // the opponent table rendered from the always-visible desktop comparison, not the tab switcher.
+    const opponentTab = screen.getAllByRole("tab", { name: "Opponent Last 10" })[0];
+    expect(opponentTab).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("region", { name: /SEA defense last 1 vs QB/i })).toBeInTheDocument();
+  });
+
+  it("Player Last 10 shows a current-matchup reference row for this week's opponent with its current defensive rank", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // Two instances render: the tab-switcher's non-compact table ("This Week") and the always-visible
+    // side-by-side comparison's compact table ("Wk", per NflYardagePlayerLast10Table's `compact` prop).
+    const regions = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    for (const region of regions) {
+      expect(within(region).getByText(/^(This Week|Wk)$/)).toBeInTheDocument();
+      // row.homeAway is "away" for Drake Maye (NE) -- the current matchup row shows "@ SEA".
+      expect(within(region).getByText("@ SEA")).toBeInTheDocument();
+      // currentWeekEpaRanks.sea.defenseRank (SEA's pregame trailing-10-game EPA defense rank) = 3rd.
+      expect(within(region).getByText("3rd")).toBeInTheDocument();
+    }
+  });
+
+  it("Opponent Last 10 shows a current-matchup reference row for the opposing QB with the current offensive rank", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // The Opponent Last 10 tab is not the default-active tab, so only the always-visible side-by-side
+    // comparison's compact table renders here ("Wk", per NflYardageOpponentLast10Table's `compact` prop).
+    const region = await screen.findByRole("region", { name: /SEA defense last 1 vs QB/i });
+    expect(within(region).getByText("Wk")).toBeInTheDocument();
+    expect(within(region).getByText("Drake Maye")).toBeInTheDocument();
+    // currentWeekEpaRanks.ne.offenseRank (NE's pregame trailing-10-game EPA offense rank) = 9th.
+    expect(within(region).getByText("9th")).toBeInTheDocument();
+    // Defense (SEA) homeAway is the inverse of the player's team ("away") -- SEA is Home this week
+    // (the historical game row also happens to show "Home", so this asserts at least one, not exactly one).
+    expect(within(region).getAllByText("Home").length).toBeGreaterThan(0);
+  });
+
+  it("the current-matchup row's future result/stat fields render blank em dashes, never a fabricated zero", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    const [playerRegion] = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    const playerRow = within(playerRegion).getByText(/^(This Week|Wk)$/).closest("tr") as HTMLTableRowElement;
+    expect(playerRow.textContent).toContain("—");
+    expect(playerRow.textContent).not.toMatch(/\b0\b/);
+
+    // Compact-only instance (see the "Opponent Last 10 shows..." test above) -- "Wk", not "This Week".
+    const opponentRegion = await screen.findByRole("region", { name: /SEA defense last 1 vs QB/i });
+    const opponentRow = within(opponentRegion).getByText("Wk").closest("tr") as HTMLTableRowElement;
+    expect(opponentRow.textContent).toContain("—");
+    expect(opponentRow.textContent).not.toMatch(/\b0\b/);
+  });
+
+  it("existing historical Last-10 rows are unchanged by the current-matchup reference row", async () => {
+    stubFetchWithEpaRanks();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // The pre-existing historical game (home vs MIA, actualYards 191, oppDefRank 14th) still
+    // renders alongside the new "This Week" reference row.
+    const [playerRegion] = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    expect(within(playerRegion).getByText("vs MIA")).toBeInTheDocument();
+    expect(within(playerRegion).getByText("14th")).toBeInTheDocument();
+    expect(within(playerRegion).getAllByText("191").length).toBeGreaterThan(0);
   });
 });

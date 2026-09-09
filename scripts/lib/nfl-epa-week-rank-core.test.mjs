@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeEpaTeamGameRows, buildPregameRollingEpa, rankTeamsAt } from "./nfl-epa-week-rank-core.mjs";
+import { normalizeEpaTeamGameRows, buildPregameRollingEpa, buildPregameRollingEpaAt, rankTeamsAt } from "./nfl-epa-week-rank-core.mjs";
 
 function row({ season, week, team, opponent, offEpa, offPlays = 60 }) {
   return { season: String(season), week: String(week), team, opponent, off_epa: String(offEpa), off_plays: String(offPlays), game_id: `${season}_${week}_${team}_${opponent}` };
@@ -92,5 +92,70 @@ describe("rankTeamsAt", () => {
     const index = buildPregameRollingEpa(rows);
     const ranks = rankTeamsAt(index, 2025, 1, "offense");
     expect(ranks.has("A")).toBe(false);
+  });
+});
+
+describe("buildPregameRollingEpaAt", () => {
+  it("produces the exact same rolling value at an unplayed cutoff as buildPregameRollingEpa does at the next played game -- same formula, same trailing window", () => {
+    // Team A plays weeks 1-3. The value buildPregameRollingEpaAt computes for
+    // the not-yet-played week 4 must equal what buildPregameRollingEpa would
+    // compute if week 4 actually existed in the input (weeks 1-3 trailing).
+    const rows = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "A", opponent: "B", offEpa: 10 }),
+      row({ season: 2025, week: 1, team: "B", opponent: "A", offEpa: -5 }),
+      row({ season: 2025, week: 2, team: "A", opponent: "C", offEpa: 20 }),
+      row({ season: 2025, week: 2, team: "C", opponent: "A", offEpa: -10 }),
+      row({ season: 2025, week: 3, team: "A", opponent: "D", offEpa: 30 }),
+      row({ season: 2025, week: 3, team: "D", opponent: "A", offEpa: -15 }),
+      // A's week-4 opponent, unplayed at week 4 -- no epa_team_game row for
+      // week 4 at all, matching the real upcoming-week shape.
+      row({ season: 2025, week: 1, team: "E", opponent: "F", offEpa: 1 }),
+      row({ season: 2025, week: 1, team: "F", opponent: "E", offEpa: -1 }),
+    ]);
+    const atCutoff = buildPregameRollingEpaAt(rows, 2025, 4);
+    const a = atCutoff.get("A|2025|4");
+    expect(a.offEpaPerPlay).toBeCloseTo((10 + 20 + 30) / (60 * 3), 5);
+    expect(a.defEpaAllowedPerPlay).toBeCloseTo((-5 + -10 + -15) / (60 * 3), 5);
+    expect(a.trailingGames).toBe(3);
+  });
+
+  it("no future-game leakage: appending a week-4 row for the team after the cutoff does not change the week-4 cutoff value", () => {
+    const before = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "A", opponent: "B", offEpa: 10 }),
+      row({ season: 2025, week: 1, team: "B", opponent: "A", offEpa: -5 }),
+    ]);
+    const after = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "A", opponent: "B", offEpa: 10 }),
+      row({ season: 2025, week: 1, team: "B", opponent: "A", offEpa: -5 }),
+      // A week 4 game that has since been played, with a huge value that must
+      // NOT leak into the week-4 pregame cutoff computed against it.
+      row({ season: 2025, week: 4, team: "A", opponent: "C", offEpa: 999 }),
+      row({ season: 2025, week: 4, team: "C", opponent: "A", offEpa: -999 }),
+    ]);
+    const beforeIndex = buildPregameRollingEpaAt(before, 2025, 4);
+    const afterIndex = buildPregameRollingEpaAt(after, 2025, 4);
+    expect(afterIndex.get("A|2025|4").offEpaPerPlay).toBeCloseTo(beforeIndex.get("A|2025|4").offEpaPerPlay, 10);
+    expect(afterIndex.get("A|2025|4").trailingGames).toBe(beforeIndex.get("A|2025|4").trailingGames);
+  });
+
+  it("resolves null, never a fabricated rank, for a team with zero prior games", () => {
+    const rows = normalizeEpaTeamGameRows([row({ season: 2025, week: 1, team: "A", opponent: "B", offEpa: 5 })]);
+    // "B" has one prior game (week 1) by the week-2 cutoff; a team that never appears has no entry at all.
+    const index = buildPregameRollingEpaAt(rows, 2025, 1);
+    // At the week-1 cutoff, neither A nor B has any strictly-prior game.
+    expect(index.get("A|2025|1").offEpaPerPlay).toBeNull();
+    expect(index.get("B|2025|1").defEpaAllowedPerPlay).toBeNull();
+  });
+
+  it("rankTeamsAt works unmodified against buildPregameRollingEpaAt's output -- same ranking function, no second ranking formula", () => {
+    // P's defense allowed -3 (stingier); Q's defense allowed 5.
+    const rows = normalizeEpaTeamGameRows([
+      row({ season: 2025, week: 1, team: "P", opponent: "Q", offEpa: 5 }), // Q allowed 5
+      row({ season: 2025, week: 1, team: "Q", opponent: "P", offEpa: -3 }), // P allowed -3 (stingiest)
+    ]);
+    const atCutoff = buildPregameRollingEpaAt(rows, 2025, 2);
+    const ranks = rankTeamsAt(atCutoff, 2025, 2, "defense");
+    expect(ranks.get("P")).toBe(1);
+    expect(ranks.get("Q")).toBe(2);
   });
 });

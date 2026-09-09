@@ -80,14 +80,27 @@ function byChronology(a, b) {
 }
 
 /**
- * Build, for every (team, season, week) present in the input, the pregame
- * trailing-10 offensive EPA/play and defensive (allowed) EPA/play -- using
- * ONLY games strictly earlier in chronological order for that team.
+ * The trailing-10-game mean of `offEpa`/`offPlays` over `games` strictly
+ * before `cutoff` (by {@link byChronology}) -- the single formula behind
+ * every pregame rolling EPA/play value this module produces, whether the
+ * cutoff is a game that's actually in `games` ({@link buildPregameRollingEpa},
+ * one historical game rolling into the next) or an arbitrary
+ * not-yet-played (season, week) ({@link buildPregameRollingEpaAt}, this
+ * week's upcoming matchup). Same leakage rule either way: only games
+ * strictly earlier than `cutoff` are ever included.
  *
- * @param {ReturnType<typeof normalizeEpaTeamGameRows>} rows
- * @returns {Map<string, { season:number, week:number, team:string, offEpaPerPlay:number|null, defEpaAllowedPerPlay:number|null, trailingGames:number }>} keyed by `${team}|${season}|${week}`
+ * @param {{season:number, week:number}[]} games - already sorted by {@link byChronology}.
+ * @param {{season:number, week:number}} cutoff
+ * @returns {{ value: number|null, trailingGames: number }}
  */
-export function buildPregameRollingEpa(rows) {
+function trailingMeanBeforeCutoff(games, cutoff) {
+  const prior = games.filter((g) => byChronology(g, cutoff) < 0).slice(-TRAILING_GAMES);
+  if (prior.length === 0) return { value: null, trailingGames: 0 };
+  const value = prior.reduce((s, g) => s + g.offEpa, 0) / prior.reduce((s, g) => s + g.offPlays, 0);
+  return { value, trailingGames: prior.length };
+}
+
+function groupByTeamAndAllowed(rows) {
   const byTeam = new Map();
   for (const row of rows) {
     const list = byTeam.get(row.team) ?? [];
@@ -101,6 +114,19 @@ export function buildPregameRollingEpa(rows) {
     list.push(row);
     allowedByTeam.set(row.opponent, list);
   }
+  return { byTeam, allowedByTeam };
+}
+
+/**
+ * Build, for every (team, season, week) present in the input, the pregame
+ * trailing-10 offensive EPA/play and defensive (allowed) EPA/play -- using
+ * ONLY games strictly earlier in chronological order for that team.
+ *
+ * @param {ReturnType<typeof normalizeEpaTeamGameRows>} rows
+ * @returns {Map<string, { season:number, week:number, team:string, offEpaPerPlay:number|null, defEpaAllowedPerPlay:number|null, trailingGames:number }>} keyed by `${team}|${season}|${week}`
+ */
+export function buildPregameRollingEpa(rows) {
+  const { byTeam, allowedByTeam } = groupByTeamAndAllowed(rows);
 
   const out = new Map();
   for (const [team, games] of byTeam) {
@@ -108,25 +134,58 @@ export function buildPregameRollingEpa(rows) {
     const allowedSorted = [...(allowedByTeam.get(team) ?? [])].sort(byChronology);
 
     for (const game of sorted) {
-      const priorOwn = sorted.filter((g) => byChronology(g, game) < 0).slice(-TRAILING_GAMES);
-      const priorAllowed = allowedSorted.filter((g) => byChronology(g, game) < 0).slice(-TRAILING_GAMES);
-
-      const offEpaPerPlay = priorOwn.length > 0
-        ? priorOwn.reduce((s, g) => s + g.offEpa, 0) / priorOwn.reduce((s, g) => s + g.offPlays, 0)
-        : null;
-      const defEpaAllowedPerPlay = priorAllowed.length > 0
-        ? priorAllowed.reduce((s, g) => s + g.offEpa, 0) / priorAllowed.reduce((s, g) => s + g.offPlays, 0)
-        : null;
+      const own = trailingMeanBeforeCutoff(sorted, game);
+      const allowed = trailingMeanBeforeCutoff(allowedSorted, game);
 
       out.set(`${team}|${game.season}|${game.week}`, {
         season: game.season,
         week: game.week,
         team,
-        offEpaPerPlay,
-        defEpaAllowedPerPlay,
-        trailingGames: priorOwn.length,
+        offEpaPerPlay: own.value,
+        defEpaAllowedPerPlay: allowed.value,
+        trailingGames: own.trailingGames,
       });
     }
+  }
+  return out;
+}
+
+/**
+ * Same pregame trailing-10-game methodology as {@link buildPregameRollingEpa}
+ * (identical {@link trailingMeanBeforeCutoff} formula, identical leakage
+ * rule), but evaluated at an arbitrary `(season, week)` cutoff instead of
+ * requiring a played game for that team at that exact cutoff -- e.g. this
+ * week's not-yet-played matchup, which has no `epa_team_game` row of its
+ * own yet. Every team that has played at least one prior game (own or
+ * allowed) gets an entry at `${team}|${season}|${week}`; a team with zero
+ * such games resolves to `null` values, never a fabricated rank.
+ *
+ * @param {ReturnType<typeof normalizeEpaTeamGameRows>} rows
+ * @param {number} season
+ * @param {number} week
+ * @returns {Map<string, { season:number, week:number, team:string, offEpaPerPlay:number|null, defEpaAllowedPerPlay:number|null, trailingGames:number }>} keyed by `${team}|${season}|${week}`, same shape as {@link buildPregameRollingEpa}.
+ */
+export function buildPregameRollingEpaAt(rows, season, week) {
+  const { byTeam, allowedByTeam } = groupByTeamAndAllowed(rows);
+  const cutoff = { season, week };
+
+  const teams = new Set([...byTeam.keys(), ...allowedByTeam.keys()]);
+  const out = new Map();
+  for (const team of teams) {
+    const sorted = [...(byTeam.get(team) ?? [])].sort(byChronology);
+    const allowedSorted = [...(allowedByTeam.get(team) ?? [])].sort(byChronology);
+
+    const own = trailingMeanBeforeCutoff(sorted, cutoff);
+    const allowed = trailingMeanBeforeCutoff(allowedSorted, cutoff);
+
+    out.set(`${team}|${season}|${week}`, {
+      season,
+      week,
+      team,
+      offEpaPerPlay: own.value,
+      defEpaAllowedPerPlay: allowed.value,
+      trailingGames: own.trailingGames,
+    });
   }
   return out;
 }

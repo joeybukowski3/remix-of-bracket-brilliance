@@ -9,9 +9,12 @@
  *
  * Structure: compact mobile-only header, then two independent tab systems
  * -- Player Stats / Opponent Stats (NflYardageStatsTabs) above Player Last
- * 10 / Opponent Last 10 (Last10Tabs below) -- then "Projection Details"
- * (Show the Work / Role & Provenance / Notes) collapsed by default at the
- * very bottom -- never before the Last 10 analysis, on any screen size.
+ * 10 / Opponent Last 10 (Last10Comparison below, single-tab switcher below
+ * `min-[1680px]`, both tables side by side (compact) at `min-[1680px]` and
+ * wider -- see that component's own doc comment) -- then "Projection
+ * Details" (Show the Work / Role & Provenance / Notes) collapsed by default
+ * at the very bottom -- never before the Last 10 analysis, on any screen
+ * size.
  */
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -37,10 +40,10 @@ import {
   type NflYardageDetailMarketContext,
 } from "@/lib/nfl/props/review/playerDetailView";
 import { useNflYardageHistory } from "@/hooks/useNflYardageHistory";
-import { lookupPlayerHistory, lookupOpponentHistory, resolvePositionSlice } from "@/lib/nfl/props/review/yardageHistoryView";
+import { lookupPlayerHistory, lookupOpponentHistory, lookupCurrentWeekEpaRank, resolvePositionSlice } from "@/lib/nfl/props/review/yardageHistoryView";
 import NflYardageReviewTeamCell from "./NflYardageReviewTeamCell";
-import NflYardagePlayerLast10Table from "./NflYardagePlayerLast10Table";
-import NflYardageOpponentLast10Table from "./NflYardageOpponentLast10Table";
+import NflYardagePlayerLast10Table, { type NflYardagePlayerCurrentMatchup } from "./NflYardagePlayerLast10Table";
+import NflYardageOpponentLast10Table, { type NflYardageOpponentCurrentMatchup } from "./NflYardageOpponentLast10Table";
 import NflYardageStatsTabs from "./NflYardageStatsTabs";
 
 function fmt1(value: number | null): string {
@@ -193,12 +196,16 @@ function Last10Tabs({
   opponentHistory,
   currentLine,
   historyError,
+  playerCurrentMatchup,
+  opponentCurrentMatchup,
 }: {
   row: NflCurrentWeekProjectionRow;
   playerHistory: ReturnType<typeof lookupPlayerHistory>;
   opponentHistory: ReturnType<typeof lookupOpponentHistory>;
   currentLine: number | null;
   historyError: boolean;
+  playerCurrentMatchup: NflYardagePlayerCurrentMatchup | null;
+  opponentCurrentMatchup: NflYardageOpponentCurrentMatchup | null;
 }) {
   const [active, setActive] = useState<"player" | "opponent">("player");
   // Distinct, restrained per-tab color identity -- sky for Player, light violet/purple for Opponent.
@@ -248,7 +255,7 @@ function Last10Tabs({
           (historyError ? (
             <p className="text-slate-400">Last-10 history unavailable this run.</p>
           ) : (
-            <NflYardagePlayerLast10Table playerName={row.playerName} history={playerHistory} currentLine={currentLine} />
+            <NflYardagePlayerLast10Table playerName={row.playerName} history={playerHistory} currentLine={currentLine} currentMatchup={playerCurrentMatchup} />
           ))}
       </div>
       <div id="last10-panel-opponent" role="tabpanel" aria-labelledby="last10-tab-opponent" className={cn("mt-2", active === "opponent" && "border-t-2 border-violet-200 pt-2")}>
@@ -261,8 +268,82 @@ function Last10Tabs({
               position={resolvePositionSlice(row.market, row.position)}
               history={opponentHistory}
               currentLine={currentLine}
+              currentMatchup={opponentCurrentMatchup}
             />
           ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Player Last 10 / Opponent Last 10 responsive presentation.
+ *
+ * Narrow/mobile through most desktop widths: the existing single-active-tab
+ * `Last10Tabs` switcher, untouched.
+ *
+ * `min-[1680px]` and wider: both tables render simultaneously, side by side,
+ * each in `compact` mode (tighter padding, shorter headers/date format, and
+ * for the Opponent table, Home/Away folded into the name cell -- see each
+ * component's own `compact` prop doc). `min-[1680px]` -- not `2xl` (1536px)
+ * -- is deliberate and load-bearing, not a rounder Tailwind alias: this
+ * page's shared NFL layout (`NflPlatformLayout`) caps content at
+ * `max-w-[1680px]` with `px-8` padding and a 228px sidebar (`gap-6`), so
+ * content-area width is `min(viewport, 1680) - 316` -- it maxes out at a
+ * fixed **1364px once the viewport itself reaches ~1680px, and never grows
+ * past that no matter how wide the browser gets**. `2xl` (1536px) would
+ * fire 144px before that cap, in the ~1220-1364px range, well short of
+ * fitting two tables. Even at the cap, two *uncompacted* tables
+ * (`min-w-820`/`860` = 1714px combined + ~34px of gap/border chrome) can
+ * never fit -- compacting each to `min-w-[640px]`/`min-w-[660px]` (1300px +
+ * ~34px chrome = ~1334px) is what makes side-by-side fit within the page's
+ * own 1364px ceiling, with a ~30px margin. Firing at the page's own
+ * max-width threshold (`1680px`) uses that full 1364px ceiling everywhere
+ * the layout can actually deliver it. Each table keeps its own
+ * `DenseTableScroller`, so even side by side neither is expected to force
+ * its own horizontal scroll -- see the width calculation above.
+ */
+function Last10Comparison(props: {
+  row: NflCurrentWeekProjectionRow;
+  playerHistory: ReturnType<typeof lookupPlayerHistory>;
+  opponentHistory: ReturnType<typeof lookupOpponentHistory>;
+  currentLine: number | null;
+  historyError: boolean;
+  playerCurrentMatchup: NflYardagePlayerCurrentMatchup | null;
+  opponentCurrentMatchup: NflYardageOpponentCurrentMatchup | null;
+}) {
+  const { row, playerHistory, opponentHistory, currentLine, historyError, playerCurrentMatchup, opponentCurrentMatchup } = props;
+
+  return (
+    <div>
+      <div className="min-[1680px]:hidden">
+        <Last10Tabs {...props} />
+      </div>
+
+      <div className="hidden min-[1680px]:grid min-[1680px]:grid-cols-2 min-[1680px]:gap-4">
+        <div className="border-r-2 border-slate-200 pr-4">
+          <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700">Player Last 10</h3>
+          {historyError ? (
+            <p className="text-slate-400">Last-10 history unavailable this run.</p>
+          ) : (
+            <NflYardagePlayerLast10Table playerName={row.playerName} history={playerHistory} currentLine={currentLine} currentMatchup={playerCurrentMatchup} compact />
+          )}
+        </div>
+        <div>
+          <h3 className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-violet-700">Opponent Last 10</h3>
+          {historyError ? (
+            <p className="text-slate-400">Last-10 history unavailable this run.</p>
+          ) : (
+            <NflYardageOpponentLast10Table
+              opponentAbbr={row.opponent}
+              position={resolvePositionSlice(row.market, row.position)}
+              history={opponentHistory}
+              currentLine={currentLine}
+              currentMatchup={opponentCurrentMatchup}
+              compact
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -292,6 +373,30 @@ export default function NflYardageReviewDetailPanel({
   const opponentHistory = lookupOpponentHistory(history.data, row.opponent, row.market, row.position);
   const currentLine = marketInfo.available ? marketInfo.line : null;
 
+  // "This week" reference rows for the two Last-10 tables -- rank context
+  // only, sourced from `yardage-history.json`'s `currentWeekEpaRanks`
+  // (`buildPregameRollingEpaAt` in nfl-epa-week-rank-core.mjs), the EXACT
+  // SAME pregame trailing-10-game EPA/play rank definition the historical
+  // `oppDefRank` / `oppOffRank` columns below use -- apples-to-apples with
+  // those columns. Deliberately NOT `opponentContext.epaEdge` (an 8-game
+  // blend from the frozen Season/Last-5 matchup-epa.json artifact, still
+  // legitimately used elsewhere in this panel -- "Opp EPA Allowed" / "Team
+  // Edge" -- just not here). Omitted (not blanked) when the history
+  // artifact hasn't resolved.
+  const opponentCurrentWeekRank = lookupCurrentWeekEpaRank(history.data, row.opponent);
+  const teamCurrentWeekRank = lookupCurrentWeekEpaRank(history.data, row.team);
+  const playerCurrentMatchup: NflYardagePlayerCurrentMatchup | null = opponentCurrentWeekRank
+    ? { opponentAbbr: row.opponent, homeAway: row.homeAway, opponentDefRank: opponentCurrentWeekRank.defenseRank }
+    : null;
+  const opponentCurrentMatchup: NflYardageOpponentCurrentMatchup | null = teamCurrentWeekRank
+    ? {
+        playerName: row.playerName,
+        // The DEFENSE's (row.opponent's) own home/away for this game is the inverse of the player's team's.
+        homeAway: row.homeAway === "home" ? "away" : "home",
+        offenseRank: teamCurrentWeekRank.offenseRank,
+      }
+    : null;
+
   return (
     // Faint warm contrast against the neutral collapsed row board below -- deliberately NOT the
     // site's amber "warning" tone (that stays reserved for the Projection Preview notice and Notes
@@ -310,7 +415,15 @@ export default function NflYardageReviewDetailPanel({
       {/* Player Stats / Opponent Stats -- a separate tab system from Last 10 below, on every screen size. */}
       <NflYardageStatsTabs row={row} opponentContext={opponentContext} playerHistory={playerHistory} />
 
-      <Last10Tabs row={row} playerHistory={playerHistory} opponentHistory={opponentHistory} currentLine={currentLine} historyError={Boolean(history.error)} />
+      <Last10Comparison
+        row={row}
+        playerHistory={playerHistory}
+        opponentHistory={opponentHistory}
+        currentLine={currentLine}
+        historyError={Boolean(history.error)}
+        playerCurrentMatchup={playerCurrentMatchup}
+        opponentCurrentMatchup={opponentCurrentMatchup}
+      />
 
       <CollapsibleSection title="Projection Details" tone="slate" defaultOpen={false}>
         <div className="space-y-3">
