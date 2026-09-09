@@ -1376,3 +1376,56 @@ describe("NFLYardagePropsReview Last-10 current-matchup reference row and side-b
     expect(within(playerRegion).getAllByText("191").length).toBeGreaterThan(0);
   });
 });
+
+describe("NFLYardagePropsReview old-schema yardage-history artifact (regression: PR #312 currentWeekEpaRanks)", () => {
+  /**
+   * Reproduces a served/generated `yardage-history.json` predating PR #312's
+   * `currentWeekEpaRanks` field entirely (the key is absent, not an empty
+   * object) -- expanding a row must never crash `lookupCurrentWeekEpaRank`
+   * just because the artifact is on the older schema.
+   */
+  function stubFetchWithOldSchemaHistory() {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("yardage-history.json")) {
+        const artifact = yardageHistoryArtifact() as Record<string, unknown>;
+        delete artifact.currentWeekEpaRanks;
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(artifact) } as Response);
+      }
+      if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
+      if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
+      if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
+      if (url.includes("matchup-production-allowed.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyProductionAllowedArtifact()) } as Response);
+      if (url.includes("teams.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyTeamsArtifact()) } as Response);
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+  }
+
+  it("expanding a row never crashes the detail panel when currentWeekEpaRanks is absent from the artifact", async () => {
+    stubFetchWithOldSchemaHistory();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // The panel renders (no ErrorBoundary swallowing it) and the historical Last-10 content is intact.
+    const [playerRegion] = await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    expect(within(playerRegion).getByText("vs MIA")).toBeInTheDocument();
+  });
+
+  it("falls back to the blank/em-dash current-matchup state instead of throwing when currentWeekEpaRanks is missing", async () => {
+    stubFetchWithOldSchemaHistory();
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Drake Maye").length).toBeGreaterThan(0));
+    screen.getAllByRole("button", { name: /expand details for drake maye/i })[0].click();
+
+    // No "This Week"/"Wk" current-matchup reference row is rendered at all -- the lookup
+    // returns null and the row is omitted, exactly as when the artifact hasn't resolved yet.
+    await screen.findAllByRole("region", { name: /Drake Maye last 1 games/i });
+    expect(screen.queryByText("This Week")).not.toBeInTheDocument();
+    expect(screen.queryByText("Wk")).not.toBeInTheDocument();
+  });
+});
