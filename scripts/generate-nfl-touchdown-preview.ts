@@ -1,8 +1,9 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { aggregateScorerTouchdownsByPosition, buildAllTouchdownWindows, TD_OPPORTUNITY_WEIGHTS, TD_SCORE_WEIGHTS, TD_SUCCESS_PRIOR_OPPORTUNITIES } from "../src/lib/nfl/touchdown-preview/model.ts";
+import { buildAllTouchdownWindows, TD_OPPORTUNITY_WEIGHTS, TD_SCORE_WEIGHTS, TD_SUCCESS_PRIOR_OPPORTUNITIES } from "../src/lib/nfl/touchdown-preview/model.ts";
 import { NFL_TOUCHDOWN_PREVIEW_SCHEMA_VERSION, type TouchdownCandidateInput, type TouchdownOpponentGame, type TouchdownPlayerGame, type TouchdownPosition, type TouchdownPreviewArtifact } from "../src/lib/nfl/touchdown-preview/types.ts";
+import { aggregateOpponentPositionTouchdowns, indexOpponentGamesByDefense, normalizeTouchdownTeam, opponentGamesForTeam, touchdownTeamGameKey } from "../src/lib/nfl/touchdown-preview/opponentHistory.ts";
 
 const root = process.cwd();
 const season = Number(process.argv.find((arg) => arg.startsWith("--season="))?.split("=")[1] ?? 2026);
@@ -34,14 +35,20 @@ const number = (value: unknown) => Number.isFinite(Number(value)) ? Number(value
 const nullableNumber = (value: unknown) => value != null && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
 const position = (value: unknown): TouchdownPosition | null => ["QB", "RB", "WR", "TE"].includes(String(value)) ? String(value) as TouchdownPosition : null;
 
-type WeekStat = Record<string, string> & { _position: TouchdownPosition; _playerId: string };
+type WeekStat = Record<string, string> & { _position: TouchdownPosition; _playerId: string; _team: string; _opponent: string };
 const stats: WeekStat[] = [];
 for (const sourceSeason of [2025, 2026]) {
   const file = path.join(root, "data", "nfl", "nflverse", "player-week-stats", `stats_player_week_${sourceSeason}.csv`);
   if (!existsSync(file)) continue;
   for (const row of await csvRecords(file)) {
     const pos = position(row.position);
-    if (row.season_type === "REG" && pos && row.player_id) stats.push({ ...row, _position: pos, _playerId: normalizedId(row.player_id) });
+    if (row.season_type === "REG" && pos && row.player_id) stats.push({
+      ...row,
+      _position: pos,
+      _playerId: normalizedId(row.player_id),
+      _team: normalizeTouchdownTeam(row.team),
+      _opponent: normalizeTouchdownTeam(row.opponent_team),
+    });
   }
 }
 
@@ -53,11 +60,22 @@ for (const sourceSeason of [2025, 2026]) {
 }
 const touchdownContextAvailable = context.length > 0;
 
-const resultsByGame = new Map<string, any>();
+type ResultGame = {
+  gameId: string;
+  seasonType: string;
+  final: boolean;
+  dateUtc?: string | null;
+  homeAbbr: string;
+  awayAbbr: string;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
+const resultsByGame = new Map<string, ResultGame>();
 for (const sourceSeason of [2025, 2026]) {
   const file = path.join(root, "public", "data", "nfl", String(sourceSeason), "results.json");
   if (!existsSync(file)) continue;
-  const parsed = JSON.parse(await readFile(file, "utf8"));
+  const parsed = JSON.parse(await readFile(file, "utf8")) as { results?: ResultGame[] };
   for (const game of parsed.results ?? []) if (game.seasonType === "REG" && game.final) resultsByGame.set(game.gameId, game);
 }
 
@@ -70,7 +88,7 @@ for (const row of context) {
   aggregate.yardlinesKnown &&= nullableNumber(row.rz_opportunity) != null && nullableNumber(row.inside_10_opportunity) != null && nullableNumber(row.goal_line_opportunity) != null;
   aggregate.rz += number(row.rz_opportunity); aggregate.i10 += number(row.inside_10_opportunity); aggregate.gl += number(row.goal_line_opportunity);
   contextByPlayerGame.set(key, aggregate);
-  const teamKey = `${row.game_id}|${row.team.toLowerCase()}`;
+  const teamKey = touchdownTeamGameKey(row.game_id, row.team);
   const teamAggregate = contextByTeamGame.get(teamKey) ?? { total: 0, rz: 0, gl: 0, yardlinesKnown: true };
   teamAggregate.total += 1;
   teamAggregate.yardlinesKnown &&= aggregate.yardlinesKnown;
@@ -78,22 +96,22 @@ for (const row of context) {
   contextByTeamGame.set(teamKey, teamAggregate);
 }
 
-function scoreFor(game: any, team: string) {
+function scoreFor(game: ResultGame | undefined, team: string) {
   if (!game) return { teamScore: null, opponentScore: null, homeAway: "away" as const };
-  const home = game.homeAbbr === team;
+  const home = normalizeTouchdownTeam(game.homeAbbr) === normalizeTouchdownTeam(team);
   return { teamScore: home ? game.homeScore : game.awayScore, opponentScore: home ? game.awayScore : game.homeScore, homeAway: home ? "home" as const : "away" as const };
 }
 
 const playerGamesById = new Map<string, TouchdownPlayerGame[]>();
 for (const row of stats) {
-  const game = resultsByGame.get(row.game_id); const team = row.team.toLowerCase(); const scoring = scoreFor(game, team);
+  const game = resultsByGame.get(row.game_id); const team = row._team; const scoring = scoreFor(game, team);
   const contextRow = contextByPlayerGame.get(`${row._playerId}|${row.game_id}`);
-  const teamContext = contextByTeamGame.get(`${row.game_id}|${team}`);
+  const teamContext = contextByTeamGame.get(touchdownTeamGameKey(row.game_id, team));
   const scorerOpportunities = touchdownContextAvailable ? contextRow?.total ?? 0 : row._position === "QB" ? null : number(row.carries) + number(row.targets);
   const rushingTds = number(row.rushing_tds); const receivingTds = number(row.receiving_tds);
   const playerGame: TouchdownPlayerGame = {
     gameId: row.game_id, season: number(row.season), week: number(row.week), date: game?.dateUtc ?? null, team,
-    opponent: row.opponent_team.toLowerCase(), homeAway: scoring.homeAway, teamScore: scoring.teamScore, opponentScore: scoring.opponentScore,
+    opponent: row._opponent, homeAway: scoring.homeAway, teamScore: scoring.teamScore, opponentScore: scoring.opponentScore,
     carries: number(row.carries), targets: number(row.targets), scorerOpportunities,
     teamScorerOpportunities: touchdownContextAvailable ? teamContext?.total ?? 0 : null,
     teamRzOpportunities: touchdownContextAvailable && (teamContext?.yardlinesKnown ?? true) ? teamContext?.rz ?? 0 : null,
@@ -106,24 +124,25 @@ for (const row of stats) {
   const list = playerGamesById.get(row._playerId) ?? []; list.push(playerGame); playerGamesById.set(row._playerId, list);
 }
 
-type DefenseAggregate = { defense: string; opponent: string; positionTds: Record<TouchdownPosition, number> };
-const defenseByGame = new Map<string, DefenseAggregate>();
-for (const row of stats) {
-  const defense = row.opponent_team.toLowerCase(); const key = `${row.game_id}|${defense}`;
-  const aggregate = defenseByGame.get(key) ?? { defense, opponent: row.team.toLowerCase(), positionTds: { QB: 0, RB: 0, WR: 0, TE: 0 } };
-  const scorerTds = aggregateScorerTouchdownsByPosition([{ position: row._position, rushingTds: number(row.rushing_tds), receivingTds: number(row.receiving_tds), passingTds: number(row.passing_tds), specialTeamsTds: number(row.special_teams_tds) }]);
-  aggregate.positionTds[row._position] += scorerTds[row._position];
-  defenseByGame.set(key, aggregate);
-}
+const defenseByGame = aggregateOpponentPositionTouchdowns(stats.map((row) => ({
+  gameId: row.game_id,
+  team: row._team,
+  opponent: row._opponent,
+  position: row._position,
+  rushingTds: number(row.rushing_tds),
+  receivingTds: number(row.receiving_tds),
+  passingTds: number(row.passing_tds),
+  specialTeamsTds: number(row.special_teams_tds),
+})));
 const opportunityAllowed = new Map<string, { rz: number; i10: number; gl: number; yardlinesKnown: boolean }>();
 for (const row of context) {
-  const defense = row.opponent.toLowerCase(); const key = `${row.game_id}|${defense}`;
+  const defense = normalizeTouchdownTeam(row.opponent); const key = touchdownTeamGameKey(row.game_id, defense);
   const aggregate = opportunityAllowed.get(key) ?? { rz: 0, i10: 0, gl: 0, yardlinesKnown: true };
   aggregate.yardlinesKnown &&= nullableNumber(row.rz_opportunity) != null && nullableNumber(row.inside_10_opportunity) != null && nullableNumber(row.goal_line_opportunity) != null;
   aggregate.rz += number(row.rz_opportunity); aggregate.i10 += number(row.inside_10_opportunity); aggregate.gl += number(row.goal_line_opportunity);
   opportunityAllowed.set(key, aggregate);
 }
-const opponentGamesByDefense = new Map<string, TouchdownOpponentGame[]>();
+const opponentGames: TouchdownOpponentGame[] = [];
 for (const [key, aggregate] of defenseByGame) {
   const gameId = key.split("|")[0]; const game = resultsByGame.get(gameId); const scoring = scoreFor(game, aggregate.defense);
   const opportunities = opportunityAllowed.get(key);
@@ -137,8 +156,9 @@ for (const [key, aggregate] of defenseByGame) {
     goalLineOpportunitiesAllowed: touchdownContextAvailable && (opportunities?.yardlinesKnown ?? true) ? opportunities?.gl ?? 0 : null,
     touchdownsAllowedByPosition: aggregate.positionTds,
   };
-  const list = opponentGamesByDefense.get(aggregate.defense) ?? []; list.push(row); opponentGamesByDefense.set(aggregate.defense, list);
+  opponentGames.push(row);
 }
+const opponentGamesByDefense = indexOpponentGamesByDefense(opponentGames);
 
 const yardagePath = path.join(root, "public", "data", "nfl", String(season), "yardage-projections.json");
 const yardage = JSON.parse(await readFile(yardagePath, "utf8"));
@@ -150,11 +170,13 @@ for (const row of yardage.rows ?? []) {
   if ((pos === "WR" || pos === "TE") && row.market !== "receiving") continue;
   if (pos === "RB" && row.market !== "rushing") continue;
   if (candidates.has(row.playerId)) continue;
+  const team = normalizeTouchdownTeam(row.team);
+  const opponent = normalizeTouchdownTeam(row.opponent);
   candidates.set(row.playerId, {
-    playerId: row.playerId, playerName: row.playerName, team: row.team, opponent: row.opponent, homeAway: row.homeAway,
+    playerId: row.playerId, playerName: row.playerName, team, opponent, homeAway: row.homeAway,
     position: pos, gameId: row.gameId, kickoff: row.kickoff ?? null,
     impliedTeamPoints: nullableNumber(row.featureSnapshot?.market?.impliedTeamTotal),
-    playerGames: playerGamesById.get(row.playerId) ?? [], opponentGames: opponentGamesByDefense.get(row.opponent) ?? [], anytimeTdOdds: null,
+    playerGames: playerGamesById.get(row.playerId) ?? [], opponentGames: opponentGamesForTeam(opponentGamesByDefense, opponent), anytimeTdOdds: null,
   });
 }
 

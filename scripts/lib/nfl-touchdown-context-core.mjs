@@ -5,7 +5,7 @@ import { createInterface } from "node:readline";
 export const TOUCHDOWN_CONTEXT_SCHEMA_VERSION = "nfl-touchdown-context-v1";
 export const TOUCHDOWN_PBP_COLUMNS = [
   "game_id", "play_id", "drive", "season", "season_type", "week", "posteam", "defteam",
-  "yardline_100", "rush", "pass", "no_play", "two_point_attempt", "qb_kneel", "qb_spike",
+  "yardline_100", "rush", "pass", "play_type", "two_point_attempt", "qb_kneel", "qb_spike",
   "rusher_player_id", "rusher_player_name", "receiver_player_id", "receiver_player_name",
   "rush_touchdown", "pass_touchdown",
 ];
@@ -41,7 +41,7 @@ export function validateTouchdownPbpHeader(header) {
 }
 
 export function touchdownContextEvent(record) {
-  if (record.season_type !== "REG" || one(record.no_play) || one(record.two_point_attempt) || one(record.qb_kneel) || one(record.qb_spike)) return null;
+  if (record.season_type !== "REG" || String(record.play_type ?? "").trim() === "no_play" || one(record.two_point_attempt) || one(record.qb_kneel) || one(record.qb_spike)) return null;
   const rusherId = String(record.rusher_player_id ?? "").trim();
   const receiverId = String(record.receiver_player_id ?? "").trim();
   const isCarry = rusherId.length > 0 && one(record.rush);
