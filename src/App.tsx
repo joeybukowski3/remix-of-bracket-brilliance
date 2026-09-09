@@ -177,10 +177,12 @@ const App = () => (
             <Route path="guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
             <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           </Route>
-          <Route path="/fantasy-football" element={<FantasyFootball />} />
-          <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
-          <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
-          <Route path="/fantasy-football/draft-preview" element={<FantasyDraftPreview />} />
+          <Route element={<NflPlatformLayout />}>
+            <Route path="/fantasy-football" element={<FantasyFootball />} />
+            <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
+            <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
+            <Route path="/fantasy-football/draft-preview" element={<FantasyDraftPreview />} />
+          </Route>
           <Route
             path="/internal/jkb-nfl-v03-review-7f3c9a"
             element={

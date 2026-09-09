@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import TeamLogo from "@/components/TeamLogo";
 import { DenseTableScroller, frozenDenseColumn, stickyDenseHeader } from "@/components/ui/dense-table";
@@ -52,7 +51,7 @@ export default function FantasyPointsAllowed() {
   }, [teams, sortKey]);
 
   return (
-    <SiteShell>
+    <>
       <NflPageHeader
         eyebrow="Fantasy Football"
         title="Points Allowed by Position"
@@ -208,7 +207,7 @@ export default function FantasyPointsAllowed() {
           2026 projection, and the research board labels it 2025 wherever it appears.
         </section>
       </div>
-    </SiteShell>
+    </>
   );
 }
 

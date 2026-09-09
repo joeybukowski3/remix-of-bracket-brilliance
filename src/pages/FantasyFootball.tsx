@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import SiteShell from "@/components/layout/SiteShell";
 import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
 import FantasyParBoard from "@/components/fantasy/FantasyParBoard";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
@@ -34,22 +33,20 @@ function RestOfSeasonRankings() {
   });
 
   return (
-    <SiteShell>
-      <div className="site-container pt-6">
-        <FantasyRankingModeNav mode="ros" />
-      </div>
+    <>
+      <FantasyRankingModeNav mode="ros" />
       <NflPageHeader
         eyebrow="Fantasy Football"
         title="2026 Rest-of-Season Rankings"
         description="Season Projection and Projected PPG for the full Joe Knows Ball research board. Approved PAR/G drives the long-term position order and draft-pool tiers; this is not a weekly matchup ranking."
       />
 
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <FantasyParBoard />
 
         <MethodologySection />
       </div>
-    </SiteShell>
+    </>
   );
 }
 
