@@ -4,7 +4,6 @@ import FantasyRankingModeNav from "@/components/fantasy/FantasyRankingModeNav";
 import ProjectionMethodologyPanel from "@/components/fantasy/ProjectionMethodologyPanel";
 import WeeklyStatsGlossary from "@/components/fantasy/WeeklyStatsGlossary";
 import WeeklyFantasyRankingsTable, { type WeeklyResearchDisplayMode } from "@/components/fantasy/WeeklyFantasyRankingsTable";
-import SiteShell from "@/components/layout/SiteShell";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -48,20 +47,17 @@ export default function FantasyWeeklyRankings() {
 
   if (week === null) {
     return (
-      <SiteShell>
-        <main className="site-container space-y-4 py-6">
-          <FantasyRankingModeNav mode="weekly" />
-          <NflPageHeader eyebrow="Fantasy Football · Full PPR" title="Weekly Fantasy Rankings" description="No regular-season schedule is available yet." />
-          <section role="status" className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">No regular-season schedule is available yet.</section>
-        </main>
-      </SiteShell>
+      <div className="space-y-4">
+        <FantasyRankingModeNav mode="weekly" />
+        <NflPageHeader eyebrow="Fantasy Football · Full PPR" title="Weekly Fantasy Rankings" description="No regular-season schedule is available yet." />
+        <section role="status" className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">No regular-season schedule is available yet.</section>
+      </div>
     );
   }
 
   return (
-    <SiteShell>
-      <main className="site-container space-y-4 py-6">
-        <FantasyRankingModeNav mode="weekly" week={week} />
+    <div className="space-y-4">
+      <FantasyRankingModeNav mode="weekly" week={week} />
         <NflPageHeader
           eyebrow="Fantasy Football · Full PPR"
           title="Weekly Fantasy Rankings"
@@ -151,7 +147,6 @@ export default function FantasyWeeklyRankings() {
             <p className="mt-1 text-sm text-red-800">The weekly artifact failed validation or could not be read. Try again after the source is refreshed.</p>
           </section>
         )}
-      </main>
-    </SiteShell>
+      </div>
   );
 }
