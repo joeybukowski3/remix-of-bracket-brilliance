@@ -1,0 +1,175 @@
+name: Walter Private Research Capture
+
+run-name: Walter Capture • ${{ github.event.inputs.capture || 'scheduled' }} • ${{ github.ref_name }}
+
+# Captures the current NFL week's WalterFootball picks/analysis for the
+# private, unlisted /walter research dashboard (see AGENTS.md and the
+# feat/walter-private-research-dashboard worktree notes for scope). Four
+# passes per week, matching WalterFootball's own publishing cadence:
+#   Wednesday 02:00 ET -- initial full weekly capture
+#   Thursday  12:00 ET -- Thursday-game / early-week updates
+#   Saturday  23:00 ET -- late-week injury/lineup/line changes
+#   Sunday    11:00 ET -- final pregame capture
+#
+# Schedule / DST tradeoff (v1, accepted, same tradeoff already used by
+# nfl-betting-lines-daily.yml): GitHub Actions `schedule` cron is UTC-only.
+# This pins each pass to its EDT-equivalent UTC time rather than adding
+# runtime timezone-resolution logic. During EST (roughly the Nov/Dec/Jan
+# tail of the season) each pass therefore lands about one hour earlier in
+# local ET than the label below -- e.g. "Wednesday 02:00 ET" runs at
+# 01:00 ET during EST. All four windows are loose research-capture windows,
+# not time-critical, so this drift is accepted for v1.
+#   Wed 02:00 ET (EDT) = 06:00 UTC Wed  -> cron "0 6 * * 3"
+#   Thu 12:00 ET (EDT) = 16:00 UTC Thu  -> cron "0 16 * * 4"
+#   Sat 23:00 ET (EDT) = 03:00 UTC Sun  -> cron "0 3 * * 0"
+#   Sun 11:00 ET (EDT) = 15:00 UTC Sun  -> cron "0 15 * * 0"
+#
+# Traffic to walterfootball.com: two GET requests per run (early + late
+# window pages), four scheduled runs per week -- matches the "do not
+# continuously hammer WalterFootball" mandate. workflow_dispatch exists for
+# manual/debug capture only.
+on:
+  schedule:
+    - cron: "0 6 * * 3"
+    - cron: "0 16 * * 4"
+    - cron: "0 3 * * 0"
+    - cron: "0 15 * * 0"
+  workflow_dispatch:
+    inputs:
+      capture:
+        description: "Capture type to run (required for manual runs; scheduled runs resolve this from the trigger time)"
+        type: choice
+        options: [wednesday, thursday, saturday, sunday]
+        required: false
+      week:
+        description: "NFL week override (optional; default resolves the current week from the committed schedule)"
+        type: string
+        required: false
+      dry_run:
+        description: "Parse and log, but write/commit nothing"
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Scheduled runs resolve captureType from which cron entry fired
+      # (matched on UTC hour/day-of-week); a manual run must pass `capture`.
+      - name: Resolve capture type
+        id: capture-type
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.capture }}" ]; then
+            echo "capture=${{ github.event.inputs.capture }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          hour=$(date -u +%H)
+          dow=$(date -u +%u) # 1=Mon .. 7=Sun
+          if [ "$dow" = "3" ] && [ "$hour" = "06" ]; then echo "capture=wednesday" >> "$GITHUB_OUTPUT"
+          elif [ "$dow" = "4" ] && [ "$hour" = "16" ]; then echo "capture=thursday" >> "$GITHUB_OUTPUT"
+          elif [ "$dow" = "7" ] && [ "$hour" = "03" ]; then echo "capture=saturday" >> "$GITHUB_OUTPUT"
+          elif [ "$dow" = "7" ] && [ "$hour" = "15" ]; then echo "capture=sunday" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Could not resolve capture type from trigger time (dow=$dow hour=$hour) and no manual 'capture' input was given." >&2
+            exit 1
+          fi
+
+      - name: Resolve current NFL season/week
+        id: week
+        run: |
+          if [ -n "${{ github.event.inputs.week }}" ]; then
+            echo "season=2026" >> "$GITHUB_OUTPUT"
+            echo "week=${{ github.event.inputs.week }}" >> "$GITHUB_OUTPUT"
+          else
+            node scripts/resolve-nfl-current-week.mjs >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Capture WalterFootball ${{ steps.capture-type.outputs.capture }} snapshot
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npm run walter:capture -- --capture=${{ steps.capture-type.outputs.capture }} --season=${{ steps.week.outputs.season }} --week=${{ steps.week.outputs.week }} --dry-run
+          else
+            npm run walter:capture -- --capture=${{ steps.capture-type.outputs.capture }} --season=${{ steps.week.outputs.season }} --week=${{ steps.week.outputs.week }}
+          fi
+
+      - name: Publish public research artifact
+        if: github.event.inputs.dry_run != 'true'
+        run: npm run walter:publish -- --season=${{ steps.week.outputs.season }} --week=${{ steps.week.outputs.week }}
+
+      - name: Detect Walter artifact changes
+        id: changes
+        if: github.event.inputs.dry_run != 'true'
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'data/walter' 'public/data/walter')" ]; then
+            echo "No Walter research artifact changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Walter research artifact changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push captured research
+        if: github.event.inputs.dry_run != 'true' && steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/walter public/data/walter
+
+          if git diff --cached --quiet; then
+            echo "No staged Walter artifact changes -- not creating an empty commit."
+            exit 0
+          fi
+
+          git commit -m "chore(walter): capture ${{ steps.capture-type.outputs.capture }} snapshot for week ${{ steps.week.outputs.week }}"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed -- Walter research capture was not committed." >&2
+            exit 1
+          fi
+
+          echo "Walter research capture pushed successfully."

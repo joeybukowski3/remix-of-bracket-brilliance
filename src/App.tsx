@@ -90,6 +90,7 @@ import {
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
 const NflV03Review = lazy(() => import("./pages/NflV03Review"));
+const WalterResearch = lazy(() => import("./pages/WalterResearch"));
 const SixteenZeroPage = lazy(() => import("./features/sixteen-zero/SixteenZeroPage"));
 
 function LegacyScheduleRedirect() {
@@ -190,6 +191,14 @@ const App = () => (
             element={
               <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading internal NFL review…</div>}>
                 <NflV03Review />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/walter"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading Walter research…</div>}>
+                <WalterResearch />
               </Suspense>
             }
           />
