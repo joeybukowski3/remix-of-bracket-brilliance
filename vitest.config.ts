@@ -54,6 +54,10 @@ export default defineConfig({
       "scripts/lib/nfl-research-buckets.test.mjs",
       "scripts/lib/nfl-research-time-split.test.mjs",
       "scripts/lib/nfl-research-bias.test.mjs",
+      // NFL prospective 2026 JKB TD Score forward-validation (research only).
+      "scripts/research/lib/nfl-td-forward-core.test.mjs",
+      "scripts/research/lib/nfl-td-forward-metrics.test.mjs",
+      "scripts/research/lib/nfl-td-forward-summary.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
