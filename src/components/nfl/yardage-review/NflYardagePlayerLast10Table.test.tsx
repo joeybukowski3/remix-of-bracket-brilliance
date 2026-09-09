@@ -66,24 +66,24 @@ function headerTexts() {
 }
 
 describe("NflYardagePlayerLast10Table column order", () => {
-  it("passing: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Pass Yds, VS OPP AVG, Cmp/Att, TD/INT, Game Score, Vegas Line", () => {
+  it("passing: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Pass Yds, VS OPP AVG, Cmp/Att, TD/INT, Game Score -- no Vegas Line or Fantasy Pts", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
     expect(headerTexts()).toEqual([
-      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Pass Yds", "VS OPP AVG", "Cmp / Att", "TD / INT", "Game Score", "Vegas Line",
+      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Pass Yds", "VS OPP AVG", "Cmp / Att", "TD / INT", "Game Score",
     ]);
   });
 
-  it("rushing: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Rush Yds, VS OPP AVG, Rush Att, Rush TD, Game Score, Vegas Line", () => {
+  it("rushing: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Rush Yds, VS OPP AVG, Rush Att, Rush TD, Game Score -- no Vegas Line or Fantasy Pts", () => {
     render(<NflYardagePlayerLast10Table playerName="Rhamondre Stevenson" history={rushingHistory()} currentLine={null} />);
     expect(headerTexts()).toEqual([
-      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Rush Yds", "VS OPP AVG", "Rush Att", "Rush TD", "Game Score", "Vegas Line",
+      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Rush Yds", "VS OPP AVG", "Rush Att", "Rush TD", "Game Score",
     ]);
   });
 
-  it("receiving: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Rec Yds, VS OPP AVG, Targets/Rec, Rec TD, Game Score, Vegas Line", () => {
+  it("receiving: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Rec Yds, VS OPP AVG, Targets/Rec, Rec TD, Game Score -- no Vegas Line or Fantasy Pts", () => {
     render(<NflYardagePlayerLast10Table playerName="Test WR" history={receivingHistory()} currentLine={null} />);
     expect(headerTexts()).toEqual([
-      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Rec Yds", "VS OPP AVG", "Targets / Rec", "Rec TD", "Game Score", "Vegas Line",
+      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Rec Yds", "VS OPP AVG", "Targets / Rec", "Rec TD", "Game Score",
     ]);
   });
 
@@ -110,6 +110,15 @@ describe("NflYardagePlayerLast10Table column order", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={null} />);
     const [cell] = screen.getAllByText("+45.7");
     expect(cell.getAttribute("data-result")).toBe("over");
+  });
+
+  it("never renders Vegas Line or a single-market total mislabeled as Fantasy Pts", () => {
+    render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
+    expect(screen.queryByRole("columnheader", { name: "Vegas Line" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /Fantasy Pts/i })).not.toBeInTheDocument();
+    // 276 * 0.04 + 1 * 4 = 15.04 -- the partial single-market DK total this game would have
+    // scored, kept out of the DOM entirely rather than shown under any label.
+    expect(screen.queryByText("15.0")).not.toBeInTheDocument();
   });
 
   it("VS OPP AVG is negative/red when actual yards trail the opponent's allowed average", () => {

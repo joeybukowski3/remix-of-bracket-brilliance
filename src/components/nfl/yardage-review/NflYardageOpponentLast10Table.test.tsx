@@ -32,11 +32,20 @@ function headerTexts() {
 }
 
 describe("NflYardageOpponentLast10Table column order", () => {
-  it("passing: Date, Opp QB, Home/Away, Opp Off Rank, QB YPG, Pass Yds Allowed, VS QB AVG, Cmp/Att Allowed, TD/INT, Game Score, Vegas Line", () => {
+  it("passing: Date, Opp QB, Home/Away, Opp Off Rank, QB YPG, Pass Yds Allowed, VS QB AVG, Cmp/Att Allowed, TD/INT, Game Score -- no Vegas Line or Fantasy Pts Allowed", () => {
     render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
     expect(headerTexts()).toEqual([
-      "Date", "Opp QB", "Home/Away", "Opp Off Rank", "QB YPG", "Pass Yds Allowed", "VS QB AVG", "Cmp / Att Allowed", "TD / INT", "Game Score", "Vegas Line",
+      "Date", "Opp QB", "Home/Away", "Opp Off Rank", "QB YPG", "Pass Yds Allowed", "VS QB AVG", "Cmp / Att Allowed", "TD / INT", "Game Score",
     ]);
+  });
+
+  it("never renders Vegas Line or a single-market total mislabeled as Fantasy Pts Allowed", () => {
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
+    expect(screen.queryByRole("columnheader", { name: "Vegas Line" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /Fantasy Pts/i })).not.toBeInTheDocument();
+    // 245 * 0.04 + 1 * 4 - 1 = 12.8 -- the partial single-market DK total this game would have
+    // allowed, kept out of the DOM entirely rather than shown under any label.
+    expect(screen.queryByText("12.8")).not.toBeInTheDocument();
   });
 
   it("Opp Off Rank renders as an ordinal, never a rank-out-of-32", () => {

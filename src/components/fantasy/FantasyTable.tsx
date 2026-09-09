@@ -23,6 +23,9 @@ export function FantasyPlayerIdentity({
   showTeamAbbreviation = true,
   nameClassName,
   teamClassName,
+  onNameClick,
+  nameExpanded,
+  nameAriaLabel,
 }: {
   player: string;
   team?: string;
@@ -31,6 +34,10 @@ export function FantasyPlayerIdentity({
   showTeamAbbreviation?: boolean;
   nameClassName?: string;
   teamClassName?: string;
+  /** When provided, the player name becomes a clickable, keyboard-accessible toggle (e.g. to expand a detail row) instead of static text. */
+  onNameClick?: () => void;
+  nameExpanded?: boolean;
+  nameAriaLabel?: string;
 }) {
   const normalizedTeam = team?.toUpperCase();
   const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
@@ -46,7 +53,23 @@ export function FantasyPlayerIdentity({
         className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
       />
       <div className={cn("flex min-w-0 gap-1.5", wrapName ? "items-start" : "items-center")}>
-        {player && (
+        {player && (onNameClick ? (
+          <button
+            type="button"
+            data-player-name
+            aria-expanded={nameExpanded}
+            aria-label={nameAriaLabel}
+            onClick={(event) => { event.stopPropagation(); onNameClick(); }}
+            className={cn(
+              "rounded font-bold text-slate-950 underline-offset-2 hover:underline focus:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-sky-500",
+              "text-[12px] leading-4",
+              wrapName ? "min-w-0 whitespace-normal break-words text-left" : "truncate",
+              nameClassName,
+            )}
+          >
+            {player}
+          </button>
+        ) : (
           <div
             data-player-name
             className={cn(
@@ -58,7 +81,7 @@ export function FantasyPlayerIdentity({
           >
             {player}
           </div>
-        )}
+        ))}
         {showTeamAbbreviation && (
           <div
             data-player-team-abbreviation

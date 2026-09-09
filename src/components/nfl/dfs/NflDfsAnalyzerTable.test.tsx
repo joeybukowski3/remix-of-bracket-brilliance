@@ -228,3 +228,48 @@ describe("compact DFS analytical columns", () => {
     expect(within(table).getAllByRole("row")).toHaveLength(2);
   });
 });
+
+describe("DFS practical pool gate on the board", () => {
+  it("hides a player outside the practical pool (e.g. a deep backup QB) from the board", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [
+      offensiveRow({ dkId: "q-starter", playerName: "Starter QB", position: "QB", jkbWeeklyPositionRank: 10 }),
+      offensiveRow({ dkId: "q-backup", playerName: "Deep Backup QB", position: "QB", jkbWeeklyPositionRank: 33 }),
+    ];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    fireEvent.click(screen.getByRole("tab", { name: "QB" }));
+    expect(screen.getByText("Starter QB")).toBeInTheDocument();
+    expect(screen.queryByText("Deep Backup QB")).not.toBeInTheDocument();
+  });
+});
+
+describe("player-name click-to-expand", () => {
+  it("opens the same detail section as the disclosure control, and closes on a second click", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "n1", playerName: "Name Click Guy", position: "QB" })];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    const nameButton = screen.getByRole("button", { name: "Expand details for Name Click Guy" });
+    expect(nameButton.tagName).toBe("BUTTON");
+    expect(screen.queryByRole("tab", { name: "Player Last 10" })).not.toBeInTheDocument();
+    fireEvent.click(nameButton);
+    expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Collapse details for Name Click Guy" })).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Name Click Guy" }));
+    expect(screen.queryByRole("tab", { name: "Player Last 10" })).not.toBeInTheDocument();
+  });
+
+  it("is keyboard accessible (native button semantics, reachable by role/name)", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "n2", playerName: "Keyboard Guy", position: "WR" })];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    const nameButton = screen.getByRole("button", { name: "Expand details for Keyboard Guy" });
+    nameButton.focus();
+    expect(nameButton).toHaveFocus();
+    fireEvent.click(nameButton);
+    expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
+  });
+
+  it("still uses the existing disclosure control independently of the name button", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "n3", playerName: "Disclosure Guy", position: "TE" })];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand Disclosure Guy" }));
+    expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
+  });
+});
