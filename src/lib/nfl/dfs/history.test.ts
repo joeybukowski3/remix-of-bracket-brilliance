@@ -12,7 +12,7 @@ function artifact(): NflYardageHistoryArtifact {
   const individualContext = buildIndividualYardageHistory({ ...target, requests: [{ playerId: "gsis:p", market: "passing", position: "QB", opponent: "b" }],
     statRows: normalizeIndividualHistoryStatRows([{ season: 2025, season_type: "REG", week: 1, player_id: "p", position: "QB", recent_team: "A", opponent_team: "B", attempts: 20, passing_yards: 100 }], 2025),
     gameLookup: buildGameLookup(games, [{ ...games[0], homeScore: 0, awayScore: 7, winner: "a" }], teams), canonicalToNflverseAbbr: teams, archiveIndex: new Map() });
-  return { schemaVersion: "nfl-yardage-history-v2", season: 2026, week: 1, _meta: { generatedAt: target.asOf, season: 2026, week: 1, source: "fixture", notes: [] }, players: {}, teamDefense: {}, individualContext };
+  return { schemaVersion: "nfl-yardage-history-v2", season: 2026, week: 1, _meta: { generatedAt: target.asOf, season: 2026, week: 1, source: "fixture", notes: [] }, players: {}, teamDefense: {}, currentWeekEpaRanks: {}, individualContext };
 }
 
 describe("DFS history adapter", () => {

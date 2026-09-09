@@ -71,6 +71,27 @@ export type NflYardageOpponentHistory = {
   games: NflYardageOpponentHistoryGame[];
 };
 
+/**
+ * This week's not-yet-played matchup rank, keyed by canonical team abbr
+ * (`row.team` / `row.opponent` convention). Computed by
+ * `buildPregameRollingEpaAt` in `scripts/lib/nfl-epa-week-rank-core.mjs` --
+ * the exact same pregame trailing-10-game EPA/play formula and
+ * `rankTeamsAt` ranking function as the historical `oppDefRank` /
+ * `oppOffRank` fields above, evaluated at this week's (season, week)
+ * cutoff instead of a played game. Apples-to-apples with those historical
+ * fields; NOT the same value as `opponentContext.epaEdge` (an 8-game blend
+ * from the frozen Season/Last-5 matchup-epa.json artifact) used elsewhere
+ * in the review panel.
+ */
+export type NflYardageCurrentWeekEpaRank = {
+  defenseRank: number | null;
+  /** Teams with a resolvable pregame rank at this week's cutoff -- not always 32; null whenever defenseRank is null. */
+  defenseRankPoolSize: number | null;
+  offenseRank: number | null;
+  /** Teams with a resolvable pregame rank at this week's cutoff -- not always 32; null whenever offenseRank is null. */
+  offenseRankPoolSize: number | null;
+};
+
 export type NflYardageHistoryArtifact = {
   _meta: { generatedAt: string; source: string; season: number | null; week: number | null; notes: string[] };
   schemaVersion: string;
@@ -78,6 +99,8 @@ export type NflYardageHistoryArtifact = {
   week: number;
   players: Record<string, NflYardagePlayerHistory>;
   teamDefense: Record<string, NflYardageOpponentHistory>;
+  /** Keyed by canonical team abbr -- see {@link NflYardageCurrentWeekEpaRank}. */
+  currentWeekEpaRanks: Record<string, NflYardageCurrentWeekEpaRank>;
   /** Additive v2 context. Legacy logs retain their original cohort semantics. */
   individualContext?: IndividualYardageHistoryContext;
 };

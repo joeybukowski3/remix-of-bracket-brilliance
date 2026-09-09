@@ -11,6 +11,7 @@ import type {
   NflYardagePlayerHistoryGame,
   NflYardageOpponentHistoryGame,
   NflYardageHistoryArtifact,
+  NflYardageCurrentWeekEpaRank,
 } from "../types/yardageHistory";
 import { playerHistoryKey, opponentHistoryKey } from "../types/yardageHistory";
 import { formatRankOrdinal } from "@/components/nfl/matchups/rankOrdinal";
@@ -39,6 +40,20 @@ export function lookupOpponentHistory(
   if (!artifact) return null;
   const position = resolvePositionSlice(market, playerPosition);
   return artifact.teamDefense[opponentHistoryKey(opponentAbbr, market, position)] ?? null;
+}
+
+/**
+ * This week's not-yet-played matchup rank for one canonical team abbr --
+ * the same pregame trailing-10-game rank definition as the historical
+ * `oppDefRank` / `oppOffRank` fields (see `NflYardageCurrentWeekEpaRank`),
+ * never `opponentContext.epaEdge`.
+ */
+export function lookupCurrentWeekEpaRank(
+  artifact: NflYardageHistoryArtifact | null,
+  teamAbbr: string,
+): NflYardageCurrentWeekEpaRank | null {
+  if (!artifact) return null;
+  return artifact.currentWeekEpaRanks[teamAbbr] ?? null;
 }
 
 export type NflYardageOverUnderResult = "over" | "under" | "push" | "neutral";
