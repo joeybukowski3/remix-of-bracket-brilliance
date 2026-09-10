@@ -108,7 +108,23 @@ function ProfileTable({ id, title, accent, rows }: { id: string; title: string; 
   );
 }
 
-export default function TouchdownPlayerDetail({ player, window }: { player: TouchdownPreviewPlayer; window: TouchdownWindowKey }) {
+/**
+ * "Opp TD/Game vs Pos SZN" row label with an explicit provenance subline so a
+ * prior-season fallback value is never mistaken for a true current-season YTD
+ * rate. `current_season` -> "{season} YTD"; `prior_season_fallback` ->
+ * "{season - 1} fallback"; `null` -> no subline.
+ */
+function SznLabel({ source, season }: { source: TouchdownPreviewPlayer["windows"][TouchdownWindowKey]["opponentPositionTdsAllowedPerGameSeasonSource"]; season: number }) {
+  const tag = source === "current_season" ? `${season} YTD` : source === "prior_season_fallback" ? `${season - 1} fallback` : null;
+  return (
+    <span className="flex flex-col">
+      <span>Opp TD/Game vs Pos SZN</span>
+      {tag && <span className="text-[9px] font-normal normal-case tracking-normal text-slate-400">{tag}</span>}
+    </span>
+  );
+}
+
+export default function TouchdownPlayerDetail({ player, window, season }: { player: TouchdownPreviewPlayer; window: TouchdownWindowKey; season: number }) {
   const metrics = player.windows[window];
   const playerGames = player.playerHistory.filter((game) => window === "last8" || game.season === Number(window)).slice(0, window === "last8" ? 8 : 10);
   const opponentGames = player.opponentHistory.filter((game) => window === "last8" || game.season === Number(window)).slice(0, window === "last8" ? 8 : 10);
@@ -132,7 +148,7 @@ export default function TouchdownPlayerDetail({ player, window }: { player: Touc
   const matchupMarket: ProfileRow[] = [
     { label: "Team Implied Points", value: number(metrics.impliedTeamPoints, 1), context: components.impliedTeamPoints.percentile },
     { label: "Opp TD Opp/G", value: number(metrics.opponentTdOpportunitiesPerGame, 2), context: components.opponentTdOpportunities.percentile },
-    { label: "Opp TD/Game vs Pos SZN", value: number(metrics.opponentPositionTdsAllowedPerGameSeason, 2), context: metrics.opponentPositionTdsAllowedPerGameSeasonPercentile },
+    { label: <SznLabel source={metrics.opponentPositionTdsAllowedPerGameSeasonSource} season={season} />, value: number(metrics.opponentPositionTdsAllowedPerGameSeason, 2), context: metrics.opponentPositionTdsAllowedPerGameSeasonPercentile },
     { label: "Opp TD/Game vs Pos Last 5", value: number(metrics.opponentPositionTdsAllowedPerGameLast5, 2), context: metrics.opponentPositionTdsAllowedPerGameLast5Percentile },
     { label: "Anytime TD Odds", value: player.anytimeTdOdds == null ? "Unavailable" : fmtOdds(player.anytimeTdOdds), context: null },
     { label: "Book", value: player.anytimeTdBook == null ? "Unavailable" : sportsbookDisplayName(player.anytimeTdBook), context: null },

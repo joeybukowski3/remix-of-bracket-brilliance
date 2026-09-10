@@ -48,7 +48,7 @@ export default function NFLTouchdownScorer() {
       ) : source.error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{source.error} Refresh after generating the touchdown preview artifact.</div>
       ) : visible.length ? (
-        <TouchdownScorerTable players={visible} window={window} heat={heat} sort={sort} onSort={(key) => setSort((current) => nextTouchdownSort(current, key))} />
+        <TouchdownScorerTable players={visible} window={window} season={source.data?.season ?? 2026} heat={heat} sort={sort} onSort={(key) => setSort((current) => nextTouchdownSort(current, key))} />
       ) : (
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">No players match these filters.</div>
       )}

@@ -48,8 +48,12 @@ export function selectPlayerGames<T extends { season: number; week: number }>(ga
  * Opponent "TDs allowed to this position, per game" over two fixed, entirely
  * window-independent samples:
  *
- * - `season` -- current-season / YTD games only. Empty until the opponent has
- *   played a current-season game (e.g. Week 1 -> `null`).
+ * - `season` -- current-season / YTD games when the opponent has played at least
+ *   one, otherwise the opponent's FULL prior regular-season rate as a fallback
+ *   (`seasonSource` records which). Opponent-specific, never a calendar gate: an
+ *   opponent flips to true current-season YTD the moment it completes its first
+ *   current-season game. Never a blend of the two seasons. `null` only when
+ *   neither season has an applicable game.
  * - `last5`  -- the opponent's trailing five applicable games in strict
  *   `(season, week)` reverse-chronological order. It crosses the season boundary
  *   until five current-season games exist, so 2026 Week 1 is five 2025 games,
@@ -63,13 +67,20 @@ export function opponentPositionTdAllowedRates(
   opponentGames: readonly TouchdownOpponentGame[] | null,
   position: TouchdownPosition,
   currentSeason: number,
-): { season: number | null; last5: number | null } {
-  if (opponentGames == null || opponentGames.length === 0) return { season: null, last5: null };
+): { season: number | null; seasonSource: "current_season" | "prior_season_fallback" | null; last5: number | null } {
+  if (opponentGames == null || opponentGames.length === 0) return { season: null, seasonSource: null, last5: null };
   const chronological = [...opponentGames].sort((a, b) => b.season - a.season || b.week - a.week);
   const perGame = (games: readonly TouchdownOpponentGame[]): number | null =>
     games.length > 0 ? sum(games.map((game) => game.touchdownsAllowedByPosition[position])) / games.length : null;
+  const currentGames = chronological.filter((game) => game.season === currentSeason);
+  const priorGames = chronological.filter((game) => game.season === currentSeason - 1);
+  const [season, seasonSource]: [number | null, "current_season" | "prior_season_fallback" | null] =
+    currentGames.length > 0 ? [perGame(currentGames), "current_season"]
+      : priorGames.length > 0 ? [perGame(priorGames), "prior_season_fallback"]
+      : [null, null];
   return {
-    season: round(perGame(chronological.filter((game) => game.season === currentSeason))),
+    season: round(season),
+    seasonSource,
     last5: round(perGame(chronological.slice(0, 5))),
   };
 }
@@ -234,6 +245,7 @@ export function buildTouchdownScores(candidates: readonly TouchdownCandidateInpu
         : null,
       opponentPositionTdsAllowedPerGame: round(row.oppPositionTdPerGame),
       opponentPositionTdsAllowedPerGameSeason: oppPositionRates[index].season,
+      opponentPositionTdsAllowedPerGameSeasonSource: oppPositionRates[index].seasonSource,
       opponentPositionTdsAllowedPerGameLast5: oppPositionRates[index].last5,
       opponentPositionTdsAllowedPerGameSeasonPercentile: round(oppSeasonPercentiles[index]),
       opponentPositionTdsAllowedPerGameLast5Percentile: round(oppLast5Percentiles[index]),

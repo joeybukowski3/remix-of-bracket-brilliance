@@ -10,7 +10,7 @@ function windowMetrics(): TouchdownWindowMetrics {
   return { sampleState: "available", sampleGames: 1, sampleLabel: "2025 regular season · 1 game", tdPerGame: 1, tdLast5PerGame: 1, usagePerGame: 14,
     teamUsageShare: 0.28, rzOpportunitiesPerGame: 3, inside10OpportunitiesPerGame: 2, goalLineOpportunitiesPerGame: 1, rzOpportunityShare: 0.375,
     goalLineOpportunityShare: 0.333, impliedTeamPoints: 25, opponentTdOpportunitiesPerGame: 4.1, opponentPositionTdsAllowedPerGame: 1,
-    opponentPositionTdsAllowedPerGameSeason: 1, opponentPositionTdsAllowedPerGameLast5: 1,
+    opponentPositionTdsAllowedPerGameSeason: 1, opponentPositionTdsAllowedPerGameSeasonSource: "current_season", opponentPositionTdsAllowedPerGameLast5: 1,
     opponentPositionTdsAllowedPerGameSeasonPercentile: 50, opponentPositionTdsAllowedPerGameLast5Percentile: 50,
     tdSuccessRate: 0.08, components: { playerUsage: metric(1, 80), tdOpportunities: metric(75, 75), teamUsage: metric(0.28, 80), tdSuccess: metric(0.08, 80),
       opponentTdOpportunities: metric(70, 70), opponentPositionTdsAllowed: metric(1, 80), impliedTeamPoints: metric(25, 80) }, jkbTdScore: 79.5, scoreRank: 1, scorePoolSize: 2 };
@@ -47,6 +47,9 @@ describe("TouchdownScorerTable", () => {
     // No 1700px+ minimum-width surface anymore; desktop min-width is modest and mobile is fluid.
     expect(screen.getByRole("table")).toHaveClass("md:min-w-[1080px]");
     expect(screen.getByRole("table")).not.toHaveClass("min-w-[2010px]");
+    // Responsive text scaling: smaller on the narrowest phone, normal from sm up.
+    expect(screen.getByRole("table")).toHaveClass("text-[10px]");
+    expect(screen.getByRole("table")).toHaveClass("sm:text-[11px]");
   });
 
   it("splits identity into Player + a compact Opponent indicator column and keeps the old aggregates out", () => {
@@ -57,6 +60,8 @@ describe("TouchdownScorerTable", () => {
     expect(headers).not.toContain("Team");
     expect(headers).not.toContain("Book");
     expect(headers).not.toContain("RZ Opp/G");
+    // Market Implied % is removed from the candidate board entirely.
+    expect(headers).not.toContain("Mkt Implied %");
   });
 
   it("renders the explicit renamed and added metric headers in board order", () => {
@@ -70,7 +75,7 @@ describe("TouchdownScorerTable", () => {
     expect(headers).not.toContain("Usage");
     expect(headers).not.toContain("TD/G");
     expect(headers).not.toContain("TD/G L5");
-    const board = ["Player", "Opponent", "POS", "JKB TD Score", "Anytime TD", "Mkt Implied %", "TD/Game", "TD/Game Last 5", "Opp TD/Game vs Pos SZN", "Opp TD/Game vs Pos Last 5", "Team Usage %"];
+    const board = ["Player", "Opponent", "POS", "JKB TD Score", "Anytime TD", "TD/Game", "TD/Game Last 5", "Opp TD/Game vs Pos SZN", "Opp TD/Game vs Pos Last 5", "Team Usage %"];
     expect(headers.filter((h) => h && board.includes(h))).toEqual(board);
   });
 
@@ -102,9 +107,9 @@ describe("TouchdownScorerTable", () => {
       playerWith("Carl", "TE", { tdPerGame: 2, tdLast5PerGame: 4, teamUsageShare: 0.25 }),
     ];
     const { container } = renderTable(players);
-    // Body row cells: 0 chevron, 1 Player, 2 Opponent, 3 POS, 4 Score, 5 Anytime,
-    // 6 Mkt Implied, 7 TD/Game, 8 TD/Game Last 5, 9 Opp SZN, 10 Opp L5, 11 Team Usage.
-    const tdCells = [...container.querySelectorAll("tbody tr")].map((row) => row.children[7].querySelector("span") as HTMLElement);
+    // Body row cells after removing Mkt Implied %: 0 chevron, 1 Player, 2 Opponent,
+    // 3 POS, 4 Score, 5 Anytime, 6 TD/Game, 7 TD/Game Last 5, 8 Opp SZN, 9 Opp L5, 10 Team Usage.
+    const tdCells = [...container.querySelectorAll("tbody tr")].map((row) => row.children[6].querySelector("span") as HTMLElement);
     expect(tdCells[0].textContent).toBe("1.00");
     expect(tdCells[1].textContent).toBe("1.00");
     expect(tdCells[0].style.backgroundColor).not.toBe("");
@@ -124,14 +129,15 @@ describe("TouchdownScorerTable", () => {
     ];
     const { container } = renderTable(players);
     const rows = [...container.querySelectorAll("tbody tr")];
-    // Opp SZN = cell index 9, Opp L5 = index 10.
+    // After removing Mkt Implied %: Opp SZN = cell index 8, Opp L5 = index 9. The
+    // fixtures are current_season, so the SZN cell is a bare heat span (no wrapper).
     const cell = (r: number, c: number) => rows[r].children[c].querySelector("span") as HTMLElement;
     // SZN: row 0 weak (percentile 4 -> red), row 1 elite (99 -> gold). L5 is the inverse,
     // proving the two columns read distinct percentiles, not one shared value.
-    expect(cell(0, 9)).toHaveStyle({ backgroundColor: "#dc2626" }); // poor
-    expect(cell(1, 9)).toHaveStyle({ backgroundColor: "#e8d5a8" }); // elite gold
-    expect(cell(0, 10)).toHaveStyle({ backgroundColor: "#e8d5a8" });
-    expect(cell(1, 10)).toHaveStyle({ backgroundColor: "#dc2626" });
+    expect(cell(0, 8)).toHaveStyle({ backgroundColor: "#dc2626" }); // poor
+    expect(cell(1, 8)).toHaveStyle({ backgroundColor: "#e8d5a8" }); // elite gold
+    expect(cell(0, 9)).toHaveStyle({ backgroundColor: "#e8d5a8" });
+    expect(cell(1, 9)).toHaveStyle({ backgroundColor: "#dc2626" });
   });
 
   it("renders the bookmaker as secondary text under the Anytime TD price, not as its own column", () => {
@@ -160,33 +166,56 @@ describe("TouchdownScorerTable", () => {
     expect(within(detail).getAllByText(/pctile$/).length).toBeGreaterThan(0);
   });
 
-  it("renders Anytime TD odds, book, and market implied percent for a populated player", () => {
+  it("keeps Anytime TD odds + book on the board but drops the visible Market Implied % column", () => {
     renderTable([player({ anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsSourceState: "available" })]);
     expect(screen.getByText("Anytime TD")).toBeInTheDocument();
     expect(screen.getByText("+160")).toBeInTheDocument();
     expect(screen.getByText("DraftKings")).toBeInTheDocument();
-    expect(screen.getByText("38.5%")).toBeInTheDocument();
+    // marketImpliedProbability is still on the model but never rendered on the board.
+    expect(screen.queryByText("38.5%")).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /Mkt Implied/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps marketImpliedProbability on the data model even though the board never shows it", () => {
+    const p = player({ marketImpliedProbability: 0.42 });
+    expect(p.marketImpliedProbability).toBe(0.42);
+    renderTable([p]);
+    expect(screen.queryByText("42.0%")).not.toBeInTheDocument();
   });
 
   it("renders a safe unavailable state for a player with no Anytime TD quote", () => {
     renderTable([player({ anytimeTdOdds: null, anytimeTdBook: null, marketImpliedProbability: null })]);
     const dashes = screen.getAllByText("—");
-    expect(dashes.length).toBeGreaterThanOrEqual(2); // Anytime TD price, Mkt Implied %
+    expect(dashes.length).toBeGreaterThanOrEqual(1); // Anytime TD price
   });
 
-  it("keeps a compact mobile column set: hides Opponent/POS/Mkt Implied/opponent-TD columns and adds an identity subline", () => {
+  it("discloses columns progressively by breakpoint and never clips the three core columns", () => {
     renderTable([player()]);
-    const opponentHeader = screen.getByRole("columnheader", { name: /Opponent/ });
-    expect(opponentHeader).toHaveClass("hidden");
-    expect(opponentHeader).toHaveClass("md:table-cell");
-    expect(screen.getByRole("columnheader", { name: /TD\/Game Last 5/ })).toHaveClass("hidden");
-    expect(screen.getByRole("columnheader", { name: /Opp TD\/Game vs Pos SZN/ })).toHaveClass("hidden");
-    expect(screen.getByRole("columnheader", { name: /Opp TD\/Game vs Pos Last 5/ })).toHaveClass("hidden");
-    // Team Usage % stays visible on mobile.
-    expect(screen.getByRole("columnheader", { name: /Team Usage %/ })).not.toHaveClass("hidden");
-    // Mobile-only identity line under the player name -- opponent + position, own
-    // team not repeated (the player-team logo already carries it).
-    expect(screen.getByText("@ cle · WR", { exact: false })).toBeInTheDocument();
+    const byLabel = new Map(screen.getAllByRole("columnheader").map((cell) => [cell.textContent?.trim() ?? "", cell]));
+    const cls = (label: string) => byLabel.get(label)!.className;
+    // Core columns: always visible, no responsive `hidden`.
+    for (const core of ["Player", "JKB TD Score", "Anytime TD"]) expect(cls(core)).not.toMatch(/\bhidden\b/);
+    // sm+ : Opponent
+    expect(cls("Opponent")).toMatch(/hidden.*sm:table-cell/);
+    // md+ : POS, TD/Game, TD/Game Last 5, Team Usage %
+    for (const md of ["POS", "TD/Game", "TD/Game Last 5", "Team Usage %"]) expect(cls(md)).toMatch(/hidden.*md:table-cell/);
+    // lg+ : the two opponent-defense analysis columns are added last as width grows
+    for (const lg of ["Opp TD/Game vs Pos SZN", "Opp TD/Game vs Pos Last 5"]) expect(cls(lg)).toMatch(/hidden.*lg:table-cell/);
+  });
+
+  it("puts the team logo + player name and a compact matchup subline on the smallest layout", () => {
+    renderTable([player()]);
+    const cells = within(screen.getByRole("table")).getAllByRole("cell");
+    const playerCell = cells[1];
+    // Logo immediately before the (never hidden) name.
+    expect(within(playerCell).getByAltText("cin")).toBeInTheDocument();
+    expect(within(playerCell).getByText("Ja'Marr Chase")).toBeInTheDocument();
+    // Base-width matchup context "@ cle · " then position; own team not repeated.
+    const matchup = within(playerCell).getByText(/@ cle ·/);
+    expect(matchup).toHaveClass("sm:hidden");
+    expect(matchup.parentElement).toHaveClass("md:hidden");
+    // Responsive per-cell padding is applied.
+    expect(playerCell).toHaveClass("px-1", "sm:px-2");
   });
 
   it("still renders a frozen suspended-odds state", () => {
@@ -213,7 +242,9 @@ describe("TouchdownScorerTable", () => {
       const scroller = container.querySelector('[data-testid="touchdown-table-scroller"]') as HTMLElement;
       const table = container.querySelector("table") as HTMLElement;
       const thead = table.querySelector("thead") as HTMLElement;
-      const widths = [28, 120, 90, 44, 70, 70, 84, 60, 60, 76, 76, 90];
+      // 11 columns after removing Mkt Implied %: expand, Player, Opponent, POS,
+      // Score, Anytime, TD/Game, TD/Game Last 5, Opp SZN, Opp L5, Team Usage.
+      const widths = [28, 120, 90, 44, 70, 70, 60, 60, 76, 76, 90];
 
       wrap.getBoundingClientRect = () => rect({ top: -200, bottom: wrapBottom, height: wrapBottom + 200 });
       thead.getBoundingClientRect = () => rect({ top: theadBottom - 30, bottom: theadBottom, height: 30 });
@@ -291,7 +322,7 @@ describe("TouchdownScorerTable", () => {
       await waitFor(() => expect(clone(container)).not.toBeNull());
 
       const cols = [...clone(container)!.querySelectorAll("colgroup col")] as HTMLElement[];
-      expect(cols.map((c) => c.style.width)).toEqual(["28px", "120px", "90px", "44px", "70px", "70px", "84px", "60px", "60px", "76px", "76px", "90px"]);
+      expect(cols.map((c) => c.style.width)).toEqual(["28px", "120px", "90px", "44px", "70px", "70px", "60px", "60px", "76px", "76px", "90px"]);
     });
   });
 
