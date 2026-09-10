@@ -44,13 +44,13 @@ describe("NflHistoryTable", () => {
   });
 });
 
-describe("DFS and Yardage history consumers share one table implementation", () => {
-  it("both import NflHistoryTable, and neither hand-rolls its own <table> shell", () => {
+describe("DFS, Yardage and Fantasy history consumers share one table implementation", () => {
+  it("all import NflHistoryTable, and none hand-rolls its own <table> shell", () => {
     const root = join(process.cwd(), "src", "components", "nfl");
     const dfs = readFileSync(join(root, "dfs", "NflDfsHistory.tsx"), "utf8");
-    const player = readFileSync(join(root, "yardage-review", "NflYardagePlayerLast10Table.tsx"), "utf8");
-    const opponent = readFileSync(join(root, "yardage-review", "NflYardageOpponentLast10Table.tsx"), "utf8");
-    for (const [name, source] of [["NflDfsHistory", dfs], ["NflYardagePlayerLast10Table", player], ["NflYardageOpponentLast10Table", opponent]] as const) {
+    const player = readFileSync(join(root, "history", "NflPlayerLast10Table.tsx"), "utf8");
+    const opponent = readFileSync(join(root, "history", "NflOpponentLast10Table.tsx"), "utf8");
+    for (const [name, source] of [["NflDfsHistory", dfs], ["NflPlayerLast10Table", player], ["NflOpponentLast10Table", opponent]] as const) {
       expect(source, `${name} should import the shared table`).toContain("NflHistoryTable");
       expect(source, `${name} should not render its own <table> element`).not.toMatch(/<table[\s>]/);
     }

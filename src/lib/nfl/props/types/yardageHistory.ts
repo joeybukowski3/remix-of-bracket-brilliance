@@ -34,6 +34,15 @@ export type NflYardagePlayerHistoryGame = {
   oppYdsAllowAvg: number | null;
   stat: NflYardageStatBlock;
   actualYards: number;
+  /**
+   * Full PPR fantasy points for this game, taken verbatim from nflverse
+   * `stats_player_week.fantasy_points_ppr` (never recomputed). Additive and
+   * QB/passing-only -- present on `market: "passing"` game rows, absent on
+   * rushing/receiving rows (older artifacts predate the field entirely, so
+   * consumers must tolerate `undefined`). `null` when the source row had no
+   * value.
+   */
+  fantasyPointsPpr?: number | null;
   gameScore: NflYardageHistoryGameScore;
   vegasLine: number | null;
 };
@@ -60,6 +69,8 @@ export type NflYardageOpponentHistoryGame = {
   oppPlayerYpg: number | null;
   stat: NflYardageStatBlock;
   yardsAllowed: number;
+  /** Opposing QB's Full PPR fantasy points for this game, verbatim from nflverse. QB/passing-only and additive -- see {@link NflYardagePlayerHistoryGame.fantasyPointsPpr}. */
+  fantasyPointsPpr?: number | null;
   gameScore: NflYardageHistoryGameScore;
   vegasLine: number | null;
 };

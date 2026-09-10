@@ -12,6 +12,7 @@
 import { cn } from "@/lib/utils";
 import { classifyVsCurrentLine } from "@/lib/nfl/props/review/yardageHistoryView";
 import {
+  NflHistoryFantasyPointsCell,
   NflHistoryGameScoreCell,
   NflHistoryHomeAwayPill,
   NflHistoryLast10SummaryStrip,
@@ -24,6 +25,7 @@ export const NflYardageGameScoreCell = NflHistoryGameScoreCell;
 export const NflYardageRankCell = NflHistoryRankCell;
 export const NflYardageVsAverageCell = NflHistoryVsAverageCell;
 export const NflYardageLast10SummaryStrip = NflHistoryLast10SummaryStrip;
+export const NflYardageFantasyPointsCell = NflHistoryFantasyPointsCell;
 
 /** Actual yardage cell colored against TODAY's current line -- never the historical Vegas Line for that game. */
 export function NflYardageActualYardsCell({ actualYards, currentLine }: { actualYards: number; currentLine: number | null }) {

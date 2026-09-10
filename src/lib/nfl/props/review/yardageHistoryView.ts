@@ -240,6 +240,8 @@ export type NflYardagePlayerLast10FooterAverages = {
   oppYdsAllowAvgAvg: number | null;
   actualYardsAvg: number | null;
   vsOppAvgAvg: number | null;
+  /** Mean of the per-game Full PPR fantasy points (QB/passing rows only; null when the field is absent/empty on every game). */
+  fantasyPointsPprAvg: number | null;
   /** Keyed by the stat block's own field names (e.g. "completions", "attempts", "rushAttempts", "recTds"). */
   statAverages: Record<string, number | null>;
   vegasLineAvg: number | null;
@@ -260,6 +262,7 @@ export function buildPlayerLast10FooterAverages(
     oppYdsAllowAvgAvg: averageExcludingNulls(games.map((g) => g.oppYdsAllowAvg)),
     actualYardsAvg: averageExcludingNulls(games.map((g) => g.actualYards)),
     vsOppAvgAvg: averageExcludingNulls(games.map((g) => computeVsAverageDiff(g.actualYards, g.oppYdsAllowAvg))),
+    fantasyPointsPprAvg: averageExcludingNulls(games.map((g) => g.fantasyPointsPpr)),
     statAverages,
     vegasLineAvg: averageExcludingNulls(games.map((g) => g.vegasLine)),
     sampleSize: games.length,
@@ -271,6 +274,8 @@ export type NflYardageOpponentLast10FooterAverages = {
   oppPlayerYpgAvg: number | null;
   yardsAllowedAvg: number | null;
   vsPlayerAvgAvg: number | null;
+  /** Mean of the opposing QB's per-game Full PPR fantasy points (QB/passing slice only). */
+  fantasyPointsPprAvg: number | null;
   statAverages: Record<string, number | null>;
   vegasLineAvg: number | null;
   sampleSize: number;
@@ -290,6 +295,7 @@ export function buildOpponentLast10FooterAverages(
     oppPlayerYpgAvg: averageExcludingNulls(games.map((g) => g.oppPlayerYpg)),
     yardsAllowedAvg: averageExcludingNulls(games.map((g) => g.yardsAllowed)),
     vsPlayerAvgAvg: averageExcludingNulls(games.map((g) => computeVsAverageDiff(g.yardsAllowed, g.oppPlayerYpg))),
+    fantasyPointsPprAvg: averageExcludingNulls(games.map((g) => g.fantasyPointsPpr)),
     statAverages,
     vegasLineAvg: averageExcludingNulls(games.map((g) => g.vegasLine)),
     sampleSize: games.length,

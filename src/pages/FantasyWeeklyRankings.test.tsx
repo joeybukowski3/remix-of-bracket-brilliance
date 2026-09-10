@@ -495,4 +495,61 @@ describe("Weekly Rankings consumer", () => {
     fireEvent.click(screen.getByRole("button", { name: "TE" }));
     expect(container.querySelector("[data-mobile-weekly-header]")?.textContent).toBe("RKPLRPROJSZNL5MUOAO5TRT%AYT/G");
   });
+
+  it("expands and collapses a player's detail when the whole desktop row is clicked", () => {
+    const { container } = renderPage();
+    const firstRow = container.querySelector<HTMLTableRowElement>("tr[data-player-id]")!;
+    expect(firstRow).toHaveAttribute("tabindex", "0");
+    expect(firstRow).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(firstRow);
+    expect(firstRow).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("heading", { name: "Samples / evidence" })).toBeInTheDocument();
+    fireEvent.click(firstRow);
+    expect(firstRow).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("heading", { name: "Samples / evidence" })).not.toBeInTheDocument();
+  });
+
+  it("toggles the desktop row from the keyboard with Enter and Space", () => {
+    const { container } = renderPage();
+    const firstRow = container.querySelector<HTMLTableRowElement>("tr[data-player-id]")!;
+    fireEvent.keyDown(firstRow, { key: "Enter" });
+    expect(firstRow).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(firstRow, { key: " " });
+    expect(firstRow).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps the explicit expand control working without a double toggle", () => {
+    const { container } = renderPage();
+    const firstRow = container.querySelector<HTMLTableRowElement>("tr[data-player-id]")!;
+    fireEvent.click(within(firstRow).getByRole("button", { name: /Show details for/ }));
+    expect(firstRow).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("heading", { name: "Samples / evidence" })).toBeInTheDocument();
+  });
+
+  it("keeps the desktop expanded detail fully visible rather than collapsed accordions", () => {
+    const { container } = renderPage();
+    fireEvent.click(container.querySelector<HTMLTableRowElement>("tr[data-player-id]")!);
+    expect(container.querySelector("[data-weekly-mobile-accordions]")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Projection context" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Matchup details" })).toBeVisible();
+  });
+
+  it("groups the mobile expanded detail into eight accordion sections that all default to collapsed", () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({
+      matches: true, media: "(max-width: 1023px)", onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    })));
+    const { container } = renderPage();
+    fireEvent.click(container.querySelector<HTMLElement>("[data-mobile-weekly-row] button")!);
+    const sections = [...container.querySelectorAll<HTMLElement>("[data-weekly-accordion-section]")];
+    expect(sections.map((section) => section.dataset.accordionTitle)).toEqual([
+      "Samples", "Trenches", "Matchups", "EPA", "Success Rate", "Context", "Last 10", "Opponent Last 10",
+    ]);
+    expect(sections.every((section) => section.querySelector("button")?.getAttribute("aria-expanded") === "false")).toBe(true);
+    const contextSection = sections.find((section) => section.dataset.accordionTitle === "Context")!;
+    expect(contextSection.textContent).not.toMatch(/Pregame information only/);
+    fireEvent.click(contextSection.querySelector("button")!);
+    expect(contextSection.querySelector("button")).toHaveAttribute("aria-expanded", "true");
+    expect(contextSection.textContent).toMatch(/Pregame information only/);
+  });
 });
