@@ -142,6 +142,25 @@ describe("TouchdownScorerTable", () => {
     expect(screen.getByText("Suspended")).toBeInTheDocument();
   });
 
+  it("pins the candidate-board header row while scrolling, below the site navigation", () => {
+    renderTable([player()]);
+    const thead = screen.getByRole("table").querySelector("thead") as HTMLElement;
+    // Sticky, offset by the 72px permanent SiteHeader, opaque so rows do not bleed through.
+    expect(thead).toHaveClass("sticky");
+    expect(thead).toHaveClass("top-[72px]");
+    expect(thead).toHaveClass("z-20");
+    expect(thead.className).toMatch(/bg-slate-100/);
+    // A hairline shadow keeps the pinned row visually distinct from the body.
+    expect(thead.className).toMatch(/shadow-\[/);
+  });
+
+  it("keeps sorting controls clickable with the sticky header in place", () => {
+    const onSort = vi.fn();
+    render(<TouchdownScorerTable players={[player()]} window="2025" heat={buildTouchdownBoardHeat([player()], "2025")} sort={DEFAULT_TOUCHDOWN_SORT} onSort={onSort} />);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by JKB TD Score" }));
+    expect(onSort).toHaveBeenCalledWith("score");
+  });
+
   it("uses bettor-perspective canonical heat and gives missing values no fake heat", () => {
     const { rerender } = render(<TouchdownMetricCell value={4} percentile={90} />);
     const favorable = screen.getByText("4.00");

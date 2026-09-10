@@ -62,11 +62,12 @@ type ProfileRow = { label: ReactNode; value: string; context: string };
 
 /**
  * Compact "Metric | Player | Context" table. Full width, no minimum width, so it
- * stacks cleanly at ~390px instead of forcing a horizontal scroll.
+ * stacks cleanly at ~390px instead of forcing a horizontal scroll. Outer spacing
+ * and width are owned by the caller's layout wrapper, not this component.
  */
 function ProfileTable({ id, title, accent, rows }: { id: string; title: string; accent: string; rows: readonly ProfileRow[] }) {
   return (
-    <section className="mt-2 overflow-hidden rounded border border-slate-200 bg-white md:max-w-2xl" aria-labelledby={id}>
+    <section className="overflow-hidden rounded border border-slate-200 bg-white" aria-labelledby={id}>
       <h3 id={id} className={cn("px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white", accent)}>{title}</h3>
       <table className="w-full text-[10px]">
         <thead className="bg-slate-50 text-slate-500">
@@ -122,8 +123,13 @@ export default function TouchdownPlayerDetail({ player, window }: { player: Touc
   ];
 
   return <div className="bg-slate-50 px-2 py-2.5 sm:px-4" data-testid="touchdown-player-detail">
-    <ProfileTable id={`scoring-profile-${player.playerId}`} title="Scoring profile" accent="bg-slate-700" rows={scoringProfile} />
-    <ProfileTable id={`matchup-market-${player.playerId}`} title="Matchup & market" accent="bg-emerald-700" rows={matchupMarket} />
+    {/* Scoring Profile and Matchup & Market sit side by side from lg up; below
+        lg they stack (Scoring Profile first). `items-start` keeps each panel at
+        its natural height so the shorter one is not stretched. */}
+    <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:items-start" data-testid="touchdown-detail-panels">
+      <ProfileTable id={`scoring-profile-${player.playerId}`} title="Scoring profile" accent="bg-slate-700" rows={scoringProfile} />
+      <ProfileTable id={`matchup-market-${player.playerId}`} title="Matchup & market" accent="bg-emerald-700" rows={matchupMarket} />
+    </div>
     <section className="mt-2 overflow-hidden rounded border border-sky-200 bg-white" aria-labelledby={`player-history-${player.playerId}`}>
       <h3 id={`player-history-${player.playerId}`} className="bg-sky-700 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white">Player game history</h3>
       <div className="min-w-0 overflow-x-auto"><table className="w-full min-w-[760px] text-[10px]"><thead className="bg-sky-50 text-sky-900"><tr>{["Week","Opp","H/A","Score","TD","Rush TD","Rec TD","RZ Opps","Inside 10 Opps","Goal Line Opps","Usage"].map((head) => <th key={head} className="px-2 py-1 text-center">{head}</th>)}</tr></thead>

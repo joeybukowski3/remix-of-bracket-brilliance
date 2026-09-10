@@ -198,6 +198,38 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
     expect(within(market).getByText("55th pctile")).toBeInTheDocument(); // Team Implied Points
   });
 
+  it("lays Scoring Profile and Matchup & Market out in a responsive two-column grid on desktop", () => {
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    const panels = screen.getByTestId("touchdown-detail-panels");
+    expect(panels).toHaveClass("grid");
+    expect(panels).toHaveClass("grid-cols-1");
+    expect(panels).toHaveClass("lg:grid-cols-2");
+    // Tops align and neither panel is stretched to match the taller one.
+    expect(panels).toHaveClass("lg:items-start");
+    const scoring = within(panels).getByText("Scoring profile").closest("section") as HTMLElement;
+    const market = within(panels).getByText("Matchup & market").closest("section") as HTMLElement;
+    expect(panels).toContainElement(scoring);
+    expect(panels).toContainElement(market);
+  });
+
+  it("keeps Player Game History full width below the two-panel area", () => {
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    const panels = screen.getByTestId("touchdown-detail-panels");
+    const history = screen.getByText("Player game history").closest("section") as HTMLElement;
+    expect(panels).not.toContainElement(history);
+    // History section follows the panels grid in document order.
+    expect(panels.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("stacks the two panels in a single column on mobile (Scoring Profile first)", () => {
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    const panels = screen.getByTestId("touchdown-detail-panels");
+    expect(panels).toHaveClass("grid-cols-1");
+    const sections = Array.from(panels.querySelectorAll("section"));
+    expect(sections[0].textContent).toContain("Scoring profile");
+    expect(sections[1].textContent).toContain("Matchup & market");
+  });
+
   it("leaves Anytime TD Odds unavailable and adds no fabricated percentile context", () => {
     render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: null })} window="2025" />);
     const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;

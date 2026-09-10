@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
-import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW } from "@/components/ui/dense-table";
+import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, stickyDenseHeader } from "@/components/ui/dense-table";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { sportsbookDisplayName } from "@/lib/nfl/bettingLinesView";
 import { touchdownBoardPercentile, type TouchdownBoardHeat, type TouchdownSort, type TouchdownSortKey } from "@/lib/nfl/touchdown-preview/presentation";
@@ -59,7 +59,11 @@ export default function TouchdownScorerTable({ players, window, heat, sort, onSo
   return <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm" data-testid="touchdown-table">
     <DenseTableScroller label="NFL touchdown scorer rankings" data-testid="touchdown-table-scroller">
       <table className="w-full border-separate border-spacing-0 text-[11px] md:min-w-[900px]">
-        <thead><tr className={DENSE_TABLE_HEAD_ROW}>
+        {/* Sticky under the global SiteHeader (`sticky top-0 z-[100]`, min-h-72px).
+            72px is the header's own height; no NFL sub-nav is sticky, so this is
+            the full permanent-chrome offset. Opaque `bg-slate-100` + a hairline
+            shadow keep body rows from bleeding through while the row is pinned. */}
+        <thead className={stickyDenseHeader("top-[72px] bg-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.08)]")}><tr className={DENSE_TABLE_HEAD_ROW}>
           <th className="w-7 px-1 py-2" aria-label="Expand" />
           <Header label="Player" sortKey="player" sort={sort} onSort={onSort} className="text-left" />
           <Header label="Matchup" sortKey="team" sort={sort} onSort={onSort} className={DESKTOP_ONLY} />
