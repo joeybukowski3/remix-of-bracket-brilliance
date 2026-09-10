@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { buildTouchdownBoardHeat, DEFAULT_TOUCHDOWN_SORT } from "@/lib/nfl/touchdown-preview/presentation";
 import type { TouchdownMetric, TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "@/lib/nfl/touchdown-preview/types";
@@ -142,23 +142,104 @@ describe("TouchdownScorerTable", () => {
     expect(screen.getByText("Suspended")).toBeInTheDocument();
   });
 
-  it("pins the candidate-board header row while scrolling, below the site navigation", () => {
-    renderTable([player()]);
-    const thead = screen.getByRole("table").querySelector("thead") as HTMLElement;
-    // Sticky, offset by the 72px permanent SiteHeader, opaque so rows do not bleed through.
-    expect(thead).toHaveClass("sticky");
-    expect(thead).toHaveClass("top-[72px]");
-    expect(thead).toHaveClass("z-20");
-    expect(thead.className).toMatch(/bg-slate-100/);
-    // A hairline shadow keeps the pinned row visually distinct from the body.
-    expect(thead.className).toMatch(/shadow-\[/);
-  });
-
-  it("keeps sorting controls clickable with the sticky header in place", () => {
+  it("keeps sorting controls clickable in the normal-flow header", () => {
     const onSort = vi.fn();
     render(<TouchdownScorerTable players={[player()]} window="2025" heat={buildTouchdownBoardHeat([player()], "2025")} sort={DEFAULT_TOUCHDOWN_SORT} onSort={onSort} />);
     fireEvent.click(screen.getByRole("button", { name: "Sort by JKB TD Score" }));
     expect(onSort).toHaveBeenCalledWith("score");
+  });
+
+  describe("page-scroll sticky header", () => {
+    /**
+     * jsdom has no layout, so stub the boxes the sticky hook measures. `theadTop`
+     * < 73 with `wrapBottom` > 73 means the real header has scrolled under the
+     * 72px SiteHeader while the table body is still on screen.
+     */
+    function primeGeometry(container: HTMLElement, { theadBottom = -10, wrapBottom = 600 } = {}) {
+      const wrap = container.querySelector('[data-testid="touchdown-table"]') as HTMLElement;
+      const scroller = container.querySelector('[data-testid="touchdown-table-scroller"]') as HTMLElement;
+      const table = container.querySelector("table") as HTMLElement;
+      const thead = table.querySelector("thead") as HTMLElement;
+      const widths = [28, 120, 90, 44, 70, 70, 84, 60, 60, 90];
+
+      wrap.getBoundingClientRect = () => rect({ top: -200, bottom: wrapBottom, height: wrapBottom + 200 });
+      thead.getBoundingClientRect = () => rect({ top: theadBottom - 30, bottom: theadBottom, height: 30 });
+      table.getBoundingClientRect = () => rect({ left: 0, width: 716, x: 0 });
+      scroller.getBoundingClientRect = () => rect({ left: 12, width: 716, x: 12 });
+      const ths = [...table.querySelectorAll("thead th")] as HTMLElement[];
+      let cursor = 0;
+      ths.forEach((th, i) => {
+        const left = cursor;
+        th.getBoundingClientRect = () => rect({ left, right: left + widths[i], width: widths[i], height: 30, x: left });
+        cursor += widths[i];
+      });
+    }
+    const rect = (partial: Partial<DOMRect>): DOMRect =>
+      ({ left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON() {}, ...partial }) as DOMRect;
+    const clone = (c: HTMLElement) => c.querySelector('[data-testid="touchdown-sticky-header"]') as HTMLElement | null;
+
+    it("renders the real header in normal flow, before tbody, with no sticky offset", () => {
+      const { container } = renderTable([player()]);
+      const table = container.querySelector("table") as HTMLElement;
+      const [first, second] = [...table.children];
+      expect(first.tagName).toBe("THEAD");
+      expect(second.tagName).toBe("TBODY");
+      // No sticky/transform/padding hack pushing the header below the first row.
+      const thead = first as HTMLElement;
+      expect(thead).not.toHaveClass("sticky");
+      expect(thead.className).not.toMatch(/top-\[/);
+      expect(thead.style.transform).toBe("");
+      expect(thead.style.paddingTop).toBe("");
+      // The fixed clone is not mounted until the header actually scrolls away.
+      expect(clone(container)).toBeNull();
+    });
+
+    it("activates the fixed clone only after the real header scrolls under the 72px SiteHeader", async () => {
+      const { container } = renderTable([player()]);
+      expect(clone(container)).toBeNull();
+
+      primeGeometry(container, { theadBottom: -10, wrapBottom: 600 });
+      fireEvent(window, new Event("resize"));
+
+      await waitFor(() => expect(clone(container)).not.toBeNull());
+      expect(clone(container)!.style.top).toBe("73px");
+      expect(clone(container)!.style.left).toBe("12px");
+    });
+
+    it("deactivates the clone once the table body has left the viewport", async () => {
+      const { container } = renderTable([player()]);
+      primeGeometry(container, { theadBottom: -10, wrapBottom: 600 });
+      fireEvent(window, new Event("resize"));
+      await waitFor(() => expect(clone(container)).not.toBeNull());
+
+      // Whole table scrolled above the sticky line: wrap bottom now < 73.
+      primeGeometry(container, { theadBottom: -400, wrapBottom: 40 });
+      fireEvent(window, new Event("scroll"));
+      await waitFor(() => expect(clone(container)).toBeNull());
+    });
+
+    it("keeps sorting clickable from the fixed clone", async () => {
+      const onSort = vi.fn();
+      const { container } = render(
+        <TouchdownScorerTable players={[player()]} window="2025" heat={buildTouchdownBoardHeat([player()], "2025")} sort={DEFAULT_TOUCHDOWN_SORT} onSort={onSort} />,
+      );
+      primeGeometry(container, { theadBottom: -10, wrapBottom: 600 });
+      fireEvent(window, new Event("resize"));
+      await waitFor(() => expect(clone(container)).not.toBeNull());
+
+      fireEvent.click(within(clone(container)!).getByRole("button", { name: "Sort by JKB TD Score", hidden: true }));
+      expect(onSort).toHaveBeenCalledWith("score");
+    });
+
+    it("mirrors measured column widths into the clone so it aligns with tbody", async () => {
+      const { container } = renderTable([player()]);
+      primeGeometry(container, { theadBottom: -10, wrapBottom: 600 });
+      fireEvent(window, new Event("resize"));
+      await waitFor(() => expect(clone(container)).not.toBeNull());
+
+      const cols = [...clone(container)!.querySelectorAll("colgroup col")] as HTMLElement[];
+      expect(cols.map((c) => c.style.width)).toEqual(["28px", "120px", "90px", "44px", "70px", "70px", "84px", "60px", "60px", "90px"]);
+    });
   });
 
   it("uses bettor-perspective canonical heat and gives missing values no fake heat", () => {
