@@ -245,6 +245,7 @@ export default function MatchupComparisonPanel({
 
       <MatchupSectionCard
         eyebrow="Metric by metric"
+        titleAlign="center"
         title={dedicatedLabel ? `Statistical Comparison — ${dedicatedLabel}` : projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
         titleId="statistical-comparison-heading"
         subtitle={dedicatedLabel ? "Rank 1 is best among teams with available values; N/A rows are excluded from category counts." : projection
@@ -283,7 +284,7 @@ export default function MatchupComparisonPanel({
                       else triggerRefs.current.delete(category.id);
                     }}
                   >
-                    <MatchupComparisonTeamHeader matchup={matchup} />
+                    <MatchupComparisonTeamHeader matchup={matchup} sticky />
                     {renderTable(rows, category.label)}
                   </MatchupCollapsibleGroup>
                 </div>

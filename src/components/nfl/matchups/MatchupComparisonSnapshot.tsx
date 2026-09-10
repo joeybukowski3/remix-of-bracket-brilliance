@@ -1,6 +1,7 @@
 import { MATCHUP_CATEGORIES, type MatchupCategoryId } from "@/lib/nfl/matchupCategoryAdvantage";
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import MatchupMetricTable from "@/components/nfl/matchups/MatchupMetricTable";
+import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 
 const SPLIT_TABLE_CATEGORIES = new Set<MatchupCategoryId>(["passing", "rushing"]);
@@ -33,10 +34,12 @@ export default function MatchupComparisonSnapshot({ matchup, categoryMetrics }: 
               aria-labelledby={`snapshot-${category.id}`}
             >
               <h3 id={`snapshot-${category.id}`}>{category.label}</h3>
+              <MatchupComparisonTeamHeader matchup={matchup} variant="compact" />
               <div className={`matchup-snapshot__tables${chunks.length > 1 ? " is-split" : ""}`}>
                 {chunks.map((chunk, index) => (
                   <MatchupMetricTable
                     key={`${category.id}-${index}`}
+                    variant="snapshot"
                     metrics={chunk}
                     matchup={matchup}
                     caption={`${category.label} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}, part ${index + 1}`}

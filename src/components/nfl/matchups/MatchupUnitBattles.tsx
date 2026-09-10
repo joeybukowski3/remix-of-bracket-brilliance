@@ -344,6 +344,7 @@ export default function MatchupUnitBattles({
     <MatchupSection
       id="matchups"
       eyebrow="Unit by unit"
+      titleAlign="center"
       subtitle="Direct unit comparison, ranked by league position. No matchup score or projected advantage is derived."
       bodyClassName="matchup-dense-section-body"
       headerAside={

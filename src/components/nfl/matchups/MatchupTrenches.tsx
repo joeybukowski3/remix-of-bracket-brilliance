@@ -104,6 +104,7 @@ export default function MatchupTrenches({
     <MatchupSection
       id="trenches"
       eyebrow="Line of scrimmage"
+      titleAlign="center"
       subtitle="Line-of-scrimmage win rates. Context only — not an input to the JKB spread model."
       bodyClassName="matchup-dense-section-body"
     >

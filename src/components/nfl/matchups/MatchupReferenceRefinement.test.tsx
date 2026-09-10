@@ -104,10 +104,19 @@ describe("reference refinement presentation", () => {
     expect(ranks.some((r) => r.textContent === "1st")).toBe(true);
     expect(ranks.some((r) => r.textContent === "19th")).toBe(true);
     expect(ranks.some((r) => r.textContent === "N/A")).toBe(true);
-    // Winner styling preserved.
+    // Rank tiles are coloured by league-rank tier, never by the row winner:
+    // no winner/loser classes, and the elite (rank 1) tile carries its tier hue.
     expect(
       container.querySelectorAll(".matchup-metric-table__value.is-winner").length
-    ).toBeGreaterThan(0);
+    ).toBe(0);
+    expect(
+      container.querySelectorAll(".matchup-metric-table__value.is-weaker").length
+    ).toBe(0);
+    expect(
+      Array.from(container.querySelectorAll('[data-cell="away"] .matchup-metric-table__value')).some(
+        (tile) => tile.className.includes("emerald")
+      )
+    ).toBe(true);
     // Edge still states the raw-value gap for a decided row.
     expect(screen.getAllByText("+0.225").length).toBeGreaterThan(0);
     // N/A preserved in both the cell and the Edge.
