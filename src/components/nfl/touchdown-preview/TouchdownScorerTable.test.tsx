@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_TOUCHDOWN_SORT } from "@/lib/nfl/touchdown-preview/presentation";
-import type { TouchdownMetric, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "@/lib/nfl/touchdown-preview/types";
+import { buildTouchdownBoardHeat, DEFAULT_TOUCHDOWN_SORT } from "@/lib/nfl/touchdown-preview/presentation";
+import type { TouchdownMetric, TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "@/lib/nfl/touchdown-preview/types";
 import TouchdownMetricCell from "./TouchdownMetricCell";
 import TouchdownScorerTable from "./TouchdownScorerTable";
 
@@ -26,9 +26,19 @@ function player(overrides: Partial<TouchdownPreviewPlayer> = {}): TouchdownPrevi
     playerHistory: [playerGame], opponentHistory: [opponentGame], ...overrides };
 }
 
+/** A player with a specific position and window-metric overrides for the active 2025 window. */
+function playerWith(id: string, position: TouchdownPosition, m: Partial<TouchdownWindowMetrics>): TouchdownPreviewPlayer {
+  const merged = { ...windowMetrics(), ...m };
+  return player({ playerId: `gsis:${id}`, playerName: id, position, windows: { 2025: merged, 2026: merged, last8: merged } });
+}
+
+function renderTable(players: TouchdownPreviewPlayer[], sort = DEFAULT_TOUCHDOWN_SORT) {
+  return render(<TouchdownScorerTable players={players} window="2025" heat={buildTouchdownBoardHeat(players, "2025")} sort={sort} onSort={vi.fn()} />);
+}
+
 describe("TouchdownScorerTable", () => {
   it("renders a reduced primary column set and contains overflow in the scroller", () => {
-    render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player()]);
     expect(screen.getByText("Ja'Marr Chase")).toBeInTheDocument();
     expect(screen.getByText("JKB TD Score")).toBeInTheDocument();
     expect(screen.getByTestId("touchdown-table-scroller")).toHaveClass("overflow-x-auto");
@@ -38,26 +48,50 @@ describe("TouchdownScorerTable", () => {
   });
 
   it("shows Matchup instead of separate Team/Opp columns and drops the standalone Book header", () => {
-    render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player()]);
     const headers = screen.getAllByRole("columnheader").map((cell) => cell.textContent?.trim());
     expect(headers).toContain("Matchup");
     expect(headers).not.toContain("Team");
     expect(headers).not.toContain("Opp");
     expect(headers).not.toContain("Book");
-    // Secondary metrics are no longer primary-table headers.
+    // Secondary opportunity metrics are still not primary-table headers.
     expect(headers).not.toContain("RZ Opp/G");
-    expect(headers).not.toContain("Team Usage %");
+  });
+
+  it("replaces the Usage column with Team Usage % and adds TD/G L5, in board order", () => {
+    renderTable([player()]);
+    const headers = screen.getAllByRole("columnheader").map((cell) => cell.textContent?.trim());
+    expect(headers).toContain("Team Usage %");
+    expect(headers).toContain("TD/G L5");
+    expect(headers).not.toContain("Usage");
+    const order = headers.filter((h) => h && ["Player", "Matchup", "Pos", "JKB TD Score", "Anytime TD", "Mkt Implied %", "TD/G", "TD/G L5", "Team Usage %"].includes(h));
+    expect(order).toEqual(["Player", "Matchup", "Pos", "JKB TD Score", "Anytime TD", "Mkt Implied %", "TD/G", "TD/G L5", "Team Usage %"]);
+  });
+
+  it("grades identical raw TD/G values with the same color regardless of position", () => {
+    const players = [
+      playerWith("Alpha", "WR", { tdPerGame: 1, tdLast5PerGame: 2, teamUsageShare: 0.4 }),
+      playerWith("Bravo", "RB", { tdPerGame: 1, tdLast5PerGame: 3, teamUsageShare: 0.1 }),
+      playerWith("Carl", "TE", { tdPerGame: 2, tdLast5PerGame: 4, teamUsageShare: 0.25 }),
+    ];
+    renderTable(players);
+    const tdCells = screen.getAllByText("1.00");
+    // One TD/G cell per row shows "1.00" (Alpha, Bravo); Carl's TD/G is "2.00".
+    expect(tdCells).toHaveLength(2);
+    const [a, b] = tdCells.map((el) => (el as HTMLElement).style.backgroundColor);
+    expect(a).not.toBe("");
+    expect(a).toBe(b);
   });
 
   it("renders the bookmaker as secondary text under the Anytime TD price, not as its own column", () => {
-    render(<TouchdownScorerTable players={[player({ anytimeTdOdds: 230, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3, oddsSourceState: "available" })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player({ anytimeTdOdds: 230, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3, oddsSourceState: "available" })]);
     const priceCell = screen.getByText("+230").closest("td") as HTMLElement;
     expect(within(priceCell).getByText("DraftKings")).toBeInTheDocument();
     expect(screen.getAllByText("DraftKings")).toHaveLength(1);
   });
 
   it("expands one compact row and renders player and opponent histories vertically", () => {
-    render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player()]);
     fireEvent.click(screen.getByRole("button", { name: "Expand details for Ja'Marr Chase" }));
     const detail = screen.getByTestId("touchdown-player-detail");
     expect(within(detail).getByText("Player game history")).toBeInTheDocument();
@@ -67,8 +101,16 @@ describe("TouchdownScorerTable", () => {
     expect(within(detail).getAllByText("Unavailable").length).toBeGreaterThan(0);
   });
 
+  it("keeps position-relative context in the expanded detail panel", () => {
+    renderTable([player()]);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Ja'Marr Chase" }));
+    const detail = screen.getByTestId("touchdown-player-detail");
+    expect(within(detail).getByText("Usage/G")).toBeInTheDocument();
+    expect(within(detail).getAllByText(/pctile$/).length).toBeGreaterThan(0);
+  });
+
   it("renders Anytime TD odds, book, and market implied percent for a populated player", () => {
-    render(<TouchdownScorerTable players={[player({ anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsSourceState: "available" })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player({ anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsSourceState: "available" })]);
     expect(screen.getByText("Anytime TD")).toBeInTheDocument();
     expect(screen.getByText("+160")).toBeInTheDocument();
     expect(screen.getByText("DraftKings")).toBeInTheDocument();
@@ -76,22 +118,26 @@ describe("TouchdownScorerTable", () => {
   });
 
   it("renders a safe unavailable state for a player with no Anytime TD quote", () => {
-    render(<TouchdownScorerTable players={[player({ anytimeTdOdds: null, anytimeTdBook: null, marketImpliedProbability: null })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player({ anytimeTdOdds: null, anytimeTdBook: null, marketImpliedProbability: null })]);
     const dashes = screen.getAllByText("—");
     expect(dashes.length).toBeGreaterThanOrEqual(2); // Anytime TD price, Mkt Implied %
   });
 
   it("keeps a compact mobile column set: hides Matchup/Pos/Mkt Implied/TD-per-game and adds an identity subline", () => {
-    render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player()]);
     const matchupHeader = screen.getByRole("columnheader", { name: /Matchup/ });
     expect(matchupHeader).toHaveClass("hidden");
     expect(matchupHeader).toHaveClass("md:table-cell");
+    // TD/G L5 is a desktop-only column, like TD/G.
+    expect(screen.getByRole("columnheader", { name: /TD\/G L5/ })).toHaveClass("hidden");
+    // Team Usage % stays visible on mobile (it replaces the old Usage column).
+    expect(screen.getByRole("columnheader", { name: /Team Usage %/ })).not.toHaveClass("hidden");
     // Mobile-only identity line under the player name.
     expect(screen.getByText("cin @ cle · WR", { exact: false })).toBeInTheDocument();
   });
 
   it("still renders a frozen suspended-odds state", () => {
-    render(<TouchdownScorerTable players={[player({ anytimeTdOdds: 145, anytimeTdBook: "fanduel", oddsSourceState: "suspended" })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    renderTable([player({ anytimeTdOdds: 145, anytimeTdBook: "fanduel", oddsSourceState: "suspended" })]);
     expect(screen.getByText("+145")).toBeInTheDocument();
     expect(screen.getByText("Suspended")).toBeInTheDocument();
   });

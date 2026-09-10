@@ -1,5 +1,6 @@
 import { normalizeNflTeamAbbr } from "@/lib/nfl/identity/identity";
-import type { TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowKey } from "./types";
+import { buildPercentileLookup, lookupPercentile } from "@/lib/shared/jkbHeat";
+import type { TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowKey, TouchdownWindowMetrics } from "./types";
 
 /** Canonical, order-independent matchup key for two teams, e.g. `ne` + `sea` -> `"ne@sea"`. */
 export function touchdownMatchupKey(teamA: string, teamB: string): string {
@@ -37,6 +38,43 @@ function value(row: TouchdownPreviewPlayer, window: TouchdownWindowKey, key: Tou
     usage: metrics.usagePerGame, teamUsage: metrics.teamUsageShare, rz: metrics.rzOpportunitiesPerGame, inside10: metrics.inside10OpportunitiesPerGame,
     goalLine: metrics.goalLineOpportunitiesPerGame, rzShare: metrics.rzOpportunityShare, goalLineShare: metrics.goalLineOpportunityShare,
     implied: metrics.impliedTeamPoints, oppOpportunities: metrics.opponentTdOpportunitiesPerGame, oppPositionTds: metrics.opponentPositionTdsAllowedPerGame })[key];
+}
+
+/**
+ * Global value -> favorable-percentile lookups for the heat-colored board cells.
+ *
+ * Built once from the FULL candidate population for the active window -- never
+ * position-relative, and never recomputed from a filtered view -- so an
+ * identical raw value always resolves to the same percentile, and therefore the
+ * same color, anywhere on the board. Higher is better for all three metrics.
+ *
+ * This deliberately does NOT reuse the per-component percentiles that feed the
+ * JKB TD Score: `components.tdSuccess` ranks an opportunity-adjusted conversion
+ * rate (not TD/G), and `components.playerUsage` ranks a position-relative usage
+ * index -- both would paint two equal raw values different colors.
+ */
+export type TouchdownBoardHeat = {
+  tdPerGame: Map<number, number>;
+  tdLast5PerGame: Map<number, number>;
+  teamUsageShare: Map<number, number>;
+};
+
+export function buildTouchdownBoardHeat(
+  players: readonly TouchdownPreviewPlayer[],
+  window: TouchdownWindowKey,
+): TouchdownBoardHeat {
+  const lookupFor = (pick: (metrics: TouchdownWindowMetrics) => number | null): Map<number, number> =>
+    buildPercentileLookup(players.map((player) => pick(player.windows[window])));
+  return {
+    tdPerGame: lookupFor((metrics) => metrics.tdPerGame),
+    tdLast5PerGame: lookupFor((metrics) => metrics.tdLast5PerGame),
+    teamUsageShare: lookupFor((metrics) => metrics.teamUsageShare),
+  };
+}
+
+/** Favorable percentile for one board cell; `null` when the value is missing or not in the pool. */
+export function touchdownBoardPercentile(value: number | null | undefined, lookup: Map<number, number>): number | null {
+  return lookupPercentile(value, lookup);
 }
 
 export function sortTouchdownPlayers(rows: readonly TouchdownPreviewPlayer[], window: TouchdownWindowKey, sort: TouchdownSort): TouchdownPreviewPlayer[] {
