@@ -1,10 +1,10 @@
 {
   "date": "2026-09-10",
-  "generatedAt": "2026-09-10T16:34:16.088Z",
+  "generatedAt": "2026-09-10T17:46:03.541Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors and Citizens Bank Park lead the slate with 1.18 and 1.17 park factors, while Ryan Feltner and Cristian Javier face lineups that post 46-57% hard-hit rates. Left-on-left and right-on-right splits favor the top three HR scores, and the thin air in Denver plus the short porch in Philly create the clearest power edges.",
-    "modelNote": "The model is overweighting barrel rate, park factor, and recent HR volume, which is why Schwarber (78.6) and the three Yankees (70-72) sit atop the board despite varying xBA marks."
+    "slateOverview": "Coors and Citizens Bank Park lead the slate with 1.18 and 1.17 park factors, while Ryan Feltner and Cristian Javier face stacked lineups in those venues. Left-handed Martín Pérez at Truist Park and Logan Gilbert at pitcher-friendly T-Mobile create secondary spots, but the highest-leverage HR environment is clearly the thin-air and bandbox combination.",
+    "modelNote": "The model is overweighting barrel rate, recent HR volume, and opposing pitcher HR vulnerability, pushing Schwarber to the top despite a 32% K-rate because his 17.1 barrel rate and 8.4 HR/FB ratio dominate the metrics."
   },
   "bestBets": [
     {
@@ -15,14 +15,14 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrel=17.1%",
-        "HH=49.7%"
+        "park=1.17"
       ],
       "bullets": [
-        "park=1.17",
-        "barrel=17.1%"
+        "barrel=17.1%",
+        "park=1.17"
       ],
-      "hrOddsYes": "+175",
-      "marketImpliedProbability": 0.36363636363636365,
+      "hrOddsYes": "+180",
+      "marketImpliedProbability": 0.35714285714285715,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -34,33 +34,14 @@
       "hrScoreRank": 2,
       "topStats": [
         "barrel=12.3%",
-        "HH=46.8%"
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "HH=46.8%"
+        "barrel=12.3%",
+        "park=1.18"
       ],
       "hrOddsYes": "+295",
       "marketImpliedProbability": 0.25316455696202533,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=14.2%",
-        "HH=48.3%"
-      ],
-      "bullets": [
-        "park=1.18",
-        "barrel=14.2%"
-      ],
-      "hrOddsYes": "+240",
-      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -69,17 +50,36 @@
       "team": "NYY",
       "opponent": "COL",
       "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=21.1%",
+        "park=1.18"
+      ],
+      "bullets": [
+        "barrel=21.1%",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+200",
+      "marketImpliedProbability": 0.3333333333333333,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 4,
       "topStats": [
         "Pitcher HR VS=62.6",
-        "Hard Hit%=57.1"
+        "Hard Hit%=48.3"
       ],
       "bullets": [
-        "HR score 70.5 (#4)",
+        "HR score 70.6 (#4)",
         "Pitcher HR VS 62.6 at park 1.18"
       ],
-      "hrOddsYes": "+225",
-      "marketImpliedProbability": 0.3076923076923077,
+      "hrOddsYes": "+260",
+      "marketImpliedProbability": 0.2777777777777778,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -91,35 +91,35 @@
       "hrScoreRank": 5,
       "topStats": [
         "Hard Hit%=50.5",
-        "Pitcher HR VS=44.5"
+        "Pitcher HR VS=44.8"
       ],
       "bullets": [
-        "HR score 64.2 (#5)",
-        "Pitcher HR VS 44.5 at park 1.03"
+        "HR score 64.1 (#5)",
+        "Pitcher HR VS 44.8 at park 1.03"
       ],
-      "hrOddsYes": "+314",
-      "marketImpliedProbability": 0.24154589371980675,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Aaron Judge",
+      "player": "Ben Rice",
       "team": "NYY",
       "opponent": "COL",
       "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=21.1%",
-        "HH=57.1%"
+        "barrel=14.2%",
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "barrel=21.1%"
+        "barrel=14.2%",
+        "park=1.18"
       ],
-      "hrOddsYes": "+225",
-      "marketImpliedProbability": 0.3076923076923077,
+      "hrOddsYes": "+260",
+      "marketImpliedProbability": 0.2777777777777778,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -131,14 +131,14 @@
       "hrScoreRank": 5,
       "topStats": [
         "barrel=13.2%",
-        "HH=50.5%"
+        "park=1.03"
       ],
       "bullets": [
-        "park=1.03",
-        "barrel=13.2%"
+        "barrel=13.2%",
+        "park=1.03"
       ],
-      "hrOddsYes": "+314",
-      "marketImpliedProbability": 0.24154589371980675,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -150,11 +150,11 @@
       "hrScoreRank": 6,
       "topStats": [
         "barrel=16%",
-        "HH=52.9%"
+        "park=1.17"
       ],
       "bullets": [
-        "park=1.17",
-        "barrel=16%"
+        "barrel=16%",
+        "park=1.17"
       ],
       "hrOddsYes": "+228",
       "marketImpliedProbability": 0.3048780487804878,
@@ -209,11 +209,11 @@
       "hrScoreRank": 7,
       "topStats": [
         "barrel=15.6%",
-        "HH=55.4%"
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "barrel=15.6%"
+        "barrel=15.6%",
+        "park=1.18"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
@@ -228,11 +228,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrel=19.3%",
-        "HH=57.5%"
+        "park=1.07"
       ],
       "bullets": [
-        "park=1.07",
-        "barrel=19.3%"
+        "barrel=19.3%",
+        "park=1.07"
       ],
       "hrOddsYes": "+317",
       "marketImpliedProbability": 0.23980815347721823,
@@ -244,13 +244,13 @@
       "team": "PHI",
       "opponent": "HOU",
       "opposingPitcher": "Cristian Javier",
-      "hrScoreRank": 24,
+      "hrScoreRank": 23,
       "topStats": [
         "Pitcher HR VS=63.0",
         "Hard Hit%=43.5"
       ],
       "bullets": [
-        "HR score 47.5 (#24)",
+        "HR score 47.8 (#23)",
         "Pitcher HR VS 63.0 at park 1.17"
       ],
       "hrOddsYes": "+600",
@@ -263,13 +263,13 @@
       "team": "PHI",
       "opponent": "HOU",
       "opposingPitcher": "Cristian Javier",
-      "hrScoreRank": 20,
+      "hrScoreRank": 21,
       "topStats": [
         "Pitcher HR VS=63.0",
         "Hard Hit%=43.2"
       ],
       "bullets": [
-        "HR score 50.0 (#20)",
+        "HR score 50.0 (#21)",
         "Pitcher HR VS 63.0 at park 1.17"
       ],
       "hrOddsYes": "+550",
