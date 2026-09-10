@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import TeamLogo from "@/components/TeamLogo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { sportsbookDisplayName } from "@/lib/nfl/bettingLinesView";
@@ -15,6 +16,7 @@ import type { TouchdownPreviewPlayer, TouchdownWindowKey } from "@/lib/nfl/touch
 import { cn } from "@/lib/utils";
 
 const number = (value: number | null, digits = 1) => value == null ? "N/A" : value.toFixed(digits);
+const pct1 = (value: number | null) => value == null ? "N/A" : `${(value * 100).toFixed(1)}%`;
 const fmtOdds = (value: number) => (value > 0 ? `+${value}` : `${value}`);
 const fmtUpdatedAt = (value: string | null | undefined) => {
   if (!value) return "N/A";
@@ -39,20 +41,53 @@ function DeltaCell({ value, average: sampleAverage, digits = 0 }: { value: numbe
   return <>{value.toFixed(digits)}{formatted && <span className={cn("ml-1 font-normal tabular-nums", DELTA_TONE_CLASS[deltaTone(delta)])}>{formatted}</span>}</>;
 }
 
-/** "62nd percentile" context for an Additional Stats metric, reusing an already-computed population percentile. No new baseline is invented here. */
 function ordinal(n: number): string {
-  const mod100 = Math.round(n) % 100;
-  if (mod100 >= 11 && mod100 <= 13) return `${Math.round(n)}th`;
-  switch (Math.round(n) % 10) {
-    case 1: return `${Math.round(n)}st`;
-    case 2: return `${Math.round(n)}nd`;
-    case 3: return `${Math.round(n)}rd`;
-    default: return `${Math.round(n)}th`;
+  const rounded = Math.round(n);
+  const mod100 = rounded % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${rounded}th`;
+  switch (rounded % 10) {
+    case 1: return `${rounded}st`;
+    case 2: return `${rounded}nd`;
+    case 3: return `${rounded}rd`;
+    default: return `${rounded}th`;
   }
 }
-function PercentileContext({ percentile }: { percentile: number | null }) {
-  if (percentile == null) return null;
-  return <span className="ml-1 text-[9px] font-normal normal-case tracking-normal text-slate-400">{ordinal(percentile)} pctile</span>;
+
+/** "62nd pctile" context reusing an already-computed population percentile. No new baseline is invented here. */
+function contextText(percentile: number | null): string {
+  return percentile == null ? "—" : `${ordinal(percentile)} pctile`;
+}
+
+type ProfileRow = { label: ReactNode; value: string; context: string };
+
+/**
+ * Compact "Metric | Player | Context" table. Full width, no minimum width, so it
+ * stacks cleanly at ~390px instead of forcing a horizontal scroll.
+ */
+function ProfileTable({ id, title, accent, rows }: { id: string; title: string; accent: string; rows: readonly ProfileRow[] }) {
+  return (
+    <section className="mt-2 overflow-hidden rounded border border-slate-200 bg-white md:max-w-2xl" aria-labelledby={id}>
+      <h3 id={id} className={cn("px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white", accent)}>{title}</h3>
+      <table className="w-full text-[10px]">
+        <thead className="bg-slate-50 text-slate-500">
+          <tr>
+            <th className="px-2.5 py-1 text-left font-semibold uppercase tracking-wide">Metric</th>
+            <th className="px-2 py-1 text-right font-semibold uppercase tracking-wide">Player</th>
+            <th className="px-2.5 py-1 text-right font-semibold uppercase tracking-wide">Context</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index} className="border-t border-slate-100">
+              <td className="px-2.5 py-1 text-left text-slate-600">{row.label}</td>
+              <td className="px-2 py-1 text-right font-semibold tabular-nums text-slate-800">{row.value}</td>
+              <td className="px-2.5 py-1 text-right tabular-nums text-slate-400">{row.context}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
 }
 
 export default function TouchdownPlayerDetail({ player, window }: { player: TouchdownPreviewPlayer; window: TouchdownWindowKey }) {
@@ -62,33 +97,43 @@ export default function TouchdownPlayerDetail({ player, window }: { player: Touc
   const playerAverages = computePlayerHistoryAverages(playerGames);
   const opponentAverages = computeOpponentHistoryAverages(opponentGames, player.position);
   const positionTdAllowedLabel = OPPONENT_POSITION_TD_ALLOWED_LABEL[player.position];
-  const stats = [
-    ["TD Success", metrics.tdSuccessRate == null ? "N/A" : `${(metrics.tdSuccessRate * 100).toFixed(1)}%`, metrics.components.tdSuccess.percentile],
-    ["RZ Share", metrics.rzOpportunityShare == null ? "N/A" : `${(metrics.rzOpportunityShare * 100).toFixed(1)}%`, metrics.components.teamUsage.percentile],
-    ["Goal-Line Share", metrics.goalLineOpportunityShare == null ? "N/A" : `${(metrics.goalLineOpportunityShare * 100).toFixed(1)}%`, metrics.components.teamUsage.percentile],
-    ["Team Implied Pts", number(metrics.impliedTeamPoints), metrics.components.impliedTeamPoints.percentile],
-    ["Anytime TD Odds", player.anytimeTdOdds == null ? "Unavailable" : fmtOdds(player.anytimeTdOdds), null],
-    ["Book", player.anytimeTdBook == null ? "Unavailable" : sportsbookDisplayName(player.anytimeTdBook), null],
-    ["Market Implied %", player.marketImpliedProbability == null ? "Unavailable" : `${(player.marketImpliedProbability * 100).toFixed(1)}%`, null],
-    ["Odds Updated", player.oddsUpdatedAt == null ? "Unavailable" : fmtUpdatedAt(player.oddsUpdatedAt), null],
-  ] as const;
+  const components = metrics.components;
+
+  const scoringProfile: ProfileRow[] = [
+    { label: "TD/G", value: number(metrics.tdPerGame, 2), context: contextText(components.tdSuccess.percentile) },
+    { label: "TD L5/G", value: number(metrics.tdLast5PerGame, 2), context: contextText(components.tdSuccess.percentile) },
+    { label: "Usage/G", value: number(metrics.usagePerGame, 1), context: contextText(components.playerUsage.percentile) },
+    { label: "Team Usage %", value: pct1(metrics.teamUsageShare), context: contextText(components.teamUsage.percentile) },
+    { label: "RZ Opp/G", value: number(metrics.rzOpportunitiesPerGame, 2), context: contextText(components.tdOpportunities.percentile) },
+    { label: "Inside 10 Opp/G", value: number(metrics.inside10OpportunitiesPerGame, 2), context: contextText(components.tdOpportunities.percentile) },
+    { label: "Goal Line Opp/G", value: number(metrics.goalLineOpportunitiesPerGame, 2), context: contextText(components.tdOpportunities.percentile) },
+    { label: "RZ Share", value: pct1(metrics.rzOpportunityShare), context: contextText(components.teamUsage.percentile) },
+    { label: "Goal Line Share", value: pct1(metrics.goalLineOpportunityShare), context: contextText(components.teamUsage.percentile) },
+  ];
+
+  const matchupMarket: ProfileRow[] = [
+    { label: "Team Implied Points", value: number(metrics.impliedTeamPoints, 1), context: contextText(components.impliedTeamPoints.percentile) },
+    { label: "Opp TD Opp/G", value: number(metrics.opponentTdOpportunitiesPerGame, 2), context: contextText(components.opponentTdOpportunities.percentile) },
+    { label: "Opp TD Allowed vs Pos", value: number(metrics.opponentPositionTdsAllowedPerGame, 2), context: contextText(components.opponentPositionTdsAllowed.percentile) },
+    { label: "Anytime TD Odds", value: player.anytimeTdOdds == null ? "Unavailable" : fmtOdds(player.anytimeTdOdds), context: "—" },
+    { label: "Book", value: player.anytimeTdBook == null ? "Unavailable" : sportsbookDisplayName(player.anytimeTdBook), context: "—" },
+    { label: "Market Implied %", value: player.marketImpliedProbability == null ? "Unavailable" : pct1(player.marketImpliedProbability), context: "—" },
+    { label: "Odds Updated", value: player.oddsUpdatedAt == null ? "Unavailable" : fmtUpdatedAt(player.oddsUpdatedAt), context: "—" },
+  ];
+
   return <div className="bg-slate-50 px-2 py-2.5 sm:px-4" data-testid="touchdown-player-detail">
-    <section aria-labelledby={`additional-${player.playerId}`}>
-      <h3 id={`additional-${player.playerId}`} className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">Additional stats</h3>
-      <dl className="grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-white sm:grid-cols-5">
-        {stats.map(([label, value, percentile]) => <div key={label} className="border-b border-r border-slate-100 px-2 py-1.5"><dt className="text-[9px] uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-0.5 text-xs font-semibold tabular-nums text-slate-800">{value}<PercentileContext percentile={percentile} /></dd></div>)}
-      </dl>
-    </section>
+    <ProfileTable id={`scoring-profile-${player.playerId}`} title="Scoring profile" accent="bg-slate-700" rows={scoringProfile} />
+    <ProfileTable id={`matchup-market-${player.playerId}`} title="Matchup & market" accent="bg-emerald-700" rows={matchupMarket} />
     <section className="mt-2 overflow-hidden rounded border border-sky-200 bg-white" aria-labelledby={`player-history-${player.playerId}`}>
       <h3 id={`player-history-${player.playerId}`} className="bg-sky-700 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white">Player game history</h3>
-      <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-[10px]"><thead className="bg-sky-50 text-sky-900"><tr>{["Week","Opp","H/A","Score","TD","Rush TD","Rec TD","RZ Opps","Inside 10 Opps","Goal Line Opps","Usage"].map((head) => <th key={head} className="px-2 py-1 text-center">{head}</th>)}</tr></thead>
+      <div className="min-w-0 overflow-x-auto"><table className="w-full min-w-[760px] text-[10px]"><thead className="bg-sky-50 text-sky-900"><tr>{["Week","Opp","H/A","Score","TD","Rush TD","Rec TD","RZ Opps","Inside 10 Opps","Goal Line Opps","Usage"].map((head) => <th key={head} className="px-2 py-1 text-center">{head}</th>)}</tr></thead>
         <tbody>{playerGames.length ? <>{playerGames.map((game) => <tr key={game.gameId} className="border-t border-slate-100"><td className="px-2 py-1 text-center">{game.season} W{game.week}</td><td className="px-2 py-1 text-center"><OpponentCell team={game.opponent} /></td><td className="px-2 py-1 text-center">{badge(game.homeAway)}</td><td className="px-2 py-1 text-center">{score(game.teamScore, game.opponentScore)}</td><td className="px-2 py-1 text-center font-bold">{game.touchdowns}</td><td className="px-2 py-1 text-center">{game.rushingTds}</td><td className="px-2 py-1 text-center">{game.receivingTds}</td><td className="px-2 py-1 text-center"><DeltaCell value={game.rzOpportunities} average={playerAverages.rzOpportunities} /></td><td className="px-2 py-1 text-center"><DeltaCell value={game.inside10Opportunities} average={playerAverages.inside10Opportunities} /></td><td className="px-2 py-1 text-center"><DeltaCell value={game.goalLineOpportunities} average={playerAverages.goalLineOpportunities} /></td><td className="px-2 py-1 text-center">{game.scorerOpportunities ?? "N/A"}</td></tr>)}
           <tr className="border-t-2 border-sky-200 bg-sky-50/60 font-semibold text-sky-900"><td colSpan={4} className="px-2 py-1 text-right uppercase tracking-wide text-[9px]">{historyAverageRowLabel(playerGames.length)}</td><td className="px-2 py-1 text-center">{number(playerAverages.touchdowns, 2)}</td><td className="px-2 py-1 text-center">{number(playerAverages.rushingTds, 2)}</td><td className="px-2 py-1 text-center">{number(playerAverages.receivingTds, 2)}</td><td className="px-2 py-1 text-center">{number(playerAverages.rzOpportunities, 2)}</td><td className="px-2 py-1 text-center">{number(playerAverages.inside10Opportunities, 2)}</td><td className="px-2 py-1 text-center">{number(playerAverages.goalLineOpportunities, 2)}</td><td className="px-2 py-1 text-center">{number(playerAverages.scorerOpportunities, 2)}</td></tr>
         </> : <tr><td colSpan={11} className="px-3 py-3 text-center text-slate-500">No applicable player games in this window.</td></tr>}</tbody></table></div>
     </section>
     <section className="mt-2 overflow-hidden rounded border border-violet-200 bg-white" aria-labelledby={`opponent-history-${player.playerId}`}>
       <h3 id={`opponent-history-${player.playerId}`} className="bg-violet-700 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white">Opponent game history</h3>
-      <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-[10px]"><thead className="bg-violet-50 text-violet-900"><tr>{["Week","Opp","H/A","Score","Off TD Allowed","RZ Opps Allowed","Inside 10 Opps Allowed","Goal Line Opps Allowed",positionTdAllowedLabel].map((head) => <th key={head} className="px-2 py-1 text-center">{head}</th>)}</tr></thead>
+      <div className="min-w-0 overflow-x-auto"><table className="w-full min-w-[760px] text-[10px]"><thead className="bg-violet-50 text-violet-900"><tr>{["Week","Opp","H/A","Score","Off TD Allowed","RZ Opps Allowed","Inside 10 Opps Allowed","Goal Line Opps Allowed",positionTdAllowedLabel].map((head) => <th key={head} className="px-2 py-1 text-center">{head}</th>)}</tr></thead>
         <tbody>{opponentGames.length ? <>{opponentGames.map((game) => <tr key={`${game.gameId}-${game.defense}`} className="border-t border-slate-100"><td className="px-2 py-1 text-center">{game.season} W{game.week}</td><td className="px-2 py-1 text-center"><OpponentCell team={game.opponent} /></td><td className="px-2 py-1 text-center">{badge(game.homeAway)}</td><td className="px-2 py-1 text-center">{score(game.defenseScore, game.opponentScore)}</td><td className="px-2 py-1 text-center font-bold">{game.offensiveTdsAllowed}</td><td className="px-2 py-1 text-center"><DeltaCell value={game.rzOpportunitiesAllowed} average={opponentAverages.rzOpportunitiesAllowed} /></td><td className="px-2 py-1 text-center"><DeltaCell value={game.inside10OpportunitiesAllowed} average={opponentAverages.inside10OpportunitiesAllowed} /></td><td className="px-2 py-1 text-center"><DeltaCell value={game.goalLineOpportunitiesAllowed} average={opponentAverages.goalLineOpportunitiesAllowed} /></td><td className="px-2 py-1 text-center"><DeltaCell value={game.touchdownsAllowedByPosition[player.position]} average={opponentAverages.positionTdsAllowed} /></td></tr>)}
           <tr className="border-t-2 border-violet-200 bg-violet-50/60 font-semibold text-violet-900"><td colSpan={4} className="px-2 py-1 text-right uppercase tracking-wide text-[9px]">{historyAverageRowLabel(opponentGames.length)}</td><td className="px-2 py-1 text-center">{number(opponentAverages.offensiveTdsAllowed, 2)}</td><td className="px-2 py-1 text-center">{number(opponentAverages.rzOpportunitiesAllowed, 2)}</td><td className="px-2 py-1 text-center">{number(opponentAverages.inside10OpportunitiesAllowed, 2)}</td><td className="px-2 py-1 text-center">{number(opponentAverages.goalLineOpportunitiesAllowed, 2)}</td><td className="px-2 py-1 text-center">{number(opponentAverages.positionTdsAllowed, 2)}</td></tr>
         </> : <tr><td colSpan={9} className="px-3 py-3 text-center text-slate-500">No applicable opponent games in this window.</td></tr>}</tbody></table></div>

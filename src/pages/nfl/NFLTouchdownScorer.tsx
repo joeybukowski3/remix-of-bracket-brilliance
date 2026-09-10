@@ -23,7 +23,7 @@ export default function NFLTouchdownScorer() {
   const matchups = useMemo(() => ["all", ...[...new Set(players.map((player) => touchdownMatchupKey(player.team, player.opponent)))].sort()], [players]);
   const visible = useMemo(() => sortTouchdownPlayers(players.filter((player) => (position === "all" || player.position === position) && (team === "all" || player.team === team) && (matchup === "all" || touchdownMatchupKey(player.team, player.opponent) === matchup) && player.playerName.toLowerCase().includes(search.trim().toLowerCase())), window, sort), [players, position, team, matchup, search, window, sort]);
   const windowContext = window === "2025" ? "2025 regular season · player samples vary by games played" : window === "2026" ? "Completed 2026 regular-season games only" : "Latest eight applicable games · crosses season boundaries";
-  return <main className="mx-auto w-full max-w-[1900px] px-3 py-4 sm:px-5 lg:px-7">
+  return <div className="w-full">
     <NflPageHeader eyebrow="Markets & Predictions" title="TD Scorer" description={<><strong>JKB TD Score</strong> is a relative 0–100 player rating for touchdown-scoring equity. It is not a calibrated probability, fair price, or sportsbook edge.</>}>
       <div className="flex flex-wrap items-center gap-2"><NflFilterChips label="Data window" options={WINDOW_OPTIONS} value={window} onChange={(next) => { setWindow(next); setSort(DEFAULT_TOUCHDOWN_SORT); }} formatOption={(option) => WINDOW_LABEL[option]} tone="sky" /></div>
     </NflPageHeader>
@@ -31,12 +31,12 @@ export default function NFLTouchdownScorer() {
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600"><span className="font-semibold text-slate-800">2026 Week {source.data?.week ?? 1} candidate board</span><span>{windowContext} · Scores use the fixed full candidate population.</span></div>
       {source.data?.sourceStatus.touchdownContext === "missing" && <p className="mt-1 text-[11px] text-amber-800" role="status">Touchdown PBP context is unavailable. Scoring-area metrics and JKB TD Score remain N/A until the validated compact cache is refreshed.</p>}
     </section>
-    <section className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 bg-white p-2.5" aria-label="TD Scorer filters">
-      <label className="min-w-[190px] flex-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Player search<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="All players" className="mt-1 h-8 w-full rounded border border-slate-300 px-2 text-xs font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-sky-600 focus:ring-1 focus:ring-sky-600" /></label>
-      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Team<select value={team} onChange={(event) => setTeam(event.target.value)} className="mt-1 block h-8 min-w-24 rounded border border-slate-300 bg-white px-2 text-xs uppercase text-slate-800"><option value="all">All</option>{teams.slice(1).map((value) => <option key={value}>{value}</option>)}</select></label>
-      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Matchup<select value={matchup} onChange={(event) => setMatchup(event.target.value)} className="mt-1 block h-8 min-w-32 rounded border border-slate-300 bg-white px-2 text-xs uppercase text-slate-800"><option value="all">All</option>{matchups.slice(1).map((value) => <option key={value} value={value}>{formatTouchdownMatchupLabel(value)}</option>)}</select></label>
-      <NflFilterChips<"all" | TouchdownPosition> label="Position" options={POSITIONS} value={position} onChange={setPosition} formatOption={(value) => value === "all" ? "All" : value} size="sm" tone="violet" />
-      <span className="ml-auto pb-1 text-[11px] tabular-nums text-slate-500">{visible.length} of {players.length} players</span>
+    <section className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-2.5 sm:flex sm:flex-wrap sm:items-end" aria-label="TD Scorer filters">
+      <label className="col-span-2 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:col-auto sm:min-w-[190px] sm:flex-1">Player search<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="All players" className="mt-1 h-8 w-full rounded border border-slate-300 px-2 text-xs font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-sky-600 focus:ring-1 focus:ring-sky-600" /></label>
+      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Team<select value={team} onChange={(event) => setTeam(event.target.value)} className="mt-1 block h-8 w-full min-w-0 rounded border border-slate-300 bg-white px-2 text-xs uppercase text-slate-800 sm:w-auto sm:min-w-24"><option value="all">All</option>{teams.slice(1).map((value) => <option key={value}>{value}</option>)}</select></label>
+      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Matchup<select value={matchup} onChange={(event) => setMatchup(event.target.value)} className="mt-1 block h-8 w-full min-w-0 rounded border border-slate-300 bg-white px-2 text-xs uppercase text-slate-800 sm:w-auto sm:min-w-32"><option value="all">All</option>{matchups.slice(1).map((value) => <option key={value} value={value}>{formatTouchdownMatchupLabel(value)}</option>)}</select></label>
+      <div className="col-span-2 sm:col-auto"><NflFilterChips<"all" | TouchdownPosition> label="Position" options={POSITIONS} value={position} onChange={setPosition} formatOption={(value) => value === "all" ? "All" : value} size="sm" tone="violet" /></div>
+      <span className="col-span-2 text-[11px] tabular-nums text-slate-500 sm:col-auto sm:ml-auto sm:pb-1">{visible.length} of {players.length} players</span>
     </section>
     <section className="mt-3">
       {source.loading ? (
@@ -49,5 +49,5 @@ export default function NFLTouchdownScorer() {
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">No players match these filters.</div>
       )}
     </section>
-  </main>;
+  </div>;
 }

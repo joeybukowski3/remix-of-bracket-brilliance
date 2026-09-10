@@ -180,28 +180,37 @@ describe("TouchdownPlayerDetail RZ/Inside-10/Goal-Line deltas", () => {
   });
 });
 
-describe("TouchdownPlayerDetail Additional Stats context", () => {
-  it("shows above/below-average percentile context for metrics with an existing baseline", () => {
+describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () => {
+  it("surfaces the secondary metrics moved out of the primary table with percentile context", () => {
     render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
-    const section = screen.getByText("Additional stats").closest("section") as HTMLElement;
-    expect(within(section).getByText("80th pctile")).toBeInTheDocument(); // TD Success
-    expect(within(section).getAllByText("62nd pctile")).toHaveLength(2); // RZ Share and Goal-Line Share (shared team-usage percentile)
-    expect(within(section).getByText("55th pctile")).toBeInTheDocument(); // Team Implied Pts
+    const detail = screen.getByTestId("touchdown-player-detail");
+    const profile = within(detail).getByText("Scoring profile").closest("section") as HTMLElement;
+    for (const label of ["TD/G", "TD L5/G", "Usage/G", "Team Usage %", "RZ Opp/G", "Inside 10 Opp/G", "Goal Line Opp/G", "RZ Share", "Goal Line Share"]) {
+      expect(within(profile).getByText(label)).toBeInTheDocument();
+    }
+    // teamUsage percentile 62 backs Team Usage %, RZ Share and Goal Line Share.
+    expect(within(profile).getAllByText("62nd pctile")).toHaveLength(3);
+
+    const market = within(detail).getByText("Matchup & market").closest("section") as HTMLElement;
+    for (const label of ["Team Implied Points", "Opp TD Opp/G", "Opp TD Allowed vs Pos", "Odds Updated"]) {
+      expect(within(market).getByText(label)).toBeInTheDocument();
+    }
+    expect(within(market).getByText("55th pctile")).toBeInTheDocument(); // Team Implied Points
   });
 
   it("leaves Anytime TD Odds unavailable and adds no fabricated percentile context", () => {
     render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: null })} window="2025" />);
-    const section = screen.getByText("Additional stats").closest("section") as HTMLElement;
-    const oddsRow = within(section).getByText("Anytime TD Odds").closest("div") as HTMLElement;
+    const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
+    const oddsRow = within(market).getByText("Anytime TD Odds").closest("tr") as HTMLElement;
     expect(within(oddsRow).getByText("Unavailable")).toBeInTheDocument();
     expect(within(oddsRow).queryByText(/pctile/)).not.toBeInTheDocument();
   });
 
   it("renders the selected book and market implied probability when odds are available", () => {
     render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsUpdatedAt: "2026-09-09T16:13:25Z" })} window="2025" />);
-    const section = screen.getByText("Additional stats").closest("section") as HTMLElement;
-    expect(within(within(section).getByText("Anytime TD Odds").closest("div") as HTMLElement).getByText("+160")).toBeInTheDocument();
-    expect(within(within(section).getByText("Book").closest("div") as HTMLElement).getByText("DraftKings")).toBeInTheDocument();
-    expect(within(within(section).getByText("Market Implied %").closest("div") as HTMLElement).getByText("38.5%")).toBeInTheDocument();
+    const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
+    expect(within(within(market).getByText("Anytime TD Odds").closest("tr") as HTMLElement).getByText("+160")).toBeInTheDocument();
+    expect(within(within(market).getByText("Book").closest("tr") as HTMLElement).getByText("DraftKings")).toBeInTheDocument();
+    expect(within(within(market).getByText("Market Implied %").closest("tr") as HTMLElement).getByText("38.5%")).toBeInTheDocument();
   });
 });
