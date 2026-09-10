@@ -43,6 +43,8 @@ export default defineConfig({
       "scripts/lib/nfl-market-coverage.test.mjs",
       // NFL Anytime TD market -- ParlayAPI canonical scorer-market pipeline.
       "scripts/lib/nfl-anytime-td-selection.test.mjs",
+      // NFL yardage alt-market (secondary source) -- Kalshi ladder normalization.
+      "scripts/lib/nfl-kalshi-yardage.test.mjs",
       // NFL Yardage Player Detail v2 -- Last-10 history pipeline.
       "scripts/lib/nfl-epa-week-rank-core.test.mjs",
       "scripts/lib/nfl-yardage-rolling-core.test.mjs",
