@@ -405,14 +405,21 @@
  * a larger type scale). Team cells show league rank only; the Edge
  * cell keeps the raw-difference / EVEN / N/A treatment.
  * ------------------------------------------------------------------ */
-.matchup-metric-table table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.62rem; }
+.matchup-metric-table table { width: 100%; border-collapse: collapse; font-size: 0.62rem; }
 .matchup-metric-table[data-variant="detail"] table { font-size: 0.72rem; }
-.matchup-metric-table__col--metric { width: 31%; }
-.matchup-metric-table__col--value { width: 23%; }
-.matchup-metric-table__col--edge { width: 23%; }
-.matchup-snapshot__tables.is-split .matchup-metric-table__col--metric { width: 25%; }
-.matchup-snapshot__tables.is-split .matchup-metric-table__col--value { width: 27%; }
-.matchup-snapshot__tables.is-split .matchup-metric-table__col--edge { width: 21%; }
+.matchup-metric-table__col--metric,
+.matchup-metric-table__col--value,
+.matchup-metric-table__col--edge { width: auto; }
+
+/* Three-part row at every width: away rank | centred metric | home rank,
+   with the edge spanning a second line beneath the metric. */
+.matchup-metric-table thead tr,
+.matchup-metric-table tbody tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.3rem;
+}
 .matchup-metric-table thead th {
   padding: 0.26rem 0.35rem;
   color: var(--sheet-muted);
@@ -420,22 +427,40 @@
   font-size: 0.58rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  text-align: left;
+  text-align: center;
 }
+.matchup-metric-table thead th[data-cell="away"] { text-align: left; }
+.matchup-metric-table thead th[data-cell="home"] { text-align: right; }
 .matchup-metric-table[data-variant="detail"] thead th { padding: 0.42rem 0.5rem; font-size: 0.62rem; }
-.matchup-metric-table thead th:not(:first-child) { text-align: center; }
-.matchup-metric-table tbody tr { border-bottom: 1px solid var(--sheet-border-soft); }
+.matchup-metric-table tbody tr { border-bottom: 1px solid var(--sheet-border-soft); padding: 0.24rem 0.26rem; row-gap: 0.16rem; }
+.matchup-metric-table[data-variant="detail"] tbody tr { padding: 0.42rem 0.4rem; row-gap: 0.22rem; }
 .matchup-metric-table tbody th,
-.matchup-metric-table tbody td { padding: 0.18rem 0.26rem; }
-.matchup-metric-table[data-variant="detail"] tbody th,
-.matchup-metric-table[data-variant="detail"] tbody td { padding: 0.34rem 0.4rem; }
-.matchup-metric-table tbody th { color: var(--sheet-muted); font-size: 0.56rem; font-weight: 700; line-height: 0.72rem; text-align: left; }
-.matchup-metric-table[data-variant="detail"] tbody th { font-size: 0.68rem; line-height: 0.9rem; }
-.matchup-metric-table__context { display: block; margin-top: 0.06rem; color: var(--sheet-muted); font-size: 0.48rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.8; }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__context { font-size: 0.56rem; }
-.matchup-metric-table tbody td { color: var(--sheet-text); font-weight: 750; text-align: center; }
-.matchup-metric-table__value { display: block; border: 1px solid var(--sheet-border-soft); border-radius: 0.22rem; padding: 0.17rem 0.2rem; background: var(--sheet-panel-2); white-space: nowrap; }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value { padding: 0.3rem 0.32rem; border-radius: 0.3rem; font-size: 0.86rem; font-weight: 800; }
+.matchup-metric-table tbody td { padding: 0; }
+
+/* Centred metric name — the dominant element of the row. */
+.matchup-metric-table tbody th[data-cell="metric"] {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: center;
+  color: var(--sheet-text);
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 0.82rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] { font-size: 0.82rem; line-height: 1rem; }
+.matchup-metric-table__metric-name { display: block; }
+.matchup-metric-table__context { display: block; margin-top: 0.04rem; color: var(--sheet-muted); font-size: 0.46rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.8; }
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__context { font-size: 0.54rem; }
+
+.matchup-metric-table tbody td[data-cell="away"] { grid-column: 1; grid-row: 1; justify-self: start; }
+.matchup-metric-table tbody td[data-cell="home"] { grid-column: 3; grid-row: 1; justify-self: end; }
+.matchup-metric-table tbody td[data-cell="edge"] { grid-column: 2; grid-row: 2; justify-self: center; text-align: center; }
+
+.matchup-metric-table tbody td { color: var(--sheet-text); font-weight: 750; }
+.matchup-metric-table__value { display: block; border: 1px solid var(--sheet-border-soft); border-radius: 0.22rem; padding: 0.17rem 0.34rem; background: var(--sheet-panel-2); white-space: nowrap; text-align: center; }
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value { padding: 0.28rem 0.44rem; border-radius: 0.3rem; font-size: 0.86rem; font-weight: 800; }
 .matchup-metric-table__value.is-winner { border-color: var(--sheet-model); background: color-mix(in srgb, var(--sheet-model) 11%, var(--sheet-panel)); color: var(--sheet-text); }
 .matchup-metric-table__value.is-weaker { border-color: color-mix(in srgb, var(--sheet-away) 45%, var(--sheet-border)); background: color-mix(in srgb, var(--sheet-away) 6%, var(--sheet-panel)); }
 .matchup-metric-table__abbr { display: none; }
@@ -471,48 +496,22 @@
 .matchup-metric-table__edge--away b, .matchup-metric-table__edge--away small { color: var(--sheet-away); }
 .matchup-metric-table__edge--home b, .matchup-metric-table__edge--home small { color: var(--sheet-home); }
 
-/* Phone: stack each row instead of shrinking the four-column grid —
-   metric label, then the two rank tiles side by side, then the Edge. */
+/* Phone: same three-part row at a compact scale — away rank | metric | home
+   rank on the top line, edge on a second line. Not a different pattern. */
 @media (max-width: 639px) {
   .matchup-snapshot__tables.is-split { grid-template-columns: minmax(0, 1fr); }
   .matchup-snapshot__tables.is-split .matchup-metric-table + .matchup-metric-table { border-left: 0; }
-  .matchup-metric-table table,
-  .matchup-metric-table tbody,
-  .matchup-metric-table tr,
-  .matchup-metric-table td,
-  .matchup-metric-table tbody th { display: block; }
-  .matchup-metric-table thead { display: none; }
-  .matchup-metric-table tbody tr {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 0.28rem 0.4rem;
-    padding: 0.5rem 0.15rem;
-  }
-  .matchup-metric-table tbody td,
-  .matchup-metric-table tbody th { padding: 0; }
-  .matchup-metric-table tbody th[data-cell="metric"] {
-    grid-column: 1 / -1;
-    color: var(--sheet-text);
-    font-size: 0.68rem;
-    font-weight: 800;
-    line-height: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-  .matchup-metric-table td[data-cell="away"] { justify-self: start; }
-  .matchup-metric-table td[data-cell="home"] { justify-self: end; }
-  .matchup-metric-table td[data-cell="edge"] { grid-column: 1 / -1; justify-self: start; }
-  .matchup-metric-table td[data-cell="away"] .matchup-metric-table__value,
-  .matchup-metric-table td[data-cell="home"] .matchup-metric-table__value {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.32rem;
-  }
+  .matchup-metric-table thead th { font-size: 0.52rem; }
+  .matchup-metric-table thead th[data-cell="metric"] { text-align: center; }
+  .matchup-metric-table tbody tr { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 0.4rem; padding: 0.5rem 0.15rem; }
+  .matchup-metric-table[data-variant="detail"] tbody tr { padding: 0.5rem 0.15rem; }
+  .matchup-metric-table tbody th[data-cell="metric"],
+  .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] { font-size: 0.66rem; line-height: 0.84rem; }
   .matchup-metric-table__abbr {
-    display: inline;
+    display: block;
+    margin-bottom: 0.1rem;
     color: var(--sheet-muted);
-    font-size: 0.58rem;
+    font-size: 0.5rem;
     font-weight: 800;
     text-transform: uppercase;
   }
