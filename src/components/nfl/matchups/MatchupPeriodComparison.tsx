@@ -82,13 +82,14 @@ export default function MatchupPeriodComparison({
   return (
     <MatchupSectionCard
       eyebrow="Over time"
+      titleAlign="center"
       title="Success Rate by Period"
       titleId="success-periods-heading"
       subtitle={note}
       bodyClassName="px-0 py-0 sm:px-0"
     >
       <div className="space-y-2 px-3 py-3 sm:px-4">
-        <MatchupComparisonTeamHeader matchup={matchup} />
+        <MatchupComparisonTeamHeader matchup={matchup} sticky />
 
         {groups.map((group) => (
           <div key={group.key} className="matchup-metric-table-group">

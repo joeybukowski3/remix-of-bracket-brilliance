@@ -393,7 +393,8 @@
 
 .matchup-snapshot__grid { display: grid; gap: 0.42rem; padding: 0.42rem; }
 .matchup-snapshot__block { overflow: hidden; border: 1px solid var(--sheet-border); border-radius: 0.3rem; background: var(--sheet-panel); }
-.matchup-snapshot__block h3 { border-bottom: 1px solid var(--sheet-border); padding: 0.34rem 0.48rem; background: var(--sheet-band); color: var(--sheet-text); font-size: 0.61rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.05em; }
+.matchup-snapshot__block h3 { border-bottom: 1px solid var(--sheet-border); padding: 0.34rem 0.48rem; background: var(--sheet-band); color: var(--sheet-text); font-size: 0.61rem; font-weight: 850; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
+.matchup-snapshot__card-header { padding: 0.3rem 0.42rem 0.36rem; }
 .matchup-snapshot__tables.is-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .matchup-snapshot__tables.is-split .matchup-metric-table + .matchup-metric-table { border-left: 1px solid var(--sheet-border); }
 
@@ -407,6 +408,11 @@
  * ------------------------------------------------------------------ */
 .matchup-metric-table table { width: 100%; border-collapse: collapse; font-size: 0.62rem; }
 .matchup-metric-table[data-variant="detail"] table { font-size: 0.72rem; }
+
+/* Detail surface: a centred, content-driven column rather than a full-width
+   stretch, so the rank tiles stay visually tied to the centred metric. */
+.matchup-metric-table[data-variant="detail"] { max-width: 44rem; margin-inline: auto; }
+.matchup-metric-table-group { max-width: 44rem; margin-inline: auto; }
 .matchup-metric-table__col--metric,
 .matchup-metric-table__col--value,
 .matchup-metric-table__col--edge { width: auto; }
@@ -432,8 +438,9 @@
 .matchup-metric-table thead th[data-cell="away"] { text-align: left; }
 .matchup-metric-table thead th[data-cell="home"] { text-align: right; }
 .matchup-metric-table[data-variant="detail"] thead th { padding: 0.42rem 0.5rem; font-size: 0.62rem; }
-.matchup-metric-table tbody tr { border-bottom: 1px solid var(--sheet-border-soft); padding: 0.24rem 0.26rem; row-gap: 0.16rem; }
-.matchup-metric-table[data-variant="detail"] tbody tr { padding: 0.42rem 0.4rem; row-gap: 0.22rem; }
+.matchup-metric-table tbody tr { border-bottom: 1px solid var(--sheet-border-soft); padding: 0.24rem 0.26rem; row-gap: 0.14rem; }
+.matchup-metric-table[data-variant="detail"] tbody tr { padding: 0.42rem 0.4rem; row-gap: 0.2rem; }
+.matchup-metric-table[data-variant="snapshot"] tbody tr { padding: 0.28rem 0.2rem; row-gap: 0.1rem; }
 .matchup-metric-table tbody th,
 .matchup-metric-table tbody td { padding: 0; }
 
@@ -456,14 +463,85 @@
 
 .matchup-metric-table tbody td[data-cell="away"] { grid-column: 1; grid-row: 1; justify-self: start; }
 .matchup-metric-table tbody td[data-cell="home"] { grid-column: 3; grid-row: 1; justify-self: end; }
-.matchup-metric-table tbody td[data-cell="edge"] { grid-column: 2; grid-row: 2; justify-self: center; text-align: center; }
+.matchup-metric-table tbody td[data-cell="bar"] { grid-column: 1 / -1; grid-row: 2; }
+.matchup-metric-table tbody td[data-cell="edge"] { grid-column: 1 / -1; grid-row: 3; justify-self: center; text-align: center; }
 
 .matchup-metric-table tbody td { color: var(--sheet-text); font-weight: 750; }
-.matchup-metric-table__value { display: block; border: 1px solid var(--sheet-border-soft); border-radius: 0.22rem; padding: 0.17rem 0.34rem; background: var(--sheet-panel-2); white-space: nowrap; text-align: center; }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value { padding: 0.28rem 0.44rem; border-radius: 0.3rem; font-size: 0.86rem; font-weight: 800; }
-.matchup-metric-table__value.is-winner { border-color: var(--sheet-model); background: color-mix(in srgb, var(--sheet-model) 11%, var(--sheet-panel)); color: var(--sheet-text); }
-.matchup-metric-table__value.is-weaker { border-color: color-mix(in srgb, var(--sheet-away) 45%, var(--sheet-border)); background: color-mix(in srgb, var(--sheet-away) 6%, var(--sheet-panel)); }
+
+/* Rank tile — league rank only. Colour comes solely from the JKB rank-tier
+   classes applied in the component (rankBadgeClass); the winner never recolours
+   a tile. An unranked tile falls back to neutral panel styling. */
+.matchup-metric-table__value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.22rem;
+  border: 1px solid transparent;
+  border-radius: 0.28rem;
+  padding: 0.13rem 0.4rem;
+  font-weight: 850;
+  white-space: nowrap;
+  text-align: center;
+}
+.matchup-metric-table__value[data-ranked="false"] {
+  border-color: var(--sheet-border-soft);
+  background: var(--sheet-panel-2);
+  color: var(--sheet-muted);
+}
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
+  min-width: 2.9rem;
+  padding: 0.26rem 0.6rem;
+  border-radius: 0.34rem;
+  font-size: 0.92rem;
+}
+.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__value {
+  padding: 0.07rem 0.32rem;
+  font-size: 0.62rem;
+}
 .matchup-metric-table__abbr { display: none; }
+
+/* One centred comparison bar per row: neutral track, fixed midpoint, a single
+   fill growing from the midpoint toward the favoured team in that team's
+   canonical colour (--bar-fill). No directional fill for a tie or a
+   not-comparable row. */
+.matchup-metric-table__bar { display: block; width: 100%; max-width: 12rem; margin: 0.05rem auto 0; }
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar { max-width: 20rem; }
+.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar { max-width: 8.5rem; }
+.matchup-metric-table__bar-track {
+  position: relative;
+  display: block;
+  height: 0.42rem;
+  overflow: hidden;
+  border: 1px solid var(--sheet-border-soft);
+  border-radius: 999px;
+  background: var(--sheet-panel-2);
+}
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track { height: 0.5rem; }
+.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar-track { height: 0.34rem; }
+.matchup-metric-table__bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  max-width: 50%;
+  background: var(--bar-fill, var(--sheet-even));
+}
+.matchup-metric-table__bar-fill--left { right: 50%; border-radius: 999px 0 0 999px; }
+.matchup-metric-table__bar-fill--right { left: 50%; border-radius: 0 999px 999px 0; }
+.matchup-metric-table__bar-tick {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--sheet-text);
+  opacity: 0.35;
+}
+.matchup-metric-table__bar[data-side="even"] .matchup-metric-table__bar-tick,
+.matchup-metric-table__bar[data-side="none"] .matchup-metric-table__bar-tick { opacity: 0.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .matchup-metric-table__bar-fill { transition: width 240ms cubic-bezier(0.16, 1, 0.3, 1); }
+}
 
 /* Titled comparison table — a heading band above the shared table, the pair
    wrapped as one bordered card. Mirrors the Overview snapshot's per-category
@@ -495,6 +573,21 @@
 .matchup-metric-table__edge.is-neutral { display: inline-block; }
 .matchup-metric-table__edge--away b, .matchup-metric-table__edge--away small { color: var(--sheet-away); }
 .matchup-metric-table__edge--home b, .matchup-metric-table__edge--home small { color: var(--sheet-home); }
+.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__edge { font-size: 0.48rem; line-height: 0.54rem; }
+
+/* Two-team header above every comparison table/card. On phones it sticks within
+   its own section while that section is in view — below the page's sticky tab
+   bar, never a global page-level header. */
+.matchup-comparison-team-header { background: var(--sheet-panel); }
+@media (max-width: 639px) {
+  .matchup-comparison-team-header--sticky {
+    position: sticky;
+    top: 118px;
+    z-index: 15;
+    margin-inline: -0.3rem;
+    padding-inline: 0.3rem;
+  }
+}
 
 /* Phone: same three-part row at a compact scale — away rank | metric | home
    rank on the top line, edge on a second line. Not a different pattern. */

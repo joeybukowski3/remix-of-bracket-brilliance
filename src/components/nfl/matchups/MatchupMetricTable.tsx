@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type {
   MatchupDisplayMetric,
   MatchupDisplaySide,
@@ -5,41 +6,43 @@ import type {
 import { formatRankOrdinal } from "@/components/nfl/matchups/rankOrdinal";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import { formatMetricDifference } from "@/components/nfl/matchups/matchupVisualMath";
+import { buildComparisonRailModel } from "@/lib/nfl/matchupRailNormalization";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+import { rankBadgeClass } from "@/lib/nfl/rankTier";
 import { METRIC_NA } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup } from "@/lib/nfl/matchups";
+import { cn } from "@/lib/utils";
 
 /**
  * The one comparison table shared by the Overview → Team Comparison Snapshot
- * and the Team Comparison tab.
+ * (`variant="snapshot"`, compact bento density) and the Team Comparison tab
+ * (`variant="detail"`, a larger type scale inside a centred max-width column).
  *
  * Both surfaces render this exact component so they cannot drift into two
- * visual systems: same three-part row (AWAY rank ← METRIC → HOME rank), same
- * rank tiles, same winner / weaker treatment, same Edge treatment, same borders
- * and separators. They differ only by `variant` — a type-scale step — and by how
- * many of these tables the caller lays out around it.
+ * visual systems. Every row is:
  *
- * Each row reads TEAM rank ← METRIC → TEAM rank: the away rank tile on the
- * left, the metric name centred and visually dominant, the home rank tile on
- * the right. The edge / advantage sits directly beneath the metric name as a
- * compact secondary line — never as a rail bar and never as a raw stat value in
- * the primary row.
+ *   [ away rank ]        METRIC NAME        [ home rank ]
+ *   ├─────────── one centred comparison bar ───────────┤
+ *                     AWAY / HOME  +gap
  *
- * Presentation only. Every number shown is read straight off the resolved
- * `MatchupDisplayMetric`:
+ *  - **Rank tiles show the league rank only.** Their colour comes solely from
+ *    the canonical JKB 1–32 rank-tier scale (`rankBadgeClass` in
+ *    `lib/nfl/rankTier.ts`) — never from which side wins the row, so rank 1 and
+ *    rank 2 are both "elite" even when they face each other. The raw formatted
+ *    value is kept on the tile's `title` for hover and never shown as the tile's
+ *    text.
+ *  - **The comparison bar** is a single neutral track with a fixed midpoint. One
+ *    fill grows from the midpoint toward the favoured team, its length set by the
+ *    existing presentation-only magnitude in `matchupRailNormalization.ts`
+ *    (rank-differential, or a proportional raw-value gap when a rank is missing).
+ *    The fill uses the favoured team's canonical colour (`nflTeamColorFor`),
+ *    falling back to the sheet's neutral token when no colour resolves. A tie or
+ *    a not-comparable row has no directional fill.
+ *  - **The Edge** keeps the existing raw-stat-difference logic
+ *    (`formatMetricDifference`) and the existing EVEN / N/A / "—" states.
  *
- *  - Team value cells show the **league rank only**. The raw formatted value is
- *    never removed from the model and stays on each cell's `title` for hover.
- *  - `comparison` is the existing per-metric winner authority — nothing is
- *    recomputed here.
- *  - The Edge cell keeps the existing raw-stat-difference logic
- *    (`formatMetricDifference`) and the existing EVEN / N/A states.
- *
- * The row is a CSS grid at every width (see `nflMatchupSheet.css`, keyed off the
- * `data-cell` attributes below): desktop and tablet lay the three parts across a
- * single line with the edge beneath the centred metric; phone keeps the exact
- * same arrangement at a compact scale — away rank | metric | home rank on top,
- * edge on a second line — so mobile is a responsive version of the same
- * component, not a different pattern.
+ * Presentation only. `comparison`, ranks and raw values are all read straight
+ * off the resolved `MatchupDisplayMetric`; nothing is recomputed here.
  */
 
 export type MatchupMetricTableVariant = "snapshot" | "detail";
@@ -64,6 +67,12 @@ function rankText(side: MatchupDisplaySide): string {
   return side.formatted;
 }
 
+function higherIsBetter(metric: MatchupDisplayMetric): boolean | null {
+  if (metric.direction === "higher-is-better") return true;
+  if (metric.direction === "lower-is-better") return false;
+  return null;
+}
+
 function ValueCell({
   metric,
   side,
@@ -76,10 +85,6 @@ function ValueCell({
   projected: boolean;
 }) {
   const value = metric[side];
-  const winning = metric.comparison === side;
-  const losing =
-    (metric.comparison === "away" || metric.comparison === "home") && !winning;
-
   const ranked = value.rank != null && Number.isFinite(value.rank);
   const title = ranked
     ? `${projected ? "Projected rank" : "League rank"} ${value.rank}${
@@ -89,9 +94,13 @@ function ValueCell({
 
   return (
     <span
-      className={`matchup-metric-table__value${winning ? " is-winner" : ""}${
-        losing ? " is-weaker" : ""
-      }`}
+      // Colour is governed solely by the league rank tier — never by the row
+      // winner. An unranked cell falls back to the neutral tier styling.
+      className={cn(
+        "matchup-metric-table__value",
+        ranked && rankBadgeClass(value.rank)
+      )}
+      data-ranked={ranked ? "true" : "false"}
       title={title}
     >
       <span className="matchup-metric-table__abbr" aria-hidden="true">
@@ -99,6 +108,68 @@ function ValueCell({
       </span>
       <span className="sr-only">{abbr.toUpperCase()}: </span>
       <span className="matchup-metric-table__rank">{rankText(value)}</span>
+    </span>
+  );
+}
+
+/**
+ * One neutral-track comparison bar with a fixed midpoint. Direction and
+ * magnitude come from the existing rail normalization; the directional fill is
+ * tinted with the favoured team's canonical colour.
+ */
+function ComparisonBar({
+  metric,
+  matchup,
+}: {
+  metric: MatchupDisplayMetric;
+  matchup: NflMatchup;
+}) {
+  const model = buildComparisonRailModel({
+    leftValue: metric.away.value,
+    rightValue: metric.home.value,
+    leftRank: metric.away.rank,
+    rightRank: metric.home.rank,
+    higherIsBetter: higherIsBetter(metric),
+    comparison: metric.comparison,
+  });
+
+  const directional = model.side === "left" || model.side === "right";
+  const favoured =
+    model.side === "left" ? matchup.away : model.side === "right" ? matchup.home : null;
+  const fill = favoured ? nflTeamColorFor(favoured) : null;
+  const widthPercent = Math.round(model.magnitude * 50 * 10) / 10;
+
+  const label =
+    model.side === "left"
+      ? `${matchup.away.abbr.toUpperCase()} advantage`
+      : model.side === "right"
+        ? `${matchup.home.abbr.toUpperCase()} advantage`
+        : model.side === "even"
+          ? "Even"
+          : "Not compared";
+
+  return (
+    <span
+      className="matchup-metric-table__bar"
+      role="img"
+      aria-label={`Comparison bar: ${label}`}
+      data-side={model.side}
+      data-basis={model.basis}
+    >
+      <span className="matchup-metric-table__bar-track" aria-hidden="true">
+        {directional && (
+          <span
+            className={`matchup-metric-table__bar-fill matchup-metric-table__bar-fill--${model.side}`}
+            style={
+              {
+                width: `${widthPercent}%`,
+                "--bar-fill": fill ?? "var(--sheet-even)",
+              } as CSSProperties
+            }
+          />
+        )}
+        <span className="matchup-metric-table__bar-tick" />
+      </span>
     </span>
   );
 }
@@ -231,6 +302,9 @@ export default function MatchupMetricTable({
                   abbr={matchup.home.abbr}
                   projected={projected}
                 />
+              </td>
+              <td data-cell="bar">
+                <ComparisonBar metric={metric} matchup={matchup} />
               </td>
               <td data-cell="edge">
                 <EdgeCell metric={metric} matchup={matchup} showDifference={edgeDifference} />

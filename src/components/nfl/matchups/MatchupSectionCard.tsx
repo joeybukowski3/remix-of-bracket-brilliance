@@ -38,6 +38,7 @@ export default function MatchupSectionCard({
   titleId,
   subtitle,
   headerAside,
+  titleAlign = "left",
   className = "",
   bodyClassName = "",
   children,
@@ -51,15 +52,22 @@ export default function MatchupSectionCard({
   subtitle?: ReactNode;
   /** Right-aligned header slot — a legend, a note or a disclosure control. */
   headerAside?: ReactNode;
+  /**
+   * Comparison sections centre their title/eyebrow/subtitle. Ignored when a
+   * `headerAside` is present, since that layout needs the title left-aligned
+   * beside it.
+   */
+  titleAlign?: "left" | "center";
   className?: string;
   bodyClassName?: string;
   children: ReactNode;
 }) {
+  const centered = titleAlign === "center" && !headerAside;
   return (
     <section id={id} aria-labelledby={titleId} className={cn(MATCHUP_CARD_SURFACE, className)}>
       <div className="px-4 pb-3 pt-4 sm:px-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div className={cn("flex items-start justify-between gap-3", centered && "justify-center")}>
+          <div className={cn("min-w-0", centered && "text-center")}>
             <div className={MATCHUP_EYEBROW}>{eyebrow}</div>
             <h2 id={titleId} className={`mt-1 ${MATCHUP_SECTION_TITLE}`}>
               {title}
