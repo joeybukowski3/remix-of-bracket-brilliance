@@ -109,6 +109,30 @@ export type TouchdownWindowMetrics = {
   impliedTeamPoints: number | null;
   opponentTdOpportunitiesPerGame: number | null;
   opponentPositionTdsAllowedPerGame: number | null;
+  /**
+   * TDs the opponent has allowed to the candidate's position, per game, over the
+   * CURRENT season only (YTD). Window-independent: never affected by the Last 8
+   * UI selection. `null` when the opponent has no current-season games yet.
+   */
+  opponentPositionTdsAllowedPerGameSeason: number | null;
+  /**
+   * TDs the opponent has allowed to the candidate's position, per game, over the
+   * opponent's trailing five applicable games in strict (season, week) reverse
+   * chronological order -- crossing the season boundary until five current-season
+   * games exist. Window-independent: never the Last 8 UI window. `null` when the
+   * opponent has no applicable games.
+   */
+  opponentPositionTdsAllowedPerGameLast5: number | null;
+  /**
+   * Favorable percentile (higher raw allowance = higher percentile) of
+   * `opponentPositionTdsAllowedPerGameSeason` / `...Last5` over the FULL fixed
+   * candidate population, from the same `computePercentileRanks` methodology the
+   * board heat lookups use. These are the two distinct raw metrics' own
+   * percentiles -- never the JKB `components.opponentPositionTdsAllowed` value,
+   * which ranks a position-relative index over the selected window.
+   */
+  opponentPositionTdsAllowedPerGameSeasonPercentile: number | null;
+  opponentPositionTdsAllowedPerGameLast5Percentile: number | null;
   tdSuccessRate: number | null;
   components: TouchdownScoreComponents;
   jkbTdScore: number | null;
