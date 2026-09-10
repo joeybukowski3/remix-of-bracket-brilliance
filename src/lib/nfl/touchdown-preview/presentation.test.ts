@@ -9,7 +9,20 @@ import {
   sortTouchdownPlayers,
   touchdownBoardPercentile,
   touchdownMatchupKey,
+  type TouchdownSortKey,
 } from "./presentation";
+
+describe("board sort surface", () => {
+  it("no longer exposes a market-implied board sort key", () => {
+    const boardKeys: TouchdownSortKey[] = [
+      "player", "opponent", "score", "anytimeTd", "tdPerGame", "tdLast5",
+      "teamUsage", "oppTdVsPosSeason", "oppTdVsPosLast5",
+    ];
+    expect(boardKeys as string[]).not.toContain("marketImplied");
+    // Cycling any real board key stays well-defined without the removed control.
+    expect(nextTouchdownSort(DEFAULT_TOUCHDOWN_SORT, "anytimeTd")).toEqual({ key: "anytimeTd", direction: "desc" });
+  });
+});
 
 describe("touchdownMatchupKey", () => {
   it("is stable regardless of which team is passed first (NE @ SEA)", () => {

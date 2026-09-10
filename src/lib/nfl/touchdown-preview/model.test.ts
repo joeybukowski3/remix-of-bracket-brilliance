@@ -121,7 +121,78 @@ describe("opponent position TD allowed — SZN and trailing-5", () => {
     const rates = opponentPositionTdAllowedRates(games, "WR", 2026);
     // Latest five 2025 weeks: 14,15,16,17,18 -> (1+1+1+1+6)/5 = 2. Week 13 dropped.
     expect(rates.last5).toBe(2);
-    expect(rates.season).toBeNull(); // no 2026 games yet
+    // No 2026 games yet -> SZN falls back to the FULL 2025 regular season, all six
+    // weeks: (1+1+1+1+1+6)/6 = 1.8333. Never null, never a blend.
+    expect(rates.season).toBeCloseTo(1.833333, 5);
+    expect(rates.seasonSource).toBe("prior_season_fallback");
+  });
+
+  it("SZN fallback: 0 current-season opponent games -> full prior regular-season rate", () => {
+    const games = seasonGames([
+      { season: 2025, week: 1, wr: 2 }, { season: 2025, week: 2, wr: 4 }, { season: 2025, week: 3, wr: 0 },
+    ]);
+    const rates = opponentPositionTdAllowedRates(games, "WR", 2026);
+    expect(rates.season).toBe(2); // (2 + 4 + 0) / 3 full 2025 season
+    expect(rates.seasonSource).toBe("prior_season_fallback");
+  });
+
+  it("SZN fallback: switches to current-season YTD the moment the opponent has one 2026 game", () => {
+    const games = seasonGames([
+      { season: 2025, week: 16, wr: 5 }, { season: 2025, week: 17, wr: 5 },
+      { season: 2026, week: 1, wr: 1 },
+    ]);
+    const rates = opponentPositionTdAllowedRates(games, "WR", 2026);
+    expect(rates.season).toBe(1); // only the single 2026 game
+    expect(rates.seasonSource).toBe("current_season");
+  });
+
+  it("SZN fallback: later current-season games keep using current-season YTD only", () => {
+    const games = seasonGames([
+      { season: 2025, week: 17, wr: 9 },
+      { season: 2026, week: 1, wr: 2 }, { season: 2026, week: 2, wr: 4 }, { season: 2026, week: 3, wr: 0 },
+    ]);
+    const rates = opponentPositionTdAllowedRates(games, "WR", 2026);
+    expect(rates.season).toBe(2); // (2 + 4 + 0) / 3, 2025 excluded
+    expect(rates.seasonSource).toBe("current_season");
+  });
+
+  it("SZN fallback: null source only when neither current nor prior season has a game", () => {
+    const empty = opponentPositionTdAllowedRates([], "WR", 2026);
+    expect(empty.season).toBeNull();
+    expect(empty.seasonSource).toBeNull();
+    const staleOnly = opponentPositionTdAllowedRates(seasonGames([{ season: 2024, week: 1, wr: 3 }]), "WR", 2026);
+    expect(staleOnly.season).toBeNull();
+    expect(staleOnly.seasonSource).toBeNull();
+  });
+
+  it("SZN fallback: Last 5 stays the cross-season rolling metric, unchanged by the fallback", () => {
+    const games = seasonGames([13, 14, 15, 16, 17, 18].map((week) => ({ season: 2025, week, wr: week === 18 ? 6 : 1 })));
+    const rates = opponentPositionTdAllowedRates(games, "WR", 2026);
+    expect(rates.last5).toBe(2); // latest five 2025 games, identical to prior behavior
+    expect(rates.seasonSource).toBe("prior_season_fallback");
+  });
+
+  it("SZN fallback: build output carries current_season provenance for real YTD data", () => {
+    const c = candidate("y", 2, "WR");
+    c.opponentGames = seasonGames([
+      { season: 2025, week: 18, wr: 9 },
+      { season: 2026, week: 1, wr: 3 },
+    ]);
+    const rows = buildAllTouchdownWindows([c], 2026);
+    for (const key of ["2025", "2026", "last8"] as const) {
+      expect(rows[0].windows[key].opponentPositionTdsAllowedPerGameSeason).toBe(3);
+      expect(rows[0].windows[key].opponentPositionTdsAllowedPerGameSeasonSource).toBe("current_season");
+    }
+  });
+
+  it("SZN fallback: build output carries prior_season_fallback provenance in Week 1 state", () => {
+    const c = candidate("z", 2, "WR");
+    c.opponentGames = seasonGames([
+      { season: 2025, week: 17, wr: 1 }, { season: 2025, week: 18, wr: 3 },
+    ]);
+    const rows = buildAllTouchdownWindows([c], 2026);
+    expect(rows[0].windows.last8.opponentPositionTdsAllowedPerGameSeason).toBe(2);
+    expect(rows[0].windows.last8.opponentPositionTdsAllowedPerGameSeasonSource).toBe("prior_season_fallback");
   });
 
   it("2026 Week 3: trailing five is 3 prior-season games + 2 current-season games", () => {

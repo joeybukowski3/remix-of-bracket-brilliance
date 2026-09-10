@@ -23,7 +23,7 @@ export const OPPONENT_POSITION_TD_ALLOWED_LABEL: Record<TouchdownPosition, strin
   TE: "TE TD Allowed",
 };
 
-export type TouchdownSortKey = "player" | "opponent" | "score" | "anytimeTd" | "marketImplied" | "tdPerGame" | "tdLast5" | "usage" | "teamUsage" | "rz" | "inside10" | "goalLine" | "rzShare" | "goalLineShare" | "implied" | "oppOpportunities" | "oppPositionTds" | "oppTdVsPosSeason" | "oppTdVsPosLast5";
+export type TouchdownSortKey = "player" | "opponent" | "score" | "anytimeTd" | "tdPerGame" | "tdLast5" | "usage" | "teamUsage" | "rz" | "inside10" | "goalLine" | "rzShare" | "goalLineShare" | "implied" | "oppOpportunities" | "oppPositionTds" | "oppTdVsPosSeason" | "oppTdVsPosLast5";
 export type TouchdownSort = { key: TouchdownSortKey; direction: "asc" | "desc" };
 export const DEFAULT_TOUCHDOWN_SORT: TouchdownSort = { key: "score", direction: "desc" };
 
@@ -35,7 +35,7 @@ export function nextTouchdownSort(current: TouchdownSort, key: TouchdownSortKey)
 
 function value(row: TouchdownPreviewPlayer, window: TouchdownWindowKey, key: TouchdownSortKey): string | number | null {
   const metrics = row.windows[window];
-  return ({ player: row.playerName, opponent: row.opponent, score: metrics.jkbTdScore, anytimeTd: row.anytimeTdOdds ?? null, marketImplied: row.marketImpliedProbability ?? null, tdPerGame: metrics.tdPerGame, tdLast5: metrics.tdLast5PerGame,
+  return ({ player: row.playerName, opponent: row.opponent, score: metrics.jkbTdScore, anytimeTd: row.anytimeTdOdds ?? null, tdPerGame: metrics.tdPerGame, tdLast5: metrics.tdLast5PerGame,
     usage: metrics.usagePerGame, teamUsage: metrics.teamUsageShare, rz: metrics.rzOpportunitiesPerGame, inside10: metrics.inside10OpportunitiesPerGame,
     goalLine: metrics.goalLineOpportunitiesPerGame, rzShare: metrics.rzOpportunityShare, goalLineShare: metrics.goalLineOpportunityShare,
     implied: metrics.impliedTeamPoints, oppOpportunities: metrics.opponentTdOpportunitiesPerGame, oppPositionTds: metrics.opponentPositionTdsAllowedPerGame,

@@ -5,6 +5,17 @@ export type TouchdownWindowKey = "2025" | "2026" | "last8";
 export type TouchdownSampleState = "available" | "zero" | "missing";
 
 /**
+ * Provenance of the "Opp TD/Game vs Pos SZN" value:
+ * - `"current_season"` -- the opponent has >=1 completed current-season game, so
+ *   the figure is a true current-season YTD rate.
+ * - `"prior_season_fallback"` -- the opponent has 0 completed current-season
+ *   games; the figure is the opponent's FULL prior regular-season rate. It is
+ *   never a blend of the two seasons, and must never be labelled as YTD.
+ * - `null` -- neither sample exists.
+ */
+export type TouchdownSeasonMetricSource = "current_season" | "prior_season_fallback";
+
+/**
  * Per-player anytime-TD market state. "unavailable" covers both "no
  * approved-book quote exists for this player" and "no market artifact was
  * ever produced" -- either way there is nothing real to show. "suspended"
@@ -112,9 +123,14 @@ export type TouchdownWindowMetrics = {
   /**
    * TDs the opponent has allowed to the candidate's position, per game, over the
    * CURRENT season only (YTD). Window-independent: never affected by the Last 8
-   * UI selection. `null` when the opponent has no current-season games yet.
+   * UI selection. When the opponent has no current-season games yet, this falls
+   * back to the opponent's FULL prior regular-season rate (see
+   * `opponentPositionTdsAllowedPerGameSeasonSource`); it is `null` only when
+   * neither season has an applicable game. Never a blend of the two seasons.
    */
   opponentPositionTdsAllowedPerGameSeason: number | null;
+  /** Provenance of `opponentPositionTdsAllowedPerGameSeason`. See `TouchdownSeasonMetricSource`. */
+  opponentPositionTdsAllowedPerGameSeasonSource: TouchdownSeasonMetricSource | null;
   /**
    * TDs the opponent has allowed to the candidate's position, per game, over the
    * opponent's trailing five applicable games in strict (season, week) reverse

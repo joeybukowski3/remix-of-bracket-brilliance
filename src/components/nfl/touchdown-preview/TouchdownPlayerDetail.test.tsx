@@ -10,7 +10,7 @@ function windowMetrics(overrides: Partial<TouchdownWindowMetrics> = {}): Touchdo
     sampleState: "available", sampleGames: 1, sampleLabel: "2025 regular season · 1 game", tdPerGame: 1, tdLast5PerGame: 1, usagePerGame: 14,
     teamUsageShare: 0.28, rzOpportunitiesPerGame: 3, inside10OpportunitiesPerGame: 2, goalLineOpportunitiesPerGame: 1, rzOpportunityShare: 0.375,
     goalLineOpportunityShare: 0.333, impliedTeamPoints: 25, opponentTdOpportunitiesPerGame: 4.1, opponentPositionTdsAllowedPerGame: 1,
-    opponentPositionTdsAllowedPerGameSeason: 1.4, opponentPositionTdsAllowedPerGameLast5: 0.8,
+    opponentPositionTdsAllowedPerGameSeason: 1.4, opponentPositionTdsAllowedPerGameSeasonSource: "current_season", opponentPositionTdsAllowedPerGameLast5: 0.8,
     opponentPositionTdsAllowedPerGameSeasonPercentile: 91, opponentPositionTdsAllowedPerGameLast5Percentile: 22,
     tdSuccessRate: 0.08, components: { playerUsage: metric(1, 80), tdOpportunities: metric(75, 75), teamUsage: metric(0.28, 62), tdSuccess: metric(0.08, 80),
       opponentTdOpportunities: metric(70, 70), opponentPositionTdsAllowed: metric(1, 80), impliedTeamPoints: metric(25, 55) }, jkbTdScore: 79.5, scoreRank: 1, scorePoolSize: 2,
@@ -53,7 +53,7 @@ function player(position: TouchdownPosition, opts: { playerHistory?: TouchdownPl
 
 describe("TouchdownPlayerDetail position-specific opponent TD Allowed column", () => {
   it("shows only RB TD Allowed for an expanded RB, no QB/WR/TE columns", () => {
-    render(<TouchdownPlayerDetail player={player("RB")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("RB")} window="2025" season={2026} />);
     const detail = screen.getByTestId("touchdown-player-detail");
     expect(within(detail).getByText("RB TD Allowed")).toBeInTheDocument();
     expect(within(detail).queryByText("QB Rush TD Allowed")).not.toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("TouchdownPlayerDetail position-specific opponent TD Allowed column", (
   });
 
   it("shows only WR TD Allowed for an expanded WR", () => {
-    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" season={2026} />);
     const detail = screen.getByTestId("touchdown-player-detail");
     expect(within(detail).getByText("WR TD Allowed")).toBeInTheDocument();
     expect(within(detail).queryByText("RB TD Allowed")).not.toBeInTheDocument();
@@ -72,7 +72,7 @@ describe("TouchdownPlayerDetail position-specific opponent TD Allowed column", (
   });
 
   it("shows only TE TD Allowed for an expanded TE", () => {
-    render(<TouchdownPlayerDetail player={player("TE")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("TE")} window="2025" season={2026} />);
     const detail = screen.getByTestId("touchdown-player-detail");
     expect(within(detail).getByText("TE TD Allowed")).toBeInTheDocument();
     expect(within(detail).queryByText("RB TD Allowed")).not.toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("TouchdownPlayerDetail position-specific opponent TD Allowed column", (
   });
 
   it("shows only QB Rush TD Allowed for an expanded QB (not a bare 'QB TD' label)", () => {
-    render(<TouchdownPlayerDetail player={player("QB")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("QB")} window="2025" season={2026} />);
     const detail = screen.getByTestId("touchdown-player-detail");
     expect(within(detail).getByText("QB Rush TD Allowed")).toBeInTheDocument();
     expect(within(detail).queryByText("QB TD")).not.toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("TouchdownPlayerDetail position-specific opponent TD Allowed column", (
   it("never shows more than one positional TD Allowed column, for any position", () => {
     const allLabels = ["QB Rush TD Allowed", "RB TD Allowed", "WR TD Allowed", "TE TD Allowed"];
     for (const position of ["QB", "RB", "WR", "TE"] as const) {
-      const { unmount } = render(<TouchdownPlayerDetail player={player(position)} window="2025" />);
+      const { unmount } = render(<TouchdownPlayerDetail player={player(position)} window="2025" season={2026} />);
       const detail = screen.getByTestId("touchdown-player-detail");
       const present = allLabels.filter((label) => within(detail).queryByText(label));
       expect(present).toHaveLength(1);
@@ -104,13 +104,13 @@ describe("TouchdownPlayerDetail position-specific opponent TD Allowed column", (
 
 describe("TouchdownPlayerDetail opponent logos", () => {
   it("renders the opponent team logo in Player Game History", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: [playerGame({ opponent: "buf" })] })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: [playerGame({ opponent: "buf" })] })} window="2025" season={2026} />);
     const section = screen.getByText("Player game history").closest("section") as HTMLElement;
     expect(within(section).getByAltText("buf")).toBeInTheDocument();
   });
 
   it("renders the opponent team logo in Opponent Game History", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { opponentHistory: [opponentGame({ opponent: "mia" })] })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { opponentHistory: [opponentGame({ opponent: "mia" })] })} window="2025" season={2026} />);
     const section = screen.getByText("Opponent game history").closest("section") as HTMLElement;
     expect(within(section).getByAltText("mia")).toBeInTheDocument();
   });
@@ -119,14 +119,14 @@ describe("TouchdownPlayerDetail opponent logos", () => {
 describe("TouchdownPlayerDetail average rows", () => {
   it("renders a 10-Game Avg row in Player Game History for a full 10-game sample", () => {
     const games = Array.from({ length: 10 }, (_, index) => playerGame({ gameId: `g${index}`, week: index + 1 }));
-    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" season={2026} />);
     const section = screen.getByText("Player game history").closest("section") as HTMLElement;
     expect(within(section).getByText("10-Game Avg")).toBeInTheDocument();
   });
 
   it("renders an Opponent Game History average row sized to the displayed sample", () => {
     const games = Array.from({ length: 4 }, (_, index) => opponentGame({ gameId: `g${index}`, week: index + 1 }));
-    render(<TouchdownPlayerDetail player={player("WR", { opponentHistory: games })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { opponentHistory: games })} window="2025" season={2026} />);
     const section = screen.getByText("Opponent game history").closest("section") as HTMLElement;
     expect(within(section).getByText("4-Game Avg")).toBeInTheDocument();
   });
@@ -138,7 +138,7 @@ describe("TouchdownPlayerDetail average rows", () => {
       playerGame({ gameId: "hidden-1", week: 11, rzOpportunities: 100 }),
       playerGame({ gameId: "hidden-2", week: 12, rzOpportunities: 100 }),
     ];
-    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: [...shown, ...hidden] })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: [...shown, ...hidden] })} window="2025" season={2026} />);
     const section = screen.getByText("Player game history").closest("section") as HTMLElement;
     const avgRow = within(section).getByText("10-Game Avg").closest("tr") as HTMLElement;
     // RZ Opps average column: with the 10 shown games all at 2, the average must read 2.00, not skewed toward 100.
@@ -149,7 +149,7 @@ describe("TouchdownPlayerDetail average rows", () => {
 describe("TouchdownPlayerDetail RZ/Inside-10/Goal-Line deltas", () => {
   it("shows a correct positive RZ Opps delta vs the displayed-sample average", () => {
     const games = [playerGame({ gameId: "a", rzOpportunities: 4 }), playerGame({ gameId: "b", rzOpportunities: 0 })];
-    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" season={2026} />);
     const section = screen.getByText("Player game history").closest("section") as HTMLElement;
     // Average is 2; game "a" is 4, delta +2.0.
     expect(within(section).getByText("(+2.0)")).toBeInTheDocument();
@@ -157,7 +157,7 @@ describe("TouchdownPlayerDetail RZ/Inside-10/Goal-Line deltas", () => {
 
   it("shows a correct Inside 10 Opps delta vs the displayed-sample average", () => {
     const games = [playerGame({ gameId: "a", inside10Opportunities: 3 }), playerGame({ gameId: "b", inside10Opportunities: 1 })];
-    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" season={2026} />);
     const section = screen.getByText("Player game history").closest("section") as HTMLElement;
     // Average is 2; game "b" is 1, delta -1.0.
     expect(within(section).getByText("(-1.0)")).toBeInTheDocument();
@@ -165,7 +165,7 @@ describe("TouchdownPlayerDetail RZ/Inside-10/Goal-Line deltas", () => {
 
   it("shows a correct Goal Line Opps delta vs the displayed-sample average", () => {
     const games = [playerGame({ gameId: "a", goalLineOpportunities: 3 }), playerGame({ gameId: "b", goalLineOpportunities: 1 })];
-    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { playerHistory: games })} window="2025" season={2026} />);
     const section = screen.getByText("Player game history").closest("section") as HTMLElement;
     expect(within(section).getByText("(+1.0)")).toBeInTheDocument();
   });
@@ -175,7 +175,7 @@ describe("TouchdownPlayerDetail RZ/Inside-10/Goal-Line deltas", () => {
       opponentGame({ gameId: "a", touchdownsAllowedByPosition: { QB: 0, RB: 0, WR: 3, TE: 0 } }),
       opponentGame({ gameId: "b", touchdownsAllowedByPosition: { QB: 0, RB: 0, WR: 1, TE: 0 } }),
     ];
-    render(<TouchdownPlayerDetail player={player("WR", { opponentHistory: games })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { opponentHistory: games })} window="2025" season={2026} />);
     const section = screen.getByText("Opponent game history").closest("section") as HTMLElement;
     // WR average allowed is 2; game "a" is 3, delta +1.0.
     expect(within(section).getByText("(+1.0)")).toBeInTheDocument();
@@ -184,7 +184,7 @@ describe("TouchdownPlayerDetail RZ/Inside-10/Goal-Line deltas", () => {
 
 describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () => {
   it("surfaces the secondary metrics moved out of the primary table with percentile context", () => {
-    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" season={2026} />);
     const detail = screen.getByTestId("touchdown-player-detail");
     const profile = within(detail).getByText("Scoring profile").closest("section") as HTMLElement;
     for (const label of ["TD/Game", "TD/Game Last 5", "Usage/G", "Team Usage %", "RZ Opp/G", "Inside 10 Opp/G", "Goal Line Opp/G", "RZ Share", "Goal Line Share"]) {
@@ -207,7 +207,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("gives the SZN and Last 5 opponent rows their own distinct favorable percentiles, not one shared value", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonPercentile: 99, opponentPositionTdsAllowedPerGameLast5Percentile: 6 } })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonPercentile: 99, opponentPositionTdsAllowedPerGameLast5Percentile: 6 } })} window="2025" season={2026} />);
     const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
     const szn = within(within(market).getByText("Opp TD/Game vs Pos SZN").closest("tr") as HTMLElement).getByText(/pctile$/);
     const l5 = within(within(market).getByText("Opp TD/Game vs Pos Last 5").closest("tr") as HTMLElement).getByText(/pctile$/);
@@ -219,7 +219,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("resolves identical raw opponent percentiles to the same tier", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonPercentile: 70, opponentPositionTdsAllowedPerGameLast5Percentile: 70 } })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonPercentile: 70, opponentPositionTdsAllowedPerGameLast5Percentile: 70 } })} window="2025" season={2026} />);
     const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
     const szn = within(within(market).getByText("Opp TD/Game vs Pos SZN").closest("tr") as HTMLElement).getByText(/pctile$/);
     const l5 = within(within(market).getByText("Opp TD/Game vs Pos Last 5").closest("tr") as HTMLElement).getByText(/pctile$/);
@@ -227,7 +227,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("heat-colors the percentile context with the shared JKB tier scale, elite gold at the top and red at the bottom", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { metrics: { components: { ...windowMetrics().components, tdSuccess: metric(0.2, 99), playerUsage: metric(1, 8) } } })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { components: { ...windowMetrics().components, tdSuccess: metric(0.2, 99), playerUsage: metric(1, 8) } } })} window="2025" season={2026} />);
     const detail = screen.getByTestId("touchdown-player-detail");
     const eliteRow = within(detail).getByText("TD/Game").closest("tr") as HTMLElement;
     const elite = within(eliteRow).getByText("99th pctile");
@@ -241,7 +241,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("lays Scoring Profile and Matchup & Market out in a responsive two-column grid on desktop", () => {
-    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" season={2026} />);
     const panels = screen.getByTestId("touchdown-detail-panels");
     expect(panels).toHaveClass("grid");
     expect(panels).toHaveClass("grid-cols-1");
@@ -255,7 +255,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("keeps Player Game History full width below the two-panel area", () => {
-    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" season={2026} />);
     const panels = screen.getByTestId("touchdown-detail-panels");
     const history = screen.getByText("Player game history").closest("section") as HTMLElement;
     expect(panels).not.toContainElement(history);
@@ -264,7 +264,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("stacks the two panels in a single column on mobile (Scoring Profile first)", () => {
-    render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR")} window="2025" season={2026} />);
     const panels = screen.getByTestId("touchdown-detail-panels");
     expect(panels).toHaveClass("grid-cols-1");
     const sections = Array.from(panels.querySelectorAll("section"));
@@ -273,7 +273,7 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("leaves Anytime TD Odds unavailable and adds no fabricated percentile context", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: null })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: null })} window="2025" season={2026} />);
     const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
     const oddsRow = within(market).getByText("Anytime TD Odds").closest("tr") as HTMLElement;
     expect(within(oddsRow).getByText("Unavailable")).toBeInTheDocument();
@@ -281,10 +281,38 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
   });
 
   it("renders the selected book and market implied probability when odds are available", () => {
-    render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsUpdatedAt: "2026-09-09T16:13:25Z" })} window="2025" />);
+    render(<TouchdownPlayerDetail player={player("WR", { anytimeTdOdds: 160, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3846, oddsUpdatedAt: "2026-09-09T16:13:25Z" })} window="2025" season={2026} />);
     const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
     expect(within(within(market).getByText("Anytime TD Odds").closest("tr") as HTMLElement).getByText("+160")).toBeInTheDocument();
     expect(within(within(market).getByText("Book").closest("tr") as HTMLElement).getByText("DraftKings")).toBeInTheDocument();
+    // Market Implied % may remain in the Matchup & Market detail context.
     expect(within(within(market).getByText("Market Implied %").closest("tr") as HTMLElement).getByText("38.5%")).toBeInTheDocument();
+  });
+});
+
+describe("TouchdownPlayerDetail Opp TD/Game vs Pos SZN provenance", () => {
+  const sznRow = (source: "current_season" | "prior_season_fallback" | null, value: number | null) => {
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonSource: source, opponentPositionTdsAllowedPerGameSeason: value } })} window="2026" season={2026} />);
+    const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
+    return within(market).getByText("Opp TD/Game vs Pos SZN").closest("tr") as HTMLElement;
+  };
+
+  it("labels a prior-season fallback value distinctly from a true current-season YTD value", () => {
+    const row = sznRow("prior_season_fallback", 0.6);
+    expect(within(row).getByText("2025 fallback")).toBeInTheDocument();
+    expect(within(row).getByText("0.60")).toBeInTheDocument();
+    expect(within(row).queryByText("2026 YTD")).not.toBeInTheDocument();
+  });
+
+  it("labels a current-season value as 2026 YTD", () => {
+    const row = sznRow("current_season", 0.75);
+    expect(within(row).getByText("2026 YTD")).toBeInTheDocument();
+    expect(within(row).getByText("0.75")).toBeInTheDocument();
+    expect(within(row).queryByText(/fallback/)).not.toBeInTheDocument();
+  });
+
+  it("adds no provenance subline when neither season sample exists", () => {
+    const row = sznRow(null, null);
+    expect(within(row).queryByText(/YTD|fallback/)).not.toBeInTheDocument();
   });
 });

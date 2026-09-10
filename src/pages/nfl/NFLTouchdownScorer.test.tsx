@@ -9,7 +9,7 @@ function windowMetrics(): TouchdownWindowMetrics {
   return { sampleState: "available", sampleGames: 1, sampleLabel: "2025 regular season · 1 game", tdPerGame: 1, tdLast5PerGame: 1, usagePerGame: 14,
     teamUsageShare: 0.28, rzOpportunitiesPerGame: 3, inside10OpportunitiesPerGame: 2, goalLineOpportunitiesPerGame: 1, rzOpportunityShare: 0.375,
     goalLineOpportunityShare: 0.333, impliedTeamPoints: 25, opponentTdOpportunitiesPerGame: 4.1, opponentPositionTdsAllowedPerGame: 1,
-    opponentPositionTdsAllowedPerGameSeason: 1, opponentPositionTdsAllowedPerGameLast5: 1,
+    opponentPositionTdsAllowedPerGameSeason: 1, opponentPositionTdsAllowedPerGameSeasonSource: "current_season", opponentPositionTdsAllowedPerGameLast5: 1,
     opponentPositionTdsAllowedPerGameSeasonPercentile: 50, opponentPositionTdsAllowedPerGameLast5Percentile: 50,
     tdSuccessRate: 0.08, components: { playerUsage: metric(1, 80), tdOpportunities: metric(75, 75), teamUsage: metric(0.28, 80), tdSuccess: metric(0.08, 80),
       opponentTdOpportunities: metric(70, 70), opponentPositionTdsAllowed: metric(1, 80), impliedTeamPoints: metric(25, 80) }, jkbTdScore: 79.5, scoreRank: 1, scorePoolSize: 6 };
