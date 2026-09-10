@@ -1,7 +1,6 @@
 import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
-import { MATCHUP_GROUP_BAND, MATCHUP_PANEL_CAPTION, MATCHUP_PANEL_TITLE } from "@/components/nfl/matchups/matchupTypography";
-import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import MatchupMetricTable, {
   type MatchupMetricTableRow,
@@ -95,49 +94,6 @@ function pairingIsDescriptive(offenseKey: string, defenseKey: string): boolean {
   return (
     getMetricDef(offenseKey)?.direction === "context-only" ||
     getMetricDef(defenseKey)?.direction === "context-only"
-  );
-}
-
-/**
- * One side of a possession header: crest, unit name and the role it is playing.
- *
- * The role caption is a restatement of the unit, not a judgement — "Attacking"
- * and "Defending" say who has the ball, and neither is presented as the better
- * position to be in.
- */
-function PossessionTeam({
-  team,
-  side,
-  unit,
-  align,
-}: {
-  team: NflMatchupTeam;
-  side: "away" | "home";
-  unit: "Offense" | "Defense";
-  /** Which edge of the header this side sits on. */
-  align: "start" | "end";
-}) {
-  const isEnd = align === "end";
-
-  return (
-    <div
-      className={`flex min-w-0 items-center gap-2 ${isEnd ? "flex-row-reverse text-right" : ""}`}
-    >
-      <NflTeamCrest team={team} side={side} size={44} className="matchup-unit-battle__crest" />
-      <div className="min-w-0">
-        <div className={`truncate ${MATCHUP_PANEL_TITLE}`}>
-          <span className="sm:hidden">
-            {team.abbr.toUpperCase()} {unit === "Offense" ? "Off" : "Def"}
-          </span>
-          <span className="hidden sm:inline">
-            {team.teamName} {unit}
-          </span>
-        </div>
-        <div className={`mt-0.5 ${MATCHUP_PANEL_CAPTION}`}>
-          {unit === "Offense" ? "Attacking" : "Defending"}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -279,16 +235,13 @@ function PossessionPanel({
     awayHasBall ? pairing.defenseKey : pairing.offenseKey;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-300">
-      <div className="matchup-unit-battle__header flex items-center justify-between gap-3 border-b-2 border-slate-300 bg-slate-100 px-3 py-3 sm:px-5 sm:py-4">
-        <PossessionTeam team={awayTeam} side="away" unit={awayUnit} align="start" />
-        <span className="shrink-0 text-[14px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
-          vs
-        </span>
-        <PossessionTeam team={homeTeam} side="home" unit={homeUnit} align="end" />
-      </div>
-
-      <div>
+    <div className="space-y-2">
+      <MatchupComparisonTeamHeader
+        matchup={matchup}
+        sticky
+        unit={{ away: awayUnit, home: homeUnit }}
+      />
+      <div className="matchup-metric-table-group matchup-metric-table-group--wide">
         {UNIT_BATTLE_GROUPS.filter((group) => group.id === activeGroup).map((group) => {
           const rows = group.pairings.flatMap((pairing) =>
             buildPairingRows({
@@ -304,7 +257,7 @@ function PossessionPanel({
           );
           return (
             <div key={group.id}>
-              <h4 className={MATCHUP_GROUP_BAND}>{group.label}</h4>
+              <h4 className="matchup-metric-table-group__subhead">{group.label}</h4>
               <MatchupMetricTable
                 variant="detail"
                 edgeDifference={false}

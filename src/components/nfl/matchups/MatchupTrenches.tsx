@@ -1,6 +1,6 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
-import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
 import MatchupMetricTable, {
   type MatchupMetricTableRow,
 } from "@/components/nfl/matchups/MatchupMetricTable";
@@ -108,44 +108,32 @@ export default function MatchupTrenches({
       subtitle="Line-of-scrimmage win rates. Context only — not an input to the JKB spread model."
       bodyClassName="matchup-dense-section-body"
     >
-      <div className="space-y-2.5">
+      <div className="space-y-4">
         {possessions.map(({ key, awayIsOffense, offense }) => (
-          <div key={key} className="matchup-metric-table-group">
-            {/*
-              The crests and role labels below always place `away` on the left
-              and `home` on the right — the same orientation the rows beneath
-              enforce — even though the offense/defense roles swap between the
-              two possessions.
-            */}
-            <h3 className="matchup-metric-table-group__head text-[10px] font-black uppercase tracking-[0.1em] text-slate-900">
-              <span className="sr-only">{offense.teamName} has the ball</span>
-              <span aria-hidden className="flex items-center gap-1.5">
-                <NflTeamCrest team={away} side="away" size={22} />
-                <span>{away.abbr.toUpperCase()}</span>
-                <span className="font-bold text-slate-500">
-                  {awayIsOffense ? "offense" : "defense"}
-                </span>
-              </span>
-              <span aria-hidden className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                vs
-              </span>
-              <span aria-hidden className="flex flex-row-reverse items-center gap-1.5 text-right">
-                <NflTeamCrest team={home} side="home" size={22} />
-                <span>{home.abbr.toUpperCase()}</span>
-                <span className="font-bold text-slate-500">
-                  {awayIsOffense ? "defense" : "offense"}
-                </span>
-              </span>
-            </h3>
-            <MatchupMetricTable
-              variant="detail"
-              edgeDifference={false}
-              metrics={possessionRows(away, home, awayIsOffense, trench)}
+          // Away always left, home always right — the same orientation the rows
+          // enforce — even though the offense/defense roles swap between the two
+          // possessions.
+          <div key={key} className="space-y-2">
+            <MatchupComparisonTeamHeader
               matchup={matchup}
-              caption={`Line-of-scrimmage win rates with ${
-                awayIsOffense ? away.teamName : home.teamName
-              } on offense`}
+              sticky
+              possession={`${offense.teamName} has the ball`}
+              unit={{
+                away: awayIsOffense ? "Offense" : "Defense",
+                home: awayIsOffense ? "Defense" : "Offense",
+              }}
             />
+            <div className="matchup-metric-table-group matchup-metric-table-group--wide">
+              <MatchupMetricTable
+                variant="detail"
+                edgeDifference={false}
+                metrics={possessionRows(away, home, awayIsOffense, trench)}
+                matchup={matchup}
+                caption={`Line-of-scrimmage win rates with ${
+                  awayIsOffense ? away.teamName : home.teamName
+                } on offense`}
+              />
+            </div>
           </div>
         ))}
       </div>
