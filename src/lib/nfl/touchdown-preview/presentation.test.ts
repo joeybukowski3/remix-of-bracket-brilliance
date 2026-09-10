@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "./types";
 import {
   OPPONENT_POSITION_TD_ALLOWED_LABEL,
+  buildTouchdownBoardHeat,
   formatTouchdownMatchupLabel,
+  touchdownBoardPercentile,
   touchdownMatchupKey,
 } from "./presentation";
 
@@ -28,6 +31,40 @@ describe("touchdownMatchupKey", () => {
 describe("formatTouchdownMatchupLabel", () => {
   it("renders a spaced label from the canonical key", () => {
     expect(formatTouchdownMatchupLabel("ne@sea")).toBe("ne @ sea");
+  });
+});
+
+describe("buildTouchdownBoardHeat", () => {
+  const mk = (position: TouchdownPosition, tdPerGame: number, tdLast5PerGame: number, teamUsageShare: number): TouchdownPreviewPlayer => {
+    const metrics = { tdPerGame, tdLast5PerGame, teamUsageShare } as unknown as TouchdownWindowMetrics;
+    return { position, windows: { "2025": metrics, "2026": metrics, last8: metrics } } as unknown as TouchdownPreviewPlayer;
+  };
+
+  it("grades a raw value against the full pool, not the player's position", () => {
+    const heat = buildTouchdownBoardHeat(
+      [mk("WR", 1, 1, 0.2), mk("RB", 1, 1, 0.2), mk("TE", 3, 3, 0.5)],
+      "2025",
+    );
+    // Bottom of a 3-value pool -> 0th percentile; top -> above 0.
+    expect(touchdownBoardPercentile(1, heat.tdPerGame)).toBe(0);
+    expect(touchdownBoardPercentile(3, heat.tdPerGame)).toBeGreaterThan(0);
+  });
+
+  it("maps identical raw values to an identical percentile across positions", () => {
+    const heat = buildTouchdownBoardHeat(
+      [mk("WR", 2, 2, 0.3), mk("RB", 2, 2, 0.1), mk("QB", 0.5, 0.5, 0.05)],
+      "2025",
+    );
+    const wr = touchdownBoardPercentile(2, heat.tdPerGame);
+    const rb = touchdownBoardPercentile(2, heat.tdPerGame);
+    expect(wr).toBe(rb);
+    expect(wr).toBeGreaterThan(0);
+  });
+
+  it("returns null for a value outside the pool or a missing value", () => {
+    const heat = buildTouchdownBoardHeat([mk("WR", 1, 1, 0.2), mk("RB", 2, 2, 0.3)], "2025");
+    expect(touchdownBoardPercentile(9, heat.tdPerGame)).toBeNull();
+    expect(touchdownBoardPercentile(null, heat.tdPerGame)).toBeNull();
   });
 });
 

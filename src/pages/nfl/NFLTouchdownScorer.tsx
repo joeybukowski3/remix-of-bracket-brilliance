@@ -4,7 +4,7 @@ import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import TouchdownScorerTable from "@/components/nfl/touchdown-preview/TouchdownScorerTable";
 import { useNflTouchdownPreview } from "@/hooks/useNflTouchdownPreview";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { DEFAULT_TOUCHDOWN_SORT, formatTouchdownMatchupLabel, nextTouchdownSort, sortTouchdownPlayers, touchdownMatchupKey, type TouchdownSort } from "@/lib/nfl/touchdown-preview/presentation";
+import { buildTouchdownBoardHeat, DEFAULT_TOUCHDOWN_SORT, formatTouchdownMatchupLabel, nextTouchdownSort, sortTouchdownPlayers, touchdownMatchupKey, type TouchdownSort } from "@/lib/nfl/touchdown-preview/presentation";
 import type { TouchdownPosition, TouchdownWindowKey } from "@/lib/nfl/touchdown-preview/types";
 
 const WINDOW_OPTIONS: readonly TouchdownWindowKey[] = ["2025", "2026", "last8"];
@@ -22,6 +22,10 @@ export default function NFLTouchdownScorer() {
   const teams = useMemo(() => ["all", ...[...new Set(players.map((player) => player.team))].sort()], [players]);
   const matchups = useMemo(() => ["all", ...[...new Set(players.map((player) => touchdownMatchupKey(player.team, player.opponent)))].sort()], [players]);
   const visible = useMemo(() => sortTouchdownPlayers(players.filter((player) => (position === "all" || player.position === position) && (team === "all" || player.team === team) && (matchup === "all" || touchdownMatchupKey(player.team, player.opponent) === matchup) && player.playerName.toLowerCase().includes(search.trim().toLowerCase())), window, sort), [players, position, team, matchup, search, window, sort]);
+  // Board-cell heat is graded once over the full candidate population for this
+  // window, so identical raw values always share a color regardless of the
+  // active position/team/matchup filter.
+  const heat = useMemo(() => buildTouchdownBoardHeat(players, window), [players, window]);
   const windowContext = window === "2025" ? "2025 regular season · player samples vary by games played" : window === "2026" ? "Completed 2026 regular-season games only" : "Latest eight applicable games · crosses season boundaries";
   return <div className="w-full">
     <NflPageHeader eyebrow="Markets & Predictions" title="TD Scorer" description={<><strong>JKB TD Score</strong> is a relative 0–100 player rating for touchdown-scoring equity. It is not a calibrated probability, fair price, or sportsbook edge.</>}>
@@ -44,7 +48,7 @@ export default function NFLTouchdownScorer() {
       ) : source.error ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{source.error} Refresh after generating the touchdown preview artifact.</div>
       ) : visible.length ? (
-        <TouchdownScorerTable players={visible} window={window} sort={sort} onSort={(key) => setSort((current) => nextTouchdownSort(current, key))} />
+        <TouchdownScorerTable players={visible} window={window} heat={heat} sort={sort} onSort={(key) => setSort((current) => nextTouchdownSort(current, key))} />
       ) : (
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">No players match these filters.</div>
       )}

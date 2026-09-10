@@ -4,7 +4,7 @@ import TeamLogo from "@/components/TeamLogo";
 import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW } from "@/components/ui/dense-table";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { sportsbookDisplayName } from "@/lib/nfl/bettingLinesView";
-import type { TouchdownSort, TouchdownSortKey } from "@/lib/nfl/touchdown-preview/presentation";
+import { touchdownBoardPercentile, type TouchdownBoardHeat, type TouchdownSort, type TouchdownSortKey } from "@/lib/nfl/touchdown-preview/presentation";
 import type { TouchdownPreviewPlayer, TouchdownWindowKey } from "@/lib/nfl/touchdown-preview/types";
 import { cn } from "@/lib/utils";
 import TouchdownMetricCell from "./TouchdownMetricCell";
@@ -15,7 +15,7 @@ const fmt2 = (value: number) => value.toFixed(2);
 const fmtPct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const fmtOdds = (value: number) => (value > 0 ? `+${value}` : `${value}`);
 
-/** Columns hidden on phones — restored from `md` up. Keeps the mobile list to Player / Score / Anytime TD / Usage. */
+/** Columns hidden on phones — restored from `md` up. Keeps the mobile list to Player / Score / Anytime TD / Team Usage %. */
 const DESKTOP_ONLY = "hidden md:table-cell";
 
 /**
@@ -54,7 +54,7 @@ function Header({ label, sortKey, sort, onSort, title, className }: { label: str
   </th>;
 }
 
-export default function TouchdownScorerTable({ players, window, sort, onSort }: { players: readonly TouchdownPreviewPlayer[]; window: TouchdownWindowKey; sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void }) {
+export default function TouchdownScorerTable({ players, window, heat, sort, onSort }: { players: readonly TouchdownPreviewPlayer[]; window: TouchdownWindowKey; heat: TouchdownBoardHeat; sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   return <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm" data-testid="touchdown-table">
     <DenseTableScroller label="NFL touchdown scorer rankings" data-testid="touchdown-table-scroller">
@@ -67,8 +67,9 @@ export default function TouchdownScorerTable({ players, window, sort, onSort }: 
           <Header label="JKB TD Score" sortKey="score" sort={sort} onSort={onSort} title="Relative 0–100 player rating; not a touchdown probability" />
           <Header label="Anytime TD" sortKey="anytimeTd" sort={sort} onSort={onSort} title="Best approved-sportsbook price for this player to score a touchdown anytime, with the offering book beneath" />
           <Header label="Mkt Implied %" sortKey="marketImplied" sort={sort} onSort={onSort} title="Sportsbook-implied probability from the Anytime TD price, including vig -- not the JKB TD Score converted to a probability" className={DESKTOP_ONLY} />
-          <Header label="TD/G" sortKey="tdPerGame" sort={sort} onSort={onSort} className={DESKTOP_ONLY} />
-          <Header label="Usage" sortKey="usage" sort={sort} onSort={onSort} />
+          <Header label="TD/G" sortKey="tdPerGame" sort={sort} onSort={onSort} className={DESKTOP_ONLY} title="Touchdowns per game across the selected window; color is a full-board percentile, not position-relative" />
+          <Header label="TD/G L5" sortKey="tdLast5" sort={sort} onSort={onSort} className={DESKTOP_ONLY} title="Touchdowns per game over the last 5 applicable games; color is a full-board percentile, not position-relative" />
+          <Header label="Team Usage %" sortKey="teamUsage" sort={sort} onSort={onSort} title="Player's share of the team's scorer opportunities; color is a full-board percentile" />
         </tr></thead>
         <tbody>{players.map((player) => {
           const metrics = player.windows[window]; const open = expanded === player.playerId;
@@ -87,9 +88,10 @@ export default function TouchdownScorerTable({ players, window, sort, onSort }: 
             <td className="px-2 py-1.5 text-center align-top"><TouchdownMetricCell value={metrics.jkbTdScore} percentile={scorePercentile} format={fmt1} prominent rank={metrics.scoreRank} poolSize={metrics.scorePoolSize} /></td>
             <td className="px-2 py-1.5 text-center align-top"><AnytimeTdCell odds={player.anytimeTdOdds} book={player.anytimeTdBook} oddsSourceState={player.oddsSourceState} /></td>
             <td className={cn("px-2 py-1.5 text-center align-top tabular-nums text-slate-700", DESKTOP_ONLY)}>{player.marketImpliedProbability == null ? <span className="text-slate-400">—</span> : fmtPct(player.marketImpliedProbability)}</td>
-            <td className={cn("px-2 py-1.5 text-center align-top", DESKTOP_ONLY)}><TouchdownMetricCell value={metrics.tdPerGame} percentile={metrics.components.tdSuccess.percentile} format={fmt2} /></td>
-            <td className="px-2 py-1.5 text-center align-top"><TouchdownMetricCell value={metrics.usagePerGame} percentile={metrics.components.playerUsage.percentile} format={fmt1} /></td>
-          </tr>{open && <tr><td colSpan={9} className="p-0">
+            <td className={cn("px-2 py-1.5 text-center align-top", DESKTOP_ONLY)}><TouchdownMetricCell value={metrics.tdPerGame} percentile={touchdownBoardPercentile(metrics.tdPerGame, heat.tdPerGame)} format={fmt2} /></td>
+            <td className={cn("px-2 py-1.5 text-center align-top", DESKTOP_ONLY)}><TouchdownMetricCell value={metrics.tdLast5PerGame} percentile={touchdownBoardPercentile(metrics.tdLast5PerGame, heat.tdLast5PerGame)} format={fmt2} /></td>
+            <td className="px-2 py-1.5 text-center align-top"><TouchdownMetricCell value={metrics.teamUsageShare} percentile={touchdownBoardPercentile(metrics.teamUsageShare, heat.teamUsageShare)} format={fmtPct} /></td>
+          </tr>{open && <tr><td colSpan={10} className="p-0">
             {/* Pin the detail panel to the viewport so the narrow mobile table cell
                 cannot be stretched wide by the inner history tables. */}
             <div className="w-[calc(100vw-2rem)] max-w-full md:w-auto"><TouchdownPlayerDetail player={player} window={window} /></div>
