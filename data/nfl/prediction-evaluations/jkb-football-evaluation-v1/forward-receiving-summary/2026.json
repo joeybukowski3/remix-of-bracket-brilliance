@@ -1,0 +1,144 @@
+{
+  "by_role_conflict": {
+    "HIGH": {
+      "insufficient_sample": true,
+      "n": 0,
+      "receiving_yards_mae": null,
+      "target_bias": null,
+      "target_mae": null
+    },
+    "LOW": {
+      "insufficient_sample": true,
+      "n": 16,
+      "receiving_yards_mae": 19.112172179031834,
+      "target_bias": 0.8468755792266112,
+      "target_mae": 2.168079053945785
+    },
+    "MEDIUM": {
+      "insufficient_sample": true,
+      "n": 0,
+      "receiving_yards_mae": null,
+      "target_bias": null,
+      "target_mae": null
+    },
+    "NULL": {
+      "insufficient_sample": true,
+      "n": 3,
+      "receiving_yards_mae": 7.105667546762642,
+      "target_bias": 0.7811568480869626,
+      "target_mae": 0.7811568480869626
+    }
+  },
+  "cohorts": {
+    "noHistory": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 0.7811568480869626,
+      "mean_signed_target_error": 0.7811568480869626,
+      "n": 3
+    },
+    "orderingConflict": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.3723418079470293,
+      "mean_signed_target_error": -0.32929081603193655,
+      "n": 7
+    },
+    "overall": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 1.949091337231234,
+      "mean_signed_target_error": 0.8364989374677193,
+      "n": 19
+    },
+    "roleConflictHigh": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": null,
+      "mean_signed_target_error": null,
+      "n": 0
+    },
+    "roleConflictLow": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.168079053945785,
+      "mean_signed_target_error": 0.8468755792266112,
+      "n": 16
+    },
+    "roleConflictMedium": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": null,
+      "mean_signed_target_error": null,
+      "n": 0
+    },
+    "sameTeam": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.0678809016521953,
+      "mean_signed_target_error": 0.5579340734017114,
+      "n": 14
+    },
+    "sourcedTE1": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.4880652130518235,
+      "mean_signed_target_error": 2.4880652130518235,
+      "n": 2
+    },
+    "sourcedWR1": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.327732827365339,
+      "mean_signed_target_error": 1.2138192135383319,
+      "n": 2
+    },
+    "sourcedWR2": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.521087170904983,
+      "mean_signed_target_error": 2.521087170904983,
+      "n": 2
+    },
+    "teamChanged": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 2.8694661200009097,
+      "mean_signed_target_error": 2.8694661200009097,
+      "n": 2
+    },
+    "week1": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 1.949091337231234,
+      "mean_signed_target_error": 0.8364989374677193,
+      "n": 19
+    },
+    "weeks1to4": {
+      "insufficient_sample": true,
+      "mean_absolute_target_error": 1.949091337231234,
+      "mean_signed_target_error": 0.8364989374677193,
+      "n": 19
+    }
+  },
+  "completed_weeks": 1,
+  "diagnostic_available": 19,
+  "diagnostic_coverage_rate": 1,
+  "diagnostic_unavailable": 0,
+  "evaluated_player_games": 19,
+  "generated_at": "2026-09-10T14:24:13.567Z",
+  "high_conflict_by_team_change": {
+    "high_conflict_same_team": {
+      "n": 0,
+      "target_mae": null
+    },
+    "high_conflict_team_changed": {
+      "n": 0,
+      "target_mae": null
+    }
+  },
+  "prediction_type": "receiving",
+  "receiving_yards_mae": 17.216408289726168,
+  "same_team_vs_team_changed": {
+    "same_team": {
+      "n": 14,
+      "target_mae": 2.0678809016521953
+    },
+    "team_changed": {
+      "n": 2,
+      "target_mae": 2.8694661200009097
+    }
+  },
+  "schema_version": "jkb-football-forward-evaluation-v1",
+  "season": 2026,
+  "target_bias": 0.8364989374677193,
+  "target_mae": 1.949091337231234
+}
