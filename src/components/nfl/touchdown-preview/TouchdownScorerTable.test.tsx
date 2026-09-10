@@ -27,12 +27,33 @@ function player(overrides: Partial<TouchdownPreviewPlayer> = {}): TouchdownPrevi
 }
 
 describe("TouchdownScorerTable", () => {
-  it("renders the dense desktop table and remains horizontally usable at narrow widths", () => {
+  it("renders a reduced primary column set and contains overflow in the scroller", () => {
     render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
     expect(screen.getByText("Ja'Marr Chase")).toBeInTheDocument();
     expect(screen.getByText("JKB TD Score")).toBeInTheDocument();
     expect(screen.getByTestId("touchdown-table-scroller")).toHaveClass("overflow-x-auto");
-    expect(screen.getByRole("table")).toHaveClass("min-w-[2010px]");
+    // No 1700px+ minimum-width surface anymore; desktop min-width is modest and mobile is fluid.
+    expect(screen.getByRole("table")).toHaveClass("md:min-w-[900px]");
+    expect(screen.getByRole("table")).not.toHaveClass("min-w-[2010px]");
+  });
+
+  it("shows Matchup instead of separate Team/Opp columns and drops the standalone Book header", () => {
+    render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    const headers = screen.getAllByRole("columnheader").map((cell) => cell.textContent?.trim());
+    expect(headers).toContain("Matchup");
+    expect(headers).not.toContain("Team");
+    expect(headers).not.toContain("Opp");
+    expect(headers).not.toContain("Book");
+    // Secondary metrics are no longer primary-table headers.
+    expect(headers).not.toContain("RZ Opp/G");
+    expect(headers).not.toContain("Team Usage %");
+  });
+
+  it("renders the bookmaker as secondary text under the Anytime TD price, not as its own column", () => {
+    render(<TouchdownScorerTable players={[player({ anytimeTdOdds: 230, anytimeTdBook: "draftkings", marketImpliedProbability: 0.3, oddsSourceState: "available" })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    const priceCell = screen.getByText("+230").closest("td") as HTMLElement;
+    expect(within(priceCell).getByText("DraftKings")).toBeInTheDocument();
+    expect(screen.getAllByText("DraftKings")).toHaveLength(1);
   });
 
   it("expands one compact row and renders player and opponent histories vertically", () => {
@@ -57,7 +78,22 @@ describe("TouchdownScorerTable", () => {
   it("renders a safe unavailable state for a player with no Anytime TD quote", () => {
     render(<TouchdownScorerTable players={[player({ anytimeTdOdds: null, anytimeTdBook: null, marketImpliedProbability: null })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
     const dashes = screen.getAllByText("—");
-    expect(dashes.length).toBeGreaterThanOrEqual(3); // odds, book, implied %
+    expect(dashes.length).toBeGreaterThanOrEqual(2); // Anytime TD price, Mkt Implied %
+  });
+
+  it("keeps a compact mobile column set: hides Matchup/Pos/Mkt Implied/TD-per-game and adds an identity subline", () => {
+    render(<TouchdownScorerTable players={[player()]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    const matchupHeader = screen.getByRole("columnheader", { name: /Matchup/ });
+    expect(matchupHeader).toHaveClass("hidden");
+    expect(matchupHeader).toHaveClass("md:table-cell");
+    // Mobile-only identity line under the player name.
+    expect(screen.getByText("cin @ cle · WR", { exact: false })).toBeInTheDocument();
+  });
+
+  it("still renders a frozen suspended-odds state", () => {
+    render(<TouchdownScorerTable players={[player({ anytimeTdOdds: 145, anytimeTdBook: "fanduel", oddsSourceState: "suspended" })]} window="2025" sort={DEFAULT_TOUCHDOWN_SORT} onSort={vi.fn()} />);
+    expect(screen.getByText("+145")).toBeInTheDocument();
+    expect(screen.getByText("Suspended")).toBeInTheDocument();
   });
 
   it("uses bettor-perspective canonical heat and gives missing values no fake heat", () => {
