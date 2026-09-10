@@ -1,47 +1,28 @@
 {
-  "date": "2026-09-09",
-  "generatedAt": "2026-09-09T18:50:58.475Z",
+  "date": "2026-09-10",
+  "generatedAt": "2026-09-10T12:17:21.931Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) hosts four of the top eight HR scores against right-hander Tomoyuki Sugano, whose 86.3 HR/9 rate against the Yankees creates a massive park-plus-pitcher boost. Camden Yards (1.1) and Kauffman Stadium (0.96) add secondary value, while Petco (0.89) caps Tatis despite his recent power surge. Sugano and Gallen both carry elevated HR vulnerability, setting up a concentrated power environment.",
-    "modelNote": "The model is overweighting park factor and opposing pitcher HR rate, pushing the entire Yankees stack to the top while discounting barrel and exit velo in favor of matchup and venue leverage."
+    "slateOverview": "Coors and Citizens Bank Park anchor the slate with 1.18 and 1.17 park factors, while Yankee Stadium and Truist Park add neutral-to-slight boosts. Ryan Feltner and Cristian Javier are the primary targets, each allowing 62-plus HR per 500 PA, and the lefty-righty splits favor the top-ranked bats against Martín Pérez. Warm, dry conditions are expected across the East Coast venues, amplifying fly-ball carry.",
+    "modelNote": "The model is overweighting barrel rate, opposing pitcher HR rate, and park factor, which is why Schwarber, García Jr., and Rice occupy the top three spots despite Judge’s recent power drought."
   },
   "bestBets": [
     {
-      "player": "Aaron Judge",
-      "team": "NYY",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "HOU",
+      "opposingPitcher": "Cristian Javier",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=21.5%",
-        "HH=57.6%"
+        "barrel=17.1%",
+        "HH=49.7%"
       ],
       "bullets": [
-        "park=1.18",
-        "hrScore=75.6"
+        "hrScore=77.8",
+        "park=1.17"
       ],
-      "hrOddsYes": "+219",
-      "marketImpliedProbability": 0.31347962382445144,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=14.3%",
-        "HH=48.6%"
-      ],
-      "bullets": [
-        "park=1.18",
-        "hrScore=75.6"
-      ],
-      "hrOddsYes": "+243",
-      "marketImpliedProbability": 0.2915451895043732,
+      "hrOddsYes": "+176",
+      "marketImpliedProbability": 0.36231884057971014,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -49,115 +30,134 @@
       "player": "Luis García Jr.",
       "team": "NYY",
       "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=12.3%",
+        "HH=46.8%"
+      ],
+      "bullets": [
+        "hrScore=71.6",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=12.1%",
-        "HH=46.5%"
+        "barrel=14.2%",
+        "HH=48.3%"
       ],
       "bullets": [
-        "park=1.18",
-        "hrScore=72.1"
+        "hrScore=70.1",
+        "park=1.18"
       ],
-      "hrOddsYes": "+356",
-      "marketImpliedProbability": 0.21929824561403508,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "AZ",
-      "opposingPitcher": "Zac Gallen",
+      "player": "Aaron Judge",
+      "team": "NYY",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=83.2",
-        "Hard Hit%=50.7"
+        "Pitcher HR VS=62.6",
+        "Hard Hit%=57.1"
       ],
       "bullets": [
-        "HR score 70.5 (#4)",
-        "Pitcher HR VS 83.2 at park 0.96"
+        "HR score 69.9 (#4)",
+        "Pitcher HR VS 62.6 at park 1.18"
       ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+200",
+      "marketImpliedProbability": 0.3333333333333333,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "WSH",
-      "opposingPitcher": "Jackson Kent",
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "ATL",
+      "opposingPitcher": "Martín Pérez",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=56.7",
-        "Hard Hit%=54.2"
+        "Hard Hit%=50.5",
+        "Pitcher HR VS=44.5"
       ],
       "bullets": [
-        "HR score 70.3 (#5)",
-        "Pitcher HR VS 56.7 at park 0.89"
+        "HR score 65.2 (#5)",
+        "Pitcher HR VS 44.5 at park 1.03"
       ],
-      "hrOddsYes": "+473",
-      "marketImpliedProbability": 0.17452006980802792,
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "AZ",
-      "opposingPitcher": "Zac Gallen",
+      "player": "Aaron Judge",
+      "team": "NYY",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=12%",
-        "HH=50.7%"
+        "barrel=21.1%",
+        "HH=57.1%"
       ],
       "bullets": [
-        "park=0.96",
-        "hrScore=70.5"
+        "hrScore=69.9",
+        "park=1.18"
       ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+200",
+      "marketImpliedProbability": 0.3333333333333333,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Fernando Tatis Jr.",
-      "team": "SD",
-      "opponent": "WSH",
-      "opposingPitcher": "Jackson Kent",
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "ATL",
+      "opposingPitcher": "Martín Pérez",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=12.6%",
-        "HH=54.2%"
+        "barrel=13.2%",
+        "HH=50.5%"
       ],
       "bullets": [
-        "park=0.89",
-        "hrScore=70.3"
+        "hrScore=65.2",
+        "park=1.03"
       ],
-      "hrOddsYes": "+473",
-      "marketImpliedProbability": 0.17452006980802792,
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "CLE",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 7,
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "PHI",
+      "opposingPitcher": "Zack Wheeler",
+      "hrScoreRank": 6,
       "topStats": [
-        "barrel=14%",
-        "HH=56.9%"
+        "barrel=16%",
+        "HH=52.9%"
       ],
       "bullets": [
-        "park=1.1",
-        "hrScore=66.5"
+        "hrScore=62.5",
+        "park=1.17"
       ],
-      "hrOddsYes": "+339",
-      "marketImpliedProbability": 0.22779043280182232,
+      "hrOddsYes": "+230",
+      "marketImpliedProbability": 0.30303030303030304,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -165,37 +165,37 @@
       "player": "Spencer Jones",
       "team": "NYY",
       "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 8,
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=86.3",
-        "Hard Hit%=55.5"
+        "Pitcher HR VS=62.6",
+        "Hard Hit%=55.4"
       ],
       "bullets": [
-        "HR score 65.3 (#8)",
-        "Pitcher HR VS 86.3 at park 1.18"
+        "HR score 61.5 (#7)",
+        "Pitcher HR VS 62.6 at park 1.18"
       ],
-      "hrOddsYes": "+249",
-      "marketImpliedProbability": 0.28653295128939826,
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Riley Greene",
-      "team": "DET",
-      "opponent": "MIN",
-      "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 9,
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "PIT",
+      "opposingPitcher": "Jared Jones",
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=66.8",
-        "Hard Hit%=47.9"
+        "Hard Hit%=57.5",
+        "Pitcher HR VS=52.5"
       ],
       "bullets": [
-        "HR score 64.2 (#9)",
-        "Pitcher HR VS 66.8 at park 0.95"
+        "HR score 60.4 (#8)",
+        "Pitcher HR VS 52.5 at park 1.07"
       ],
-      "hrOddsYes": "+373",
-      "marketImpliedProbability": 0.21141649048625794,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -205,75 +205,75 @@
       "player": "Spencer Jones",
       "team": "NYY",
       "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=15.6%",
+        "HH=55.4%"
+      ],
+      "bullets": [
+        "hrScore=61.5",
+        "park=1.18"
+      ],
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "PIT",
+      "opposingPitcher": "Jared Jones",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=15.8%",
-        "HH=55.5%"
+        "barrel=19.3%",
+        "HH=57.5%"
       ],
       "bullets": [
-        "park=1.18",
-        "hrScore=65.3"
+        "hrScore=60.4",
+        "park=1.07"
       ],
-      "hrOddsYes": "+249",
-      "marketImpliedProbability": 0.28653295128939826,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Riley Greene",
-      "team": "DET",
-      "opponent": "MIN",
-      "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 9,
-      "topStats": [
-        "barrel=15.2%",
-        "HH=47.9%"
-      ],
-      "bullets": [
-        "park=0.95",
-        "hrScore=64.2"
-      ],
-      "hrOddsYes": "+373",
-      "marketImpliedProbability": 0.21141649048625794,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yohandy Morales",
-      "team": "WSH",
-      "opponent": "SD",
-      "opposingPitcher": "Walker Buehler",
-      "hrScoreRank": 15,
-      "topStats": [
-        "Hard Hit%=87.5",
-        "Pitcher HR VS=48.8"
-      ],
-      "bullets": [
-        "HR score 60.3 (#15)",
-        "Pitcher HR VS 48.8 at park 0.89"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Rafael Flores Jr.",
-      "team": "PIT",
-      "opponent": "CWS",
-      "opposingPitcher": "Davis Martin",
+      "player": "Jonathan Aranda",
+      "team": "TB",
+      "opponent": "ATL",
+      "opposingPitcher": "Martín Pérez",
       "hrScoreRank": 16,
       "topStats": [
-        "Pitcher HR VS=55.3",
-        "Hard Hit%=47.1"
+        "Hard Hit%=45.5",
+        "Pitcher HR VS=44.5"
       ],
       "bullets": [
-        "HR score 60.0 (#16)",
-        "Pitcher HR VS 55.3 at park 1.07"
+        "HR score 54.0 (#16)",
+        "Pitcher HR VS 44.5 at park 1.03"
       ],
-      "hrOddsYes": "+670",
-      "marketImpliedProbability": 0.12987012987012986,
+      "hrOddsYes": "+625",
+      "marketImpliedProbability": 0.13793103448275862,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Alec Bohm",
+      "team": "PHI",
+      "opponent": "HOU",
+      "opposingPitcher": "Cristian Javier",
+      "hrScoreRank": 22,
+      "topStats": [
+        "Pitcher HR VS=63.0",
+        "Hard Hit%=43.2"
+      ],
+      "bullets": [
+        "HR score 48.9 (#22)",
+        "Pitcher HR VS 63.0 at park 1.17"
+      ],
+      "hrOddsYes": "+600",
+      "marketImpliedProbability": 0.14285714285714285,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
