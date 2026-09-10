@@ -1,11 +1,14 @@
+import type { CSSProperties } from "react";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import MatchupMetricTable, {
   type MatchupMetricTableRow,
 } from "@/components/nfl/matchups/MatchupMetricTable";
 import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { classifyMetricComparison } from "@/lib/nfl/matchupCategoryAdvantage";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 import {
   SUCCESS_PERIOD_LABELS,
@@ -21,15 +24,15 @@ import {
  * and no week-indexed series exist in any artifact.
  *
  * Which periods appear is decided once per matchup by `resolveSuccessPeriods()`
- * and both teams always move together — a comparison where one side showed Last
- * 5 and the other Last 8 would not be a comparison.
+ * and both teams always move together.
  *
- * Presentation is the shared `MatchupMetricTable` — the same bordered table the
- * Statistical Comparison and Overview snapshot use — one titled group per
- * metric, one row per visible period. RBSDM publishes a rank per split, so team
- * cells show the league rank when it exists and fall back to the raw percentage
- * when a split is unranked (never a fabricated position). The Edge keeps the
- * existing raw percentage-point gap. Nothing here scrolls sideways.
+ * Presentation follows the approved mockup: a responsive two-column grid of
+ * compact metric cards (one column when narrow). Each card carries a thin split
+ * team-colour cap, a tinted head with both crests and the centred metric title,
+ * then the shared `MatchupMetricTable` comparison row(s) — one per visible
+ * period. RBSDM publishes a rank per split, so team cells show the league rank
+ * when it exists and fall back to the raw percentage when a split is unranked.
+ * Nothing here scrolls sideways and no window logic changes.
  */
 export default function MatchupPeriodComparison({
   matchup,
@@ -79,6 +82,13 @@ export default function MatchupPeriodComparison({
     return { key, label, help: def?.help, rows };
   });
 
+  const awayColor = nflTeamColorFor(away);
+  const homeColor = nflTeamColorFor(home);
+  const cardStyle = {
+    ...(awayColor ? { "--team-away": awayColor } : {}),
+    ...(homeColor ? { "--team-home": homeColor } : {}),
+  } as CSSProperties;
+
   return (
     <MatchupSectionCard
       eyebrow="Over time"
@@ -88,24 +98,36 @@ export default function MatchupPeriodComparison({
       subtitle={note}
       bodyClassName="px-0 py-0 sm:px-0"
     >
-      <div className="space-y-2 px-3 py-3 sm:px-4">
-        <MatchupComparisonTeamHeader matchup={matchup} sticky />
+      <div className="px-3 py-3 sm:px-4">
+        {/* Section-scoped sticky team header — the anchor that pins beneath the
+            page tab bar while this section is scrolled on a phone. It is a
+            direct child of this tall container so it stays pinned for the whole
+            section; desktop uses the per-card crests instead. */}
+        <MatchupComparisonTeamHeader matchup={matchup} sticky className="sm:hidden" />
 
-        {groups.map((group) => (
-          <div key={group.key} className="matchup-metric-table-group">
-            <div className="matchup-metric-table-group__head">
-              <span className="matchup-metric-table-group__title" title={group.help}>
-                {group.label}
-              </span>
+        <div className="matchup-sr-grid">
+          {groups.map((group) => (
+            <div key={group.key} className="matchup-sr-card" style={cardStyle}>
+              <div className="matchup-sr-card__cap" aria-hidden="true">
+                <i />
+                <i />
+              </div>
+              <div className="matchup-sr-card__head">
+                <NflTeamCrest team={away} side="away" size={24} label={`${away.teamName} (away)`} />
+                <span className="matchup-sr-card__title" title={group.help}>
+                  {group.label}
+                </span>
+                <NflTeamCrest team={home} side="home" size={24} label={`${home.teamName} (home)`} />
+              </div>
+              <MatchupMetricTable
+                variant="detail"
+                metrics={group.rows}
+                matchup={matchup}
+                caption={`${group.label} by period for ${away.teamName} and ${home.teamName}`}
+              />
             </div>
-            <MatchupMetricTable
-              variant="detail"
-              metrics={group.rows}
-              matchup={matchup}
-              caption={`${group.label} by period for ${away.teamName} and ${home.teamName}`}
-            />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <p className="border-t border-slate-100 px-3 py-2 text-[11px] leading-4 text-slate-600 sm:px-4">

@@ -5,7 +5,6 @@ import MatchupCategoryAdvantageChip, {
 } from "@/components/nfl/matchups/MatchupCategoryAdvantageChip";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
-import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import MatchupMetricTable from "@/components/nfl/matchups/MatchupMetricTable";
 import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
@@ -13,7 +12,6 @@ import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import { cn } from "@/lib/utils";
-import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import {
   MATCHUP_CATEGORIES,
@@ -149,30 +147,11 @@ export default function MatchupComparisonPanel({
   const [activeTab, setActiveTab] = useState<StatComparisonTabId>(MATCHUP_CATEGORIES[0].id);
   const [highlighted, setHighlighted] = useState<StatComparisonTabId | null>(null);
   const triggerRefs = useRef(new Map<StatComparisonTabId, HTMLButtonElement>());
-  const isMobile = useIsCompactLayout("(max-width: 639px)");
-
-  // Mobile-only accordion state: every category starts collapsed, per the
-  // mobile density spec — the tab strip below is the desktop presentation of
-  // this exact same content and needs no such state, since every panel is
-  // already mounted and only one is unhidden.
-  const [openCategories, setOpenCategories] = useState<Set<StatComparisonTabId>>(new Set());
-  const toggleCategory = (id: StatComparisonTabId) => {
-    setOpenCategories((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   useEffect(() => {
     if (!pendingCategory) return;
     setActiveTab(pendingCategory);
     setHighlighted(pendingCategory);
-    // A jump must reveal the destination even when its accordion group starts
-    // collapsed — arriving at a category is expected to open it, not leave it
-    // closed behind the highlight.
-    setOpenCategories((current) => new Set(current).add(pendingCategory));
 
     const destination = document.getElementById(getMatchupCategory(pendingCategory).hash);
     destination?.scrollIntoView({
@@ -205,8 +184,7 @@ export default function MatchupComparisonPanel({
 
   /**
    * One category's metrics as the shared comparison table — the same component
-   * the Overview snapshot uses, at the larger `detail` scale. Shared by the
-   * mobile accordion and the desktop tab panel.
+   * the Overview snapshot uses, at the larger `detail` scale.
    */
   const renderTable = (rows: MatchupDisplayMetric[], categoryLabel: string) => (
     <MatchupMetricTable
@@ -253,120 +231,70 @@ export default function MatchupComparisonPanel({
           : "League rank out of 32 — 1 is best. Every row states its advantage in words."}
         bodyClassName="px-0 py-0 sm:px-0"
       >
-        {isMobile ? (
-          <div>
-            {MATCHUP_CATEGORIES.map((category) => {
-              const rows = categoryMetrics[category.id] ?? [];
-              const result = categoryResults?.[category.id];
-              const decided = result?.result === "away" || result?.result === "home";
-              return (
-                <div
-                  key={category.id}
-                  className={cn(decided ? "border-l-4 border-l-emerald-600" : "border-l-4 border-l-slate-300")}
-                >
-                  <MatchupCollapsibleGroup
-                    id={category.hash}
-                    triggerId={matchupCategoryTriggerId(category.id)}
-                    title={category.label}
-                    meta={result && (
-                      <CategoryAdvantageMeta
-                        result={result}
-                        categoryLabel={category.label}
-                        away={matchup.away}
-                        home={matchup.home}
-                      />
-                    )}
-                    open={openCategories.has(category.id)}
-                    onToggle={() => toggleCategory(category.id)}
-                    highlighted={highlighted === category.id}
-                    triggerRef={(node) => {
-                      if (node) triggerRefs.current.set(category.id, node);
-                      else triggerRefs.current.delete(category.id);
-                    }}
-                  >
-                    <MatchupComparisonTeamHeader matchup={matchup} sticky />
-                    {renderTable(rows, category.label)}
-                  </MatchupCollapsibleGroup>
-                </div>
-              );
-            })}
-            {coaching && (
-              <MatchupCollapsibleGroup
-                id="comparison-coaching"
-                triggerId="comparison-coaching-tab"
-                title="Coaching / Sideline"
-                open={openCategories.has(COACHING_TAB_ID)}
-                onToggle={() => toggleCategory(COACHING_TAB_ID)}
-                highlighted={highlighted === COACHING_TAB_ID}
-                triggerRef={(node) => {
-                  if (node) triggerRefs.current.set(COACHING_TAB_ID, node);
-                  else triggerRefs.current.delete(COACHING_TAB_ID);
-                }}
-              >
-                {coaching}
-              </MatchupCollapsibleGroup>
-            )}
-          </div>
-        ) : (
-          <>
-            <MatchupTabStrip
-              tabs={tabs}
-              activeId={activeTab}
-              onSelect={(id) => setActiveTab(id as StatComparisonTabId)}
-              ariaLabel="Statistical comparison categories"
-              triggerRef={(id, node) => {
-                const tabId = id as StatComparisonTabId;
-                if (node) triggerRefs.current.set(tabId, node);
-                else triggerRefs.current.delete(tabId);
-              }}
-            />
+        {/*
+          One presentation at every width, matching the approved mockup: a
+          single centred category control that becomes a horizontal pill
+          scroller on phones (never a stack of wrapped rows), a leader pill for
+          the active category, then that category's split-header comparison
+          table. Every panel stays mounted so a deep-link jump has its
+          destination in the DOM the instant the effect runs.
+        */}
+        <MatchupTabStrip
+          tabs={tabs}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as StatComparisonTabId)}
+          ariaLabel="Statistical comparison categories"
+          className="sm:flex-wrap sm:justify-center"
+          triggerRef={(id, node) => {
+            const tabId = id as StatComparisonTabId;
+            if (node) triggerRefs.current.set(tabId, node);
+            else triggerRefs.current.delete(tabId);
+          }}
+        />
 
-            {MATCHUP_CATEGORIES.map((category) => {
-              const rows = categoryMetrics[category.id] ?? [];
-              // Optional-chained for the same reason `categoryMetrics` is: a
-              // category with no resolved result renders without a meta chip
-              // rather than taking the whole panel down.
-              const result = categoryResults?.[category.id];
-              return (
-                <div
-                  key={category.id}
-                  id={category.hash}
-                  role="tabpanel"
-                  aria-labelledby={matchupCategoryTriggerId(category.id)}
-                  hidden={activeTab !== category.id}
-                  className={cn(
-                    MATCHUP_SECTION_SCROLL_MT,
-                    "px-2.5 pb-2 pt-2 sm:px-3 motion-safe:transition-colors motion-safe:duration-700",
-                    highlighted === category.id && "bg-sky-50"
-                  )}
-                >
-                  <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-slate-600">
-                    {result && (
-                      <CategoryAdvantageMeta
-                        result={result}
-                        categoryLabel={category.label}
-                        away={matchup.away}
-                        home={matchup.home}
-                      />
-                    )}
-                  </div>
-                  <MatchupComparisonTeamHeader matchup={matchup} />
-                  {renderTable(rows, category.label)}
-                </div>
-              );
-            })}
-
+        {MATCHUP_CATEGORIES.map((category) => {
+          const rows = categoryMetrics[category.id] ?? [];
+          const result = categoryResults?.[category.id];
+          return (
             <div
-              id="comparison-coaching"
+              key={category.id}
+              id={category.hash}
               role="tabpanel"
-              aria-labelledby="comparison-coaching-tab"
-              hidden={activeTab !== COACHING_TAB_ID}
-              className={cn(MATCHUP_SECTION_SCROLL_MT, "px-2.5 pb-2 pt-2 sm:px-3")}
+              aria-labelledby={matchupCategoryTriggerId(category.id)}
+              hidden={activeTab !== category.id}
+              className={cn(
+                MATCHUP_SECTION_SCROLL_MT,
+                "space-y-2 px-3 py-3 sm:px-4 motion-safe:transition-colors motion-safe:duration-700",
+                highlighted === category.id && "bg-sky-50"
+              )}
             >
-              {coaching}
+              {result && (
+                <div className="flex justify-center pb-1">
+                  <span className="matchup-lead-pill">
+                    <CategoryAdvantageMeta
+                      result={result}
+                      categoryLabel={category.label}
+                      away={matchup.away}
+                      home={matchup.home}
+                    />
+                  </span>
+                </div>
+              )}
+              <MatchupComparisonTeamHeader matchup={matchup} sticky />
+              <div className="matchup-metric-table-group">{renderTable(rows, category.label)}</div>
             </div>
-          </>
-        )}
+          );
+        })}
+
+        <div
+          id="comparison-coaching"
+          role="tabpanel"
+          aria-labelledby="comparison-coaching-tab"
+          hidden={activeTab !== COACHING_TAB_ID}
+          className={cn(MATCHUP_SECTION_SCROLL_MT, "px-3 py-3 sm:px-4")}
+        >
+          {coaching}
+        </div>
 
         {/* One compact, collapsed-by-default legend beneath the tab panels,
             rather than a raised card repeated in view. Rank colours stay

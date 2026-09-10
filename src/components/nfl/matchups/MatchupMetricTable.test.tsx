@@ -192,3 +192,43 @@ describe("MatchupMetricTable — edge, variant, sides", () => {
     expect(within(home).getByText("SEA", { exact: false })).toBeTruthy();
   });
 });
+
+describe("MatchupMetricTable — raw values under the bar (detail variant)", () => {
+  it("shows each team's formatted raw value beneath its own side, advantaged side tinted", () => {
+    const { container } = renderTable([metric()], { variant: "detail" });
+    const vals = container.querySelector('[data-cell="vals"]') as HTMLElement;
+    const spans = vals.querySelectorAll(".matchup-metric-table__val");
+    expect(spans).toHaveLength(2);
+    expect(spans[0].textContent).toBe("+0.215");
+    expect(spans[1].textContent).toBe("-0.010");
+    // away leads the row → away value takes the lead-away emphasis class
+    // (styled from the theme-safe --sheet-away token, not the literal colour).
+    expect(spans[0].className).toContain("matchup-metric-table__val--lead-away");
+    expect(spans[1].className).not.toContain("lead");
+  });
+
+  it("renders an em dash and a neutral class for an unavailable side", () => {
+    const { container } = renderTable(
+      [metric({ comparison: "missing", home: { value: null, rank: null, formatted: "N/A" } })],
+      { variant: "detail" }
+    );
+    const spans = container.querySelectorAll('[data-cell="vals"] .matchup-metric-table__val');
+    expect(spans[1].textContent).toBe("—");
+    expect(spans[1].className).toContain("matchup-metric-table__val--na");
+  });
+
+  it("does not add a raw-value row in the compact snapshot variant", () => {
+    const { container } = renderTable([metric()], { variant: "snapshot" });
+    expect(container.querySelector('[data-cell="vals"]')).toBeNull();
+    expect(container.querySelector(".matchup-metric-table__val")).toBeNull();
+    // the snapshot keeps its visible Edge cell.
+    expect(container.querySelector(".matchup-metric-table__edge--away")).not.toBeNull();
+  });
+
+  it("keeps the Edge semantics available (screen-reader only) in the detail variant", () => {
+    const { container } = renderTable([metric()], { variant: "detail" });
+    const edgeCell = container.querySelector('td[data-cell="edge"]') as HTMLElement;
+    expect(edgeCell.className).toContain("sr-only");
+    expect(edgeCell.textContent).toContain("+0.225");
+  });
+});
