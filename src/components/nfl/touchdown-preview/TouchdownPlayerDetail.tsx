@@ -13,6 +13,7 @@ import {
 } from "@/lib/nfl/touchdown-preview/historyAverages";
 import { OPPONENT_POSITION_TD_ALLOWED_LABEL } from "@/lib/nfl/touchdown-preview/presentation";
 import type { TouchdownPreviewPlayer, TouchdownWindowKey } from "@/lib/nfl/touchdown-preview/types";
+import { getPercentileTier } from "@/lib/shared/jkbHeat";
 import { cn } from "@/lib/utils";
 
 const number = (value: number | null, digits = 1) => value == null ? "N/A" : value.toFixed(digits);
@@ -53,12 +54,28 @@ function ordinal(n: number): string {
   }
 }
 
-/** "62nd pctile" context reusing an already-computed population percentile. No new baseline is invented here. */
-function contextText(percentile: number | null): string {
-  return percentile == null ? "—" : `${ordinal(percentile)} pctile`;
+/**
+ * "62nd pctile" context, heat-colored with the shared JKB percentile scale
+ * (`getPercentileTier`, the same 8-tier gold->green->slate->red ramp the board
+ * cells use). The percentile passed in is ALREADY a favorable percentile from
+ * `components.*` -- higher is better for every metric surfaced here -- so
+ * `"higherBetter"` applies it directly and never double-inverts. Raw text is
+ * preserved; only the cell treatment changes. `null` -> plain em dash, no wash.
+ */
+function PercentileContext({ percentile }: { percentile: number | null }) {
+  if (percentile == null || !Number.isFinite(percentile)) return <span className="text-slate-400">—</span>;
+  const tier = getPercentileTier(percentile, "higherBetter");
+  const style = tier
+    ? { backgroundColor: tier.style.backgroundColor, color: tier.style.color, boxShadow: tier.style.border.replace("1px solid ", "inset 0 0 0 1px ") }
+    : undefined;
+  return (
+    <span className="inline-flex items-center justify-center rounded px-1.5 py-0.5 font-semibold tabular-nums" style={style}>
+      {ordinal(percentile)} pctile
+    </span>
+  );
 }
 
-type ProfileRow = { label: ReactNode; value: string; context: string };
+type ProfileRow = { label: ReactNode; value: string; context: number | null };
 
 /**
  * Compact "Metric | Player | Context" table. Full width, no minimum width, so it
@@ -82,7 +99,7 @@ function ProfileTable({ id, title, accent, rows }: { id: string; title: string; 
             <tr key={index} className="border-t border-slate-100">
               <td className="px-2.5 py-1 text-left text-slate-600">{row.label}</td>
               <td className="px-2 py-1 text-right font-semibold tabular-nums text-slate-800">{row.value}</td>
-              <td className="px-2.5 py-1 text-right tabular-nums text-slate-400">{row.context}</td>
+              <td className="px-2.5 py-1 text-right tabular-nums"><PercentileContext percentile={row.context} /></td>
             </tr>
           ))}
         </tbody>
@@ -101,25 +118,26 @@ export default function TouchdownPlayerDetail({ player, window }: { player: Touc
   const components = metrics.components;
 
   const scoringProfile: ProfileRow[] = [
-    { label: "TD/G", value: number(metrics.tdPerGame, 2), context: contextText(components.tdSuccess.percentile) },
-    { label: "TD L5/G", value: number(metrics.tdLast5PerGame, 2), context: contextText(components.tdSuccess.percentile) },
-    { label: "Usage/G", value: number(metrics.usagePerGame, 1), context: contextText(components.playerUsage.percentile) },
-    { label: "Team Usage %", value: pct1(metrics.teamUsageShare), context: contextText(components.teamUsage.percentile) },
-    { label: "RZ Opp/G", value: number(metrics.rzOpportunitiesPerGame, 2), context: contextText(components.tdOpportunities.percentile) },
-    { label: "Inside 10 Opp/G", value: number(metrics.inside10OpportunitiesPerGame, 2), context: contextText(components.tdOpportunities.percentile) },
-    { label: "Goal Line Opp/G", value: number(metrics.goalLineOpportunitiesPerGame, 2), context: contextText(components.tdOpportunities.percentile) },
-    { label: "RZ Share", value: pct1(metrics.rzOpportunityShare), context: contextText(components.teamUsage.percentile) },
-    { label: "Goal Line Share", value: pct1(metrics.goalLineOpportunityShare), context: contextText(components.teamUsage.percentile) },
+    { label: "TD/Game", value: number(metrics.tdPerGame, 2), context: components.tdSuccess.percentile },
+    { label: "TD/Game Last 5", value: number(metrics.tdLast5PerGame, 2), context: components.tdSuccess.percentile },
+    { label: "Usage/G", value: number(metrics.usagePerGame, 1), context: components.playerUsage.percentile },
+    { label: "Team Usage %", value: pct1(metrics.teamUsageShare), context: components.teamUsage.percentile },
+    { label: "RZ Opp/G", value: number(metrics.rzOpportunitiesPerGame, 2), context: components.tdOpportunities.percentile },
+    { label: "Inside 10 Opp/G", value: number(metrics.inside10OpportunitiesPerGame, 2), context: components.tdOpportunities.percentile },
+    { label: "Goal Line Opp/G", value: number(metrics.goalLineOpportunitiesPerGame, 2), context: components.tdOpportunities.percentile },
+    { label: "RZ Share", value: pct1(metrics.rzOpportunityShare), context: components.teamUsage.percentile },
+    { label: "Goal Line Share", value: pct1(metrics.goalLineOpportunityShare), context: components.teamUsage.percentile },
   ];
 
   const matchupMarket: ProfileRow[] = [
-    { label: "Team Implied Points", value: number(metrics.impliedTeamPoints, 1), context: contextText(components.impliedTeamPoints.percentile) },
-    { label: "Opp TD Opp/G", value: number(metrics.opponentTdOpportunitiesPerGame, 2), context: contextText(components.opponentTdOpportunities.percentile) },
-    { label: "Opp TD Allowed vs Pos", value: number(metrics.opponentPositionTdsAllowedPerGame, 2), context: contextText(components.opponentPositionTdsAllowed.percentile) },
-    { label: "Anytime TD Odds", value: player.anytimeTdOdds == null ? "Unavailable" : fmtOdds(player.anytimeTdOdds), context: "—" },
-    { label: "Book", value: player.anytimeTdBook == null ? "Unavailable" : sportsbookDisplayName(player.anytimeTdBook), context: "—" },
-    { label: "Market Implied %", value: player.marketImpliedProbability == null ? "Unavailable" : pct1(player.marketImpliedProbability), context: "—" },
-    { label: "Odds Updated", value: player.oddsUpdatedAt == null ? "Unavailable" : fmtUpdatedAt(player.oddsUpdatedAt), context: "—" },
+    { label: "Team Implied Points", value: number(metrics.impliedTeamPoints, 1), context: components.impliedTeamPoints.percentile },
+    { label: "Opp TD Opp/G", value: number(metrics.opponentTdOpportunitiesPerGame, 2), context: components.opponentTdOpportunities.percentile },
+    { label: "Opp TD/Game vs Pos SZN", value: number(metrics.opponentPositionTdsAllowedPerGameSeason, 2), context: metrics.opponentPositionTdsAllowedPerGameSeasonPercentile },
+    { label: "Opp TD/Game vs Pos Last 5", value: number(metrics.opponentPositionTdsAllowedPerGameLast5, 2), context: metrics.opponentPositionTdsAllowedPerGameLast5Percentile },
+    { label: "Anytime TD Odds", value: player.anytimeTdOdds == null ? "Unavailable" : fmtOdds(player.anytimeTdOdds), context: null },
+    { label: "Book", value: player.anytimeTdBook == null ? "Unavailable" : sportsbookDisplayName(player.anytimeTdBook), context: null },
+    { label: "Market Implied %", value: player.marketImpliedProbability == null ? "Unavailable" : pct1(player.marketImpliedProbability), context: null },
+    { label: "Odds Updated", value: player.oddsUpdatedAt == null ? "Unavailable" : fmtUpdatedAt(player.oddsUpdatedAt), context: null },
   ];
 
   return <div className="bg-slate-50 px-2 py-2.5 sm:px-4" data-testid="touchdown-player-detail">

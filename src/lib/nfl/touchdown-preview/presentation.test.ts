@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { TouchdownPosition, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "./types";
 import {
+  DEFAULT_TOUCHDOWN_SORT,
   OPPONENT_POSITION_TD_ALLOWED_LABEL,
   buildTouchdownBoardHeat,
   formatTouchdownMatchupLabel,
+  nextTouchdownSort,
+  sortTouchdownPlayers,
   touchdownBoardPercentile,
   touchdownMatchupKey,
 } from "./presentation";
@@ -65,6 +68,28 @@ describe("buildTouchdownBoardHeat", () => {
     const heat = buildTouchdownBoardHeat([mk("WR", 1, 1, 0.2), mk("RB", 2, 2, 0.3)], "2025");
     expect(touchdownBoardPercentile(9, heat.tdPerGame)).toBeNull();
     expect(touchdownBoardPercentile(null, heat.tdPerGame)).toBeNull();
+  });
+});
+
+describe("Opponent column sorting", () => {
+  const row = (playerName: string, team: string, opponent: string): TouchdownPreviewPlayer => {
+    const metrics = { jkbTdScore: 50 } as unknown as TouchdownWindowMetrics;
+    return { playerName, team, opponent, windows: { "2025": metrics, "2026": metrics, last8: metrics } } as unknown as TouchdownPreviewPlayer;
+  };
+
+  it("first click on Opponent sorts ascending, like the Player/text columns", () => {
+    expect(nextTouchdownSort(DEFAULT_TOUCHDOWN_SORT, "opponent")).toEqual({ key: "opponent", direction: "asc" });
+  });
+
+  it("orders by row.opponent (A–Z), never by the player's own team", () => {
+    const rows = [
+      row("Zeb", "was", "buf"), // team sorts last, opponent sorts first
+      row("Amy", "buf", "was"), // team sorts first, opponent sorts last
+      row("Moe", "phi", "nyg"),
+    ];
+    const sorted = sortTouchdownPlayers(rows, "2025", { key: "opponent", direction: "asc" });
+    expect(sorted.map((r) => r.opponent)).toEqual(["buf", "nyg", "was"]);
+    expect(sorted.map((r) => r.playerName)).toEqual(["Zeb", "Moe", "Amy"]);
   });
 });
 

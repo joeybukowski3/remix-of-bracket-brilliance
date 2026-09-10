@@ -194,7 +194,7 @@ for (const row of yardage.rows ?? []) {
   });
 }
 
-const players = buildAllTouchdownWindows([...candidates.values()]);
+const players = buildAllTouchdownWindows([...candidates.values()], season);
 const impliedCount = players.filter((player) => player.impliedTeamPoints != null).length;
 const anytimeTdAvailableCount = players.filter((player) => player.anytimeTdOdds != null).length;
 const artifact: TouchdownPreviewArtifact = {

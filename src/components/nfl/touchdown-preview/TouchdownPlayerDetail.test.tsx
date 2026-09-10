@@ -10,6 +10,8 @@ function windowMetrics(overrides: Partial<TouchdownWindowMetrics> = {}): Touchdo
     sampleState: "available", sampleGames: 1, sampleLabel: "2025 regular season · 1 game", tdPerGame: 1, tdLast5PerGame: 1, usagePerGame: 14,
     teamUsageShare: 0.28, rzOpportunitiesPerGame: 3, inside10OpportunitiesPerGame: 2, goalLineOpportunitiesPerGame: 1, rzOpportunityShare: 0.375,
     goalLineOpportunityShare: 0.333, impliedTeamPoints: 25, opponentTdOpportunitiesPerGame: 4.1, opponentPositionTdsAllowedPerGame: 1,
+    opponentPositionTdsAllowedPerGameSeason: 1.4, opponentPositionTdsAllowedPerGameLast5: 0.8,
+    opponentPositionTdsAllowedPerGameSeasonPercentile: 91, opponentPositionTdsAllowedPerGameLast5Percentile: 22,
     tdSuccessRate: 0.08, components: { playerUsage: metric(1, 80), tdOpportunities: metric(75, 75), teamUsage: metric(0.28, 62), tdSuccess: metric(0.08, 80),
       opponentTdOpportunities: metric(70, 70), opponentPositionTdsAllowed: metric(1, 80), impliedTeamPoints: metric(25, 55) }, jkbTdScore: 79.5, scoreRank: 1, scorePoolSize: 2,
     ...overrides,
@@ -185,17 +187,57 @@ describe("TouchdownPlayerDetail Scoring Profile / Matchup & Market tables", () =
     render(<TouchdownPlayerDetail player={player("WR")} window="2025" />);
     const detail = screen.getByTestId("touchdown-player-detail");
     const profile = within(detail).getByText("Scoring profile").closest("section") as HTMLElement;
-    for (const label of ["TD/G", "TD L5/G", "Usage/G", "Team Usage %", "RZ Opp/G", "Inside 10 Opp/G", "Goal Line Opp/G", "RZ Share", "Goal Line Share"]) {
+    for (const label of ["TD/Game", "TD/Game Last 5", "Usage/G", "Team Usage %", "RZ Opp/G", "Inside 10 Opp/G", "Goal Line Opp/G", "RZ Share", "Goal Line Share"]) {
       expect(within(profile).getByText(label)).toBeInTheDocument();
     }
     // teamUsage percentile 62 backs Team Usage %, RZ Share and Goal Line Share.
     expect(within(profile).getAllByText("62nd pctile")).toHaveLength(3);
 
     const market = within(detail).getByText("Matchup & market").closest("section") as HTMLElement;
-    for (const label of ["Team Implied Points", "Opp TD Opp/G", "Opp TD Allowed vs Pos", "Odds Updated"]) {
+    for (const label of ["Team Implied Points", "Opp TD Opp/G", "Opp TD/Game vs Pos SZN", "Opp TD/Game vs Pos Last 5", "Odds Updated"]) {
       expect(within(market).getByText(label)).toBeInTheDocument();
     }
+    expect(within(market).queryByText("Opp TD Allowed vs Pos")).not.toBeInTheDocument();
     expect(within(market).getByText("55th pctile")).toBeInTheDocument(); // Team Implied Points
+    // Explicit SZN / Last 5 opponent rows carry the model's window-independent values.
+    const sznRow = within(market).getByText("Opp TD/Game vs Pos SZN").closest("tr") as HTMLElement;
+    expect(within(sznRow).getByText("1.40")).toBeInTheDocument();
+    const l5Row = within(market).getByText("Opp TD/Game vs Pos Last 5").closest("tr") as HTMLElement;
+    expect(within(l5Row).getByText("0.80")).toBeInTheDocument();
+  });
+
+  it("gives the SZN and Last 5 opponent rows their own distinct favorable percentiles, not one shared value", () => {
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonPercentile: 99, opponentPositionTdsAllowedPerGameLast5Percentile: 6 } })} window="2025" />);
+    const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
+    const szn = within(within(market).getByText("Opp TD/Game vs Pos SZN").closest("tr") as HTMLElement).getByText(/pctile$/);
+    const l5 = within(within(market).getByText("Opp TD/Game vs Pos Last 5").closest("tr") as HTMLElement).getByText(/pctile$/);
+    expect(szn.textContent).toBe("99th pctile");
+    expect(l5.textContent).toBe("6th pctile");
+    // Elite SZN -> gold; weak Last 5 -> red. Distinct tiers from distinct percentiles.
+    expect(szn).toHaveStyle({ backgroundColor: "#e8d5a8" });
+    expect(l5).toHaveStyle({ backgroundColor: "#dc2626" });
+  });
+
+  it("resolves identical raw opponent percentiles to the same tier", () => {
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { opponentPositionTdsAllowedPerGameSeasonPercentile: 70, opponentPositionTdsAllowedPerGameLast5Percentile: 70 } })} window="2025" />);
+    const market = screen.getByText("Matchup & market").closest("section") as HTMLElement;
+    const szn = within(within(market).getByText("Opp TD/Game vs Pos SZN").closest("tr") as HTMLElement).getByText(/pctile$/);
+    const l5 = within(within(market).getByText("Opp TD/Game vs Pos Last 5").closest("tr") as HTMLElement).getByText(/pctile$/);
+    expect((szn as HTMLElement).style.backgroundColor).toBe((l5 as HTMLElement).style.backgroundColor);
+  });
+
+  it("heat-colors the percentile context with the shared JKB tier scale, elite gold at the top and red at the bottom", () => {
+    render(<TouchdownPlayerDetail player={player("WR", { metrics: { components: { ...windowMetrics().components, tdSuccess: metric(0.2, 99), playerUsage: metric(1, 8) } } })} window="2025" />);
+    const detail = screen.getByTestId("touchdown-player-detail");
+    const eliteRow = within(detail).getByText("TD/Game").closest("tr") as HTMLElement;
+    const elite = within(eliteRow).getByText("99th pctile");
+    // Elite tier = warm muted gold (#e8d5a8), from PERCENTILE_TIERS.
+    expect(elite).toHaveStyle({ backgroundColor: "#e8d5a8" });
+    const weakRow = within(detail).getByText("Usage/G").closest("tr") as HTMLElement;
+    const weak = within(weakRow).getByText("8th pctile");
+    expect(weak).toHaveStyle({ backgroundColor: "#dc2626" });
+    // Raw percentile text is preserved, not replaced by a swatch.
+    expect(elite.textContent).toBe("99th pctile");
   });
 
   it("lays Scoring Profile and Matchup & Market out in a responsive two-column grid on desktop", () => {
