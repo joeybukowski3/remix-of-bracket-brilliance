@@ -1,8 +1,9 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { POSITION_TONES } from "@/lib/fantasy/positionTone";
-import { weeklyHeatStyle } from "@/lib/shared/jkbHeat";
+import { matchupGradeHeatTone, weeklyHeatStyle, weeklyRankHeatTone } from "@/lib/shared/jkbHeat";
 import { JKB_HEAT_LEGEND } from "@/lib/shared/jkbHeat";
+import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
 
 import { cn } from "@/lib/utils";
 
@@ -29,5 +30,32 @@ export function DfsHeatLegend() {
 
 export function DfsHeatValue({ children, style, title }: { children: ReactNode; style?: CSSProperties; title?: string }) {
   return <span title={title} style={style} className="inline-flex min-w-10 justify-end whitespace-nowrap rounded px-1.5 py-0.5 font-semibold tabular-nums">{children}</span>;
+}
+
+// ---------------------------------------------------------------------------
+// Shared metric cells — used by both the main analyzer board and the
+// Generated Lineups roster table so the two never fork a heat/value rule.
+// Values come straight off the canonical enriched analyzer row.
+// ---------------------------------------------------------------------------
+
+/** Canonical weekly matchup grade (Great/Good/Neutral/Tough/Very Tough) with JKB heat. */
+export function MatchupCell({ row }: { row: DfsEnrichedAnalyzerRow }) {
+  const grade = row.research?.status === "available" ? row.research.matchupGrade : null;
+  return <DfsHeatValue style={weeklyHeatStyle(matchupGradeHeatTone(grade?.id))}>{grade?.label ?? "—"}</DfsHeatValue>;
+}
+
+/** Player fantasy PPG (JKB Full PPR) — season or last-5 — from the weekly research context, with rank heat. */
+export function FantasyPpgCell({ row, period }: { row: DfsEnrichedAnalyzerRow; period: "season" | "last5" }) {
+  const research = row.research?.status === "available" ? row.research : null;
+  const metric = research ? (period === "season" ? research.context?.seasonPpg : research.context?.last5Ppg) : null;
+  const label = period === "season" ? "Season" : "Last 5";
+  const title = `${label} fantasy PPG (JKB Full PPR): ${metric?.value == null ? "unavailable" : metric.value.toFixed(1)}`
+    + `${metric?.sampleSize ? `; ${metric.sampleSize} games` : ""}`
+    + `${metric?.rank != null ? `; rank ${metric.rank} of ${metric.poolSize}` : ""}`;
+  return (
+    <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(metric?.rank ?? null, metric?.poolSize ?? 0))} title={title}>
+      {metric?.value == null ? "—" : metric.value.toFixed(1)}
+    </DfsHeatValue>
+  );
 }
 

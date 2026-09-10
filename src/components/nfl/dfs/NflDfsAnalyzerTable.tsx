@@ -1,32 +1,26 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { FANTASY_TABLE_BODY_CELL, FANTASY_TABLE_HEADER_CELL, FANTASY_TABLE_SHELL, FantasyExpandControl, FantasyPlayerIdentity, FantasyOpponentIdentity } from "@/components/fantasy/FantasyTable";
-import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller, stickyDenseHeader } from "@/components/ui/dense-table";
+import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller, frozenDenseColumn, stickyDenseHeader } from "@/components/ui/dense-table";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
-import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 import type { FantasyMatchupEdges } from "@/lib/nfl/matchupEdges";
 import { POSITION_TAB_TONES } from "@/lib/fantasy/positionTone";
 import { DFS_STATUS_BADGE_CLASSES, defaultDfsSortDirection, dfsMatchupValue, filterDfsRows, formatDfsPointsPer1k, formatDfsProjection, formatDfsRank, formatDfsRankDiff, formatDfsSalary, getDfsRankDiffTone, getDfsStatusBadge, selectDfsBoardRows, sortDfsRows, type DfsBoardView, type DfsDirectionFilter, type DfsSortKey, type DfsSortDirection } from "@/lib/nfl/dfs/presentation";
+import { dfsOptionalColumnsForView, type DfsColumnId } from "@/lib/nfl/dfs/columnRegistry";
+import { useDfsColumnVisibility } from "@/hooks/useDfsColumnVisibility";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
+import { playerSurname } from "@/lib/nfl/playerSurname";
 import { weeklyHeatStyle } from "@/lib/fantasy/weekly/researchPresentation";
-import { matchupGradeHeatTone, weeklyMatchupDifferenceHeatTone, weeklyRankHeatTone, resolvePercentileDisplay } from "@/lib/shared/jkbHeat";
+import { weeklyMatchupDifferenceHeatTone, weeklyRankHeatTone, resolvePercentileDisplay } from "@/lib/shared/jkbHeat";
 import { cn } from "@/lib/utils";
 import NflDfsHistory, { FpaSignal, DefenseSignal, FPA_HELP, DEF_AVG_HELP } from "./NflDfsHistory";
-import { DfsHeatLegend, DfsHeatValue, DfsPositionBadge, DfsSortButton } from "./DfsTableCells";
-import { DFS_POSITION_ACCENT, dfsValueStyles, dfsWeeklyRankStyle } from "@/lib/nfl/dfs/tablePresentation";
+import { DfsHeatLegend, DfsHeatValue, DfsPositionBadge, DfsSortButton, FantasyPpgCell, MatchupCell } from "./DfsTableCells";
+import DfsColumnMenu from "./DfsColumnMenu";
+import { DFS_POSITION_ACCENT, dfsValueStyles } from "@/lib/nfl/dfs/tablePresentation";
 import { dfsHistoryLoader, historyCoverage, type DfsHistoryIndex, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
 
+const MOBILE_QUERY = "(max-width: 767px)";
+
 const BOARD_VIEWS: readonly DfsBoardView[] = ["VALUE", "QB", "RB", "WR", "TE", "DST"];
-const BASE_COLUMNS: { key: DfsSortKey; label: string }[] = [
-  { key: "player", label: "Player" }, { key: "teamOpp", label: "Team/Opp" }, { key: "salary", label: "Salary" }, { key: "dkPosRank", label: "DK Pos RK" },
-];
-const OFFENSE_COLUMNS: { key: DfsSortKey; label: string }[] = [
-  { key: "jkbSlateRank", label: "JKB Slate RK" }, { key: "weeklyRank", label: "JKB Week RK" }, { key: "rankDiff", label: "Rank Diff" },
-  { key: "proj", label: "JKB Proj" }, { key: "pts1k", label: "JKB Pts/$1K" }, { key: "matchup", label: "Matchup" },
-  { key: "fpaSeason", label: "FPA SZN" }, { key: "fpaLast5", label: "FPA L5" },
-];
-const EDGE_COLUMNS: { key: DfsSortKey; label: string }[] = [
-  { key: "epa", label: "EPA ADV" }, { key: "success", label: "SUCCESS ADV" }, { key: "trenches", label: "TRENCHES" },
-];
-const EMPTY_PROJECTIONS: readonly WeeklyFantasyProjectionProductionRow[] = [];
 
 function ResearchDetail({ row }: { row: DfsEnrichedAnalyzerRow }) {
   if (row.kind === "dst") {
@@ -68,10 +62,9 @@ export type NflDfsAnalyzerTableProps = {
   rows: readonly DfsEnrichedAnalyzerRow[];
   historyTarget?: HistoryTarget;
   dstEdges?: ReadonlyMap<string, FantasyMatchupEdges>;
-  projectionRows?: readonly WeeklyFantasyProjectionProductionRow[];
 };
 
-export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, projectionRows = EMPTY_PROJECTIONS }: NflDfsAnalyzerTableProps) {
+export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges }: NflDfsAnalyzerTableProps) {
   const [historyState, setHistoryState] = useState<{ target: HistoryTarget; index: DfsHistoryIndex | null } | null>(null);
   useEffect(() => {
     let active = true;
@@ -93,9 +86,26 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, pro
   const [sortKey, setSortKey] = useState<DfsSortKey>("rankDiff");
   const [sortDirection, setSortDirection] = useState<DfsSortDirection>("desc");
   const [expandedDkId, setExpandedDkId] = useState<string | null>(null);
+  const [mobileDetailDkId, setMobileDetailDkId] = useState<string | null>(null);
   const isDst = view === "DST";
-  const columns = [...BASE_COLUMNS, ...(isDst ? [{ key: "dstRank" as const, label: "DST Matchup RK" }, { key: "dstScore" as const, label: "DST Score" }] : OFFENSE_COLUMNS), ...EDGE_COLUMNS,
-    ...(!isDst ? [{ key: "defenseAvg" as const, label: "DEF VS AVG" }] : [])];
+  const isCompact = useIsCompactLayout(MOBILE_QUERY);
+  const visibility = useDfsColumnVisibility(isCompact ? "mobile" : "desktop");
+  const columns = useMemo(() => visibility.columnsForView(view), [visibility, view]);
+  const optionalColumns = useMemo(() => dfsOptionalColumnsForView(view), [view]);
+  const defaultSortKey: DfsSortKey = isDst ? "dstRank" : "rankDiff";
+  // Section 14: if the active sort key is not a *visible* column of the current
+  // view (the user hid it, or it is stale after a view switch), fall back to the
+  // view default sort when that is still visible, otherwise to the first visible
+  // sortable column. Visible-but-reordered columns keep their sort.
+  useEffect(() => {
+    if (columns.some((column) => column.sortKey === sortKey)) return;
+    const fallback =
+      columns.find((column) => column.sortKey === defaultSortKey)?.sortKey
+      ?? columns.find((column) => column.sortable && column.sortKey)?.sortKey
+      ?? defaultSortKey;
+    setSortKey(fallback);
+    setSortDirection(defaultDfsSortDirection(fallback));
+  }, [columns, defaultSortKey, sortKey]);
   const visibleRows = useMemo(() => sortDfsRows(filterDfsRows(selectDfsBoardRows(rows, view), { search, availableOnly, optimizerEligibleOnly, direction: isDst ? "all" : direction }), sortKey, sortDirection, { historyIndex, dstEdges }),
     [rows, view, search, availableOnly, optimizerEligibleOnly, direction, isDst, sortKey, sortDirection, historyIndex, dstEdges]);
   const projectionStyles = useMemo(() => dfsValueStyles(rows, row => row.projectedFantasyPoints), [rows]);
@@ -104,16 +114,20 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, pro
     setSortDirection(key === sortKey ? sortDirection === "asc" ? "desc" : "asc" : defaultDfsSortDirection(key));
     setSortKey(key);
   };
-  const renderMetric = (row: DfsEnrichedAnalyzerRow, key: DfsSortKey) => {
+  const renderMetric = (row: DfsEnrichedAnalyzerRow, key: DfsColumnId) => {
     switch (key) {
       case "salary": return formatDfsSalary(row.salary);
-      case "dkPosRank": return formatDfsRank(row.dkPositionSalaryRank);
+      case "dkPosRank": {
+        const pool = rows.filter(entry => entry.position === row.position).length;
+        return <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(row.dkPositionSalaryRank, pool))}>{formatDfsRank(row.dkPositionSalaryRank)}</DfsHeatValue>;
+      }
       case "jkbSlateRank": return <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(row.jkbSlatePositionRank, rows.filter(entry => entry.position === row.position && entry.jkbSlatePositionRank != null).length))}>{formatDfsRank(row.jkbSlatePositionRank)}</DfsHeatValue>;
-      case "weeklyRank": return <DfsHeatValue style={dfsWeeklyRankStyle(row, projectionRows)}>{row.jkbWeeklyPositionRank == null ? "—" : `${row.position}${row.jkbWeeklyPositionRank}`}</DfsHeatValue>;
       case "rankDiff": return <DfsHeatValue style={weeklyHeatStyle(getDfsRankDiffTone(row.posRankDiff))}>{formatDfsRankDiff(row.posRankDiff)}</DfsHeatValue>;
       case "proj": return <DfsHeatValue style={projectionStyles.get(row.dkId)}>{formatDfsProjection(row.projectedFantasyPoints)}</DfsHeatValue>;
       case "pts1k": return <DfsHeatValue style={valueStyles.get(row.dkId)}>{formatDfsPointsPer1k(row.pointsPer1k)}</DfsHeatValue>;
-      case "matchup": return <DfsHeatValue style={weeklyHeatStyle(matchupGradeHeatTone(row.research?.matchupGrade?.id))}>{row.research?.matchupGrade?.label ?? "—"}</DfsHeatValue>;
+      case "fantasyPpg": return <FantasyPpgCell row={row} period="season" />;
+      case "fantasyPpgL5": return <FantasyPpgCell row={row} period="last5" />;
+      case "matchup": return <MatchupCell row={row} />;
       case "fpaSeason": case "fpaLast5": return <FpaSignal row={row} period={key === "fpaSeason" ? "season" : "last5"} />;
       case "epa": case "success": case "trenches": {
         const value = dfsMatchupValue(row, key, { dstEdges });
@@ -147,8 +161,15 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, pro
         </select></label>}
       <label className="flex items-center gap-1 text-[11px] font-semibold text-slate-700">Sort
         <select aria-label="Sort by" value={sortKey} onChange={event => { const key = event.target.value as DfsSortKey; setSortKey(key); setSortDirection(defaultDfsSortDirection(key)); }} className="h-8 rounded-md border border-slate-300 px-1 text-[11px]">
-          {columns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}
+          {columns.filter(column => column.sortable && column.sortKey).map(column => <option key={column.id} value={column.sortKey as string}>{column.label}</option>)}
         </select></label>
+      <DfsColumnMenu
+        optionalColumns={optionalColumns}
+        isVisible={visibility.isVisible}
+        onToggle={visibility.toggle}
+        onReset={visibility.reset}
+        isCustomized={visibility.isCustomized}
+      />
     </div>
     {coverage && <p className="text-[10px] text-slate-500">Player history: {coverage.covered}/{coverage.total} offensive entries have a sample. Expand a player for yardage history; opponent coverage is independent.</p>}
     {isDst && <p className="text-[11px] text-slate-600">DST scores are matchup composites. EPA, success and trenches show the passing matchup from the defense’s perspective; positive favors the defense. No weekly DST fantasy rank or point projection is published.</p>}
@@ -157,30 +178,47 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, pro
       <DenseTableScroller label={`${view} DFS analyzer`} className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto")}>
         <table className="w-full border-collapse whitespace-nowrap text-[11px] tabular-nums" aria-label={`${view} DFS players`}>
           <thead className={stickyDenseHeader("bg-slate-100")}><tr className={DENSE_TABLE_HEAD_ROW}>
-            {columns.map(column => <th key={column.key} scope="col" aria-sort={sortKey === column.key ? sortDirection === "asc" ? "ascending" : "descending" : "none"}
-              title={column.key.startsWith("fpa") ? FPA_HELP : column.key === "defenseAvg" ? DEF_AVG_HELP : undefined}
-              className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1 text-right")}>
-              <DfsSortButton label={column.label} active={sortKey === column.key} direction={sortDirection} onClick={() => sort(column.key)} />
+            {columns.map((column, index) => <th key={column.id} scope="col" aria-sort={sortKey === column.sortKey ? sortDirection === "asc" ? "ascending" : "descending" : "none"}
+              title={column.id.startsWith("fpa") ? FPA_HELP : column.id === "defenseAvg" ? DEF_AVG_HELP : column.headerHelp}
+              className={cn(FANTASY_TABLE_HEADER_CELL, "px-2 py-1", column.align === "left" ? "text-left" : "text-right",
+                isCompact && index === 0 && frozenDenseColumn({ isHeader: true, surface: "bg-slate-100", className: "border-r border-slate-200" }))}>
+              <DfsSortButton label={column.label} active={sortKey === column.sortKey} direction={sortDirection} onClick={() => { if (column.sortKey) sort(column.sortKey); }} />
             </th>)}
-            {!isDst && <th scope="col" className="px-1"><span className="sr-only">Details</span></th>}
+            {!isDst && <th scope="col" className={cn("px-1", isCompact && "sticky right-0 bg-slate-100")}><span className="sr-only">Details</span></th>}
           </tr></thead>
           <tbody>{visibleRows.map(row => {
             const expanded = expandedDkId === row.dkId;
+            const mobileDetailOpen = mobileDetailDkId === row.dkId;
             const status = getDfsStatusBadge(row.dkStatus);
             const warning = row.identityConflict ? "Multiple DraftKings rows resolved to the same JKB player." : row.identityStatus !== "resolved" ? "Could not match this DraftKings player uniquely to JKB." : row.teamMismatchStatus !== "none" ? "DK team differs from the JKB projection team." : null;
             return <Fragment key={row.dkId}>
               <tr data-dfs-player-row={row.dkId} className={cn(DENSE_TABLE_ROW, "group")}>
-                <td className={cn(FANTASY_TABLE_BODY_CELL, "border-l-2 px-2 py-1", DFS_POSITION_ACCENT[row.position])}><div className="flex items-center gap-1.5">
-                  <DfsPositionBadge position={row.position} /><FantasyPlayerIdentity player={row.playerName} team={row.team} compact
-                    onNameClick={isDst ? undefined : () => setExpandedDkId(expanded ? null : row.dkId)}
-                    nameExpanded={expanded} nameAriaLabel={`${expanded ? "Collapse" : "Expand"} details for ${row.playerName}`} />
+                <td className={cn(FANTASY_TABLE_BODY_CELL, "border-l-2 px-2 py-1", DFS_POSITION_ACCENT[row.position],
+                  isCompact && frozenDenseColumn({ surface: "bg-white", className: "border-r border-slate-200 group-hover:bg-slate-50" }))}><div className="flex items-center gap-1.5">
+                  <DfsPositionBadge position={row.position} /><FantasyPlayerIdentity player={isCompact ? playerSurname(row.playerName) : row.playerName} team={row.team} compact showTeamAbbreviation={false}
+                    onNameClick={isDst ? undefined : () => (isCompact
+                      ? setMobileDetailDkId(current => current === row.dkId ? null : row.dkId)
+                      : setExpandedDkId(current => current === row.dkId ? null : row.dkId))}
+                    nameExpanded={isCompact ? mobileDetailOpen : expanded}
+                    nameAriaLabel={isCompact
+                      ? `${mobileDetailOpen ? "Hide" : "Show"} row details for ${row.playerName}`
+                      : `${expanded ? "Collapse" : "Expand"} details for ${row.playerName}`} />
                   {status && <span className={cn("rounded border px-1 text-[9px] font-bold", DFS_STATUS_BADGE_CLASSES[status.tone])}>{status.label}</span>}
                   {warning && <span title={warning} aria-label={warning} className="text-[10px] font-semibold text-amber-800">Check identity</span>}
                 </div></td>
-                <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1")}>{row.opponent ? <FantasyOpponentIdentity opponent={row.opponent} homeAway={row.homeAway ?? "neutral"} compact /> : "—"}</td>
-                {columns.slice(2).map(column => <td key={column.key} className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1 text-right font-semibold")}>{renderMetric(row, column.key)}</td>)}
-                {!isDst && <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-0")}><FantasyExpandControl label={`${expanded ? "Collapse" : "Expand"} ${row.playerName}`} expanded={expanded} onClick={() => setExpandedDkId(expanded ? null : row.dkId)} /></td>}
+                <td className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1")}>{row.opponent ? <FantasyOpponentIdentity opponent={row.opponent} homeAway={row.homeAway ?? "neutral"} compact showAbbreviation={false} /> : "—"}</td>
+                {columns.slice(2).map(column => <td key={column.id} className={cn(FANTASY_TABLE_BODY_CELL, "px-2 py-1 text-right font-semibold")}>{renderMetric(row, column.id)}</td>)}
+                {!isDst && <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-0", isCompact && "sticky right-0 bg-white group-hover:bg-slate-50")}><FantasyExpandControl label={`${expanded ? "Collapse" : "Expand"} ${row.playerName}`} expanded={expanded} onClick={() => setExpandedDkId(expanded ? null : row.dkId)} /></td>}
               </tr>
+              {!isDst && isCompact && mobileDetailOpen && <tr data-dfs-mobile-detail={row.dkId}><td colSpan={columns.length + 1} className="whitespace-normal border-b border-slate-200 bg-slate-50 px-3 py-2">
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                  {columns.slice(2).map(column => <div key={column.id} className="flex items-center justify-between gap-2">
+                    <dt className="text-slate-500">{column.label}</dt>
+                    <dd className="font-semibold text-slate-900">{renderMetric(row, column.id)}</dd>
+                  </div>)}
+                  {columns.length <= 2 && <p className="col-span-2 text-slate-500">All optional columns are hidden. Use “Columns” to add metrics.</p>}
+                </dl>
+              </td></tr>}
               {!isDst && expanded && <tr><td colSpan={columns.length + 1} className="whitespace-normal border-b border-slate-200 bg-slate-50 px-3 py-2">
                 <ResearchDetail row={row} /><NflDfsHistory key={row.dkId} row={row} target={historyTarget} index={historyIndex} />
               </td></tr>}

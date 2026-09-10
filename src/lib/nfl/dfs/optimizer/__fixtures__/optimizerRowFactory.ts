@@ -1,4 +1,5 @@
 import { createEmptyWeeklyFantasyResearchContext } from "@/lib/fantasy/weekly/researchContext";
+import { getMatchupGrade } from "@/lib/fantasy/matchupGrade";
 import type { WeeklyFantasyResearchContext, WeeklyResearchMetric } from "@/lib/fantasy/weekly/researchContext";
 import type { FantasyMatchupEdges, NflMatchupEdge } from "@/lib/nfl/matchupEdges";
 import type { DstMatchup } from "@/lib/nfl/dfs/dstMatchup";
@@ -27,6 +28,12 @@ export type OffensiveFixture = {
   roleClass?: DfsRoleContext["roleClass"];
   roleCertainty?: DfsRoleContext["roleCertainty"];
   researchAvailable?: boolean;
+  /** Canonical weekly research PPG / FPA values surfaced on the board and generated lineups. */
+  seasonPpg?: number | null;
+  last5Ppg?: number | null;
+  /** When set, drives both the FPA SZN cell and (via getMatchupGrade) the Matchup grade. */
+  opponentFpaSeasonRank?: number | null;
+  opponentFpaSeasonValue?: number | null;
   /**
    * Defaults to 9 -- comfortably inside every DFS_POSITION_RANK_CAPS cap, and
    * intentionally above 3 so it never collides with a rendered RB1/RB2/WR1/
@@ -53,10 +60,17 @@ function edge(score: number | null): NflMatchupEdge {
   };
 }
 
+function fpaMetric(value: number | null, rank: number | null): WeeklyResearchMetric {
+  return { value, rank, poolSize: rank == null ? 0 : 32, sampleSize: value == null ? 0 : 5, sampleSeason: 2025, games: [] };
+}
+
 function researchContext(fixture: OffensiveFixture): WeeklyFantasyResearchContext {
   const base = createEmptyWeeklyFantasyResearchContext();
   return {
     ...base,
+    seasonPpg: metric(fixture.seasonPpg ?? null),
+    last5Ppg: metric(fixture.last5Ppg ?? null),
+    opponentFpaSeason: fpaMetric(fixture.opponentFpaSeasonValue ?? null, fixture.opponentFpaSeasonRank ?? null),
     evidence: {
       ...base.evidence,
       yardsPerCarry: metric(fixture.yardsPerCarry ?? null),
@@ -127,7 +141,7 @@ export function buildOffensiveRow(fixture: OffensiveFixture): DfsEnrichedOffensi
     roleContext: roleContext(fixture),
     eligibilityReasons: [],
     research: available
-      ? { status: "available", context: researchContext(fixture), matchupEdges: edges, matchupGrade: null }
+      ? { status: "available", context: researchContext(fixture), matchupEdges: edges, matchupGrade: getMatchupGrade(fixture.opponentFpaSeasonRank ?? null) }
       : { status: "missing", context: null, matchupEdges: null, matchupGrade: null },
     teamMismatchStatus: "none",
     opponent: "opp",

@@ -91,11 +91,14 @@ describe("DFS historical UI", () => {
     vi.spyOn(dfsHistoryLoader, "index").mockResolvedValue(index);
     const load = vi.spyOn(dfsHistoryLoader, "detail").mockResolvedValue(detail);
     render(<NflDfsAnalyzerTable rows={[row]} historyTarget={historyTarget} />);
-    await screen.findByText("+1.7");
+    const control = await screen.findByRole("button", { name: "Expand Player One" });
     expect(load).not.toHaveBeenCalled();
-    expect(screen.getByRole("columnheader", { name: "FPA SZN" })).toBeVisible();
-    expect(screen.getByRole("columnheader", { name: "DEF VS AVG" })).toBeVisible();
-    const control = screen.getByRole("button", { name: "Expand Player One" });
+    if (!compact) {
+      // Desktop shows the full column set; mobile hides FPA/DEF VS AVG by default.
+      expect(screen.getByRole("columnheader", { name: "FPA SZN" })).toBeVisible();
+      expect(screen.getByRole("columnheader", { name: "DEF VS AVG" })).toBeVisible();
+      expect(screen.getByText("+1.7")).toBeVisible();
+    }
     fireEvent.click(control);
     await screen.findByRole("region", { name: "Historical yardage context" });
     await waitFor(() => expect(load).toHaveBeenCalledTimes(1));
