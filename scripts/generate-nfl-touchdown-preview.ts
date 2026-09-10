@@ -199,7 +199,7 @@ const impliedCount = players.filter((player) => player.impliedTeamPoints != null
 const anytimeTdAvailableCount = players.filter((player) => player.anytimeTdOdds != null).length;
 const artifact: TouchdownPreviewArtifact = {
   schemaVersion: NFL_TOUCHDOWN_PREVIEW_SCHEMA_VERSION, modelVersion: "jkb-td-score-v1.0.0", season, week,
-  generatedAt: yardage.generatedAt ?? null, defaultWindow: season === 2026 && week === 1 ? "2025" : "2026",
+  generatedAt: yardage.generatedAt ?? null, defaultWindow: "last8",
   sourceStatus: {
     playerWeekStats: stats.length ? "available" : "missing", touchdownContext: touchdownContextAvailable ? "available" : "missing",
     marketImpliedPoints: impliedCount === 0 ? "missing" : impliedCount === players.length ? "available" : "partial",

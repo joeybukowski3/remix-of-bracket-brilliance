@@ -14,7 +14,7 @@ const POSITIONS = ["all", "QB", "RB", "WR", "TE"] as const;
 export default function NFLTouchdownScorer() {
   usePageSeo({ title: "NFL TD Scorer | Joe Knows Ball", description: "Current-week NFL touchdown scorer rankings from the relative JKB TD Score.", path: "/nfl/td-scorer" });
   const source = useNflTouchdownPreview(2026);
-  const [window, setWindow] = useState<TouchdownWindowKey>("2025");
+  const [window, setWindow] = useState<TouchdownWindowKey>("last8");
   const [position, setPosition] = useState<"all" | TouchdownPosition>("all");
   const [team, setTeam] = useState("all"); const [matchup, setMatchup] = useState("all"); const [search, setSearch] = useState("");
   const [sort, setSort] = useState<TouchdownSort>(DEFAULT_TOUCHDOWN_SORT);
