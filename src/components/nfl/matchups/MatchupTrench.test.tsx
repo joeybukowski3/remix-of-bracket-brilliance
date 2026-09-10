@@ -149,7 +149,7 @@ describe("preseason — 2025 only", () => {
     expect(tables).toHaveLength(2);
     for (const table of tables) {
       const headers = Array.from(table.querySelectorAll("thead th")).map((th) => th.textContent);
-      expect(headers).toEqual(["Metric", "NE", "SEA", "Edge"]);
+      expect(headers).toEqual(["NE", "Metric", "SEA", "Edge"]);
     }
   });
 });

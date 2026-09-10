@@ -13,10 +13,16 @@ import type { NflMatchup } from "@/lib/nfl/matchups";
  * and the Team Comparison tab.
  *
  * Both surfaces render this exact component so they cannot drift into two
- * visual systems: same column layout (METRIC | AWAY | HOME | EDGE), same rank
- * tiles, same winner / weaker treatment, same Edge cell, same borders and
- * separators. They differ only by `variant` — a type-scale step — and by how
+ * visual systems: same three-part row (AWAY rank ← METRIC → HOME rank), same
+ * rank tiles, same winner / weaker treatment, same Edge treatment, same borders
+ * and separators. They differ only by `variant` — a type-scale step — and by how
  * many of these tables the caller lays out around it.
+ *
+ * Each row reads TEAM rank ← METRIC → TEAM rank: the away rank tile on the
+ * left, the metric name centred and visually dominant, the home rank tile on
+ * the right. The edge / advantage sits directly beneath the metric name as a
+ * compact secondary line — never as a rail bar and never as a raw stat value in
+ * the primary row.
  *
  * Presentation only. Every number shown is read straight off the resolved
  * `MatchupDisplayMetric`:
@@ -28,10 +34,12 @@ import type { NflMatchup } from "@/lib/nfl/matchups";
  *  - The Edge cell keeps the existing raw-stat-difference logic
  *    (`formatMetricDifference`) and the existing EVEN / N/A states.
  *
- * On a phone the four-column grid is not shrunk — each row stacks: the metric
- * label, then the two rank tiles side by side, then the Edge. The stacking is
- * driven entirely by CSS in `nflMatchupSheet.css` keyed off the `data-cell`
- * attributes below, so the markup stays one responsive system.
+ * The row is a CSS grid at every width (see `nflMatchupSheet.css`, keyed off the
+ * `data-cell` attributes below): desktop and tablet lay the three parts across a
+ * single line with the edge beneath the centred metric; phone keeps the exact
+ * same arrangement at a compact scale — away rank | metric | home rank on top,
+ * edge on a second line — so mobile is a responsive version of the same
+ * component, not a different pattern.
  */
 
 export type MatchupMetricTableVariant = "snapshot" | "detail";
@@ -176,30 +184,30 @@ export default function MatchupMetricTable({
       <table>
         <caption className="sr-only">{caption}</caption>
         <colgroup>
-          <col className="matchup-metric-table__col--metric" />
           <col className="matchup-metric-table__col--value" />
+          <col className="matchup-metric-table__col--metric" />
           <col className="matchup-metric-table__col--value" />
           <col className="matchup-metric-table__col--edge" />
         </colgroup>
         <thead>
           <tr>
-            <th scope="col">Metric</th>
-            <th scope="col">{matchup.away.abbr.toUpperCase()}</th>
-            <th scope="col">{matchup.home.abbr.toUpperCase()}</th>
-            <th scope="col">Edge</th>
+            <th scope="col" data-cell="away">
+              {matchup.away.abbr.toUpperCase()}
+            </th>
+            <th scope="col" data-cell="metric">
+              Metric
+            </th>
+            <th scope="col" data-cell="home">
+              {matchup.home.abbr.toUpperCase()}
+            </th>
+            <th scope="col" data-cell="edge" className="sr-only">
+              Edge
+            </th>
           </tr>
         </thead>
         <tbody>
           {metrics.map((metric) => (
             <tr key={metric.key}>
-              <th scope="row" data-cell="metric" title={metric.help}>
-                <span className="matchup-metric-table__metric-name">
-                  {metric.shortLabel ?? metric.label}
-                </span>
-                {metric.contextLabel && (
-                  <span className="matchup-metric-table__context">{metric.contextLabel}</span>
-                )}
-              </th>
               <td data-cell="away">
                 <ValueCell
                   metric={metric}
@@ -208,6 +216,14 @@ export default function MatchupMetricTable({
                   projected={projected}
                 />
               </td>
+              <th scope="row" data-cell="metric" title={metric.help}>
+                <span className="matchup-metric-table__metric-name">
+                  {metric.shortLabel ?? metric.label}
+                </span>
+                {metric.contextLabel && (
+                  <span className="matchup-metric-table__context">{metric.contextLabel}</span>
+                )}
+              </th>
               <td data-cell="home">
                 <ValueCell
                   metric={metric}
