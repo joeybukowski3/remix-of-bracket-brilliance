@@ -1,7 +1,8 @@
 import { Fragment, useState } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
-import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, stickyDenseHeader } from "@/components/ui/dense-table";
+import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW } from "@/components/ui/dense-table";
+import { STICKY_TOP, useTouchdownStickyHeader, type TouchdownHeaderGeometry } from "./touchdownStickyHeader";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { sportsbookDisplayName } from "@/lib/nfl/bettingLinesView";
 import { touchdownBoardPercentile, type TouchdownBoardHeat, type TouchdownSort, type TouchdownSortKey } from "@/lib/nfl/touchdown-preview/presentation";
@@ -47,33 +48,74 @@ function MatchupCell({ team, opponent, homeAway }: { team: string; opponent: str
   );
 }
 
-function Header({ label, sortKey, sort, onSort, title, className }: { label: string; sortKey?: TouchdownSortKey; sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void; title?: string; className?: string }) {
+function Header({ label, sortKey, sort, onSort, title, className, buttonTabIndex }: { label: string; sortKey?: TouchdownSortKey; sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void; title?: string; className?: string; buttonTabIndex?: number }) {
   const active = sortKey && sort.key === sortKey;
   return <th scope="col" title={title} aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : undefined} className={cn("whitespace-nowrap px-2 py-2 text-center align-bottom", className)}>
-    {sortKey ? <button type="button" onClick={() => onSort(sortKey)} className={cn("inline-flex items-center gap-1 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-600", active ? "text-sky-800" : "hover:text-slate-900")} aria-label={`Sort by ${label}`}>{label}{active ? sort.direction === "desc" ? <ArrowDown className="h-3 w-3" aria-hidden="true" /> : <ArrowUp className="h-3 w-3" aria-hidden="true" /> : <ArrowUpDown className="h-3 w-3 opacity-50" aria-hidden="true" />}</button> : label}
+    {sortKey ? <button type="button" tabIndex={buttonTabIndex} onClick={() => onSort(sortKey)} className={cn("inline-flex items-center gap-1 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-600", active ? "text-sky-800" : "hover:text-slate-900")} aria-label={`Sort by ${label}`}>{label}{active ? sort.direction === "desc" ? <ArrowDown className="h-3 w-3" aria-hidden="true" /> : <ArrowUp className="h-3 w-3" aria-hidden="true" /> : <ArrowUpDown className="h-3 w-3 opacity-50" aria-hidden="true" />}</button> : label}
   </th>;
+}
+
+/**
+ * The single row of header cells, shared verbatim by the real (normal-flow)
+ * `<thead>` and the page-scroll fixed clone so the two can never drift.
+ * `clone` neutralises the clone's tab stops — the real header keeps them.
+ */
+function HeaderCells({ sort, onSort, clone = false }: { sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void; clone?: boolean }) {
+  const tab = clone ? -1 : undefined;
+  return <>
+    <th className="w-7 px-1 py-2" aria-label="Expand" />
+    <Header label="Player" sortKey="player" sort={sort} onSort={onSort} className="text-left" buttonTabIndex={tab} />
+    <Header label="Matchup" sortKey="team" sort={sort} onSort={onSort} className={DESKTOP_ONLY} buttonTabIndex={tab} />
+    <Header label="Pos" sort={sort} onSort={onSort} className={DESKTOP_ONLY} buttonTabIndex={tab} />
+    <Header label="JKB TD Score" sortKey="score" sort={sort} onSort={onSort} title="Relative 0–100 player rating; not a touchdown probability" buttonTabIndex={tab} />
+    <Header label="Anytime TD" sortKey="anytimeTd" sort={sort} onSort={onSort} title="Best approved-sportsbook price for this player to score a touchdown anytime, with the offering book beneath" buttonTabIndex={tab} />
+    <Header label="Mkt Implied %" sortKey="marketImplied" sort={sort} onSort={onSort} title="Sportsbook-implied probability from the Anytime TD price, including vig -- not the JKB TD Score converted to a probability" className={DESKTOP_ONLY} buttonTabIndex={tab} />
+    <Header label="TD/G" sortKey="tdPerGame" sort={sort} onSort={onSort} className={DESKTOP_ONLY} title="Touchdowns per game across the selected window; color is a full-board percentile, not position-relative" buttonTabIndex={tab} />
+    <Header label="TD/G L5" sortKey="tdLast5" sort={sort} onSort={onSort} className={DESKTOP_ONLY} title="Touchdowns per game over the last 5 applicable games; color is a full-board percentile, not position-relative" buttonTabIndex={tab} />
+    <Header label="Team Usage %" sortKey="teamUsage" sort={sort} onSort={onSort} title="Player's share of the team's scorer opportunities; color is a full-board percentile" buttonTabIndex={tab} />
+  </>;
+}
+
+/**
+ * `position: fixed` clone of the header row, mounted only while the real
+ * `<thead>` has scrolled under the 72px `SiteHeader` and the table body is still
+ * on screen (see `useTouchdownStickyHeader`). It is measured from the live header
+ * cells, so column widths — including the responsive `hidden md:table-cell`
+ * columns, which measure 0 on phones — line up exactly with the body. The inner
+ * layer is translated by `-scrollLeft` so horizontal table scroll stays in sync.
+ */
+function TouchdownStickyHeaderClone({ geometry, sort, onSort }: { geometry: TouchdownHeaderGeometry; sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void }) {
+  if (!geometry.active || geometry.columns.length === 0) return null;
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="touchdown-sticky-header"
+      className="fixed z-20 overflow-hidden border-b border-slate-300 bg-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+      style={{ top: STICKY_TOP, left: geometry.left, width: geometry.width, height: geometry.height }}
+    >
+      <div className="absolute left-0 top-0" style={{ width: geometry.tableWidth || undefined, transform: `translateX(${-geometry.scrollLeft}px)` }}>
+        <table className="w-full border-separate border-spacing-0 text-[11px]">
+          <colgroup>{geometry.columns.map((col, index) => <col key={index} style={{ width: `${col.width}px` }} />)}</colgroup>
+          <thead><tr className={DENSE_TABLE_HEAD_ROW}><HeaderCells sort={sort} onSort={onSort} clone /></tr></thead>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 export default function TouchdownScorerTable({ players, window, heat, sort, onSort }: { players: readonly TouchdownPreviewPlayer[]; window: TouchdownWindowKey; heat: TouchdownBoardHeat; sort: TouchdownSort; onSort: (key: TouchdownSortKey) => void }) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  return <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm" data-testid="touchdown-table">
-    <DenseTableScroller label="NFL touchdown scorer rankings" data-testid="touchdown-table-scroller">
+  const { wrapRef, scrollRef, theadRef, geometry } = useTouchdownStickyHeader();
+  return <div ref={wrapRef} className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm" data-testid="touchdown-table">
+    <DenseTableScroller label="NFL touchdown scorer rankings" data-testid="touchdown-table-scroller" scrollRef={scrollRef}>
       <table className="w-full border-separate border-spacing-0 text-[11px] md:min-w-[900px]">
-        {/* Sticky under the global SiteHeader (`sticky top-0 z-[100]`, min-h-72px).
-            72px is the header's own height; no NFL sub-nav is sticky, so this is
-            the full permanent-chrome offset. Opaque `bg-slate-100` + a hairline
-            shadow keep body rows from bleeding through while the row is pinned. */}
-        <thead className={stickyDenseHeader("top-[72px] bg-slate-100 shadow-[0_1px_2px_rgba(15,23,42,0.08)]")}><tr className={DENSE_TABLE_HEAD_ROW}>
-          <th className="w-7 px-1 py-2" aria-label="Expand" />
-          <Header label="Player" sortKey="player" sort={sort} onSort={onSort} className="text-left" />
-          <Header label="Matchup" sortKey="team" sort={sort} onSort={onSort} className={DESKTOP_ONLY} />
-          <Header label="Pos" sort={sort} onSort={onSort} className={DESKTOP_ONLY} />
-          <Header label="JKB TD Score" sortKey="score" sort={sort} onSort={onSort} title="Relative 0–100 player rating; not a touchdown probability" />
-          <Header label="Anytime TD" sortKey="anytimeTd" sort={sort} onSort={onSort} title="Best approved-sportsbook price for this player to score a touchdown anytime, with the offering book beneath" />
-          <Header label="Mkt Implied %" sortKey="marketImplied" sort={sort} onSort={onSort} title="Sportsbook-implied probability from the Anytime TD price, including vig -- not the JKB TD Score converted to a probability" className={DESKTOP_ONLY} />
-          <Header label="TD/G" sortKey="tdPerGame" sort={sort} onSort={onSort} className={DESKTOP_ONLY} title="Touchdowns per game across the selected window; color is a full-board percentile, not position-relative" />
-          <Header label="TD/G L5" sortKey="tdLast5" sort={sort} onSort={onSort} className={DESKTOP_ONLY} title="Touchdowns per game over the last 5 applicable games; color is a full-board percentile, not position-relative" />
-          <Header label="Team Usage %" sortKey="teamUsage" sort={sort} onSort={onSort} title="Player's share of the team's scorer opportunities; color is a full-board percentile" />
+        {/* Normal flow — no sticky offset here. `DenseTableScroller`'s
+            `overflow-x` makes it (not the viewport) the sticky containing block,
+            so a `top-[72px]` sticky `<thead>` would just be shoved 72px down
+            inside the scroller (PR #327 bug). The 72px `SiteHeader`-relative pin
+            is done by `TouchdownStickyHeaderClone` below instead. */}
+        <thead ref={theadRef}><tr className={DENSE_TABLE_HEAD_ROW}>
+          <HeaderCells sort={sort} onSort={onSort} />
         </tr></thead>
         <tbody>{players.map((player) => {
           const metrics = player.windows[window]; const open = expanded === player.playerId;
@@ -103,5 +145,6 @@ export default function TouchdownScorerTable({ players, window, heat, sort, onSo
         })}</tbody>
       </table>
     </DenseTableScroller>
+    <TouchdownStickyHeaderClone geometry={geometry} sort={sort} onSort={onSort} />
   </div>;
 }
