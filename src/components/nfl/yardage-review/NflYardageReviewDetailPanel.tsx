@@ -48,8 +48,8 @@ import {
   buildOpponentGameTimeTeamByGame,
 } from "@/lib/nfl/props/review/yardageHistoryView";
 import NflYardageReviewTeamCell from "./NflYardageReviewTeamCell";
-import NflYardagePlayerLast10Table, { type NflYardagePlayerCurrentMatchup } from "./NflYardagePlayerLast10Table";
-import NflYardageOpponentLast10Table, { type NflYardageOpponentCurrentMatchup } from "./NflYardageOpponentLast10Table";
+import NflYardagePlayerLast10Table, { type NflYardagePlayerCurrentMatchup } from "@/components/nfl/history/NflPlayerLast10Table";
+import NflYardageOpponentLast10Table, { type NflYardageOpponentCurrentMatchup } from "@/components/nfl/history/NflOpponentLast10Table";
 import NflYardageStatsTabs from "./NflYardageStatsTabs";
 
 function fmt1(value: number | null): string {

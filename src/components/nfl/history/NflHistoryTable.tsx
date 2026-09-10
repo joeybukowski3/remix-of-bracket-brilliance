@@ -26,6 +26,8 @@ export type NflHistoryColumn<TRow> = {
   header: ReactNode;
   /** Extra classes on the <th>/<td>, e.g. accent-column borders/background. */
   className?: string;
+  /** Extra classes on the <th> only, e.g. `whitespace-normal` two-line headers or narrow min/max width on space-hungry columns. */
+  headerClassName?: string;
   render: (row: TRow) => ReactNode;
   /** Cell shown in the totals/averages footer row for this column; omitted columns render an empty footer cell. */
   footer?: ReactNode;
@@ -98,7 +100,7 @@ export function NflHistoryTable<TRow>({
       {title != null && <h4 className="text-[11px] font-bold uppercase tracking-wide text-slate-700">{title}</h4>}
 
       {mobileColumns != null && (
-        <div className="overflow-hidden rounded-md border-2 border-slate-300 md:hidden">
+        <div className="overflow-hidden rounded-md border-2 border-slate-400 bg-white md:hidden">
           <table className="w-full table-fixed border-collapse text-[10px]">
             <colgroup>
               {mobileColumns.map((column) => (
@@ -140,13 +142,13 @@ export function NflHistoryTable<TRow>({
 
       <DenseTableScroller
         label={scrollLabel}
-        className={mobileColumns != null ? `hidden rounded-md border-2 border-slate-300 md:block` : "max-w-full overflow-x-auto rounded-md border-2 border-slate-300"}
+        className={mobileColumns != null ? `hidden rounded-md border-2 border-slate-400 bg-white md:block` : "max-w-full overflow-x-auto rounded-md border-2 border-slate-400 bg-white"}
       >
         <table className={`w-full ${minWidthClassName} border-collapse text-[11px]`}>
           <thead>
             <tr className="border-b-2 border-slate-300 bg-slate-200/70 text-left text-[10px] font-bold uppercase tracking-wide text-slate-600">
               {columns.map((column) => (
-                <th key={column.key} className={`${cellPad} ${column.className ?? ""}`}>
+                <th key={column.key} className={`${cellPad} ${column.className ?? ""} ${column.headerClassName ?? ""}`}>
                   {column.header}
                 </th>
               ))}

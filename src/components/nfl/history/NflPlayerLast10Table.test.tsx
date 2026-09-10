@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import NflYardagePlayerLast10Table from "./NflYardagePlayerLast10Table";
+import NflYardagePlayerLast10Table from "./NflPlayerLast10Table";
 import type { NflYardagePlayerHistory } from "@/lib/nfl/props/types/yardageHistory";
 
 function passingHistory(): NflYardagePlayerHistory {
@@ -14,7 +14,7 @@ function passingHistory(): NflYardagePlayerHistory {
         gameId: "g1", season: 2025, week: 18, dateUtc: "2026-01-04T21:25:00.000Z",
         opponentAbbr: "mia", homeAway: "home", oppDefRank: 14, oppDefRankPoolSize: 32, oppYdsAllowAvg: 230.3,
         stat: { completions: 14, attempts: 18, passingTds: 1, interceptions: 0 },
-        actualYards: 276, gameScore: { result: "W", teamScore: 38, oppScore: 10 }, vegasLine: 233.5,
+        actualYards: 276, fantasyPointsPpr: 22.34, gameScore: { result: "W", teamScore: 38, oppScore: 10 }, vegasLine: 233.5,
       },
     ],
   };
@@ -66,11 +66,46 @@ function headerTexts() {
 }
 
 describe("NflYardagePlayerLast10Table column order", () => {
-  it("passing: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Pass Yds, VS OPP AVG, Cmp/Att, TD/INT, Game Score -- no Vegas Line or Fantasy Pts", () => {
+  it("passing/QB: the approved shared column order with Fantasy PPR Points and no Score column", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
     expect(headerTexts()).toEqual([
-      "Date", "Opponent", "Opp Def Rank", "Opp Yds Allow Avg", "Pass Yds", "VS OPP AVG", "Cmp / Att", "TD / INT", "Game Score",
+      "Date", "Opponent", "Comp/Att", "Yards", "TD/INT", "Fantasy PPR Points", "Avg. Yards Allowed", "vs AVG", "Def Rank",
     ]);
+  });
+
+  it("passing/QB: never renders a Score / Game Score column", () => {
+    render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
+    expect(headerTexts()).not.toContain("Score");
+    expect(headerTexts()).not.toContain("Game Score");
+  });
+
+  it("mobile Player Last 10 opponent cell shows vs/@ + a team logo, never the opponent abbreviation", () => {
+    render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
+    const mobile = document.querySelector(".md\\:hidden");
+    expect(mobile).toBeTruthy();
+    expect(mobile!.querySelector("img")).toBeTruthy();
+    expect(mobile!.textContent).toContain("vs");
+    expect(mobile!.textContent).not.toContain("MIA");
+  });
+
+  it("rushing keeps its Game Score column", () => {
+    render(<NflYardagePlayerLast10Table playerName="Rhamondre Stevenson" history={rushingHistory()} currentLine={null} />);
+    expect(headerTexts()).toContain("Game Score");
+  });
+
+  it("passing/QB: Fantasy PPR Points shows the existing nflverse Full PPR value, not a recomputed total", () => {
+    render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
+    // artifact value is 22.34; a naive per-market DK-ish recompute (276*0.04 + 4) would be 15.04.
+    expect(screen.getAllByText("22.3").length).toBeGreaterThan(0);
+    expect(screen.queryByText("15.0")).not.toBeInTheDocument();
+  });
+
+  it("passing/QB: Comp/Att and TD/INT footers drop the redundant per-side 'Avg'", () => {
+    render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
+    const region = screen.getByRole("region", { name: /last \d+ games?/i });
+    expect(within(region).getByText("14.0 / 18.0")).toBeInTheDocument();
+    expect(within(region).getByText("1.0 / 0.0")).toBeInTheDocument();
+    expect(within(region).queryByText(/Avg 14\.0/)).not.toBeInTheDocument();
   });
 
   it("rushing: Date, Opponent, Opp Def Rank, Opp Yds Allow Avg, Rush Yds, VS OPP AVG, Rush Att, Rush TD, Game Score -- no Vegas Line or Fantasy Pts", () => {
@@ -112,13 +147,16 @@ describe("NflYardagePlayerLast10Table column order", () => {
     expect(cell.getAttribute("data-result")).toBe("over");
   });
 
-  it("never renders Vegas Line or a single-market total mislabeled as Fantasy Pts", () => {
+  it("never renders a Vegas Line column, and never a recomputed single-market total", () => {
     render(<NflYardagePlayerLast10Table playerName="Drake Maye" history={passingHistory()} currentLine={233.5} />);
     expect(screen.queryByRole("columnheader", { name: "Vegas Line" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: /Fantasy Pts/i })).not.toBeInTheDocument();
-    // 276 * 0.04 + 1 * 4 = 15.04 -- the partial single-market DK total this game would have
-    // scored, kept out of the DOM entirely rather than shown under any label.
+    // 276 * 0.04 + 1 * 4 = 15.04 -- a partial single-market recompute, never shown.
     expect(screen.queryByText("15.0")).not.toBeInTheDocument();
+  });
+
+  it("rushing keeps its original columns -- no Fantasy PPR Points column", () => {
+    render(<NflYardagePlayerLast10Table playerName="Rhamondre Stevenson" history={rushingHistory()} currentLine={null} />);
+    expect(headerTexts()).not.toContain("Fantasy PPR Points");
   });
 
   it("VS OPP AVG is negative/red when actual yards trail the opponent's allowed average", () => {

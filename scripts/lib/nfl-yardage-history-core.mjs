@@ -104,6 +104,14 @@ export function normalizeHistoryStatRows(rows, season) {
       targets: Number(row.targets) || 0,
       receivingYards: Number(row.receiving_yards) || 0,
       receivingTds: Number(row.receiving_tds) || 0,
+      // Full PPR fantasy points for this game, taken verbatim from nflverse
+      // stats_player_week's own `fantasy_points_ppr` column -- never
+      // recomputed here. Missing/blank -> null (can legitimately be
+      // negative, so no `|| 0` coercion).
+      fantasyPointsPpr:
+        row.fantasy_points_ppr === "" || row.fantasy_points_ppr == null || !Number.isFinite(Number(row.fantasy_points_ppr))
+          ? null
+          : Number(row.fantasy_points_ppr),
     });
   }
   return out;
@@ -263,6 +271,10 @@ export function buildPlayerLast10(params) {
       oppYdsAllowAvg: oppYdsAllow?.avg ?? null,
       stat: statBlockFor(market, row),
       actualYards: market === "passing" ? row.passingYards : market === "rushing" ? row.rushingYards : row.receivingYards,
+      // Additive, QB/passing-only: the game's Full PPR total from nflverse
+      // (see normalizeHistoryStatRows). Omitted entirely for rushing/receiving
+      // so existing consumers of those markets are byte-for-byte unchanged.
+      ...(market === "passing" ? { fantasyPointsPpr: row.fantasyPointsPpr ?? null } : {}),
       gameScore: game ? { result: game.result, teamScore: game.teamScore, oppScore: game.oppScore } : null,
       vegasLine: vegasLine?.point ?? null,
     };
@@ -336,6 +348,9 @@ export function buildOpponentLast10(params) {
       oppPlayerYpg: oppPlayerYpg?.avg ?? null,
       stat: statBlockFor(market, leaderRow),
       yardsAllowed: market === "passing" ? leaderRow.passingYards : market === "rushing" ? leaderRow.rushingYards : leaderRow.receivingYards,
+      // Additive, QB/passing-only: the opposing QB's Full PPR total for that
+      // game, verbatim from nflverse. Omitted for rushing/receiving.
+      ...(market === "passing" ? { fantasyPointsPpr: leaderRow.fantasyPointsPpr ?? null } : {}),
       gameScore: game ? { result: game.result, teamScore: game.teamScore, oppScore: game.oppScore } : null,
       vegasLine: vegasLine?.point ?? null,
     };
