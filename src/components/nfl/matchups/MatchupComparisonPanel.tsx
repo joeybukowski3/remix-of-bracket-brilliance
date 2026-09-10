@@ -7,9 +7,9 @@ import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
-import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
+import MatchupMetricTable from "@/components/nfl/matchups/MatchupMetricTable";
+import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
-import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import { cn } from "@/lib/utils";
@@ -39,33 +39,6 @@ const COACHING_TAB_ID: StatComparisonTabId = "coaching";
 
 /** How long the arrival highlight stays on the destination group. */
 const JUMP_HIGHLIGHT_MS = 1100;
-
-/**
- * Away/home identity for a comparison group: the two crests and abbreviations
- * over the value columns the new head-to-head rows align to. One quiet line,
- * not the former full table header.
- */
-function ComparisonSideHeader({ matchup }: { matchup: NflMatchup }) {
-  return (
-    <div className="mx-auto grid w-full grid-cols-[3.75rem_minmax(0,1fr)_3.75rem] items-center gap-x-2 border-b border-slate-200 pb-1.5 sm:max-w-[760px] sm:grid-cols-[5rem_minmax(0,1fr)_5rem] sm:gap-x-4">
-      <span className="flex items-center justify-end gap-1">
-        <NflTeamCrest team={matchup.away} side="away" size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          {matchup.away.abbr.toUpperCase()}
-        </span>
-      </span>
-      <span aria-hidden className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
-        Advantage
-      </span>
-      <span className="flex items-center justify-start gap-1">
-        <NflTeamCrest team={matchup.home} side="home" size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          {matchup.home.abbr.toUpperCase()}
-        </span>
-      </span>
-    </div>
-  );
-}
 
 /**
  * Category advantage on the accordion trigger.
@@ -230,35 +203,20 @@ export default function MatchupComparisonPanel({
     matchup.home.teamName
   );
 
-  /** Every metric row for one category, shared by the mobile accordion and the desktop tab panel. */
-  const renderRows = (rows: MatchupDisplayMetric[]) =>
-    rows.map((metric) => (
-      <NflHeadToHeadMetricRow
-        key={metric.key}
-        label={metric.label}
-        shortLabel={metric.shortLabel}
-        help={metric.help}
-        leftValue={metric.away.formatted}
-        rightValue={metric.home.formatted}
-        leftRank={metric.away.rank}
-        rightRank={metric.home.rank}
-        projected={(projection || !!dedicatedLabel) && metric.key !== "team.overallRating"}
-        leftRawValue={metric.away.value}
-        rightRawValue={metric.home.value}
-        higherIsBetter={
-          metric.direction === "higher-is-better"
-            ? true
-            : metric.direction === "lower-is-better"
-              ? false
-              : null
-        }
-        comparison={metric.comparison}
-        leftTeamName={matchup.away.teamName}
-        rightTeamName={matchup.home.teamName}
-        leftTeamAbbr={matchup.away.abbr}
-        rightTeamAbbr={matchup.home.abbr}
-      />
-    ));
+  /**
+   * One category's metrics as the shared comparison table — the same component
+   * the Overview snapshot uses, at the larger `detail` scale. Shared by the
+   * mobile accordion and the desktop tab panel.
+   */
+  const renderTable = (rows: MatchupDisplayMetric[], categoryLabel: string) => (
+    <MatchupMetricTable
+      variant="detail"
+      metrics={rows}
+      matchup={matchup}
+      projected={projection || !!dedicatedLabel}
+      caption={`${categoryLabel} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
+    />
+  );
 
   const tabs: MatchupTabDef[] = [
     ...MATCHUP_CATEGORIES.map((category) => ({
@@ -325,8 +283,8 @@ export default function MatchupComparisonPanel({
                       else triggerRefs.current.delete(category.id);
                     }}
                   >
-                    <ComparisonSideHeader matchup={matchup} />
-                    {renderRows(rows)}
+                    <MatchupComparisonTeamHeader matchup={matchup} />
+                    {renderTable(rows, category.label)}
                   </MatchupCollapsibleGroup>
                 </div>
               );
@@ -391,8 +349,8 @@ export default function MatchupComparisonPanel({
                       />
                     )}
                   </div>
-                  <ComparisonSideHeader matchup={matchup} />
-                  {renderRows(rows)}
+                  <MatchupComparisonTeamHeader matchup={matchup} />
+                  {renderTable(rows, category.label)}
                 </div>
               );
             })}

@@ -31,7 +31,7 @@ const MATCHUP: NflMatchup = {
   away: AWAY, home: HOME, neutralSite: false, spread: null,
 };
 
-const metric = (pct: number, rank: number) => ({ pct, raw: pct / 100, rank });
+const metric = (pct: number, rank: number | null) => ({ pct, raw: pct / 100, rank });
 
 function teamPeriod(base: number, rank: number) {
   return {
@@ -80,39 +80,65 @@ function renderPeriods(awayGames: number, homeGames: number) {
 }
 
 describe("MatchupPeriodComparison", () => {
-  it("keeps the headings, explanatory sentence and period sub-labels", () => {
+  it("keeps the headings, explanatory sentence and period labels", () => {
     renderPeriods(0, 0);
     expect(screen.getByText("Over time")).toBeInTheDocument();
     expect(screen.getByText("Success Rate by Period")).toBeInTheDocument();
     expect(
       screen.getByText(/Periods switch together for both teams once each has six completed/)
     ).toBeInTheDocument();
-    // Preseason shows the 2025 Last 8 window, carried in each row's context label.
+    // Preseason shows the 2025 Last 8 window, carried in each row's metric cell.
     expect(screen.getAllByText("2025 L8").length).toBeGreaterThan(0);
   });
 
-  it("renders every paired stat through the shared head-to-head row", () => {
-    renderPeriods(0, 0);
-    // One rail per metric per visible period (6 metrics × 1 period).
-    expect(screen.getAllByRole("img", { name: /Comparison rail/ })).toHaveLength(6);
+  it("renders each success-rate metric as its own titled shared comparison table", () => {
+    const { container } = renderPeriods(0, 0);
+    // Six metrics → six titled table groups, each a shared MatchupMetricTable.
+    expect(container.querySelectorAll(".matchup-metric-table-group")).toHaveLength(6);
+    expect(container.querySelectorAll(".matchup-metric-table")).toHaveLength(6);
+    // The prominent two-team header sits above the tables.
+    expect(screen.getAllByText("NE").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("SEA").length).toBeGreaterThan(0);
   });
 
-  it("states a left-side winner for offense success rate and a right-side winner for defense", () => {
-    renderPeriods(0, 0);
+  it("shows league ranks in the team cells and states the raw percentage-point Edge", () => {
+    const { container } = renderPeriods(0, 0);
+    const ranks = Array.from(container.querySelectorAll(".matchup-metric-table__rank")).map(
+      (n) => n.textContent
+    );
     // NE 50.5 (#2) leads SEA 45.8 (#9) on Success Rate — higher is better.
-    const offense = screen.getByRole("img", {
-      name: /Comparison rail — Success Rate \(2025 L8\): New England Patriots advantage/,
-    });
-    expect(offense).toHaveAttribute("data-side", "left");
-    // Success Rate Allowed: SEA 41.8 lower than NE 46.5 — lower is better, SEA leads.
-    const defense = screen.getByRole("img", {
-      name: /Comparison rail — Success Rate Allowed \(2025 L8\): Seattle Seahawks advantage/,
-    });
-    expect(defense).toHaveAttribute("data-side", "right");
+    expect(ranks).toContain("2nd");
+    expect(ranks).toContain("9th");
+    // The raw percentage is preserved on the cell hover title, not shown in the cell.
+    expect(screen.getAllByTitle(/50\.5%/).length).toBeGreaterThan(0);
+    // Edge names the advantaged side with the raw percentage-point gap.
+    expect(screen.getAllByText("+4.7 pp").length).toBeGreaterThan(0);
   });
 
-  it("shows a neutral rail with no winner when a value is missing", () => {
-    // 2026-only period from a fixture with no 2026-last5 data for either team.
+  it("falls back to the raw percentage when a split has no league rank", () => {
+    const noRank: SuccessRatesArtifact = {
+      ...ARTIFACT,
+      periods: {
+        "2025-last8": {
+          ne: { gamesIncluded: 8, gameIds: ["x"], metrics: { "off.successRate": metric(48, null) } },
+          sea: { gamesIncluded: 8, gameIds: ["x"], metrics: { "off.successRate": metric(44, null) } },
+        },
+      },
+    };
+    render(
+      <MemoryRouter>
+        <MatchupPeriodComparison
+          matchup={MATCHUP}
+          successRate={{ periods: ["2025-last8"], resolve: createSuccessRateResolver(noRank) }}
+          note="t"
+        />
+      </MemoryRouter>
+    );
+    expect(screen.getAllByText("48.0%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("44.0%").length).toBeGreaterThan(0);
+  });
+
+  it("keeps a missing value honest with an N/A cell and no winner", () => {
     const emptyArtifact: SuccessRatesArtifact = {
       ...ARTIFACT,
       periods: { "2026-last5": { ne: undefined as never, sea: undefined as never } },
@@ -126,7 +152,6 @@ describe("MatchupPeriodComparison", () => {
         />
       </MemoryRouter>
     );
-    expect(screen.getAllByText("No data").length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("img", { name: /not compared/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
   });
 });
