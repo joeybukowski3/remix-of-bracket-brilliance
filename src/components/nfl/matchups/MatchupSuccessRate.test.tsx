@@ -214,11 +214,13 @@ describe("offense vs defense", () => {
         />
       </MemoryRouter>
     );
-    // NE offense 50.5 vs SEA defense allowed 41.8 (45.8 - 4).
+    // NE offense success (rank 2) vs SEA defense success allowed (rank 12).
+    // Team cells show the league rank; the raw percentage stays on the title.
     const blocks = screen.getAllByText("Success Rate");
     expect(blocks.length).toBeGreaterThan(0);
-    expect(screen.getAllByText("50.5%").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("41.8%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2nd").length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/50\.5%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/41\.8%/).length).toBeGreaterThan(0);
   });
 
   it("derives no matchup score, edge or winner", () => {
@@ -256,7 +258,7 @@ describe("nothing else regressed", () => {
     );
     // One neutral "Not compared" battle per pairing per possession when the
     // ESPN artifact is absent.
-    expect(screen.getAllByText("Not compared")).toHaveLength(4);
+    expect(screen.getAllByTitle("Not compared")).toHaveLength(4);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
   });
 

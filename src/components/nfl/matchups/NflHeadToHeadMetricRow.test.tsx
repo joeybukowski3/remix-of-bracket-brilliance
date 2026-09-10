@@ -319,10 +319,10 @@ describe("Team Comparison panel with head-to-head rows", () => {
     const panel = document.getElementById("comparison-offense");
     expect(panel?.textContent).toContain(`Leads ${offense.awayLeads} of ${offense.eligible}`);
 
-    // The first category is open by default and renders head-to-head rails.
+    // The first category renders the shared comparison table.
     fireEvent.click(screen.getByRole("tab", { name: "Overall Quality" }));
     const openPanel = document.getElementById("comparison-overall");
-    expect(within(openPanel as HTMLElement).getAllByRole("img", { name: /comparison rail/i }).length)
-      .toBeGreaterThan(0);
+    expect(within(openPanel as HTMLElement).getByRole("table")).toBeInTheDocument();
+    expect((openPanel as HTMLElement).querySelector(".matchup-metric-table")).not.toBeNull();
   });
 });

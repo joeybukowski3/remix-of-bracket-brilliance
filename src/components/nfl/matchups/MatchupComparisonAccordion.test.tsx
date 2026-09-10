@@ -137,7 +137,9 @@ describe("MatchupComparisonPanel accordion on a compact (mobile) viewport", () =
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(panel).not.toHaveAttribute("hidden");
-    expect(within(panel as HTMLElement).getAllByText("10.0").length).toBeGreaterThan(0);
+    // Team cells show league rank only (away rank 4 → "4th"), never the raw stat.
+    expect(within(panel as HTMLElement).queryByText("10.0")).toBeNull();
+    expect(within(panel as HTMLElement).getAllByText(/4th/).length).toBeGreaterThan(0);
 
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "false");

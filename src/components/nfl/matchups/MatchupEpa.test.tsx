@@ -178,9 +178,10 @@ describe("offense vs defense battles", () => {
         <MatchupUnitBattles matchup={MATCHUP} resolver={epaResolver(settings("season", true))} />
       </MemoryRouter>
     );
+    // Team cells show the league rank; the raw three-decimal EPA value is
+    // preserved on the cell hover title.
+    expect(screen.getAllByTitle(/[+-]0\.\d{3}/).length).toBeGreaterThan(0);
     const text = container.textContent ?? "";
-    expect(text).toContain("+0.215");
-    expect(text).toMatch(/-0\.\d{3}/);
     // "No matchup score or projected advantage is derived" is the section's own
     // disclaimer, so the assertion targets claims rather than the word alone.
     expect(text).not.toMatch(/winner|epa edge|advantage to|projected spread|favou?rite|win prob/i);

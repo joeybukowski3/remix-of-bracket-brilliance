@@ -3,7 +3,9 @@ import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import { MATCHUP_GROUP_BAND, MATCHUP_PANEL_CAPTION, MATCHUP_PANEL_TITLE } from "@/components/nfl/matchups/matchupTypography";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
-import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
+import MatchupMetricTable, {
+  type MatchupMetricTableRow,
+} from "@/components/nfl/matchups/MatchupMetricTable";
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
 import {
   UNIT_BATTLE_GROUPS,
@@ -143,21 +145,20 @@ function PossessionTeam({
  * Every comparison row for one attacking-vs-defending pairing.
  *
  * The two sides of a pairing measure opposing sides of the same matchup and do
- * not share a raw unit, so their values are never compared directly. Each side's
- * league rank is direction-normalized, so the better league position is the
- * stronger side — that is the only comparison the advantage caption and rail
- * express, via the shared `NflHeadToHeadMetricRow`. When a rank is unavailable
- * the row shows a neutral "Not compared" rail rather than inventing a winner.
+ * not share a raw unit, so their values are never compared directly and the
+ * Edge names only the advantaged side. Each side's league rank is
+ * direction-normalized, so the better league position is the stronger side —
+ * that is the comparison the row expresses. When a rank is unavailable the row
+ * stays neutral rather than inventing a winner. Descriptive pairings (a
+ * context-only metric on either side) assert no winner at all.
  *
- * Period-based sources (success rate, trench win rates) render one row per
+ * Period-based sources (success rate, trench win rates) contribute one row per
  * visible period with the period carried in the row's context sub-label.
  */
-function PairingRows({
+function buildPairingRows({
   pairing,
   awayTeam,
   homeTeam,
-  awayRole,
-  homeRole,
   awayMetricKey,
   homeMetricKey,
   resolver,
@@ -167,79 +168,50 @@ function PairingRows({
   pairing: NflMetricPairing;
   awayTeam: NflMatchupTeam;
   homeTeam: NflMatchupTeam;
-  awayRole: "offense" | "defense";
-  homeRole: "offense" | "defense";
   awayMetricKey: string;
   homeMetricKey: string;
   resolver: NflMatchupMetricResolver;
   successRate?: MatchupSuccessRateConfig;
   trench?: MatchupTrenchConfig;
-}) {
-  const common = {
-    label: pairing.label,
-    help: pairing.help,
-    leftTeamName: `${awayTeam.teamName} ${awayRole}`,
-    rightTeamName: `${homeTeam.teamName} ${homeRole}`,
-    leftTeamAbbr: awayTeam.abbr,
-    rightTeamAbbr: homeTeam.abbr,
-    leftRawValue: null,
-    rightRawValue: null,
-  };
+}): MatchupMetricTableRow[] {
+  const common = { label: pairing.label, help: pairing.help, direction: "higher-is-better" as const };
 
   if (trench && isTrenchMetric(pairing.offenseKey)) {
     const awayValues = collectTrenchPeriodValues(trench.resolve, awayTeam.abbr, awayMetricKey, trench.periods);
     const homeValues = collectTrenchPeriodValues(trench.resolve, homeTeam.abbr, homeMetricKey, trench.periods);
-    return (
-      <>
-        {trench.periods.map((period) => {
-          const away = awayValues[period] ?? null;
-          const home = homeValues[period] ?? null;
-          const leftRank = away?.espnRank ?? null;
-          const rightRank = home?.espnRank ?? null;
-          return (
-            <NflHeadToHeadMetricRow
-              key={period}
-              {...common}
-              contextLabel={trenchPeriodLabel(trench.artifact, period).label}
-              leftValue={formatTrenchValue(away)}
-              rightValue={formatTrenchValue(home)}
-              leftRank={leftRank}
-              rightRank={rightRank}
-              higherIsBetter
-              comparison={deriveMetricComparisonFromRanks(leftRank, rightRank)}
-            />
-          );
-        })}
-      </>
-    );
+    return trench.periods.map((period) => {
+      const away = awayValues[period] ?? null;
+      const home = homeValues[period] ?? null;
+      const leftRank = away?.espnRank ?? null;
+      const rightRank = home?.espnRank ?? null;
+      return {
+        ...common,
+        key: `${pairing.id}-${period}`,
+        contextLabel: trenchPeriodLabel(trench.artifact, period).label,
+        away: { value: away?.valuePct ?? null, rank: leftRank, formatted: formatTrenchValue(away) },
+        home: { value: home?.valuePct ?? null, rank: rightRank, formatted: formatTrenchValue(home) },
+        comparison: deriveMetricComparisonFromRanks(leftRank, rightRank),
+      };
+    });
   }
 
   if (successRate && isSuccessRateMetric(pairing.offenseKey)) {
     const awayValues = collectPeriodValues(successRate.resolve, awayTeam.abbr, awayMetricKey, successRate.periods);
     const homeValues = collectPeriodValues(successRate.resolve, homeTeam.abbr, homeMetricKey, successRate.periods);
-    return (
-      <>
-        {successRate.periods.map((period) => {
-          const away = awayValues[period] ?? null;
-          const home = homeValues[period] ?? null;
-          const leftRank = away?.rank ?? null;
-          const rightRank = home?.rank ?? null;
-          return (
-            <NflHeadToHeadMetricRow
-              key={period}
-              {...common}
-              contextLabel={SUCCESS_PERIOD_LABELS[period].short}
-              leftValue={formatSuccessRate(away)}
-              rightValue={formatSuccessRate(home)}
-              leftRank={leftRank}
-              rightRank={rightRank}
-              higherIsBetter
-              comparison={deriveMetricComparisonFromRanks(leftRank, rightRank)}
-            />
-          );
-        })}
-      </>
-    );
+    return successRate.periods.map((period) => {
+      const away = awayValues[period] ?? null;
+      const home = homeValues[period] ?? null;
+      const leftRank = away?.rank ?? null;
+      const rightRank = home?.rank ?? null;
+      return {
+        ...common,
+        key: `${pairing.id}-${period}`,
+        contextLabel: SUCCESS_PERIOD_LABELS[period].short,
+        away: { value: away?.pct ?? null, rank: leftRank, formatted: formatSuccessRate(away) },
+        home: { value: home?.pct ?? null, rank: rightRank, formatted: formatSuccessRate(home) },
+        comparison: deriveMetricComparisonFromRanks(leftRank, rightRank),
+      };
+    });
   }
 
   const away = resolver(awayTeam.slug, awayMetricKey);
@@ -247,17 +219,16 @@ function PairingRows({
   const leftRank = away?.rank ?? null;
   const rightRank = home?.rank ?? null;
   const descriptive = pairingIsDescriptive(pairing.offenseKey, pairing.defenseKey);
-  return (
-    <NflHeadToHeadMetricRow
-      {...common}
-      leftValue={away?.formattedValue ?? METRIC_NA}
-      rightValue={home?.formattedValue ?? METRIC_NA}
-      leftRank={leftRank}
-      rightRank={rightRank}
-      higherIsBetter={descriptive ? null : true}
-      comparison={descriptive ? "not-comparable" : deriveMetricComparisonFromRanks(leftRank, rightRank)}
-    />
-  );
+  return [
+    {
+      ...common,
+      key: pairing.id,
+      direction: descriptive ? "context-only" : "higher-is-better",
+      away: { value: away?.value ?? null, rank: leftRank, formatted: away?.formattedValue ?? METRIC_NA },
+      home: { value: home?.value ?? null, rank: rightRank, formatted: home?.formattedValue ?? METRIC_NA },
+      comparison: descriptive ? "not-comparable" : deriveMetricComparisonFromRanks(leftRank, rightRank),
+    },
+  ];
 }
 
 /**
@@ -272,11 +243,13 @@ function PossessionPanel({
   awayTeam,
   homeTeam,
   ballSide,
+  matchup,
   resolver,
   successRate,
   trench,
   activeGroup,
 }: {
+  matchup: NflMatchup;
   awayTeam: NflMatchupTeam;
   homeTeam: NflMatchupTeam;
   /** Which side has the ball in this panel. Decides roles, never columns. */
@@ -316,26 +289,32 @@ function PossessionPanel({
       </div>
 
       <div>
-        {UNIT_BATTLE_GROUPS.filter((group) => group.id === activeGroup).map((group) => (
-          <div key={group.id}>
-            <h4 className={MATCHUP_GROUP_BAND}>{group.label}</h4>
-            {group.pairings.map((pairing) => (
-              <PairingRows
-                key={pairing.id}
-                pairing={pairing}
-                awayTeam={awayTeam}
-                homeTeam={homeTeam}
-                awayRole={awayRole}
-                homeRole={homeRole}
-                awayMetricKey={awayKey(pairing)}
-                homeMetricKey={homeKey(pairing)}
-                resolver={resolver}
-                successRate={successRate}
-                trench={trench}
+        {UNIT_BATTLE_GROUPS.filter((group) => group.id === activeGroup).map((group) => {
+          const rows = group.pairings.flatMap((pairing) =>
+            buildPairingRows({
+              pairing,
+              awayTeam,
+              homeTeam,
+              awayMetricKey: awayKey(pairing),
+              homeMetricKey: homeKey(pairing),
+              resolver,
+              successRate,
+              trench,
+            })
+          );
+          return (
+            <div key={group.id}>
+              <h4 className={MATCHUP_GROUP_BAND}>{group.label}</h4>
+              <MatchupMetricTable
+                variant="detail"
+                edgeDifference={false}
+                metrics={rows}
+                matchup={matchup}
+                caption={`${group.label}: ${awayTeam.teamName} ${awayRole} versus ${homeTeam.teamName} ${homeRole}`}
               />
-            ))}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -388,6 +367,7 @@ export default function MatchupUnitBattles({
       <div className="space-y-2">
         <div className={side === "away-ball" ? "" : "hidden lg:block"}>
           <PossessionPanel
+            matchup={matchup}
             awayTeam={away}
             homeTeam={home}
             ballSide="away"
@@ -399,6 +379,7 @@ export default function MatchupUnitBattles({
         </div>
         <div className={side === "home-ball" ? "" : "hidden lg:block"}>
           <PossessionPanel
+            matchup={matchup}
             awayTeam={away}
             homeTeam={home}
             ballSide="home"

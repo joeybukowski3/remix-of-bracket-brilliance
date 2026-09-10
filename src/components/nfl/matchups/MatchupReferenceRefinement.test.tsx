@@ -74,6 +74,48 @@ describe("reference refinement presentation", () => {
     }
   });
 
+  it("shows league rank only in the snapshot team cells, keeping Edge and N/A intact", () => {
+    const categoryMetrics = Object.fromEntries(
+      MATCHUP_CATEGORIES.map((category) => [
+        category.id,
+        [
+          metric({ key: `${category.id}.epaPerPlay`, label: `${category.label} a` }),
+          metric({
+            key: `${category.id}.na`,
+            label: `${category.label} na`,
+            comparison: "missing",
+            home: { value: null, rank: null, formatted: "N/A" },
+          }),
+        ],
+      ])
+    ) as Record<MatchupCategoryId, MatchupDisplayMetric[]>;
+    const { container } = render(
+      <MatchupComparisonSnapshot matchup={matchup} categoryMetrics={categoryMetrics} />
+    );
+
+    const values = container.querySelectorAll(".matchup-metric-table__value");
+    expect(values.length).toBeGreaterThan(0);
+    values.forEach((value) => {
+      // No raw decimal stat leaks into the primary rank tile.
+      expect(value.textContent).not.toMatch(/[+-]?\d\.\d/);
+    });
+    // Rank ordinals are what is shown.
+    const ranks = Array.from(container.querySelectorAll(".matchup-metric-table__rank"));
+    expect(ranks.some((r) => r.textContent === "1st")).toBe(true);
+    expect(ranks.some((r) => r.textContent === "19th")).toBe(true);
+    expect(ranks.some((r) => r.textContent === "N/A")).toBe(true);
+    // Winner styling preserved.
+    expect(
+      container.querySelectorAll(".matchup-metric-table__value.is-winner").length
+    ).toBeGreaterThan(0);
+    // Edge still states the raw-value gap for a decided row.
+    expect(screen.getAllByText("+0.225").length).toBeGreaterThan(0);
+    // N/A preserved in both the cell and the Edge.
+    expect(container.querySelectorAll(".matchup-metric-table__edge.is-neutral").length).toBe(
+      MATCHUP_CATEGORIES.length
+    );
+  });
+
   it("splits only the dense passing and rushing blocks", () => {
     const denseMetrics = (categoryId: MatchupCategoryId) => Array.from({ length: 10 }, (_, index) => metric({
       key: `${categoryId}.metric-${index}`,
