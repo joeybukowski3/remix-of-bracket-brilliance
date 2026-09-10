@@ -60,11 +60,21 @@ jobs:
         env:
           PARLAYAPI: ${{ secrets.PARLAYAPI }}
 
+      # Secondary/fallback yardage source (Kalshi public market-data API, no
+      # key). Deliberately isolated: this step has its own `|| true` guard so
+      # a Kalshi outage can never fail the primary sportsbook refresh above,
+      # and the script itself already exits 0 on any fetch/parse failure
+      # without touching its last-known-good artifact. Writes only
+      # nfl-yardage-alt-market.json + its archive -- never the sportsbook
+      # artifact.
+      - name: Fetch NFL yardage alt markets (Kalshi)
+        run: npm run nfl:yardage-alt-market || true
+
       - name: Detect meaningful data changes
         id: changes
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- 'public/data/nfl/nfl-yardage-market.json' 'data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl' 'public/data/nfl/nfl-anytime-td-market.json' 'data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl')" ]; then
+          if [ -z "$(git status --porcelain -- 'public/data/nfl/nfl-yardage-market.json' 'data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl' 'public/data/nfl/nfl-anytime-td-market.json' 'data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl' 'public/data/nfl/nfl-yardage-alt-market.json' 'data/nfl/props/market-archive/nfl-yardage-alt-market-archive.jsonl')" ]; then
             echo "No NFL market changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -95,6 +105,16 @@ jobs:
               console.log('Generated NFL anytime-TD market artifact is valid.');
               console.log('Canonical anytime-TD quotes:', tdParsed.qa?.playersWithCanonicalQuote);
             }
+
+            const altFile = 'public/data/nfl/nfl-yardage-alt-market.json';
+            if (existsSync(altFile)) {
+              const altParsed = JSON.parse(readFileSync(altFile, 'utf8'));
+              if (altParsed.schemaVersion !== 'nfl-yardage-alt-market-v1') {
+                throw new Error(\`\${altFile} has unexpected schemaVersion \${altParsed.schemaVersion}\`);
+              }
+              console.log('Generated NFL yardage alt-market (Kalshi) artifact is valid.');
+              console.log('Kalshi reference lines:', altParsed.diagnostics?.matched);
+            }
           "
 
       - name: Commit and push refreshed data
@@ -105,7 +125,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/nfl/nfl-yardage-market.json data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl public/data/nfl/nfl-anytime-td-market.json data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl
+          git add public/data/nfl/nfl-yardage-market.json data/nfl/props/market-archive/nfl-yardage-market-archive.jsonl public/data/nfl/nfl-anytime-td-market.json data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl public/data/nfl/nfl-yardage-alt-market.json data/nfl/props/market-archive/nfl-yardage-alt-market-archive.jsonl
 
           if git diff --cached --quiet; then
             echo "No staged NFL market changes."

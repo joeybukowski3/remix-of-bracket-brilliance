@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import NFLYardagePropsReview from "./NFLYardagePropsReview";
@@ -196,11 +196,22 @@ function yardageHistoryArtifact() {
   };
 }
 
+/** Empty Kalshi alt-market artifact, timestamped to match the sportsbook artifact so freshness tests stay in sync. */
+function altMarketArtifact(generatedAt: string) {
+  return {
+    generatedAt,
+    schemaVersion: "nfl-yardage-alt-market-v1",
+    currentWeek: 1,
+    canonical: { passingYards: {}, rushingYards: {}, receivingYards: {} },
+  };
+}
+
 function stubFetch(projections: NflCurrentWeekProjectionArtifact, market: NflYardageMarketArtifact) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes("yardage-history.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(yardageHistoryArtifact()) } as Response);
     if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projections) } as Response);
+    if (url.includes("nfl-yardage-alt-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(altMarketArtifact(market.generatedAt)) } as Response);
     if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(market) } as Response);
     if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
     if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
@@ -239,6 +250,13 @@ function stubMatchMedia(matches: boolean) {
 
 beforeEach(() => {
   vi.unstubAllGlobals();
+});
+
+// Most tests run on the real clock. The few that assert freshness tiers pin
+// the clock themselves via `vi.setSystemTime(...)`; this guard makes sure a
+// pinned clock never leaks into a later test even if that test throws.
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("NFLYardagePropsReview", () => {
@@ -362,7 +380,7 @@ describe("NFLYardagePropsReview", () => {
     showWorkButtons[0].click();
 
     await waitFor(() => expect(screen.getAllByText("1. Projected Yards").length).toBeGreaterThan(0));
-    expect(screen.getAllByText("2. Sportsbook").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2. Market Line").length).toBeGreaterThan(0);
     expect(screen.getAllByText("3. Diff").length).toBeGreaterThan(0);
     expect(screen.getAllByText("4. Matchup").length).toBeGreaterThan(0);
     expect(screen.getAllByText("8. Team Edge").length).toBeGreaterThan(0);
@@ -478,10 +496,15 @@ describe("NFLYardagePropsReview", () => {
     const showWorkButtons = await screen.findAllByRole("button", { name: "Show the Work" });
     showWorkButtons[0].click();
 
-    await waitFor(() => expect(screen.getAllByText(/no approved sportsbook line available/i).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText(/no sportsbook or kalshi line available/i).length).toBeGreaterThan(0));
   });
 
   it("shows a fresh status chip for every source when every artifact was just generated", async () => {
+    // Pin the clock next to the opponent-context fixtures' own generatedAt
+    // (2026-08-26) so every source lands inside its intended freshness window
+    // without touching production thresholds or fixture timestamps.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-08-26T12:00:00Z"));
     const now = new Date().toISOString();
     stubFetch(
       { ...projectionsArtifact([passingRow({ generatedAt: now })]), generatedAt: now, depthChartSource: { available: true, stale: false, snapshotAt: now, ageHours: 0 } },
@@ -1228,6 +1251,7 @@ describe("NFLYardagePropsReview vs Defense Edge -- both offense and defense rank
       const url = String(input);
       if (url.includes("yardage-history.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(yardageHistoryArtifact()) } as Response);
       if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-alt-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(altMarketArtifact(marketArtifact().generatedAt)) } as Response);
       if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
       if (url.includes("matchup-epa.json")) {
         return Promise.resolve({
@@ -1385,6 +1409,7 @@ describe("NFLYardagePropsReview Opponent Last 10 Opp Player cell", () => {
         };
         return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow(), rushingRow as never])) } as Response);
       }
+      if (url.includes("nfl-yardage-alt-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(altMarketArtifact(marketArtifact().generatedAt)) } as Response);
       if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
       if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
       if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
@@ -1444,6 +1469,7 @@ describe("NFLYardagePropsReview Last-10 current-matchup reference row and side-b
         } as Response);
       }
       if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-alt-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(altMarketArtifact(marketArtifact().generatedAt)) } as Response);
       if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
       if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
       if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);
@@ -1562,6 +1588,7 @@ describe("NFLYardagePropsReview old-schema yardage-history artifact (regression:
         return Promise.resolve({ ok: true, json: () => Promise.resolve(artifact) } as Response);
       }
       if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projectionsArtifact([passingRow()])) } as Response);
+      if (url.includes("nfl-yardage-alt-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(altMarketArtifact(marketArtifact().generatedAt)) } as Response);
       if (url.includes("nfl-yardage-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(marketArtifact()) } as Response);
       if (url.includes("matchup-epa.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptyEpaArtifact()) } as Response);
       if (url.includes("matchup-success-rates.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(emptySuccessArtifact()) } as Response);

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNflYardageProjections } from "@/hooks/useNflYardageProjections";
 import { useNflYardageMarket } from "@/hooks/useNflYardageMarket";
+import { useNflYardageAltMarket } from "@/hooks/useNflYardageAltMarket";
 import { useNflYardageOpponentContext } from "@/hooks/useNflYardageOpponentContext";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
@@ -81,6 +82,7 @@ export default function NFLYardagePropsReview() {
 
   const projections = useNflYardageProjections(SEASON);
   const marketData = useNflYardageMarket();
+  const altMarketData = useNflYardageAltMarket();
   const opponentContextData = useNflYardageOpponentContext();
 
   const marketRows = useMemo(
@@ -88,7 +90,10 @@ export default function NFLYardagePropsReview() {
     [projections.data, market, week],
   );
 
-  const reviewEntries = useMemo(() => buildYardageReviewRows(marketRows, marketData.data), [marketRows, marketData.data]);
+  const reviewEntries = useMemo(
+    () => buildYardageReviewRows(marketRows, marketData.data, altMarketData.data),
+    [marketRows, marketData.data, altMarketData.data],
+  );
 
   const freshnessSources = useMemo(
     () =>
@@ -96,13 +101,14 @@ export default function NFLYardagePropsReview() {
         projectionGeneratedAt: projections.data?.generatedAt ?? null,
         depthChartSnapshotAt: projections.data?.depthChartSource.snapshotAt ?? null,
         sportsbookGeneratedAt: marketData.data?.generatedAt ?? null,
+        altMarketGeneratedAt: altMarketData.data?.generatedAt ?? null,
         opponentContextGeneratedAts: [
           opponentContextData.epa?._meta.generatedAt,
           opponentContextData.success?._meta.generatedAt,
           opponentContextData.productionAllowed?._meta.generatedAt,
         ],
       }),
-    [projections.data, marketData.data, opponentContextData],
+    [projections.data, marketData.data, altMarketData.data, opponentContextData],
   );
 
   // Opponent-defense context (yards allowed, EPA/Success allowed, matchup edge) is
@@ -172,7 +178,8 @@ export default function NFLYardagePropsReview() {
 
   const loading = projections.loading;
   const hasProjectionError = Boolean(projections.error);
-  const availableLineCount = reviewEntries.filter((e) => e.marketInfo.available).length;
+  const sportsbookLineCount = reviewEntries.filter((e) => e.marketInfo.available && e.marketInfo.source === "sportsbook").length;
+  const kalshiLineCount = reviewEntries.filter((e) => e.marketInfo.available && e.marketInfo.source === "kalshi").length;
   const activeFilterCount = [
     filters.matchup !== "all",
     filters.position !== "all",
@@ -262,8 +269,10 @@ export default function NFLYardagePropsReview() {
           </div>
 
           <p className="text-[11px] text-slate-500">
-            {sorted.length} of {reviewEntries.length} {MARKET_LABEL[market].toLowerCase()} candidates shown · {availableLineCount} with a
-            matching sportsbook line{marketData.error ? " · sportsbook data unavailable this run" : ""}
+            {sorted.length} of {reviewEntries.length} {MARKET_LABEL[market].toLowerCase()} candidates shown · {sportsbookLineCount} with a
+            sportsbook line{kalshiLineCount > 0 ? ` · ${kalshiLineCount} with a Kalshi fallback line` : ""}
+            {marketData.error ? " · sportsbook data unavailable this run" : ""}
+            {altMarketData.error ? " · Kalshi data unavailable this run" : ""}
             {opponentContextData.errors.length > 0 ? ` · ${opponentContextData.errors.join(" ")}` : ""}
           </p>
 

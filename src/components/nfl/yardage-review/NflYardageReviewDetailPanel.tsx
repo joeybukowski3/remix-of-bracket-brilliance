@@ -431,7 +431,7 @@ export default function NflYardageReviewDetailPanel({
         <p className="text-[13px] font-bold text-slate-900">{row.playerName}</p>
         <p className="text-[10px] text-slate-500">
           {row.team.toUpperCase()} vs {row.opponent.toUpperCase()} · {row.position}
-          {marketInfo.available && <> · Line {marketInfo.line.toFixed(1)}</>}
+          {marketInfo.available && <> · Line {marketInfo.source === "kalshi" ? "~" : ""}{marketInfo.line.toFixed(1)}{marketInfo.source === "kalshi" ? " (Kalshi)" : ""}</>}
         </p>
       </div>
 
@@ -461,16 +461,27 @@ export default function NflYardageReviewDetailPanel({
                 </div>
               </Card>
 
-              <Card title="2. Sportsbook">
-                {sportsbook.available ? (
+              <Card title="2. Market Line">
+                {sportsbook.available && sportsbook.source === "sportsbook" ? (
                   <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Source</span><span className="text-slate-800">Sportsbook</span></div>
                     <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Book</span><span className="text-slate-800">{sportsbook.book}</span></div>
                     <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Line</span><span className="tabular-nums text-slate-800">{sportsbook.line.toFixed(1)}</span></div>
                     <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Over / Under</span><span className="tabular-nums text-slate-800">{sportsbook.overPrice} / {sportsbook.underPrice}</span></div>
                     <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Observed</span><span className="text-slate-800">{new Date(sportsbook.lastUpdate).toLocaleString()}</span></div>
                   </div>
+                ) : sportsbook.available && sportsbook.source === "kalshi" ? (
+                  <div className="space-y-0.5">
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Source</span><span className="text-amber-700">Kalshi (fallback)</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Reference line</span><span className="tabular-nums text-amber-700">~{sportsbook.line.toFixed(1)}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Derived by</span><span className="text-slate-800">{sportsbook.referenceLineMode.replace("_", " ")}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Nearest contract</span><span className="tabular-nums text-slate-800">{sportsbook.exchange.contractThreshold}+ yds</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Raw price</span><span className="tabular-nums text-slate-800">{sportsbook.exchange.yesCents != null ? `${sportsbook.exchange.yesCents}¢ YES` : "—"}{sportsbook.exchange.americanYes != null ? ` (≈ ${sportsbook.exchange.americanYes > 0 ? "+" : ""}${sportsbook.exchange.americanYes}, display only)` : ""}</span></div>
+                    <div className="flex items-baseline justify-between"><span className="font-medium text-slate-600">Observed</span><span className="text-slate-800">{new Date(sportsbook.lastUpdate).toLocaleString()}</span></div>
+                    <p className="pt-1 text-[10px] text-slate-400">Derived market-implied reference, not a tradable line or sportsbook juice.</p>
+                  </div>
                 ) : (
-                  <p className="text-slate-400">No approved sportsbook line available.</p>
+                  <p className="text-slate-400">No sportsbook or Kalshi line available.</p>
                 )}
               </Card>
 
@@ -481,7 +492,7 @@ export default function NflYardageReviewDetailPanel({
                     <p className="tabular-nums text-slate-800">
                       {diff.projectedYards.toFixed(1)} − {diff.line.toFixed(1)} = <span className="font-semibold">{fmtSigned(diff.diff)}</span>
                     </p>
-                    <p className="text-[10px] text-slate-400">Projection − Sportsbook Line. Research context only, not a recommendation.</p>
+                    <p className="text-[10px] text-slate-400">Projection − Market Line. Research context only, not a recommendation.</p>
                   </div>
                 ) : (
                   <p className="text-slate-400">No available line to diff against.</p>
