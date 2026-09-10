@@ -230,11 +230,11 @@ describe("new analytical sorting and matchup presentation", () => {
   const highEdges = buildMatchupEdges();
   highEdges.epa.rankDifference = 5; highEdges.success.rankDifference = 9; highEdges.trenches.rankDifference = 3;
   const low = row({ dkId: "lo", playerName: "Alpha", position: "QB", team: "ari", jkbWeeklyPositionRank: 1,
-    research: { status: "available", matchupGrade: null, matchupEdges: lowEdges, context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 10, rank: 2 }), opponentFpaLast5: buildMetric({ value: 30 }) }) } });
+    research: { status: "available", matchupGrade: null, matchupEdges: lowEdges, context: buildResearchContext({ seasonPpg: buildMetric({ value: 9, rank: 2 }), last5Ppg: buildMetric({ value: 24, rank: 2 }), opponentFpaSeason: buildMetric({ value: 10, rank: 2 }), opponentFpaLast5: buildMetric({ value: 30 }) }) } });
   const high = row({ dkId: "hi", playerName: "Zulu", position: "QB", team: "wsh", jkbWeeklyPositionRank: 9,
-    research: { status: "available", matchupGrade: null, matchupEdges: highEdges, context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 30, rank: 5 }), opponentFpaLast5: buildMetric({ value: 10 }) }) } });
+    research: { status: "available", matchupGrade: null, matchupEdges: highEdges, context: buildResearchContext({ seasonPpg: buildMetric({ value: 22, rank: 5 }), last5Ppg: buildMetric({ value: 12, rank: 5 }), opponentFpaSeason: buildMetric({ value: 30, rank: 5 }), opponentFpaLast5: buildMetric({ value: 10 }) }) } });
   const missing = row({ dkId: "na", playerName: "Missing", position: "QB", jkbWeeklyPositionRank: null });
-  it.each(["weeklyRank", "fpaSeason", "fpaLast5", "epa", "success", "trenches", "matchup"] as DfsSortKey[])("sorts %s in both directions with missing last", key => {
+  it.each(["fantasyPpg", "fantasyPpgL5", "fpaSeason", "fpaLast5", "epa", "success", "trenches", "matchup"] as DfsSortKey[])("sorts %s in both directions with missing last", key => {
     const expected = Number(dfsSortValue(low, key)) < Number(dfsSortValue(high, key)) ? [low, high] : [high, low];
     expect(sortDfsRows([missing, high, low], key, "asc")).toEqual([...expected, missing]);
     expect(sortDfsRows([missing, high, low], key, "desc")).toEqual([...expected].reverse().concat(missing));

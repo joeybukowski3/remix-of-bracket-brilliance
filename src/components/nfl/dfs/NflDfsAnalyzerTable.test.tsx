@@ -1,5 +1,31 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+/** Column visibility persists to localStorage; isolate every test. */
+beforeEach(() => {
+  try { window.localStorage.clear(); } catch { /* ignore */ }
+});
+
+/** Force a viewport for `useIsCompactLayout`. `null` restores the jsdom default (desktop). */
+function setViewport(matches: boolean | null) {
+  if (matches === null) {
+    // @ts-expect-error test cleanup
+    delete window.matchMedia;
+    return;
+  }
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })) as unknown as typeof window.matchMedia;
+}
+
+afterEach(() => setViewport(null));
 import { buildMetric, buildResearchContext, buildMatchupEdges } from "@/lib/nfl/dfs/__fixtures__/researchFactory";
 import { buildDstRow } from "@/lib/nfl/dfs/optimizer/__fixtures__/optimizerRowFactory";
 import NflDfsAnalyzerTable from "@/components/nfl/dfs/NflDfsAnalyzerTable";
@@ -93,12 +119,36 @@ describe("NflDfsAnalyzerTable", () => {
     expect(screen.getByText("RB Alpha")).toBeInTheDocument();
   });
 
-  it("shows DK Pos RK, JKB Slate RK, JKB Week RK, Rank Diff, JKB Proj, JKB Pts/$1K columns", () => {
+  it("shows DK Pos RK, JKB Slate RK, Rank Diff, JKB Proj, JKB Pts/$1K, Fantasy PPG columns and no JKB Week RK", () => {
     const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })];
     render(<NflDfsAnalyzerTable rows={rows} />);
-    ["DK Pos RK", "JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K"].forEach((label) => {
+    ["DK Pos RK", "JKB Slate RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Fantasy PPG", "Fantasy PPG L5"].forEach((label) => {
       expect(screen.getByRole("columnheader", { name: label })).toBeInTheDocument();
     });
+    expect(screen.queryByRole("columnheader", { name: "JKB Week RK" })).not.toBeInTheDocument();
+    expect(screen.queryByText("JKB Week RK")).not.toBeInTheDocument();
+  });
+
+  it("color-codes the DK Pos RK cell with JKB rank heat", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [
+      offensiveRow({ dkId: "a", playerName: "Best Value", position: "QB", dkPositionSalaryRank: 1 }),
+      offensiveRow({ dkId: "b", playerName: "Worst Value", position: "QB", dkPositionSalaryRank: 2 }),
+    ];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    const cell = within(screen.getByText("Best Value").closest("tr") as HTMLElement).getByText("1");
+    expect(cell.style.backgroundColor).not.toBe("");
+  });
+
+  it("removes the redundant team abbreviation after the player name and the opponent abbreviation", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB", team: "no", opponent: "det", homeAway: "away" })];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    const row = screen.getByText("QB Alpha").closest("tr") as HTMLElement;
+    expect(row.querySelector("[data-player-team-abbreviation]")).toBeNull();
+    // Opponent abbreviation text is gone, but the logo and an accessible label remain.
+    expect(within(row).queryByText("DET")).not.toBeInTheDocument();
+    expect(row.querySelector('[data-team-logo="NO"] img')).toBeInTheDocument();
+    expect(row.querySelector('[data-opponent-logo="DET"] img')).toBeInTheDocument();
+    expect(within(row).getByText("at DET")).toBeInTheDocument();
   });
 
   it("keeps an unresolved player's row visible with a warning instead of hiding it", () => {
@@ -187,12 +237,11 @@ describe("compact DFS analytical columns", () => {
       }) } })];
     render(<NflDfsAnalyzerTable rows={rows} />);
     const row = screen.getByText("Alpha").closest("tr")!;
-    expect(within(row).getByText("QB3")).toBeInTheDocument();
     expect(row.querySelector('[data-team-logo="NO"] img')).toHaveAttribute("src", expect.stringContaining("NO"));
     expect(row.querySelector('[data-opponent-logo="DET"] img')).toHaveAttribute("src", expect.stringContaining("det"));
     expect(within(row).getByText("22.8").closest("td")).not.toBe(within(row).getByText("19.4").closest("td"));
     for (const value of ["+9", "-4", "+13"]) expect(within(row).getByText(value).style.backgroundColor).not.toBe("");
-    for (const name of ["Player", "Team/Opp", "Salary", "DK Pos RK", "JKB Slate RK", "JKB Week RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Matchup", "FPA SZN", "FPA L5", "EPA ADV", "SUCCESS ADV", "TRENCHES", "DEF VS AVG"]) {
+    for (const name of ["Player", "Team/Opp", "Salary", "DK Pos RK", "JKB Slate RK", "Rank Diff", "JKB Proj", "JKB Pts/$1K", "Fantasy PPG", "Fantasy PPG L5", "Matchup", "FPA SZN", "FPA L5", "EPA ADV", "SUCCESS ADV", "TRENCHES", "DEF VS AVG"]) {
       const button = document.querySelector<HTMLButtonElement>(`th button[aria-label="${name}"]`)!;
       const header = button.closest("th")!;
       fireEvent.click(button);
@@ -201,6 +250,26 @@ describe("compact DFS analytical columns", () => {
       fireEvent.click(button);
       expect(header.getAttribute("aria-sort")).not.toBe(previous);
     }
+  });
+
+  it("renders Fantasy PPG and Fantasy PPG L5 from canonical weekly research and sorts them", () => {
+    const withPpg = (dkId: string, name: string, season: number, last5: number, rank: number) =>
+      offensiveRow({ dkId, playerName: name, position: "WR", research: { status: "available", matchupGrade: null, matchupEdges: buildMatchupEdges(), context: buildResearchContext({
+        seasonPpg: buildMetric({ value: season, rank, poolSize: 40 }), last5Ppg: buildMetric({ value: last5, rank, poolSize: 40 }),
+      }) } });
+    const rows = [withPpg("a", "Low PPG", 8.2, 15.1, 30), withPpg("b", "High PPG", 21.7, 6.4, 2)];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    expect(screen.getByText("8.2")).toBeInTheDocument();
+    expect(screen.getByText("21.7")).toBeInTheDocument();
+    expect(screen.getByText("15.1")).toBeInTheDocument();
+    // Sort by Fantasy PPG descending -> High PPG first.
+    fireEvent.click(document.querySelector<HTMLButtonElement>('th button[aria-label="Fantasy PPG"]')!);
+    let dataRows = screen.getAllByRole("row").slice(1);
+    expect(within(dataRows[0]).getByText("High PPG")).toBeInTheDocument();
+    // Sort by Fantasy PPG L5 descending -> Low PPG (better L5) first.
+    fireEvent.click(document.querySelector<HTMLButtonElement>('th button[aria-label="Fantasy PPG L5"]')!);
+    dataRows = screen.getAllByRole("row").slice(1);
+    expect(within(dataRows[0]).getByText("Low PPG")).toBeInTheDocument();
   });
 
   it("renders single compact DST rows with independent rank/score and eligible filtering", () => {
@@ -271,5 +340,152 @@ describe("player-name click-to-expand", () => {
     render(<NflDfsAnalyzerTable rows={rows} />);
     fireEvent.click(screen.getByRole("button", { name: "Expand Disclosure Guy" }));
     expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
+  });
+});
+
+describe("column visibility dropdown", () => {
+  const rows = (): DfsEnrichedAnalyzerRow[] => [offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })];
+
+  it("opens, hides an optional column, and restores it", () => {
+    render(<NflDfsAnalyzerTable rows={rows()} />);
+    expect(screen.getByRole("columnheader", { name: "Salary" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    const menu = screen.getByRole("group", { name: /toggle table columns/i });
+    fireEvent.click(within(menu).getByRole("checkbox", { name: "Salary" }));
+    expect(screen.queryByRole("columnheader", { name: "Salary" })).not.toBeInTheDocument();
+    fireEvent.click(within(menu).getByRole("checkbox", { name: "Salary" }));
+    expect(screen.getByRole("columnheader", { name: "Salary" })).toBeInTheDocument();
+  });
+
+  it("never offers Player or Team/Opp as hideable", () => {
+    render(<NflDfsAnalyzerTable rows={rows()} />);
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    const menu = screen.getByRole("group", { name: /toggle table columns/i });
+    expect(within(menu).queryByRole("checkbox", { name: "Player" })).not.toBeInTheDocument();
+    expect(within(menu).queryByRole("checkbox", { name: "Team/Opp" })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Player" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Team/Opp" })).toBeInTheDocument();
+  });
+
+  it("persists choices to localStorage and reloads them", () => {
+    const view = render(<NflDfsAnalyzerTable rows={rows()} />);
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    fireEvent.click(within(screen.getByRole("group", { name: /toggle table columns/i })).getByRole("checkbox", { name: "DK Pos RK" }));
+    expect(window.localStorage.getItem("jkb-nfl-dfs-columns-v1")).toContain("dkPosRank");
+    view.unmount();
+    render(<NflDfsAnalyzerTable rows={rows()} />);
+    expect(screen.queryByRole("columnheader", { name: "DK Pos RK" })).not.toBeInTheDocument();
+  });
+
+  it("ignores stale/unknown saved column ids", () => {
+    window.localStorage.setItem("jkb-nfl-dfs-columns-v1", JSON.stringify({ v: 1, hidden: ["totally-made-up", "salary", "player"] }));
+    render(<NflDfsAnalyzerTable rows={rows()} />);
+    // "salary" honored, garbage dropped, mandatory "player" never hidden.
+    expect(screen.queryByRole("columnheader", { name: "Salary" })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Player" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Rank Diff" })).toBeInTheDocument();
+  });
+
+  it("resets to defaults", () => {
+    render(<NflDfsAnalyzerTable rows={rows()} />);
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    const menu = screen.getByRole("group", { name: /toggle table columns/i });
+    fireEvent.click(within(menu).getByRole("checkbox", { name: "Salary" }));
+    expect(screen.queryByRole("columnheader", { name: "Salary" })).not.toBeInTheDocument();
+    fireEvent.click(within(menu).getByRole("button", { name: /reset to defaults/i }));
+    expect(screen.getByRole("columnheader", { name: "Salary" })).toBeInTheDocument();
+  });
+
+  it("resets the sort to the view default when the sorted column is hidden", () => {
+    render(<NflDfsAnalyzerTable rows={[
+      offensiveRow({ dkId: "a", playerName: "Aaa", position: "QB", salary: 4000 }),
+      offensiveRow({ dkId: "b", playerName: "Bbb", position: "QB", salary: 9000 }),
+    ]} />);
+    fireEvent.click(document.querySelector<HTMLButtonElement>('th button[aria-label="Salary"]')!);
+    expect(screen.getByRole("columnheader", { name: "Salary" })).not.toHaveAttribute("aria-sort", "none");
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    fireEvent.click(within(screen.getByRole("group", { name: /toggle table columns/i })).getByRole("checkbox", { name: "Salary" }));
+    expect(screen.getByRole("columnheader", { name: "Rank Diff" })).not.toHaveAttribute("aria-sort", "none");
+  });
+
+  it("offers DST-applicable columns on the DST view", () => {
+    render(<NflDfsAnalyzerTable rows={[buildDstRow({ dkId: "d1", team: "kc", gameKey: "g1", salary: 3000, percentile: 60 })]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DST" }));
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    const menu = screen.getByRole("group", { name: /toggle table columns/i });
+    expect(within(menu).getByRole("checkbox", { name: "DST Matchup RK" })).toBeInTheDocument();
+    expect(within(menu).getByRole("checkbox", { name: "DST Score" })).toBeInTheDocument();
+    expect(within(menu).queryByRole("checkbox", { name: "JKB Slate RK" })).not.toBeInTheDocument();
+  });
+});
+
+describe("mobile presentation", () => {
+  const mobileRows = (): DfsEnrichedAnalyzerRow[] => [
+    offensiveRow({ dkId: "h1", playerName: "Justin Herbert", position: "QB", team: "lac", opponent: "kc", homeAway: "home" }),
+  ];
+
+  it("shows only the surname on mobile and the full name on desktop", () => {
+    setViewport(true);
+    const view = render(<NflDfsAnalyzerTable rows={mobileRows()} />);
+    expect(screen.getByText("Herbert")).toBeInTheDocument();
+    expect(screen.queryByText("Justin Herbert")).not.toBeInTheDocument();
+    view.unmount();
+
+    setViewport(false);
+    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
+    expect(screen.getByText("Justin Herbert")).toBeInTheDocument();
+  });
+
+  it("keeps the Player column and the header sticky on mobile", () => {
+    setViewport(true);
+    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
+    const playerHeader = screen.getByRole("columnheader", { name: "Player" });
+    expect(playerHeader.className).toMatch(/sticky/);
+    expect(playerHeader.className).toMatch(/left-0/);
+    expect(playerHeader.closest("thead")!.className).toMatch(/sticky/);
+    const playerCell = screen.getByText("Herbert").closest("td")!;
+    expect(playerCell.className).toMatch(/sticky/);
+    expect(playerCell.className).toMatch(/left-0/);
+    // Opaque background so scrolled content does not bleed through.
+    expect(playerCell.className).toMatch(/bg-white/);
+  });
+
+  it("expands and collapses a compact row detail from the surname, using the same visible columns", () => {
+    setViewport(true);
+    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
+    const nameButton = screen.getByRole("button", { name: "Show row details for Justin Herbert" });
+    expect(nameButton).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(nameButton);
+    const detail = document.querySelector('[data-dfs-mobile-detail="h1"]')!;
+    expect(detail).toBeInTheDocument();
+    // Uses the same registry label as the (mobile-default) visible metric column.
+    expect(within(detail as HTMLElement).getByText("Matchup")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hide row details for Justin Herbert" }));
+    expect(document.querySelector('[data-dfs-mobile-detail="h1"]')).not.toBeInTheDocument();
+  });
+
+  it("reflects added/hidden columns in the compact detail", () => {
+    setViewport(true);
+    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    const menu = screen.getByRole("group", { name: /toggle table columns/i });
+    fireEvent.click(within(menu).getByRole("checkbox", { name: "JKB Proj" })); // add
+    fireEvent.click(within(menu).getByRole("checkbox", { name: "Matchup" })); // remove
+    fireEvent.click(screen.getByRole("button", { name: "Show row details for Justin Herbert" }));
+    const detail = document.querySelector('[data-dfs-mobile-detail="h1"]') as HTMLElement;
+    expect(within(detail).getByText("JKB Proj")).toBeInTheDocument();
+    expect(within(detail).queryByText("Matchup")).not.toBeInTheDocument();
+  });
+
+  it("keeps the historical Last 10 expansion separate from the compact row detail", () => {
+    setViewport(true);
+    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Show row details for Justin Herbert" }));
+    expect(document.querySelector('[data-dfs-mobile-detail="h1"]')).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Player Last 10" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Expand Justin Herbert" }));
+    expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
+    // Compact detail is still open — the two are independent controls.
+    expect(document.querySelector('[data-dfs-mobile-detail="h1"]')).toBeInTheDocument();
   });
 });

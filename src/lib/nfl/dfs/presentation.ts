@@ -138,7 +138,7 @@ export type DfsBoardView = "VALUE" | "QB" | "RB" | "WR" | "TE" | "DST";
 export type DfsDirectionFilter = "all" | "jkb-higher" | "dk-higher" | "agreement";
 
 export type DfsSortKey = "player" | "teamOpp" | "rankDiff" | "proj" | "pts1k" | "salary" | "dkPosRank" | "jkbSlateRank"
-  | "weeklyRank" | "matchup" | "fpaSeason" | "fpaLast5" | "epa" | "success" | "trenches" | "defenseAvg" | "dstRank" | "dstScore";
+  | "fantasyPpg" | "fantasyPpgL5" | "matchup" | "fpaSeason" | "fpaLast5" | "epa" | "success" | "trenches" | "defenseAvg" | "dstRank" | "dstScore";
 export type DfsSortDirection = "asc" | "desc";
 export type DfsDisplayContext = { historyIndex?: DfsHistoryIndex | null; dstEdges?: ReadonlyMap<string, FantasyMatchupEdges> };
 
@@ -150,7 +150,7 @@ export function dfsMatchupValue(row: DfsEnrichedAnalyzerRow, key: "epa" | "succe
 }
 
 export function defaultDfsSortDirection(key: DfsSortKey): DfsSortDirection {
-  return ["player", "teamOpp", "dkPosRank", "jkbSlateRank", "weeklyRank", "dstRank", "matchup"].includes(key) ? "asc" : "desc";
+  return ["player", "teamOpp", "dkPosRank", "jkbSlateRank", "dstRank", "matchup"].includes(key) ? "asc" : "desc";
 }
 
 export type DfsTableFilters = {
@@ -208,7 +208,8 @@ export function dfsSortValue(row: DfsEnrichedAnalyzerRow, key: DfsSortKey, conte
     case "salary": return row.salary;
     case "dkPosRank": return row.dkPositionSalaryRank;
     case "jkbSlateRank": return row.jkbSlatePositionRank;
-    case "weeklyRank": return row.jkbWeeklyPositionRank;
+    case "fantasyPpg": return research?.context?.seasonPpg.value ?? null;
+    case "fantasyPpgL5": return research?.context?.last5Ppg.value ?? null;
     case "matchup": return research?.context?.opponentFpaSeason.rank ?? null;
     case "fpaSeason": return research?.context?.opponentFpaSeason.value ?? null;
     case "fpaLast5": return research?.context?.opponentFpaLast5.value ?? null;

@@ -132,7 +132,7 @@ export default function NFLDfsContestAnalyzer() {
         <>
           <NflDfsSlateSummary analysis={enrichedAnalysis} season={WEEKLY_RANKINGS_SEASON} week={selectedWeek} />
           <NflDfsGeneratedLineups analysis={enrichedAnalysis} projectionRows={projectionRows} asOf={analysisAsOf} slateKey={`${WEEKLY_RANKINGS_SEASON}/${selectedWeek}`} />
-          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} dstEdges={dstEdges} projectionRows={projectionRows} />
+          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} dstEdges={dstEdges} />
         </>
       )}
     </div>
