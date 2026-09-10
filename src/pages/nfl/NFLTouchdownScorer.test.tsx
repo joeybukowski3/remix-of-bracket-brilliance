@@ -25,7 +25,7 @@ function player(name: string, team: string, opponent: string, homeAway: "home" |
 
 function artifact(): TouchdownPreviewArtifact {
   return {
-    schemaVersion: "nfl-touchdown-preview-v1", modelVersion: "jkb-td-score-v1.0.0", season: 2026, week: 1, generatedAt: null, defaultWindow: "2025",
+    schemaVersion: "nfl-touchdown-preview-v1", modelVersion: "jkb-td-score-v1.0.0", season: 2026, week: 1, generatedAt: null, defaultWindow: "last8",
     sourceStatus: { playerWeekStats: "available", touchdownContext: "available", marketImpliedPoints: "available", anytimeTdOdds: "unsupported" },
     methodology: { normalization: "", tdSuccess: "", positionAdjustment: "", componentWeights: { playerUsage: 0.2, tdOpportunities: 0.25, teamUsage: 0.15, tdSuccess: 0.15, opponentTdOpportunities: 0.1, opponentPositionTdsAllowed: 0.1, impliedTeamPoints: 0.05 }, opportunityWeights: { rz: 0.25, inside10: 0.35, goalLine: 0.4 } },
     players: [
