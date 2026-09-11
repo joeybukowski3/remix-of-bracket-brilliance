@@ -4,6 +4,8 @@ import { POSITION_TONES } from "@/lib/fantasy/positionTone";
 import { matchupGradeHeatTone, weeklyHeatStyle, weeklyRankHeatTone } from "@/lib/shared/jkbHeat";
 import { JKB_HEAT_LEGEND } from "@/lib/shared/jkbHeat";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
+import { resolveDfsTdScore, type DfsTdScoreLookup } from "@/lib/nfl/dfs/tdScoreContext";
+import { resolveDfsOppSlotWideContext, type DfsSlotWideEntry } from "@/lib/nfl/dfs/slotWideContext";
 
 import { cn } from "@/lib/utils";
 
@@ -57,5 +59,59 @@ export function FantasyPpgCell({ row, period }: { row: DfsEnrichedAnalyzerRow; p
       {metric?.value == null ? "—" : metric.value.toFixed(1)}
     </DfsHeatValue>
   );
+}
+
+/** WR/TE targets/game — season or last-5 — from the weekly research context, with rank heat. */
+export function TargetsPerGameCell({ row, period }: { row: DfsEnrichedAnalyzerRow; period: "season" | "last5" }) {
+  const research = row.research?.status === "available" ? row.research : null;
+  const metric = research ? (period === "season" ? research.context?.evidence.targetsPerGame : research.context?.evidence.targetsPerGameL5) : null;
+  const label = period === "season" ? "Season" : "Last 5";
+  const title = `${label} targets/game: ${metric?.value == null ? "unavailable" : metric.value.toFixed(1)}`
+    + `${metric?.sampleSize ? `; ${metric.sampleSize} games` : ""}`
+    + `${metric?.rank != null ? `; rank ${metric.rank} of ${metric.poolSize}` : ""}`;
+  return (
+    <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(metric?.rank ?? null, metric?.poolSize ?? 0))} title={title}>
+      {metric?.value == null ? "—" : metric.value.toFixed(1)}
+    </DfsHeatValue>
+  );
+}
+
+/** JKB TD Score from the canonical Touchdown Preview artifact — never recomputed here. */
+export function TdScoreCell({ row, lookup }: { row: DfsEnrichedAnalyzerRow; lookup: DfsTdScoreLookup }) {
+  const entry = row.kind === "offense" ? resolveDfsTdScore(lookup, row.playerId, row.canonicalGameId) : null;
+  const title = entry?.jkbTdScore == null ? "JKB TD Score unavailable for this player/week" : `JKB TD Score: ${entry.jkbTdScore.toFixed(1)}${entry.scoreRank != null ? `; rank ${entry.scoreRank} of ${entry.scorePoolSize}` : ""}`;
+  return (
+    <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(entry?.scoreRank ?? null, entry?.scorePoolSize ?? 0))} title={title}>
+      {entry?.jkbTdScore == null ? "—" : entry.jkbTdScore.toFixed(1)}
+    </DfsHeatValue>
+  );
+}
+
+function wrOppSlotWideEntry(row: DfsEnrichedAnalyzerRow, slotWideByAbbr: ReadonlyMap<string, DfsSlotWideEntry>): DfsSlotWideEntry | null {
+  if (row.kind !== "offense" || row.position !== "WR") return null;
+  return resolveDfsOppSlotWideContext(slotWideByAbbr, row.opponent);
+}
+
+/** Opponent DEFENSE's fantasy PPG allowed to slot/wide receivers (Razzball) — higher favors this receiver, rank heat like every other PPG-allowed cell. Never this player's own alignment. */
+export function SlotWidePpgAllowedCell({ row, slotWideByAbbr, field }: { row: DfsEnrichedAnalyzerRow; slotWideByAbbr: ReadonlyMap<string, DfsSlotWideEntry>; field: "slot" | "wide" }) {
+  const entry = wrOppSlotWideEntry(row, slotWideByAbbr);
+  const value = entry ? (field === "slot" ? entry.slotPpgAllowed : entry.widePpgAllowed) : null;
+  const rank = entry ? (field === "slot" ? entry.slotPpgAllowedRank : entry.widePpgAllowedRank) : null;
+  const label = field === "slot" ? "Slot PPG Allowed" : "Wide PPG Allowed";
+  const title = value == null ? `${label} unavailable` : `Opponent defense ${label.toLowerCase()}: ${value.toFixed(1)}${rank != null ? `; rank ${rank} of ${entry?.poolSize}` : ""}`;
+  return (
+    <DfsHeatValue style={weeklyHeatStyle(weeklyRankHeatTone(rank, entry?.poolSize ?? 0))} title={title}>
+      {value == null ? "—" : value.toFixed(1)}
+    </DfsHeatValue>
+  );
+}
+
+/** Opponent DEFENSE's descriptive slot/wide distribution share (Razzball) — neutral formatting, no heat; this is not the player's own alignment. */
+export function SlotWidePctCell({ row, slotWideByAbbr, field }: { row: DfsEnrichedAnalyzerRow; slotWideByAbbr: ReadonlyMap<string, DfsSlotWideEntry>; field: "slot" | "wide" }) {
+  const entry = wrOppSlotWideEntry(row, slotWideByAbbr);
+  const value = entry ? (field === "slot" ? entry.slotPct : entry.widePct) : null;
+  const label = field === "slot" ? "Opp Slot %" : "Opp Wide %";
+  const title = value == null ? `${label} unavailable` : `${label} (opponent defense, descriptive): ${(value * 100).toFixed(0)}%`;
+  return <span title={title} className="inline-flex min-w-10 justify-end whitespace-nowrap px-1.5 py-0.5 font-semibold tabular-nums text-slate-700">{value == null ? "—" : `${Math.round(value * 100)}%`}</span>;
 }
 

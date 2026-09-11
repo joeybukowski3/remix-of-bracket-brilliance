@@ -1,0 +1,121 @@
+name: NFL Slot/Wide Defense Context
+
+run-name: NFL Slot/Wide Defense Context • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# Refreshes public/data/nfl/{season}/slot-wide-defense-context.json from
+# Razzball's defensive slot-vs-wide PPG-allowed table
+# (https://football.razzball.com/defensive-slot-vs-wide-ppg-allowed/).
+# Standalone and independent of the other NFL data-writer workflows -- this
+# source has no dependency on schedules/results, team ratings, or matchup
+# market data, and vice versa. A once-daily refresh comfortably respects the
+# source's robots.txt `Crawl-delay: 10`.
+
+on:
+  schedule:
+    # 8:50 AM ET daily during the NFL season window (Sep-Feb) -- slotted
+    # between the 8:10 AM matchup-projections and 9:30 AM yardage-projections
+    # refreshes without depending on either.
+    - cron: "50 8 * 1,2,9,10,11,12 *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-slot-wide-defense-context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh Razzball slot/wide defense context
+        run: npm run nfl:slot-wide-defense-context
+
+      - name: Detect meaningful data changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'public/data/nfl/*/slot-wide-defense-context.json')" ]; then
+            echo "No slot/wide defense context changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Slot/wide defense context changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          node -e "
+            const { existsSync, readFileSync } = require('fs');
+            let validated = 0;
+            for (let season = 2025; season <= 2027; season += 1) {
+              const file = \`public/data/nfl/\${season}/slot-wide-defense-context.json\`;
+              if (!existsSync(file)) continue;
+              const parsed = JSON.parse(readFileSync(file, 'utf8'));
+              if (parsed.schemaVersion !== 'nfl-slot-wide-defense-context-v1') throw new Error(\`\${file} has an unexpected schemaVersion\`);
+              if (!Array.isArray(parsed.teams) || parsed.teams.length !== 32) throw new Error(\`\${file} does not have exactly 32 teams\`);
+              validated += 1;
+            }
+            if (validated === 0) throw new Error('No slot-wide-defense-context.json files found to validate');
+            console.log(\`Validated \${validated} slot/wide defense context file(s).\`);
+          "
+
+      - name: Commit and push refreshed data
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nfl/*/slot-wide-defense-context.json
+
+          if git diff --cached --quiet; then
+            echo "No staged slot/wide defense context changes."
+            exit 0
+          fi
+
+          git commit -m "data(nfl): refresh Razzball slot/wide defense context"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — slot/wide defense context was not committed." >&2
+            exit 1
+          fi
+
+          echo "Slot/wide defense context pushed successfully."

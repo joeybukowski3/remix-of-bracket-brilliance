@@ -84,6 +84,8 @@ export default defineConfig({
       "scripts/generate-nfl-yardage-outcomes.test.ts",
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
+      // Phase 3 DFS -- Razzball defensive slot/wide PPG-allowed scraper core (parse/normalize/validate).
+      "scripts/lib/nfl-slot-wide-defense-context-core.test.mjs",
       // WU4C.1 -- scheduled-workflow commit-path allowlist (predictions/outcomes/evaluations).
       "scripts/lib/nfl-prediction-archive-allowlist.test.mjs",
       // WU4G -- forward evaluation (rushing shadow-vs-production / receiving role-conflict) operational layer.
