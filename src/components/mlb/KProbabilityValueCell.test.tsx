@@ -48,7 +48,7 @@ describe("KProbabilityValueBadge", () => {
     expect(screen.getByText(/\+9\.0%/)).toBeInTheDocument();
   });
 
-  it("does NOT cap or alter the displayed edge when the model probability is in the overconfident tail (>= 65%) -- only adds a visible caution marker", () => {
+  it("does NOT cap or alter the displayed edge when the model probability is in the overconfident tail (>= 65%) -- the compact pill shows no caution marker for it", () => {
     const row = computedRow({
       model: { overProbability: 0.72, underProbability: 0.28, meanSimulatedKs: 6.0, medianSimulatedKs: 6, stdevSimulatedKs: 2.5 },
       edge: { overProbabilityEdge: 0.21, underProbabilityEdge: null, lean: "OVER", bestProbabilityEdge: 0.21, bestProbabilitySide: "OVER" },
@@ -56,11 +56,11 @@ describe("KProbabilityValueBadge", () => {
     render(<KProbabilityValueBadge probabilityRow={row} />);
     // Raw edge is preserved verbatim -- not capped, not hidden.
     expect(screen.getByText(/\+21\.0%/)).toBeInTheDocument();
-    // A caution marker is present.
-    expect(screen.getByText("*")).toBeInTheDocument();
+    // The overconfident-tail caution is not surfaced on the compact pill.
+    expect(screen.queryByText("*")).not.toBeInTheDocument();
   });
 
-  it("does not show a caution marker for a well-within-range model probability", () => {
+  it("never shows a caution marker on the compact pill, in or out of the overconfident tail", () => {
     render(<KProbabilityValueBadge probabilityRow={computedRow()} />);
     expect(screen.queryByText("*")).not.toBeInTheDocument();
   });

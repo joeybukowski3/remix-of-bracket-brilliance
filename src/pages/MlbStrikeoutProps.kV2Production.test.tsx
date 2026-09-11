@@ -214,7 +214,7 @@ describe("sorting uses the resolved projection", () => {
     ]);
   });
 
-  it("orders Best Value by the resolved absolute edge", () => {
+  it("orders Largest Diff by the resolved absolute edge", () => {
     expect(sortByAbsoluteProjectionEdge(rows).map((row) => row.pitcher)).toEqual([
       "Framber Valdez", // |4.0 - 7.0| = 3.0
       "Dean Kremer", // |6.4 - 5.5| = 0.9
