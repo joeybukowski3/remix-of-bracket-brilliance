@@ -31,7 +31,7 @@ describe("dfsColumnsForView", () => {
 
   it("gives the DST view its matchup columns and drops offense-only columns", () => {
     const ids = dfsColumnsForView("DST").map((column) => column.id);
-    expect(ids).toEqual(["player", "teamOpp", "salary", "dkPosRank", "dstRank", "dstScore", "epa", "success", "trenches"]);
+    expect(ids).toEqual(["player", "teamOpp", "salary", "dkPosRank", "dstRank", "dstScore", "defRank", "oppOffRank", "epa", "success", "trenches"]);
   });
 
   it("keeps DK Pos RK ahead of the JKB metric block for the offense view", () => {
@@ -39,6 +39,46 @@ describe("dfsColumnsForView", () => {
     expect(ids.indexOf("dkPosRank")).toBeLessThan(ids.indexOf("jkbSlateRank"));
     expect(ids.indexOf("pts1k")).toBeLessThan(ids.indexOf("fantasyPpg"));
     expect(ids.indexOf("fantasyPpgL5")).toBeLessThan(ids.indexOf("matchup"));
+  });
+});
+
+describe("Phase 3 columns", () => {
+  it("scopes Def Rank / Off Rank to DST and Targets/Game / TD Score to offense", () => {
+    const dst = dfsColumnsForView("DST").map((column) => column.id);
+    expect(dst).toContain("defRank");
+    expect(dst).toContain("oppOffRank");
+    const offense = dfsColumnsForView("WR").map((column) => column.id);
+    expect(offense).toContain("targetsPerGame");
+    expect(offense).toContain("targetsPerGameL5");
+    expect(offense).toContain("tdScore");
+    expect(offense).not.toContain("defRank");
+    expect(dst).not.toContain("targetsPerGame");
+  });
+
+  it("makes all five Phase 3 fields available in the Columns dropdown", () => {
+    const dstOptional = dfsOptionalColumnsForView("DST").map((column) => column.id);
+    expect(dstOptional).toEqual(expect.arrayContaining(["defRank", "oppOffRank"]));
+    const offenseOptional = dfsOptionalColumnsForView("WR").map((column) => column.id);
+    expect(offenseOptional).toEqual(expect.arrayContaining(["targetsPerGame", "targetsPerGameL5", "tdScore"]));
+  });
+});
+
+describe("WR slot/wide columns", () => {
+  it("scopes Opp Slot %/Opp Wide %/Slot PPG Allowed/Wide PPG Allowed to the WR tab only", () => {
+    const wr = dfsColumnsForView("WR").map((column) => column.id);
+    expect(wr).toEqual(expect.arrayContaining(["oppSlotPct", "oppWidePct", "slotPpgAllowed", "widePpgAllowed"]));
+    for (const view of ["VALUE", "QB", "RB", "TE", "DST"] as const) {
+      const ids = dfsColumnsForView(view).map((column) => column.id);
+      expect(ids).not.toContain("oppSlotPct");
+      expect(ids).not.toContain("oppWidePct");
+      expect(ids).not.toContain("slotPpgAllowed");
+      expect(ids).not.toContain("widePpgAllowed");
+    }
+  });
+
+  it("makes the WR slot/wide fields available in the WR Columns dropdown", () => {
+    const wrOptional = dfsOptionalColumnsForView("WR").map((column) => column.id);
+    expect(wrOptional).toEqual(expect.arrayContaining(["oppSlotPct", "oppWidePct", "slotPpgAllowed", "widePpgAllowed"]));
   });
 });
 

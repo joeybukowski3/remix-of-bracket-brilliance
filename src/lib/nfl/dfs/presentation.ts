@@ -15,6 +15,9 @@ import type { FantasyMatchupEdges } from "@/lib/nfl/matchupEdges";
 import type { WeeklyHeatTone } from "@/lib/fantasy/weekly/researchPresentation";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
 import { isDfsCandidatePoolPlayer } from "@/lib/nfl/dfs/dfsPlayerPool";
+import { resolveDfsDefRank, resolveDfsOppOffRank, type DfsTeamRank } from "@/lib/nfl/dfs/teamRankContext";
+import { resolveDfsTdScore, type DfsTdScoreLookup } from "@/lib/nfl/dfs/tdScoreContext";
+import { resolveDfsOppSlotWideContext, type DfsSlotWideEntry } from "@/lib/nfl/dfs/slotWideContext";
 
 /** V1 provisional Rank Diff heat bands. Recalibrate in WU5 against real slate distributions. */
 const RANK_DIFF_BANDS: ReadonlyArray<{ min: number; tone: WeeklyHeatTone }> = [
@@ -138,9 +141,17 @@ export type DfsBoardView = "VALUE" | "QB" | "RB" | "WR" | "TE" | "DST";
 export type DfsDirectionFilter = "all" | "jkb-higher" | "dk-higher" | "agreement";
 
 export type DfsSortKey = "player" | "teamOpp" | "rankDiff" | "proj" | "pts1k" | "salary" | "dkPosRank" | "jkbSlateRank"
-  | "fantasyPpg" | "fantasyPpgL5" | "matchup" | "fpaSeason" | "fpaLast5" | "epa" | "success" | "trenches" | "defenseAvg" | "dstRank" | "dstScore";
+  | "fantasyPpg" | "fantasyPpgL5" | "matchup" | "fpaSeason" | "fpaLast5" | "epa" | "success" | "trenches" | "defenseAvg" | "dstRank" | "dstScore"
+  | "defRank" | "oppOffRank" | "targetsPerGame" | "targetsPerGameL5" | "tdScore"
+  | "oppSlotPct" | "oppWidePct" | "slotPpgAllowed" | "widePpgAllowed";
 export type DfsSortDirection = "asc" | "desc";
-export type DfsDisplayContext = { historyIndex?: DfsHistoryIndex | null; dstEdges?: ReadonlyMap<string, FantasyMatchupEdges> };
+export type DfsDisplayContext = {
+  historyIndex?: DfsHistoryIndex | null;
+  dstEdges?: ReadonlyMap<string, FantasyMatchupEdges>;
+  teamRankByAbbr?: ReadonlyMap<string, DfsTeamRank>;
+  tdScoreLookup?: DfsTdScoreLookup;
+  slotWideByAbbr?: ReadonlyMap<string, DfsSlotWideEntry>;
+};
 
 /** Read the already position-selected research edge. DST reverses the opponent's passing perspective. */
 export function dfsMatchupValue(row: DfsEnrichedAnalyzerRow, key: "epa" | "success" | "trenches", context: DfsDisplayContext = {}): number | null {
@@ -150,7 +161,7 @@ export function dfsMatchupValue(row: DfsEnrichedAnalyzerRow, key: "epa" | "succe
 }
 
 export function defaultDfsSortDirection(key: DfsSortKey): DfsSortDirection {
-  return ["player", "teamOpp", "dkPosRank", "jkbSlateRank", "dstRank", "matchup"].includes(key) ? "asc" : "desc";
+  return ["player", "teamOpp", "dkPosRank", "jkbSlateRank", "dstRank", "matchup", "defRank", "oppOffRank"].includes(key) ? "asc" : "desc";
 }
 
 export type DfsTableFilters = {
@@ -217,6 +228,15 @@ export function dfsSortValue(row: DfsEnrichedAnalyzerRow, key: DfsSortKey, conte
     case "defenseAvg": return defenseSummary(context.historyIndex ?? null, row).mean;
     case "dstRank": return row.kind === "dst" ? row.dstMatchup?.dstMatchupRank ?? null : null;
     case "dstScore": return row.kind === "dst" ? row.dstMatchup?.dstMatchupScore ?? null : null;
+    case "defRank": return row.kind === "dst" ? resolveDfsDefRank(context.teamRankByAbbr ?? new Map(), row.team) : null;
+    case "oppOffRank": return row.kind === "dst" ? resolveDfsOppOffRank(context.teamRankByAbbr ?? new Map(), row.opponent) : null;
+    case "targetsPerGame": return research?.context?.evidence.targetsPerGame.value ?? null;
+    case "targetsPerGameL5": return research?.context?.evidence.targetsPerGameL5.value ?? null;
+    case "tdScore": return row.kind === "offense" ? resolveDfsTdScore(context.tdScoreLookup ?? new Map(), row.playerId, row.canonicalGameId)?.jkbTdScore ?? null : null;
+    case "oppSlotPct": return row.kind === "offense" && row.position === "WR" ? resolveDfsOppSlotWideContext(context.slotWideByAbbr ?? new Map(), row.opponent)?.slotPct ?? null : null;
+    case "oppWidePct": return row.kind === "offense" && row.position === "WR" ? resolveDfsOppSlotWideContext(context.slotWideByAbbr ?? new Map(), row.opponent)?.widePct ?? null : null;
+    case "slotPpgAllowed": return row.kind === "offense" && row.position === "WR" ? resolveDfsOppSlotWideContext(context.slotWideByAbbr ?? new Map(), row.opponent)?.slotPpgAllowed ?? null : null;
+    case "widePpgAllowed": return row.kind === "offense" && row.position === "WR" ? resolveDfsOppSlotWideContext(context.slotWideByAbbr ?? new Map(), row.opponent)?.widePpgAllowed ?? null : null;
   }
 }
 

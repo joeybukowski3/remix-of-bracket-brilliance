@@ -21,6 +21,12 @@ import { joinWeeklyFantasyResearchRows } from "@/lib/fantasy/weekly/researchJoin
 import { buildDfsDstDisplayEdges } from "@/lib/nfl/dfs/presentation";
 import { assessDfsResearch } from "@/lib/nfl/dfs/research";
 import { buildDfsSlateAnalysis, enrichDfsSlateAnalysis } from "@/lib/nfl/dfs/slateAnalyzer";
+import { buildDfsTeamRankContext } from "@/lib/nfl/dfs/teamRankContext";
+import { buildDfsTdScoreContext } from "@/lib/nfl/dfs/tdScoreContext";
+import { buildDfsSlotWideContext } from "@/lib/nfl/dfs/slotWideContext";
+import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
+import { useNflTouchdownPreview } from "@/hooks/useNflTouchdownPreview";
+import { useNflSlotWideDefenseContext } from "@/hooks/useNflSlotWideDefenseContext";
 import type { CanonicalNflTeam } from "@/lib/nfl/standings";
 import type { DraftKingsNflClassicParseResult } from "@/lib/nfl/dfs/contracts";
 import type { WeeklyFantasyProjectionProductionRow } from "@/lib/fantasy/weekly/projections/production/artifactContract";
@@ -86,6 +92,13 @@ export default function NFLDfsContestAnalyzer() {
     joinWeeklyFantasyResearchRows(projectionRows, researchArtifact?.season === WEEKLY_RANKINGS_SEASON && researchArtifact.week === selectedWeek ? researchArtifact : null).rows),
     [enrichedAnalysis, researchArtifact, selectedWeek, projectionRows]);
 
+  const currentRating = useNflCurrentRating2026();
+  const teamRankByAbbr = useMemo(() => buildDfsTeamRankContext(currentRating.data), [currentRating.data]);
+  const touchdownPreview = useNflTouchdownPreview(WEEKLY_RANKINGS_SEASON);
+  const tdScoreLookup = useMemo(() => buildDfsTdScoreContext(touchdownPreview.data, WEEKLY_RANKINGS_SEASON, selectedWeek), [touchdownPreview.data, selectedWeek]);
+  const slotWideDefenseContext = useNflSlotWideDefenseContext(WEEKLY_RANKINGS_SEASON);
+  const slotWideByAbbr = useMemo(() => buildDfsSlotWideContext(slotWideDefenseContext.data), [slotWideDefenseContext.data]);
+
   if (week === null) {
     return (
       <>
@@ -132,7 +145,7 @@ export default function NFLDfsContestAnalyzer() {
         <>
           <NflDfsSlateSummary analysis={enrichedAnalysis} season={WEEKLY_RANKINGS_SEASON} week={selectedWeek} />
           <NflDfsGeneratedLineups analysis={enrichedAnalysis} projectionRows={projectionRows} asOf={analysisAsOf} slateKey={`${WEEKLY_RANKINGS_SEASON}/${selectedWeek}`} />
-          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} dstEdges={dstEdges} />
+          <NflDfsAnalyzerTable rows={enrichedAnalysis.rows} historyTarget={historyTarget} dstEdges={dstEdges} teamRankByAbbr={teamRankByAbbr} tdScoreLookup={tdScoreLookup} slotWideByAbbr={slotWideByAbbr} />
         </>
       )}
     </div>

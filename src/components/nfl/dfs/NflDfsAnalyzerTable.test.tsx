@@ -287,7 +287,8 @@ describe("compact DFS analytical columns", () => {
     const table = screen.getByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(3);
     const first = table.querySelector('[data-dfs-player-row="d1"]')!;
-    expect(first.querySelectorAll("td")).toHaveLength(9);
+    // 9 pre-Phase-3 DST columns + Def Rank + Off Rank (both desktop-default-visible).
+    expect(first.querySelectorAll("td")).toHaveLength(11);
     expect(first.querySelector("[colspan], p, details")).toBeNull();
     expect(within(first as HTMLElement).getByText("5").closest("td")).not.toBe(within(first as HTMLElement).getByText("77.8").closest("td"));
     expect(first).toHaveTextContent("+7");
@@ -419,6 +420,227 @@ describe("column visibility dropdown", () => {
   });
 });
 
+describe("sticky Player column at all widths", () => {
+  it("keeps the Player column and header sticky on desktop too, not just mobile", () => {
+    setViewport(false);
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "h1", playerName: "Justin Herbert", position: "QB" })]} />);
+    const playerHeader = screen.getByRole("columnheader", { name: "Player" });
+    expect(playerHeader.className).toMatch(/sticky/);
+    expect(playerHeader.className).toMatch(/left-0/);
+    const playerCell = screen.getByText("Justin Herbert").closest("td")!;
+    expect(playerCell.className).toMatch(/sticky/);
+    expect(playerCell.className).toMatch(/left-0/);
+    expect(playerCell.className).toMatch(/bg-white/);
+  });
+
+  it("applies the frozen-column behavior identically across every positional view", () => {
+    setViewport(false);
+    const rows = [
+      offensiveRow({ dkId: "qb1", playerName: "QB One", position: "QB" }),
+      dstRow({ dkId: "d1", playerName: "Saints" }),
+    ];
+    const { rerender } = render(<NflDfsAnalyzerTable rows={rows} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DST" }));
+    const dstHeader = screen.getByRole("columnheader", { name: "Player" });
+    expect(dstHeader.className).toMatch(/sticky/);
+    rerender(<NflDfsAnalyzerTable rows={rows} />);
+  });
+});
+
+describe("full screen mode", () => {
+  it("opens a dialog, keeps the same rows/data, and closes via the close button", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText("QB Alpha")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByText("QB Alpha")).toBeInTheDocument();
+  });
+
+  it("closes on Escape", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("cycles positions and keeps filter/sort/column controls interactive inside full screen", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [
+      offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" }),
+      offensiveRow({ dkId: "r1", playerName: "RB Alpha", position: "RB" }),
+    ];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("tab", { name: "RB" }));
+    expect(within(dialog).queryByText("QB Alpha")).not.toBeInTheDocument();
+    expect(within(dialog).getByText("RB Alpha")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Search player"), { target: { value: "rb" } });
+    expect(within(dialog).getByText("RB Alpha")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: /columns/i }));
+    expect(within(dialog).getByRole("group", { name: /toggle table columns/i })).toBeInTheDocument();
+  });
+});
+
+describe("Player Review panel", () => {
+  it("opens for every player identity, including DST, and closes on a second click", () => {
+    render(<NflDfsAnalyzerTable rows={[dstRow({ dkId: "d1", playerName: "Saints" })]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DST" }));
+    const nameButton = screen.getByRole("button", { name: "Expand details for Saints" });
+    fireEvent.click(nameButton);
+    expect(document.querySelector('[data-dfs-player-review="d1"]')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Saints" }));
+    expect(document.querySelector('[data-dfs-player-review="d1"]')).not.toBeInTheDocument();
+  });
+
+  it("gracefully omits offense-only fields for a DST review and shows DST matchup fields", () => {
+    const teamRankByAbbr = new Map([["no", { offenseRank: 20, defenseRank: 3 }], ["det", { offenseRank: 5, defenseRank: 25 }]]);
+    render(<NflDfsAnalyzerTable rows={[dstRow({ dkId: "d1", playerName: "Saints", team: "no", opponent: "det" })]} teamRankByAbbr={teamRankByAbbr} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DST" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Saints" }));
+    const detail = document.querySelector('[data-dfs-player-review="d1"]') as HTMLElement;
+    expect(within(detail).getByText("DST Matchup")).toBeInTheDocument();
+    expect(within(detail).getByText("Def Rank")).toBeInTheDocument();
+    expect(within(detail).getByText("Off Rank")).toBeInTheDocument();
+    expect(within(detail).queryByText("JKB Proj")).not.toBeInTheDocument();
+    expect(within(detail).queryByText("Additional Research")).not.toBeInTheDocument();
+    expect(within(detail).getByText(/JKB projection unavailable for DST/i)).toBeInTheDocument();
+  });
+
+  it("shows hidden (board-invisible) columns in the complete review", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    fireEvent.click(within(screen.getByRole("group", { name: /toggle table columns/i })).getByRole("checkbox", { name: "JKB Proj" }));
+    expect(screen.queryByRole("columnheader", { name: "JKB Proj" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for QB Alpha" }));
+    const detail = document.querySelector('[data-dfs-player-review="q1"]') as HTMLElement;
+    expect(within(detail).getByText("JKB Proj")).toBeInTheDocument();
+  });
+
+  it("reuses the same JKB heat cell styling as the main table (no second heat system)", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [
+      offensiveRow({ dkId: "a", playerName: "Best Value", position: "QB", dkPositionSalaryRank: 1 }),
+      offensiveRow({ dkId: "b", playerName: "Worst Value", position: "QB", dkPositionSalaryRank: 2 }),
+    ];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Best Value" }));
+    const detail = document.querySelector('[data-dfs-player-review="a"]') as HTMLElement;
+    const cell = within(detail).getAllByText("1")[0];
+    expect(cell.style.backgroundColor).not.toBe("");
+  });
+
+  it("keeps historical Last 10 access inside the review", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for QB Alpha" }));
+    expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Opponent Last 10" })).toBeInTheDocument();
+  });
+});
+
+describe("Phase 3 DST/offense metric columns", () => {
+  it("renders Def Rank / Off Rank for DST rows from the team rank context, with heat", () => {
+    const teamRankByAbbr = new Map([
+      ["no", { offenseRank: 20, defenseRank: 3 }],
+      ["det", { offenseRank: 5, defenseRank: 25 }],
+    ]);
+    render(<NflDfsAnalyzerTable rows={[dstRow({ dkId: "d1", playerName: "Saints", team: "no", opponent: "det" })]} teamRankByAbbr={teamRankByAbbr} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DST" }));
+    expect(screen.getByText("3")).toBeInTheDocument(); // Def Rank
+    expect(screen.getByText("5")).toBeInTheDocument(); // Off Rank
+  });
+
+  it("shows — for Def Rank / Off Rank when the team rank board has not loaded", () => {
+    render(<NflDfsAnalyzerTable rows={[dstRow({ dkId: "d1", playerName: "Saints" })]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DST" }));
+    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
+    const menu = screen.getByRole("group", { name: /toggle table columns/i });
+    expect(within(menu).getByRole("checkbox", { name: "Def Rank" })).toBeInTheDocument();
+  });
+
+  it("renders TD Score for offense rows from the join lookup, with a — when unresolved", () => {
+    const tdScoreLookup = new Map([["gsis:w1:2026_01_NO_DET", { jkbTdScore: 71.4, scoreRank: 2, scorePoolSize: 30 }]]);
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "w1", playerName: "Chris Olave", position: "WR" })]} tdScoreLookup={tdScoreLookup} />);
+    expect(screen.getByText("71.4")).toBeInTheDocument();
+  });
+
+  it("renders TGT/G and TGT/G L5 from the research evidence", () => {
+    const context = buildResearchContext({
+      evidence: {
+        touches: buildMetric(), redZoneTouches: buildMetric(), yardsPerCarry: buildMetric(), receivingTargets: buildMetric(),
+        targetShare: buildMetric(), airYardsPerGame: buildMetric(),
+        targetsPerGame: buildMetric({ value: 7.2, rank: 4, poolSize: 20 }),
+        targetsPerGameL5: buildMetric({ value: 8.4, rank: 3, poolSize: 20 }),
+      },
+    });
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "w1", playerName: "Chris Olave", position: "WR",
+      research: { status: "available", matchupGrade: null, matchupEdges: buildMatchupEdges(), context } })]} />);
+    expect(screen.getByText("7.2")).toBeInTheDocument();
+    expect(screen.getByText("8.4")).toBeInTheDocument();
+  });
+});
+
+describe("WR slot/wide defense columns", () => {
+  const slotWideByAbbr = new Map([
+    ["det", { team: "det", totalPpgAllowed: 41.2, slotPpgAllowed: 11.9, widePpgAllowed: 29.3, slotPct: 0.29, widePct: 0.71, nextOpponent: "min", slotPpgAllowedRank: 2, widePpgAllowedRank: 1, poolSize: 32 }],
+  ]);
+
+  it("renders all four fields for a WR row, joined by the opponent DEFENSE, only on the WR tab", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "w1", playerName: "Amon-Ra St. Brown", position: "WR", team: "lac", opponent: "det" })]} slotWideByAbbr={slotWideByAbbr} />);
+    fireEvent.click(screen.getByRole("tab", { name: "WR" }));
+    expect(screen.getByRole("columnheader", { name: "Opp Slot %" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Opp Wide %" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Slot PPG Allowed" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Wide PPG Allowed" })).toBeInTheDocument();
+    expect(screen.getByText("29%")).toBeInTheDocument(); // Opp Slot % — the DEFENSE's field, not the player's alignment.
+    expect(screen.getByText("71%")).toBeInTheDocument();
+    expect(screen.getByText("11.9")).toBeInTheDocument();
+    expect(screen.getByText("29.3")).toBeInTheDocument();
+  });
+
+  it("does not offer the WR-only columns on other views", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} slotWideByAbbr={slotWideByAbbr} />);
+    expect(screen.queryByRole("columnheader", { name: "Opp Slot %" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "QB" }));
+    expect(screen.queryByRole("columnheader", { name: "Opp Slot %" })).not.toBeInTheDocument();
+  });
+
+  it("heat-codes PPG Allowed as favorable-high but leaves the percentages neutral", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "w1", playerName: "Amon-Ra St. Brown", position: "WR", opponent: "det" })]} slotWideByAbbr={slotWideByAbbr} />);
+    fireEvent.click(screen.getByRole("tab", { name: "WR" }));
+    const slotPpgCell = screen.getByText("11.9").closest("span")!;
+    expect(slotPpgCell.style.backgroundColor).not.toBe("");
+    const pctCell = screen.getByText("29%").closest("span")!;
+    expect(pctCell.style.backgroundColor).toBe("");
+  });
+
+  it("shows — when the slot/wide artifact has not loaded", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "w1", playerName: "Amon-Ra St. Brown", position: "WR", opponent: "det" })]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "WR" }));
+    const row = screen.getByText("Amon-Ra St. Brown").closest("tr") as HTMLElement;
+    expect(within(row).getAllByText("—").length).toBeGreaterThan(0);
+  });
+
+  it("includes the WR Alignment / Defense group in the Player Review only for WR rows", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "w1", playerName: "Amon-Ra St. Brown", position: "WR", opponent: "det" })]} slotWideByAbbr={slotWideByAbbr} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for Amon-Ra St. Brown" }));
+    const detail = document.querySelector('[data-dfs-player-review="w1"]') as HTMLElement;
+    expect(within(detail).getByText("WR Alignment / Defense")).toBeInTheDocument();
+    expect(within(detail).getByText("Slot PPG Allowed")).toBeInTheDocument();
+  });
+
+  it("omits the WR Alignment / Defense group from a non-WR Player Review", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "r1", playerName: "RB Alpha", position: "RB" })]} slotWideByAbbr={slotWideByAbbr} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for RB Alpha" }));
+    const detail = document.querySelector('[data-dfs-player-review="r1"]') as HTMLElement;
+    expect(within(detail).queryByText("WR Alignment / Defense")).not.toBeInTheDocument();
+  });
+});
+
 describe("mobile presentation", () => {
   const mobileRows = (): DfsEnrichedAnalyzerRow[] => [
     offensiveRow({ dkId: "h1", playerName: "Justin Herbert", position: "QB", team: "lac", opponent: "kc", homeAway: "home" }),
@@ -450,42 +672,19 @@ describe("mobile presentation", () => {
     expect(playerCell.className).toMatch(/bg-white/);
   });
 
-  it("expands and collapses a compact row detail from the surname, using the same visible columns", () => {
+  it("opens the full Player Review from the surname on mobile, same as desktop", () => {
     setViewport(true);
     render(<NflDfsAnalyzerTable rows={mobileRows()} />);
-    const nameButton = screen.getByRole("button", { name: "Show row details for Justin Herbert" });
+    const nameButton = screen.getByRole("button", { name: "Expand details for Justin Herbert" });
     expect(nameButton).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(nameButton);
-    const detail = document.querySelector('[data-dfs-mobile-detail="h1"]')!;
+    const detail = document.querySelector('[data-dfs-player-review="h1"]')!;
     expect(detail).toBeInTheDocument();
-    // Uses the same registry label as the (mobile-default) visible metric column.
-    expect(within(detail as HTMLElement).getByText("Matchup")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Hide row details for Justin Herbert" }));
-    expect(document.querySelector('[data-dfs-mobile-detail="h1"]')).not.toBeInTheDocument();
-  });
-
-  it("reflects added/hidden columns in the compact detail", () => {
-    setViewport(true);
-    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
-    fireEvent.click(screen.getByRole("button", { name: /columns/i }));
-    const menu = screen.getByRole("group", { name: /toggle table columns/i });
-    fireEvent.click(within(menu).getByRole("checkbox", { name: "JKB Proj" })); // add
-    fireEvent.click(within(menu).getByRole("checkbox", { name: "Matchup" })); // remove
-    fireEvent.click(screen.getByRole("button", { name: "Show row details for Justin Herbert" }));
-    const detail = document.querySelector('[data-dfs-mobile-detail="h1"]') as HTMLElement;
-    expect(within(detail).getByText("JKB Proj")).toBeInTheDocument();
-    expect(within(detail).queryByText("Matchup")).not.toBeInTheDocument();
-  });
-
-  it("keeps the historical Last 10 expansion separate from the compact row detail", () => {
-    setViewport(true);
-    render(<NflDfsAnalyzerTable rows={mobileRows()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Show row details for Justin Herbert" }));
-    expect(document.querySelector('[data-dfs-mobile-detail="h1"]')).toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: "Player Last 10" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Expand Justin Herbert" }));
+    expect(within(detail as HTMLElement).getByText("Matchup", { selector: "dt" })).toBeInTheDocument();
+    // Full review includes fields beyond the currently visible board columns and the Last 10 history.
+    expect(within(detail as HTMLElement).getByText("DK Overall RK")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
-    // Compact detail is still open — the two are independent controls.
-    expect(document.querySelector('[data-dfs-mobile-detail="h1"]')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse details for Justin Herbert" }));
+    expect(document.querySelector('[data-dfs-player-review="h1"]')).not.toBeInTheDocument();
   });
 });
