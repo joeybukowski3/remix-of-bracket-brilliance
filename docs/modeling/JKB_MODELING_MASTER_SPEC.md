@@ -51,6 +51,22 @@ JKB is building one football modeling platform for game spreads, game totals, pa
 
 ## Governing principles
 
+### NFL Situational Trends Study v1 (research only)
+
+The [NFL Situational Trends Study v1](../research/nfl-situational-trends-v1.md)
+is a descriptive historical research layer over 12 predefined ATS/SU angles.
+It owns versioned deterministic qualification rules, team-relative ATS grading,
+95% Wilson uncertainty context, fixed FULL HISTORY (2011-2025) and RECENT FORM
+(2021-2025) reporting, a non-optimized 2011-2018 / 2019-2025 stability split,
+and a reusable team-game research artifact. All 12 approved common/classic
+angles remain in the artifact regardless of measured ATS strength. It is not a JKB predictive model, does not promote a trend
+into a feature, and does not alter power ratings, projected spreads, totals,
+props, prediction archives, outcome resolution, or production performance
+grading. Its nflverse market input is explicitly an unnamed, untimestamped
+settled historical line and is never described as an independently verified
+closing line. Any future use as a production model input requires a separately
+approved versioned feature and temporal validation under this specification.
+
 ### Team Comparison projection lens
 
 The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.

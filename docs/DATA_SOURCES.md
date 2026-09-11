@@ -88,6 +88,21 @@ Repository-wide notes:
 | Fallback | A scheduled game with no line yet is normal; all market fields null. Descriptive only — no projected/fair spread, edge, or pick in the artifact. |
 | Pointers | `docs/nfl-matchup-analyzer-redesign-spec.md` §24 |
 
+### NFL situational-trend research derivative
+
+| Field | Value |
+|---|---|
+| Purpose | Research-only ATS/SU screening of 12 predefined schedule, rest, travel, divisional, and prior-result situations |
+| Producer | `scripts/research/generate-nfl-situational-trends-v1.mjs` (`nfl:situational-trends`) |
+| Standard-study input policy | One local nflverse/nfldata `games.csv` snapshot, filtered to 2011-2025; never combine different spread providers or snapshots |
+| Offline smoke-test policy | With no `--input`, the generator joins `public/data/nfl/2024/{games,results}.json`, `public/data/nfl/2025/{games,results}.json`, and `data/nfl/benchmark/market_lines_2025.csv`; this validates the pipeline but is not the standard research artifact |
+| Reporting windows | Fixed FULL HISTORY 2011-2025 and RECENT FORM 2021-2025, plus a non-optimized 2011-2018 / 2019-2025 stability split |
+| Artifacts | `data/nfl/research/situational-trend-team-games-v1.jsonl`, `public/data/nfl/research/situational-trends-v1.json`, and `docs/research/nfl-situational-trends-v1.md` |
+| Market semantics | `spread_line` is positive for a home favorite. It is a single settled historical line from an unnamed book/source composition, with no per-row timestamp; it is not called an independently verified close or consensus. |
+| Scope boundary | Descriptive research only. It does not feed or change JKB power ratings, spreads, totals, props, predictions, outcome resolution, or performance grading. |
+| Reproduction | Standard artifact: `npm run nfl:situational-trends -- --input=data/external/nflverse/games.csv --start-season=2011 --end-season=2025`. Offline smoke test: `npm run nfl:situational-trends`. |
+| Pointer | `docs/research/nfl-situational-trends-v1.md` |
+
 ## NFL — player-prop market (yardage props)
 
 | Field | Value |
