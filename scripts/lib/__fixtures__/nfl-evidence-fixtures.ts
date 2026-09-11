@@ -7,7 +7,7 @@
  * nfl-evidence-store.test.ts, and generate-nfl-evidence-fixture.ts.
  */
 
-import type { EvidenceNormalizationContext, RawEvidenceCandidate } from "../nfl-evidence-types";
+import type { EvidenceNormalizationContext, RawEvidenceCandidate, SubjectIdentitySource } from "../nfl-evidence-types";
 
 export const FIXTURE_GAME_ID = "2026_01_BAL_IND";
 export const FIXTURE_SEASON = 2026;
@@ -25,6 +25,34 @@ export const FIXTURE_CONTEXT: EvidenceNormalizationContext = {
   kickoffUtc: FIXTURE_KICKOFF_UTC,
   contextVersion: "nfl-game-context-v1-fixture",
   knownTeamAbbrs: new Set(["ind", "bal", "kc", "buf"]),
+  // Deliberately omitted here -- FIXTURE_CONTEXT doubles as the
+  // "no authoritative subject-identity source available" case (WU2.1's
+  // stale/unavailable-source test uses this context unmodified).
+};
+
+/**
+ * WU2.1 -- SYNTHETIC canonical roster/coach identity data for the fixture
+ * game (ind vs bal), plus one player and one coach conclusively rostered on
+ * an unrelated third team (kc) to exercise the wrong-team-association reject
+ * path. None of this is real nflverse/coaching data.
+ */
+export const FIXTURE_SUBJECT_IDENTITY: SubjectIdentitySource = {
+  players: [
+    { playerId: "00-fixture-001", canonicalName: "Fixture Player A", team: "ind" },
+    { playerId: "00-fixture-002", canonicalName: "Fixture Player B", team: "ind" },
+    { playerId: "00-fixture-003", canonicalName: "Fixture Player C", team: "bal" },
+    { playerId: "00-fixture-999", canonicalName: "Fixture Player Z", team: "kc" },
+  ],
+  coaches: [
+    { coachId: "fixture-ind-coach", canonicalName: "Fixture Head Coach", team: "ind" },
+    { coachId: "fixture-bal-coach", canonicalName: "Fixture Bal Coach", team: "bal" },
+    { coachId: "fixture-kc-coach", canonicalName: "Fixture Kc Coach", team: "kc" },
+  ],
+};
+
+export const FIXTURE_CONTEXT_WITH_SUBJECT_IDENTITY: EvidenceNormalizationContext = {
+  ...FIXTURE_CONTEXT,
+  subjectIdentity: FIXTURE_SUBJECT_IDENTITY,
 };
 
 /** Case 1: confirmed injury, official source -- should normalize to verified/pregameSafe. */
@@ -307,6 +335,49 @@ export const unknownTeamSubjectCandidate: RawEvidenceCandidate = {
   subjects: { teams: ["kc"], players: ["fixture-player-a"], coaches: [] },
 };
 
+/** WU2.1 case: subject player exists on the roster and is rostered on the away (BAL) team. */
+export const validBalPlayerSubjectCandidate: RawEvidenceCandidate = {
+  ...personnelUpdateCandidate,
+  subjects: { teams: ["bal"], players: ["Fixture Player C"], coaches: [] },
+};
+
+/** WU2.1 case: subject player exists on the roster and is rostered on the home (IND) team. */
+export const validIndPlayerSubjectCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  subjects: { teams: ["ind"], players: ["Fixture Player A"], coaches: [] },
+};
+
+/**
+ * WU2.1 hard-fail case: the named player is conclusively rostered on an
+ * unrelated third team (kc), even though subjects.teams claims this game --
+ * a real identity assigned to the wrong game.
+ */
+export const wrongTeamPlayerSubjectCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  subjects: { teams: ["ind"], players: ["Fixture Player Z"], coaches: [] },
+};
+
+/** WU2.1 case: subject name not present anywhere in the identity source -- unresolved, not rejected. */
+export const unknownPlayerSubjectCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  subjects: { teams: ["ind"], players: ["Nonexistent Fixture Player Q"], coaches: [] },
+};
+
+/** WU2.1 case: subject coach exists and is associated with the home (IND) team. */
+export const validCoachSubjectCandidate: RawEvidenceCandidate = {
+  ...coachQuoteCandidate,
+  subjects: { teams: ["ind"], players: [], coaches: ["Fixture Head Coach"] },
+};
+
+/**
+ * WU2.1 hard-fail case: the named coach is conclusively associated with an
+ * unrelated third team (kc).
+ */
+export const wrongTeamCoachSubjectCandidate: RawEvidenceCandidate = {
+  ...coachQuoteCandidate,
+  subjects: { teams: ["ind"], players: [], coaches: ["Fixture Kc Coach"] },
+};
+
 /**
  * ChatGPT-namespace mirror of a subset of the above, independently sourced
  * (different URL/reporter), to exercise model-isolation and
@@ -322,6 +393,13 @@ export const chatgptQuestionablePlayerCandidate: RawEvidenceCandidate = {
   ...questionablePlayerCandidate,
   model: "chatgpt",
   source: { ...questionablePlayerCandidate.source, name: "ChatGPT-stream Beat Reporter Mirror", url: "https://example-fixture.test/chatgpt-mirror/beat-injury-notes" },
+};
+
+/** WU2.1: chatgpt-namespace mirror of validIndPlayerSubjectCandidate, to exercise identity resolution under model isolation. */
+export const chatgptValidIndPlayerSubjectCandidate: RawEvidenceCandidate = {
+  ...validIndPlayerSubjectCandidate,
+  model: "chatgpt",
+  source: { ...validIndPlayerSubjectCandidate.source, name: "ChatGPT-stream Colts Injury Mirror", url: "https://example-fixture.test/chatgpt-mirror/colts-injury-report" },
 };
 
 export const GROK_FIXTURE_CANDIDATES: RawEvidenceCandidate[] = [

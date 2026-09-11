@@ -122,6 +122,13 @@ export default defineConfig({
       // Dual-AI handicapping architecture WU2 -- external evidence normalization/validation foundation.
       "scripts/lib/nfl-evidence-normalizer.test.ts",
       "scripts/lib/nfl-evidence-store.test.ts",
+      // Dual-AI handicapping architecture WU2.1 -- canonical player/coach
+      // subject identity validation.
+      "scripts/lib/nfl-evidence-subject-identity.test.ts",
+      // Dual-AI handicapping architecture WU2.2 -- production subject
+      // identity source loader (pure core + repo-file I/O wrapper).
+      "scripts/lib/nfl-evidence-subject-identity-loader-core.test.ts",
+      "scripts/lib/nfl-evidence-subject-identity-loader.test.ts",
       // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
       "scripts/lib/nfl-props-performance.test.ts",
       "scripts/generate-nfl-props-performance.test.ts",

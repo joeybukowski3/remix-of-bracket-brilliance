@@ -31,10 +31,12 @@ import {
   type EvidenceFreshness,
   type EvidenceNormalizationContext,
   type EvidenceRecord,
+  type EvidenceSubjectValidation,
   type EvidenceVerificationStatus,
   type RawEvidenceCandidate,
 } from "./nfl-evidence-types";
 import { freshnessThresholdsForCategory, isRejectedSourceByPolicy, isUnsupportedSharpMoneyClaim, sourceTier } from "./nfl-evidence-policy";
+import { validateSubjectIdentities } from "./nfl-evidence-subject-identity";
 
 export const NORMALIZER_VERSION = "nfl-evidence-normalizer-v1" as const;
 
@@ -69,7 +71,7 @@ function isValidUrl(value: string | null): boolean {
  * becomes an EvidenceRecord at all -- these are the "this cannot be safely
  * placed anywhere" cases, not quality judgments.
  */
-function validateStructural(candidate: RawEvidenceCandidate, context: EvidenceNormalizationContext): string[] {
+function validateStructural(candidate: RawEvidenceCandidate, context: EvidenceNormalizationContext, subjectValidation: EvidenceSubjectValidation): string[] {
   const reasons: string[] = [];
 
   if (candidate.model !== "grok" && candidate.model !== "chatgpt") {
@@ -123,6 +125,17 @@ function validateStructural(candidate: RawEvidenceCandidate, context: EvidenceNo
     }
     if (!context.knownTeamAbbrs.has(team)) {
       reasons.push(`subjects.teams entry "${team}" is not a known team alias`);
+    }
+  }
+
+  for (const player of subjectValidation.players) {
+    if (player.status === "rejected") {
+      reasons.push(`subjects.players entry "${player.input}" is conclusively rostered on an unrelated team (${player.team}) -- wrong-team player association`);
+    }
+  }
+  for (const coach of subjectValidation.coaches) {
+    if (coach.status === "rejected") {
+      reasons.push(`subjects.coaches entry "${coach.input}" is conclusively associated with an unrelated team (${coach.team}) -- wrong-team coach association`);
     }
   }
 
@@ -197,7 +210,13 @@ function defaultConfidenceForTier(tier: 1 | 2 | 3 | 4): EvidenceConfidence {
  * pair (see nfl-evidence-normalizer.test.ts's determinism assertion).
  */
 export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, context: EvidenceNormalizationContext): NormalizeResult {
-  const structuralIssues = validateStructural(candidate, context);
+  const subjectValidation = validateSubjectIdentities(
+    { players: candidate.subjects?.players ?? [], coaches: candidate.subjects?.coaches ?? [] },
+    { homeTeam: context.homeTeam, awayTeam: context.awayTeam },
+    context.subjectIdentity ?? null
+  );
+
+  const structuralIssues = validateStructural(candidate, context, subjectValidation);
   if (structuralIssues.length > 0) {
     return { ok: false, reasons: structuralIssues };
   }
@@ -267,6 +286,7 @@ export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, conte
       players: candidate.subjects?.players ?? [],
       coaches: candidate.subjects?.coaches ?? [],
     },
+    subjectValidation,
     confidence,
     verificationStatus,
     pregameSafe,
