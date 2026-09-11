@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, CircleDot } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, CircleDot } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import {
   FANTASY_TABLE_BODY_CELL,
@@ -38,6 +38,8 @@ import {
   type WeeklyResearchSortKey,
 } from "@/lib/fantasy/weekly/researchSorting";
 import { cn } from "@/lib/utils";
+import { WEEKLY_RANKINGS_SEASON } from "@/lib/fantasy/weeklyRankings";
+import FantasyQbLast10 from "@/components/fantasy/FantasyQbLast10";
 
 export type WeeklyResearchDisplayMode = "stat" | "rank";
 
@@ -362,7 +364,7 @@ function MobileExpandedSummary({ presentation }: { presentation: WeeklyResearchP
   );
 }
 
-function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+function SamplesContent({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
   const { row } = presentation;
   const evidence = EVIDENCE_COLUMNS[row.position];
   const samples = [
@@ -376,6 +378,23 @@ function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow 
       return [`${column.detail} evidence`, `${formatEvidenceValue(column.key, raw.value)} · ${display.displayRank == null ? "N/A" : `#${display.displayRank} of ${display.poolSize}`} · ${sampleLabel(raw)}`] as const;
     }),
   ] as const;
+  return (
+    <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
+      {samples.map(([label, value], index) => (
+        <div key={label} data-evidence-card className={cn("border-b px-2 py-1.5 sm:border-r sm:px-3 sm:py-2 last:border-r-0", EVIDENCE_CARD_TONES[index % EVIDENCE_CARD_TONES.length])}>
+          <dt className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.04em] opacity-70">
+            <CircleDot aria-hidden className={cn("h-3 w-3 shrink-0", EVIDENCE_MARKER_TONES[index % EVIDENCE_MARKER_TONES.length])} />
+            {label}
+          </dt>
+          <dd className="mt-0.5 font-black">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function ProjectionContextContent({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+  const { row } = presentation;
   const projectionContext = [
     ["Baseline pts", row.baselineFantasyPoints.toFixed(1)],
     ["Usage adjustment", row.position === "QB" ? "Not used" : row.residualActivated ? signed(row.components.usageAdjustment) : "Not active yet"],
@@ -384,20 +403,103 @@ function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow 
     ["Final projected pts", row.projectedFantasyPoints.toFixed(1)],
   ] as const;
   return (
+    <>
+      <dl className="grid sm:grid-cols-2 lg:grid-cols-5">
+        {projectionContext.map(([label, value]) => (
+          <div key={label} className="border-b border-slate-100 px-3 py-2 sm:border-r last:border-r-0">
+            <dt className="text-[9px] font-bold uppercase tracking-[0.04em] text-slate-500">{label}</dt>
+            <dd className="mt-0.5 text-sm font-black tabular-nums text-slate-950">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-500">JKB Full PPR · Pregame information only; research context does not alter the projection or rank.</p>
+    </>
+  );
+}
+
+/** Collapsible section header used only by the mobile Fantasy detail. Default collapsed. */
+function MobileAccordionSection({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div data-weekly-accordion-section data-accordion-title={title} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          "flex min-h-11 w-full items-center justify-between gap-2 bg-slate-50 px-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500",
+          open && "border-b border-slate-200",
+        )}
+      >
+        <span className="text-[10px] font-black uppercase tracking-[0.04em] text-slate-950">{title}</span>
+        <ChevronDown aria-hidden className={cn("h-4 w-4 shrink-0 text-slate-500 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="p-1.5">{children}</div>}
+    </div>
+  );
+}
+
+/**
+ * Mobile-only expanded detail: the same underlying content components as the
+ * desktop layout, grouped into eight independently collapsible sections that
+ * all default to collapsed so the row detail stays scannable on a phone.
+ */
+function MobileDetail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+  const { row } = presentation;
+  const isQb = row.position === "QB";
+  const qbLast10Props = {
+    season: WEEKLY_RANKINGS_SEASON,
+    playerId: row.playerId,
+    playerName: row.playerName,
+    team: row.team,
+    opponent: row.opponent,
+    homeAway: (row.homeAway === "away" ? "away" : "home") as "home" | "away",
+  };
+  return (
+    <div data-weekly-expanded-detail data-weekly-mobile-accordions className="space-y-1.5 border border-slate-200 bg-slate-100/70 p-1.5 text-[10px] text-slate-700">
+      <MobileAccordionSection title="Samples">
+        <SamplesContent presentation={presentation} />
+      </MobileAccordionSection>
+      <MobileAccordionSection title="Trenches">
+        <EdgeDetail title="Trenches" category="trenches" edge={row.matchupEdges.trenches} metric={presentation.matchupEdges.trenches} />
+      </MobileAccordionSection>
+      <MobileAccordionSection title="Matchups">
+        <CompositeMatchupSummary presentation={presentation} />
+      </MobileAccordionSection>
+      {isQb && (
+        <MobileAccordionSection title="EPA">
+          <EdgeDetail title="EPA advantage" category="epa" edge={row.matchupEdges.epa} metric={presentation.matchupEdges.epa} />
+        </MobileAccordionSection>
+      )}
+      {isQb && (
+        <MobileAccordionSection title="Success Rate">
+          <EdgeDetail title="Success advantage" category="success" edge={row.matchupEdges.success} metric={presentation.matchupEdges.success} />
+        </MobileAccordionSection>
+      )}
+      <MobileAccordionSection title="Context">
+        <ProjectionContextContent presentation={presentation} />
+      </MobileAccordionSection>
+      {isQb && (
+        <MobileAccordionSection title="Last 10">
+          <FantasyQbLast10 {...qbLast10Props} only="player" unwrapped />
+        </MobileAccordionSection>
+      )}
+      {isQb && (
+        <MobileAccordionSection title="Opponent Last 10">
+          <FantasyQbLast10 {...qbLast10Props} only="opponent" unwrapped />
+        </MobileAccordionSection>
+      )}
+    </div>
+  );
+}
+
+function DesktopDetail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+  const { row } = presentation;
+  return (
     <div data-weekly-expanded-detail className="space-y-2 border border-slate-200 bg-slate-100/70 p-1.5 text-[10px] text-slate-700 sm:space-y-3 sm:rounded-lg sm:p-3 sm:text-xs">
       <section aria-labelledby={`samples-${row.playerId}`} className="overflow-hidden border border-slate-200 bg-white sm:rounded-lg">
         <h3 id={`samples-${row.playerId}`} className="border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-[9px] font-black uppercase tracking-[0.04em] text-slate-950 sm:px-3 sm:py-2 sm:text-[11px]">Samples / evidence</h3>
-        <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
-          {samples.map(([label, value], index) => (
-            <div key={label} data-evidence-card className={cn("border-b px-2 py-1.5 sm:border-r sm:px-3 sm:py-2 last:border-r-0", EVIDENCE_CARD_TONES[index % EVIDENCE_CARD_TONES.length])}>
-              <dt className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.04em] opacity-70">
-                <CircleDot aria-hidden className={cn("h-3 w-3 shrink-0", EVIDENCE_MARKER_TONES[index % EVIDENCE_MARKER_TONES.length])} />
-                {label}
-              </dt>
-              <dd className="mt-0.5 font-black">{value}</dd>
-            </div>
-          ))}
-        </dl>
+        <SamplesContent presentation={presentation} />
       </section>
       <section aria-labelledby={`matchups-${row.playerId}`}>
         <h3 id={`matchups-${row.playerId}`} className="mb-1 px-1 text-[9px] font-black uppercase tracking-[0.04em] text-slate-950 sm:mb-1.5 sm:text-[11px]">Matchup details</h3>
@@ -410,18 +512,28 @@ function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow 
       </section>
       <section aria-labelledby={`projection-${row.playerId}`} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         <h3 id={`projection-${row.playerId}`} className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-[0.05em] text-slate-950">Projection context</h3>
-        <dl className="grid sm:grid-cols-2 lg:grid-cols-5">
-          {projectionContext.map(([label, value]) => (
-            <div key={label} className="border-b border-slate-100 px-3 py-2 sm:border-r last:border-r-0">
-              <dt className="text-[9px] font-bold uppercase tracking-[0.04em] text-slate-500">{label}</dt>
-              <dd className="mt-0.5 text-sm font-black tabular-nums text-slate-950">{value}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-500">JKB Full PPR · Pregame information only; research context does not alter the projection or rank.</p>
+        <ProjectionContextContent presentation={presentation} />
       </section>
+      {row.position === "QB" && (
+        <section aria-labelledby={`last10-${row.playerId}`}>
+          <h3 id={`last10-${row.playerId}`} className="mb-1 px-1 text-[9px] font-black uppercase tracking-[0.04em] text-slate-950 sm:mb-1.5 sm:text-[11px]">Last 10 games</h3>
+          <FantasyQbLast10
+            season={WEEKLY_RANKINGS_SEASON}
+            playerId={row.playerId}
+            playerName={row.playerName}
+            team={row.team}
+            opponent={row.opponent}
+            homeAway={row.homeAway === "away" ? "away" : "home"}
+          />
+        </section>
+      )}
     </div>
   );
+}
+
+function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+  const compact = useIsCompactLayout();
+  return compact ? <MobileDetail presentation={presentation} /> : <DesktopDetail presentation={presentation} />;
 }
 
 function CompositeMatchupSummary({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
@@ -668,7 +780,19 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
               const expanded = expandedPlayerId === row.playerId;
               return (
                 <Fragment key={row.playerId}>
-                  <tr data-player-id={row.playerId} className="group bg-white hover:bg-slate-50">
+                  <tr
+                    data-player-id={row.playerId}
+                    onClick={() => setExpandedPlayerId(expanded ? null : row.playerId)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setExpandedPlayerId(expanded ? null : row.playerId);
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-expanded={expanded}
+                    className="group cursor-pointer bg-white hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-500"
+                  >
                     <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-2 text-center text-xs font-black tabular-nums text-slate-950")}>{row.positionRank}</td>
                     <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1.5 py-1")}><div className="flex min-w-0 items-center gap-1"><div className="min-w-0 flex-1"><FantasyPlayerIdentity player={row.playerName} team={row.team} compact wrapName showTeamAbbreviation={false} /></div><FantasyExpandControl label={`${expanded ? "Hide" : "Show"} details for ${row.playerName}`} expanded={expanded} onClick={() => setExpandedPlayerId(expanded ? null : row.playerId)} /></div></td>
                     <td className={cn(FANTASY_TABLE_BODY_CELL, "whitespace-nowrap px-1 py-2 text-left text-xs font-black uppercase text-slate-950")}><span className="mr-1 lowercase text-slate-500">{row.homeAway === "away" ? "@" : "vs"}</span>{row.opponent}</td>

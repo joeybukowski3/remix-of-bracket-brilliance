@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import NflYardageOpponentLast10Table from "./NflYardageOpponentLast10Table";
+import NflYardageOpponentLast10Table from "./NflOpponentLast10Table";
 import type { NflYardageOpponentHistory } from "@/lib/nfl/props/types/yardageHistory";
 
 function passingHistory(homeAway: "home" | "away" | null = "home"): NflYardageOpponentHistory {
@@ -14,7 +14,7 @@ function passingHistory(homeAway: "home" | "away" | null = "home"): NflYardageOp
         opponentPlayerId: "00-1", opponentPlayerName: "Test Opp QB", homeAway,
         oppOffRank: 20, oppOffRankPoolSize: 32, oppPlayerYpg: 210.4,
         stat: { completions: 22, attempts: 33, passingTds: 1, interceptions: 1 },
-        yardsAllowed: 245, gameScore: { result: "L", teamScore: 17, oppScore: 24 }, vegasLine: null,
+        yardsAllowed: 245, fantasyPointsPpr: 18.9, gameScore: { result: "L", teamScore: 17, oppScore: 24 }, vegasLine: null,
       },
     ],
   };
@@ -32,14 +32,52 @@ function headerTexts() {
 }
 
 describe("NflYardageOpponentLast10Table column order", () => {
-  it("passing: Date, Opp QB, Home/Away, Opp Off Rank, QB YPG, Pass Yds Allowed, VS QB AVG, Cmp/Att Allowed, TD/INT, Game Score, Vegas Line", () => {
+  it("passing/QB: the approved shared column order with Fantasy PPR Points and OFF Rank, no Score column", () => {
     render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
     expect(headerTexts()).toEqual([
-      "Date", "Opp QB", "Home/Away", "Opp Off Rank", "QB YPG", "Pass Yds Allowed", "VS QB AVG", "Cmp / Att Allowed", "TD / INT", "Game Score", "Vegas Line",
+      "Date", "Opp QB", "Home/Away", "Comp/Att", "Yards", "TD/INT", "Fantasy PPR Points", "QB YPG", "OFF Rank",
     ]);
   });
 
-  it("Opp Off Rank renders as an ordinal, never a rank-out-of-32", () => {
+  it("passing/QB: never renders a Score / Game Score column", () => {
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
+    expect(headerTexts()).not.toContain("Score");
+    expect(headerTexts()).not.toContain("Game Score");
+  });
+
+  it("mobile Opp QB cell shows the opposing QB's last name only, next to the team logo slot; desktop keeps the full name", () => {
+    const history = passingHistory();
+    history.games[0].opponentPlayerName = "Bryce Young";
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={history} currentLine={null} />);
+    const mobile = document.querySelector(".md\\:hidden");
+    expect(mobile).toBeTruthy();
+    expect(mobile!.textContent).toContain("Young");
+    expect(mobile!.textContent).not.toContain("Bryce");
+    const desktop = screen.getByRole("region", { name: /defense last \d+ vs/i });
+    expect(within(desktop).getByText("Bryce Young")).toBeInTheDocument();
+  });
+
+  it("passing/QB: Fantasy PPR Points shows the opposing QB's existing nflverse Full PPR value", () => {
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
+    expect(screen.getAllByText("18.9").length).toBeGreaterThan(0);
+    // 245*0.04 + 4 - 1 = 12.8 -- a partial recompute, never shown.
+    expect(screen.queryByText("12.8")).not.toBeInTheDocument();
+  });
+
+  it("passing/QB: Comp/Att and TD/INT footers drop the redundant per-side 'Avg'", () => {
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
+    const region = screen.getByRole("region", { name: /defense last \d+ vs/i });
+    expect(within(region).getByText("22.0 / 33.0")).toBeInTheDocument();
+    expect(within(region).getByText("1.0 / 1.0")).toBeInTheDocument();
+    expect(within(region).queryByText(/Avg 22\.0/)).not.toBeInTheDocument();
+  });
+
+  it("never renders a Vegas Line column", () => {
+    render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
+    expect(screen.queryByRole("columnheader", { name: "Vegas Line" })).not.toBeInTheDocument();
+  });
+
+  it("OFF Rank renders as an ordinal, never a rank-out-of-32", () => {
     render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
     expect(screen.getAllByText("20th").length).toBeGreaterThan(0);
     expect(screen.queryByText(/20\/32/)).not.toBeInTheDocument();
@@ -57,11 +95,9 @@ describe("NflYardageOpponentLast10Table column order", () => {
     expect(screen.queryByText(/^A$/)).not.toBeInTheDocument();
   });
 
-  it("VS QB AVG is yards allowed minus the QB's entering YPG -- positive means the defense allowed more than that QB's average", () => {
-    // 245 allowed - 210.4 entering YPG = +34.6
+  it("passing/QB layout has no VS QB AVG column", () => {
     render(<NflYardageOpponentLast10Table opponentAbbr="sea" position="QB" history={passingHistory()} currentLine={null} />);
-    const [cell] = screen.getAllByText("+34.6");
-    expect(cell.getAttribute("data-result")).toBe("over");
+    expect(headerTexts()).not.toContain("VS QB AVG");
   });
 
   it("Opp Off Rank paints heat only when a pool size is available -- N/A rank gets no heat class", () => {

@@ -8,7 +8,7 @@ The fixed score population is the current-week QB/RB/WR/TE candidate union from 
 
 - `2025`: 2025 regular-season player and opponent games.
 - `2026`: completed 2026 regular-season games. An available source with no completed games is `zero`, distinct from a missing source.
-- `last8`: the eight latest applicable games ordered by season and week, crossing the season boundary.
+- `last8`: the eight latest applicable games ordered by season and week, crossing the season boundary. This is the default selection (`artifact.defaultWindow`); rolling-origin calibration showed it materially improves early-season calibration and slightly improves full-season Brier without hurting Weeks 5+. `2025` and `2026` remain user-selectable.
 - `TD L5/G`: rushing plus receiving TDs over the latest five games inside the selected sample.
 
 ## Formula

@@ -199,7 +199,29 @@ export default function NflYardageReviewMobileTable({
                     </td>
                     {/* Secondary to Proj on purpose -- neutral, never colored by edge (that's Diff's job). */}
                     <td className="px-1 py-2 text-center tabular-nums text-slate-600">
-                      {marketInfo.available ? marketInfo.line.toFixed(1) : <span className="text-slate-400">—</span>}
+                      {marketInfo.available ? (
+                        <span className="inline-flex flex-col leading-tight">
+                          <span className={cn("font-semibold", marketInfo.source === "kalshi" ? "text-amber-700" : "text-slate-700")}>
+                            {marketInfo.source === "kalshi" ? "~" : ""}
+                            {marketInfo.line.toFixed(1)}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-[7px] font-semibold uppercase tracking-wide",
+                              marketInfo.source === "kalshi" ? "text-amber-600" : "text-slate-400",
+                            )}
+                            title={
+                              marketInfo.source === "kalshi"
+                                ? "Kalshi market-implied reference line — derived, not a sportsbook line or sportsbook odds"
+                                : "Sportsbook line"
+                            }
+                          >
+                            {marketInfo.source === "kalshi" ? "Kalshi" : "Book"}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     {/* The one column allowed a green/red signal -- it's the row's outcome value. Always bold, sign always shown, never color-only. */}
                     <td

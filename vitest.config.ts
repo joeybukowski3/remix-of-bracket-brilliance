@@ -41,6 +41,10 @@ export default defineConfig({
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
       "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL Anytime TD market -- ParlayAPI canonical scorer-market pipeline.
+      "scripts/lib/nfl-anytime-td-selection.test.mjs",
+      // NFL yardage alt-market (secondary source) -- Kalshi ladder normalization.
+      "scripts/lib/nfl-kalshi-yardage.test.mjs",
       // NFL Yardage Player Detail v2 -- Last-10 history pipeline.
       "scripts/lib/nfl-epa-week-rank-core.test.mjs",
       "scripts/lib/nfl-yardage-rolling-core.test.mjs",
@@ -52,6 +56,10 @@ export default defineConfig({
       "scripts/lib/nfl-research-buckets.test.mjs",
       "scripts/lib/nfl-research-time-split.test.mjs",
       "scripts/lib/nfl-research-bias.test.mjs",
+      // NFL prospective 2026 JKB TD Score forward-validation (research only).
+      "scripts/research/lib/nfl-td-forward-core.test.mjs",
+      "scripts/research/lib/nfl-td-forward-metrics.test.mjs",
+      "scripts/research/lib/nfl-td-forward-summary.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
@@ -76,6 +84,8 @@ export default defineConfig({
       "scripts/generate-nfl-yardage-outcomes.test.ts",
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
+      // Phase 3 DFS -- Razzball defensive slot/wide PPG-allowed scraper core (parse/normalize/validate).
+      "scripts/lib/nfl-slot-wide-defense-context-core.test.mjs",
       // WU4C.1 -- scheduled-workflow commit-path allowlist (predictions/outcomes/evaluations).
       "scripts/lib/nfl-prediction-archive-allowlist.test.mjs",
       // WU4G -- forward evaluation (rushing shadow-vs-production / receiving role-conflict) operational layer.

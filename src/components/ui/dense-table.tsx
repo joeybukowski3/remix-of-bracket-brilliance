@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactNode, RefObject } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,14 +53,21 @@ export function DenseTableScroller({
   label,
   className = "",
   children,
+  scrollRef,
   ...props
 }: Omit<ComponentPropsWithoutRef<"div">, "aria-label"> & {
   label: string;
   children: ReactNode;
+  /**
+   * Optional handle on the scroll element itself, for consumers that need to
+   * measure `scrollLeft` / bounding box (e.g. a page-scroll sticky-header clone).
+   */
+  scrollRef?: RefObject<HTMLDivElement>;
 }) {
   return (
     <div
       {...props}
+      ref={scrollRef}
       role="region"
       aria-label={label}
       tabIndex={0}

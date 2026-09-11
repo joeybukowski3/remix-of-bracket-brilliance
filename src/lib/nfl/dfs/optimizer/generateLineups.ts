@@ -22,6 +22,7 @@ import {
   type ObjectiveComponent,
 } from "@/lib/nfl/dfs/policies/lineupObjectivesV1";
 import type { DfsEnrichedAnalyzerRow, DfsEnrichedOffensiveRow, DfsEnrichedDstRow } from "@/lib/nfl/dfs/slateAnalyzer";
+import { isDfsCandidatePoolPlayer } from "@/lib/nfl/dfs/dfsPlayerPool";
 import type {
   GeneratedLineup,
   GeneratedLineupSet,
@@ -156,7 +157,10 @@ function buildCandidates(input: GenerateLineupsInput, strategy: LineupStrategy):
 
   const offenseRows = input.rows
     .filter(isOffense)
-    .filter((row) => row.optimizerEligibility === "eligible" && row.projectedFantasyPoints != null);
+    // The DFS practical-pool gate sits above base optimizer eligibility: a
+    // fringe/backup player who happens to satisfy the eligibility policy is
+    // still never a candidate for a generated lineup. See dfsPlayerPool.ts.
+    .filter((row) => row.optimizerEligibility === "eligible" && row.projectedFantasyPoints != null && isDfsCandidatePoolPlayer(row));
 
   const offenseInputs: OffensiveCandidateInput[] = offenseRows.map((row) => ({
     row,
@@ -203,6 +207,7 @@ function buildCandidates(input: GenerateLineupsInput, strategy: LineupStrategy):
 
   input.rows
     .filter((row): row is DfsEnrichedDstRow => row.kind === "dst")
+    .filter(isDfsCandidatePoolPlayer)
     .forEach((row) => {
       const score = scoreDstCandidate(row.dstMatchup, strategy);
       if (!score.scorable || score.score == null) return;
@@ -326,6 +331,7 @@ export function generateLineups(input: GenerateLineupsInput): GeneratedLineupSet
         distinctGames: result.solution.distinctGames,
         minimumGamesSatisfied: result.solution.distinctGames >= NFL_CLASSIC_RULES.roster.minimumGamesRequired,
         allOffenseOptimizerEligible: offenseSlots.every((slot) => slot.optimizerEligibility === "eligible"),
+        allOffenseInDfsPool: chosen.every((candidate) => candidate.slotPlayer.position === "DST" || isDfsCandidatePoolPlayer(candidate.row)),
         dstContextUsable: slots.every((slot) => slot.position !== "DST" || slot.dstMatchup?.dstMatchupScore != null),
         allFromUploadedSlate: slots.every((slot) => uploadedDkIds.has(slot.dkId)),
       },

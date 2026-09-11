@@ -204,13 +204,14 @@ describe("static workflow audit -- mlb-x-canonical.yml sources only production d
   });
 });
 
-describe("static workflow audit -- Sep 3 2026 fix: canonical schedule is exactly 9/10/11/12 AM ET", () => {
-  it("mlb-x-canonical.yml has exactly four schedule entries, all America/New_York, at the top of each hour 9-12", () => {
+describe("static workflow audit -- canonical recovery schedule", () => {
+  it("mlb-x-canonical.yml has four staggered morning checks in America/New_York", () => {
     const { doc } = loadWorkflow("mlb-x-canonical.yml");
     const schedule = doc.on.schedule;
     assert.equal(schedule.length, 4);
     for (const entry of schedule) assert.equal(entry.timezone, "America/New_York");
-    assert.deepEqual(schedule.map((e) => e.cron).sort(), ["0 9 * * *", "0 10 * * *", "0 11 * * *", "0 12 * * *"].sort());
+    assert.deepEqual(schedule.map((e) => e.cron), ["40 8 * * *", "20 9 * * *", "20 10 * * *", "5 11 * * *"]);
+    assert.ok(schedule.every((entry) => !entry.cron.startsWith("0 ")), "canonical checks must avoid top-of-hour delivery pressure");
   });
 
   it("the old every-15-minutes cron is gone", () => {
@@ -221,6 +222,20 @@ describe("static workflow audit -- Sep 3 2026 fix: canonical schedule is exactly
   it("workflow_dispatch is preserved", () => {
     const { doc } = loadWorkflow("mlb-x-canonical.yml");
     assert.ok("workflow_dispatch" in doc.on);
+  });
+
+  it("whole canonical runs are serialized without cancelling an in-flight attempt", () => {
+    const { doc } = loadWorkflow("mlb-x-canonical.yml");
+    assert.equal(doc.concurrency.group, "mlb-x-canonical-${{ github.repository }}");
+    assert.equal(doc.concurrency.cancelInProgress ?? doc.concurrency["cancel-in-progress"], false);
+  });
+
+  it("the daily production generator refreshes before the first publisher check", () => {
+    const { doc } = loadWorkflow("generate-mlb-hr-props.yml");
+    const schedule = doc.on.schedule;
+    const morning = schedule.find((entry) => entry.cron === "47 7 * * *");
+    assert.ok(morning, "expected a 7:47 AM production-data refresh");
+    assert.equal(morning.timezone, "America/New_York");
   });
 });
 
@@ -307,6 +322,21 @@ describe("static workflow audit -- Sep 3 2026 fix: single upstream ensure-data j
       assert.ok(noopStep, `${job} must have a data_ready != 'true' no-op step`);
       assert.match(noopStep.run, /WAITING_FOR_TODAYS_DATA/);
       assert.doesNotMatch(noopStep.run, /post-mlb-social-canonical\.mjs/);
+    }
+  });
+
+  it("both ready and waiting summaries expose the operational decision fields", () => {
+    const { doc } = loadWorkflow("mlb-x-canonical.yml");
+    for (const [jobName, product] of [["publish-hr", "HR"], ["publish-k", "K"]]) {
+      const steps = doc.jobs[jobName].steps;
+      const waiting = steps.find((step) => typeof step.if === "string" && step.if.includes("data_ready != 'true'"));
+      const evaluated = steps.find((step) => step.name === `Write ${product} step summary`);
+      for (const [label, step] of [["waiting", waiting], ["evaluated", evaluated]]) {
+        assert.ok(step, `${jobName} must have a ${label} summary`);
+        for (const field of ["production data date", "readiness status", "readiness reason", "Publication cutoff", "Earliest included game start", "wouldCallX"]) {
+          assert.match(step.run, new RegExp(field, "i"), `${jobName} ${label} summary must report ${field}`);
+        }
+      }
     }
   });
 

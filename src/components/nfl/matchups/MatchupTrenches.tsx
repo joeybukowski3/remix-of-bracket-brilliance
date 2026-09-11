@@ -1,7 +1,9 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
-import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
-import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
+import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import MatchupMetricTable, {
+  type MatchupMetricTableRow,
+} from "@/components/nfl/matchups/MatchupMetricTable";
 import { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
 import { TRENCH_BATTLES, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import { deriveMetricComparisonFromRanks } from "@/lib/nfl/matchupRailNormalization";
@@ -13,98 +15,60 @@ import {
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /**
- * One line-of-scrimmage battle: the team with the ball's blocking metric against
- * the opposing front's matching disruption metric (e.g. Pass Block Win Rate vs
- * the opponent's Pass Rush Win Rate).
+ * Build one possession's comparison rows.
  *
- * The two win rates are not the same raw statistic, so their percentages are
- * never compared directly. Each side's league rank is direction-normalized, so
- * the stronger league position is the stronger side of the matchup — that is the
- * only comparison the row's advantage caption and rail express. When a rank is
- * missing the row falls back to its neutral "not compared" state.
+ * Each line-of-scrimmage battle pairs the team-with-the-ball's blocking metric
+ * against the opposing front's disruption metric (Pass Block Win Rate vs the
+ * opponent's Pass Rush Win Rate). The two win rates are NOT the same raw
+ * statistic, so their percentages are never compared directly and the Edge
+ * shows only the advantaged side. Each side's ESPN rank is direction-normalized,
+ * so the stronger league position is the stronger side — that is the comparison
+ * the row expresses, exactly as before. A missing rank stays neutral.
  *
- * Periods are always aligned across the pairing — a 2025 blocking value is never
- * shown against a 2026 rush value. No trench score, percentage edge or projected
- * sacks is derived.
- *
- * Columns are keyed by SIDE, not by role, matching every other comparison table
- * on the page: the away team is always the left column and the home team always
- * the right, whichever team happens to be on offense for this possession. Only
- * `awayIsOffense` decides which metric key (and role label) each side reads —
- * never which column it renders in.
+ * Columns are keyed by SIDE: away team left, home team right, whichever team is
+ * on offense for this possession. Only `awayIsOffense` decides which metric key
+ * each side reads.
  */
-function TrenchBattle({
-  awayTeam,
-  homeTeam,
-  awayIsOffense,
-  offenseKey,
-  defenseKey,
-  label,
-  help,
-  trench,
-}: {
-  awayTeam: NflMatchupTeam;
-  homeTeam: NflMatchupTeam;
-  /** Which side has the ball for this possession. Decides roles, never columns. */
-  awayIsOffense: boolean;
-  offenseKey: string;
-  defenseKey: string;
-  label: string;
-  help?: string;
-  trench?: MatchupTrenchConfig;
-}) {
+function possessionRows(
+  awayTeam: NflMatchupTeam,
+  homeTeam: NflMatchupTeam,
+  awayIsOffense: boolean,
+  trench: MatchupTrenchConfig | undefined
+): MatchupMetricTableRow[] {
   const periods = trench?.periods ?? [];
-  const awayMetricKey = awayIsOffense ? offenseKey : defenseKey;
-  const homeMetricKey = awayIsOffense ? defenseKey : offenseKey;
-
-  const awayValues = trench
-    ? collectTrenchPeriodValues(trench.resolve, awayTeam.abbr, awayMetricKey, periods)
-    : {};
-  const homeValues = trench
-    ? collectTrenchPeriodValues(trench.resolve, homeTeam.abbr, homeMetricKey, periods)
-    : {};
-
-  // A missing artifact or an unavailable season still renders the row, with N/A
-  // values and a neutral rail — never a hidden pairing or a fabricated winner.
   const periodList: (typeof periods[number] | null)[] = periods.length > 0 ? [...periods] : [null];
 
-  const awayRoleLabel = awayIsOffense ? "offense" : "defense";
-  const homeRoleLabel = awayIsOffense ? "defense" : "offense";
+  return TRENCH_BATTLES.flatMap((battle) => {
+    const awayMetricKey = awayIsOffense ? battle.offenseKey : battle.defenseKey;
+    const homeMetricKey = awayIsOffense ? battle.defenseKey : battle.offenseKey;
+    const awayValues = trench
+      ? collectTrenchPeriodValues(trench.resolve, awayTeam.abbr, awayMetricKey, periods)
+      : {};
+    const homeValues = trench
+      ? collectTrenchPeriodValues(trench.resolve, homeTeam.abbr, homeMetricKey, periods)
+      : {};
 
-  return (
-    <>
-      {periodList.map((period) => {
-        const away = period ? awayValues[period] ?? null : null;
-        const home = period ? homeValues[period] ?? null : null;
-        const leftRank = away?.espnRank ?? null;
-        const rightRank = home?.espnRank ?? null;
-        return (
-          <NflHeadToHeadMetricRow
-            key={`${offenseKey}-${period ?? "na"}`}
-            label={label}
-            contextLabel={period ? trenchPeriodLabel(trench?.artifact ?? null, period).label : undefined}
-            help={help}
-            leftValue={formatTrenchValue(away)}
-            rightValue={formatTrenchValue(home)}
-            leftRank={leftRank}
-            rightRank={rightRank}
-            leftRawValue={null}
-            rightRawValue={null}
-            higherIsBetter
-            comparison={deriveMetricComparisonFromRanks(leftRank, rightRank)}
-            leftTeamName={`${awayTeam.teamName} ${awayRoleLabel}`}
-            rightTeamName={`${homeTeam.teamName} ${homeRoleLabel}`}
-            leftTeamAbbr={awayTeam.abbr}
-            rightTeamAbbr={homeTeam.abbr}
-          />
-        );
-      })}
-    </>
-  );
+    return periodList.map((period) => {
+      const away = period ? awayValues[period] ?? null : null;
+      const home = period ? homeValues[period] ?? null : null;
+      const leftRank = away?.espnRank ?? null;
+      const rightRank = home?.espnRank ?? null;
+      return {
+        key: `${battle.id}-${period ?? "na"}`,
+        label: battle.label,
+        help: battle.help,
+        contextLabel: period ? trenchPeriodLabel(trench?.artifact ?? null, period).label : undefined,
+        direction: "higher-is-better" as const,
+        away: { value: away?.valuePct ?? null, rank: leftRank, formatted: formatTrenchValue(away) },
+        home: { value: home?.valuePct ?? null, rank: rightRank, formatted: formatTrenchValue(home) },
+        comparison: deriveMetricComparisonFromRanks(leftRank, rightRank),
+      };
+    });
+  });
 }
 
 /**
- * Trenches: four line-of-scrimmage battles, two per possession.
+ * Trenches: line-of-scrimmage battles, two per possession.
  *
  * Values are ESPN Analytics team win rates (PBWR / RBWR / PRWR / RSWR) built on
  * NFL Next Gen Stats tracking data, shown with ESPN's official ranks. Sacks and
@@ -112,7 +76,9 @@ function TrenchBattle({
  *
  * ESPN publishes cumulative season-to-date figures only, so this section uses
  * its own season-based period policy rather than the conventional Season/Last 5
- * controls, and never produces a Last 5 or Last 8 trench value.
+ * controls, and never produces a Last 5 or Last 8 trench value. Presentation is
+ * the shared `MatchupMetricTable` so the section reads in the same language as
+ * the Statistical Comparison above it.
  */
 export default function MatchupTrenches({
   matchup,
@@ -130,52 +96,43 @@ export default function MatchupTrenches({
   const { away, home } = matchup;
 
   const possessions = [
-    { key: "away", awayIsOffense: true, offense: away, defense: home },
-    { key: "home", awayIsOffense: false, offense: home, defense: away },
+    { key: "away", awayIsOffense: true, offense: away },
+    { key: "home", awayIsOffense: false, offense: home },
   ] as const;
 
   return (
     <MatchupSection
       id="trenches"
       eyebrow="Line of scrimmage"
+      titleAlign="center"
       subtitle="Line-of-scrimmage win rates. Context only — not an input to the JKB spread model."
       bodyClassName="matchup-dense-section-body"
     >
-      <div className="space-y-2.5">
-        {possessions.map(({ key, awayIsOffense, offense, defense }) => (
-          <div key={key}>
-            {/*
-              The crests and role labels below always place `away` on the left
-              and `home` on the right — the same orientation the rows beneath
-              enforce — even though the offense/defense roles swap between the
-              two possessions.
-            */}
-            <h3 className="matchup-trenches__possession mb-1.5 flex items-center justify-between gap-2 rounded-md border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-900">
-              <span className="sr-only">{offense.teamName} has the ball</span>
-              <span aria-hidden className="flex items-center gap-1.5">
-                <NflTeamCrest team={away} side="away" size={22} />
-                <span><span className="sm:hidden">{away.abbr.toUpperCase()}</span><span className="hidden sm:inline">{away.teamName}</span> {awayIsOffense ? "offense" : "defense"}</span>
-              </span>
-              <span aria-hidden className="shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">vs</span>
-              <span aria-hidden className="flex flex-row-reverse items-center gap-1.5 text-right">
-                <NflTeamCrest team={home} side="home" size={22} />
-                <span><span className="sm:hidden">{home.abbr.toUpperCase()}</span><span className="hidden sm:inline">{home.teamName}</span> {awayIsOffense ? "defense" : "offense"}</span>
-              </span>
-            </h3>
-            <div className="grid gap-1.5">
-              {TRENCH_BATTLES.map((battle) => (
-                <TrenchBattle
-                  key={battle.id}
-                  awayTeam={away}
-                  homeTeam={home}
-                  awayIsOffense={awayIsOffense}
-                  offenseKey={battle.offenseKey}
-                  defenseKey={battle.defenseKey}
-                  label={battle.label}
-                  help={battle.help}
-                  trench={trench}
-                />
-              ))}
+      <div className="space-y-4">
+        {possessions.map(({ key, awayIsOffense, offense }) => (
+          // Away always left, home always right — the same orientation the rows
+          // enforce — even though the offense/defense roles swap between the two
+          // possessions.
+          <div key={key} className="space-y-2">
+            <MatchupComparisonTeamHeader
+              matchup={matchup}
+              sticky
+              possession={`${offense.teamName} has the ball`}
+              unit={{
+                away: awayIsOffense ? "Offense" : "Defense",
+                home: awayIsOffense ? "Defense" : "Offense",
+              }}
+            />
+            <div className="matchup-metric-table-group matchup-metric-table-group--wide">
+              <MatchupMetricTable
+                variant="detail"
+                edgeDifference={false}
+                metrics={possessionRows(away, home, awayIsOffense, trench)}
+                matchup={matchup}
+                caption={`Line-of-scrimmage win rates with ${
+                  awayIsOffense ? away.teamName : home.teamName
+                } on offense`}
+              />
             </div>
           </div>
         ))}

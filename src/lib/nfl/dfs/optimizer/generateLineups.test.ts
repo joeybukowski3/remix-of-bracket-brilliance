@@ -261,6 +261,16 @@ describe("generateLineups on the real Week 1 slate fixture", () => {
     readFileSync("src/lib/nfl/dfs/__fixtures__/draftkings-nfl-classic-week1-2026.csv", "utf8"),
   ).rows;
 
+  // The lineup-context artifact is a FROZEN fixture whose newest embedded
+  // source timestamp is 2026-09-09T16:35Z; FIXTURE_ASOF sits just after that
+  // (and after the artifact's generatedAt), so every 48h freshness window in
+  // optimizerEligibilityV1 / dstMatchupV1 is satisfied. Every clock in this
+  // block is a fixed string relative to that frozen artifact -- no reliance
+  // on `new Date()` -- so this test stays deterministic in 2027+. Using the
+  // live public/data/nfl/dfs/2026/week-01.json here instead would make the
+  // test pass vacuously once the calendar moves past its 48h windows.
+  const FIXTURE_ASOF = "2026-09-10T09:00:00Z";
+
   const analysis = attachDfsLineupContext(
     enrichDfsSlateAnalysis(
       buildDfsSlateAnalysis({ dkRows, projectionRows: projections, teams }),
@@ -272,31 +282,41 @@ describe("generateLineups on the real Week 1 slate fixture", () => {
         selectedSeason: 2026,
         selectedWeek: 1,
         canonicalGames: games,
+        now: FIXTURE_ASOF,
         offensiveIdentityResolutions: dkRows
           .filter(isDraftKingsOffensiveRow)
           .map((row) => resolveOffensiveIdentity(row, projections)),
       }),
     ),
-    lineupContextSchema.parse(read("public/data/nfl/dfs/2026/week-01.json")),
-    { season: 2026, week: 1, asOf: ASOF },
+    lineupContextSchema.parse(read("src/lib/nfl/dfs/__fixtures__/real/lineup-context-2026-week1.json")),
+    { season: 2026, week: 1, asOf: FIXTURE_ASOF },
   );
 
   it("does not mutate the enriched slate it was given", () => {
     const snapshot = JSON.stringify(analysis.rows);
-    generateLineups({ rows: analysis.rows, projectionRows: projections, asOf: ASOF, now: () => 0 });
+    generateLineups({ rows: analysis.rows, projectionRows: projections, asOf: FIXTURE_ASOF, now: () => 0 });
     expect(JSON.stringify(analysis.rows)).toBe(snapshot);
   });
 
-  it("either solves within the canonical rules or explains exactly why it cannot", () => {
-    const set = generateLineups({ rows: analysis.rows, projectionRows: projections, asOf: ASOF, now: () => 0 });
-    expect(["ready", "infeasible", "unavailable"]).toContain(set.status);
+  it("builds all three presets within the canonical rules (READY path)", () => {
+    const set = generateLineups({ rows: analysis.rows, projectionRows: projections, asOf: FIXTURE_ASOF, now: () => 0 });
+
+    expect(set.status).toBe("ready");
+    expect(set.infeasible).toHaveLength(0);
+    expect(set.lineups).toHaveLength(3);
+    expect(set.lineups.map((lineup) => lineup.strategy).sort()).toEqual(["balanced", "ceiling", "floor"]);
+    expect(set.candidatePool.offenseEligible).toBeGreaterThan(0);
+    expect(set.candidatePool.dstWithUsableContext).toBeGreaterThan(0);
+    expect(set.candidatePool.dstWithoutUsableContext).toBe(0);
+
     set.lineups.forEach((lineup) => {
-      expect(lineup.salaryUsed).toBeLessThanOrEqual(NFL_CLASSIC_RULES.salaryCap);
       expect(lineup.slots).toHaveLength(9);
+      expect(lineup.salaryUsed).toBeLessThanOrEqual(NFL_CLASSIC_RULES.salaryCap);
       expect(lineup.constraintStatus.minimumGamesSatisfied).toBe(true);
       expect(lineup.constraintStatus.allOffenseOptimizerEligible).toBe(true);
+      expect(lineup.constraintStatus.allOffenseInDfsPool).toBe(true);
+      expect(lineup.constraintStatus.dstContextUsable).toBe(true);
+      expect(lineup.constraintStatus.allFromUploadedSlate).toBe(true);
     });
-    set.infeasible.forEach((entry) => expect(entry.reasons.length).toBeGreaterThan(0));
-    expect(set.lineups.length + set.infeasible.length).toBe(3);
   });
 });

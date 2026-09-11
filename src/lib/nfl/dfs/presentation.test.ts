@@ -1,5 +1,6 @@
 import { historyFixture } from "./__fixtures__/historyFactory";
 import { buildMatchupEdges, buildMetric, buildResearchContext } from "./__fixtures__/researchFactory";
+import { createEmptyWeeklyFantasyResearchContext } from "@/lib/fantasy/weekly/researchContext";
 import { selectFantasyMatchupEdges, type NflOffenseMatchupEdges } from "@/lib/nfl/matchupEdges";
 import { buildDstRow } from "./optimizer/__fixtures__/optimizerRowFactory";
 import { describe, expect, it } from "vitest";
@@ -230,11 +231,11 @@ describe("new analytical sorting and matchup presentation", () => {
   const highEdges = buildMatchupEdges();
   highEdges.epa.rankDifference = 5; highEdges.success.rankDifference = 9; highEdges.trenches.rankDifference = 3;
   const low = row({ dkId: "lo", playerName: "Alpha", position: "QB", team: "ari", jkbWeeklyPositionRank: 1,
-    research: { status: "available", matchupGrade: null, matchupEdges: lowEdges, context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 10, rank: 2 }), opponentFpaLast5: buildMetric({ value: 30 }) }) } });
+    research: { status: "available", matchupGrade: null, matchupEdges: lowEdges, context: buildResearchContext({ seasonPpg: buildMetric({ value: 9, rank: 2 }), last5Ppg: buildMetric({ value: 24, rank: 2 }), opponentFpaSeason: buildMetric({ value: 10, rank: 2 }), opponentFpaLast5: buildMetric({ value: 30 }) }) } });
   const high = row({ dkId: "hi", playerName: "Zulu", position: "QB", team: "wsh", jkbWeeklyPositionRank: 9,
-    research: { status: "available", matchupGrade: null, matchupEdges: highEdges, context: buildResearchContext({ opponentFpaSeason: buildMetric({ value: 30, rank: 5 }), opponentFpaLast5: buildMetric({ value: 10 }) }) } });
+    research: { status: "available", matchupGrade: null, matchupEdges: highEdges, context: buildResearchContext({ seasonPpg: buildMetric({ value: 22, rank: 5 }), last5Ppg: buildMetric({ value: 12, rank: 5 }), opponentFpaSeason: buildMetric({ value: 30, rank: 5 }), opponentFpaLast5: buildMetric({ value: 10 }) }) } });
   const missing = row({ dkId: "na", playerName: "Missing", position: "QB", jkbWeeklyPositionRank: null });
-  it.each(["weeklyRank", "fpaSeason", "fpaLast5", "epa", "success", "trenches", "matchup"] as DfsSortKey[])("sorts %s in both directions with missing last", key => {
+  it.each(["fantasyPpg", "fantasyPpgL5", "fpaSeason", "fpaLast5", "epa", "success", "trenches", "matchup"] as DfsSortKey[])("sorts %s in both directions with missing last", key => {
     const expected = Number(dfsSortValue(low, key)) < Number(dfsSortValue(high, key)) ? [low, high] : [high, low];
     expect(sortDfsRows([missing, high, low], key, "asc")).toEqual([...expected, missing]);
     expect(sortDfsRows([missing, high, low], key, "desc")).toEqual([...expected].reverse().concat(missing));
@@ -276,6 +277,52 @@ describe("new analytical sorting and matchup presentation", () => {
   });
 });
 
+
+describe("Phase 3 columns: Def Rank / Off Rank / Targets / TD Score", () => {
+  it("sorts Def Rank / Off Rank from the team rank context, DST rows only", () => {
+    const a = buildDstRow({ dkId: "a", team: "no", gameKey: "g", salary: 3000, percentile: 70 });
+    const b = buildDstRow({ dkId: "b", team: "det", gameKey: "g", salary: 3000, percentile: 80 });
+    a.opponent = "kc"; b.opponent = "phi";
+    const teamRankByAbbr = new Map([
+      ["no", { offenseRank: 20, defenseRank: 3 }],
+      ["det", { offenseRank: 5, defenseRank: 25 }],
+      ["kc", { offenseRank: 1, defenseRank: 30 }],
+      ["phi", { offenseRank: 32, defenseRank: 1 }],
+    ]);
+    expect(sortDfsRows([a, b], "defRank", "asc", { teamRankByAbbr })[0]).toBe(a);
+    expect(sortDfsRows([a, b], "oppOffRank", "asc", { teamRankByAbbr })[0]).toBe(a);
+    const offenseRow = row({ dkId: "o", playerName: "Offense", position: "QB" });
+    expect(dfsSortValue(offenseRow, "defRank", { teamRankByAbbr })).toBeNull();
+  });
+
+  it("returns null Def Rank / Off Rank when the team rank board has not loaded", () => {
+    const dst = buildDstRow({ dkId: "a", team: "no", gameKey: "g", salary: 3000, percentile: 70 });
+    expect(dfsSortValue(dst, "defRank")).toBeNull();
+    expect(dfsSortValue(dst, "oppOffRank")).toBeNull();
+  });
+
+  it("sorts Targets/Game and Targets/Game L5 from the research evidence, missing last", () => {
+    const emptyEvidence = createEmptyWeeklyFantasyResearchContext().evidence;
+    const low = row({ dkId: "lo", playerName: "Alpha", position: "WR",
+      research: { status: "available", matchupGrade: null, matchupEdges: buildMatchupEdges(),
+        context: buildResearchContext({ evidence: { ...emptyEvidence, targetsPerGame: buildMetric({ value: 4 }), targetsPerGameL5: buildMetric({ value: 3 }) } }) } });
+    const high = row({ dkId: "hi", playerName: "Zulu", position: "WR",
+      research: { status: "available", matchupGrade: null, matchupEdges: buildMatchupEdges(),
+        context: buildResearchContext({ evidence: { ...emptyEvidence, targetsPerGame: buildMetric({ value: 9 }), targetsPerGameL5: buildMetric({ value: 8 }) } }) } });
+    const missing = row({ dkId: "na", playerName: "Missing", position: "WR" });
+    expect(sortDfsRows([missing, high, low], "targetsPerGame", "desc")).toEqual([high, low, missing]);
+    expect(sortDfsRows([missing, high, low], "targetsPerGameL5", "asc")).toEqual([low, high, missing]);
+  });
+
+  it("resolves TD Score from the join lookup by playerId + gameId, null when unresolved", () => {
+    const tdScoreLookup = new Map([["gsis:hi:game-1", { jkbTdScore: 62.5, scoreRank: 3, scorePoolSize: 40 }]]);
+    const high = row({ dkId: "hi", playerName: "Zulu", position: "WR", canonicalGameId: "game-1" });
+    const missing = row({ dkId: "na", playerName: "Missing", position: "WR", canonicalGameId: null });
+    expect(dfsSortValue(high, "tdScore", { tdScoreLookup })).toBe(62.5);
+    expect(dfsSortValue(missing, "tdScore", { tdScoreLookup })).toBeNull();
+    expect(dfsSortValue(high, "tdScore")).toBeNull();
+  });
+});
 
 it("sorts DEF VS AVG by the same canonical history summary displayed in the board", () => {
   const { index } = historyFixture();

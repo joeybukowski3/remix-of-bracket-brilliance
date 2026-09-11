@@ -176,6 +176,10 @@ async function main() {
   const depthChartEntries = loadDepthChartEntries();
   const gameIndex = buildGameIndex(games);
   const rosterIndex = buildRosterNameIndex(depthChartEntries);
+  // Computed up front (not just in the later coverage QA section) so identity
+  // resolution can disambiguate a divisional-rematch team pair toward the
+  // week this market is actually being built for -- see selectGameForPair.
+  const currentWeek = resolveCurrentWeek(games);
 
   const quotesByMarket = {};
   for (const market of CANONICAL_MARKETS) quotesByMarket[market] = [];
@@ -199,7 +203,7 @@ async function main() {
 
     for (const selection of selections) {
       const identity = resolvePlayerIdentity(
-        { providerName: selection.providerPlayerName, homeTeamFullName: selection.homeTeam, awayTeamFullName: selection.awayTeam, canonicalMarket: market },
+        { providerName: selection.providerPlayerName, homeTeamFullName: selection.homeTeam, awayTeamFullName: selection.awayTeam, canonicalMarket: market, targetWeek: currentWeek },
         { rosterIndex, gameIndex, marketPlausiblePositions: MARKET_PLAUSIBLE_POSITIONS },
       );
 
@@ -250,7 +254,6 @@ async function main() {
   // (roster-slot-based, not statistical) candidate-universe estimate --
   // see nfl-market-coverage.mjs -- purely as a QA denominator. Never reads
   // from or writes to the actual projection eligibility pipeline.
-  const currentWeek = resolveCurrentWeek(games);
   const currentWeekTeams = new Set(
     games.filter((g) => g.week === currentWeek).flatMap((g) => [String(g.homeAbbr ?? "").toLowerCase(), String(g.awayAbbr ?? "").toLowerCase()]).filter(Boolean),
   );

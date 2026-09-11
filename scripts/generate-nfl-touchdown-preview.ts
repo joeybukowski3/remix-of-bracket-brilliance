@@ -4,6 +4,7 @@ import path from "node:path";
 import { buildAllTouchdownWindows, TD_OPPORTUNITY_WEIGHTS, TD_SCORE_WEIGHTS, TD_SUCCESS_PRIOR_OPPORTUNITIES } from "../src/lib/nfl/touchdown-preview/model.ts";
 import { NFL_TOUCHDOWN_PREVIEW_SCHEMA_VERSION, type TouchdownCandidateInput, type TouchdownOpponentGame, type TouchdownPlayerGame, type TouchdownPosition, type TouchdownPreviewArtifact } from "../src/lib/nfl/touchdown-preview/types.ts";
 import { aggregateOpponentPositionTouchdowns, indexOpponentGamesByDefense, normalizeTouchdownTeam, opponentGamesForTeam, touchdownTeamGameKey } from "../src/lib/nfl/touchdown-preview/opponentHistory.ts";
+import { resolveAnytimeTdForCandidate } from "./lib/nfl-anytime-td-selection.mjs";
 
 const root = process.cwd();
 const season = Number(process.argv.find((arg) => arg.startsWith("--season="))?.split("=")[1] ?? 2026);
@@ -162,6 +163,16 @@ const opponentGamesByDefense = indexOpponentGamesByDefense(opponentGames);
 
 const yardagePath = path.join(root, "public", "data", "nfl", String(season), "yardage-projections.json");
 const yardage = JSON.parse(await readFile(yardagePath, "utf8"));
+
+// Anytime-TD odds are presentation/market context only -- never a JKB TD
+// Score input. A missing artifact (never fetched, or the fetch failed and
+// preserved a prior file's absence) degrades every candidate to
+// oddsSourceState "unavailable" without affecting anything else here.
+const anytimeTdMarketPath = path.join(root, "public", "data", "nfl", "nfl-anytime-td-market.json");
+const anytimeTdMarketAvailable = existsSync(anytimeTdMarketPath);
+const anytimeTdCanonical: Record<string, { gameId: string; anytimeTdOdds: number | null; anytimeTdBook: string | null; marketImpliedProbability: number | null; oddsUpdatedAt: string | null }> =
+  anytimeTdMarketAvailable ? (JSON.parse(await readFile(anytimeTdMarketPath, "utf8")).canonical ?? {}) : {};
+
 const candidates = new Map<string, TouchdownCandidateInput>();
 for (const row of yardage.rows ?? []) {
   if (row.week !== week || row.status !== "projected") continue;
@@ -172,22 +183,27 @@ for (const row of yardage.rows ?? []) {
   if (candidates.has(row.playerId)) continue;
   const team = normalizeTouchdownTeam(row.team);
   const opponent = normalizeTouchdownTeam(row.opponent);
+  const anytimeTd = resolveAnytimeTdForCandidate({ playerId: row.playerId, gameId: row.gameId, kickoff: row.kickoff ?? null }, anytimeTdCanonical);
   candidates.set(row.playerId, {
     playerId: row.playerId, playerName: row.playerName, team, opponent, homeAway: row.homeAway,
     position: pos, gameId: row.gameId, kickoff: row.kickoff ?? null,
     impliedTeamPoints: nullableNumber(row.featureSnapshot?.market?.impliedTeamTotal),
-    playerGames: playerGamesById.get(row.playerId) ?? [], opponentGames: opponentGamesForTeam(opponentGamesByDefense, opponent), anytimeTdOdds: null,
+    playerGames: playerGamesById.get(row.playerId) ?? [], opponentGames: opponentGamesForTeam(opponentGamesByDefense, opponent),
+    anytimeTdOdds: anytimeTd.anytimeTdOdds, anytimeTdBook: anytimeTd.anytimeTdBook,
+    marketImpliedProbability: anytimeTd.marketImpliedProbability, oddsUpdatedAt: anytimeTd.oddsUpdatedAt, oddsSourceState: anytimeTd.oddsSourceState,
   });
 }
 
-const players = buildAllTouchdownWindows([...candidates.values()]);
+const players = buildAllTouchdownWindows([...candidates.values()], season);
 const impliedCount = players.filter((player) => player.impliedTeamPoints != null).length;
+const anytimeTdAvailableCount = players.filter((player) => player.anytimeTdOdds != null).length;
 const artifact: TouchdownPreviewArtifact = {
   schemaVersion: NFL_TOUCHDOWN_PREVIEW_SCHEMA_VERSION, modelVersion: "jkb-td-score-v1.0.0", season, week,
-  generatedAt: yardage.generatedAt ?? null, defaultWindow: season === 2026 && week === 1 ? "2025" : "2026",
+  generatedAt: yardage.generatedAt ?? null, defaultWindow: "last8",
   sourceStatus: {
     playerWeekStats: stats.length ? "available" : "missing", touchdownContext: touchdownContextAvailable ? "available" : "missing",
-    marketImpliedPoints: impliedCount === 0 ? "missing" : impliedCount === players.length ? "available" : "partial", anytimeTdOdds: "unsupported",
+    marketImpliedPoints: impliedCount === 0 ? "missing" : impliedCount === players.length ? "available" : "partial",
+    anytimeTdOdds: !anytimeTdMarketAvailable ? "unsupported" : anytimeTdAvailableCount === 0 ? "missing" : anytimeTdAvailableCount === players.length ? "available" : "partial",
   },
   methodology: {
     normalization: "Conservative full-candidate percentile: count strictly lower / finite population × 100; ties share a percentile; singleton = 50.",

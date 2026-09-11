@@ -108,18 +108,21 @@ describe("preseason — 2025 only", () => {
 
   it("renders all four battles across both possessions", () => {
     renderTrenches(resolveTrenchPeriods(0, 0));
-    expect(screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ })).toHaveLength(2);
-    expect(screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })).toHaveLength(2);
+    // One "Pass Block vs Pass Rush" / "Run Block vs Run Stop" row per possession.
+    expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
+    expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
     expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
     expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
   });
 
-  it("renders published percentages with ESPN official ranks", () => {
+  it("shows ESPN official ranks in the team cells with the raw percentage on the title", () => {
     renderTrenches(resolveTrenchPeriods(0, 0));
-    // NE PBWR 64 (#13) vs SEA PRWR 41 (#25)
-    expect(screen.getAllByText("64%").length).toBeGreaterThan(0);
+    // NE PBWR 64 (#13) vs SEA PRWR 41 (#25) — the rank is shown, the raw
+    // percentage is preserved on the cell hover title.
     expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("41%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("25th").length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/· 64%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/· 41%/).length).toBeGreaterThan(0);
   });
 
   it("shows whole-number percentages without invented decimals", () => {
@@ -127,33 +130,31 @@ describe("preseason — 2025 only", () => {
     expect(screen.queryByText(/\d+\.\d%/)).toBeNull();
   });
 
-  it("labels each side of a battle with its team and role", () => {
-    renderTrenches(resolveTrenchPeriods(0, 0));
-    // The possession the row belongs to establishes which unit each side is,
-    // but the away team's label always comes first (left column) regardless
-    // of which side is on offense for that possession.
-    const passRush = screen.getByRole("img", {
-      name: /Pass Block vs Pass Rush.*New England Patriots offense.*Seattle Seahawks defense/,
-    });
-    expect(passRush).toBeInTheDocument();
-    const runStop = screen.getAllByRole("img", {
-      name: /Run Block vs Run Stop.*New England Patriots defense.*Seattle Seahawks offense/,
-    });
-    expect(runStop.length).toBeGreaterThan(0);
+  it("labels each possession with which team has the ball and each side's role", () => {
+    const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
+    // Possession identity is announced to assistive tech via the split header.
+    expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
+    expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
+    // Across the two possession headers each role word appears once per side.
+    expect(screen.getAllByText("Attacking")).toHaveLength(2);
+    expect(screen.getAllByText("Defending")).toHaveLength(2);
+    // Away team is always the left side regardless of who is on offense.
+    const awayNames = Array.from(
+      container.querySelectorAll(".matchup-team-split__side--away .matchup-team-split__name")
+    ).map((n) => n.textContent);
+    expect(awayNames).toEqual(["New England Patriots Offense", "New England Patriots Defense"]);
   });
 
   it("keeps NE (away) left and SEA (home) right across both reciprocal possessions", () => {
-    renderTrenches(resolveTrenchPeriods(0, 0));
-    // NE-ball possession: NE offense vs SEA defense — NE left, SEA right.
-    const neBall = screen.getByRole("img", { name: /Pass Block vs Pass Rush.*New England Patriots offense/ });
-    expect(neBall).toHaveAttribute("aria-label", expect.stringContaining("New England Patriots offense"));
-    // SEA-ball possession: SEA offense vs NE defense — NE STILL left, SEA STILL right.
-    // Rows render away-ball possession first, then home-ball, so index 1 is SEA's ball.
-    const seaBall = screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })[1];
-    const label = seaBall.getAttribute("aria-label") ?? "";
-    expect(label.indexOf("New England Patriots")).toBeLessThan(label.indexOf("Seattle Seahawks"));
-    expect(label).toContain("New England Patriots defense");
-    expect(label).toContain("Seattle Seahawks offense");
+    const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
+    // Both possession tables use the same column order: away team then home team.
+    const tables = container.querySelectorAll(".matchup-metric-table table");
+    expect(tables).toHaveLength(2);
+    for (const header of container.querySelectorAll(".matchup-team-split")) {
+      const sides = Array.from(header.querySelectorAll(".matchup-team-split__side"));
+      expect(sides[0].className).toContain("matchup-team-split__side--away");
+      expect(sides[1].className).toContain("matchup-team-split__side--home");
+    }
   });
 });
 
@@ -166,8 +167,11 @@ describe("early 2026 — two separate periods", () => {
 
   it("keeps both seasons' values distinct and unblended", () => {
     renderTrenches(resolveTrenchPeriods(3, 2));
-    expect(screen.getAllByText("64%").length).toBeGreaterThan(0); // 2025 NE PBWR
-    expect(screen.getAllByText("70%").length).toBeGreaterThan(0); // 2026 NE PBWR
+    // 2025 NE PBWR is ESPN rank 13; 2026 NE PBWR is rank 3 — separate rows.
+    expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3rd").length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/· 64%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/· 70%/).length).toBeGreaterThan(0);
   });
 
   it("holds the two-period state when only one team has six games", () => {
@@ -178,8 +182,8 @@ describe("early 2026 — two separate periods", () => {
   it("shows N/A for the 2026 period when that season is unavailable", () => {
     const only2025 = { ...ARTIFACT, seasons: { "2025": ARTIFACT.seasons["2025"] } };
     renderTrenches(["2025-season", "2026-season"], only2025);
-    // 2025 values still render; the 2026 line falls back to N/A.
-    expect(screen.getAllByText("64%").length).toBeGreaterThan(0);
+    // 2025 values still render (rank shown, raw % on title); the 2026 line is N/A.
+    expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2026 Season to Date").length).toBeGreaterThan(0);
   });
@@ -190,8 +194,9 @@ describe("established 2026 — 2026 only", () => {
     renderTrenches(resolveTrenchPeriods(6, 6));
     expect(screen.queryByText("2025 Season")).toBeNull();
     expect(screen.getAllByText("2026 Through Week 4").length).toBeGreaterThan(0);
-    expect(screen.queryByText("64%")).toBeNull();
-    expect(screen.getAllByText("70%").length).toBeGreaterThan(0);
+    // The 2025 raw values are gone from the titles; the 2026 values are shown.
+    expect(screen.queryAllByTitle(/· 64%/)).toHaveLength(0);
+    expect(screen.getAllByTitle(/· 70%/).length).toBeGreaterThan(0);
   });
 });
 
@@ -229,10 +234,10 @@ describe("integrity", () => {
         <MatchupTrenches matchup={MATCHUP} />
       </MemoryRouter>
     );
-    expect(screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ })).toHaveLength(2);
-    expect(screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })).toHaveLength(2);
+    expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
+    expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
     // Every battle reads a neutral "Not compared" state; no fabricated value.
-    expect(screen.getAllByText("Not compared")).toHaveLength(4);
+    expect(screen.getAllByTitle("Not compared")).toHaveLength(4);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
   });
 });
@@ -272,9 +277,13 @@ describe("offense vs defense pairings", () => {
     // "Pass Block vs Pass Rush" lives in the Passing group tab, not the
     // Overall tab shown by default.
     fireEvent.click(screen.getByRole("tab", { name: "Passing" }));
-    // Each pairing renders one row per period, the same season on both sides.
-    const rows = screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ });
-    expect(rows.some((r) => /2025 Season/.test(r.getAttribute("aria-label") ?? ""))).toBe(true);
-    expect(rows.some((r) => /2026 Through Week 4/.test(r.getAttribute("aria-label") ?? ""))).toBe(true);
+    // Each pairing renders one row per period, the period carried in the row's
+    // metric cell as a context label.
+    const contexts = Array.from(
+      document.querySelectorAll(".matchup-metric-table__context")
+    ).map((n) => n.textContent);
+    expect(contexts).toContain("2025 Season");
+    expect(contexts).toContain("2026 Through Week 4");
+    expect(screen.getAllByText("Pass Block vs Pass Rush").length).toBeGreaterThan(0);
   });
 });
