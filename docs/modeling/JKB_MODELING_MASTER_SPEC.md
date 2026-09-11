@@ -67,6 +67,16 @@ settled historical line and is never described as an independently verified
 closing line. Any future use as a production model input requires a separately
 approved versioned feature and temporal validation under this specification.
 
+The [Phase 2 robustness layer](../research/nfl-situational-trends-phase2.md)
+preserves those Phase 1 definitions and results. It studies only pre-bye,
+West-to-East early, divisional underdogs, rest advantage/disadvantage, and the
+pre-bye/post-bye comparison using fixed first-order splits. Current-season
+quality context is calculated strictly from completed prior games; divisional
+meeting order is same-season and chronological; rest structures are declared as
+mutually exclusive bands or nested flags; and coarse travel distance does not
+redefine the Phase 1 qualifier. Phase 2 remains descriptive research and does
+not promote any subgroup into production behavior.
+
 ### Team Comparison projection lens
 
 The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.

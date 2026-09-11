@@ -92,16 +92,16 @@ Repository-wide notes:
 
 | Field | Value |
 |---|---|
-| Purpose | Research-only ATS/SU screening of 12 predefined schedule, rest, travel, divisional, and prior-result situations |
-| Producer | `scripts/research/generate-nfl-situational-trends-v1.mjs` (`nfl:situational-trends`) |
+| Purpose | Research-only ATS/SU screening of 12 predefined schedule, rest, travel, divisional, and prior-result situations, plus a targeted Phase 2 robustness layer over five locked Phase 1 areas |
+| Producer | Phase 1: `scripts/research/generate-nfl-situational-trends-v1.mjs` (`nfl:situational-trends`). Phase 2: `scripts/research/generate-nfl-situational-trends-phase2.mjs` (`nfl:situational-trends:phase2`). |
 | Standard-study input policy | One local nflverse/nfldata `games.csv` snapshot, filtered to 2011-2025; never combine different spread providers or snapshots |
 | Offline smoke-test policy | With no `--input`, the generator joins `public/data/nfl/2024/{games,results}.json`, `public/data/nfl/2025/{games,results}.json`, and `data/nfl/benchmark/market_lines_2025.csv`; this validates the pipeline but is not the standard research artifact |
 | Reporting windows | Fixed FULL HISTORY 2011-2025 and RECENT FORM 2021-2025, plus a non-optimized 2011-2018 / 2019-2025 stability split |
-| Artifacts | `data/nfl/research/situational-trend-team-games-v1.jsonl`, `public/data/nfl/research/situational-trends-v1.json`, and `docs/research/nfl-situational-trends-v1.md` |
+| Artifacts | Phase 1: `data/nfl/research/situational-trend-team-games-v1.jsonl`, `public/data/nfl/research/situational-trends-v1.json`, and `docs/research/nfl-situational-trends-v1.md`. Phase 2: `public/data/nfl/research/situational-trends-phase2.json` and `docs/research/nfl-situational-trends-phase2.md`; it references rather than duplicates the Phase 1 team-game rows. |
 | Market semantics | `spread_line` is positive for a home favorite. It is a single settled historical line from an unnamed book/source composition, with no per-row timestamp; it is not called an independently verified close or consensus. |
 | Scope boundary | Descriptive research only. It does not feed or change JKB power ratings, spreads, totals, props, predictions, outcome resolution, or performance grading. |
-| Reproduction | Standard artifact: `npm run nfl:situational-trends -- --input=data/external/nflverse/games.csv --start-season=2011 --end-season=2025`. Offline smoke test: `npm run nfl:situational-trends`. |
-| Pointer | `docs/research/nfl-situational-trends-v1.md` |
+| Reproduction | Standard Phase 1 artifact: `npm run nfl:situational-trends -- --input=data/external/nflverse/games.csv --start-season=2011 --end-season=2025`. Phase 2 from locked Phase 1: `npm run nfl:situational-trends:phase2`. Offline Phase 1 smoke test: `npm run nfl:situational-trends`. |
+| Pointer | `docs/research/nfl-situational-trends-v1.md` and `docs/research/nfl-situational-trends-phase2.md` |
 
 ## NFL — player-prop market (yardage props)
 
