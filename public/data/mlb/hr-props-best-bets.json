@@ -1,10 +1,10 @@
 {
   "date": "2026-09-11",
-  "generatedAt": "2026-09-11T12:36:33.381Z",
+  "generatedAt": "2026-09-11T16:16:54.045Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Comerica Park's 0.95 factor and Coors-like hitter-friendly conditions at American Family Field (1.1) set the stage, while Nationals Park (0.98) and Rogers Centre (1.08) offer neutral-to-favorable environments. Mason Adams and Dustin May face elevated barrel and hard-hit rates from Greene and De La Cruz, respectively, creating favorable HR matchups. Kikuchi's left-handed delivery against Wood and Morales adds platoon leverage in a park that plays neutral.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and recent HR volume over park factors, elevating Greene and De La Cruz despite sub-1.0 park factors due to their elite exit velocity and opposing pitcher vulnerabilities."
+    "slateOverview": "Comerica Park (0.95) and Busch Stadium (0.92) suppress power, but Riley Greene still tops the board on a 73 hrScore against Mason Adams. American Family Field (1.1) and Rogers Centre (1.08) boost offense, giving Elly De La Cruz and Pete Alonso favorable venues against Dustin May and Max Scherzer. Lefties Yusei Kikuchi and Matthew Liberatore face right-handed power bats in neutral-to-friendly parks, creating the clearest edges.",
+    "modelNote": "The model is overweighting barrel rate, exit velocity, and recent HR volume while discounting park suppression when the underlying contact metrics are elite."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Mason Adams",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=15.1%",
-        "HH=47.6%"
+        "hrScore=73",
+        "barrel=15.1%"
       ],
       "bullets": [
         "hrScore=73",
-        "park=0.95"
+        "barrel=15.1%"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Dustin May",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=16%",
-        "HH=52.9%"
+        "hrScore=70.3",
+        "barrel=16%"
       ],
       "bullets": [
         "hrScore=70.3",
-        "park=1.1"
+        "barrel=16%"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Yusei Kikuchi",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=20.5%",
-        "HH=58.3%"
+        "hrScore=68.8",
+        "barrel=20.5%"
       ],
       "bullets": [
-        "hrScore=68.9",
-        "park=0.98"
+        "hrScore=68.8",
+        "barrel=20.5%"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -71,16 +71,16 @@
       "opposingPitcher": "Max Scherzer",
       "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=57.0",
-        "Pitcher HR VS=51.4"
+        "hrScore=66.3",
+        "barrel=14%"
       ],
       "bullets": [
-        "HR score 66.3 (#4)",
-        "Pitcher HR VS 51.4 at park 1.08"
+        "hrScore=66.3",
+        "barrel=14%"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -90,191 +90,115 @@
       "opposingPitcher": "Yusei Kikuchi",
       "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=72.7",
-        "Pitcher HR VS=71.8"
+        "hrScore=66",
+        "barrel=27.3%"
       ],
       "bullets": [
-        "HR score 66.1 (#5)",
-        "Pitcher HR VS 71.8 at park 0.98"
+        "hrScore=66",
+        "barrel=27.3%"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 4,
+      "player": "Riley Greene",
+      "team": "DET",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=14%",
-        "HH=57%"
+        "HH=47.6%",
+        "park=0.95"
       ],
       "bullets": [
-        "hrScore=66.3",
-        "park=1.08"
+        "HH=47.6%",
+        "park=0.95"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Yohandy Morales",
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "MIL",
+      "opposingPitcher": "Dustin May",
+      "hrScoreRank": 2,
+      "topStats": [
+        "HH=52.9%",
+        "park=1.1"
+      ],
+      "bullets": [
+        "HH=52.9%",
+        "park=1.1"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
       "team": "WSH",
       "opponent": "LAA",
       "opposingPitcher": "Yusei Kikuchi",
-      "hrScoreRank": 5,
+      "hrScoreRank": 3,
       "topStats": [
-        "barrel=27.3%",
-        "HH=72.7%"
-      ],
-      "bullets": [
-        "hrScore=66.1",
+        "HH=58.3%",
         "park=0.98"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=13.5%",
-        "HH=45.2%"
-      ],
       "bullets": [
-        "hrScore=63.3",
-        "park=0.92"
+        "HH=58.3%",
+        "park=0.98"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "CIN",
-      "opposingPitcher": "Andrew Abbott",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=57.7",
-        "Hard Hit%=47.0"
-      ],
-      "bullets": [
-        "HR score 62.0 (#7)",
-        "Pitcher HR VS 57.7 at park 1.10"
-      ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=67.9",
-        "Hard Hit%=57.1"
-      ],
-      "bullets": [
-        "HR score 61.8 (#8)",
-        "Pitcher HR VS 67.9 at park 0.92"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "CIN",
-      "opposingPitcher": "Andrew Abbott",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=12.6%",
-        "HH=47%"
-      ],
-      "bullets": [
-        "hrScore=62",
-        "park=1.1"
-      ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=19%",
-        "HH=57.1%"
-      ],
-      "bullets": [
-        "hrScore=61.8",
-        "park=0.92"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Brett Callahan",
+      "player": "Riley Greene",
       "team": "DET",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 21,
+      "hrScoreRank": 1,
       "topStats": [
-        "Pitcher HR VS=94.3",
-        "Hard Hit%=51.9"
+        "hrScore=73",
+        "HH=47.6%"
       ],
       "bullets": [
-        "HR score 56.6 (#21)",
-        "Pitcher HR VS 94.3 at park 0.95"
+        "hrScore=73",
+        "HH=47.6%"
       ],
-      "hrOddsYes": "+800",
-      "marketImpliedProbability": 0.1111111111111111,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Colt Keith",
-      "team": "DET",
-      "opponent": "COL",
-      "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 18,
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "MIL",
+      "opposingPitcher": "Dustin May",
+      "hrScoreRank": 2,
       "topStats": [
-        "Pitcher HR VS=94.3",
-        "Hard Hit%=41.7"
+        "hrScore=70.3",
+        "HH=52.9%"
       ],
       "bullets": [
-        "HR score 57.7 (#18)",
-        "Pitcher HR VS 94.3 at park 0.95"
+        "hrScore=70.3",
+        "HH=52.9%"
       ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]
