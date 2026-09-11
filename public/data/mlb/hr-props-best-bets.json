@@ -1,10 +1,10 @@
 {
   "date": "2026-09-11",
-  "generatedAt": "2026-09-11T12:12:49.142Z",
+  "generatedAt": "2026-09-11T12:36:33.381Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Comerica Park's 0.95 factor and Coors-like altitude at American Family Field (1.1) create the day's clearest edges, while Rogers Centre (1.08) and Nationals Park (0.98) offer neutral-to-slight boosts. Greene draws the best matchup against Adams in a righty-friendly park, and De La Cruz benefits from May's fly-ball tendencies in a hitter-friendly venue. Wood and Morales face Kikuchi's left-handed stuff in a neutral park, but their elite barrel and exit-velo profiles still project well.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park-adjusted hrFBRatio over recent HR volume, elevating Greene and De La Cruz despite modest last-30 totals while still recognizing Wood's raw power despite a cold streak."
+    "slateOverview": "Comerica Park's 0.95 factor and Coors-like hitter-friendly conditions at American Family Field (1.1) set the stage, while Nationals Park (0.98) and Rogers Centre (1.08) offer neutral-to-favorable environments. Mason Adams and Dustin May face elevated barrel and hard-hit rates from Greene and De La Cruz, respectively, creating favorable HR matchups. Kikuchi's left-handed delivery against Wood and Morales adds platoon leverage in a park that plays neutral.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and recent HR volume over park factors, elevating Greene and De La Cruz despite sub-1.0 park factors due to their elite exit velocity and opposing pitcher vulnerabilities."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
         "HH=47.6%"
       ],
       "bullets": [
-        "barrel=15.1%",
+        "hrScore=73",
         "park=0.95"
       ],
       "hrOddsYes": "+450",
@@ -37,7 +37,7 @@
         "HH=52.9%"
       ],
       "bullets": [
-        "barrel=16%",
+        "hrScore=70.3",
         "park=1.1"
       ],
       "hrOddsYes": "+475",
@@ -56,7 +56,7 @@
         "HH=58.3%"
       ],
       "bullets": [
-        "barrel=20.5%",
+        "hrScore=68.9",
         "park=0.98"
       ],
       "hrOddsYes": "+400",
@@ -65,80 +65,80 @@
       "hrValueEdge": null
     },
     {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "TOR",
+      "opposingPitcher": "Max Scherzer",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Hard Hit%=57.0",
+        "Pitcher HR VS=51.4"
+      ],
+      "bullets": [
+        "HR score 66.3 (#4)",
+        "Pitcher HR VS 51.4 at park 1.08"
+      ],
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Yohandy Morales",
       "team": "WSH",
       "opponent": "LAA",
       "opposingPitcher": "Yusei Kikuchi",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "Hard Hit%=72.7",
         "Pitcher HR VS=71.8"
       ],
       "bullets": [
-        "HR score 66.1 (#4)",
+        "HR score 66.1 (#5)",
         "Pitcher HR VS 71.8 at park 0.98"
       ],
       "hrOddsYes": "+520",
       "marketImpliedProbability": 0.16129032258064516,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Hard Hit%=57.0",
-        "Pitcher HR VS=51.4"
-      ],
-      "bullets": [
-        "HR score 65.2 (#5)",
-        "Pitcher HR VS 51.4 at park 1.08"
-      ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Yohandy Morales",
-      "team": "WSH",
-      "opponent": "LAA",
-      "opposingPitcher": "Yusei Kikuchi",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=27.3%",
-        "HH=72.7%"
-      ],
-      "bullets": [
-        "barrel=27.3%",
-        "park=0.98"
-      ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Pete Alonso",
       "team": "BAL",
       "opponent": "TOR",
       "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=14%",
         "HH=57%"
       ],
       "bullets": [
-        "barrel=14%",
+        "hrScore=66.3",
         "park=1.08"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yohandy Morales",
+      "team": "WSH",
+      "opponent": "LAA",
+      "opposingPitcher": "Yusei Kikuchi",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=27.3%",
+        "HH=72.7%"
+      ],
+      "bullets": [
+        "hrScore=66.1",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+520",
+      "marketImpliedProbability": 0.16129032258064516,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -153,11 +153,11 @@
         "HH=45.2%"
       ],
       "bullets": [
-        "barrel=13.5%",
+        "hrScore=63.3",
         "park=0.92"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -172,7 +172,7 @@
         "Hard Hit%=47.0"
       ],
       "bullets": [
-        "HR score 62.4 (#7)",
+        "HR score 62.0 (#7)",
         "Pitcher HR VS 57.7 at park 1.10"
       ],
       "hrOddsYes": "+375",
@@ -191,11 +191,11 @@
         "Hard Hit%=57.1"
       ],
       "bullets": [
-        "HR score 61.2 (#8)",
+        "HR score 61.8 (#8)",
         "Pitcher HR VS 67.9 at park 0.92"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -212,7 +212,7 @@
         "HH=47%"
       ],
       "bullets": [
-        "barrel=12.6%",
+        "hrScore=62",
         "park=1.1"
       ],
       "hrOddsYes": "+375",
@@ -231,11 +231,11 @@
         "HH=57.1%"
       ],
       "bullets": [
-        "barrel=19%",
+        "hrScore=61.8",
         "park=0.92"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,13 +244,13 @@
       "team": "DET",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 22,
+      "hrScoreRank": 21,
       "topStats": [
         "Pitcher HR VS=94.3",
         "Hard Hit%=51.9"
       ],
       "bullets": [
-        "HR score 56.6 (#22)",
+        "HR score 56.6 (#21)",
         "Pitcher HR VS 94.3 at park 0.95"
       ],
       "hrOddsYes": "+800",
