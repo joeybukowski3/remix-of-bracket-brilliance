@@ -136,24 +136,39 @@ function HomeAwayBadge({ site }: { site: "home" | "away" | null | undefined }) {
   );
 }
 
-function TeamCell({ team, site }: { team: string | null; site?: "home" | "away" | null }) {
+/** `showSite` defaults to true; pass false when the H/A tile is rendered elsewhere in the same row (e.g. paired with the opposing starter's name) to avoid showing it twice. */
+function TeamCell({ team, site, showSite = true }: { team: string | null; site?: "home" | "away" | null; showSite?: boolean }) {
   if (!team) return <span>{DASH}</span>;
   return (
     <span className="inline-flex items-center gap-1">
       <MlbTeamLogo team={team} size={14} />
       {team}
-      <HomeAwayBadge site={site} />
+      {showSite && <HomeAwayBadge site={site} />}
     </span>
   );
 }
 
 /**
+ * "First Initial. Last Name" display for an opposing starting pitcher.
+ * Reuses splitDisplayName's split (last whitespace-separated token, so
+ * hyphenated last names like "Crow-Armstrong" stay intact) rather than
+ * duplicating name-parsing logic. A single-token name (no first/last split
+ * possible) renders as-is with no trailing period.
+ */
+function formatOpposingStarterShortName(fullName: string | null | undefined): string {
+  if (!fullName || !fullName.trim()) return DASH;
+  const { first, last } = splitDisplayName(fullName);
+  if (!first) return last;
+  return `${first.charAt(0).toUpperCase()}. ${last}`;
+}
+
+/**
  * Mobile collapsed-row team cell for "Opponent Last 10 Games vs SP" --
- * stacks the opposing starter's last name above the team abbreviation so the
- * matchup is identifiable without expanding the row. `starterName` comes
- * straight from the history record's own `opposingStartingPitcher` field
- * (see opponentSource below); when that field is missing, falls back to the
- * plain team-only cell rather than fabricating a name.
+ * stacks the opposing starter's "F. Last" name above the team abbreviation
+ * so the matchup is identifiable without expanding the row. `starterName`
+ * comes straight from the history record's own `opposingStartingPitcher`
+ * field (see opponentSource below); when that field is missing, falls back
+ * to the plain team-only cell rather than fabricating a name.
  */
 function OpponentGameTeamCell({ team, starterName, site }: { team: string | null; starterName: string | null; site?: "home" | "away" | null }) {
   if (!team) return <span>{DASH}</span>;
@@ -163,7 +178,7 @@ function OpponentGameTeamCell({ team, starterName, site }: { team: string | null
       <HomeAwayBadge site={site} />
       <MlbTeamLogo team={team} size={14} className="shrink-0" />
       <span className="min-w-0 flex-1 leading-tight">
-        <span className="block truncate font-semibold text-slate-700">{splitDisplayName(starterName).last}</span>
+        <span className="block truncate font-semibold text-slate-700">{formatOpposingStarterShortName(starterName)}</span>
         <span className="block truncate text-[9px] font-medium text-slate-400">{team}</span>
       </span>
     </span>
@@ -874,8 +889,11 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     const teamStrikeouts = getNumber(game, "teamStrikeouts");
     return [
       fmtDate(game.date),
-      <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} site={getSite(game)} />,
-      fmtText(getString(game, "opposingStartingPitcher")),
+      <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} site={getSite(game)} showSite={false} />,
+      <span key={`vs-opp-sp-${index}`} className="flex min-w-0 items-center gap-1.5">
+        <HomeAwayBadge site={getSite(game)} />
+        <span className="min-w-0 truncate">{formatOpposingStarterShortName(getString(game, "opposingStartingPitcher"))}</span>
+      </span>,
       starterOuts != null ? fmtOutsIp(starterOuts) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined),
       <StrikeoutsVsCurrentLine key={`opponent-sp-k-${index}`} strikeouts={starterStrikeouts} currentKLine={currentKLine} />,
       fmtFixed(getNumber(game, "opposingStarterSeasonKPerGame")),
