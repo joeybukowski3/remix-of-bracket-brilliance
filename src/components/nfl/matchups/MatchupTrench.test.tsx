@@ -131,15 +131,18 @@ describe("preseason — 2025 only", () => {
   });
 
   it("labels each possession with which team has the ball and each side's role", () => {
-    renderTrenches(resolveTrenchPeriods(0, 0));
-    // Possession identity is announced to assistive tech; the visible band shows
-    // both sides' roles. Away team is always the left column regardless of who
-    // is on offense.
+    const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
+    // Possession identity is announced to assistive tech via the split header.
     expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
     expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
-    // Across the two possession bands each role word appears once per side.
-    expect(screen.getAllByText("offense")).toHaveLength(2);
-    expect(screen.getAllByText("defense")).toHaveLength(2);
+    // Across the two possession headers each role word appears once per side.
+    expect(screen.getAllByText("Attacking")).toHaveLength(2);
+    expect(screen.getAllByText("Defending")).toHaveLength(2);
+    // Away team is always the left side regardless of who is on offense.
+    const awayNames = Array.from(
+      container.querySelectorAll(".matchup-team-split__side--away .matchup-team-split__name")
+    ).map((n) => n.textContent);
+    expect(awayNames).toEqual(["New England Patriots Offense", "New England Patriots Defense"]);
   });
 
   it("keeps NE (away) left and SEA (home) right across both reciprocal possessions", () => {
@@ -147,9 +150,10 @@ describe("preseason — 2025 only", () => {
     // Both possession tables use the same column order: away team then home team.
     const tables = container.querySelectorAll(".matchup-metric-table table");
     expect(tables).toHaveLength(2);
-    for (const table of tables) {
-      const headers = Array.from(table.querySelectorAll("thead th")).map((th) => th.textContent);
-      expect(headers).toEqual(["NE", "Metric", "SEA", "Edge"]);
+    for (const header of container.querySelectorAll(".matchup-team-split")) {
+      const sides = Array.from(header.querySelectorAll(".matchup-team-split__side"));
+      expect(sides[0].className).toContain("matchup-team-split__side--away");
+      expect(sides[1].className).toContain("matchup-team-split__side--home");
     }
   });
 });

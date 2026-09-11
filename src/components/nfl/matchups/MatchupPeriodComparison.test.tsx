@@ -91,12 +91,14 @@ describe("MatchupPeriodComparison", () => {
     expect(screen.getAllByText("2025 L8").length).toBeGreaterThan(0);
   });
 
-  it("renders each success-rate metric as its own titled shared comparison table", () => {
+  it("renders each success-rate metric as its own card in the responsive grid", () => {
     const { container } = renderPeriods(0, 0);
-    // Six metrics → six titled table groups, each a shared MatchupMetricTable.
-    expect(container.querySelectorAll(".matchup-metric-table-group")).toHaveLength(6);
+    // Six metrics → six mini cards, each a shared MatchupMetricTable.
+    expect(container.querySelectorAll(".matchup-sr-grid")).toHaveLength(1);
+    expect(container.querySelectorAll(".matchup-sr-card")).toHaveLength(6);
     expect(container.querySelectorAll(".matchup-metric-table")).toHaveLength(6);
-    // The prominent two-team header sits above the tables.
+    // Team identity is carried by the section-scoped sticky header and the
+    // per-card crests, away (NE) then home (SEA).
     expect(screen.getAllByText("NE").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SEA").length).toBeGreaterThan(0);
   });

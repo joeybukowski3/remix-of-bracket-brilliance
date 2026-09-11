@@ -52,18 +52,17 @@ for (const width of WIDTHS) {
     const heading = page.getByRole("heading", { name: "Statistical Comparison" });
     await expect(heading).toBeVisible();
 
-    // On phones the categories are a collapsed accordion — open one.
-    if (width < 640) {
-      await page.getByRole("button", { name: /Overall Quality/ }).first().click();
-    }
+    // The categories are a single pill row/scroller at every width — select one.
+    await page.getByRole("tab", { name: /Overall Quality/ }).first().click();
 
     // Detail table is a centred, capped column — not a full-width stretch.
     const table = page.locator('.matchup-metric-table[data-variant="detail"]').first();
     await expect(table).toBeVisible();
     const box = await table.boundingBox();
     expect(box).not.toBeNull();
-    // 44rem cap (704px) plus a little slop — never a full-viewport stretch.
-    expect(box!.width, "detail table capped near 44rem").toBeLessThanOrEqual(740);
+    // Approved mockup column: ~880px (~920 for the wider Unit tables), never a
+    // full-viewport stretch.
+    expect(box!.width, "detail table capped near the mockup column").toBeLessThanOrEqual(940);
 
     // Rank tile colour comes from the tier helper (emerald / red / amber / teal / orange),
     // never a winner/loser class.
