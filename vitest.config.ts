@@ -119,6 +119,9 @@ export default defineConfig({
       "scripts/generate-nfl-totals-performance.test.ts",
       // Dual-AI handicapping architecture WU1 -- Game Context Packet builder + validators.
       "scripts/lib/nfl-full-game-context.test.ts",
+      // Dual-AI handicapping architecture WU2 -- external evidence normalization/validation foundation.
+      "scripts/lib/nfl-evidence-normalizer.test.ts",
+      "scripts/lib/nfl-evidence-store.test.ts",
       // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
       "scripts/lib/nfl-props-performance.test.ts",
       "scripts/generate-nfl-props-performance.test.ts",
