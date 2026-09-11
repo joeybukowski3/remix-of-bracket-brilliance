@@ -1,10 +1,10 @@
 {
   "date": "2026-09-11",
-  "generatedAt": "2026-09-11T16:16:54.045Z",
+  "generatedAt": "2026-09-11T17:51:59.938Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Comerica Park (0.95) and Busch Stadium (0.92) suppress power, but Riley Greene still tops the board on a 73 hrScore against Mason Adams. American Family Field (1.1) and Rogers Centre (1.08) boost offense, giving Elly De La Cruz and Pete Alonso favorable venues against Dustin May and Max Scherzer. Lefties Yusei Kikuchi and Matthew Liberatore face right-handed power bats in neutral-to-friendly parks, creating the clearest edges.",
-    "modelNote": "The model is overweighting barrel rate, exit velocity, and recent HR volume while discounting park suppression when the underlying contact metrics are elite."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Coors-like effects at American Family Field (1.10) and Rogers Centre (1.08), while Comerica (0.95) and Busch (0.92) suppress power. Pitching matchups tilt toward the bats: Mason Adams and Dustin May both carry elevated HR/9 rates, and Yusei Kikuchi's left-handed delivery plays into Nationals Park's righty power alleys.",
+    "modelNote": "The model is overweighting barrel rate and recent home-run volume, elevating Greene and De La Cruz despite modest park factors, while discounting Wood's zero recent HR output despite elite underlying metrics."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Mason Adams",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=73",
-        "barrel=15.1%"
+        "barrel=15.1%",
+        "HH=47.6%"
       ],
       "bullets": [
         "hrScore=73",
-        "barrel=15.1%"
+        "park=0.95"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Dustin May",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=70.3",
-        "barrel=16%"
+        "barrel=16%",
+        "HH=52.9%"
       ],
       "bullets": [
         "hrScore=70.3",
-        "barrel=16%"
+        "park=1.1"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Yusei Kikuchi",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=68.8",
-        "barrel=20.5%"
+        "barrel=20.5%",
+        "HH=58.3%"
       ],
       "bullets": [
-        "hrScore=68.8",
-        "barrel=20.5%"
+        "hrScore=68.7",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -71,16 +71,16 @@
       "opposingPitcher": "Max Scherzer",
       "hrScoreRank": 4,
       "topStats": [
-        "hrScore=66.3",
-        "barrel=14%"
+        "barrel=14%",
+        "HH=57%"
       ],
       "bullets": [
         "hrScore=66.3",
-        "barrel=14%"
+        "park=1.08"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+285",
+      "marketImpliedProbability": 0.2597402597402597,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -90,115 +90,115 @@
       "opposingPitcher": "Yusei Kikuchi",
       "hrScoreRank": 5,
       "topStats": [
-        "hrScore=66",
-        "barrel=27.3%"
+        "barrel=27.3%",
+        "HH=72.7%"
       ],
       "bullets": [
-        "hrScore=66",
-        "barrel=27.3%"
+        "hrScore=65.9",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+560",
+      "marketImpliedProbability": 0.15151515151515152,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Riley Greene",
-      "team": "DET",
-      "opponent": "COL",
-      "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 1,
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "STL",
+      "opposingPitcher": "Matthew Liberatore",
+      "hrScoreRank": 6,
       "topStats": [
-        "HH=47.6%",
-        "park=0.95"
+        "barrel=13.5%",
+        "HH=45.2%"
       ],
       "bullets": [
-        "HH=47.6%",
-        "park=0.95"
+        "hrScore=63.3",
+        "park=0.92"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "MIL",
-      "opposingPitcher": "Dustin May",
-      "hrScoreRank": 2,
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "CIN",
+      "opposingPitcher": "Andrew Abbott",
+      "hrScoreRank": 7,
       "topStats": [
-        "HH=52.9%",
-        "park=1.1"
+        "barrel=12.6%",
+        "HH=47%"
       ],
       "bullets": [
-        "HH=52.9%",
+        "hrScore=62",
         "park=1.1"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "LAA",
-      "opposingPitcher": "Yusei Kikuchi",
-      "hrScoreRank": 3,
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "STL",
+      "opposingPitcher": "Matthew Liberatore",
+      "hrScoreRank": 8,
       "topStats": [
-        "HH=58.3%",
-        "park=0.98"
+        "barrel=19%",
+        "HH=57.1%"
       ],
       "bullets": [
-        "HH=58.3%",
-        "park=0.98"
+        "hrScore=61.9",
+        "park=0.92"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+354",
+      "marketImpliedProbability": 0.22026431718061673,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Riley Greene",
+      "player": "Brett Callahan",
       "team": "DET",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 1,
+      "hrScoreRank": 21,
       "topStats": [
-        "hrScore=73",
-        "HH=47.6%"
+        "barrel=11.1%",
+        "HH=51.9%"
       ],
       "bullets": [
-        "hrScore=73",
-        "HH=47.6%"
+        "hrScore=56.6",
+        "park=0.95"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+830",
+      "marketImpliedProbability": 0.10752688172043011,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "MIL",
-      "opposingPitcher": "Dustin May",
-      "hrScoreRank": 2,
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
+      "hrScoreRank": 23,
       "topStats": [
-        "hrScore=70.3",
-        "HH=52.9%"
+        "barrel=11%",
+        "HH=49.8%"
       ],
       "bullets": [
-        "hrScore=70.3",
-        "HH=52.9%"
+        "hrScore=56.2",
+        "park=0.92"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+570",
+      "marketImpliedProbability": 0.14925373134328357,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ]
