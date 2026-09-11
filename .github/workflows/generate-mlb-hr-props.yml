@@ -535,6 +535,26 @@ jobs:
         id: resolve_k_projection
         run: npm run mlb:k-production-projection
 
+      # SHADOW / INFORMATIONAL probability-vs-market layer for
+      # /mlb/strikeout-props (docs/features/mlb-k.md; methodology in
+      # scripts/lib/mlb-k-probability-shadow-core.mjs and
+      # scripts/lib/mlb-k-probability-model.mjs). Must run AFTER K lines/
+      # odds are injected (inject_k_odds, above), V4 shadow diagnostics are
+      # generated + validated (generate_k_props_v2_shadow /
+      # validate_k_props_v2_shadow, above), and the production projection is
+      # resolved (resolve_k_projection, immediately above) -- it reads all
+      # three and writes ONLY a separate, additive artifact
+      # (k-probability-shadow.json), never hr-props-raw.json or
+      # k-props-v2-shadow.json. continue-on-error: true because this is
+      # informational/shadow only and must never block the authoritative MLB
+      # projection pipeline -- same convention as every other shadow step in
+      # this job (generate_k_props_v2_shadow, generate_k_workload_shadow,
+      # generate_k_details).
+      - name: Generate K probability/value shadow artifact
+        id: generate_k_probability_shadow
+        continue-on-error: true
+        run: node scripts/generate-mlb-k-probability-shadow.mjs
+
       - name: Preserve date-keyed Projected K inputs and outputs
         id: archive_k_history
         shell: bash

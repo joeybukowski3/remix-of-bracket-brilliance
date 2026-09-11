@@ -247,7 +247,20 @@ export function projectInningsV4(input = {}, config = V4_DEFAULTS) {
     seasonGamesStarted: gamesStarted,
     neutralPitcherIP: round(neutral, 4),
     recentFormIPAdjustment: round(recentFormIPAdjustment, 4),
-    leagueTrust: round(trust, 4),
+    // Named distinctly from projectKPerInningV4's own trust field (below) --
+    // projectStrikeoutsV4 merges this object with that one via
+    // `{...innings, ...kPerInning}`, and both stages previously used the
+    // same key `leagueTrust`, so the K-side value silently overwrote the
+    // IP-side one in every DOWNSTREAM SERIALIZED reader (k-props-v2-
+    // shadow.json's `v4.leagueTrust`, and the V4 backtest's own `kTrust`
+    // diagnostic, which was only accidentally correct because of the spread
+    // order). This never affected `finalProjectedIP`, `finalProjectedKPerIP`,
+    // `projectedKs`, `confidence`, or `confidenceScore` -- those are all
+    // computed from these LOCAL, unmerged `innings`/`kPerInning` objects
+    // before the merge happens (see projectStrikeoutsV4 below), so the
+    // collision was diagnostics-only. Fixed here rather than left as a trap
+    // for the next reader of the merged object.
+    workloadLeagueTrust: round(trust, 4),
     leagueRegressedIP: round(leagueRegressedIP, 4),
     opponentIPFactor: round(opponentIPFactor, 4),
     wrcIPMultiplier: round(wrcIPMultiplier, 4),
@@ -362,7 +375,9 @@ export function projectKPerInningV4(input = {}, config = V4_DEFAULTS) {
     seasonInnings: round(seasonInnings, 2),
     neutralPitcherKPerIP: round(neutral),
     recentFormKAdjustment: round(recentFormKAdjustment),
-    leagueTrust: round(trust),
+    // Distinct from projectInningsV4's own `workloadLeagueTrust` -- see the
+    // comment there for why these must not share a key.
+    kRateLeagueTrust: round(trust),
     leagueRegressedKPerIP: round(leagueRegressedKPerIP),
     opponentStarterKFactor: round(opponentStarterKFactor),
     opponentKRateVsHand: round(kRateVsHand),
@@ -403,8 +418,8 @@ export function projectStrikeoutsV4(input = {}, config = V4_DEFAULTS) {
   // sample confidence, so a thin pitcher or a thin opponent sample is visible
   // rather than implied.
   const confidenceParts = [
-    finite(innings.leagueTrust) ?? 0,
-    finite(kPerInning.leagueTrust) ?? 0,
+    finite(innings.workloadLeagueTrust) ?? 0,
+    finite(kPerInning.kRateLeagueTrust) ?? 0,
     finite(input.opponentConfidence) ?? 0,
   ];
   const confidenceScore = confidenceParts.reduce((sum, part) => sum + part, 0) / confidenceParts.length;

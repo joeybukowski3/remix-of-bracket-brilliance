@@ -27,6 +27,8 @@ import { describeKPropStatusReasons, resolveKPropStatus } from "@/lib/mlb/kPropS
 import { cn } from "@/lib/utils";
 import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
 import { useMlbKPropsV2Shadow, type KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
+import { useMlbKProbabilityShadow } from "@/hooks/useMlbKProbabilityShadow";
+import { KProbabilityDetailBlock, KProbabilityValueBadge } from "@/components/mlb/KProbabilityValueCell";
 import { useMlbKPlusEv } from "@/hooks/useMlbKPlusEv";
 import { evaluateKPlusEvArtifact } from "@/lib/mlb/kPlusEvSourceAdapter";
 import KPlusEvTable from "@/components/mlb/KPlusEvTable";
@@ -432,6 +434,12 @@ export default function MlbStrikeoutProps() {
   const showKProjectionV2Debug = new URLSearchParams(location.search).get("debug") === "k-v2";
   const kV2Shadow = useMlbKPropsV2Shadow(showKProjectionV2Debug, slateDate);
   /**
+   * K probability / value SHADOW layer (informational only -- see
+   * docs/features/mlb-k.md). Reads an additive artifact and is never
+   * consumed by projectedKs, K Score, or Best K Prop Bets.
+   */
+  const kProbability = useMlbKProbabilityShadow(slateDate);
+  /**
    * K Props +EV V1 -- a standalone model, selectable via the K Score / +EV
    * tabs below. Defaults to "score" so the existing K Score view remains the
    * default page experience; seeded from ?view=ev so direct links (MLB
@@ -772,6 +780,14 @@ export default function MlbStrikeoutProps() {
                 </p>
               )}
 
+              {(kProbability.status === "stale" || kProbability.status === "invalid") && (
+                <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+                  {kProbability.status === "stale"
+                    ? "The probability/value shadow layer (Value column) is from a different slate than this page and has been hidden until it refreshes -- Proj K, K Score, and Best K Prop Bets are unaffected."
+                    : "The probability/value shadow layer (Value column) could not be read and has been hidden -- Proj K, K Score, and Best K Prop Bets are unaffected."}
+                </p>
+              )}
+
               <section data-x-export="mlb-strikeout-props" className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
                 {isCompactLayout ? (
                   /* Mobile/tablet (below lg): dense sortable table (Pitcher/Proj K/Line/Diff/K Score), matching the NFL Yardage Props Review mobile table pattern. Tapping a row expands the same detail content inline underneath it. */
@@ -892,6 +908,12 @@ export default function MlbStrikeoutProps() {
                                               bypassSampleGate
                                             />
                                           </MetricTile>
+                                          <MetricTile label="Value">
+                                            <KProbabilityValueBadge probabilityRow={kProbability.findProbabilityRow(row)} />
+                                          </MetricTile>
+                                        </div>
+                                        <div className="mt-1.5">
+                                          <KProbabilityDetailBlock probabilityRow={kProbability.findProbabilityRow(row)} />
                                         </div>
                                       </div>
                                       <PropsTwoTabSwitch<KStatsTabKey> tabs={K_STATS_TABS} active={kStatsTab} onChange={setKStatsTab} idPrefix={panelId} />
@@ -939,7 +961,7 @@ export default function MlbStrikeoutProps() {
                     </colgroup>
                     <thead className={stickyDenseHeader()}>
                     <tr className="text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
-                      <th colSpan={7} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
+                      <th colSpan={8} className="border-b border-slate-200 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Core / Market</th>
                       <th colSpan={5} data-table-group="pitcher-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Pitcher Stats</th>
                       <th colSpan={4} data-table-group="opposing-team-stats" className="border-b border-l-2 border-slate-400 bg-slate-100/90 px-1.5 py-1.5 text-center align-middle">Opposing Team Stats</th>
                     </tr>
@@ -951,14 +973,16 @@ export default function MlbStrikeoutProps() {
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
                       <SortTh k="gameStartTime" label="Game Time" />
-                      <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th><SortTh k="projectedKs" label="Proj K" /><SortTh k="absoluteProjectionEdge" label="Edge" /><SortTh k="strikeoutMatchupScore" label="K Score" />
+                      <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th><SortTh k="projectedKs" label="Proj K" /><SortTh k="absoluteProjectionEdge" label="Edge" />
+                      <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500" title="Shadow/informational: model probability vs. no-vig market probability. Visual context only -- not a bet recommendation and does not drive Best K Prop Bets.">Value</th>
+                      <SortTh k="strikeoutMatchupScore" label="K Score" />
                       {["K Per Game SZN", "K Per Game @ Site", "K/Inning Last 5", "Avg IP", "Szn Vs Hand Rate"].map((label, index) => <th key={label} data-table-group={index === 0 ? "pitcher-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
                       {["K% vs Hand L30", "Opp K% at Site Szn", "Opp wRC+ Rank L30", "Opp wRC+ Rank L10"].map((label, index) => <th key={label} data-table-group={index === 0 ? "opposing-team-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
                     </tr></thead>
                     <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
                       const isExpanded = expandedRowKey === rowKey;
-                      const desktopColumnCount = 16;
+                      const desktopColumnCount = 17;
                       const edgeInfo = getProjectionEdgeInfo(row);
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
                       const rowLabel = `${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`;
@@ -1007,6 +1031,9 @@ export default function MlbStrikeoutProps() {
                         </span>
                       </td>
                       <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle">
+                        <KProbabilityValueBadge probabilityRow={kProbability.findProbabilityRow(row)} />
+                      </td>
+                      <td className="border-b border-slate-100 px-1.5 py-2 text-center align-middle">
                         <PercentileCell
                           value={row.strikeoutMatchupScore}
                           display={row.strikeoutMatchupScore.toFixed(1)}
@@ -1035,13 +1062,16 @@ export default function MlbStrikeoutProps() {
                       {isExpanded && (
                         <tr>
                           <td colSpan={desktopColumnCount} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                            <div className="mb-2">
+                              <KProbabilityDetailBlock probabilityRow={kProbability.findProbabilityRow(row)} />
+                            </div>
                             <RowDetailPanel row={row} />
                           </td>
                         </tr>
                       )}
                       </Fragment>
                       );
-                    }) : <tr><td colSpan={16} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
+                    }) : <tr><td colSpan={17} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
                   </table>
                   </DenseTableScroller>
                 )}

@@ -209,7 +209,7 @@ const scored = withV3.map((row) => {
       seasonKPerIP: finite(v4.seasonKPerIP),
       neutralKPerIP: finite(v4.neutralPitcherKPerIP),
       regressedKPerIP: finite(v4.leagueRegressedKPerIP),
-      kTrust: finite(v4.leagueTrust),
+      kTrust: finite(v4.kRateLeagueTrust),
       env: finite(v4.opponentKEnvironment),
     },
     v4: {

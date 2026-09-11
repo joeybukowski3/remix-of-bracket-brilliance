@@ -22,6 +22,11 @@ export default defineConfig({
       "scripts/lib/pga-best-bets-schema.test.mjs",
       "scripts/lib/mlb-opponent-k-context.test.mjs",
       "scripts/lib/mlb-strikeout-reference-context.test.mjs",
+      // MLB K probability/value shadow layer (informational, does not drive
+      // Best K Prop Bets) -- see docs/features/mlb-k.md.
+      "scripts/lib/mlb-k-odds-math.test.mjs",
+      "scripts/lib/mlb-k-probability-model.test.mjs",
+      "scripts/lib/mlb-k-probability-shadow-core.test.mjs",
       // MLB K table column updates -- K/Inning Last 5 (total/total, not an
       // average of per-game rates) and opponent last-10-games home/away
       // passthrough.

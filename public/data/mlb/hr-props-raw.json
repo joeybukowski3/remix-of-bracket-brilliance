@@ -31377,19 +31377,17 @@
       }
     }
   ],
-  "kProjectionMode": "v4-production",
-  "kProjectionModelVersion": "mlb-k-projection-v4",
   "kProjectionResolver": "mlb-k-production-projection-v2",
   "kProjectionLegacyRole": "per-row-fallback",
-  "kWorkloadProjectionMode": "shadow",
-  "kWorkloadProjectionModelVersion": "workload-team-k-v3",
+  "kWorkloadProjectionMode": "v4-production",
+  "kWorkloadProjectionModelVersion": "mlb-k-projection-v4",
   "kProductionProjection": {
     "model": "mlb-k-production-projection-v2",
     "displayedProjection": "v4-production",
     "displayedProjectionSummary": "hr-props-raw.json pitchers[].projectedKs is the resolved production K projection: K Projection V4 (mlb-k-projection-v4, projected IP x projected K/IP with opponent-relative starter adjustments) where the row's V4 block passes the production gate, K Projection V2.2 (mlb-k-projection-v2-production) where it does not -- openers and relievers are refused by V4 by design -- and the legacy IP x K9 / 9 projection as a per-row fail-safe fallback only. V3 remains computed in k-props-v2-shadow.json for comparison but is no longer in the authority chain. pitchers[].projectionSource records which produced each row.",
     "v2ModelVersion": "mlb-k-projection-v2-production",
     "v2SlateDate": "2026-09-11",
-    "v2GeneratedAt": "2026-09-11T12:58:49.377Z",
+    "v2GeneratedAt": "2026-09-11T15:59:02.660Z",
     "v2ArtifactUsable": true,
     "note": null,
     "totalRows": 26,
@@ -31412,5 +31410,7 @@
     "ambiguousStableIds": [],
     "ambiguousMatchups": [],
     "ambiguousLegacyKeys": []
-  }
+  },
+  "kProjectionMode": "v4-production",
+  "kProjectionModelVersion": "mlb-k-projection-v4"
 }

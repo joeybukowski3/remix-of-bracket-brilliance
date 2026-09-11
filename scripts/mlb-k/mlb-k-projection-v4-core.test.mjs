@@ -169,6 +169,25 @@ describe("V4 composition and safety", () => {
     assert.deepStrictEqual(a, b);
   });
 
+  it("publishes distinct workload/K-rate trust fields -- regression guard for a fixed field-name collision", () => {
+    // projectInningsV4 and projectKPerInningV4 each compute their own
+    // "league prior trust" and used to both call it `leagueTrust`; merging
+    // their objects here (`{...innings, ...kPerInning}`) let the K-side
+    // value silently overwrite the IP-side one for any reader of this
+    // merged object. It never affected finalProjectedIP/finalProjectedKPerIP/
+    // projectedKs/confidence (those are computed from the pre-merge
+    // `innings`/`kPerInning` locals below), but a bare `out.leagueTrust`
+    // read by a future consumer would have been silently wrong. Fixed via
+    // distinct `workloadLeagueTrust` / `kRateLeagueTrust` keys -- this test
+    // pins that fix.
+    const out = projectStrikeoutsV4(BASE);
+    assert.strictEqual("leagueTrust" in out, false, "the ambiguous merged key must not reappear");
+    assert.ok(Number.isFinite(out.workloadLeagueTrust));
+    assert.ok(Number.isFinite(out.kRateLeagueTrust));
+    const expectedConfidenceScore = (out.workloadLeagueTrust + out.kRateLeagueTrust + BASE.opponentConfidence) / 3;
+    assert.ok(Math.abs(out.confidenceScore - expectedConfidenceScore) < 1e-6, "confidenceScore must be built from the two distinct trusts, not a collided one");
+  });
+
   it("NEVER reads a sportsbook line or price", () => {
     const clean = projectStrikeoutsV4(BASE);
     const polluted = projectStrikeoutsV4({
