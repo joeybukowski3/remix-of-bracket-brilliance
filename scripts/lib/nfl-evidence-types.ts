@@ -200,6 +200,7 @@ export interface EvidenceRecord {
   category: EvidenceCategory;
   source: EvidenceSource;
   subjects: EvidenceSubjects;
+  subjectValidation: EvidenceSubjectValidation;
   confidence: EvidenceConfidence;
   verificationStatus: EvidenceVerificationStatus;
   pregameSafe: boolean;
@@ -247,6 +248,111 @@ export interface RawEvidenceCandidate {
   supersedesEvidenceId?: string | null;
 }
 
+/**
+ * WU2.1 -- one authoritative roster/coach entry the normalizer can match a
+ * free-text evidence subject against. Deliberately minimal: an id, a
+ * canonical display name, and the team the entry is current for. Callers
+ * derive these from existing repo sources (nflverse weekly rosters/depth
+ * charts, coaching-ratings.json) -- this module never fetches or parses a
+ * source itself.
+ */
+export interface SubjectRosterEntry {
+  playerId: string;
+  canonicalName: string;
+  team: string; // teams.json abbr, lowercase
+  /** WU2.2 -- optional enrichment. Absent when a caller builds a minimal source by hand. */
+  position?: string | null;
+  /** Roster status as reported by the source (e.g. ACT/RES/DEV/RET) -- never used to exclude a subject, only to inform consumers. */
+  rosterStatus?: string | null;
+  sourceRecord?: "weekly_roster" | "depth_chart";
+  /** The roster week this entry was observed for, when known. */
+  week?: number | null;
+}
+
+export interface SubjectCoachEntry {
+  coachId: string;
+  canonicalName: string;
+  team: string; // teams.json abbr, lowercase
+  /** WU2.2 -- optional enrichment. Only "head_coach" is populated by the current loader -- no coordinator/staff data exists in an authoritative repo source. */
+  role?: string | null;
+  season?: number | null;
+}
+
+/** WU2.2 -- coarse status a consumer can branch on without inspecting every meta field. */
+export type SubjectIdentitySourceStatus = "available" | "partial" | "stale" | "unavailable";
+
+/**
+ * WU2.2 -- provenance/freshness metadata for a loader-built SubjectIdentitySource.
+ * Optional: hand-built sources (WU2.1 fixtures/tests) may omit it entirely.
+ */
+export interface SubjectIdentitySourceMeta {
+  status: SubjectIdentitySourceStatus;
+  season: number;
+  requestedWeek: number;
+  rosterWeekUsed: number | null; // null when no pregame-safe roster week was available
+  rosterIsCurrentWeek: boolean; // true only when rosterWeekUsed === requestedWeek
+  rosterSource: "weekly_roster" | "none";
+  depthChartSource: "depth_chart" | "none";
+  coachSeasonUsed: number | null;
+  coachIsCurrentSeason: boolean;
+  coachSource: "coaching_ratings" | "none";
+  generatedAt: string; // ISO -- when the loader produced this source
+  notes: readonly string[];
+}
+
+/**
+ * Canonical subject-identity data for ONE game's two teams, supplied by the
+ * caller. Absence (context.subjectIdentity is null/undefined) means "no
+ * authoritative source was available" -- every subject resolves to
+ * "unresolved", never fabricated as "confirmed". See
+ * nfl-evidence-subject-identity.ts.
+ */
+export interface SubjectIdentitySource {
+  players: readonly SubjectRosterEntry[];
+  coaches: readonly SubjectCoachEntry[];
+  /** WU2.2 -- present when built by nfl-evidence-subject-identity-loader(-core).ts. */
+  meta?: SubjectIdentitySourceMeta;
+}
+
+/**
+ * confirmed    -- subject matched a roster/coach entry on one of this game's
+ *                  two teams.
+ * unresolved   -- no authoritative source was available, or the subject was
+ *                  not found in an available source. Never treated as a
+ *                  rejection -- absence of proof is not proof of absence.
+ * conflicting  -- the subject matched more than one of this game's two teams
+ *                  (name collision within the game) and cannot be resolved
+ *                  to a single side.
+ * rejected     -- the subject conclusively matched a roster/coach entry on a
+ *                  team OTHER than this game's two teams -- a real identity
+ *                  assigned to the wrong game.
+ */
+export type SubjectValidationStatus = "confirmed" | "unresolved" | "conflicting" | "rejected";
+
+export interface PlayerSubjectValidation {
+  input: string; // the raw subjects.players entry, as supplied by the candidate
+  status: SubjectValidationStatus;
+  canonicalPlayerId: string | null;
+  canonicalName: string | null;
+  team: string | null; // resolved roster team when known (including the unrelated team for "rejected")
+  reason: string; // short machine-readable reason code
+}
+
+export interface CoachSubjectValidation {
+  input: string; // the raw subjects.coaches entry, as supplied by the candidate
+  status: SubjectValidationStatus;
+  canonicalCoachId: string | null;
+  canonicalName: string | null;
+  team: string | null;
+  reason: string;
+}
+
+/** Per-candidate identity-validation outcome, attached to every EvidenceRecord. */
+export interface EvidenceSubjectValidation {
+  players: PlayerSubjectValidation[];
+  coaches: CoachSubjectValidation[];
+}
+
 /** Deterministic game facts the normalizer validates each candidate against. */
 export interface EvidenceNormalizationContext {
   gameId: string;
@@ -257,4 +363,10 @@ export interface EvidenceNormalizationContext {
   kickoffUtc: string;
   contextVersion: string | null;
   knownTeamAbbrs: ReadonlySet<string>;
+  /**
+   * WU2.1 -- optional canonical player/coach identity data for this game.
+   * Omit (or pass null) when no authoritative source is available; the
+   * normalizer degrades every subject to "unresolved" rather than guessing.
+   */
+  subjectIdentity?: SubjectIdentitySource | null;
 }
