@@ -65,7 +65,7 @@ const highKsRow: PitcherStrikeoutTeamRow = {
 };
 
 // Lower projected Ks, but the biggest absolute edge vs its line (a strong
-// UNDER) -- should rank first under "Best Value".
+// UNDER) -- should rank first under "Largest Diff".
 const bigUnderEdgeRow: PitcherStrikeoutTeamRow = {
   ...baseRow,
   rank: 3,
@@ -139,16 +139,16 @@ function firstDesktopRow(name: string | RegExp) {
 const SLOW_RENDER_TIMEOUT_MS = 15000;
 
 describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
-  it("renders the page, Edge, Best Value, rank, and related-tool guidance without changing the model controls", async () => {
+  it("renders the page, Edge, Largest Diff, rank, and related-tool guidance without changing the model controls", async () => {
     vi.resetModules();
     mockPropsData([baseRow]);
     await renderPage();
 
     expect(screen.getByRole("heading", { name: "How to use this page" })).toBeTruthy();
     expect(screen.getByText(/This board ranks today's probable starters by K Score/)).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Understanding Edge" })).toBeTruthy();
-    expect(screen.getByText("Edge compares our projected strikeouts to the sportsbook line.")).toBeTruthy();
-    expect(screen.getByText(/Best Value ranks the largest model-to-line differences/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Understanding Projection Diff" })).toBeTruthy();
+    expect(screen.getByText("Projection Diff compares our projected strikeouts to the sportsbook line.")).toBeTruthy();
+    expect(screen.getByText(/Largest Diff ranks the biggest projected-K vs line differences/)).toBeTruthy();
 
     const rankControl = screen.getByRole("button", { name: "Model Rank. This remains fixed even if you sort by another column." });
     expect(rankControl).toHaveAttribute("title", "Model Rank. This remains fixed even if you sort by another column.");
@@ -276,7 +276,7 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     ]);
     const headers = Array.from(headerRows[1].querySelectorAll("th")).map((header) => header.textContent?.replace(/[↑↓]/g, "").trim());
     expect(headers).toEqual([
-      "#", "Pitcher", "Game Time", "K Line", "Proj K", "Edge", "K Score",
+      "#", "Pitcher", "Game Time", "K Line", "Proj K", "Projection Diff", "K Score",
       "K Per Game SZN", "K Per Game @ Site", "K/Inning Last 5", "Avg IP", "Szn Vs Hand Rate",
       "K% vs Hand L30", "Opp K% at Site Szn", "Opp wRC+ Rank L30", "Opp wRC+ Rank L10",
     ]);
@@ -303,12 +303,12 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     expect(perInning(null, 18)).toBeNull();
   });
 
-  it('"Best Value" ranks the largest absolute edge first, so a big UNDER outranks a small OVER even with fewer projected strikeouts', async () => {
+  it('"Largest Diff" ranks the largest absolute edge first, so a big UNDER outranks a small OVER even with fewer projected strikeouts', async () => {
     vi.resetModules();
     mockPropsData([highKsRow, baseRow, bigUnderEdgeRow]); // deliberately out of order
     await renderPage();
 
-    fireEvent.click(firstTrigger("Best Value"));
+    fireEvent.click(firstTrigger("Largest Diff"));
 
     await waitFor(() => {
       const cells = screen.getAllByText(/Gallen|Valdez|Kremer/);
@@ -320,13 +320,13 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     });
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("Best Value keeps a row with a missing projection visible but ranked below every row with a real edge", async () => {
+  it("Largest Diff keeps a row with a missing projection visible but ranked below every row with a real edge", async () => {
     vi.resetModules();
     const noProjectionRow: PitcherStrikeoutTeamRow = { ...baseRow, rank: 4, pitcher: "No Projection Guy", team: "SEA", opponent: "OAK", gameKey: "SEA@OAK", projectedKs: undefined, kLine: 6.5 };
     mockPropsData([noProjectionRow, bigUnderEdgeRow]);
     await renderPage();
 
-    fireEvent.click(firstTrigger("Best Value"));
+    fireEvent.click(firstTrigger("Largest Diff"));
 
     await waitFor(() => {
       const cells = screen.getAllByText(/Valdez|No Projection Guy/);

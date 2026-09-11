@@ -34,15 +34,12 @@ function formatProbabilityPercent(value: number | null): string {
 }
 
 /**
- * Positive value: green. Near-neutral: muted slate. Negative/no-value: cool
- * muted -- STEP 6's suggested interpretation, matching the page's existing
- * heat-treatment vocabulary (see StatScorePill above it in
- * MlbStrikeoutProps.tsx) without introducing a new color language.
+ * Directional tone matching the page's Projection Diff column vocabulary:
+ * OVER is orange, UNDER is blue, no-lean/no-value is muted slate.
  */
-function edgeTone(edge: number | null): string {
-  if (edge == null || !Number.isFinite(edge)) return "bg-slate-100 text-slate-400";
-  if (edge >= 0.08) return "bg-emerald-600 text-white";
-  if (edge > 0) return "bg-emerald-100 text-emerald-800";
+function edgeTone(lean: "OVER" | "UNDER" | "NEUTRAL" | null | undefined): string {
+  if (lean === "OVER") return "bg-orange-100 text-orange-800";
+  if (lean === "UNDER") return "bg-blue-100 text-blue-800";
   return "bg-slate-100 text-slate-500";
 }
 
@@ -64,22 +61,20 @@ export function KProbabilityValueBadge({ probabilityRow }: { probabilityRow: KPr
     return <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-400">Neutral</span>;
   }
   const favoredProbability = lean === "OVER" ? probabilityRow.model.overProbability : probabilityRow.model.underProbability;
-  const overconfidentTail = isOverconfidentTail(favoredProbability);
+  // Overconfidence-tail logic (isOverconfidentTail) still runs in the
+  // detail block below; it is intentionally not surfaced on this compact
+  // pill right now -- no caution ring/border, per current design direction.
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
-        edgeTone(bestProbabilityEdge),
-        // Caution ring only -- the color/value tone above is unchanged, and
-        // the number itself is never capped or hidden.
-        overconfidentTail && "ring-2 ring-amber-400 ring-offset-1",
+        edgeTone(lean),
       )}
-      title={`Model ${lean === "OVER" ? "Over" : "Under"} ${formatProbabilityPercent(favoredProbability)} vs no-vig market ${formatProbabilityPercent(lean === "OVER" ? probabilityRow.market.overNoVigProbability : probabilityRow.market.underNoVigProbability)}${overconfidentTail ? " -- historical calibration check found model probabilities this high are overconfident (predicted ~67-76%, actual hit rate only ~48-54%); treat with extra caution." : ""}`}
+      title={`Model ${lean === "OVER" ? "Over" : "Under"} ${formatProbabilityPercent(favoredProbability)} vs no-vig market ${formatProbabilityPercent(lean === "OVER" ? probabilityRow.market.overNoVigProbability : probabilityRow.market.underNoVigProbability)}`}
     >
       {lean}
       {" "}
       {formatEdgePercent(bestProbabilityEdge)}
-      {overconfidentTail && <span aria-hidden="true" className="font-black text-amber-600">*</span>}
     </span>
   );
 }
@@ -141,7 +136,7 @@ export function KProbabilityDetailBlock({ probabilityRow }: { probabilityRow: KP
       ) : (
         <div className="flex items-center justify-between gap-2 text-[11px]">
           <span className="font-bold text-slate-600">Probability Edge</span>
-          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums", edgeTone(edge.bestProbabilityEdge))}>
+          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums", edgeTone(edge.lean))}>
             {edge.lean === "NEUTRAL" ? "No value" : `${edge.lean} ${formatEdgePercent(edge.bestProbabilityEdge)}`}
           </span>
         </div>

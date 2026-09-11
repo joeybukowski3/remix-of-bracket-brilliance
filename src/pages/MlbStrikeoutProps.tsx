@@ -67,10 +67,10 @@ type ComparativeMetricKey = "pitcherSeasonKPerGame" | "pitcherKPerInningLastFive
 const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"];
 
 /**
- * "Most Strikeouts" and "Best Value" use dedicated null-safe comparators
+ * "Most Strikeouts" and "Largest Diff" use dedicated null-safe comparators
  * (see kPropValueSorting.ts) so a missing projection/line is never
  * fabricated into a 0 -- it always sorts after every row with a real
- * value. Best Value is always highest-absolute-edge-first regardless of
+ * value. Largest Diff is always highest-absolute-edge-first regardless of
  * the toggled direction, matching its "rank by strength of edge" meaning;
  * every other column keeps the normal toggleable asc/desc compare.
  */
@@ -762,15 +762,15 @@ export default function MlbStrikeoutProps() {
                     <button type="button" aria-label="Most Strikeouts" onClick={() => { setSortKey("strikeoutMatchupScore"); setSortDir("desc"); }} aria-pressed={sortKey === "strikeoutMatchupScore"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", sortKey === "strikeoutMatchupScore" ? "border-emerald-600 bg-emerald-600 text-white" : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400")}>
                       Most Strikeouts<span className={cn("mt-0.5 block text-[9px] font-semibold", sortKey === "strikeoutMatchupScore" ? "text-emerald-50" : "text-emerald-600")}>K Score ↓</span>
                     </button>
-                    <button type="button" aria-label="Best Value" disabled={marketsUnavailable} onClick={() => { setSortKey("absoluteProjectionEdge"); setSortDir("desc"); }} aria-pressed={sortKey === "absoluteProjectionEdge"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", marketsUnavailable ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400" : sortKey === "absoluteProjectionEdge" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-violet-50 text-violet-800 hover:border-violet-400")}>
-                      Best Value<span className={cn("mt-0.5 block text-[9px] font-semibold", marketsUnavailable ? "text-slate-400" : sortKey === "absoluteProjectionEdge" ? "text-violet-50" : "text-violet-600")}>{marketsUnavailable ? "Unavailable" : "Largest edge"}</span>
+                    <button type="button" aria-label="Largest Diff" disabled={marketsUnavailable} onClick={() => { setSortKey("absoluteProjectionEdge"); setSortDir("desc"); }} aria-pressed={sortKey === "absoluteProjectionEdge"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", marketsUnavailable ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400" : sortKey === "absoluteProjectionEdge" ? "border-violet-600 bg-violet-600 text-white" : "border-violet-200 bg-violet-50 text-violet-800 hover:border-violet-400")}>
+                      Largest Diff<span className={cn("mt-0.5 block text-[9px] font-semibold", marketsUnavailable ? "text-slate-400" : sortKey === "absoluteProjectionEdge" ? "text-violet-50" : "text-violet-600")}>{marketsUnavailable ? "Unavailable" : "Largest edge"}</span>
                     </button>
                     <button type="button" aria-label="Game Time" onClick={() => { setSortKey("gameStartTime"); setSortDir("asc"); }} aria-pressed={sortKey === "gameStartTime"} className={cn("min-w-0 rounded-xl border px-2.5 py-2 text-left text-[11px] font-black leading-tight shadow-sm transition sm:min-w-[132px]", sortKey === "gameStartTime" ? "border-slate-700 bg-slate-700 text-white" : "border-sky-200 bg-sky-50 text-sky-800 hover:border-sky-400")}>
                       Game Time<span className={cn("mt-0.5 block text-[9px] font-semibold", sortKey === "gameStartTime" ? "text-slate-100" : "text-sky-600")}>Earliest first</span>
                     </button>
                   </div>
                 </div>
-                <p className="mt-2 text-xs leading-5 text-slate-500">Most Strikeouts ranks K Score descending. Best Value ranks the largest model-to-line differences. Game Time shows the earliest starts first.</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Most Strikeouts ranks K Score descending. Largest Diff ranks the biggest projected-K vs line differences. Value shows the model&apos;s probability edge vs Vegas pricing. Game Time shows the earliest starts first.</p>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500"><span>{filteredRows.length} pitchers shown</span><Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB</Link></div>
               </section>
 
@@ -891,7 +891,7 @@ export default function MlbStrikeoutProps() {
                                         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                           <MetricTile label="K Line"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{hasPostedLine ? fmt(row.kLine) : DASH}</span></MetricTile>
                                           <MetricTile label="Proj K"><span className="text-[11px] font-semibold tabular-nums text-slate-700">{fmt(row.projectedKs)}</span></MetricTile>
-                                          <MetricTile label="Edge">
+                                          <MetricTile label="Projection Diff">
                                             <span className={cn(
                                               "rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
                                               edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
@@ -973,7 +973,7 @@ export default function MlbStrikeoutProps() {
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
                       <SortTh k="gameStartTime" label="Game Time" />
-                      <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th><SortTh k="projectedKs" label="Proj K" /><SortTh k="absoluteProjectionEdge" label="Edge" />
+                      <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500">K Line</th><SortTh k="projectedKs" label="Proj K" /><SortTh k="absoluteProjectionEdge" label="Projection Diff" />
                       <th className="border-b border-slate-200 bg-slate-50 px-1.5 py-2 text-center align-middle font-black leading-tight text-slate-500" title="Shadow/informational: model probability vs. no-vig market probability. Visual context only -- not a bet recommendation and does not drive Best K Prop Bets.">Value</th>
                       <SortTh k="strikeoutMatchupScore" label="K Score" />
                       {["K Per Game SZN", "K Per Game @ Site", "K/Inning Last 5", "Avg IP", "Szn Vs Hand Rate"].map((label, index) => <th key={label} data-table-group={index === 0 ? "pitcher-stats-start" : undefined} className={cn("border-b border-slate-200 bg-slate-50 px-1 py-2 text-center align-middle font-black leading-tight text-slate-500", index === 0 && "border-l-2 border-slate-400")}>{label}</th>)}
@@ -1099,7 +1099,7 @@ export default function MlbStrikeoutProps() {
                       <div>
                         <div className="text-sm font-black text-amber-900">Low Confidence <span className="font-bold text-amber-700">({lowConfidenceRows.length})</span></div>
                         <p className="mt-0.5 text-[11px] text-amber-800">
-                          These pitchers are excluded from Best Value, Best Bets, and social picks because of a data or odds quality issue -- not because the model is confident in an UNDER. All currently available data is shown; unavailable metrics show as {DASH} instead of a fabricated number.
+                          These pitchers are excluded from Largest Diff, Best Bets, and social picks because of a data or odds quality issue -- not because the model is confident in an UNDER. All currently available data is shown; unavailable metrics show as {DASH} instead of a fabricated number.
                         </p>
                       </div>
                       <span className="shrink-0 text-amber-700 transition-transform duration-150 group-open:rotate-180" aria-hidden="true">⌄</span>
@@ -1297,12 +1297,12 @@ export default function MlbStrikeoutProps() {
               </section>
 
               <section aria-labelledby="strikeout-edge-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <h2 id="strikeout-edge-guide-title" className="text-sm font-black text-slate-900">Understanding Edge</h2>
+                <h2 id="strikeout-edge-guide-title" className="text-sm font-black text-slate-900">Understanding Projection Diff</h2>
                 {(!isCompactLayout || howToReadExpanded) && (
                   <div className="mt-1.5 space-y-1 text-xs leading-5 text-slate-600">
-                    <p>Edge compares our projected strikeouts to the sportsbook line.</p>
+                    <p>Projection Diff compares our projected strikeouts to the sportsbook line.</p>
                     <p><strong className="text-slate-900">OVER</strong> means the model projects more strikeouts than the posted line. <strong className="text-slate-900">UNDER</strong> means fewer.</p>
-                    <p>Edge measures model disagreement with the market—it is not a betting recommendation by itself.</p>
+                    <p>Projection Diff measures model disagreement with the market—it is not a betting recommendation by itself.</p>
                     {!hasKOdds && <p className="font-semibold text-slate-500">No line posted yet. Odds not yet available for this slate.</p>}
                   </div>
                 )}
