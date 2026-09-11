@@ -447,16 +447,26 @@ describe("sticky Player column at all widths", () => {
   });
 });
 
-describe("full screen mode", () => {
-  it("opens a dialog, keeps the same rows/data, and closes via the close button", () => {
+describe("DFS workspace mode (full screen)", () => {
+  afterEach(() => {
+    // Reset any workspace URL state and body scroll lock a test left behind.
+    window.history.pushState({}, "", "/");
+    document.body.style.overflow = "";
+  });
+
+  it("opens a dedicated full-viewport workspace (not a centered dialog), keeps the same rows/data, and exits via the Exit control", () => {
     const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })];
     render(<NflDfsAnalyzerTable rows={rows} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
-    const dialog = screen.getByRole("dialog");
-    expect(dialog).toBeInTheDocument();
-    expect(within(dialog).getByText("QB Alpha")).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    const workspace = screen.getByRole("dialog");
+    expect(workspace).toBeInTheDocument();
+    // Takes over the whole viewport, painted above site chrome -- not a
+    // centered/sized modal box.
+    expect(workspace.className).toMatch(/fixed/);
+    expect(workspace.className).toMatch(/inset-0/);
+    expect(within(workspace).getByText("QB Alpha")).toBeInTheDocument();
+    fireEvent.click(within(workspace).getByRole("button", { name: "Exit Full Screen" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("QB Alpha")).toBeInTheDocument();
   });
@@ -465,25 +475,69 @@ describe("full screen mode", () => {
     render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
     fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("cycles positions and keeps filter/sort/column controls interactive inside full screen", () => {
+  it("keeps position tabs and the filter toolbar pinned, with the table filling the rest of the workspace", () => {
+    const rows: DfsEnrichedAnalyzerRow[] = [offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })];
+    render(<NflDfsAnalyzerTable rows={rows} />);
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    const workspace = screen.getByRole("dialog");
+    for (const label of ["Value Board", "QB", "RB", "WR", "TE", "DST"]) {
+      expect(within(workspace).getByRole("tab", { name: label })).toBeInTheDocument();
+    }
+    expect(within(workspace).getByLabelText("Search player")).toBeInTheDocument();
+    expect(within(workspace).getByRole("button", { name: /columns/i })).toBeInTheDocument();
+    expect(within(workspace).getByRole("table")).toBeInTheDocument();
+  });
+
+  it("cycles positions and keeps filter/sort/column controls interactive inside the workspace", () => {
     const rows: DfsEnrichedAnalyzerRow[] = [
       offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" }),
       offensiveRow({ dkId: "r1", playerName: "RB Alpha", position: "RB" }),
     ];
     render(<NflDfsAnalyzerTable rows={rows} />);
     fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("tab", { name: "RB" }));
-    expect(within(dialog).queryByText("QB Alpha")).not.toBeInTheDocument();
-    expect(within(dialog).getByText("RB Alpha")).toBeInTheDocument();
-    fireEvent.change(within(dialog).getByLabelText("Search player"), { target: { value: "rb" } });
-    expect(within(dialog).getByText("RB Alpha")).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole("button", { name: /columns/i }));
-    expect(within(dialog).getByRole("group", { name: /toggle table columns/i })).toBeInTheDocument();
+    const workspace = screen.getByRole("dialog");
+    fireEvent.click(within(workspace).getByRole("tab", { name: "RB" }));
+    expect(within(workspace).queryByText("QB Alpha")).not.toBeInTheDocument();
+    expect(within(workspace).getByText("RB Alpha")).toBeInTheDocument();
+    fireEvent.change(within(workspace).getByLabelText("Search player"), { target: { value: "rb" } });
+    expect(within(workspace).getByText("RB Alpha")).toBeInTheDocument();
+    fireEvent.click(within(workspace).getByRole("button", { name: /columns/i }));
+    expect(within(workspace).getByRole("group", { name: /toggle table columns/i })).toBeInTheDocument();
+  });
+
+  it("keeps Player Review working inside the workspace, reusing the same panel", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    const workspace = screen.getByRole("dialog");
+    fireEvent.click(within(workspace).getByRole("button", { name: "Expand details for QB Alpha" }));
+    expect(document.querySelector('[data-dfs-player-review="q1"]')).toBeInTheDocument();
+  });
+
+  it("locks page scroll while open and restores it on exit", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    expect(document.body.style.overflow).not.toBe("hidden");
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    expect(document.body.style.overflow).toBe("hidden");
+    fireEvent.click(screen.getByRole("button", { name: "Exit Full Screen" }));
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
+
+  it("reflects workspace mode as ?mode=workspace in the URL, and clears it on exit", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Full Screen" }));
+    expect(new URLSearchParams(window.location.search).get("mode")).toBe("workspace");
+    fireEvent.click(screen.getByRole("button", { name: "Exit Full Screen" }));
+    expect(new URLSearchParams(window.location.search).get("mode")).toBeNull();
+  });
+
+  it("opens directly into the workspace when the page loads with ?mode=workspace", () => {
+    window.history.pushState({}, "", "/nfl/dfs?mode=workspace");
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
 

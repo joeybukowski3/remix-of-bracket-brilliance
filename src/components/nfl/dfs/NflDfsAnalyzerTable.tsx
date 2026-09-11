@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { FANTASY_TABLE_BODY_CELL, FANTASY_TABLE_HEADER_CELL, FANTASY_TABLE_SHELL, FantasyExpandControl, FantasyPlayerIdentity, FantasyOpponentIdentity } from "@/components/fantasy/FantasyTable";
 import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller, frozenDenseColumn, stickyDenseHeader } from "@/components/ui/dense-table";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
 import type { FantasyMatchupEdges } from "@/lib/nfl/matchupEdges";
 import { POSITION_TAB_TONES } from "@/lib/fantasy/positionTone";
@@ -26,6 +26,25 @@ import type { DfsSlotWideEntry } from "@/lib/nfl/dfs/slotWideContext";
 const MOBILE_QUERY = "(max-width: 767px)";
 
 const BOARD_VIEWS: readonly DfsBoardView[] = ["VALUE", "QB", "RB", "WR", "TE", "DST"];
+
+/**
+ * The workspace takeover deliberately paints above `SiteHeader` (`z-[100]`,
+ * see `dense-table.tsx`'s layer ladder) -- it is the one place in the app
+ * meant to cover the global chrome rather than defer to it.
+ */
+const DFS_WORKSPACE_Z = "z-[200]";
+
+const WORKSPACE_QUERY_PARAM = "mode";
+const WORKSPACE_QUERY_VALUE = "workspace";
+
+function readWorkspaceModeFromLocation(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URLSearchParams(window.location.search).get(WORKSPACE_QUERY_PARAM) === WORKSPACE_QUERY_VALUE;
+  } catch {
+    return false;
+  }
+}
 
 /** Non-registry evidence that supplements the registry-driven Player Review groups (overall ranks, RB/WR raw usage detail). */
 function SupplementalResearchReview({ row }: { row: DfsEnrichedAnalyzerRow }) {
@@ -135,7 +154,41 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, tea
   const [sortKey, setSortKey] = useState<DfsSortKey>("rankDiff");
   const [sortDirection, setSortDirection] = useState<DfsSortDirection>("desc");
   const [reviewDkId, setReviewDkId] = useState<string | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  // "Full screen" is a dedicated workspace mode, not a modal: it takes over
+  // the whole viewport and hides site chrome instead of floating a dialog
+  // over the page. Mirrored into `?mode=workspace` on the current URL so a
+  // reload or shared link lands back in the workspace, and so the browser
+  // Back button exits it before leaving the page.
+  const [isFullScreen, setIsFullScreen] = useState(readWorkspaceModeFromLocation);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const hasWorkspaceParam = url.searchParams.get(WORKSPACE_QUERY_PARAM) === WORKSPACE_QUERY_VALUE;
+    if (isFullScreen && !hasWorkspaceParam) {
+      url.searchParams.set(WORKSPACE_QUERY_PARAM, WORKSPACE_QUERY_VALUE);
+      window.history.pushState({ dfsWorkspace: true }, "", url);
+    } else if (!isFullScreen && hasWorkspaceParam) {
+      url.searchParams.delete(WORKSPACE_QUERY_PARAM);
+      window.history.replaceState({}, "", url);
+    }
+  }, [isFullScreen]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = () => setIsFullScreen(readWorkspaceModeFromLocation());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+  useEffect(() => {
+    if (!isFullScreen || typeof document === "undefined") return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setIsFullScreen(false); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isFullScreen]);
   const isDst = view === "DST";
   const isCompact = useIsCompactLayout(MOBILE_QUERY);
   const visibility = useDfsColumnVisibility(isCompact ? "mobile" : "desktop");
@@ -246,12 +299,15 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, tea
     </div>
   </>;
 
-  const boardBody = <>
+  const contextNotes = <>
     {coverage && <p className="text-[10px] text-slate-500">Player history: {coverage.covered}/{coverage.total} offensive entries have a sample. Expand a player for yardage history; opponent coverage is independent.</p>}
     {isDst && <p className="text-[11px] text-slate-600">DST scores are matchup composites. EPA, success and trenches show the passing matchup from the defense’s perspective; positive favors the defense. No weekly DST fantasy rank or point projection is published.</p>}
     {!isDst && <p className="text-[10px] text-slate-500">Advantages are unit rank differences: rushing for RB, passing for QB/WR/TE. Positive favors the player’s offense. FPA source season and sample are available on hover.</p>}
-    {visibleRows.length === 0 ? <p role="status" className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500">No players match the current filters.</p> :
-      <DenseTableScroller label={`${view} DFS analyzer`} className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto", isFullScreen && "h-full")}>
+  </>;
+
+  const tableSection =
+    visibleRows.length === 0 ? <p role="status" className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500">No players match the current filters.</p> :
+      <DenseTableScroller label={`${view} DFS analyzer`} className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto", isFullScreen && "h-full overflow-y-auto")}>
         <table className="w-full border-collapse whitespace-nowrap text-[11px] tabular-nums" aria-label={`${view} DFS players`}>
           <thead className={stickyDenseHeader("bg-slate-100")}><tr className={DENSE_TABLE_HEAD_ROW}>
             {columns.map((column, index) => <th key={column.id} scope="col" aria-sort={sortKey === column.sortKey ? sortDirection === "asc" ? "ascending" : "descending" : "none"}
@@ -287,26 +343,31 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, tea
             </Fragment>;
           })}</tbody>
         </table>
-      </DenseTableScroller>}
-    <DfsHeatLegend />
-  </>;
+      </DenseTableScroller>;
 
   if (isFullScreen) {
-    return <Dialog open onOpenChange={(open) => { if (!open) setIsFullScreen(false); }}>
-      <DialogContent
-        className="flex h-[96vh] w-[98vw] max-w-none translate-x-[-50%] translate-y-[-50%] flex-col gap-2 overflow-hidden p-3 sm:rounded-lg"
-        aria-label={`${view} DFS analyzer, full screen`}
-      >
-        <DialogTitle className="sr-only">{view} DFS analyzer — full screen</DialogTitle>
-        <DialogDescription className="sr-only">Full-screen DFS board with the same players, filters, sorting and columns as the inline board.</DialogDescription>
+    // A dedicated full-viewport workspace, not a floating dialog: it is
+    // portaled to `document.body` and painted above the site chrome
+    // (see `DFS_WORKSPACE_Z`) so nothing about the normal page -- header,
+    // nav, page padding -- is reachable while it's open. Position tabs and
+    // the filter toolbar are pinned in a `shrink-0` row; only the table
+    // region below scrolls, and it keeps its own frozen header/column.
+    return createPortal(
+      <div role="dialog" aria-modal="true" aria-label={`${view} DFS analyzer, full screen`}
+        className={cn("fixed inset-0 flex flex-col gap-2 bg-slate-50 p-3", DFS_WORKSPACE_Z)}>
         <div className="shrink-0 space-y-2">{toolbar}</div>
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">{boardBody}</div>
-      </DialogContent>
-    </Dialog>;
+        <div className="shrink-0 space-y-1">{contextNotes}</div>
+        <div className="min-h-0 flex-1">{tableSection}</div>
+        <div className="shrink-0"><DfsHeatLegend /></div>
+      </div>,
+      document.body,
+    );
   }
 
   return <section aria-label="DFS analyzer table" className="min-w-0 space-y-2">
     {toolbar}
-    {boardBody}
+    {contextNotes}
+    {tableSection}
+    <DfsHeatLegend />
   </section>;
 }
