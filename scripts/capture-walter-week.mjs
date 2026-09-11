@@ -24,6 +24,7 @@ import { fetchWalterPage } from "./lib/walter/fetchPage.mjs";
 import { parseWalterWindowPage } from "./lib/walter/parseGamePage.mjs";
 import { normalizeGame } from "./lib/walter/normalizeGame.mjs";
 import { captureFilePath, readJsonIfExists, readManifest, shouldWriteCapture, writeJson, writeManifest } from "./lib/walter/storage.mjs";
+import { computeScheduleCoverage, detectPremiumGate, loadCanonicalWeekGameIds } from "./lib/walter/scheduleCoverage.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CAPTURE_TYPES = ["wednesday", "thursday", "saturday", "sunday"];
@@ -55,7 +56,18 @@ function resolveSeasonWeek(args) {
 }
 
 async function captureWindow({ window, url }, context, dryRun) {
-  const result = { window, url, fetched: false, gamesDiscovered: 0, gamesWritten: 0, gamesSkippedWorse: 0, gamesFailed: 0, warnings: [] };
+  const result = {
+    window,
+    url,
+    fetched: false,
+    gamesDiscovered: 0,
+    gamesWritten: 0,
+    gamesSkippedWorse: 0,
+    gamesFailed: 0,
+    warnings: [],
+    parsedGameIds: [],
+    premiumGateDetected: false,
+  };
 
   const fetchResult = await fetchWalterPage(url);
   if (!fetchResult.ok) {
@@ -63,6 +75,7 @@ async function captureWindow({ window, url }, context, dryRun) {
     return result;
   }
   result.fetched = true;
+  result.premiumGateDetected = detectPremiumGate(fetchResult.html);
 
   const { games, pageWarnings } = parseWalterWindowPage(fetchResult.html, { sourceUrl: url });
   result.warnings.push(...pageWarnings);
@@ -71,6 +84,7 @@ async function captureWindow({ window, url }, context, dryRun) {
   for (const rawGame of games) {
     try {
       const capture = normalizeGame(rawGame, { ...context, sourceUrl: url, window });
+      result.parsedGameIds.push(capture.game.gameId ?? null);
       if (!capture.game.gameId) {
         result.gamesFailed++;
         result.warnings.push(`unresolved gameId for "${rawGame.awayName}" at "${rawGame.homeName}" -- not written`);
@@ -114,6 +128,27 @@ async function main() {
   const totalWritten = windowResults.reduce((sum, r) => sum + r.gamesWritten, 0);
   const totalFailed = windowResults.reduce((sum, r) => sum + r.gamesFailed, 0);
 
+  let canonicalGameIds;
+  try {
+    canonicalGameIds = loadCanonicalWeekGameIds(ROOT, season, week);
+  } catch {
+    canonicalGameIds = new Set();
+  }
+  const scheduleCoverage = computeScheduleCoverage({
+    sourcePagesExpected: windows.length,
+    windowResults: windowResults.map((r) => ({
+      fetched: r.fetched,
+      panelsDiscovered: r.gamesDiscovered,
+      parsedGameIds: r.parsedGameIds,
+      premiumGateDetected: r.premiumGateDetected,
+    })),
+    canonicalGameIds,
+  });
+  const coverageWarnings = [
+    ...scheduleCoverage.unmatchedParsed.map((id) => `unmatched canonical schedule: parsed gameId "${id}" not found in season ${season} week ${week} schedule`),
+    ...scheduleCoverage.duplicateCanonicalMatches.map((id) => `duplicate canonical match: gameId "${id}" was captured by more than one parsed panel`),
+  ];
+
   if (!args.dryRun) {
     const manifest = readManifest(ROOT, season, week);
     manifest.captures[args.capture] = {
@@ -132,14 +167,20 @@ async function main() {
       gamesWritten: totalWritten,
       gamesFailed: totalFailed,
       status: totalFailed === 0 && totalWritten > 0 ? "ok" : totalWritten > 0 ? "partial" : "failed",
+      scheduleCoverage,
+      coverageWarnings,
     };
     writeManifest(ROOT, season, week, manifest);
   }
 
   console.log(`[capture-walter-week] season=${season} week=${week} capture=${args.capture} discovered=${totalDiscovered} written=${totalWritten} failed=${totalFailed}${args.dryRun ? " (dry-run, nothing written)" : ""}`);
+  console.log(
+    `[capture-walter-week] coverage: sources ${scheduleCoverage.sourcePagesFetched}/${scheduleCoverage.sourcePagesExpected}, panels discovered=${scheduleCoverage.panelsDiscovered} parsed=${scheduleCoverage.panelsParsed}, canonical matched=${scheduleCoverage.canonicalMatched}/${scheduleCoverage.canonicalWeekGameCount}, not captured=${scheduleCoverage.canonicalNotCaptured.length}, premiumGateDetected=${scheduleCoverage.premiumGateDetected}, accessScope=${scheduleCoverage.accessScope}`,
+  );
   for (const r of windowResults) {
     for (const w of r.warnings) console.warn(`[capture-walter-week] ${r.window}: ${w}`);
   }
+  for (const w of coverageWarnings) console.warn(`[capture-walter-week] ${w}`);
 }
 
 main().catch((err) => {
