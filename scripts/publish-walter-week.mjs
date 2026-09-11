@@ -100,8 +100,18 @@ function main() {
           gamesDiscovered: entry.gamesDiscovered,
           gamesWritten: entry.gamesWritten,
           gamesFailed: entry.gamesFailed,
+          scheduleCoverage: entry.scheduleCoverage ?? null,
+          coverageWarnings: entry.coverageWarnings ?? [],
         }
-      : { status: "pending", capturedAt: null, gamesDiscovered: 0, gamesWritten: 0, gamesFailed: 0 };
+      : {
+          status: "pending",
+          capturedAt: null,
+          gamesDiscovered: 0,
+          gamesWritten: 0,
+          gamesFailed: 0,
+          scheduleCoverage: null,
+          coverageWarnings: [],
+        };
   }
 
   const publicArtifact = {

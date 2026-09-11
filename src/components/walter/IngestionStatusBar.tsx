@@ -9,16 +9,65 @@ const CAPTURE_LABELS: Record<WalterCaptureType, string> = {
   sunday: "Sun 11 AM",
 };
 
-function StatusIcon({ status }: { status: WalterIngestionStatus["status"] }) {
-  if (status === "ok") return <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />;
-  if (status === "partial") return <XCircle className="h-4 w-4 text-amber-500" aria-hidden />;
-  if (status === "failed") return <XCircle className="h-4 w-4 text-red-500" aria-hidden />;
-  return <CircleDashed className="h-4 w-4 text-slate-500" aria-hidden />;
+/**
+ * A capture only gets red/error treatment for genuine scrape problems: a
+ * source page that failed to fetch, a discovered panel that failed to parse,
+ * a parsed matchup that couldn't be matched to the canonical schedule, or the
+ * same canonical game captured twice. Canonical games WalterFootball simply
+ * hasn't published for free yet (`canonicalNotCaptured`) are an expected,
+ * incomplete-source state, not a failure -- see scheduleCoverage.mjs.
+ */
+function hasRealWarning(entry?: WalterIngestionStatus): boolean {
+  if (!entry || entry.status === "pending") return false;
+  if (entry.status === "failed") return true;
+  const coverage = entry.scheduleCoverage;
+  if (!coverage) return entry.gamesFailed > 0;
+  return (
+    coverage.sourcePagesFetched < coverage.sourcePagesExpected ||
+    coverage.panelsParsed < coverage.panelsDiscovered ||
+    coverage.unmatchedParsed.length > 0 ||
+    coverage.duplicateCanonicalMatches.length > 0
+  );
 }
 
-function statusLabel(entry: WalterIngestionStatus): string {
-  if (entry.status === "pending") return "Pending";
-  return `${entry.gamesWritten}/${entry.gamesDiscovered}`;
+function StatusIcon({ entry }: { entry?: WalterIngestionStatus }) {
+  if (!entry || entry.status === "pending") return <CircleDashed className="h-4 w-4 text-slate-500" aria-hidden />;
+  if (hasRealWarning(entry)) return <XCircle className="h-4 w-4 text-red-500" aria-hidden />;
+  return <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />;
+}
+
+function CoverageDetails({ entry }: { entry: WalterIngestionStatus }) {
+  const coverage = entry.scheduleCoverage;
+  if (!coverage) {
+    // Older manifests captured before scheduleCoverage existed -- fall back
+    // to the raw counts rather than showing nothing.
+    return <span className="text-slate-500">{entry.gamesWritten}/{entry.gamesDiscovered}</span>;
+  }
+
+  const showParsedLine = coverage.panelsParsed !== coverage.panelsDiscovered || coverage.panelsDiscovered !== coverage.canonicalMatched;
+
+  return (
+    <div className="flex flex-col text-xs text-slate-500">
+      <span>
+        Sources: {coverage.sourcePagesFetched}/{coverage.sourcePagesExpected}
+      </span>
+      <span>
+        Captured: {coverage.canonicalMatched}/{coverage.canonicalWeekGameCount} games
+      </span>
+      {coverage.canonicalNotCaptured.length > 0 && <span>{coverage.canonicalNotCaptured.length} unavailable from public source</span>}
+      {showParsedLine && (
+        <span>
+          Parsed: {coverage.panelsParsed}/{coverage.panelsDiscovered}
+        </span>
+      )}
+      {coverage.unmatchedParsed.length > 0 && (
+        <span className="text-red-400">{coverage.unmatchedParsed.length} parsed game(s) did not match the canonical schedule</span>
+      )}
+      {coverage.duplicateCanonicalMatches.length > 0 && (
+        <span className="text-red-400">{coverage.duplicateCanonicalMatches.length} canonical game(s) captured more than once</span>
+      )}
+    </div>
+  );
 }
 
 export function IngestionStatusBar({ artifact }: { artifact: WalterWeekArtifact }) {
@@ -37,10 +86,12 @@ export function IngestionStatusBar({ artifact }: { artifact: WalterWeekArtifact 
         {WALTER_CAPTURE_TYPES.map((type) => {
           const entry = artifact.ingestion[type];
           return (
-            <div key={type} className="flex items-center gap-2">
-              <StatusIcon status={entry?.status ?? "pending"} />
-              <span className="text-slate-300">{CAPTURE_LABELS[type]}</span>
-              <span className="text-slate-500">{entry ? statusLabel(entry) : "Pending"}</span>
+            <div key={type} className="flex items-start gap-2">
+              <StatusIcon entry={entry} />
+              <div className="flex flex-col">
+                <span className="text-slate-300">{CAPTURE_LABELS[type]}</span>
+                {entry && entry.status !== "pending" ? <CoverageDetails entry={entry} /> : <span className="text-xs text-slate-500">Pending</span>}
+              </div>
             </div>
           );
         })}

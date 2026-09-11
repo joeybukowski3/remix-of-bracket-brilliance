@@ -134,6 +134,9 @@ export default defineConfig({
       "scripts/lib/walter/normalizeGame.test.mjs",
       "scripts/lib/walter/diffCapture.test.mjs",
       "scripts/lib/walter/storage.test.mjs",
+      // Canonical-schedule coverage diagnostics (sources/panels/canonical
+      // match counts, premium-gate detection) -- see scheduleCoverage.mjs.
+      "scripts/lib/walter/scheduleCoverage.test.mjs",
     ],
   },
   resolve: {
