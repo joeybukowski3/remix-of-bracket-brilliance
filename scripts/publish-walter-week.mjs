@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 /**
+ * WalterFootball automated ingestion paused due to premium-gated source;
+ * historical snapshot retained. This script is no longer invoked on a
+ * schedule (see .github/workflows/walter-capture.yml) but is kept working
+ * for manual/future reuse.
+ *
  * Projects the private data/walter/{season}/week-{NN} captures into a single
  * public/data/walter/{season}/week-{NN}.json artifact for the /walter page
  * to fetch, plus updates public/data/walter/{season}/index.json with the
