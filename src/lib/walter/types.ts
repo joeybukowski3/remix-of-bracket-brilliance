@@ -85,12 +85,28 @@ export interface WalterPublicGame {
   deltas: Partial<Record<WalterCaptureType, WalterCaptureDelta | null>>;
 }
 
+export interface WalterScheduleCoverage {
+  sourcePagesExpected: number;
+  sourcePagesFetched: number;
+  panelsDiscovered: number;
+  panelsParsed: number;
+  canonicalMatched: number;
+  canonicalWeekGameCount: number;
+  canonicalNotCaptured: string[];
+  unmatchedParsed: string[];
+  duplicateCanonicalMatches: string[];
+  accessScope: "public-only" | "authenticated";
+  premiumGateDetected: boolean;
+}
+
 export interface WalterIngestionStatus {
   status: "ok" | "partial" | "failed" | "pending";
   capturedAt: string | null;
   gamesDiscovered: number;
   gamesWritten: number;
   gamesFailed: number;
+  scheduleCoverage: WalterScheduleCoverage | null;
+  coverageWarnings: string[];
 }
 
 export interface WalterWeekArtifact {
