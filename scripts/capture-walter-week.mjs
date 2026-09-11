@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 /**
+ * WalterFootball automated ingestion paused due to premium-gated source;
+ * historical snapshot retained. This script is no longer invoked on a
+ * schedule (see .github/workflows/walter-capture.yml) but is kept working
+ * for manual/future reuse.
+ *
  * Captures one WalterFootball weekly-picks snapshot (Wednesday/Thursday/
  * Saturday/Sunday) for the current or a given NFL week, and writes one
  * private, immutable-per-slot artifact per game under

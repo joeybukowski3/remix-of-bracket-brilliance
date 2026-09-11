@@ -1,39 +1,28 @@
 name: Walter Private Research Capture
 
-run-name: Walter Capture • ${{ github.event.inputs.capture || 'scheduled' }} • ${{ github.ref_name }}
+run-name: Walter Capture • ${{ github.event.inputs.capture || 'manual' }} • ${{ github.ref_name }}
 
-# Captures the current NFL week's WalterFootball picks/analysis for the
-# private, unlisted /walter research dashboard (see AGENTS.md and the
-# feat/walter-private-research-dashboard worktree notes for scope). Four
-# passes per week, matching WalterFootball's own publishing cadence:
-#   Wednesday 02:00 ET -- initial full weekly capture
-#   Thursday  12:00 ET -- Thursday-game / early-week updates
-#   Saturday  23:00 ET -- late-week injury/lineup/line changes
-#   Sunday    11:00 ET -- final pregame capture
+# WalterFootball automated ingestion paused due to premium-gated source;
+# historical snapshot retained.
 #
-# Schedule / DST tradeoff (v1, accepted, same tradeoff already used by
-# nfl-betting-lines-daily.yml): GitHub Actions `schedule` cron is UTC-only.
-# This pins each pass to its EDT-equivalent UTC time rather than adding
-# runtime timezone-resolution logic. During EST (roughly the Nov/Dec/Jan
-# tail of the season) each pass therefore lands about one hour earlier in
-# local ET than the label below -- e.g. "Wednesday 02:00 ET" runs at
-# 01:00 ET during EST. All four windows are loose research-capture windows,
-# not time-critical, so this drift is accepted for v1.
-#   Wed 02:00 ET (EDT) = 06:00 UTC Wed  -> cron "0 6 * * 3"
-#   Thu 12:00 ET (EDT) = 16:00 UTC Thu  -> cron "0 16 * * 4"
-#   Sat 23:00 ET (EDT) = 03:00 UTC Sun  -> cron "0 3 * * 0"
-#   Sun 11:00 ET (EDT) = 15:00 UTC Sun  -> cron "0 15 * * 0"
+# WalterFootball now gates most weekly picks behind premium access, so this
+# workflow's scheduled triggers have been removed (2026-09) to stop
+# automatically fetching/publishing WalterFootball content. The existing
+# /walter research dashboard, its routes/components, and all previously
+# captured artifacts under data/walter and public/data/walter are left in
+# place as a stale snapshot -- see AGENTS.md and the
+# feat/walter-private-research-dashboard worktree notes for scope.
 #
-# Traffic to walterfootball.com: two GET requests per run (early + late
-# window pages), four scheduled runs per week -- matches the "do not
-# continuously hammer WalterFootball" mandate. workflow_dispatch exists for
-# manual/debug capture only.
+# workflow_dispatch is kept only so this pipeline can be re-enabled manually
+# (or the schedule restored) if WalterFootball ever reopens free access.
+# Do not re-add a `schedule:` trigger without revisiting that decision.
+#
+# Original cadence (for reference, no longer scheduled): four passes per
+# week matching WalterFootball's own publishing cadence --
+# Wed 02:00 ET / Thu 12:00 ET / Sat 23:00 ET / Sun 11:00 ET, pinned to their
+# EDT-equivalent UTC crons ("0 6 * * 3", "0 16 * * 4", "0 3 * * 0",
+# "0 15 * * 0").
 on:
-  schedule:
-    - cron: "0 6 * * 3"
-    - cron: "0 16 * * 4"
-    - cron: "0 3 * * 0"
-    - cron: "0 15 * * 0"
   workflow_dispatch:
     inputs:
       capture:
