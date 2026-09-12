@@ -206,7 +206,7 @@ export default function MatchupComparisonPanel({
   ];
 
   return (
-    <div className="matchup-comparison-density @container space-y-2">
+    <div className="@container space-y-2">
       {categorySummary && (
         <p className="px-0.5 text-[12px] leading-5 text-slate-700">{categorySummary}</p>
       )}

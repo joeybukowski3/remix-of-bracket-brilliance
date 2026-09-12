@@ -78,7 +78,7 @@ export default function MatchupComparisonRow({
   const neutral = direction === "context-only";
   const isMobile = useIsCompactLayout("(max-width: 639px)");
   return (
-    <div className="border-b border-slate-100 last:border-0">
+    <div className="matchup-comparison-row border-b border-slate-100 last:border-0">
       {isMobile ? (
       <CompactMatchupMetricRow
         label={shortLabel ?? metricLabel}
@@ -91,7 +91,7 @@ export default function MatchupComparisonRow({
       ) : (<>
       {/* Capped and centred so the rank pill stays beside the metric label
           however wide the viewport is, rather than drifting to the page edge. */}
-      <div className={`grid ${MATCHUP_UNIT_ROW_GRID}`}>
+      <div className={`matchup-comparison-row__grid grid ${MATCHUP_UNIT_ROW_GRID}`}>
         <div className={`px-2 py-2.5 sm:px-4 ${MATCHUP_ROW_AWAY_CELL}`}>
           <ComparisonSide side="away" value={away} teamName={awayTeamName} metricLabel={metricLabel} neutral={neutral} />
         </div>

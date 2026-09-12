@@ -466,18 +466,18 @@
 }
 .matchup-metric-table[data-variant="snapshot"] tbody tr { padding: 0.28rem 0.2rem; row-gap: 0.1rem; }
 
-/* Statistical Comparison uses the Overview snapshot's compact rhythm at a
-   still-readable desktop scale. Keep this scoped: other detail tables (period,
-   unit and trenches views) retain their roomier presentation. */
+/* Every comparison table inside the Team Comparison tab uses the Overview
+   snapshot's compact rhythm. The page-level class keeps shared table primitives
+   unchanged on every other NFL surface. */
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] thead tr,
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr {
-    grid-template-columns: 64px minmax(0, 1fr) 64px;
-    column-gap: 0.75rem;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] thead tr,
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    column-gap: 0.5rem;
   }
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr {
-    padding: 0.35rem 1rem;
-    row-gap: 0.12rem;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr {
+    padding: 0.1875rem 0.75rem;
+    row-gap: 0;
   }
 }
 .matchup-metric-table tbody th,
@@ -511,15 +511,16 @@
   opacity: 1;
 }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] {
-    font-size: 0.82rem;
-    line-height: 1.05;
-    letter-spacing: 0.035em;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] {
+    font-size: 0.75rem;
+    line-height: 0.82rem;
+    letter-spacing: 0.025em;
   }
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__context {
-    margin-top: 0.12rem;
-    font-size: 0.55rem;
-    letter-spacing: 0.1em;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__context {
+    margin-top: 0.05rem;
+    font-size: 0.5rem;
+    line-height: 0.625rem;
+    letter-spacing: 0.08em;
   }
 }
 
@@ -538,10 +539,10 @@
 .matchup-metric-table[data-variant="detail"] thead th[data-cell="home"] { text-align: center; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__abbr { display: none; }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] thead th {
-    padding: 0.28rem 1rem;
-    font-size: 0.54rem;
-    letter-spacing: 0.16em;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] thead th {
+    padding: 0.2rem 0.75rem;
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
   }
 }
 
@@ -607,14 +608,15 @@
   font-size: 0.95rem;
 }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
-    min-height: 2rem;
-    padding: 0.12rem 0.25rem;
-    border-radius: 0.45rem;
-    font-size: 0.9rem;
-  }
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value[data-ranked="false"] {
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
+    height: 1.875rem;
+    min-height: 1.875rem;
+    padding: 0.08rem 0.2rem;
+    border-radius: 0.375rem;
     font-size: 0.78rem;
+  }
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value[data-ranked="false"] {
+    font-size: 0.7rem;
   }
 }
 /* Raw value under each side of the bar. Secondary to the rank + metric; the
@@ -629,10 +631,13 @@
 .matchup-metric-table__val--lead-home { color: var(--sheet-home); font-weight: 850; }
 .matchup-metric-table__val--na { color: var(--sheet-faint); font-weight: 700; }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody td[data-cell="vals"] {
-    max-width: 18rem;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody td[data-cell="vals"] {
+    max-width: 14rem;
   }
-  .matchup-comparison-density .matchup-metric-table__val { font-size: 0.74rem; }
+  .matchup-team-comparison-density .matchup-metric-table__val {
+    font-size: 0.6875rem;
+    line-height: 0.75rem;
+  }
 }
 .matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__value {
   padding: 0.07rem 0.32rem;
@@ -648,9 +653,9 @@
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar { max-width: 22rem; margin-top: 0.15rem; }
 .matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar { max-width: 8.5rem; }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar {
-    max-width: 18rem;
-    margin-top: 0.04rem;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar {
+    max-width: 14rem;
+    margin-top: 0;
   }
 }
 .matchup-metric-table__bar-track {
@@ -670,8 +675,8 @@
   background: var(--sheet-band);
 }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track {
-    height: 0.48rem;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track {
+    height: 0.375rem;
     border-radius: 999px;
   }
 }
@@ -688,8 +693,8 @@
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--left { border-radius: 0.5rem 0 0 0.5rem; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--right { border-radius: 0 0.5rem 0.5rem 0; }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--left { border-radius: 999px 0 0 999px; }
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--right { border-radius: 0 999px 999px 0; }
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--left { border-radius: 999px 0 0 999px; }
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--right { border-radius: 0 999px 999px 0; }
 }
 .matchup-metric-table__bar-tick {
   position: absolute;
@@ -710,10 +715,10 @@
   opacity: 0.9;
 }
 @media (min-width: 640px) {
-  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-tick {
-    top: -0.12rem;
-    bottom: -0.12rem;
-    width: 2px;
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-tick {
+    top: -0.08rem;
+    bottom: -0.08rem;
+    width: 1px;
   }
 }
 .matchup-metric-table__bar[data-side="even"] .matchup-metric-table__bar-tick,
@@ -1146,10 +1151,10 @@ body.nfl-matchup-route[data-nfl-matchup-theme="dark"] > #root > div > header spa
   .matchup-overview__market { order: 6; }
   .matchup-overview__explainer { order: 7; }
   .nfl-matchup-sheet section { border-radius: 0.42rem !important; }
-  .matchup-comparison-density { row-gap: 0.35rem; }
-  .matchup-comparison-density section[aria-labelledby] > div:first-child { padding: 0.55rem 0.6rem; }
-  .matchup-comparison-density [id^="comparison-"] > h3 button { min-height: 2.6rem; padding: 0.42rem 0.5rem; }
-  .matchup-comparison-density [id^="comparison-"] > [id$="-panel"] { padding-inline: 0.3rem; padding-bottom: 0.3rem; }
+  .matchup-team-comparison-density { row-gap: 0.35rem; }
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child { padding: 0.55rem 0.6rem; }
+  .matchup-team-comparison-density [id^="comparison-"] > h3 button { min-height: 2.6rem; padding: 0.42rem 0.5rem; }
+  .matchup-team-comparison-density [id^="comparison-"] > [id$="-panel"] { padding-inline: 0.3rem; padding-bottom: 0.3rem; }
   .matchup-dense-section-body { padding: 0.45rem !important; }
   .matchup-unit-battle__header { padding: 0.45rem 0.5rem !important; }
   .matchup-unit-battle__crest { width: 1.5rem !important; height: 1.5rem !important; }
@@ -1269,3 +1274,170 @@ body.nfl-matchup-route[data-nfl-matchup-theme="dark"] > #root > div > header spa
 }
 .nfl-h2h-rail[data-side="even"] .nfl-h2h-rail__tick,
 .nfl-h2h-rail[data-side="none"] .nfl-h2h-rail__tick { opacity: 0.5; }
+
+/* -------------------------------------------------------------------------
+ * Team Comparison desktop density
+ *
+ * This is deliberately rooted at the tab panel, not at any shared component.
+ * It therefore reaches Statistical Comparison, period splits, Unit Battles,
+ * Trenches and market comparison rows without changing their use elsewhere.
+ * Mobile keeps its purpose-built geometry above.
+ * ---------------------------------------------------------------------- */
+@media (min-width: 640px) {
+  .matchup-team-comparison-density > :not([hidden]) + :not([hidden]) {
+    margin-top: 0.375rem;
+  }
+
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child h2 {
+    margin-top: 0.125rem;
+    font-size: 0.8125rem;
+    line-height: 1rem;
+  }
+
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child p {
+    margin-top: 0.125rem;
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+  }
+
+  .matchup-team-comparison-density .matchup-dense-section-body {
+    padding: 0.5rem !important;
+  }
+
+  .matchup-team-comparison-density .matchup-metric-table-group,
+  .matchup-team-comparison-density .matchup-sr-card {
+    border-radius: 0.5rem;
+    box-shadow: none;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split {
+    grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+    margin-bottom: 0.375rem !important;
+    border-radius: 0.5rem;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split__side {
+    gap: 0.45rem;
+    padding: 0.375rem 0.625rem;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split__side::before {
+    height: 2px;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split__side > span:first-child {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split__name {
+    font-size: 0.75rem;
+    line-height: 0.875rem;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split__role {
+    margin-top: 0.0625rem;
+    font-size: 0.5rem;
+    line-height: 0.625rem;
+    letter-spacing: 0.12em;
+  }
+
+  .matchup-team-comparison-density .matchup-team-split__vs {
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  .matchup-team-comparison-density .matchup-lead-pill {
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.625rem;
+  }
+
+  .matchup-team-comparison-density .matchup-metric-table-group__subhead {
+    padding: 0.32rem 0;
+    font-size: 0.625rem;
+    line-height: 0.75rem;
+    letter-spacing: 0.16em;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-grid {
+    gap: 0.5rem;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-card__cap {
+    height: 2px;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-card__head {
+    gap: 0.4rem;
+    padding: 0.375rem 0.625rem;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-card__title {
+    font-size: 0.6875rem;
+    line-height: 0.8125rem;
+    letter-spacing: 0.08em;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-card .matchup-metric-table[data-variant="detail"] tbody tr {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    column-gap: 0.5rem;
+    padding: 0.1875rem 0.5rem;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-card .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
+    height: 1.875rem;
+    min-height: 1.875rem;
+    font-size: 0.78rem;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-card .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] {
+    color: var(--sheet-text);
+    font-size: 0.75rem;
+    line-height: 0.82rem;
+    letter-spacing: 0.025em;
+  }
+
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr[data-availability="none"] {
+    padding-block: 0.125rem;
+  }
+
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr[data-availability="none"] td[data-cell="bar"] {
+    display: none;
+  }
+
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr[data-availability="none"] td[data-cell="vals"] {
+    grid-row: 2;
+  }
+
+  .matchup-team-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr[data-availability="none"] .matchup-metric-table__value {
+    height: 1.625rem;
+    min-height: 1.625rem;
+  }
+
+  .matchup-team-comparison-density .matchup-comparison-row__grid > div {
+    padding-block: 0.375rem;
+  }
+
+  .matchup-team-comparison-density .matchup-market-row {
+    padding-block: 0.25rem;
+  }
+
+  .matchup-team-comparison-density .nfl-h2h-row {
+    padding-block: 0.375rem;
+  }
+
+  .matchup-team-comparison-density .nfl-h2h-rail {
+    margin-inline: auto;
+    max-width: 14rem;
+    padding-block: 0.0625rem;
+  }
+
+  .matchup-team-comparison-density .nfl-h2h-rail__track {
+    height: 0.375rem;
+  }
+}

@@ -3,7 +3,7 @@ import { expect, test } from "../playwright-fixture";
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8089";
 const route = "/nfl/matchups/new-england-patriots-at-seattle-seahawks";
 
-const WIDTHS = [390, 768, 1440] as const;
+const WIDTHS = [390, 768, 1280, 1440] as const;
 const SHOT_DIR = process.env.SHOT_DIR ?? "test-results/compact-bars";
 
 async function noBodyOverflow(page: import("@playwright/test").Page) {
@@ -45,7 +45,7 @@ for (const width of WIDTHS) {
   test(`${width}px — Team Comparison detail: centred title, capped width, tier tiles, team-colour bar`, async ({
     page,
   }, testInfo) => {
-    await page.setViewportSize({ width, height: 1400 });
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
     await page.goto(`${baseUrl}${route}`);
     await page.getByRole("tab", { name: "Team Comparison" }).click();
 
@@ -121,7 +121,7 @@ const OUTER_SECTIONS = [
   { label: "Line of scrimmage", heading: "Trenches" },
 ] as const;
 
-for (const width of [390, 768, 1440] as const) {
+for (const width of [390, 768, 1280, 1440] as const) {
   for (const { label: section, heading: headingName } of OUTER_SECTIONS) {
     test(`${width}px — ${section}: centred title + shared bar/tier-tile system`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1600 });

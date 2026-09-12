@@ -304,8 +304,14 @@ export default function MatchupMetricTable({
         <tbody>
           {metrics.map((metric) => {
             const model = railModelFor(metric);
+            const unavailable =
+              metric.away.formatted === METRIC_NA && metric.home.formatted === METRIC_NA;
             return (
-              <tr key={metric.key}>
+              <tr
+                key={metric.key}
+                data-availability={unavailable ? "none" : "available"}
+                data-context={metric.contextLabel ? "true" : "false"}
+              >
                 <td data-cell="away">
                   <ValueCell metric={metric} side="away" abbr={matchup.away.abbr} projected={projected} />
                 </td>
