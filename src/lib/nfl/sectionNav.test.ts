@@ -17,6 +17,7 @@ const LIVE_NFL_ROUTES = new Set([
   "/nfl/schedule",
   "/nfl/team-schedules",
   "/nfl/matchups",
+  "/nfl/trends",
   "/nfl/analytics",
   "/nfl/super-bowl",
   "/nfl/coach-of-year",
@@ -39,6 +40,7 @@ describe("NFL section navigation", () => {
       "/nfl/schedule",
       "/nfl/team-schedules",
       "/nfl/matchups",
+      "/nfl/trends",
       "/nfl/analytics",
       "/nfl/super-bowl",
       "/nfl/coach-of-year",
@@ -63,6 +65,7 @@ describe("NFL section navigation", () => {
     expect(getActiveNflSectionLabel("/nfl/power-ratings")).toBe("Power Ratings");
     expect(getActiveNflSectionLabel("/nfl/standings")).toBe("Standings by Division");
     expect(getActiveNflSectionLabel("/nfl/td-scorer")).toBe("TD Scorer");
+    expect(getActiveNflSectionLabel("/nfl/trends")).toBe("NFL Trends");
     expect(getActiveNflSectionLabel("/nfl/guide/team/seattle-seahawks")).toBe("2026 Team Guide");
     expect(getActiveNflSectionLabel("/fantasy-football")).toBe("Fantasy Football");
     expect(getActiveNflSectionLabel("/mlb")).toBeNull();

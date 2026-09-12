@@ -256,7 +256,7 @@ describe("tabs", () => {
   it("selects Overview by default and shows only its panel", () => {
     render(<Harness />);
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(document.getElementById(matchupPanelId("overview"))).not.toHaveAttribute("hidden");
     expect(document.getElementById(matchupPanelId("comparison"))).toHaveAttribute("hidden");
@@ -308,6 +308,15 @@ describe("tabs", () => {
       "aria-selected",
       "true"
     );
+  });
+
+  it("opens Situational Trends from the stable trends fragment", () => {
+    window.history.replaceState(null, "", "#trends");
+    render(<Harness />);
+    const trendsTab = screen.getByRole("tab", { name: "Situational Trends" });
+    expect(trendsTab).toHaveAttribute("aria-selected", "true");
+    expect(trendsTab).toHaveAttribute("aria-controls", matchupPanelId("trends"));
+    expect(document.getElementById(matchupPanelId("trends"))).not.toHaveAttribute("hidden");
   });
 
   it("scrolls the selected tab fully into view", () => {
