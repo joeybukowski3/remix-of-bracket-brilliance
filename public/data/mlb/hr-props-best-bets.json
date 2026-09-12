@@ -1,10 +1,10 @@
 {
   "date": "2026-09-12",
-  "generatedAt": "2026-09-12T11:40:49.167Z",
+  "generatedAt": "2026-09-12T14:25:51.089Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium's 1.18 park factor and Zac Thornton's left-handed delivery create a power-friendly environment for the Yankees' lefty bats, while Busch Stadium's pitcher-friendly 0.92 factor tempers the White Sox slate despite favorable opposing pitcher HR rates. Paul Skenes' elite stuff in Wrigley and Gerrit Cole's command against the Mets present tougher environments, but the model still surfaces value in high-barrel, pull-heavy profiles.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park-adjusted HR/FB ratios over recent HR volume, elevating Luis García Jr. and Ben Rice despite Judge's zero last-30 HR output."
+    "slateOverview": "Yankee Stadium (1.18) hosts four of the top four HR scores with Zac Thornton (L) on the mound for the Mets, creating a lefty-lefty platoon edge for García, Judge, and Rice. Busch Stadium (0.92) suppresses power but still surfaces three White Sox bats because Kyle Leahy’s 71.7 HR/9 rate dwarfs the park factor. Tropicana and Wrigley offer neutral conditions, leaving Skenes and Lambert as the only true pitching hurdles on the slate.",
+    "modelNote": "The model is overweighting park-adjusted barrel and hard-hit rates while discounting recent HR volume, which is why García (67.2) edges Judge (65.2) despite Judge’s superior exit data."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "opposingPitcher": "Zac Thornton",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=67.8",
+        "hrScore=67.2",
         "barrel=12.8%"
       ],
       "bullets": [
-        "hrScore=67.8",
+        "hrScore=67.2",
         "park=1.18"
       ],
       "hrOddsYes": null,
@@ -33,11 +33,11 @@
       "opposingPitcher": "Zac Thornton",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=65.7",
+        "hrScore=65.2",
         "barrel=20.9%"
       ],
       "bullets": [
-        "barrel=20.9%",
+        "hrScore=65.2",
         "HH=57.4%"
       ],
       "hrOddsYes": "+210",
@@ -52,11 +52,11 @@
       "opposingPitcher": "Zac Thornton",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=64.3",
+        "hrScore=63.8",
         "barrel=14.4%"
       ],
       "bullets": [
-        "hrScore=64.3",
+        "hrScore=63.8",
         "park=1.18"
       ],
       "hrOddsYes": "+320",
@@ -65,76 +65,57 @@
       "hrValueEdge": null
     },
     {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "STL",
-      "opposingPitcher": "Kyle Leahy",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=71.7",
-        "Hard Hit%=56.9"
-      ],
-      "bullets": [
-        "HR score 63.4 (#4)",
-        "Pitcher HR VS 71.7 at park 0.92"
-      ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Juan Soto",
       "team": "NYM",
       "opponent": "NYY",
       "opposingPitcher": "Gerrit Cole",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "Pitcher HR VS=62.3",
         "Hard Hit%=47.4"
       ],
       "bullets": [
-        "HR score 63.3 (#5)",
+        "HR score 63.1 (#4)",
         "Pitcher HR VS 62.3 at park 1.18"
       ],
       "hrOddsYes": "+250",
       "marketImpliedProbability": 0.2857142857142857,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "STL",
       "opposingPitcher": "Kyle Leahy",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "hrScore=63.4",
-        "barrel=19%"
+        "Pitcher HR VS=71.7",
+        "Hard Hit%=56.9"
       ],
       "bullets": [
-        "barrel=19%",
-        "HH=56.9%"
+        "HR score 62.7 (#5)",
+        "Pitcher HR VS 71.7 at park 0.92"
       ],
       "hrOddsYes": "+325",
       "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Juan Soto",
       "team": "NYM",
       "opponent": "NYY",
       "opposingPitcher": "Gerrit Cole",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=63.3",
+        "hrScore=63.1",
         "barrel=14%"
       ],
       "bullets": [
-        "hrScore=63.3",
+        "hrScore=63.1",
         "park=1.18"
       ],
       "hrOddsYes": "+250",
@@ -143,21 +124,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Miguel Vargas",
+      "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "STL",
       "opposingPitcher": "Kyle Leahy",
-      "hrScoreRank": 6,
+      "hrScoreRank": 5,
       "topStats": [
-        "hrScore=61.3",
-        "barrel=13.6%"
+        "hrScore=62.7",
+        "barrel=19%"
       ],
       "bullets": [
-        "hrScore=61.3",
-        "park=0.92"
+        "hrScore=62.7",
+        "HH=56.9%"
       ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -166,17 +147,36 @@
       "team": "CHC",
       "opponent": "PIT",
       "opposingPitcher": "Paul Skenes",
-      "hrScoreRank": 7,
+      "hrScoreRank": 6,
       "topStats": [
-        "Hard Hit%=49.0",
-        "Pitcher HR VS=42.6"
+        "hrScore=60.7",
+        "barrel=13.2%"
       ],
       "bullets": [
-        "HR score 60.6 (#7)",
-        "Pitcher HR VS 42.6 at park 1.00"
+        "hrScore=60.7",
+        "park=1"
       ],
-      "hrOddsYes": "+270",
-      "marketImpliedProbability": 0.2702702702702703,
+      "hrOddsYes": "+272",
+      "marketImpliedProbability": 0.26881720430107525,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "STL",
+      "opposingPitcher": "Kyle Leahy",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=71.7",
+        "Hard Hit%=45.1"
+      ],
+      "bullets": [
+        "HR score 60.5 (#7)",
+        "Pitcher HR VS 71.7 at park 0.92"
+      ],
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -191,32 +191,32 @@
         "Pitcher HR VS=42.5"
       ],
       "bullets": [
-        "HR score 59.5 (#9)",
+        "HR score 59.4 (#9)",
         "Pitcher HR VS 42.5 at park 0.98"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
+      "hrOddsYes": "+280",
+      "marketImpliedProbability": 0.2631578947368421,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "PIT",
-      "opposingPitcher": "Paul Skenes",
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "STL",
+      "opposingPitcher": "Kyle Leahy",
       "hrScoreRank": 7,
       "topStats": [
-        "hrScore=60.6",
-        "barrel=13.2%"
+        "hrScore=60.5",
+        "barrel=13.6%"
       ],
       "bullets": [
-        "hrScore=60.6",
-        "park=1"
+        "hrScore=60.5",
+        "park=0.92"
       ],
-      "hrOddsYes": "+270",
-      "marketImpliedProbability": 0.2702702702702703,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -227,15 +227,15 @@
       "opposingPitcher": "Peter Lambert",
       "hrScoreRank": 9,
       "topStats": [
-        "hrScore=59.5",
+        "hrScore=59.4",
         "barrel=13.2%"
       ],
       "bullets": [
-        "hrScore=59.5",
+        "hrScore=59.4",
         "HH=50.2%"
       ],
-      "hrOddsYes": "+255",
-      "marketImpliedProbability": 0.28169014084507044,
+      "hrOddsYes": "+280",
+      "marketImpliedProbability": 0.2631578947368421,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,13 +244,13 @@
       "team": "BOS",
       "opponent": "KC",
       "opposingPitcher": "Randy Dobnak",
-      "hrScoreRank": 16,
+      "hrScoreRank": 21,
       "topStats": [
         "Pitcher HR VS=42.0",
         "Hard Hit%=37.7"
       ],
       "bullets": [
-        "HR score 54.9 (#16)",
+        "HR score 53.7 (#21)",
         "Pitcher HR VS 42.0 at park 0.95"
       ],
       "hrOddsYes": "+600",
@@ -259,21 +259,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Rafael Flores Jr.",
-      "team": "PIT",
-      "opponent": "CHC",
-      "opposingPitcher": "Clay Holmes",
-      "hrScoreRank": 22,
+      "player": "Corbin Carroll",
+      "team": "AZ",
+      "opponent": "TEX",
+      "opposingPitcher": "Kumar Rocker",
+      "hrScoreRank": 15,
       "topStats": [
-        "Hard Hit%=49.4",
-        "Pitcher HR VS=34.9"
+        "Pitcher HR VS=57.3",
+        "Hard Hit%=47.9"
       ],
       "bullets": [
-        "HR score 54.2 (#22)",
-        "Pitcher HR VS 34.9 at park 1.00"
+        "HR score 54.7 (#15)",
+        "Pitcher HR VS 57.3 at park 1.01"
       ],
-      "hrOddsYes": "+565",
-      "marketImpliedProbability": 0.15037593984962405,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
