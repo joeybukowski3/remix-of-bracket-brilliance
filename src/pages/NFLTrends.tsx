@@ -1,15 +1,14 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Clock3, Filter, Search } from "lucide-react";
+import { ChevronRight, Filter, Search } from "lucide-react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNflSituationalTrends } from "@/hooks/useNflSituationalTrends";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { Input } from "@/components/ui/input";
-import { QualifierEvidenceCard } from "@/components/nfl/trends/TrendEvidenceCard";
+import { MatchupPendingRows, MatchupQualifierRows } from "@/components/nfl/trends/MatchupTrendRows";
 import {
   HistoricalMetricBlock,
   NflTrendMatchupIdentity,
-  NflTrendTeamIdentity,
   TrendCategoryBadge,
   TrendTierBadge,
 } from "@/components/nfl/trends/TrendPresentation";
@@ -22,8 +21,6 @@ import {
   filterTrendGames,
   filterTrendLibrary,
   formatTrendPercent,
-  formatTrendRecord,
-  formatTrendRoi,
   rankTrendResearch,
   resolveGameQualifiers,
   type EarlySeasonWeek,
@@ -75,6 +72,7 @@ function CurrentMatchupCard({ artifact, game }: { artifact: NflSituationalTrends
   const strongest = qualifiers[0];
   const away = resolveTrendTeam(game.away, game.awayName);
   const home = resolveTrendTeam(game.home, game.homeName);
+  const trendById = useMemo(() => new Map(artifact.researchLibrary.map((trend) => [trend.id, trend])), [artifact]);
 
   return (
     <article className="relative overflow-hidden rounded-xl border border-slate-300 bg-white" data-qualifier-count={qualifiers.length}>
@@ -117,19 +115,12 @@ function CurrentMatchupCard({ artifact, game }: { artifact: NflSituationalTrends
       {(qualifiers.length > 0 || game.pending.length > 0) && (
         <details className="group border-t border-slate-200">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-xs font-bold text-slate-800 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 sm:px-4 [&::-webkit-details-marker]:hidden">View every applicable trend and pending status <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-slate-300 bg-white"><ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden /></span></summary>
-          <div className="space-y-3 border-t border-slate-200 bg-slate-50/70 p-3 sm:p-4">
-            {qualifiers.length > 0 && <div className="grid gap-3 2xl:grid-cols-2">{qualifiers.map((qualifier) => <QualifierEvidenceCard key={`${qualifier.team}-${qualifier.trendId}`} qualifier={qualifier} />)}</div>}
+          <div className="space-y-3 border-t border-slate-200 bg-slate-50/70 p-2 sm:p-3">
+            <MatchupQualifierRows qualifiers={qualifiers} />
             {game.pending.length > 0 && (
               <div>
-                <h4 className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600">Awaiting inputs</h4>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                  {game.pending.map((row) => (
-                    <div key={`${row.team}-${row.trendId}`} className="flex gap-2 rounded-lg border border-slate-300 bg-white p-2.5 text-[11px] leading-4 text-slate-700">
-                      <Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden />
-                      <div><div className="mb-2"><NflTrendTeamIdentity abbr={row.team} compact /></div><p className="font-bold text-slate-900">{artifact.researchLibrary.find((trend) => trend.id === row.trendId)?.name}</p><p>{TREND_STATUS_LABELS[row.status]} — {row.reason}</p></div>
-                    </div>
-                  ))}
-                </div>
+                <h4 className="mb-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600">Awaiting inputs ({game.pending.length})</h4>
+                <MatchupPendingRows pending={game.pending} trendById={trendById} />
               </div>
             )}
           </div>

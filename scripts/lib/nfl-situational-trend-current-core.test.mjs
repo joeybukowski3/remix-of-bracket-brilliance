@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CURRENT_TREND_IDS,
+  MATCHUP_DIRECTIONAL_STATUS,
   QUALIFICATION_STATUS,
   buildCurrentTrendEvaluations,
   evaluateCurrentTrend,
+  resolveMatchupTrendPresentation,
 } from "./nfl-situational-trend-current-core.mjs";
 
 function row(overrides = {}) {
@@ -227,4 +229,106 @@ test("Phase 2C 0-1-vs-1-0 opponent matchups await the opponent's Week 1 result i
     opponentPreviousResult: { teamScore: 21, opponentScore: 14, pointMargin: 7, overtime: false },
   }), "week2-0-1-vs-1-0-opponent");
   assert.equal(confirmedMatchup.status, QUALIFICATION_STATUS.confirmed);
+});
+
+function gameRow(gameId, team, trendId, evaluation) {
+  return { gameId, team, trendId, ...evaluation };
+}
+
+test("matchup directionality: both teams confirming the same non-playoff trend is suppressed", () => {
+  const atl = evaluateCurrentTrend(row({ team: "atl", week: 1, teamPriorSeasonPlayoffStatus: "non-playoff" }), "week1-prior-season-non-playoff-team");
+  const pit = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonPlayoffStatus: "non-playoff" }), "week1-prior-season-non-playoff-team");
+  assert.equal(atl.status, QUALIFICATION_STATUS.confirmed);
+  assert.equal(pit.status, QUALIFICATION_STATUS.confirmed);
+
+  const { qualifiers, pending } = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "week1-prior-season-non-playoff-team", atl),
+    gameRow("g1", "pit", "week1-prior-season-non-playoff-team", pit),
+  ]);
+  assert.deepEqual(qualifiers, []);
+  assert.deepEqual(pending, []);
+});
+
+test("matchup directionality: exactly one confirmed team surfaces as the sole qualifier", () => {
+  const atl = evaluateCurrentTrend(row({ team: "atl", week: 1, teamPriorSeasonPlayoffStatus: "non-playoff" }), "week1-prior-season-non-playoff-team");
+  const pit = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonPlayoffStatus: "playoff" }), "week1-prior-season-non-playoff-team");
+  assert.equal(atl.status, QUALIFICATION_STATUS.confirmed);
+  assert.equal(pit.status, QUALIFICATION_STATUS.notApplicable);
+
+  const { qualifiers, pending } = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "week1-prior-season-non-playoff-team", atl),
+    gameRow("g1", "pit", "week1-prior-season-non-playoff-team", pit),
+  ]);
+  assert.equal(qualifiers.length, 1);
+  assert.equal(qualifiers[0].team, "atl");
+  assert.deepEqual(pending, []);
+});
+
+test("matchup directionality: one playoff / one non-playoff team surfaces only the appropriate side on each trend", () => {
+  const atlNonPlayoff = evaluateCurrentTrend(row({ team: "atl", week: 1, teamPriorSeasonPlayoffStatus: "non-playoff" }), "week1-prior-season-non-playoff-team");
+  const pitNonPlayoff = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonPlayoffStatus: "playoff" }), "week1-prior-season-non-playoff-team");
+  const atlPlayoff = evaluateCurrentTrend(row({ team: "atl", week: 1, teamPriorSeasonPlayoffStatus: "non-playoff" }), "week1-prior-season-playoff-team");
+  const pitPlayoff = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonPlayoffStatus: "playoff" }), "week1-prior-season-playoff-team");
+
+  const nonPlayoffResult = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "week1-prior-season-non-playoff-team", atlNonPlayoff),
+    gameRow("g1", "pit", "week1-prior-season-non-playoff-team", pitNonPlayoff),
+  ]);
+  assert.deepEqual(nonPlayoffResult.qualifiers.map((qualifier) => qualifier.team), ["atl"]);
+
+  const playoffResult = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "week1-prior-season-playoff-team", atlPlayoff),
+    gameRow("g1", "pit", "week1-prior-season-playoff-team", pitPlayoff),
+  ]);
+  assert.deepEqual(playoffResult.qualifiers.map((qualifier) => qualifier.team), ["pit"]);
+});
+
+test("matchup directionality: a confirmed team paired with an awaiting-market opponent yields a pending state, not a directional claim", () => {
+  const confirmedRow = { status: QUALIFICATION_STATUS.confirmed, reason: "Road team listed at -12.", variantIds: ["margin-10-to-13"] };
+  const awaitingRow = { status: QUALIFICATION_STATUS.awaitingMarket, reason: "Awaiting a current market spread.", variantIds: [] };
+
+  const { qualifiers, pending } = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "double-digit-favorites", confirmedRow),
+    gameRow("g1", "pit", "double-digit-favorites", awaitingRow),
+  ]);
+  assert.deepEqual(qualifiers, []);
+  assert.equal(pending.length, 2);
+  const matchupPending = pending.find((row) => row.team === "atl");
+  assert.equal(matchupPending.status, MATCHUP_DIRECTIONAL_STATUS.matchupPending);
+  assert.match(matchupPending.reason, /PIT.*status for this trend is still AWAITING_MARKET/);
+  const opponentPending = pending.find((row) => row.team === "pit");
+  assert.equal(opponentPending.status, QUALIFICATION_STATUS.awaitingMarket);
+  assert.equal(opponentPending.reason, "Awaiting a current market spread.");
+});
+
+test("matchup directionality: opposing prior-season winning/losing variants remain distinguishable, but a shared variant still suppresses", () => {
+  const winning = evaluateCurrentTrend(row({ team: "atl", week: 1, teamPriorSeasonRecordRole: "winning" }), "week1-prior-season-winning-vs-losing");
+  const losing = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonRecordRole: "losing" }), "week1-prior-season-winning-vs-losing");
+  assert.deepEqual(winning.variantIds, ["winning-team"]);
+  assert.deepEqual(losing.variantIds, ["losing-team"]);
+
+  const distinguished = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "week1-prior-season-winning-vs-losing", winning),
+    gameRow("g1", "pit", "week1-prior-season-winning-vs-losing", losing),
+  ]);
+  assert.deepEqual(distinguished.qualifiers.map((qualifier) => qualifier.team).sort(), ["atl", "pit"]);
+
+  const bothLosing = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonRecordRole: "losing" }), "week1-prior-season-winning-vs-losing");
+  const suppressed = resolveMatchupTrendPresentation([
+    gameRow("g1", "atl", "week1-prior-season-winning-vs-losing", { ...winning, variantIds: ["losing-team"] }),
+    gameRow("g1", "pit", "week1-prior-season-winning-vs-losing", bothLosing),
+  ]);
+  assert.deepEqual(suppressed.qualifiers, []);
+});
+
+test("matchup directionality does not alter the underlying evaluation payload for surfaced or untouched rows", () => {
+  const atl = evaluateCurrentTrend(row({ team: "atl", week: 1, teamPriorSeasonPlayoffStatus: "non-playoff" }), "week1-prior-season-non-playoff-team");
+  const pit = evaluateCurrentTrend(row({ team: "pit", week: 1, teamPriorSeasonPlayoffStatus: "playoff" }), "week1-prior-season-non-playoff-team");
+  const atlRow = gameRow("g1", "atl", "week1-prior-season-non-playoff-team", atl);
+  const pitRow = gameRow("g1", "pit", "week1-prior-season-non-playoff-team", pit);
+
+  const { qualifiers } = resolveMatchupTrendPresentation([atlRow, pitRow]);
+  assert.equal(qualifiers[0], atlRow);
+  assert.equal(qualifiers[0].reason, atl.reason);
+  assert.deepEqual(qualifiers[0].variantIds, atl.variantIds);
 });
