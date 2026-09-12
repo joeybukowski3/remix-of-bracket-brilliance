@@ -1,10 +1,8 @@
 import { useState } from "react";
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
-import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
-import MatchupMetricTable, {
-  type MatchupMetricTableRow,
-} from "@/components/nfl/matchups/MatchupMetricTable";
+import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
 import {
   UNIT_BATTLE_GROUPS,
@@ -235,14 +233,8 @@ function PossessionPanel({
     awayHasBall ? pairing.defenseKey : pairing.offenseKey;
 
   return (
-    <div className="space-y-2">
-      <MatchupComparisonTeamHeader
-        matchup={matchup}
-        sticky
-        unit={{ away: awayUnit, home: homeUnit }}
-      />
-      <div className="matchup-metric-table-group matchup-metric-table-group--wide">
-        {UNIT_BATTLE_GROUPS.filter((group) => group.id === activeGroup).map((group) => {
+    <div>
+      {UNIT_BATTLE_GROUPS.filter((group) => group.id === activeGroup).map((group) => {
           const rows = group.pairings.flatMap((pairing) =>
             buildPairingRows({
               pairing,
@@ -255,20 +247,20 @@ function PossessionPanel({
               trench,
             })
           );
-          return (
-            <div key={group.id}>
-              <h4 className="matchup-metric-table-group__subhead">{group.label}</h4>
-              <MatchupMetricTable
-                variant="detail"
-                edgeDifference={false}
-                metrics={rows}
-                matchup={matchup}
-                caption={`${group.label}: ${awayTeam.teamName} ${awayRole} versus ${homeTeam.teamName} ${homeRole}`}
-              />
-            </div>
-          );
-        })}
-      </div>
+        return (
+            <MatchupComparisonCard
+              key={group.id}
+              title={group.label}
+              matchup={matchup}
+              metrics={rows}
+              variant="detail"
+              edgeDifference={false}
+              stickyHeader
+              unit={{ away: awayUnit, home: homeUnit }}
+              caption={`${group.label}: ${awayTeam.teamName} ${awayRole} versus ${homeTeam.teamName} ${homeRole}`}
+            />
+        );
+      })}
     </div>
   );
 }

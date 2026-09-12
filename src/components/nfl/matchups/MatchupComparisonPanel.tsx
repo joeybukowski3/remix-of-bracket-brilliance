@@ -6,8 +6,7 @@ import MatchupCategoryAdvantageChip, {
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
-import MatchupMetricTable from "@/components/nfl/matchups/MatchupMetricTable";
-import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
@@ -182,20 +181,6 @@ export default function MatchupComparisonPanel({
     matchup.home.teamName
   );
 
-  /**
-   * One category's metrics as the shared comparison table — the same component
-   * the Overview snapshot uses, at the larger `detail` scale.
-   */
-  const renderTable = (rows: MatchupDisplayMetric[], categoryLabel: string) => (
-    <MatchupMetricTable
-      variant="detail"
-      metrics={rows}
-      matchup={matchup}
-      projected={projection || !!dedicatedLabel}
-      caption={`${categoryLabel} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
-    />
-  );
-
   const tabs: MatchupTabDef[] = [
     ...MATCHUP_CATEGORIES.map((category) => ({
       id: category.id,
@@ -280,8 +265,16 @@ export default function MatchupComparisonPanel({
                   </span>
                 </div>
               )}
-              <MatchupComparisonTeamHeader matchup={matchup} sticky className="mb-2 sm:mb-2" />
-              <div className="matchup-metric-table-group">{renderTable(rows, category.label)}</div>
+              <MatchupComparisonCard
+                title={category.label}
+                titleId={`${category.hash}-card-heading`}
+                matchup={matchup}
+                metrics={rows}
+                variant="detail"
+                projected={projection || !!dedicatedLabel}
+                stickyHeader
+                caption={`${category.label} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
+              />
             </div>
           );
         })}

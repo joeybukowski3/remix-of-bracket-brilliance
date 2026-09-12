@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * The one comparison table shared by the Overview → Team Comparison Snapshot
- * (`variant="snapshot"`, compact bento density) and the Team Comparison tab
- * (`variant="detail"`, the approved larger presentation inside a centred
- * max-width column).
+ * (`variant="snapshot"`) and the Team Comparison tab (`variant="detail"`).
+ * Both use the same compact visual scale; detail adds the raw values beneath
+ * the rail without changing the card, badge, or row system.
  *
  * Both surfaces render this exact component so they cannot drift into two
  * visual systems. Every row is:

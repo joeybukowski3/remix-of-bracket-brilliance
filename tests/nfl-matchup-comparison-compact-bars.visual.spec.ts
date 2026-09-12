@@ -47,6 +47,11 @@ for (const width of WIDTHS) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
     await page.goto(`${baseUrl}${route}`);
+    const overviewCard = page.locator(".matchup-snapshot .matchup-comparison-card").first();
+    const overviewBadge = await overviewCard.locator(".matchup-metric-table__value").first().boundingBox();
+    const overviewRail = await overviewCard.locator(".matchup-metric-table__bar-track").first().boundingBox();
+    expect(overviewBadge).not.toBeNull();
+    expect(overviewRail).not.toBeNull();
     await page.getByRole("tab", { name: "Team Comparison" }).click();
 
     const heading = page.getByRole("heading", { name: "Statistical Comparison" });
@@ -63,6 +68,16 @@ for (const width of WIDTHS) {
     // Approved mockup column: ~880px (~920 for the wider Unit tables), never a
     // full-viewport stretch.
     expect(box!.width, "detail table capped near the mockup column").toBeLessThanOrEqual(940);
+
+    // Team Comparison extends Overview's exact card, badge and rail language.
+    const comparisonCard = page.locator(".matchup-team-comparison-density .matchup-comparison-card").first();
+    await expect(comparisonCard).toBeVisible();
+    const comparisonBadge = await comparisonCard.locator(".matchup-metric-table__value").first().boundingBox();
+    const comparisonRail = await comparisonCard.locator(".matchup-metric-table__bar-track").first().boundingBox();
+    expect(comparisonBadge).not.toBeNull();
+    expect(comparisonRail).not.toBeNull();
+    expect(comparisonBadge!.height).toBeCloseTo(overviewBadge!.height, 0);
+    expect(comparisonRail!.height).toBeCloseTo(overviewRail!.height, 0);
 
     // Rank tile colour comes from the tier helper (emerald / red / amber / teal / orange),
     // never a winner/loser class.

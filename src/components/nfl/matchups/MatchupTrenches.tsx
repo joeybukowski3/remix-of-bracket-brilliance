@@ -1,9 +1,7 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
-import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
-import MatchupMetricTable, {
-  type MatchupMetricTableRow,
-} from "@/components/nfl/matchups/MatchupMetricTable";
+import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
+import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
 import { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
 import { TRENCH_BATTLES, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import { deriveMetricComparisonFromRanks } from "@/lib/nfl/matchupRailNormalization";
@@ -113,28 +111,23 @@ export default function MatchupTrenches({
           // Away always left, home always right — the same orientation the rows
           // enforce — even though the offense/defense roles swap between the two
           // possessions.
-          <div key={key} className="space-y-2">
-            <MatchupComparisonTeamHeader
-              matchup={matchup}
-              sticky
-              possession={`${offense.teamName} has the ball`}
-              unit={{
-                away: awayIsOffense ? "Offense" : "Defense",
-                home: awayIsOffense ? "Defense" : "Offense",
-              }}
-            />
-            <div className="matchup-metric-table-group matchup-metric-table-group--wide">
-              <MatchupMetricTable
-                variant="detail"
-                edgeDifference={false}
-                metrics={possessionRows(away, home, awayIsOffense, trench)}
-                matchup={matchup}
-                caption={`Line-of-scrimmage win rates with ${
-                  awayIsOffense ? away.teamName : home.teamName
-                } on offense`}
-              />
-            </div>
-          </div>
+          <MatchupComparisonCard
+            key={key}
+            title={`${offense.abbr.toUpperCase()} Offense`}
+            matchup={matchup}
+            stickyHeader
+            possession={`${offense.teamName} has the ball`}
+            unit={{
+              away: awayIsOffense ? "Offense" : "Defense",
+              home: awayIsOffense ? "Defense" : "Offense",
+            }}
+            variant="detail"
+            edgeDifference={false}
+            metrics={possessionRows(away, home, awayIsOffense, trench)}
+            caption={`Line-of-scrimmage win rates with ${
+              awayIsOffense ? away.teamName : home.teamName
+            } on offense`}
+          />
         ))}
       </div>
 

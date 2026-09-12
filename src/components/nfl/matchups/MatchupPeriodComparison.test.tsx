@@ -95,10 +95,12 @@ describe("MatchupPeriodComparison", () => {
     const { container } = renderPeriods(0, 0);
     // Six metrics → six mini cards, each a shared MatchupMetricTable.
     expect(container.querySelectorAll(".matchup-sr-grid")).toHaveLength(1);
-    expect(container.querySelectorAll(".matchup-sr-card")).toHaveLength(6);
+    expect(container.querySelectorAll(".matchup-comparison-card")).toHaveLength(6);
     expect(container.querySelectorAll(".matchup-metric-table")).toHaveLength(6);
-    // Team identity is carried by the section-scoped sticky header and the
-    // per-card crests, away (NE) then home (SEA).
+    // Every card carries the same compact away/home identity header as Overview.
+    expect(
+      container.querySelector(".matchup-sr-grid")?.querySelectorAll(".matchup-comparison-card__team-header")
+    ).toHaveLength(6);
     expect(screen.getAllByText("NE").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SEA").length).toBeGreaterThan(0);
   });

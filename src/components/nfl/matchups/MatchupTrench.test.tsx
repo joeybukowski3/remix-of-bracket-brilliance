@@ -132,17 +132,17 @@ describe("preseason — 2025 only", () => {
 
   it("labels each possession with which team has the ball and each side's role", () => {
     const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
-    // Possession identity is announced to assistive tech via the split header.
+    // Possession identity is announced to assistive tech via the shared compact header.
     expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
     expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
     // Across the two possession headers each role word appears once per side.
     expect(screen.getAllByText("Attacking")).toHaveLength(2);
     expect(screen.getAllByText("Defending")).toHaveLength(2);
     // Away team is always the left side regardless of who is on offense.
-    const awayNames = Array.from(
-      container.querySelectorAll(".matchup-team-split__side--away .matchup-team-split__name")
-    ).map((n) => n.textContent);
-    expect(awayNames).toEqual(["New England Patriots Offense", "New England Patriots Defense"]);
+    const headers = Array.from(container.querySelectorAll(".matchup-comparison-card__team-header"));
+    expect(headers.map((header) => header.textContent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("NE Off"), expect.stringContaining("NE Def")])
+    );
   });
 
   it("keeps NE (away) left and SEA (home) right across both reciprocal possessions", () => {
@@ -150,10 +150,9 @@ describe("preseason — 2025 only", () => {
     // Both possession tables use the same column order: away team then home team.
     const tables = container.querySelectorAll(".matchup-metric-table table");
     expect(tables).toHaveLength(2);
-    for (const header of container.querySelectorAll(".matchup-team-split")) {
-      const sides = Array.from(header.querySelectorAll(".matchup-team-split__side"));
-      expect(sides[0].className).toContain("matchup-team-split__side--away");
-      expect(sides[1].className).toContain("matchup-team-split__side--home");
+    for (const header of container.querySelectorAll(".matchup-comparison-card__team-header")) {
+      const text = header.textContent ?? "";
+      expect(text.indexOf("NE")).toBeLessThan(text.indexOf("SEA"));
     }
   });
 });

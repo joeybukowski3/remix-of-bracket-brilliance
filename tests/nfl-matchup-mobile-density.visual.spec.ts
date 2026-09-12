@@ -76,7 +76,7 @@ for (const width of [768, 1280, 1440]) {
       expect(rail!.width).toBeLessThanOrEqual(224);
       expect(rail!.height).toBeLessThanOrEqual(6);
 
-      const teamHeader = await density.locator(".matchup-team-split").first().boundingBox();
+      const teamHeader = await density.locator(".matchup-comparison-card__team-header").first().boundingBox();
       expect(teamHeader).not.toBeNull();
       expect(teamHeader!.height).toBeLessThanOrEqual(48);
 
