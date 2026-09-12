@@ -1,9 +1,9 @@
 /**
  * Tab and category navigation state for the matchup analyzer.
  *
- * The four tabs are real content panels, and the URL fragment is their address:
+ * The five tabs are real content panels, and the URL fragment is their address:
  *
- *   #overview  #comparison  #availability  #model  #comparison-{categoryId}
+ *   #overview  #comparison  #trends  #availability  #model  #comparison-{categoryId}
  *
  * Every fragment is team-neutral. A category fragment names the category only —
  * never a team, abbreviation, slug or game — so the same link works on every
@@ -24,7 +24,7 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 
-export type MatchupTabId = "overview" | "comparison" | "availability" | "model";
+export type MatchupTabId = "overview" | "comparison" | "trends" | "availability" | "model";
 
 export type MatchupTab = {
   id: MatchupTabId;
@@ -35,6 +35,7 @@ export type MatchupTab = {
 export const MATCHUP_TABS: readonly MatchupTab[] = [
   { id: "overview", label: "Overview" },
   { id: "comparison", label: "Team Comparison" },
+  { id: "trends", label: "Situational Trends" },
   { id: "availability", label: "Availability & Snaps" },
   { id: "model", label: "Model Details" },
 ] as const;

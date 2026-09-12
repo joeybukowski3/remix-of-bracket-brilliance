@@ -46,6 +46,7 @@ import NFLSchedule from "./pages/NFLSchedule";
 import NFLTeamSchedules from "./pages/NFLTeamSchedules";
 import NFLMatchups from "./pages/NFLMatchups";
 import NFLMatchupDetail from "./pages/NFLMatchupDetail";
+import NFLTrends from "./pages/NFLTrends";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
 import NFLRegression2026 from "./pages/NFLRegression2026";
@@ -168,6 +169,7 @@ const App = () => (
             <Route path="team-schedules/:teamSlug" element={<NFLTeamSchedules />} />
             <Route path="matchups" element={<NFLMatchups />} />
             <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
+            <Route path="trends" element={<NFLTrends />} />
             <Route path="analytics" element={<NFLAnalytics />} />
             <Route path="performance" element={<Navigate to="/nfl/performance/overview" replace />} />
             <Route path="performance/:tab" element={<NFLPerformance />} />

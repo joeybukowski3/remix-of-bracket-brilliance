@@ -9,6 +9,7 @@ import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { useNflCoachingRatings } from "@/hooks/useNflCoachingRatings";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
+import { useNflSituationalTrends } from "@/hooks/useNflSituationalTrends";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
 import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
@@ -72,6 +73,7 @@ import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
 import MatchupOverviewPanel from "@/components/nfl/matchups/MatchupOverviewPanel";
 import MatchupPeriodComparison from "@/components/nfl/matchups/MatchupPeriodComparison";
 import MatchupScheduleContext from "@/components/nfl/matchups/MatchupScheduleContext";
+import MatchupSituationalTrendsPanel from "@/components/nfl/matchups/MatchupSituationalTrendsPanel";
 import MatchupThemeToggle from "@/components/nfl/matchups/MatchupThemeToggle";
 import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupTabRow from "@/components/nfl/matchups/MatchupTabRow";
@@ -110,10 +112,10 @@ const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
  * matchup the route selected, so every generated matchup URL renders through
  * exactly this code path.
  *
- * Four content tabs replace the former jump navigation. There is deliberately
- * no Trends tab: the only genuine multi-period data is `resolveSuccessPeriods()`
- * — no home/away splits and no week-indexed series exist in any artifact — so
- * that comparison lives inside Team Comparison instead.
+ * Five content tabs replace the former jump navigation. Situational Trends is
+ * a descriptive research/context panel backed by its own generated current-
+ * season artifact; it remains separate from every projection and comparison
+ * resolver on this page.
  *
  * Metrics absent from the artifacts (first downs, third down, time of
  * possession) resolve to null and keep rendering "N/A". Nothing is ever
@@ -139,6 +141,7 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: a missing market artifact leaves only the
   // market rows unavailable.
   const { artifact: marketArtifact } = useNflMatchupMarket();
+  const situationalTrends = useNflSituationalTrends();
   // Independent optional enrichment: a missing EPA artifact leaves only the six
   // EPA rows unavailable.
   const { artifact: epaArtifact } = useNflMatchupEpa();
@@ -537,6 +540,15 @@ export default function NFLMatchupDetail() {
         {isLegacyObserved && (
           <MatchupBookSays matchup={matchup} market={market} projection={projection} />
         )}
+      </div>
+
+      <div {...panelProps("trends")}>
+        <MatchupSituationalTrendsPanel
+          matchup={matchup}
+          artifact={situationalTrends.artifact}
+          loading={situationalTrends.loading}
+          error={situationalTrends.error}
+        />
       </div>
 
       <div {...panelProps("availability")}>
