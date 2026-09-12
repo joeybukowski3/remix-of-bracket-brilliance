@@ -8,6 +8,7 @@ import {
   TREND_DEFINITIONS,
   blowoutThresholds,
   calculateRestDays,
+  gradeTeamAts,
   isByeGap,
   isDivisionalMatchup,
   isLesserFavorite,
@@ -33,6 +34,16 @@ import {
   roadFavorite,
   underdogSpreadBand,
 } from "./nfl-situational-trends-phase2b-core.mjs";
+import {
+  PHASE2C_TREND_IDS,
+  isWeek1FavoriteAtsLoss,
+  isWeek1FavoriteLostOutright,
+  isWeek1UnderdogWonOutright,
+  marginAtLeast,
+  marketRole,
+  priorSeasonPlayoffStatus,
+  priorSeasonRecordRole,
+} from "./nfl-situational-trends-phase2c-core.mjs";
 
 export const CURRENT_TREND_SCHEMA_VERSION = "nfl-situational-trend-matchups-v1";
 
@@ -47,6 +58,7 @@ export const QUALIFICATION_STATUS = Object.freeze({
 export const CURRENT_TREND_IDS = Object.freeze([
   ...TREND_DEFINITIONS.map((trend) => trend.id),
   ...PHASE2B_TREND_IDS,
+  ...PHASE2C_TREND_IDS,
 ]);
 
 const finite = (value) => Number.isFinite(value);
@@ -127,6 +139,15 @@ export function evaluateCurrentTrend(row, trendId) {
   const spread = row.teamSpread;
   const previous = row.previousResult
     ? { ...row.previousResult, teamSpread: row.previousTeamSpread }
+    : null;
+  const week1Gate = () => (row.week === 1 ? null : notApplicable(`This is a Week 1 definition; the current game is Week ${row.week ?? "unknown"}.`));
+  const week2Gate = () => {
+    if (row.week !== 2) return notApplicable(`This is a Week 2 definition; the current game is Week ${row.week ?? "unknown"}.`);
+    if (!row.previousGame || row.previousGame.week !== 1) return notApplicable("Week 2 bounce-back definitions require an immediately previous Week 1 game.");
+    return previousGate();
+  };
+  const opponentWeek1 = row.opponentPreviousResult
+    ? { ...row.opponentPreviousResult, teamSpread: row.opponentPreviousTeamSpread }
     : null;
 
   switch (trendId) {
@@ -301,6 +322,205 @@ export function evaluateCurrentTrend(row, trendId) {
       const scoreVariant = `${scored ? "scored" : "allowed"}-${band}`;
       return confirmed(`${scored ? "Scored" : "Allowed"} ${points} points in the previous game.`, [resultVariant, ...commonCurrentVariants(row), scoreVariant].filter(Boolean));
     }
+    case "week1-home-favorites": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (row.venue !== "home") return notApplicable("The team is not at a non-neutral home venue.");
+      if (!finite(spread)) return marketUnavailable();
+      if (marketRole(spread) !== "favorite") return notApplicable("The home team is not the current favorite.");
+      return confirmed(`Week 1 home favorite listed at ${spread}.`, [favoriteSpreadBand(spread)].filter(Boolean));
+    }
+    case "week1-home-underdogs": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (row.venue !== "home") return notApplicable("The team is not at a non-neutral home venue.");
+      if (!finite(spread)) return marketUnavailable();
+      if (marketRole(spread) !== "underdog") return notApplicable("The home team is not the current underdog.");
+      const band = underdogSpreadBand(spread)?.replace("underdog-", "dog-");
+      return confirmed(`Week 1 home underdog listed at +${spread}.`, band ? [band] : []);
+    }
+    case "week1-road-favorites": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (row.venue !== "away") return notApplicable("The team is not at a true road venue.");
+      if (!finite(spread)) return marketUnavailable();
+      if (marketRole(spread) !== "favorite") return notApplicable("The road team is not the current favorite.");
+      return confirmed(`Week 1 road favorite listed at ${spread}.`, [favoriteSpreadBand(spread)].filter(Boolean));
+    }
+    case "week1-road-underdogs": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (row.venue !== "away") return notApplicable("The team is not at a true road venue.");
+      if (!finite(spread)) return marketUnavailable();
+      if (marketRole(spread) !== "underdog") return notApplicable("The road team is not the current underdog.");
+      const band = underdogSpreadBand(spread)?.replace("underdog-", "dog-");
+      return confirmed(`Week 1 road underdog listed at +${spread}.`, band ? [band] : []);
+    }
+    case "week1-divisional-home-favorites": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (!row.divisional || row.venue !== "home") return notApplicable("This is not a Week 1 divisional home matchup.");
+      if (!finite(spread)) return marketUnavailable();
+      return marketRole(spread) === "favorite"
+        ? confirmed("Week 1 divisional home favorite.")
+        : notApplicable("The home team is not the current favorite.");
+    }
+    case "week1-divisional-home-underdogs": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (!row.divisional || row.venue !== "home") return notApplicable("This is not a Week 1 divisional home matchup.");
+      if (!finite(spread)) return marketUnavailable();
+      return marketRole(spread) === "underdog"
+        ? confirmed("Week 1 divisional home underdog.")
+        : notApplicable("The home team is not the current underdog.");
+    }
+    case "week1-favorites-by-spread-band": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (!finite(spread)) return marketUnavailable();
+      if (marketRole(spread) !== "favorite") return notApplicable("The team is not the current favorite.");
+      return confirmed(`Week 1 favorite listed at ${spread}.`, [locationVariant(row), favoriteSpreadBand(spread)].filter(Boolean));
+    }
+    case "week1-underdogs-by-spread-band": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (!finite(spread)) return marketUnavailable();
+      if (marketRole(spread) !== "underdog") return notApplicable("The team is not the current underdog.");
+      const band = underdogSpreadBand(spread)?.replace("underdog-", "dog-");
+      return confirmed(`Week 1 underdog listed at +${spread}.`, [locationVariant(row), band].filter(Boolean));
+    }
+    case "week1-double-digit-favorites":
+    case "week1-double-digit-underdogs": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (!finite(spread)) return marketUnavailable();
+      const role = doubleDigitClassification(spread);
+      const wanted = trendId === "week1-double-digit-favorites" ? "favorite" : "underdog";
+      if (role !== wanted) return notApplicable(`The team is not a Week 1 double-digit ${wanted}.`);
+      const margin = doubleDigitMarginBand(spread);
+      return confirmed(`Week 1 market spread is ${spread > 0 ? "+" : ""}${spread}.`, [locationVariant(row), margin && `margin-${margin}`].filter(Boolean));
+    }
+    case "week1-prior-season-playoff-team":
+    case "week1-prior-season-non-playoff-team": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (row.teamPriorSeasonPlayoffStatus == null) return status(QUALIFICATION_STATUS.unavailable, "Prior-season playoff participation is unavailable.");
+      const wanted = trendId === "week1-prior-season-playoff-team" ? "playoff" : "non-playoff";
+      if (row.teamPriorSeasonPlayoffStatus !== wanted) return notApplicable(`The team is not a prior-season ${wanted} team.`);
+      return confirmed(`The team was a prior-season ${wanted} team.`, commonCurrentVariants(row));
+    }
+    case "week1-prior-season-winning-vs-losing": {
+      const gate = week1Gate();
+      if (gate) return gate;
+      if (row.teamPriorSeasonRecordRole == null) return status(QUALIFICATION_STATUS.unavailable, "Prior-season record is unavailable or exactly .500.");
+      return confirmed(`The team's prior-season record was a ${row.teamPriorSeasonRecordRole} record.`, [`${row.teamPriorSeasonRecordRole}-team`]);
+    }
+    case "week2-after-0-1-start":
+    case "week2-after-1-0-start": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      const wanted = trendId === "week2-after-0-1-start" ? "L" : "W";
+      const previousSu = previous.pointMargin > 0 ? "W" : previous.pointMargin < 0 ? "L" : "T";
+      if (previousSu !== wanted) return notApplicable(`The team did not start ${wanted === "L" ? "0-1" : "1-0"}.`);
+      return confirmed(`The team started ${wanted === "L" ? "0-1" : "1-0"}.`, commonCurrentVariants(row));
+    }
+    case "week2-after-week1-ats-loss":
+    case "week2-after-week1-ats-win": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      if (!finite(previous.teamSpread)) return marketUnavailable("Awaiting the Week 1 market spread.");
+      const wanted = trendId === "week2-after-week1-ats-loss" ? "L" : "W";
+      const previousAts = gradeTeamAts(previous.pointMargin, previous.teamSpread);
+      if (previousAts !== wanted) return notApplicable(`The Week 1 ATS grade was not a ${wanted === "L" ? "loss" : "win"}.`);
+      return confirmed(`Week 1 ATS grade was a ${wanted === "L" ? "loss" : "win"}.`, commonCurrentVariants(row));
+    }
+    case "week2-after-week1-favorite-failed-to-cover": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      if (!finite(previous.teamSpread)) return marketUnavailable("Awaiting the Week 1 market spread.");
+      const previousAts = gradeTeamAts(previous.pointMargin, previous.teamSpread);
+      if (!isWeek1FavoriteAtsLoss({ previousTeamSpread: previous.teamSpread, previousAtsResult: previousAts })) {
+        return notApplicable("The team was not a Week 1 favorite that failed to cover.");
+      }
+      return confirmed("The team was a Week 1 favorite that failed to cover.", commonCurrentVariants(row));
+    }
+    case "week2-home-favorite-after-week1-ats-loss": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      if (row.venue !== "home") return notApplicable("The team is not at a non-neutral home venue.");
+      if (!finite(previous.teamSpread)) return marketUnavailable("Awaiting the Week 1 market spread.");
+      const previousAts = gradeTeamAts(previous.pointMargin, previous.teamSpread);
+      if (!isWeek1FavoriteAtsLoss({ previousTeamSpread: previous.teamSpread, previousAtsResult: previousAts })) {
+        return notApplicable("The team was not a Week 1 favorite that failed to cover.");
+      }
+      return confirmed("Home team after an ATS loss as a Week 1 favorite.", [marketVariant(row)].filter(Boolean));
+    }
+    case "week2-after-week1-favorite-lost-outright": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      if (!finite(previous.teamSpread)) return marketUnavailable("Awaiting the Week 1 market spread.");
+      if (!isWeek1FavoriteLostOutright({ previousTeamSpread: previous.teamSpread, previousPointMargin: previous.pointMargin })) {
+        return notApplicable("The team was not a Week 1 favorite that lost outright.");
+      }
+      return confirmed("The team was a Week 1 favorite that lost outright.", commonCurrentVariants(row));
+    }
+    case "week2-after-week1-underdog-won-outright": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      if (!finite(previous.teamSpread)) return marketUnavailable("Awaiting the Week 1 market spread.");
+      if (!isWeek1UnderdogWonOutright({ previousTeamSpread: previous.teamSpread, previousPointMargin: previous.pointMargin })) {
+        return notApplicable("The team was not a Week 1 underdog that won outright.");
+      }
+      return confirmed("The team was a Week 1 underdog that won outright.", commonCurrentVariants(row));
+    }
+    case "week2-after-week1-win-10-plus":
+    case "week2-after-week1-win-14-plus": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      const threshold = trendId === "week2-after-week1-win-14-plus" ? 14 : 10;
+      if (!(previous.pointMargin > 0) || !marginAtLeast(previous.pointMargin, threshold)) {
+        return notApplicable(`The team did not win Week 1 by at least ${threshold} points.`);
+      }
+      return confirmed(`Won Week 1 by ${previous.pointMargin} points.`, commonCurrentVariants(row));
+    }
+    case "week2-after-week1-loss-10-plus":
+    case "week2-after-week1-loss-14-plus": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      const threshold = trendId === "week2-after-week1-loss-14-plus" ? 14 : 10;
+      if (!(previous.pointMargin < 0) || !marginAtLeast(previous.pointMargin, threshold)) {
+        return notApplicable(`The team did not lose Week 1 by at least ${threshold} points.`);
+      }
+      return confirmed(`Lost Week 1 by ${Math.abs(previous.pointMargin)} points.`, commonCurrentVariants(row));
+    }
+    case "week2-0-1-favorite":
+    case "week2-0-1-underdog":
+    case "week2-1-0-favorite":
+    case "week2-1-0-underdog": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      const wantedRecord = trendId.startsWith("week2-0-1") ? "L" : "W";
+      const previousSu = previous.pointMargin > 0 ? "W" : previous.pointMargin < 0 ? "L" : "T";
+      if (previousSu !== wantedRecord) return notApplicable(`The team did not start ${wantedRecord === "L" ? "0-1" : "1-0"}.`);
+      if (!finite(spread)) return marketUnavailable();
+      const wantedRole = trendId.endsWith("favorite") ? "favorite" : "underdog";
+      if (marketRole(spread) !== wantedRole) return notApplicable(`The team is not the current ${wantedRole}.`);
+      return confirmed(`${wantedRecord === "L" ? "0-1" : "1-0"} team and current ${wantedRole}.`, [locationVariant(row)].filter(Boolean));
+    }
+    case "week2-0-1-vs-1-0-opponent":
+    case "week2-1-0-vs-0-1-opponent": {
+      const gate = week2Gate();
+      if (gate) return gate;
+      if (!opponentWeek1) return status(QUALIFICATION_STATUS.awaitingPriorResult, "Awaiting the opponent's Week 1 result.");
+      const teamWanted = trendId === "week2-0-1-vs-1-0-opponent" ? "L" : "W";
+      const opponentWanted = teamWanted === "L" ? "W" : "L";
+      const previousSu = previous.pointMargin > 0 ? "W" : previous.pointMargin < 0 ? "L" : "T";
+      const opponentSu = opponentWeek1.pointMargin > 0 ? "W" : opponentWeek1.pointMargin < 0 ? "L" : "T";
+      if (previousSu !== teamWanted || opponentSu !== opponentWanted) {
+        return notApplicable(`The team/opponent Week 1 records do not match ${teamWanted === "L" ? "0-1 vs 1-0" : "1-0 vs 0-1"}.`);
+      }
+      return confirmed(`${teamWanted === "L" ? "0-1 team facing a 1-0 opponent" : "1-0 team facing an 0-1 opponent"}.`, [locationVariant(row)].filter(Boolean));
+    }
     default:
       return status(QUALIFICATION_STATUS.unavailable, "Unknown trend definition.");
   }
@@ -323,8 +543,20 @@ function buildMeetingNumbers(games, divisionByTeam) {
   return numberByGame;
 }
 
+function priorSeasonRecordByTeam(priorSeasonResults) {
+  const records = new Map();
+  const bump = (team, key) => records.set(team, { ...(records.get(team) ?? { wins: 0, losses: 0, ties: 0 }), [key]: (records.get(team)?.[key] ?? 0) + 1 });
+  for (const result of priorSeasonResults) {
+    if (result.seasonType !== "REG" || !result.final || !finite(result.homeScore) || !finite(result.awayScore)) continue;
+    if (result.homeScore > result.awayScore) { bump(result.homeAbbr, "wins"); bump(result.awayAbbr, "losses"); }
+    else if (result.homeScore < result.awayScore) { bump(result.awayAbbr, "wins"); bump(result.homeAbbr, "losses"); }
+    else { bump(result.homeAbbr, "ties"); bump(result.awayAbbr, "ties"); }
+  }
+  return records;
+}
+
 /** Build canonical team-game contexts before evaluating any trend. */
-export function buildCurrentTeamContexts({ season, games, results, teams, priorSeasonGames = [], currentMarket = {} }) {
+export function buildCurrentTeamContexts({ season, games, results, teams, priorSeasonGames = [], priorSeasonResults = [], currentMarket = {} }) {
   const targetGames = games
     .filter((game) => game.season === season && game.seasonType === "REG")
     .map((game) => ({ ...game, kickoffUtc: game.kickoffUtc ?? game.dateUtc ?? null }))
@@ -334,6 +566,8 @@ export function buildCurrentTeamContexts({ season, games, results, teams, priorS
   const priorPlayoffTeams = new Set(
     priorSeasonGames.filter((game) => game.seasonType !== "REG").flatMap((game) => [game.homeAbbr, game.awayAbbr])
   );
+  const priorSeasonKnown = priorSeasonGames.length > 0;
+  const priorRecords = priorSeasonRecordByTeam(priorSeasonResults);
   const meetingNumberByGame = buildMeetingNumbers(targetGames, divisionByTeam);
   const contexts = [];
 
@@ -358,6 +592,7 @@ export function buildCurrentTeamContexts({ season, games, results, teams, priorS
         schemaVersion: "nfl-situational-trend-current-team-game-v1",
         rowId: `${game.gameId}:${team}`,
         season,
+        week: game.week,
         team,
         opponent: side.opponent,
         venue: side.venue,
@@ -365,6 +600,8 @@ export function buildCurrentTeamContexts({ season, games, results, teams, priorS
         game,
         previousGame,
         nextGame,
+        teamPriorSeasonPlayoffStatus: priorSeasonPlayoffStatus(priorSeasonKnown ? priorPlayoffTeams.has(team) : null),
+        teamPriorSeasonRecordRole: priorSeasonRecordRole(priorRecords.get(team) ?? null),
         previousResult: previousGame ? resultFor(resultByGame.get(previousGame.gameId), team) : null,
         firstMeetingResult: firstMeeting ? resultFor(resultByGame.get(firstMeeting.gameId), team) : null,
         teamSpread: spreadFor(currentMarket[game.gameId], team),
@@ -388,6 +625,8 @@ export function buildCurrentTeamContexts({ season, games, results, teams, priorS
     const opponent = byRowId.get(`${row.game.gameId}:${row.opponent}`);
     row.opponentRestDays = opponent?.restDays ?? null;
     row.restDifferential = finite(row.restDays) && finite(row.opponentRestDays) ? row.restDays - row.opponentRestDays : null;
+    row.opponentPreviousResult = opponent?.previousResult ?? null;
+    row.opponentPreviousTeamSpread = opponent?.previousTeamSpread ?? null;
   }
   return contexts.sort((a, b) => (a.kickoffUtc ?? "").localeCompare(b.kickoffUtc ?? "") || a.game.gameId.localeCompare(b.game.gameId) || a.team.localeCompare(b.team));
 }

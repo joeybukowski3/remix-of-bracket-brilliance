@@ -91,6 +91,22 @@ uses the existing grading, fixed windows, uncertainty, evidence, and confidence
 conventions, retains weak angles, and changes no Phase 1/2 artifact or
 production behavior.
 
+The [Phase 2C Early Season Study](../research/nfl-situational-trends-phase2c.md)
+adds a predeclared Week 1 / Week 2 angle family restricted to those two weeks
+of the same locked Phase 1 team-game artifact: 13 Week 1 families (home/road
+favorite and underdog roles, divisional home role, fixed spread bands,
+double-digit role, and prior-season playoff/winning-vs-losing record status)
+and 18 Week 2 bounce-back families (0-1/1-0 starts, Week 1 ATS win/loss,
+favorite-failed-to-cover, outright upset follow-ups, win/loss margin bands,
+and current-role/opponent-record combinations). Prior-season playoff
+participation and regular-season win-loss record are computed from the same
+locked nflverse snapshot Phase 1 hashes; a team's own record is never
+classified winning or losing when it is exactly .500. Week 1/2 sample sizes
+are treated conservatively and a high raw ATS% never implies a noteworthy
+label on its own. Phase 2C reuses the Phase 1 grading/market/spread-band
+primitives and the Phase 2B variant builder and evidence classifier
+unchanged, and changes no Phase 1/2/2B artifact or production behavior.
+
 ### Team Comparison projection lens
 
 The additive `2026 Projection` comparison lens uses the canonical current Power Rating as model context and a separate, validated season-stat contract. No EPA/success/yardage/trench forecasts are inferred from ratings or copied from observed data. See [Projected Comparison contract and source inventory](../features/nfl-projected-comparison.md) for every catalogue metric's readiness, identity/rank/provenance rules, and the framework-only publication boundary. This does not change any football model formula or prediction archive.
