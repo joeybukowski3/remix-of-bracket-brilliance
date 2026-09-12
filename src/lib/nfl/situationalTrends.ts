@@ -9,7 +9,8 @@ export type TrendQualificationStatus =
   | "AWAITING_MARKET"
   | "AWAITING_PRIOR_RESULT"
   | "UNAVAILABLE"
-  | "NOT_APPLICABLE";
+  | "NOT_APPLICABLE"
+  | "MATCHUP_PENDING";
 
 export type SituationalTrendMetrics = {
   qualifyingTeamGames: number;
@@ -277,4 +278,5 @@ export const TREND_STATUS_LABELS: Record<TrendQualificationStatus, string> = {
   AWAITING_PRIOR_RESULT: "Awaiting prior-game result",
   UNAVAILABLE: "Unavailable",
   NOT_APPLICABLE: "Not applicable",
+  MATCHUP_PENDING: "Awaiting opponent status",
 };

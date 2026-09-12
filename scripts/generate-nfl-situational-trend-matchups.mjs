@@ -10,8 +10,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   CURRENT_TREND_SCHEMA_VERSION,
-  QUALIFICATION_STATUS,
   buildCurrentTrendEvaluations,
+  resolveMatchupTrendPresentation,
 } from "./lib/nfl-situational-trend-current-core.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -299,6 +299,7 @@ function main() {
       const rows = evaluationsByGame.get(game.gameId) ?? [];
       const awayTeam = teamByAbbr.get(game.awayAbbr);
       const homeTeam = teamByAbbr.get(game.homeAbbr);
+      const { qualifiers, pending } = resolveMatchupTrendPresentation(rows);
       return {
         gameId: game.gameId,
         week: game.week,
@@ -309,11 +310,8 @@ function main() {
         gameSlug: buildSlug(game, teamByAbbr),
         kickoff: game.dateUtc,
         status: game.status,
-        qualifiers: rows.filter((row) => row.status === QUALIFICATION_STATUS.confirmed),
-        pending: rows.filter((row) => ![
-          QUALIFICATION_STATUS.confirmed,
-          QUALIFICATION_STATUS.notApplicable,
-        ].includes(row.status)),
+        qualifiers,
+        pending,
       };
     });
 

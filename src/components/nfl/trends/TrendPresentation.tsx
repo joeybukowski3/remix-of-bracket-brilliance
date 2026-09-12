@@ -118,9 +118,9 @@ export function NflTrendMatchupIdentity({
   );
 }
 
-function RoiSignal({ value }: { value: number }) {
-  const positive = value > 0;
-  const negative = value < 0;
+export function RoiSignal({ value }: { value: number | null }) {
+  const positive = (value ?? 0) > 0;
+  const negative = (value ?? 0) < 0;
   const Icon = positive ? TrendingUp : negative ? TrendingDown : Minus;
   const label = positive ? "Positive historical ROI" : negative ? "Negative historical ROI" : "Neutral historical ROI";
   return (

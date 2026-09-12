@@ -640,3 +640,88 @@ export function buildCurrentTrendEvaluations(inputs) {
     ...evaluateCurrentTrend(row, trendId),
   })));
 }
+
+export const MATCHUP_DIRECTIONAL_STATUS = Object.freeze({
+  matchupPending: "MATCHUP_PENDING",
+});
+
+const PENDING_QUALIFICATION_STATUSES = new Set([
+  QUALIFICATION_STATUS.awaitingMarket,
+  QUALIFICATION_STATUS.awaitingPriorResult,
+  QUALIFICATION_STATUS.unavailable,
+]);
+
+/**
+ * Trend ids whose predefined variants are mutually exclusive team roles
+ * (e.g. prior-season winning vs. losing) rather than incidental context
+ * (venue, market side). Only these trends can distinguish two same-game
+ * CONFIRMED rows by variant instead of suppressing the shared trendId.
+ */
+const OPPOSING_VARIANT_TREND_IDS = new Set(["week1-prior-season-winning-vs-losing"]);
+
+function isSameDirectionalClaim(trendId, rowA, rowB) {
+  if (!OPPOSING_VARIANT_TREND_IDS.has(trendId)) return true;
+  const [variantA] = rowA.variantIds;
+  const [variantB] = rowB.variantIds;
+  if (!variantA || !variantB) return true;
+  return variantA === variantB;
+}
+
+function matchupPendingRow(confirmedRow, blockedRow) {
+  return {
+    ...confirmedRow,
+    status: MATCHUP_DIRECTIONAL_STATUS.matchupPending,
+    reason: `${confirmedRow.team.toUpperCase()} individually qualifies, but ${blockedRow.team.toUpperCase()}'s status for this trend is still ${blockedRow.status} — a directional matchup trend is not yet confirmed.`,
+  };
+}
+
+/**
+ * Reduce the raw per-team evaluations for one game into matchup-ready
+ * qualifiers/pending lists per the live-matchup directionality rule:
+ * a trend is only surfaced when exactly one team confirms it. Both-confirmed
+ * angles are suppressed (unless the trend defines mutually exclusive
+ * variants); a confirmed team paired with a still-pending opponent yields a
+ * pending state rather than an inferred directional claim.
+ */
+export function resolveMatchupTrendPresentation(gameRows) {
+  const byTrend = new Map();
+  for (const row of gameRows) {
+    const list = byTrend.get(row.trendId) ?? [];
+    list.push(row);
+    byTrend.set(row.trendId, list);
+  }
+
+  const qualifiers = [];
+  const pending = [];
+
+  for (const teamRows of byTrend.values()) {
+    const confirmedRows = teamRows.filter((row) => row.status === QUALIFICATION_STATUS.confirmed);
+    const otherRows = teamRows.filter((row) => row.status !== QUALIFICATION_STATUS.confirmed);
+
+    if (confirmedRows.length === 2) {
+      const [rowA, rowB] = confirmedRows;
+      if (!isSameDirectionalClaim(rowA.trendId, rowA, rowB)) qualifiers.push(rowA, rowB);
+      continue;
+    }
+
+    if (confirmedRows.length === 1) {
+      const [confirmedRow] = confirmedRows;
+      const blockedOpponent = otherRows.find((row) => PENDING_QUALIFICATION_STATUSES.has(row.status));
+      if (blockedOpponent) {
+        pending.push(matchupPendingRow(confirmedRow, blockedOpponent));
+      } else {
+        qualifiers.push(confirmedRow);
+      }
+      for (const row of otherRows) {
+        if (PENDING_QUALIFICATION_STATUSES.has(row.status)) pending.push(row);
+      }
+      continue;
+    }
+
+    for (const row of teamRows) {
+      if (PENDING_QUALIFICATION_STATUSES.has(row.status)) pending.push(row);
+    }
+  }
+
+  return { qualifiers, pending };
+}
