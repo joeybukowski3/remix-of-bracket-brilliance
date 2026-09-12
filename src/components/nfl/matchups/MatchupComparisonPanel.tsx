@@ -6,8 +6,7 @@ import MatchupCategoryAdvantageChip, {
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
-import MatchupMetricTable from "@/components/nfl/matchups/MatchupMetricTable";
-import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
@@ -182,20 +181,6 @@ export default function MatchupComparisonPanel({
     matchup.home.teamName
   );
 
-  /**
-   * One category's metrics as the shared comparison table — the same component
-   * the Overview snapshot uses, at the larger `detail` scale.
-   */
-  const renderTable = (rows: MatchupDisplayMetric[], categoryLabel: string) => (
-    <MatchupMetricTable
-      variant="detail"
-      metrics={rows}
-      matchup={matchup}
-      projected={projection || !!dedicatedLabel}
-      caption={`${categoryLabel} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
-    />
-  );
-
   const tabs: MatchupTabDef[] = [
     ...MATCHUP_CATEGORIES.map((category) => ({
       id: category.id,
@@ -206,7 +191,7 @@ export default function MatchupComparisonPanel({
   ];
 
   return (
-    <div className="matchup-comparison-density @container space-y-2">
+    <div className="@container space-y-2">
       {categorySummary && (
         <p className="px-0.5 text-[12px] leading-5 text-slate-700">{categorySummary}</p>
       )}
@@ -264,12 +249,12 @@ export default function MatchupComparisonPanel({
               hidden={activeTab !== category.id}
               className={cn(
                 MATCHUP_SECTION_SCROLL_MT,
-                "space-y-2 px-3 py-3 sm:px-4 motion-safe:transition-colors motion-safe:duration-700",
+                "space-y-2 px-3 py-2 sm:px-4 sm:py-2 motion-safe:transition-colors motion-safe:duration-700",
                 highlighted === category.id && "bg-sky-50"
               )}
             >
               {result && (
-                <div className="flex justify-center pb-1">
+                <div className="flex justify-center sm:pb-0.5">
                   <span className="matchup-lead-pill">
                     <CategoryAdvantageMeta
                       result={result}
@@ -280,8 +265,16 @@ export default function MatchupComparisonPanel({
                   </span>
                 </div>
               )}
-              <MatchupComparisonTeamHeader matchup={matchup} sticky />
-              <div className="matchup-metric-table-group">{renderTable(rows, category.label)}</div>
+              <MatchupComparisonCard
+                title={category.label}
+                titleId={`${category.hash}-card-heading`}
+                matchup={matchup}
+                metrics={rows}
+                variant="detail"
+                projected={projection || !!dedicatedLabel}
+                stickyHeader
+                caption={`${category.label} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
+              />
             </div>
           );
         })}

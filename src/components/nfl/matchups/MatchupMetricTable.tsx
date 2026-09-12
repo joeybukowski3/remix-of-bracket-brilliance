@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * The one comparison table shared by the Overview → Team Comparison Snapshot
- * (`variant="snapshot"`, compact bento density) and the Team Comparison tab
- * (`variant="detail"`, the approved larger presentation inside a centred
- * max-width column).
+ * (`variant="snapshot"`) and the Team Comparison tab (`variant="detail"`).
+ * Both use the same compact visual scale; detail adds the raw values beneath
+ * the rail without changing the card, badge, or row system.
  *
  * Both surfaces render this exact component so they cannot drift into two
  * visual systems. Every row is:
@@ -304,8 +304,14 @@ export default function MatchupMetricTable({
         <tbody>
           {metrics.map((metric) => {
             const model = railModelFor(metric);
+            const unavailable =
+              metric.away.formatted === METRIC_NA && metric.home.formatted === METRIC_NA;
             return (
-              <tr key={metric.key}>
+              <tr
+                key={metric.key}
+                data-availability={unavailable ? "none" : "available"}
+                data-context={metric.contextLabel ? "true" : "false"}
+              >
                 <td data-cell="away">
                   <ValueCell metric={metric} side="away" abbr={matchup.away.abbr} projected={projected} />
                 </td>

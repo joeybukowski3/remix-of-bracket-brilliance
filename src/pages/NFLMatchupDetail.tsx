@@ -453,7 +453,10 @@ export default function NFLMatchupDetail() {
         {isLegacyObserved && <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />}
       </div>
 
-      <div {...panelProps("comparison")} className="space-y-2">
+      <div
+        {...panelProps("comparison")}
+        className="matchup-team-comparison-density space-y-2"
+      >
         <MatchupDataControls
           settings={sampleSettings}
           onChange={setSampleSettings}

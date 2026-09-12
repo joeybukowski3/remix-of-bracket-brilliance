@@ -392,32 +392,22 @@
 .matchup-edge-map p { margin: 0.35rem 0 0 !important; font-size: 0.58rem !important; line-height: 0.85rem !important; }
 
 .matchup-snapshot__grid { display: grid; gap: 0.42rem; padding: 0.42rem; }
-.matchup-snapshot__block { overflow: hidden; border: 1px solid var(--sheet-border); border-radius: 0.3rem; background: var(--sheet-panel); }
-.matchup-snapshot__block h3 { border-bottom: 1px solid var(--sheet-border); padding: 0.34rem 0.48rem; background: var(--sheet-band); color: var(--sheet-text); font-size: 0.61rem; font-weight: 850; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
-.matchup-snapshot__card-header { padding: 0.3rem 0.42rem 0.36rem; }
-.matchup-snapshot__tables.is-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.matchup-snapshot__tables.is-split .matchup-metric-table + .matchup-metric-table { border-left: 1px solid var(--sheet-border); }
+.matchup-comparison-card { overflow: hidden; border: 1px solid var(--sheet-border); border-radius: 0.3rem; background: var(--sheet-panel); }
+.matchup-comparison-card > h3 { border-bottom: 1px solid var(--sheet-border); padding: 0.34rem 0.48rem; background: var(--sheet-band); color: var(--sheet-text); font-size: 0.61rem; font-weight: 850; text-align: center; text-transform: uppercase; letter-spacing: 0.05em; }
+.matchup-comparison-card__team-header { padding: 0.3rem 0.42rem 0.36rem; }
+.matchup-comparison-card__team-role { margin-top: 0.12rem; color: var(--sheet-muted); font-size: 0.47rem; font-weight: 750; line-height: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.matchup-comparison-card__tables.is-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.matchup-comparison-card__tables.is-split .matchup-metric-table + .matchup-metric-table { border-left: 1px solid var(--sheet-border); }
 
 /* ------------------------------------------------------------------ *
  * Shared comparison table
  *
  * One visual language for the Overview → Team Comparison Snapshot
- * (default) and the Team Comparison tab (`[data-variant="detail"]`,
- * a larger type scale). Team cells show league rank only; the Edge
- * cell keeps the raw-difference / EVEN / N/A treatment.
+ * (default) and the Team Comparison tab (`[data-variant="detail"]`).
+ * The detail variant adds raw values without changing the Overview scale.
  * ------------------------------------------------------------------ */
 .matchup-metric-table table { width: 100%; border-collapse: collapse; font-size: 0.62rem; }
-.matchup-metric-table[data-variant="detail"] table { font-size: 0.72rem; }
-
-/* Detail surface: a centred, content-driven column rather than a full-width
-   stretch, so the rank tiles stay visually tied to the centred metric. The
-   approved Team Comparison mockup sets this at ~880px (57.5rem for the wider
-   Unit / Trenches tables), a deliberately substantial column that never runs
-   to the full page width. */
-.matchup-metric-table[data-variant="detail"] { max-width: 55rem; margin-inline: auto; }
-.matchup-metric-table-group { max-width: 55rem; margin-inline: auto; }
-.matchup-metric-table-group--wide { max-width: 57.5rem; }
-.matchup-metric-table-group--wide .matchup-metric-table[data-variant="detail"] { max-width: none; }
+.matchup-team-comparison-density .matchup-comparison-card { width: 100%; max-width: 55rem; margin-inline: auto; }
 .matchup-metric-table__col--metric,
 .matchup-metric-table__col--value,
 .matchup-metric-table__col--edge { width: auto; }
@@ -432,14 +422,6 @@
   column-gap: 0.3rem;
 }
 
-/* Detail: fixed, perfectly mirrored side columns for the rank tiles with a
-   flexible metric column between them, matching the approved mockup's
-   78px | 1fr | 78px geometry (56px on phones). */
-.matchup-metric-table[data-variant="detail"] thead tr,
-.matchup-metric-table[data-variant="detail"] tbody tr {
-  grid-template-columns: 78px minmax(0, 1fr) 78px;
-  column-gap: 1.375rem;
-}
 .matchup-metric-table thead th {
   padding: 0.26rem 0.35rem;
   color: var(--sheet-muted);
@@ -451,18 +433,10 @@
 }
 .matchup-metric-table thead th[data-cell="away"] { text-align: left; }
 .matchup-metric-table thead th[data-cell="home"] { text-align: right; }
-.matchup-metric-table[data-variant="detail"] thead th { padding: 0.42rem 0.5rem; font-size: 0.62rem; }
 .matchup-metric-table tbody tr { border-bottom: 1px solid var(--sheet-border-soft); padding: 0.24rem 0.26rem; row-gap: 0.14rem; }
 .matchup-metric-table[data-variant="detail"] tbody tr {
-  padding: 0.95rem 1.5rem;
-  row-gap: 0.3rem;
-  border-bottom: 0;
-  border-top: 1px solid var(--sheet-border-soft);
-}
-.matchup-metric-table[data-variant="detail"] tbody tr:first-child { border-top: 0; }
-/* Very light zebra — a whisper of alternation, not a stripe. */
-.matchup-metric-table[data-variant="detail"] tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--sheet-panel-2) 55%, transparent);
+  padding: 0.28rem 0.3rem;
+  row-gap: 0.1rem;
 }
 .matchup-metric-table[data-variant="snapshot"] tbody tr { padding: 0.28rem 0.2rem; row-gap: 0.1rem; }
 .matchup-metric-table tbody th,
@@ -481,34 +455,23 @@
   text-transform: uppercase;
 }
 .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] {
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1.15;
-  letter-spacing: 0.05em;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 0.82rem;
+  letter-spacing: 0.02em;
 }
 .matchup-metric-table__metric-name { display: block; }
 .matchup-metric-table__context { display: block; margin-top: 0.04rem; color: var(--sheet-muted); font-size: 0.46rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.8; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__context {
-  margin-top: 0.35rem;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  opacity: 1;
+  margin-top: 0.04rem;
+  font-size: 0.46rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
 }
 
 /* Detail column head — the split team header already carries identity, so this
    row is just a whispered "RANK … RANK" over the two side columns. */
-.matchup-metric-table[data-variant="detail"] thead th {
-  padding: 0.5rem 1.5rem;
-  background: var(--sheet-panel-2);
-  color: var(--sheet-faint);
-  font-size: 0.58rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  text-align: center;
-}
-.matchup-metric-table[data-variant="detail"] thead th[data-cell="away"],
-.matchup-metric-table[data-variant="detail"] thead th[data-cell="home"] { text-align: center; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__abbr { display: none; }
 
 .matchup-metric-table tbody td[data-cell="away"] { grid-column: 1; grid-row: 1; justify-self: start; }
@@ -519,8 +482,6 @@
 
 /* Detail: the rank tile fills its fixed side column and the raw values sit on
    their own line under the bar, one per side. */
-.matchup-metric-table[data-variant="detail"] tbody td[data-cell="away"],
-.matchup-metric-table[data-variant="detail"] tbody td[data-cell="home"] { justify-self: stretch; }
 .matchup-metric-table[data-variant="detail"] tbody td[data-cell="vals"] {
   display: flex;
   grid-column: 1 / -1;
@@ -531,7 +492,7 @@
   margin: 0 auto;
   padding: 0 0.15rem;
   width: 100%;
-  max-width: 22rem;
+  max-width: 12rem;
 }
 .matchup-metric-table[data-variant="detail"] tbody td[data-cell="edge"] { grid-row: 4; }
 
@@ -557,33 +518,19 @@
   background: var(--sheet-panel-2);
   color: var(--sheet-muted);
 }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  min-height: 3.5rem;
-  padding: 0.2rem 0.35rem;
-  border-radius: 0.75rem;
-  font-size: 1.2rem;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  line-height: 1;
-}
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value[data-ranked="false"] {
-  font-size: 0.95rem;
-}
 /* Raw value under each side of the bar. Secondary to the rank + metric; the
    advantaged side may take its team-colour emphasis, the other stays muted. */
 .matchup-metric-table__val {
   color: var(--sheet-muted);
-  font-size: 0.9rem;
+  font-size: 0.58rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 .matchup-metric-table__val--lead-away { color: var(--sheet-away); font-weight: 850; }
 .matchup-metric-table__val--lead-home { color: var(--sheet-home); font-weight: 850; }
 .matchup-metric-table__val--na { color: var(--sheet-faint); font-weight: 700; }
-.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__value {
+.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__value,
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
   padding: 0.07rem 0.32rem;
   font-size: 0.62rem;
 }
@@ -594,7 +541,7 @@
    canonical colour (--bar-fill). No directional fill for a tie or a
    not-comparable row. */
 .matchup-metric-table__bar { display: block; width: 100%; max-width: 12rem; margin: 0.05rem auto 0; }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar { max-width: 22rem; margin-top: 0.15rem; }
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar { max-width: 8.5rem; }
 .matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar { max-width: 8.5rem; }
 .matchup-metric-table__bar-track {
   position: relative;
@@ -605,14 +552,8 @@
   border-radius: 999px;
   background: var(--sheet-panel-2);
 }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track {
-  height: 0.85rem;
-  overflow: visible;
-  border: 0;
-  border-radius: 0.5rem;
-  background: var(--sheet-band);
-}
-.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar-track { height: 0.34rem; }
+.matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar-track,
+.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track { height: 0.34rem; }
 .matchup-metric-table__bar-fill {
   position: absolute;
   top: 0;
@@ -622,8 +563,6 @@
 }
 .matchup-metric-table__bar-fill--left { right: 50%; border-radius: 999px 0 0 999px; }
 .matchup-metric-table__bar-fill--right { left: 50%; border-radius: 0 999px 999px 0; }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--left { border-radius: 0.5rem 0 0 0.5rem; }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--right { border-radius: 0 0.5rem 0.5rem 0; }
 .matchup-metric-table__bar-tick {
   position: absolute;
   left: 50%;
@@ -634,25 +573,11 @@
   background: var(--sheet-text);
   opacity: 0.35;
 }
-.matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-tick {
-  top: -0.22rem;
-  bottom: -0.22rem;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--sheet-muted);
-  opacity: 0.9;
-}
 .matchup-metric-table__bar[data-side="even"] .matchup-metric-table__bar-tick,
 .matchup-metric-table__bar[data-side="none"] .matchup-metric-table__bar-tick { opacity: 0.5; }
 @media (prefers-reduced-motion: no-preference) {
   .matchup-metric-table__bar-fill { transition: width 240ms cubic-bezier(0.16, 1, 0.3, 1); }
 }
-
-/* Titled comparison table — a heading band above the shared table, the pair
-   wrapped as one bordered card. Mirrors the Overview snapshot's per-category
-   blocks so Success Rate by Period reads in the same language. */
-.matchup-metric-table-group { overflow: hidden; border: 1px solid var(--sheet-border); border-radius: 0.85rem; background: var(--sheet-panel); box-shadow: 0 2px 10px rgba(12, 21, 36, 0.05); }
-.nfl-matchup-sheet[data-theme="dark"] .matchup-metric-table-group { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
 
 /* Active-category leader pill, directly under the category controls. */
 .matchup-lead-pill {
@@ -670,23 +595,6 @@
   text-transform: uppercase;
 }
 .matchup-lead-pill .sr-only { position: absolute; }
-.matchup-metric-table-group__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; border-bottom: 1px solid var(--sheet-border); padding: 0.36rem 0.55rem; background: var(--sheet-band); }
-.matchup-metric-table-group__title { color: var(--sheet-text); font-size: 0.62rem; font-weight: 850; text-transform: uppercase; letter-spacing: 0.05em; }
-/* Centred group subhead ("PASSING") inside a possession table, per the mockup. */
-.matchup-metric-table-group__subhead {
-  padding: 0.55rem 0;
-  border-bottom: 1px solid var(--sheet-border-soft);
-  background: var(--sheet-panel-2);
-  color: var(--sheet-muted);
-  font-size: 0.66rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  text-align: center;
-  text-transform: uppercase;
-}
-.matchup-metric-table-group__aside { color: var(--sheet-muted); font-size: 0.54rem; font-weight: 700; }
-.matchup-metric-table-group .matchup-metric-table table { font-size: 0.66rem; }
-.matchup-metric-table-group .matchup-metric-table[data-variant="detail"] thead th { background: var(--sheet-panel-2); }
 .matchup-metric-table__edge {
   display: inline-grid;
   grid-template-columns: 1rem minmax(0, 1fr);
@@ -726,117 +634,16 @@
   }
 }
 
-/* ------------------------------------------------------------------ *
- * Split team-colour header (approved Team Comparison mockup)
- *
- * Away team left, home team right, at every width and regardless of
- * offense/defense role. Each side is tinted with that team's canonical
- * colour (injected as --team-away / --team-home by the component, with the
- * sheet's neutral away/home tokens as the fallback) and carries a thin
- * top accent in the same colour. A neutral VS divider sits between.
- * ------------------------------------------------------------------ */
-.matchup-team-split {
-  --team-away: var(--sheet-away);
-  --team-home: var(--sheet-home);
-  display: grid;
-  grid-template-columns: 1fr 62px 1fr;
-  align-items: stretch;
-  /* `clip` rounds the accent bars without creating a scroll container, so a
-     `position: sticky` header still pins on mobile. */
-  overflow: clip;
-  border: 1px solid var(--sheet-border-soft);
-  border-radius: 0.85rem;
-  background: var(--sheet-panel);
-}
-.matchup-team-split__side {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.8rem 1.05rem;
-  min-width: 0;
-}
-.matchup-team-split__side::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 4px;
-}
-.matchup-team-split__side--away {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--team-away) 24%, transparent), transparent 82%);
-}
-.matchup-team-split__side--away::before { background: var(--team-away); }
-.matchup-team-split__side--home {
-  flex-direction: row-reverse;
-  justify-content: flex-start;
-  text-align: right;
-  background: linear-gradient(270deg, color-mix(in srgb, var(--team-home) 24%, transparent), transparent 82%);
-}
-.matchup-team-split__side--home::before { background: var(--team-home); }
-.matchup-team-split__vs {
-  display: grid;
-  place-items: center;
-  border-inline: 1px solid var(--sheet-border-soft);
-  background: var(--sheet-panel);
-  color: var(--sheet-faint);
-  font-size: 0.62rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-}
-.matchup-team-split__body { min-width: 0; }
-.matchup-team-split__name {
-  overflow: hidden;
-  color: var(--sheet-text);
-  font-size: 0.95rem;
-  font-weight: 900;
-  line-height: 1.15;
-  letter-spacing: 0.01em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.matchup-team-split__role {
-  margin-top: 0.22rem;
-  color: var(--sheet-faint);
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.matchup-team-split__side--away .matchup-team-split__role--accent { color: var(--team-away); }
-.matchup-team-split__side--home .matchup-team-split__role--accent { color: var(--team-home); }
-
-@media (max-width: 639px) {
-  .matchup-team-split { grid-template-columns: 1fr 40px 1fr; border-radius: 0.7rem; }
-  .matchup-team-split__side { gap: 0.55rem; padding: 0.6rem 0.7rem; }
-  .matchup-team-split__name { font-size: 0.85rem; }
-  .matchup-team-split__role { margin-top: 0.15rem; font-size: 0.52rem; letter-spacing: 0.12em; }
-  .matchup-team-split__vs { font-size: 0.55rem; letter-spacing: 0.1em; }
-}
-
 /* Phone: same three-part row at a compact scale — away rank | metric | home
    rank on the top line, edge on a second line. Not a different pattern. */
 @media (max-width: 639px) {
-  .matchup-snapshot__tables.is-split { grid-template-columns: minmax(0, 1fr); }
-  .matchup-snapshot__tables.is-split .matchup-metric-table + .matchup-metric-table { border-left: 0; }
+  .matchup-comparison-card__tables.is-split { grid-template-columns: minmax(0, 1fr); }
+  .matchup-comparison-card__tables.is-split .matchup-metric-table + .matchup-metric-table { border-left: 0; border-top: 1px solid var(--sheet-border); }
   .matchup-metric-table thead th { font-size: 0.52rem; }
   .matchup-metric-table thead th[data-cell="metric"] { text-align: center; }
   .matchup-metric-table tbody tr { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 0.4rem; padding: 0.5rem 0.15rem; }
   .matchup-metric-table tbody th[data-cell="metric"] { font-size: 0.66rem; line-height: 0.84rem; }
 
-  /* Detail on phones: 56px | 1fr | 56px, 48px tiles, 12px track — the mockup's
-     mobile scale. Nothing is hidden to make it fit. */
-  .matchup-metric-table[data-variant="detail"] thead tr,
-  .matchup-metric-table[data-variant="detail"] tbody tr {
-    grid-template-columns: 56px minmax(0, 1fr) 56px;
-    column-gap: 0.75rem;
-  }
-  .matchup-metric-table[data-variant="detail"] tbody tr { padding: 0.8rem 0.5rem; }
-  .matchup-metric-table[data-variant="detail"] thead th { padding: 0.45rem 0.5rem; }
-  .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] { font-size: 0.8rem; line-height: 1.15; }
-  .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value { min-height: 3rem; border-radius: 0.6rem; font-size: 1rem; }
-  .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track { height: 0.75rem; }
   .matchup-metric-table[data-variant="detail"] tbody td[data-cell="vals"] { max-width: none; }
   .matchup-metric-table__abbr {
     display: block;
@@ -848,69 +655,13 @@
   }
 }
 
-/* ------------------------------------------------------------------ *
- * Success Rate by Period — responsive card grid (approved mockup)
- *
- * Two compact metric cards per row where space allows, one column when
- * narrow. Each card: a thin split team-colour cap, a tinted head with the
- * two crests and the centred metric title, then one shared comparison row.
- * ------------------------------------------------------------------ */
+/* Success Rate reuses the same comparison cards in a responsive grid. */
 .matchup-sr-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   max-width: 58rem;
   margin-inline: auto;
-}
-.matchup-sr-card {
-  --team-away: var(--sheet-away);
-  --team-home: var(--sheet-home);
-  overflow: hidden;
-  border: 1px solid var(--sheet-border-soft);
-  border-radius: 0.85rem;
-  background: var(--sheet-panel);
-}
-.matchup-sr-card__cap { display: flex; height: 4px; }
-.matchup-sr-card__cap i { flex: 1; }
-.matchup-sr-card__cap i:first-child { background: var(--team-away); }
-.matchup-sr-card__cap i:last-child { background: var(--team-home); }
-.matchup-sr-card__head {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid var(--sheet-border-soft);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--team-away) 9%, transparent),
-    transparent 38%,
-    transparent 62%,
-    color-mix(in srgb, var(--team-home) 9%, transparent)
-  );
-}
-.matchup-sr-card__title {
-  text-align: center;
-  color: var(--sheet-text);
-  font-size: 0.74rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.matchup-sr-card .matchup-metric-table[data-variant="detail"] { max-width: none; }
-.matchup-sr-card .matchup-metric-table[data-variant="detail"] thead { display: none; }
-.matchup-sr-card .matchup-metric-table[data-variant="detail"] tbody tr {
-  grid-template-columns: 62px minmax(0, 1fr) 62px;
-  column-gap: 0.9rem;
-  padding: 0.85rem 0.9rem 1rem;
-}
-.matchup-sr-card .matchup-metric-table[data-variant="detail"] tbody tr:nth-child(even) { background: transparent; }
-.matchup-sr-card .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value { min-height: 3rem; font-size: 1.05rem; }
-.matchup-sr-card .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] {
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  color: var(--sheet-faint);
 }
 @media (max-width: 720px) {
   .matchup-sr-grid { grid-template-columns: minmax(0, 1fr); }
@@ -1072,10 +823,10 @@ body.nfl-matchup-route[data-nfl-matchup-theme="dark"] > #root > div > header spa
   .matchup-overview__market { order: 6; }
   .matchup-overview__explainer { order: 7; }
   .nfl-matchup-sheet section { border-radius: 0.42rem !important; }
-  .matchup-comparison-density { row-gap: 0.35rem; }
-  .matchup-comparison-density section[aria-labelledby] > div:first-child { padding: 0.55rem 0.6rem; }
-  .matchup-comparison-density [id^="comparison-"] > h3 button { min-height: 2.6rem; padding: 0.42rem 0.5rem; }
-  .matchup-comparison-density [id^="comparison-"] > [id$="-panel"] { padding-inline: 0.3rem; padding-bottom: 0.3rem; }
+  .matchup-team-comparison-density { row-gap: 0.35rem; }
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child { padding: 0.55rem 0.6rem; }
+  .matchup-team-comparison-density [id^="comparison-"] > h3 button { min-height: 2.6rem; padding: 0.42rem 0.5rem; }
+  .matchup-team-comparison-density [id^="comparison-"] > [id$="-panel"] { padding-inline: 0.3rem; padding-bottom: 0.3rem; }
   .matchup-dense-section-body { padding: 0.45rem !important; }
   .matchup-unit-battle__header { padding: 0.45rem 0.5rem !important; }
   .matchup-unit-battle__crest { width: 1.5rem !important; height: 1.5rem !important; }
@@ -1195,3 +946,69 @@ body.nfl-matchup-route[data-nfl-matchup-theme="dark"] > #root > div > header spa
 }
 .nfl-h2h-rail[data-side="even"] .nfl-h2h-rail__tick,
 .nfl-h2h-rail[data-side="none"] .nfl-h2h-rail__tick { opacity: 0.5; }
+
+/* -------------------------------------------------------------------------
+ * Team Comparison desktop density
+ *
+ * This is deliberately rooted at the tab panel, not at any shared component.
+ * It therefore reaches Statistical Comparison, period splits, Unit Battles,
+ * Trenches and market comparison rows without changing their use elsewhere.
+ * Mobile keeps its purpose-built geometry above.
+ * ---------------------------------------------------------------------- */
+@media (min-width: 640px) {
+  .matchup-team-comparison-density > :not([hidden]) + :not([hidden]) {
+    margin-top: 0.375rem;
+  }
+
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child h2 {
+    margin-top: 0.125rem;
+    font-size: 0.8125rem;
+    line-height: 1rem;
+  }
+
+  .matchup-team-comparison-density section[aria-labelledby] > div:first-child p {
+    margin-top: 0.125rem;
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+  }
+
+  .matchup-team-comparison-density .matchup-dense-section-body {
+    padding: 0.5rem !important;
+  }
+
+  .matchup-team-comparison-density .matchup-lead-pill {
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.625rem;
+  }
+
+  .matchup-team-comparison-density .matchup-sr-grid {
+    gap: 0.5rem;
+  }
+
+  .matchup-team-comparison-density .matchup-comparison-row__grid > div {
+    padding-block: 0.375rem;
+  }
+
+  .matchup-team-comparison-density .matchup-market-row {
+    padding-block: 0.25rem;
+  }
+
+  .matchup-team-comparison-density .nfl-h2h-row {
+    padding-block: 0.375rem;
+  }
+
+  .matchup-team-comparison-density .nfl-h2h-rail {
+    margin-inline: auto;
+    max-width: 14rem;
+    padding-block: 0.0625rem;
+  }
+
+  .matchup-team-comparison-density .nfl-h2h-rail__track {
+    height: 0.375rem;
+  }
+}

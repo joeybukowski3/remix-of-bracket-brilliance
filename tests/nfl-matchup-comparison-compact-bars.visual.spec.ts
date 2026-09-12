@@ -3,7 +3,7 @@ import { expect, test } from "../playwright-fixture";
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8089";
 const route = "/nfl/matchups/new-england-patriots-at-seattle-seahawks";
 
-const WIDTHS = [390, 768, 1440] as const;
+const WIDTHS = [390, 768, 1280, 1440] as const;
 const SHOT_DIR = process.env.SHOT_DIR ?? "test-results/compact-bars";
 
 async function noBodyOverflow(page: import("@playwright/test").Page) {
@@ -45,8 +45,13 @@ for (const width of WIDTHS) {
   test(`${width}px — Team Comparison detail: centred title, capped width, tier tiles, team-colour bar`, async ({
     page,
   }, testInfo) => {
-    await page.setViewportSize({ width, height: 1400 });
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
     await page.goto(`${baseUrl}${route}`);
+    const overviewCard = page.locator(".matchup-snapshot .matchup-comparison-card").first();
+    const overviewBadge = await overviewCard.locator(".matchup-metric-table__value").first().boundingBox();
+    const overviewRail = await overviewCard.locator(".matchup-metric-table__bar-track").first().boundingBox();
+    expect(overviewBadge).not.toBeNull();
+    expect(overviewRail).not.toBeNull();
     await page.getByRole("tab", { name: "Team Comparison" }).click();
 
     const heading = page.getByRole("heading", { name: "Statistical Comparison" });
@@ -63,6 +68,16 @@ for (const width of WIDTHS) {
     // Approved mockup column: ~880px (~920 for the wider Unit tables), never a
     // full-viewport stretch.
     expect(box!.width, "detail table capped near the mockup column").toBeLessThanOrEqual(940);
+
+    // Team Comparison extends Overview's exact card, badge and rail language.
+    const comparisonCard = page.locator(".matchup-team-comparison-density .matchup-comparison-card").first();
+    await expect(comparisonCard).toBeVisible();
+    const comparisonBadge = await comparisonCard.locator(".matchup-metric-table__value").first().boundingBox();
+    const comparisonRail = await comparisonCard.locator(".matchup-metric-table__bar-track").first().boundingBox();
+    expect(comparisonBadge).not.toBeNull();
+    expect(comparisonRail).not.toBeNull();
+    expect(comparisonBadge!.height).toBeCloseTo(overviewBadge!.height, 0);
+    expect(comparisonRail!.height).toBeCloseTo(overviewRail!.height, 0);
 
     // Rank tile colour comes from the tier helper (emerald / red / amber / teal / orange),
     // never a winner/loser class.
@@ -121,7 +136,7 @@ const OUTER_SECTIONS = [
   { label: "Line of scrimmage", heading: "Trenches" },
 ] as const;
 
-for (const width of [390, 768, 1440] as const) {
+for (const width of [390, 768, 1280, 1440] as const) {
   for (const { label: section, heading: headingName } of OUTER_SECTIONS) {
     test(`${width}px — ${section}: centred title + shared bar/tier-tile system`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1600 });
