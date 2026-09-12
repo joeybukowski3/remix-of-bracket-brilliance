@@ -26,6 +26,7 @@ import {
   formatTrendRoi,
   rankTrendResearch,
   resolveGameQualifiers,
+  type EarlySeasonWeek,
   type NflSituationalTrendsArtifact,
   type SituationalTrendGame,
   type SituationalTrendResearch,
@@ -203,6 +204,7 @@ export default function NFLTrends() {
   const [confidence, setConfidence] = useState("ALL");
   const [direction, setDirection] = useState<TrendHistoricalDirection | "ALL">("ALL");
   const [researchPhase, setResearchPhase] = useState<TrendResearchPhase | "ALL">("ALL");
+  const [earlySeasonWeek, setEarlySeasonWeek] = useState<EarlySeasonWeek | "ALL">("ALL");
   const [primaryWindow, setPrimaryWindow] = useState<PerformanceWindow>("fullHistory");
 
   usePageSeo({ title: "NFL Situational Trends | Joe Knows Ball", description: "Search the complete NFL situational trend research library and scan confirmed or awaiting qualifiers for 2026 matchups.", path: "/nfl/trends" });
@@ -213,7 +215,7 @@ export default function NFLTrends() {
   const categories = useMemo(() => [...new Set(trends.map((trend) => trend.category))].sort(), [trends]);
   const classifications = useMemo(() => [...new Set(trends.map((trend) => trend.classification))].sort(), [trends]);
   const currentGames = useMemo(() => filterTrendGames(artifact?.games ?? [], { search: currentSearch, week: selectedWeek, trendId, tier, classification: currentClassification, noteworthyOnly }).sort((a, b) => a.week - b.week || (a.kickoff ?? "").localeCompare(b.kickoff ?? "")), [artifact, currentSearch, selectedWeek, trendId, tier, currentClassification, noteworthyOnly]);
-  const library = useMemo(() => filterTrendLibrary(trends, { search: librarySearch, category, classification: libraryClassification, confidence, direction, researchPhase }), [trends, librarySearch, category, libraryClassification, confidence, direction, researchPhase]);
+  const library = useMemo(() => filterTrendLibrary(trends, { search: librarySearch, category, classification: libraryClassification, confidence, direction, researchPhase, earlySeasonWeek }), [trends, librarySearch, category, libraryClassification, confidence, direction, researchPhase, earlySeasonWeek]);
 
   const handleModeKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: PageMode) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -271,7 +273,8 @@ export default function NFLTrends() {
                 <SelectField label="Classification" value={libraryClassification} onChange={setLibraryClassification}><option value="ALL">All classifications</option>{classifications.map((value) => <option key={value} value={value}>{value}</option>)}</SelectField>
                 <SelectField label="Confidence" value={confidence} onChange={setConfidence}><option value="ALL">All confidence</option>{["High", "Moderate", "Low"].map((value) => <option key={value} value={value}>{value}</option>)}</SelectField>
                 <SelectField label="Historical direction" value={direction} onChange={(value) => setDirection(value as TrendHistoricalDirection | "ALL")}><option value="ALL">All directions</option><option value="POSITIVE">Positive</option><option value="NEGATIVE">Negative</option><option value="MIXED">Mixed</option><option value="NO_BROAD_EDGE">No broad edge</option></SelectField>
-                <SelectField label="Research phase" value={researchPhase} onChange={(value) => setResearchPhase(value as TrendResearchPhase | "ALL")}><option value="ALL">All phases</option><option value="PHASE_1">Phase 1</option><option value="PHASE_2B">Phase 2B</option></SelectField>
+                <SelectField label="Research phase" value={researchPhase} onChange={(value) => setResearchPhase(value as TrendResearchPhase | "ALL")}><option value="ALL">All phases</option><option value="PHASE_1">Phase 1</option><option value="PHASE_2B">Phase 2B</option><option value="PHASE_2C">Phase 2C (Early Season)</option></SelectField>
+                <SelectField label="Early season week" value={String(earlySeasonWeek)} onChange={(value) => setEarlySeasonWeek(value === "ALL" ? "ALL" : (Number(value) as EarlySeasonWeek))}><option value="ALL">All weeks</option><option value="1">Week 1</option><option value="2">Week 2</option></SelectField>
                 <SelectField label="Primary performance" value={primaryWindow} onChange={(value) => setPrimaryWindow(value as PerformanceWindow)}><option value="fullHistory">Full history 2011–2025</option><option value="recentForm">Recent form 2021–2025</option></SelectField>
               </div>
             </div>

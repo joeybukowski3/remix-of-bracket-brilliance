@@ -1,8 +1,9 @@
 export const NFL_SITUATIONAL_TRENDS_PATH = "/data/nfl/2026/situational-trend-matchups.json";
 
 export type TrendTier = "NOTEWORTHY" | "CONTEXTUAL" | "CLASSIC_ANGLE";
-export type TrendResearchPhase = "PHASE_1" | "PHASE_2B";
+export type TrendResearchPhase = "PHASE_1" | "PHASE_2B" | "PHASE_2C";
 export type TrendHistoricalDirection = "POSITIVE" | "NEGATIVE" | "MIXED" | "NO_BROAD_EDGE";
+export type EarlySeasonWeek = 1 | 2;
 export type TrendQualificationStatus =
   | "CONFIRMED"
   | "AWAITING_MARKET"
@@ -36,6 +37,7 @@ export type SituationalTrendResearch = {
   definition: string;
   category: string;
   researchPhase: TrendResearchPhase;
+  earlySeasonWeek?: EarlySeasonWeek | null;
   classification: string;
   confidence: string;
   recentEvidenceClassification: string;
@@ -147,7 +149,7 @@ export function isNflSituationalTrendsArtifact(value: unknown): value is NflSitu
   const candidate = value as Partial<NflSituationalTrendsArtifact>;
   return candidate.schemaVersion === "nfl-situational-trend-matchups-v1" &&
     candidate.season === 2026 &&
-    Array.isArray(candidate.researchLibrary) && candidate.researchLibrary.length === 24 &&
+    Array.isArray(candidate.researchLibrary) && candidate.researchLibrary.length === 55 &&
     Array.isArray(candidate.games) &&
     candidate.games.every((game) => Boolean(
       game && typeof game === "object" &&
@@ -198,6 +200,7 @@ export type TrendLibraryFilters = {
   confidence?: string;
   direction?: TrendHistoricalDirection | "ALL";
   researchPhase?: TrendResearchPhase | "ALL";
+  earlySeasonWeek?: EarlySeasonWeek | "ALL";
 };
 
 export function filterTrendLibrary(
@@ -212,7 +215,8 @@ export function filterTrendLibrary(
       (!filters.classification || filters.classification === "ALL" || trend.classification === filters.classification) &&
       (!filters.confidence || filters.confidence === "ALL" || trend.confidence === filters.confidence) &&
       (!filters.direction || filters.direction === "ALL" || trend.historicalDirection === filters.direction) &&
-      (!filters.researchPhase || filters.researchPhase === "ALL" || trend.researchPhase === filters.researchPhase);
+      (!filters.researchPhase || filters.researchPhase === "ALL" || trend.researchPhase === filters.researchPhase) &&
+      (!filters.earlySeasonWeek || filters.earlySeasonWeek === "ALL" || trend.earlySeasonWeek === filters.earlySeasonWeek);
   }));
 }
 

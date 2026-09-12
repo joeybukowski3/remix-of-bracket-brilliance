@@ -2,7 +2,7 @@
 
 ## Scope
 
-The NFL Situational Trends product is a descriptive research layer. It exposes the locked Phase 1 and Phase 2B trend library, Phase 2 robustness conclusions where available, and deterministic current-season qualification. It does not feed projections, power ratings, props, matchup advantages, pick grading, or performance tracking.
+The NFL Situational Trends product is a descriptive research layer. It exposes the locked Phase 1, Phase 2B, and Phase 2C (Early Season) trend library, Phase 2 robustness conclusions where available, and deterministic current-season qualification. It does not feed projections, power ratings, props, matchup advantages, pick grading, or performance tracking.
 
 ## Data flow
 
@@ -10,8 +10,9 @@ The NFL Situational Trends product is a descriptive research layer. It exposes t
    - `public/data/nfl/research/situational-trends-v1.json`
    - `public/data/nfl/research/situational-trends-phase2.json`
    - `public/data/nfl/research/situational-trends-phase2b.json`
-2. `scripts/lib/nfl-situational-trend-current-core.mjs` imports the locked deterministic primitives from the Phase 1 and Phase 2B research cores. It builds one current team-game context and evaluates all 24 broad definitions.
-3. `scripts/generate-nfl-situational-trend-matchups.mjs` joins canonical schedule, result, team, and market inputs with the research metadata and writes `public/data/nfl/2026/situational-trend-matchups.json`.
+   - `public/data/nfl/research/situational-trends-phase2c.json` (Phase 2C: Week 1 / Week 2 early-season angles, restricted to those two weeks)
+2. `scripts/lib/nfl-situational-trend-current-core.mjs` imports the locked deterministic primitives from the Phase 1, Phase 2B, and Phase 2C research cores. It builds one current team-game context and evaluates all 55 broad definitions (24 Phase 1/2B + 31 Phase 2C).
+3. `scripts/generate-nfl-situational-trend-matchups.mjs` joins canonical schedule, result, team, and market inputs (plus the prior season's results, for Phase 2C prior-season record/playoff context) with the research metadata and writes `public/data/nfl/2026/situational-trend-matchups.json`.
 4. `src/lib/nfl/situationalTrends.ts` validates, types, ranks, resolves, and filters the generated data for both UI surfaces. React does not reimplement qualification rules or recalculate historical metrics.
 
 Generate the current artifact with:
@@ -19,6 +20,10 @@ Generate the current artifact with:
 ```powershell
 npm run nfl:situational-trends:current
 ```
+
+### Phase 2C: Early Season Study
+
+Phase 2C adds 13 Week 1 families (market role/venue, divisional home role, spread bands, double-digit role, and prior-season playoff/record status) and 18 Week 2 bounce-back families (0-1/1-0 starts, Week 1 ATS win/loss, favorite-failed-to-cover, outright upset follow-ups, win/loss margin bands, and current-role/opponent-record combinations). Week 1 rows never carry previous-game context; Week 2 rows reuse the immediately previous (Week 1) game already present in the locked Phase 1 chronology. A Week 2 row whose previous game is not Week 1 is excluded rather than assumed. Rebuild with `npm run nfl:situational-trends:phase2c` and test with `npm run nfl:situational-trends:phase2c:test`. It reuses the Phase 1 grading/market/spread-band primitives and the Phase 2B variant builder and evidence classifier unchanged, and never rewrites a Phase 1, Phase 2, or Phase 2B artifact.
 
 ## Qualification states
 
@@ -54,3 +59,4 @@ Both surfaces consume the same generated artifact and resolver utilities.
 - Prior-result angles remain pending until the immediately preceding game is final.
 - The public result artifact currently lacks an overtime indicator, so coming-off-overtime is reported unavailable rather than inferred.
 - Historical evidence windows remain fixed at 2011–2025 and 2021–2025; the 2026 scanner does not recompute them.
+- Phase 2C Week 1/2 angles have inherently small samples; a high raw ATS% in an early-season subgroup is never treated as noteworthy on its own.

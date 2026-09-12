@@ -21,11 +21,13 @@ const PATHS = {
   games: resolve(ROOT, `public/data/nfl/${SEASON}/games.json`),
   results: resolve(ROOT, `public/data/nfl/${SEASON}/results.json`),
   priorGames: resolve(ROOT, `public/data/nfl/${SEASON - 1}/games.json`),
+  priorResults: resolve(ROOT, `public/data/nfl/${SEASON - 1}/results.json`),
   teams: resolve(ROOT, "public/data/nfl/teams.json"),
   market: resolve(ROOT, "public/data/nfl/matchup-market.json"),
   phase1: resolve(ROOT, "public/data/nfl/research/situational-trends-v1.json"),
   phase2: resolve(ROOT, "public/data/nfl/research/situational-trends-phase2.json"),
   phase2b: resolve(ROOT, "public/data/nfl/research/situational-trends-phase2b.json"),
+  phase2c: resolve(ROOT, "public/data/nfl/research/situational-trends-phase2c.json"),
   output: resolve(ROOT, `public/data/nfl/${SEASON}/situational-trend-matchups.json`),
 };
 
@@ -120,7 +122,7 @@ function evidenceTier({ classification, confidence, robustnessLabel }) {
   return "CONTEXTUAL";
 }
 
-function normalizeResearch(phase1, phase2, phase2b) {
+function normalizeResearch(phase1, phase2, phase2b, phase2c) {
   const areaById = new Map(phase2.areas.map((area) => [area.id, area]));
   const phase1Rows = phase1.trends.map((trend) => {
     const area = areaById.get(PREFERRED_PHASE2_AREA[trend.id]);
@@ -165,6 +167,43 @@ function normalizeResearch(phase1, phase2, phase2b) {
     };
   });
 
+  const phase2cRows = phase2c.trends.map((trend) => {
+    const full = metricSubset(trend.fullHistoryMetrics);
+    const recent = metricSubset(trend.recentFormMetrics);
+    const earlySeasonWeek = trend.id.startsWith("week1-") ? 1 : trend.id.startsWith("week2-") ? 2 : null;
+    const normalized = {
+      id: trend.id,
+      name: trend.label,
+      definition: trend.exactDefinition,
+      category: trend.parentCategory ?? "Early Season",
+      researchPhase: "PHASE_2C",
+      earlySeasonWeek,
+      classification: trend.evidenceClassification,
+      confidence: trend.confidence,
+      recentEvidenceClassification: trend.recentEvidenceClassification,
+      fullHistory: full,
+      recentForm: recent,
+      robustnessLabel: null,
+      robustnessInterpretation: null,
+      articleNote: trend.articleRelevanceNote,
+      stability: trend.stabilityFlags,
+      variants: trend.variants.filter((variant) => variant.id !== "overall").map((variant) => ({
+        id: variant.id,
+        label: variant.label,
+        definition: variant.definition,
+        fullHistory: metricSubset(variant.fullHistoryMetrics),
+        recentForm: metricSubset(variant.recentFormMetrics),
+        classification: variant.evidenceClassification,
+        confidence: variant.confidence,
+      })),
+    };
+    return {
+      ...normalized,
+      tier: evidenceTier(normalized),
+      historicalDirection: historicalDirection(trend.evidenceClassification, full, recent),
+    };
+  });
+
   const phase2bRows = phase2b.trends.map((trend) => {
     const full = metricSubset(trend.fullHistoryMetrics);
     const recent = metricSubset(trend.recentFormMetrics);
@@ -200,7 +239,7 @@ function normalizeResearch(phase1, phase2, phase2b) {
     };
   });
 
-  return [...phase1Rows, ...phase2bRows];
+  return [...phase1Rows, ...phase2bRows, ...phase2cRows];
 }
 
 function buildSlug(game, teamByAbbr) {
@@ -214,12 +253,14 @@ function main() {
   const gamesArtifact = read(PATHS.games);
   const resultsArtifact = read(PATHS.results);
   const priorGamesArtifact = read(PATHS.priorGames);
+  const priorResultsArtifact = read(PATHS.priorResults);
   const teamsArtifact = read(PATHS.teams);
   const marketArtifact = read(PATHS.market);
   const phase1 = read(PATHS.phase1);
   const phase2 = read(PATHS.phase2);
   const phase2b = read(PATHS.phase2b);
-  const researchLibrary = normalizeResearch(phase1, phase2, phase2b);
+  const phase2c = read(PATHS.phase2c);
+  const researchLibrary = normalizeResearch(phase1, phase2, phase2b, phase2c);
   const researchById = new Map(researchLibrary.map((trend) => [trend.id, trend]));
   const teamByAbbr = new Map(teamsArtifact.teams.map((team) => [team.abbr, team]));
   const evaluations = buildCurrentTrendEvaluations({
@@ -228,6 +269,7 @@ function main() {
     results: resultsArtifact.results,
     teams: teamsArtifact.teams,
     priorSeasonGames: priorGamesArtifact.games,
+    priorSeasonResults: priorResultsArtifact.results,
     currentMarket: marketArtifact.currentMarket,
   });
   const evaluationsByGame = new Map();
@@ -292,11 +334,13 @@ function main() {
       phase1: "public/data/nfl/research/situational-trends-v1.json",
       phase2: "public/data/nfl/research/situational-trends-phase2.json",
       phase2b: "public/data/nfl/research/situational-trends-phase2b.json",
+      phase2c: "public/data/nfl/research/situational-trends-phase2c.json",
     },
     definitionVersions: {
       phase1: phase1.definitionVersion,
       phase2: phase2.studyVersion,
       phase2b: phase2b.definitionVersion,
+      phase2c: phase2c.definitionVersion,
     },
     evaluatedTrendIds: researchLibrary.map((trend) => trend.id),
     researchLibrary,
@@ -305,12 +349,13 @@ function main() {
       "Historical results are descriptive and do not guarantee future outcomes.",
       "Current market-role qualification uses the source-published line available as of the market artifact timestamp; it may change on refresh.",
       "The public 2026 result artifact does not expose overtime, so coming-off-overtime remains unavailable rather than inferred.",
+      "Week 1 and Week 2 early-season angles have inherently small samples; a high raw ATS% in an early-season subgroup is treated conservatively rather than promoted as noteworthy.",
     ],
   };
 
-  if (researchLibrary.length !== 24) throw new Error(`Expected 24 researched trends, received ${researchLibrary.length}.`);
+  if (researchLibrary.length !== 55) throw new Error(`Expected 55 researched trends, received ${researchLibrary.length}.`);
   if (games.length !== gamesArtifact.games.filter((game) => game.seasonType === "REG").length) throw new Error("Game coverage mismatch.");
-  if (evaluations.length !== games.length * researchLibrary.length * 2) throw new Error("Every game must evaluate all 24 trends for both teams.");
+  if (evaluations.length !== games.length * researchLibrary.length * 2) throw new Error("Every game must evaluate all 55 trends for both teams.");
   writeFileSync(PATHS.output, `${JSON.stringify(artifact, null, 2)}\n`);
   console.log(`Wrote ${games.length} games and ${researchLibrary.length} research trends to ${PATHS.output}.`);
 }
