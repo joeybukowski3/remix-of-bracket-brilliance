@@ -264,12 +264,12 @@ export default function MatchupComparisonPanel({
               hidden={activeTab !== category.id}
               className={cn(
                 MATCHUP_SECTION_SCROLL_MT,
-                "space-y-2 px-3 py-3 sm:px-4 motion-safe:transition-colors motion-safe:duration-700",
+                "space-y-2 px-3 py-2 sm:px-4 sm:py-2 motion-safe:transition-colors motion-safe:duration-700",
                 highlighted === category.id && "bg-sky-50"
               )}
             >
               {result && (
-                <div className="flex justify-center pb-1">
+                <div className="flex justify-center sm:pb-0.5">
                   <span className="matchup-lead-pill">
                     <CategoryAdvantageMeta
                       result={result}
@@ -280,7 +280,7 @@ export default function MatchupComparisonPanel({
                   </span>
                 </div>
               )}
-              <MatchupComparisonTeamHeader matchup={matchup} sticky />
+              <MatchupComparisonTeamHeader matchup={matchup} sticky className="mb-2 sm:mb-2" />
               <div className="matchup-metric-table-group">{renderTable(rows, category.label)}</div>
             </div>
           );

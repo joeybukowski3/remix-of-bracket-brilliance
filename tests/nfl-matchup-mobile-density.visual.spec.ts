@@ -38,7 +38,7 @@ for (const width of [390, 430]) {
 
 for (const width of [1280, 1440]) {
   for (const theme of ["light", "dark"] as const) {
-    test(`${width}px ${theme} desktop remains unchanged`, async ({ page }) => {
+    test(`${width}px ${theme} desktop comparison stays compact and overflow-free`, async ({ page }) => {
       await page.setViewportSize({ width, height: 960 });
       await page.addInitScript((selectedTheme) => {
         localStorage.setItem("jkb-nfl-matchup-theme", selectedTheme);
@@ -48,6 +48,12 @@ for (const width of [1280, 1440]) {
       await expect(page.locator(".matchup-comparison-density")).toBeVisible();
       await expect(page.getByLabel("Matchup team orientation")).toHaveCount(0);
       await expect(page.locator("[data-compact-matchup-row]")).toHaveCount(0);
+      const detailRows = page.locator('.matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr:visible');
+      await expect(detailRows.first()).toBeVisible();
+      const rowHeights = await detailRows.evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+      // Context-bearing rows are tallest; keep even those well below the old
+      // ~120px detail geometry without forcing the subtitle into an overlap.
+      expect(Math.max(...rowHeights)).toBeLessThanOrEqual(76);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow).toBeLessThanOrEqual(1);
       await expect(page.locator(".vite-error-overlay")).toHaveCount(0);

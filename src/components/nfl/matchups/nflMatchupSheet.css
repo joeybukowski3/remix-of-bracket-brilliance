@@ -465,6 +465,21 @@
   background: color-mix(in srgb, var(--sheet-panel-2) 55%, transparent);
 }
 .matchup-metric-table[data-variant="snapshot"] tbody tr { padding: 0.28rem 0.2rem; row-gap: 0.1rem; }
+
+/* Statistical Comparison uses the Overview snapshot's compact rhythm at a
+   still-readable desktop scale. Keep this scoped: other detail tables (period,
+   unit and trenches views) retain their roomier presentation. */
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] thead tr,
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr {
+    grid-template-columns: 64px minmax(0, 1fr) 64px;
+    column-gap: 0.75rem;
+  }
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody tr {
+    padding: 0.35rem 1rem;
+    row-gap: 0.12rem;
+  }
+}
 .matchup-metric-table tbody th,
 .matchup-metric-table tbody td { padding: 0; }
 
@@ -495,6 +510,18 @@
   letter-spacing: 0.16em;
   opacity: 1;
 }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody th[data-cell="metric"] {
+    font-size: 0.82rem;
+    line-height: 1.05;
+    letter-spacing: 0.035em;
+  }
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__context {
+    margin-top: 0.12rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+  }
+}
 
 /* Detail column head — the split team header already carries identity, so this
    row is just a whispered "RANK … RANK" over the two side columns. */
@@ -510,6 +537,13 @@
 .matchup-metric-table[data-variant="detail"] thead th[data-cell="away"],
 .matchup-metric-table[data-variant="detail"] thead th[data-cell="home"] { text-align: center; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__abbr { display: none; }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] thead th {
+    padding: 0.28rem 1rem;
+    font-size: 0.54rem;
+    letter-spacing: 0.16em;
+  }
+}
 
 .matchup-metric-table tbody td[data-cell="away"] { grid-column: 1; grid-row: 1; justify-self: start; }
 .matchup-metric-table tbody td[data-cell="home"] { grid-column: 3; grid-row: 1; justify-self: end; }
@@ -572,6 +606,17 @@
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value[data-ranked="false"] {
   font-size: 0.95rem;
 }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value {
+    min-height: 2rem;
+    padding: 0.12rem 0.25rem;
+    border-radius: 0.45rem;
+    font-size: 0.9rem;
+  }
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__value[data-ranked="false"] {
+    font-size: 0.78rem;
+  }
+}
 /* Raw value under each side of the bar. Secondary to the rank + metric; the
    advantaged side may take its team-colour emphasis, the other stays muted. */
 .matchup-metric-table__val {
@@ -583,6 +628,12 @@
 .matchup-metric-table__val--lead-away { color: var(--sheet-away); font-weight: 850; }
 .matchup-metric-table__val--lead-home { color: var(--sheet-home); font-weight: 850; }
 .matchup-metric-table__val--na { color: var(--sheet-faint); font-weight: 700; }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] tbody td[data-cell="vals"] {
+    max-width: 18rem;
+  }
+  .matchup-comparison-density .matchup-metric-table__val { font-size: 0.74rem; }
+}
 .matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__value {
   padding: 0.07rem 0.32rem;
   font-size: 0.62rem;
@@ -596,6 +647,12 @@
 .matchup-metric-table__bar { display: block; width: 100%; max-width: 12rem; margin: 0.05rem auto 0; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar { max-width: 22rem; margin-top: 0.15rem; }
 .matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar { max-width: 8.5rem; }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar {
+    max-width: 18rem;
+    margin-top: 0.04rem;
+  }
+}
 .matchup-metric-table__bar-track {
   position: relative;
   display: block;
@@ -612,6 +669,12 @@
   border-radius: 0.5rem;
   background: var(--sheet-band);
 }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-track {
+    height: 0.48rem;
+    border-radius: 999px;
+  }
+}
 .matchup-metric-table[data-variant="snapshot"] .matchup-metric-table__bar-track { height: 0.34rem; }
 .matchup-metric-table__bar-fill {
   position: absolute;
@@ -624,6 +687,10 @@
 .matchup-metric-table__bar-fill--right { left: 50%; border-radius: 0 999px 999px 0; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--left { border-radius: 0.5rem 0 0 0.5rem; }
 .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--right { border-radius: 0 0.5rem 0.5rem 0; }
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--left { border-radius: 999px 0 0 999px; }
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-fill--right { border-radius: 0 999px 999px 0; }
+}
 .matchup-metric-table__bar-tick {
   position: absolute;
   left: 50%;
@@ -641,6 +708,13 @@
   border-radius: 3px;
   background: var(--sheet-muted);
   opacity: 0.9;
+}
+@media (min-width: 640px) {
+  .matchup-comparison-density .matchup-metric-table[data-variant="detail"] .matchup-metric-table__bar-tick {
+    top: -0.12rem;
+    bottom: -0.12rem;
+    width: 2px;
+  }
 }
 .matchup-metric-table__bar[data-side="even"] .matchup-metric-table__bar-tick,
 .matchup-metric-table__bar[data-side="none"] .matchup-metric-table__bar-tick { opacity: 0.5; }
