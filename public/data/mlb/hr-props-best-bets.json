@@ -1,10 +1,10 @@
 {
   "date": "2026-09-12",
-  "generatedAt": "2026-09-12T17:19:06.373Z",
+  "generatedAt": "2026-09-12T17:50:04.877Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) and Busch Stadium (0.92) create the clearest park-driven edges, with Zac Thornton and Kyle Leahy both allowing elevated HR rates to opposing lineups. The model is also keying on lefty-righty splits and recent barrel trends, especially for Judge and Soto in the Subway Series.",
-    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability while downplaying recent HR droughts for high-skill hitters like Judge."
+    "slateOverview": "Yankee Stadium’s 1.18 park factor and a lefty matchup for Aaron Judge create the clearest power edge, while Busch Stadium’s pitcher-friendly 0.92 factor still yields value on CWS bats facing Kyle Leahy. Wrigley and Tropicana are neutral, but Paul Skenes on the mound in Pittsburgh suppresses fly-ball outcomes for the Cubs.",
+    "modelNote": "The model is overweighting barrel/hard-hit rates and park-adjusted hrFBRatio, then layering in recent opposing-pitcher HR vulnerability to rank Judge, Soto, and Murakami at the top."
   },
   "bestBets": [
     {
@@ -91,11 +91,11 @@
       "hrScoreRank": 5,
       "topStats": [
         "Hard Hit%=49.0",
-        "Pitcher HR VS=42.6"
+        "Pitcher HR VS=42.3"
       ],
       "bullets": [
         "HR score 60.8 (#5)",
-        "Pitcher HR VS 42.6 at park 1.00"
+        "Pitcher HR VS 42.3 at park 1.00"
       ],
       "hrOddsYes": "+248",
       "marketImpliedProbability": 0.28735632183908044,
@@ -172,7 +172,7 @@
         "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 59.2 (#8)",
+        "HR score 59.1 (#8)",
         "Pitcher HR VS 61.2 at park 1.18"
       ],
       "hrOddsYes": "+420",
