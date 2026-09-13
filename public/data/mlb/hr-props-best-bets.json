@@ -1,10 +1,10 @@
 {
   "date": "2026-09-13",
-  "generatedAt": "2026-09-13T12:47:40.965Z",
+  "generatedAt": "2026-09-13T15:06:04.215Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a handful of favorable HR environments, with Wrigley Field (1.00) and Truist Park (1.03) playing neutral-to-slightly hitter-friendly, while Nationals Park (0.98) and Tropicana Field (0.98) suppress power. The top model targets face right-handers Grayson Rodriguez and Grant Holmes, whose HR-allowed rates (76.6 and 62.9) create exploitable matchups, especially for pull-heavy bats like Schwarber (54.7 % pull).",
-    "modelNote": "The model is prioritizing barrel rate, exit velocity, and opposing pitcher HR vulnerability over recent HR form, elevating Wood and De La Cruz despite their zero and six last-30 dingers, respectively."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with elevated park factors (Yankee Stadium 1.18, American Family Field 1.1, Truist Park 1.03) and several favorable right-handed pitcher matchups, including Rodriguez vs. Nationals and Bibee vs. Twins. Warm, dry conditions are expected across the East Coast and Midwest, boosting fly-ball carry and HR upside. The model is overweighting barrel rate, hard-hit rate, and recent HR trends while discounting park-neutral venues and lefty-on-lefty disadvantages.",
+    "modelNote": "The model is prioritizing Wood and Rodriguez due to elite barrel/hard-hit profiles and favorable park/pitcher matchups, while De La Cruz and Schwarber climb the board on recent power surges and platoon advantages."
   },
   "bestBets": [
     {
@@ -19,10 +19,48 @@
       ],
       "bullets": [
         "barrel=20.3%",
-        "park=0.98"
+        "HH=58.4%"
       ],
       "hrOddsYes": "+327",
       "marketImpliedProbability": 0.234192037470726,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Emmanuel Rodriguez",
+      "team": "MIN",
+      "opponent": "CLE",
+      "opposingPitcher": "Tanner Bibee",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=50%",
+        "HH=75%"
+      ],
+      "bullets": [
+        "barrel=50%",
+        "HH=75%"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yohandy Morales",
+      "team": "WSH",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=20%",
+        "HH=73.3%"
+      ],
+      "bullets": [
+        "barrel=20%",
+        "HH=73.3%"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -31,17 +69,17 @@
       "team": "CIN",
       "opponent": "MIL",
       "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 2,
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=16.1%",
-        "HH=53.1%"
+        "Hard Hit%=53.1",
+        "Pitcher HR VS=43.7"
       ],
       "bullets": [
-        "barrel=16.1%",
-        "park=1.1"
+        "HR score 68.2 (#4)",
+        "Pitcher HR VS 43.7 at park 1.10"
       ],
-      "hrOddsYes": "+430",
-      "marketImpliedProbability": 0.18867924528301888,
+      "hrOddsYes": "+437",
+      "marketImpliedProbability": 0.186219739292365,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,77 +88,58 @@
       "team": "PHI",
       "opponent": "ATL",
       "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=16.9%",
-        "HH=49.2%"
-      ],
-      "bullets": [
-        "barrel=16.9%",
-        "park=1.03"
-      ],
-      "hrOddsYes": "+229",
-      "marketImpliedProbability": 0.303951367781155,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andrew Pinckney",
-      "team": "WSH",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=76.6",
-        "Hard Hit%=62.5"
-      ],
-      "bullets": [
-        "HR score 63.7 (#4)",
-        "Pitcher HR VS 76.6 at park 0.98"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "PIT",
-      "opposingPitcher": "Bubba Chandler",
       "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=49.0",
-        "Pitcher HR VS=42.8"
+        "Pitcher HR VS=62.6",
+        "Hard Hit%=49.2"
       ],
       "bullets": [
-        "HR score 63.3 (#5)",
-        "Pitcher HR VS 42.8 at park 1.00"
+        "HR score 65.7 (#5)",
+        "Pitcher HR VS 62.6 at park 1.03"
       ],
-      "hrOddsYes": "+467",
-      "marketImpliedProbability": 0.1763668430335097,
+      "hrOddsYes": "+233",
+      "marketImpliedProbability": 0.3003003003003003,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Andrew Pinckney",
-      "team": "WSH",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "MIL",
+      "opposingPitcher": "Robert Gasser",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=12.5%",
-        "HH=62.5%"
+        "barrel=16.1%",
+        "HH=53.1%"
       ],
       "bullets": [
-        "HH=62.5%",
-        "park=0.98"
+        "barrel=16.1%",
+        "HH=53.1%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+437",
+      "marketImpliedProbability": 0.186219739292365,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=16.9%",
+        "HH=49.2%"
+      ],
+      "bullets": [
+        "barrel=16.9%",
+        "HH=49.2%"
+      ],
+      "hrOddsYes": "+233",
+      "marketImpliedProbability": 0.3003003003003003,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -128,36 +147,17 @@
       "team": "CHC",
       "opponent": "PIT",
       "opposingPitcher": "Bubba Chandler",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrel=13.1%",
         "HH=49%"
       ],
       "bullets": [
         "barrel=13.1%",
-        "park=1"
+        "HH=49%"
       ],
-      "hrOddsYes": "+467",
-      "marketImpliedProbability": 0.1763668430335097,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "WSH",
-      "opposingPitcher": "Jake Irvin",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=15.6%",
-        "HH=45.2%"
-      ],
-      "bullets": [
-        "barrel=15.6%",
-        "park=0.98"
-      ],
-      "hrOddsYes": "+312",
-      "marketImpliedProbability": 0.24271844660194175,
+      "hrOddsYes": "+470",
+      "marketImpliedProbability": 0.17543859649122806,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -168,34 +168,34 @@
       "opposingPitcher": "Andrew Painter",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=54.4",
+        "Pitcher HR VS=53.6",
         "Hard Hit%=51.7"
       ],
       "bullets": [
-        "HR score 62.4 (#7)",
-        "Pitcher HR VS 54.4 at park 1.03"
+        "HR score 63.0 (#7)",
+        "Pitcher HR VS 53.6 at park 1.03"
       ],
-      "hrOddsYes": "+324",
-      "marketImpliedProbability": 0.2358490566037736,
+      "hrOddsYes": "+329",
+      "marketImpliedProbability": 0.2331002331002331,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "PHI",
-      "opposingPitcher": "Andrew Painter",
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "WSH",
+      "opposingPitcher": "Jake Irvin",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=54.4",
-        "Hard Hit%=50.7"
+        "Pitcher HR VS=76.9",
+        "Hard Hit%=45.2"
       ],
       "bullets": [
-        "HR score 61.2 (#8)",
-        "Pitcher HR VS 54.4 at park 1.03"
+        "HR score 62.7 (#8)",
+        "Pitcher HR VS 76.9 at park 0.98"
       ],
-      "hrOddsYes": "+411",
-      "marketImpliedProbability": 0.19569471624266144,
+      "hrOddsYes": "+317",
+      "marketImpliedProbability": 0.23980815347721823,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -213,67 +213,67 @@
       ],
       "bullets": [
         "barrel=14.6%",
-        "park=1.03"
+        "HH=51.7%"
       ],
-      "hrOddsYes": "+324",
-      "marketImpliedProbability": 0.2358490566037736,
+      "hrOddsYes": "+329",
+      "marketImpliedProbability": 0.2331002331002331,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "PHI",
-      "opposingPitcher": "Andrew Painter",
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "WSH",
+      "opposingPitcher": "Jake Irvin",
       "hrScoreRank": 8,
       "topStats": [
-        "barrel=12.7%",
-        "HH=50.7%"
+        "barrel=15.6%",
+        "HH=45.2%"
       ],
       "bullets": [
-        "barrel=12.7%",
-        "park=1.03"
+        "barrel=15.6%",
+        "HH=45.2%"
       ],
-      "hrOddsYes": "+411",
-      "marketImpliedProbability": 0.19569471624266144,
+      "hrOddsYes": "+317",
+      "marketImpliedProbability": 0.23980815347721823,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Brady House",
-      "team": "WSH",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "SF",
+      "opposingPitcher": "Logan Webb",
+      "hrScoreRank": 21,
+      "topStats": [
+        "Hard Hit%=53.9",
+        "Pitcher HR VS=35.2"
+      ],
+      "bullets": [
+        "HR score 56.5 (#21)",
+        "Pitcher HR VS 35.2 at park 0.85"
+      ],
+      "hrOddsYes": "+570",
+      "marketImpliedProbability": 0.14925373134328357,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "SF",
+      "opposingPitcher": "Logan Webb",
       "hrScoreRank": 18,
       "topStats": [
-        "Pitcher HR VS=76.6",
-        "Hard Hit%=47.6"
+        "Hard Hit%=48.3",
+        "Pitcher HR VS=35.2"
       ],
       "bullets": [
-        "HR score 56.7 (#18)",
-        "Pitcher HR VS 76.6 at park 0.98"
+        "HR score 57.5 (#18)",
+        "Pitcher HR VS 35.2 at park 0.85"
       ],
-      "hrOddsYes": "+660",
-      "marketImpliedProbability": 0.13157894736842105,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Bryan Reynolds",
-      "team": "PIT",
-      "opponent": "CHC",
-      "opposingPitcher": "Matthew Boyd",
-      "hrScoreRank": 25,
-      "topStats": [
-        "Pitcher HR VS=56.2",
-        "Hard Hit%=48.5"
-      ],
-      "bullets": [
-        "HR score 53.3 (#25)",
-        "Pitcher HR VS 56.2 at park 1.00"
-      ],
-      "hrOddsYes": "+610",
-      "marketImpliedProbability": 0.14084507042253522,
+      "hrOddsYes": "+566",
+      "marketImpliedProbability": 0.15015015015015015,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
