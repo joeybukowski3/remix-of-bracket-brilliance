@@ -116,7 +116,7 @@ describe("generated season files (real pipeline output)", () => {
   });
 
   it("completed results have consistent scores, winner, margin and totals", () => {
-    for (const season of [2022, 2025]) {
+    for (const season of SEASONS) {
       const { results } = readSeason(season);
       for (const result of results.results as ResultRecord[]) {
         expect(Number.isInteger(result.homeScore) && result.homeScore >= 0).toBe(true);
@@ -135,12 +135,28 @@ describe("generated season files (real pipeline output)", () => {
     }
   });
 
-  it("2026 has a full 272-game schedule and zero results (documented preseason state)", () => {
+  it("2026 preserves the full schedule and has exactly one result for each final game", () => {
     const { games, results } = readSeason(2026);
     expect(games.games).toHaveLength(272);
-    expect(results.results).toHaveLength(0);
-    expect((games.games as GameRecord[]).every((g) => g.status === "scheduled")).toBe(true);
-    expect(results._meta.notes.some((n: string) => n.includes("No 2026 games have been completed"))).toBe(true);
+    const schedule = games.games as GameRecord[];
+    const finals = schedule.filter((g) => g.status === "final");
+    const resolved = results.results as ResultRecord[];
+    expect(resolved.map((r) => r.gameId).sort()).toEqual(finals.map((g) => g.gameId).sort());
+    for (const game of schedule) {
+      expect(game.season).toBe(2026);
+      expect(Number.isInteger(game.week) && game.week > 0).toBe(true);
+      expect(["REG", "WC", "DIV", "CON", "SB"]).toContain(game.seasonType);
+      expect(["scheduled", "final"]).toContain(game.status);
+    }
+    for (const result of resolved) {
+      const game = finals.find((g) => g.gameId === result.gameId)!;
+      expect(result.season).toBe(2026);
+      expect(result.week).toBe(game.week);
+      expect(result.seasonType).toBe(game.seasonType);
+      expect(result.homeAbbr).toBe(game.homeAbbr);
+      expect(result.awayAbbr).toBe(game.awayAbbr);
+      expect(result.final).toBe(true);
+    }
   });
 
   it("2022 omits the cancelled BUF-CIN game (271 REG results) and documents it", () => {
@@ -154,6 +170,24 @@ describe("generated season files (real pipeline output)", () => {
 });
 
 describe("pipeline core (fixture input)", () => {
+  it("filters by season and distinguishes final zero scores from unplayed 2026 games", () => {
+    const csv = [
+      FIXTURE_CSV.replace("NE,,SEA,,", "NE,10,SEA,13,"),
+      "2026_01_CHI_CAR,2026,REG,1,2026-09-13,13:00,CHI,0,CAR,0,outdoors,Bank of America Stadium",
+      "2026_01_DEN_KC,2026,REG,1,2026-09-14,20:15,DEN,,KC,,outdoors,Arrowhead Stadium",
+    ].join("\n");
+    const { games, results } = transformSeasonRows(parseCsv(csv), 2026, buildNflverseTeamMap(TEAMS_JSON));
+    expect(games.map((g: GameRecord) => g.gameId)).toEqual(["2026_01_NE_SEA", "2026_01_CHI_CAR", "2026_01_DEN_KC"]);
+    expect(games.map((g: GameRecord) => g.status)).toEqual(["final", "final", "scheduled"]);
+    expect(results).toHaveLength(2);
+    expect(results.every((r: ResultRecord) => r.season === 2026 && r.week === 1 && r.seasonType === "REG" && r.final)).toBe(true);
+    expect(results.find((r: ResultRecord) => r.gameId === "2026_01_NE_SEA")).toMatchObject({ homeAbbr: "sea", awayAbbr: "ne", homeScore: 13, awayScore: 10, winner: "sea", margin: 3, totalPoints: 23 });
+    expect(results.find((r: ResultRecord) => r.gameId === "2026_01_CHI_CAR")).toMatchObject({ homeScore: 0, awayScore: 0, winner: "TIE", margin: 0, totalPoints: 0 });
+    expect(results.some((r: ResultRecord) => r.gameId === "2026_01_DEN_KC")).toBe(false);
+    // The 2025 Super Bowl has a 2026 calendar date, but is still season 2025.
+    expect(games.some((g: GameRecord) => g.gameId === "2025_22_SEA_NE")).toBe(false);
+  });
+
   it("transforms rows into games and results with nflverse->site abbr mapping", () => {
     const rows = parseCsv(FIXTURE_CSV);
     const teamMap = buildNflverseTeamMap(TEAMS_JSON);

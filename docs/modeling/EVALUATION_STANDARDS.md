@@ -24,6 +24,49 @@ Report at minimum:
 
 Do not claim the model beats market from winner accuracy. The current calibration's market MAE was lower and ATS rate near 50%; that benchmark must remain visible.
 
+### Offline single-week spread audit
+
+`scripts/research/nfl-week-spread-ats-audit.mts` implements the additive
+`jkb-week-spread-ats-audit-v1` research contract. Unlike the WU3 per-snapshot
+materializer, it selects one final valid production/projected spread snapshot
+per canonical REG game, strictly before kickoff and no later than explicit
+UTC `--as-of`. Equal final timestamps with different IDs fail closed. Archive
+schema, feature and prediction hashes, source-manifest hashes, canonical
+identity/kickoff/neutral status, Week 1 zero-game blend and formula are checked.
+This version is specifically for Week 1: later-week live-blend snapshots do
+not satisfy its zero-game feature-integrity policy.
+
+Latest outcome revision at cutoff must be resolved/final and agree with
+canonical final scores and teams. Missing outcomes stay excluded and visible.
+One fixed book (default DraftKings) is selected by latest valid archived
+capture strictly before kickoff/cutoff, with semantic hash, identity, opposite
+home/away spread lines and provider-update timing checked. This is explicitly
+**last archived pre-kickoff**, not a proven closing line: mutable unchanged-state
+observation metadata and incomplete capture cadence prevent closing claims.
+Closing MAE/RMSE/closer percentage, actual qualifying-pick ATS and CLV remain
+unavailable until the necessary evidence is supplied; model direction is never
+substituted for an issued qualifying pick. No threshold is invented or changed.
+
+Descriptive absolute prediction-time model/market gap buckets are fixed at
+[0,1), [1,3), [3,5), [5,infinity), plus missing; absolute OVR-gap buckets at
+[0,10), [10,20), [20,infinity). All report counts and error metrics; current
+one-game cells are exploratory and calibration fitting is withheld. These
+diagnostic bins do not change production qualification policy. Local input
+SHA-256 hashes and selected IDs/features/market evidence are emitted with
+deterministic JSON and Markdown only inside an explicit `docs/research/`
+output directory. No production-writing or network mode exists. See the
+[Week 1 report](../research/nfl-week1-spread-ats-audit-2026/REPORT.md).
+
+Week 1 data completion uses the unchanged canonical nflverse score transform
+and existing spread-only append-only outcome resolver. Selected prediction IDs,
+model code, ratings and projections are preserved against the original audit's
+hash ledger. Additional per-game errors, median error and directional ATS call
+the existing production sides-performance grading functions (sign of the gap,
+no minimum threshold); they do not establish issued qualifying recommendations.
+The fixed snapshot/book/bucket/closing selection policies above are unchanged.
+`complete-nfl-week1-result-data.mjs` merges a captured public Week 1 CSV subset
+through that canonical transform without truncating other season games.
+
 ## Total
 
 Once a total exists, report MAE, RMSE, bias, correlation, calibration, over/under directional accuracy, JKB versus the same-game timestamp-valid market, edge buckets, season/week, dome/outdoor/weather, pace and favorite/underdog environment splits. Evaluate projected home/away scoring components separately if the model produces them.
