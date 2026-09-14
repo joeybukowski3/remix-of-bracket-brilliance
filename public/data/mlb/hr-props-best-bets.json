@@ -1,10 +1,10 @@
 {
   "date": "2026-09-14",
-  "generatedAt": "2026-09-14T14:15:00.086Z",
+  "generatedAt": "2026-09-14T17:05:48.311Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field and Great American Ball Park are the primary HR drivers today, with park factors of 1.4 and 1.25 respectively. Sugano and Lodolo are both vulnerable to power, especially from left-handed bats, while Target Field and Citi Field play neutral-to-suppressed. Weather is benign across the board, so park and matchup edges dominate.",
-    "modelNote": "The model is overweighting barrel rate and park factor while discounting recent HR volume, which explains why De Paula and Merrill rank ahead of higher recent-HR names like Merrill and Tatis."
+    "slateOverview": "Coors Field and Great American Ball Park headline a slate with elevated park factors (1.4 and 1.25), while Target Field and Citi Field play closer to neutral. Nick Lodolo and Tomoyuki Sugano face lineups with strong barrel and exit-velo profiles, and the lefty-righty splits favor power bats in both Coors and GABP. Weather looks mild across the board, so the edge stays with park and matchup data rather than wind or temperature boosts.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and recent HR/FB ratios, which is why De Paula and Merrill sit at the top despite modest sample sizes; opposing pitcher HR vulnerability is a secondary lever that pushes Merrill and Tatis higher in Coors."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Nick Lodolo",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=28.6%",
-        "HH=57.1%"
+        "hrScore=82.4",
+        "barrel=28.6%"
       ],
       "bullets": [
-        "barrel=28.6%",
-        "park=1.25"
+        "hrScore=82.4",
+        "barrel=28.6%"
       ],
-      "hrOddsYes": "+670",
-      "marketImpliedProbability": 0.12987012987012986,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=12.9%",
-        "HH=48.5%"
+        "hrScore=76.9",
+        "barrel=12.9%"
       ],
       "bullets": [
-        "park=1.4",
-        "HH=48.5%"
+        "hrScore=76.9",
+        "barrel=12.9%"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=12.5%",
-        "HH=54.2%"
+        "hrScore=75.6",
+        "barrel=12.5%"
       ],
       "bullets": [
-        "park=1.4",
-        "HH=54.2%"
+        "hrScore=75.6",
+        "barrel=12.5%"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -71,75 +71,16 @@
       "opposingPitcher": "Nick Lodolo",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=77.1",
-        "Hard Hit%=47.3"
-      ],
-      "bullets": [
-        "HR score 68.0 (#4)",
-        "Pitcher HR VS 77.1 at park 1.25"
-      ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "NYY",
-      "opposingPitcher": "Will Warren",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Hard Hit%=83.3",
-        "Pitcher HR VS=59.7"
-      ],
-      "bullets": [
-        "HR score 66.1 (#5)",
-        "Pitcher HR VS 59.7 at park 0.97"
-      ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "CIN",
-      "opposingPitcher": "Nick Lodolo",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=13.2%",
-        "HH=47.3%"
-      ],
-      "bullets": [
-        "park=1.25",
+        "hrScore=67.5",
         "barrel=13.2%"
       ],
-      "hrOddsYes": "+475",
-      "marketImpliedProbability": 0.17391304347826086,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "NYY",
-      "opposingPitcher": "Will Warren",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=50%",
-        "HH=83.3%"
-      ],
       "bullets": [
-        "barrel=50%",
-        "HH=83.3%"
+        "hrScore=67.5",
+        "barrel=13.2%"
       ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -147,115 +88,117 @@
       "team": "NYY",
       "opponent": "MIN",
       "opposingPitcher": "Dean Kremer",
-      "hrScoreRank": 6,
+      "hrScoreRank": 5,
       "topStats": [
-        "barrel=14.4%",
-        "HH=48.2%"
-      ],
-      "bullets": [
-        "park=0.97",
+        "hrScore=66.2",
         "barrel=14.4%"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
-      "valueStatus": "uncalibrated",
+      "bullets": [
+        "hrScore=66.2",
+        "barrel=14.4%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Josue De Paula",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 1,
+      "topStats": [
+        "hrScore=82.4",
+        "barrel=28.6%"
+      ],
+      "bullets": [
+        "hrScore=82.4",
+        "barrel=28.6%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 7,
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "COL",
+      "opposingPitcher": "Tomoyuki Sugano",
+      "hrScoreRank": 2,
       "topStats": [
-        "Pitcher HR VS=51.6",
-        "Hard Hit%=47.8"
+        "hrScore=76.9",
+        "barrel=12.9%"
       ],
       "bullets": [
-        "HR score 65.2 (#7)",
-        "Pitcher HR VS 51.6 at park 1.06"
+        "hrScore=76.9",
+        "barrel=12.9%"
       ],
-      "hrOddsYes": "+310",
-      "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "ATL",
-      "opposingPitcher": "Reynaldo López",
-      "hrScoreRank": 8,
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "COL",
+      "opposingPitcher": "Tomoyuki Sugano",
+      "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=51.6",
-        "Hard Hit%=49.1"
+        "hrScore=75.6",
+        "barrel=12.5%"
       ],
       "bullets": [
-        "HR score 65.0 (#8)",
-        "Pitcher HR VS 51.6 at park 1.00"
+        "hrScore=75.6",
+        "barrel=12.5%"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "ATL",
-      "opposingPitcher": "Reynaldo López",
-      "hrScoreRank": 8,
+      "player": "Josue De Paula",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=13.5%",
-        "HH=49.1%"
+        "hrScore=82.4",
+        "barrel=28.6%"
       ],
       "bullets": [
-        "park=1",
-        "barrel=13.5%"
+        "hrScore=82.4",
+        "barrel=28.6%"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Riley Greene",
-      "team": "DET",
-      "opponent": "TOR",
-      "opposingPitcher": "José Soriano",
-      "hrScoreRank": 23,
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "COL",
+      "opposingPitcher": "Tomoyuki Sugano",
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=15.3%",
-        "HH=47.7%"
+        "hrScore=76.9",
+        "barrel=12.9%"
       ],
       "bullets": [
-        "park=1.08",
-        "barrel=15.3%"
+        "hrScore=76.9",
+        "barrel=12.9%"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "LAD",
-      "opposingPitcher": "Tarik Skubal",
-      "hrScoreRank": 18,
-      "topStats": [
-        "Hard Hit%=53.5",
-        "Pitcher HR VS=32.8"
-      ],
-      "bullets": [
-        "HR score 58.4 (#18)",
-        "Pitcher HR VS 32.8 at park 1.25"
-      ],
-      "hrOddsYes": "+600",
-      "marketImpliedProbability": 0.14285714285714285,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]
