@@ -5,7 +5,7 @@
  * candidate before it is allowed to become trusted evidence.
  */
 
-import type { EvidenceCategory, EvidenceSourceType } from "./nfl-evidence-types";
+import type { EvidenceCategory, EvidenceCitationSpecificity, EvidenceSourceType } from "./nfl-evidence-types";
 
 /**
  * Tier 1 (official) > Tier 2 (established reporting) > Tier 3 (reputable
@@ -128,4 +128,69 @@ const FRESHNESS_HOURS_BY_CATEGORY: Record<EvidenceCategory, { fresh: number; agi
 
 export function freshnessThresholdsForCategory(category: EvidenceCategory): { fresh: number; aging: number } {
   return FRESHNESS_HOURS_BY_CATEGORY[category];
+}
+
+/**
+ * WU3.1 -- category-word path segments that mark a URL as a section/index
+ * page rather than a specific article, when that word IS the whole final
+ * path segment (e.g. ".../news", ".../injury-report"). Deliberately narrow
+ * and mechanical -- this never inspects page content, only URL shape.
+ */
+const INDEX_PATH_SEGMENT_WORDS = new Set([
+  "news",
+  "injuries",
+  "injury-report",
+  "injury-reports",
+  "roster",
+  "team",
+  "schedule",
+  "stats",
+  "depth-chart",
+  "press-conference",
+  "transcripts",
+  "articles",
+  "media",
+]);
+
+/** A segment shaped like a real article slug: hyphenated words and/or a multi-digit id, not a bare category word. */
+function looksLikeArticleSlug(segment: string): boolean {
+  if (INDEX_PATH_SEGMENT_WORDS.has(segment.toLowerCase())) return false;
+  return /-/.test(segment) || /\d{3,}/.test(segment);
+}
+
+/**
+ * Classifies a citation URL's specificity from its shape alone (no page
+ * fetch). See EvidenceCitationSpecificity's doc comment in
+ * nfl-evidence-types.ts for what each value means. Deliberately
+ * conservative: a URL this function cannot confidently classify as
+ * exact_document falls back to section_or_index rather than being upgraded
+ * on a guess.
+ */
+export function classifyCitationSpecificity(url: string | null): EvidenceCitationSpecificity {
+  if (!url) return "unknown";
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "unknown";
+  }
+
+  const segments = parsed.pathname.split("/").filter((segment) => segment.length > 0);
+  if (segments.length === 0) return "homepage";
+
+  const lastSegment = segments[segments.length - 1];
+
+  // WU3.3.2 -- a genuinely article-shaped final segment (hyphenated slug or
+  // numeric id, e.g. ".../91712815007/" or ".../some-article-slug/") is
+  // still an exact document even when the URL has a trailing slash; only a
+  // bare category word or other non-article-shaped segment demotes to
+  // section_or_index. This check must run BEFORE the trailing-slash
+  // shortcut below, or a real article URL that happens to end in "/" gets
+  // misclassified as an index page.
+  if (looksLikeArticleSlug(lastSegment)) return "exact_document";
+
+  const endsWithTrailingSlash = parsed.pathname.endsWith("/");
+  if (endsWithTrailingSlash) return "section_or_index";
+  if (segments.length === 1 && INDEX_PATH_SEGMENT_WORDS.has(lastSegment.toLowerCase())) return "section_or_index";
+  return "section_or_index";
 }

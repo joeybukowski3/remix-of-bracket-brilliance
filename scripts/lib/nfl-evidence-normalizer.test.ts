@@ -4,12 +4,19 @@ import {
   FIXTURE_CONTEXT,
   coachQuoteCandidate,
   confirmedInjuryCandidate,
+  factualClaimWithNoQuoteCandidate,
+  factualClaimWithNonverbatimQuoteCandidate,
+  factualClaimWithNonverbatimQuoteNoSourceCandidate,
+  factualClaimWithVerbatimQuoteCandidate,
+  homepageCitationCandidate,
   jkbMetricMasqueradeCandidate,
   missingUrlCandidate,
   paraphraseAsQuoteCandidate,
   postKickoffContaminationCandidate,
   questionablePlayerCandidate,
+  quotePrimaryNonverbatimCandidate,
   rejectedRumorCandidate,
+  sectionIndexCitationCandidate,
   unknownTeamSubjectCandidate,
   unsupportedSharpMoneyCandidate,
   weatherCandidate,
@@ -166,5 +173,98 @@ describe("normalizeExternalEvidence", () => {
     if (!result.ok) return;
     expect(result.evidence.provenance.candidateHash).toBeTruthy();
     expect(result.evidence.provenance.normalizerVersion).toBeTruthy();
+  });
+
+  it("21. (WU3.1) a specific article URL is classified exact_document and needs no citation review", () => {
+    const result = normalizeExternalEvidence(confirmedInjuryCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.source.citationSpecificity).toBe("exact_document");
+    expect(result.evidence.citationNeedsReview).toBe(false);
+  });
+
+  it("22. (WU3.1) retains a section/index-URL claim rather than rejecting it, but flags it for citation review", () => {
+    const result = normalizeExternalEvidence(sectionIndexCitationCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.source.citationSpecificity).toBe("section_or_index");
+    expect(result.evidence.citationNeedsReview).toBe(true);
+  });
+
+  it("23. (WU3.1) retains a homepage-only claim rather than rejecting it, but flags it for citation review", () => {
+    const result = normalizeExternalEvidence(homepageCitationCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.source.citationSpecificity).toBe("homepage");
+    expect(result.evidence.citationNeedsReview).toBe(true);
+  });
+
+  it("24. (WU3.1) a homepage citation is never treated as equivalent to a direct article citation", () => {
+    const exact = normalizeExternalEvidence(confirmedInjuryCandidate, FIXTURE_CONTEXT);
+    const homepage = normalizeExternalEvidence(homepageCitationCandidate, FIXTURE_CONTEXT);
+    if (!exact.ok || !homepage.ok) throw new Error("expected both to normalize");
+    expect(exact.evidence.citationNeedsReview).not.toBe(homepage.evidence.citationNeedsReview);
+  });
+});
+
+describe("normalizeExternalEvidence quote sanitization (WU3.3.1)", () => {
+  it("1/replay. the real Madubuike-shaped case: a valid, cited factual claim with a paraphrased optional quote is ACCEPTED, quote stripped, diagnostic recorded", () => {
+    const result = normalizeExternalEvidence(factualClaimWithNonverbatimQuoteCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.claim).toContain("ruled out");
+    expect(result.evidence.quote).toBeNull();
+    expect(result.evidence.quoteSanitization).toBe("removed_nonverbatim");
+    expect(result.evidence.verificationStatus).not.toBe("rejected");
+  });
+
+  it("2. a true verbatim optional quote is retained, tagged 'verified'", () => {
+    const result = normalizeExternalEvidence(factualClaimWithVerbatimQuoteCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.quote).toEqual(factualClaimWithVerbatimQuoteCandidate.quote);
+    expect(result.evidence.quoteSanitization).toBe("verified");
+  });
+
+  it("3. a quote-primary (category 'quote') candidate with an unsupported exactText is still hard-rejected, unchanged", () => {
+    const result = normalizeExternalEvidence(quotePrimaryNonverbatimCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.join(" ")).toMatch(/verbatim/);
+  });
+
+  it("4. no quote at all -- unchanged normal behavior, tagged 'not_applicable'", () => {
+    const result = normalizeExternalEvidence(factualClaimWithNoQuoteCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.quote).toBeNull();
+    expect(result.evidence.quoteSanitization).toBe("not_applicable");
+  });
+
+  it("5. a factual claim with a bad quote but no source URL still fails under existing trust rules (quote sanitization does not bypass other structural checks)", () => {
+    const result = normalizeExternalEvidence(factualClaimWithNonverbatimQuoteNoSourceCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.join(" ")).toMatch(/source\.url/);
+  });
+
+  it("never rewrites a paraphrase into a fabricated verbatim quote -- the stripped quote is null, never a modified/invented exactText", () => {
+    const result = normalizeExternalEvidence(factualClaimWithNonverbatimQuoteCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.quote).toBeNull();
+  });
+
+  it("preserves the original rawExcerpt even when the quote is stripped", () => {
+    const result = normalizeExternalEvidence(factualClaimWithNonverbatimQuoteCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.rawExcerpt).toBe(factualClaimWithNonverbatimQuoteCandidate.rawExcerpt);
+  });
+
+  it("never mutates the input candidate's quote object while sanitizing", () => {
+    const before = JSON.stringify(factualClaimWithNonverbatimQuoteCandidate);
+    normalizeExternalEvidence(factualClaimWithNonverbatimQuoteCandidate, FIXTURE_CONTEXT);
+    expect(JSON.stringify(factualClaimWithNonverbatimQuoteCandidate)).toBe(before);
   });
 });

@@ -35,7 +35,7 @@ import {
   type EvidenceVerificationStatus,
   type RawEvidenceCandidate,
 } from "./nfl-evidence-types";
-import { freshnessThresholdsForCategory, isRejectedSourceByPolicy, isUnsupportedSharpMoneyClaim, sourceTier } from "./nfl-evidence-policy";
+import { classifyCitationSpecificity, freshnessThresholdsForCategory, isRejectedSourceByPolicy, isUnsupportedSharpMoneyClaim, sourceTier } from "./nfl-evidence-policy";
 import { validateSubjectIdentities } from "./nfl-evidence-subject-identity";
 
 export const NORMALIZER_VERSION = "nfl-evidence-normalizer-v1" as const;
@@ -45,7 +45,8 @@ export type NormalizeResult = { ok: true; evidence: EvidenceRecord } | { ok: fal
 const GAME_ID_PATTERN = /^(\d{4})_(\d{2})_([A-Za-z]+)_([A-Za-z]+)$/;
 
 /** Postgame-result language a pregame claim must never carry. */
-const FORBIDDEN_POSTGAME_PATTERN =
+/** Exported for reuse by WU3.4's analysis validator (nfl-grok-analysis-validator.ts) -- same "no postgame language" rule applied to Grok's own analysis prose fields. */
+export const FORBIDDEN_POSTGAME_PATTERN =
   /\b(final score|defeated|won the game|game[- ]winning|walked off|final:|postgame|after the win|after the loss)\b/i;
 
 /** Mechanical proxy for "external claim restates a JKB-only internal metric as if independently researched." */
@@ -67,9 +68,44 @@ function isValidUrl(value: string | null): boolean {
 }
 
 /**
+ * WU3.3.1 -- evaluates ONLY the optional `quote` sub-object's internal
+ * integrity (speaker present, exactText present, exactText verbatim inside
+ * rawExcerpt). Deliberately separate from validateStructural() so the
+ * caller (normalizeExternalEvidence) can decide what an invalid quote MEANS
+ * for the candidate as a whole:
+ *   - category "quote" (the claim IS the quote): an invalid quote is a hard
+ *     structural failure of the entire candidate, unchanged from prior
+ *     behavior.
+ *   - any other category (a factual claim that happens to carry an optional
+ *     supporting quote): an invalid quote must NOT sink an otherwise-valid
+ *     factual claim -- the quote is stripped (never silently rewritten into
+ *     a fabricated verbatim quote) and the record is tagged
+ *     `quoteSanitization: "removed_nonverbatim"` so the loss is auditable.
+ * This rule is never weakened: a quote is retained ONLY when exactText is
+ * genuinely verbatim in rawExcerpt.
+ */
+function evaluateQuote(candidate: RawEvidenceCandidate): { status: "not_applicable" | "valid" | "invalid"; reasons: string[] } {
+  if (!candidate.quote) return { status: "not_applicable", reasons: [] };
+  const reasons: string[] = [];
+  if (!candidate.quote.speaker || candidate.quote.speaker.trim().length === 0) {
+    reasons.push("quote.speaker is required when a quote is present");
+  }
+  if (!candidate.quote.exactText || candidate.quote.exactText.trim().length === 0) {
+    reasons.push("quote.exactText is required when a quote is present");
+  }
+  if (!candidate.rawExcerpt || !candidate.quote.exactText || !candidate.rawExcerpt.includes(candidate.quote.exactText)) {
+    reasons.push("quote.exactText must appear verbatim inside rawExcerpt -- a paraphrase cannot be stored as a quote");
+  }
+  return { status: reasons.length > 0 ? "invalid" : "valid", reasons };
+}
+
+/**
  * Hard, structural validation. Any failure here means the candidate never
  * becomes an EvidenceRecord at all -- these are the "this cannot be safely
- * placed anywhere" cases, not quality judgments.
+ * placed anywhere" cases, not quality judgments. Quote integrity is
+ * deliberately NOT checked here -- see evaluateQuote() and its caller in
+ * normalizeExternalEvidence() for why a bad quote's consequence depends on
+ * the candidate's category.
  */
 function validateStructural(candidate: RawEvidenceCandidate, context: EvidenceNormalizationContext, subjectValidation: EvidenceSubjectValidation): string[] {
   const reasons: string[] = [];
@@ -149,18 +185,6 @@ function validateStructural(candidate: RawEvidenceCandidate, context: EvidenceNo
     }
   }
 
-  if (candidate.quote) {
-    if (!candidate.quote.speaker || candidate.quote.speaker.trim().length === 0) {
-      reasons.push("quote.speaker is required when a quote is present");
-    }
-    if (!candidate.quote.exactText || candidate.quote.exactText.trim().length === 0) {
-      reasons.push("quote.exactText is required when a quote is present");
-    }
-    if (!candidate.rawExcerpt || !candidate.quote.exactText || !candidate.rawExcerpt.includes(candidate.quote.exactText)) {
-      reasons.push("quote.exactText must appear verbatim inside rawExcerpt -- a paraphrase cannot be stored as a quote");
-    }
-  }
-
   return reasons;
 }
 
@@ -217,9 +241,24 @@ export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, conte
   );
 
   const structuralIssues = validateStructural(candidate, context, subjectValidation);
+
+  // WU3.3.1 -- an invalid quote is only a hard, whole-candidate failure when
+  // the claim IS the quote (category "quote"). For every other category, the
+  // quote is optional supporting material: stripping it must never sink an
+  // otherwise-valid factual claim. The rule itself (exactText must be
+  // genuinely verbatim in rawExcerpt) is unchanged and never weakened.
+  const quoteEvaluation = evaluateQuote(candidate);
+  if (candidate.category === "quote" && quoteEvaluation.status === "invalid") {
+    structuralIssues.push(...quoteEvaluation.reasons);
+  }
+
   if (structuralIssues.length > 0) {
     return { ok: false, reasons: structuralIssues };
   }
+
+  const quoteSanitization: EvidenceRecord["quoteSanitization"] =
+    quoteEvaluation.status === "not_applicable" ? "not_applicable" : quoteEvaluation.status === "valid" ? "verified" : "removed_nonverbatim";
+  const sanitizedQuote = quoteSanitization === "removed_nonverbatim" ? null : (candidate.quote ?? null);
 
   const publishedAt = candidate.source.publishedAt ?? null;
   const retrievedAt = candidate.source.retrievedAt;
@@ -264,6 +303,9 @@ export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, conte
   const evidenceId = computeEvidenceId(candidate, referenceTimestamp);
   const normalizedAt = new Date().toISOString();
 
+  const citationSpecificity = classifyCitationSpecificity(candidate.source.url);
+  const citationNeedsReview = citationSpecificity !== "exact_document";
+
   const evidence: EvidenceRecord = {
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     evidenceId,
@@ -280,6 +322,7 @@ export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, conte
       author: candidate.source.author ?? null,
       publishedAt,
       retrievedAt,
+      citationSpecificity,
     },
     subjects: {
       teams: candidate.subjects?.teams ?? [],
@@ -290,11 +333,13 @@ export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, conte
     confidence,
     verificationStatus,
     pregameSafe,
+    citationNeedsReview,
     relevance: {
       summary: candidate.relevance?.summary ?? "",
       areas: candidate.relevance?.areas ?? [],
     },
-    quote: candidate.quote ?? null,
+    quote: sanitizedQuote,
+    quoteSanitization,
     rawExcerpt: candidate.rawExcerpt ?? null,
     freshness: computeFreshness(candidate.category, publishedAt, retrievedAt, context.kickoffUtc),
     supersessionStatus: "current",

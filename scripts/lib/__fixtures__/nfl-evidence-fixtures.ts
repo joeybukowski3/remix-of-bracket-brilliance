@@ -42,6 +42,12 @@ export const FIXTURE_SUBJECT_IDENTITY: SubjectIdentitySource = {
     { playerId: "00-fixture-002", canonicalName: "Fixture Player B", team: "ind" },
     { playerId: "00-fixture-003", canonicalName: "Fixture Player C", team: "bal" },
     { playerId: "00-fixture-999", canonicalName: "Fixture Player Z", team: "kc" },
+    // WU3.1 -- real roster entry the "Drew Ogletree" -> "Andrew Ogletree" alias test resolves against.
+    { playerId: "00-0037292", canonicalName: "Andrew Ogletree", team: "ind" },
+    // WU3.1 -- two DISTINCT players sharing one canonical name, both in this game, to exercise
+    // "an alias-driven match can still be ambiguous/conflicting -- never auto-confirmed."
+    { playerId: "00-fixture-dup-ind", canonicalName: "Fixture Duplicate Name", team: "ind" },
+    { playerId: "00-fixture-dup-bal", canonicalName: "Fixture Duplicate Name", team: "bal" },
   ],
   coaches: [
     { coachId: "fixture-ind-coach", canonicalName: "Fixture Head Coach", team: "ind" },
@@ -303,6 +309,92 @@ export const paraphraseAsQuoteCandidate: RawEvidenceCandidate = {
   rawExcerpt: "The coach said he felt good about the line's depth heading into Sunday.",
 };
 
+/** WU3.1 case: valid, official, but the URL is a section/index page rather than a specific article -- must be retained + flagged for review, never rejected outright. */
+export const sectionIndexCitationCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  claim: "Colts posted their Week 1 injury report update.",
+  source: { ...confirmedInjuryCandidate.source, name: "Colts Official Site", url: "https://example-fixture.test/colts/injury-report/", sourceType: "official_team" },
+  rawExcerpt: "See the linked injury report index.",
+};
+
+/** WU3.1 case: valid claim, but cited only to the outlet's homepage -- weakest citation specificity, still retained + flagged. */
+export const homepageCitationCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  claim: "Colts official site published Week 1 news.",
+  source: { ...confirmedInjuryCandidate.source, name: "Colts Official Site", url: "https://example-fixture.test/", sourceType: "official_team" },
+  rawExcerpt: "See the team site for the latest news.",
+};
+
+/**
+ * WU3.3.1 -- SYNTHETIC replay of the real live BAL-IND update-mode finding
+ * (structural shape only; the actual player/text was Nnamdi Madubuike, ESPN,
+ * "ruled out" -- see the WU3.3 report). A valid, well-cited, category
+ * "injury" factual claim that ALSO carries an optional supporting quote
+ * whose exactText is a paraphrase, not verbatim in rawExcerpt. Must be
+ * accepted as a factual record with the quote stripped, never rejected
+ * outright.
+ */
+export const factualClaimWithNonverbatimQuoteCandidate: RawEvidenceCandidate = {
+  model: "grok",
+  gameId: FIXTURE_GAME_ID,
+  claim: "Fixture defensive tackle [Fixture Player A] was ruled out for Sunday's game after Friday's practice.",
+  category: "injury",
+  source: {
+    name: "Fixture National Outlet",
+    url: "https://example-fixture.test/national/fixture-player-a-ruled-out",
+    sourceType: "national_reporter",
+    author: "Fixture Reporter",
+    publishedAt: "2026-09-12T19:17:00.000Z",
+    retrievedAt: "2026-09-12T19:56:27.000Z",
+  },
+  subjects: { teams: ["ind"], players: ["Fixture Player A"], coaches: ["Fixture Head Coach"] },
+  confidence: "high",
+  relevance: { summary: "Starting DT unavailable for Week 1.", areas: ["run_defense"] },
+  quote: { speaker: "Fixture Head Coach", exactText: "Feel great about where he's at, but we're not going to play him this week." },
+  rawExcerpt: "Fixture Head Coach ruled out [Fixture Player A] for Sunday's game, but said the lineman is really close to returning.",
+};
+
+/** WU3.3.1 -- same factual claim, but the optional quote's exactText genuinely IS verbatim in rawExcerpt: must be retained (quoteSanitization: "verified"). */
+export const factualClaimWithVerbatimQuoteCandidate: RawEvidenceCandidate = {
+  ...factualClaimWithNonverbatimQuoteCandidate,
+  source: { ...factualClaimWithNonverbatimQuoteCandidate.source, url: "https://example-fixture.test/national/fixture-player-a-ruled-out-verbatim" },
+  rawExcerpt: "Fixture Head Coach on [Fixture Player A]: \"Feel great about where he's at, but we're not going to play him this week.\"",
+};
+
+/** WU3.3.1 -- same factual claim, no quote object at all: baseline "unchanged normal behavior" case. */
+export const factualClaimWithNoQuoteCandidate: RawEvidenceCandidate = {
+  ...factualClaimWithNonverbatimQuoteCandidate,
+  source: { ...factualClaimWithNonverbatimQuoteCandidate.source, url: "https://example-fixture.test/national/fixture-player-a-ruled-out-no-quote" },
+  quote: null,
+};
+
+/** WU3.3.1 -- same factual claim, but with no source URL at all: must still be rejected under the existing trust rules regardless of the quote-sanitization change. */
+export const factualClaimWithNonverbatimQuoteNoSourceCandidate: RawEvidenceCandidate = {
+  ...factualClaimWithNonverbatimQuoteCandidate,
+  source: { ...factualClaimWithNonverbatimQuoteCandidate.source, url: null },
+};
+
+/** WU3.3.1 -- quote-primary (category "quote") candidate whose claim IS the quote and whose exactText cannot be verified: must still hard-reject, unchanged. */
+export const quotePrimaryNonverbatimCandidate: RawEvidenceCandidate = {
+  model: "grok",
+  gameId: FIXTURE_GAME_ID,
+  claim: "Fixture Head Coach commented on [Fixture Player A]'s status.",
+  category: "quote",
+  source: {
+    name: "Fixture National Outlet",
+    url: "https://example-fixture.test/national/fixture-head-coach-comment",
+    sourceType: "national_reporter",
+    author: "Fixture Reporter",
+    publishedAt: "2026-09-12T19:17:00.000Z",
+    retrievedAt: "2026-09-12T19:56:27.000Z",
+  },
+  subjects: { teams: ["ind"], players: ["Fixture Player A"], coaches: ["Fixture Head Coach"] },
+  confidence: "medium",
+  relevance: { summary: "Coach's own words on the injury.", areas: ["other"] },
+  quote: { speaker: "Fixture Head Coach", exactText: "Feel great about where he's at, but we're not going to play him this week." },
+  rawExcerpt: "Fixture Head Coach ruled out [Fixture Player A] for Sunday's game, but said the lineman is really close to returning.",
+};
+
 /** Hard-fail case: malformed/missing URL. */
 export const missingUrlCandidate: RawEvidenceCandidate = {
   model: "grok",
@@ -361,6 +453,24 @@ export const wrongTeamPlayerSubjectCandidate: RawEvidenceCandidate = {
 export const unknownPlayerSubjectCandidate: RawEvidenceCandidate = {
   ...confirmedInjuryCandidate,
   subjects: { teams: ["ind"], players: ["Nonexistent Fixture Player Q"], coaches: [] },
+};
+
+/** WU3.1 case: "Drew Ogletree" resolves via the explicit alias table to the real roster entry "Andrew Ogletree". */
+export const drewOgletreeAliasSubjectCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  subjects: { teams: ["ind"], players: ["Drew Ogletree"], coaches: [] },
+};
+
+/**
+ * WU3.1 case: a name that matches TWO distinct players in this game (never
+ * reached via the alias table itself -- this exercises the SAME
+ * ambiguity-detection code path that an alias-resolved match would also go
+ * through, proving an alias can never bypass it into a fabricated "confirmed"
+ * result).
+ */
+export const ambiguousDuplicateNameSubjectCandidate: RawEvidenceCandidate = {
+  ...confirmedInjuryCandidate,
+  subjects: { teams: ["ind", "bal"], players: ["Fixture Duplicate Name"], coaches: [] },
 };
 
 /** WU2.1 case: subject coach exists and is associated with the home (IND) team. */

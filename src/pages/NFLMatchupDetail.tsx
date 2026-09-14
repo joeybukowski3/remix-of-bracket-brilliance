@@ -13,6 +13,7 @@ import { useNflSituationalTrends } from "@/hooks/useNflSituationalTrends";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
 import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
+import { useNflGameAiHandicaps } from "@/hooks/useNflGameAiHandicaps";
 import { teamTotalFor } from "@/lib/nfl/totalsProjectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
@@ -71,6 +72,7 @@ import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile
 import MatchupMobileStickyHeader from "@/components/nfl/matchups/MatchupMobileStickyHeader";
 import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
 import MatchupOverviewPanel from "@/components/nfl/matchups/MatchupOverviewPanel";
+import MatchupAiPicksPanel from "@/components/nfl/matchups/MatchupAiPicksPanel";
 import MatchupPeriodComparison from "@/components/nfl/matchups/MatchupPeriodComparison";
 import MatchupScheduleContext from "@/components/nfl/matchups/MatchupScheduleContext";
 import MatchupSituationalTrendsPanel from "@/components/nfl/matchups/MatchupSituationalTrendsPanel";
@@ -197,6 +199,11 @@ export default function NFLMatchupDetail() {
     () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
     [data, gameSlug]
   );
+
+  // Independent optional enrichment: a game with no generated AI-handicap
+  // artifact yet leaves only the AI Picks tab unavailable; every other
+  // section of the page keeps working.
+  const { presentation: aiHandicapPresentation, loading: aiHandicapLoading, error: aiHandicapError } = useNflGameAiHandicaps(CURRENT_SEASON, matchup?.gameId ?? null);
 
   // The UI addresses teams by guide slug; the artifact is keyed by the canonical
   // abbreviation, so the resolver is built with an explicit two-entry map.
@@ -573,6 +580,14 @@ export default function NFLMatchupDetail() {
         />
       </div>
 
+      <div {...panelProps("aiPicks")}>
+        <MatchupAiPicksPanel
+          presentation={aiHandicapPresentation}
+          loading={aiHandicapLoading}
+          error={aiHandicapError}
+        />
+      </div>
+
       {/* Stated once for the whole page, beneath every tab. */}
       {isLegacyObserved && <p className="text-[11px] leading-5 text-slate-400">{CONVENTIONAL_STATS_METHODOLOGY}</p>}
 
@@ -615,9 +630,17 @@ export default function NFLMatchupDetail() {
         </p>
       )}
 
+      {aiHandicapPresentation && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          AI Picks (Grokowski / Chatty Ice): independent third-party AI opinions, not JKB&apos;s own model and not
+          betting advice. Each forms its own side/total lean and confidence from public evidence; they never see
+          each other&apos;s work, and this page never averages, compares or declares a winner between them.
+        </p>
+      )}
+
       <p className="text-[11px] leading-5 text-slate-400">
         Informational model preview only — not betting advice. No pick, best bet, confidence
-        rating or stake size is produced anywhere on this page.
+        rating or stake size is produced by JKB&apos;s own model anywhere on this page.
       </p>
     </div>
   );

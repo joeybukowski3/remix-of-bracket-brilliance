@@ -256,7 +256,7 @@ describe("tabs", () => {
   it("selects Overview by default and shows only its panel", () => {
     render(<Harness />);
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(5);
+    expect(tabs).toHaveLength(MATCHUP_TABS.length);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     expect(document.getElementById(matchupPanelId("overview"))).not.toHaveAttribute("hidden");
     expect(document.getElementById(matchupPanelId("comparison"))).toHaveAttribute("hidden");
@@ -291,11 +291,11 @@ describe("tabs", () => {
     expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
 
     fireEvent.keyDown(tablist, { key: "End" });
-    expect(screen.getByRole("tab", { name: "Model Details" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "AI Picks" })).toHaveAttribute(
       "aria-selected",
       "true"
     );
-    expect(window.location.hash).toBe("#model");
+    expect(window.location.hash).toBe("#aiPicks");
 
     fireEvent.keyDown(tablist, { key: "Home" });
     expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");

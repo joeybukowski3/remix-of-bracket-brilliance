@@ -151,6 +151,22 @@ export type EvidenceFreshness = "fresh" | "aging" | "stale" | "unknown";
  */
 export type EvidenceSupersessionStatus = "current" | "superseded" | "conflicting";
 
+/**
+ * WU3.1 -- how specific a source URL actually is, independent of source
+ * TIER (sourceType/sourceTier already answer "how authoritative is this
+ * outlet"). A homepage or section/index URL ("https://team.com/news/") is
+ * not auditable the way a specific article URL is, even from a tier-1
+ * outlet -- this axis exists so that distinction is never silently lost.
+ *   exact_document    -- URL points at a specific article/document/page.
+ *   section_or_index   -- URL points at a category/section/listing page
+ *                          (e.g. trailing-slash "/news/", "/injury-report/").
+ *   homepage           -- URL points at a site root.
+ *   unknown            -- URL missing or unparseable.
+ */
+export type EvidenceCitationSpecificity = "exact_document" | "section_or_index" | "homepage" | "unknown";
+
+export const EVIDENCE_CITATION_SPECIFICITIES: readonly EvidenceCitationSpecificity[] = ["exact_document", "section_or_index", "homepage", "unknown"];
+
 export interface EvidenceSource {
   name: string;
   url: string | null;
@@ -158,6 +174,8 @@ export interface EvidenceSource {
   author: string | null;
   publishedAt: string | null; // source's own timestamp, ISO-8601, if known
   retrievedAt: string; // when the research pass fetched it, ISO-8601
+  /** WU3.1 -- always computed by the normalizer from `url`; never provider-supplied. */
+  citationSpecificity: EvidenceCitationSpecificity;
 }
 
 export interface EvidenceSubjects {
@@ -183,6 +201,25 @@ export interface EvidenceQuote {
   exactText: string;
 }
 
+/**
+ * WU3.3.1 -- distinguishes three outcomes for a candidate's optional
+ * `quote` field, so "whole candidate rejected" / "quote rejected but
+ * factual candidate retained" / "fully accepted quote" are never conflated:
+ *   not_applicable      -- no quote was supplied on the candidate at all.
+ *   verified             -- a quote was supplied and its exactText is
+ *                            genuinely verbatim inside rawExcerpt; retained.
+ *   removed_nonverbatim -- a quote was supplied but failed verbatim
+ *                            validation; for a non-"quote"-category
+ *                            candidate this is stripped (never rewritten
+ *                            into a fabricated exact quote) while the
+ *                            surrounding factual claim is still normalized.
+ *                            (A "quote"-category candidate that fails this
+ *                            check is hard-rejected entirely -- see
+ *                            nfl-evidence-normalizer.ts -- and never reaches
+ *                            this value.)
+ */
+export type QuoteSanitizationStatus = "not_applicable" | "verified" | "removed_nonverbatim";
+
 export interface EvidenceProvenance {
   candidateHash: string; // content hash of the raw candidate that produced this record
   normalizerVersion: string;
@@ -204,8 +241,16 @@ export interface EvidenceRecord {
   confidence: EvidenceConfidence;
   verificationStatus: EvidenceVerificationStatus;
   pregameSafe: boolean;
+  /**
+   * WU3.1 -- true when source.citationSpecificity is "section_or_index",
+   * "homepage", or "unknown". Never treated as equivalent to a direct
+   * "exact_document" citation; retained (not rejected) but flagged so a
+   * human/editorial pass can weigh it accordingly.
+   */
+  citationNeedsReview: boolean;
   relevance: EvidenceRelevance;
   quote: EvidenceQuote | null;
+  quoteSanitization: QuoteSanitizationStatus;
   rawExcerpt: string | null;
   freshness: EvidenceFreshness;
   supersessionStatus: EvidenceSupersessionStatus; // always "current" as stored; see resolveEvidenceAuthority()

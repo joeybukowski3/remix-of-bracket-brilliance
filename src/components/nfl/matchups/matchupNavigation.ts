@@ -24,7 +24,13 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 
-export type MatchupTabId = "overview" | "comparison" | "trends" | "availability" | "model";
+export type MatchupTabId =
+  | "overview"
+  | "comparison"
+  | "trends"
+  | "availability"
+  | "model"
+  | "aiPicks";
 
 export type MatchupTab = {
   id: MatchupTabId;
@@ -38,6 +44,7 @@ export const MATCHUP_TABS: readonly MatchupTab[] = [
   { id: "trends", label: "Situational Trends" },
   { id: "availability", label: "Availability & Snaps" },
   { id: "model", label: "Model Details" },
+  { id: "aiPicks", label: "AI Picks" },
 ] as const;
 
 export const MATCHUP_TAB_IDS: readonly MatchupTabId[] = MATCHUP_TABS.map((tab) => tab.id);

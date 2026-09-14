@@ -36,6 +36,35 @@ function normalizedPlayerKey(name: string): string {
   return normalizeNflPropName(name);
 }
 
+/**
+ * WU3.1 -- explicit, reviewed player-name aliases for external-research
+ * subject resolution. Mirrors the established repo pattern in
+ * src/lib/fantasy/parRankings.ts (JKB_PLAYER_ALIASES): a small, hand-curated
+ * lookup table, NEVER fuzzy/similarity matching. Add an entry only after
+ * confirming the mismatch against an authoritative roster source (see
+ * nfl-evidence-subject-identity.test.ts) -- this must never grow into a
+ * general nickname-guessing mechanism.
+ *
+ * Keyed by normalizedPlayerKey() of the alias form; value is the canonical
+ * display name to re-resolve against the roster (itself re-normalized before
+ * matching, so this table only ever needs the "obvious" spelling).
+ */
+const PLAYER_NAME_ALIASES: Readonly<Record<string, string>> = {
+  [normalizedPlayerKey("Drew Ogletree")]: "Andrew Ogletree", // nflverse rosters use the full given name "Andrew"; some reporters use "Drew".
+};
+
+/**
+ * Returns the direct normalized key for rawInput, plus (when one exists) the
+ * normalized key of its explicit alias target. Never returns more than 2
+ * keys, and never guesses an alias that isn't in PLAYER_NAME_ALIASES.
+ */
+function candidatePlayerKeys(rawInput: string): { direct: string; alias: string | null } {
+  const direct = normalizedPlayerKey(rawInput);
+  const aliasTarget = PLAYER_NAME_ALIASES[direct];
+  const alias = aliasTarget ? normalizedPlayerKey(aliasTarget) : null;
+  return { direct, alias: alias && alias !== direct ? alias : null };
+}
+
 function normalizedCoachKey(name: string): string {
   return normalizeCoachName(name).toLowerCase();
 }
@@ -54,12 +83,16 @@ function validatePlayerSubject(rawInput: string, gameTeams: GameTeams, source: S
     return unresolved("roster_source_unavailable");
   }
 
-  const key = normalizedPlayerKey(rawInput);
-  if (!key) {
+  const { direct, alias } = candidatePlayerKeys(rawInput);
+  if (!direct) {
     return unresolved("empty_subject");
   }
 
-  const matches = source.players.filter((entry) => normalizedPlayerKey(entry.canonicalName) === key);
+  const directMatches = source.players.filter((entry) => normalizedPlayerKey(entry.canonicalName) === direct);
+  const aliasMatches = alias ? source.players.filter((entry) => normalizedPlayerKey(entry.canonicalName) === alias) : [];
+  const matchedViaAlias = directMatches.length === 0 && aliasMatches.length > 0;
+  const matches = matchedViaAlias ? aliasMatches : directMatches;
+
   if (matches.length === 0) {
     return unresolved("not_found_in_roster_source");
   }
@@ -106,7 +139,7 @@ function validatePlayerSubject(rawInput: string, gameTeams: GameTeams, source: S
     canonicalPlayerId: match.playerId,
     canonicalName: match.canonicalName,
     team: match.team,
-    reason: "matched_roster_in_game",
+    reason: matchedViaAlias ? "matched_roster_via_alias_in_game" : "matched_roster_in_game",
   };
 }
 

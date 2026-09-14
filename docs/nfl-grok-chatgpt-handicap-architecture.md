@@ -1188,6 +1188,435 @@ manually (WU9).
 
 ---
 
+## 24. Recurring pregame snapshot lifecycle (WU3.2)
+
+Status: **framework implemented, no model-generated content, no automation.**
+Extends §17's lifecycle table (which stays the authority on cadence phases)
+with the actual immutable, model-agnostic storage/delta framework both Grok's
+and ChatGPT's future recurring-update passes will use. Implemented in
+`scripts/lib/nfl-snapshot-*.ts` and `scripts/lib/nfl-research-delta-context.ts`.
+
+### 24.1 Lifecycle
+
+```
+INITIAL SNAPSHOT
+      |
+later research cutoff
+      |
+new validated evidence (WU2 EvidenceRecord[], unchanged schema)
+      |
+deterministic comparison against the previous model-specific snapshot
+      |
+structured update assessment (typed contract; values are model-generated, added in a future WU)
+      |
+append-only snapshot history
+```
+
+Each step from "new validated evidence" onward runs independently per model
+(`grok` | `chatgpt`) with no shared state — see §24.4.
+
+### 24.2 Snapshot schema
+
+`AnalysisSnapshot` (`scripts/lib/nfl-snapshot-types.ts`, schema
+`nfl-snapshot-v1`) is the one canonical record type for every point in a
+model's pregame timeline:
+
+```typescript
+interface AnalysisSnapshot {
+  schemaVersion: "nfl-snapshot-v1";
+  snapshotId: string;            // deterministic content hash, see 24.6
+  model: "grok" | "chatgpt";
+  gameId: string; season: number; week: number;
+  snapshotType: "initial" | "daily_update" | "gameday";
+  createdAt: string;
+  researchCutoff: string;        // must be <= kickoff, enforced at write time (24.7)
+  kickoff: string;
+  previousSnapshotId: string | null;  // null only for the first snapshot
+  context: { contextVersion: string; contextHash: string };
+  evidence: {                    // computed by nfl-snapshot-evidence-delta.ts, never LLM-judged
+    evidenceIds: string[]; addedEvidenceIds: string[];
+    supersededEvidenceIds: string[]; conflictingEvidenceIds: string[];
+  };
+  market: {                      // computed by nfl-snapshot-market-delta.ts from JKB's deterministic market artifact
+    sportsbook: string | null;
+    spread: { homeLine: number | null; awayLine: number | null };
+    total: { line: number | null };
+    moneyline: { homePrice: number | null; awayPrice: number | null } | null;
+    asOf: string | null;
+    previousSpread: { homeLine: number | null; awayLine: number | null } | null;
+    previousTotal: number | null;
+    spreadDelta: number | null; totalDelta: number | null;
+    moneylineHomeDelta: number | null; moneylineAwayDelta: number | null;
+    sportsbookChanged: boolean; asOfDeltaMs: number | null;
+  };
+  analysisState: {                // null on a research-only snapshot -- an analysis pass hasn't run yet
+    thesis: string | null;
+    side: { lean: "home"|"away"|"pass"|"undecided"; confidence: number|null; spreadLineAtOpinion: {homeLine:number|null; awayLine:number|null}|null };
+    total: { lean: "over"|"under"|"pass"|"undecided"; confidence: number|null; totalLineAtOpinion: number|null };
+  } | null;
+  updateAssessment: UpdateAssessment | null;  // see 24.3; null on "initial" and until an analysis pass populates it
+}
+```
+
+Side/total pick vocabulary and the 1-10 confidence scale are reused verbatim
+from §6's `SideOpinion`/`TotalOpinion` — `"undecided"` is the one addition,
+for "no opinion formed yet." `confidence` is `null` for `"undecided"` (no
+opinion) and for `"pass"` (no directional confidence once no play is being
+made), and required for `"home"`/`"away"`/`"over"`/`"under"`.
+
+**Line-at-opinion**: `spreadLineAtOpinion`/`totalLineAtOpinion` freeze the
+exact market number in effect when that opinion was recorded. Two snapshots
+with the same lean but different lines (e.g. IND +3.5 on Friday vs IND +2.5
+on Sunday, lean unchanged) are never collapsed to a team name — both exact
+numbers remain independently queryable from their own snapshot.
+
+### 24.3 Update-assessment schema (contract only — not populated by WU3.2)
+
+```typescript
+interface UpdateAssessment {
+  developments: {                 // model-generated; WU3.2 only types/validates this shape
+    developmentId: string; evidenceIds: string[]; summary: string;
+    significance: "major"|"moderate"|"minor"|"neutral";
+    direction: "home_positive"|"away_positive"|"over_positive"|"under_positive"|"mixed"|"neutral";
+    affectedAreas: ("passing"|"rushing"|"protection"|"pass_rush"|"coverage"|"run_defense"|"usage"|"pace"|"weather"|"market"|"other")[];
+    footballImpact: string; marketRelevance: string;
+  }[];
+  thesisAssessment: { changed: boolean; explanation: string };
+  sideAssessment: {                // change/previousLean/previousConfidence computed deterministically (24.4); explanation is model-generated
+    previousLean: SideLean; currentLean: SideLean;
+    change: "none"|"strengthened"|"weakened"|"changed_side"|"moved_to_pass"|"pass_to_play";
+    previousConfidence: number|null; currentConfidence: number|null; explanation: string;
+  };
+  totalAssessment: { /* same shape, total vocabulary */ };
+  overallChange: "material" | "minor" | "none";
+  conciseCommentary: string;
+}
+```
+
+**No-change is valid and expected**: `developments` may be `[]`,
+`thesisAssessment.changed` may be `false`, both `sideAssessment.change` and
+`totalAssessment.change` may be `"none"`, and `overallChange` may be
+`"none"` — none of this represents a failed or incomplete run. A future
+analysis pass answering "what changed?" is explicitly allowed to answer "no"
+to every opinion-change question (§24.9).
+
+### 24.4 Evidence delta (deterministic, no LLM)
+
+`computeEvidenceDelta()` (`scripts/lib/nfl-snapshot-evidence-delta.ts`)
+compares a previous snapshot's `evidence.evidenceIds` against the model's
+current full `EvidenceRecord[]` and classifies every id as added / unchanged
+/ superseded / conflicting — entirely by reusing WU2's
+`resolveEvidenceAuthority()` (`nfl-evidence-store.ts`). No model is ever
+asked "is this evidence new" or "does this contradict a prior claim."
+
+### 24.5 Market delta (deterministic, no LLM)
+
+`computeMarketDelta()` (`scripts/lib/nfl-snapshot-market-delta.ts`) takes two
+`SnapshotMarketState` reads — each one a direct capture of JKB's
+deterministic market artifact (`GameContextMarket` /
+`buildMarketSection()`, `scripts/lib/nfl-full-game-context.ts`), never an
+independently AI-derived number — and computes spread/total/moneyline
+deltas, a sportsbook-changed flag, and an `asOf` timestamp delta by plain
+subtraction. No future model is ever asked to report or estimate line
+movement itself.
+
+### 24.6 Opinion-change classification (deterministic, no LLM)
+
+`classifySideOpinionChange()` / `classifyTotalOpinionChange()`
+(`scripts/lib/nfl-snapshot-opinion-delta.ts`) mechanically classify the
+`SideAssessment.change` / `TotalAssessment.change` enum from two
+`SideOpinionState`/`TotalOpinionState` values (lean + confidence
+comparison only) — never the football "why," which stays a model-generated
+`explanation` string on the assessment. This is what makes "was there a
+material change" answerable without re-deriving it from prose later.
+
+### 24.7 Storage layout and snapshot identity
+
+Mirrors WU2's evidence-store directory convention exactly:
+
+```
+data/nfl/analysis/<season>/<week>/<gameId>/<model>/
+  snapshots/<snapshotId>.json   -- canonical, append-only, never rewritten
+  latest.json                  -- derived pointer {snapshotId}, rebuilt on every write
+  history.json                 -- derived lightweight index, rebuilt on every write
+```
+
+`snapshotId` is a deterministic content hash
+(`computeSnapshotId()`, `scripts/lib/nfl-snapshot-store.ts`) over
+`{model, gameId, snapshotType, researchCutoff, contextHash, evidenceIds}` —
+never an opaque random id. `writeSnapshot()` is idempotent for a byte-
+identical re-write of the same id and throws on any attempt to write
+different content under an existing id — prior snapshots cannot be
+rewritten, full stop. `latest.json`/`history.json` are indexes only; a
+future UI timeline reads `history.json` for its row list
+(`SnapshotHistoryEntry`: snapshotId, createdAt, researchCutoff,
+snapshotType, market spread/total, side/total lean, side/total confidence,
+overallChange, previousSnapshotId) and fetches individual
+`snapshots/<id>.json` files for full detail.
+
+### 24.8 Model isolation and pregame locking
+
+Storage isolation is physical (separate `grok`/`chatgpt` directories) and
+defensive: every read (`readSnapshotHistory`/`readLatestSnapshot`) validates
+`snapshot.model` against the model it was asked to load and throws on a
+mismatch, so a misplaced or corrupted file is a hard error, never a silent
+cross-model leak. No function in `nfl-snapshot-store.ts` accepts both
+models' data at once — merging streams stays a future comparison WU (§9),
+unchanged from the existing independence guarantees (§13).
+
+Locking (`scripts/lib/nfl-snapshot-lock.ts`) is never a stored flag:
+`isPregameStreamLocked(kickoffUtc, now)` is `true` once `now >= kickoff`.
+`canCreatePregameSnapshot()` enforces two independent gates — `researchCutoff`
+must never be after `kickoff`, and no new pregame snapshot of any
+`snapshotType` (including the final `"gameday"` one) may be created once the
+stream is locked. Existing snapshots remain readable forever; only new
+pregame-snapshot *creation* is blocked.
+
+### 24.9 Delta-first research input (provider-neutral)
+
+`ResearchDeltaContext` (`nfl-snapshot-types.ts`) and its builder
+`buildResearchDeltaContext()` (`nfl-research-delta-context.ts`) give a
+future delta-focused research pass exactly what it needs to ask "what
+materially changed after the cutoff?" instead of re-researching the whole
+matchup: `previousSnapshotId`, `previousResearchCutoff`, `priorEvidenceIds`,
+optional `priorEvidenceClaims`/`priorCoverage` (WU3.1's coverage-summary
+shape, itself already provider-neutral), and `previousMarketState`. The type
+contains no Grok- or OpenAI-specific field, by construction — both future
+update-mode adapters (§11/§12) consume it unchanged.
+
+Future opinion-update rules (documented now, not implemented): a delta-pass
+analysis must answer, and may legitimately answer "no" to every
+opinion-change question:
+
+1. What changed since the previous research cutoff?
+2. Is the new information reliable (source tier / verification status)?
+3. What football consequence does it have?
+4. Has the market changed?
+5. Does the thesis change?
+6. Does the side lean change?
+7. Does the total lean change?
+8. Does confidence change?
+
+### 24.10 Cadence — still design-only
+
+No weekday is hardcoded into any WU3.2 module. §17's table (early
+week/Wednesday/Thursday/Friday/Saturday/game-day) remains the design
+reference for a *future* automation layer to decide `snapshotType` and
+trigger timing; `nfl-snapshot-*.ts` only knows about the three
+`snapshotType` values and the researchCutoff/kickoff ordering, never a
+calendar.
+
+### 24.11 Remaining gaps before wiring an update mode
+
+- **Grok update mode**: `runGrokResearch()` (`nfl-grok-research-adapter.ts`)
+  still rejects `mode:"update"` outright (WU3.1) — a delta-focused prompt
+  that consumes `ResearchDeltaContext` and emits findings the same way the
+  initial-mode prompt does is unbuilt.
+- **ChatGPT adapter**: does not exist yet at all (§12) — `AnalysisSnapshot`/
+  `ResearchDeltaContext` are provider-neutral by construction so this is
+  additive, not a redesign, but the adapter itself, its retry/backoff shape,
+  and its research-tooling capability are all unverified (§23 item 3).
+  ChatGPT's snapshot writes are already isolated by construction (`model:
+  "chatgpt"` selects its own directory) — no store change is needed to add
+  it.
+- **Analysis pass**: nothing in WU3.2 populates `analysisState` or
+  `updateAssessment` — that is the next WU per model, and must call
+  `classifySideOpinionChange()`/`classifyTotalOpinionChange()` for the
+  mechanical fields rather than re-deriving them.
+- **Comparison/UI timeline**: `history.json` is shaped for a future UI
+  timeline (§16.5-16.6 patterns apply) but no UI consumes it yet.
+
+---
+
+## 25. Grok handicap + update-assessment engine (WU3.4)
+
+Status: **implemented and live-confirmed for `2026_01_BAL_IND`; no ChatGPT,
+no article, no picks archive, no automation.** Adds the first structured
+handicapping layer on top of WU3's validated evidence and WU3.2's snapshot
+framework. Implemented in `scripts/lib/nfl-grok-analysis-*.ts`.
+
+**Separation from research (unchanged principle)**: the analysis engine
+consumes JKB deterministic context, validated Grok evidence, evidence
+authority/supersession state, current market, and (for updates) the
+model's own prior analysis state -- and nothing else. `nfl-grok-analysis-adapter.ts`
+never sends a `tools` field to `/v1/responses`; web_search is categorically
+absent from this pass.
+
+**Schema** (`nfl-grok-analysis-types.ts`, `nfl-grok-analysis-v1`):
+`GrokAnalysisV1` — `centralThesis`, `matchupFactors[]` (area/finding/supports/
+importance/`jkbContextRefs`/`evidenceIds`), `marketAssessment` (current vs.
+JKB spread/total with gap fields), `side`/`total` opinions (lean, optional
+team/line-at-opinion, 1-10 confidence, rationale), `failureModes[]` (≥2),
+`evidenceQualityAssessment`. `GrokUpdateProposal` deliberately omits any
+"what changed" field — it only reports the model's CURRENT thesis/side/total;
+every classification is computed downstream.
+
+**Validation boundary** (`nfl-grok-analysis-validator.ts`, mirrors
+`normalizeExternalEvidence`'s role): model/gameId identity, legal enums,
+confidence range, line-at-opinion exact match against the supplied current
+market, evidenceId existence + Grok-only + non-rejected + pregame-safe,
+`jkbContextRefs` restricted to the packet's real top-level sections, every
+`marketAssessment` JKB/market number cross-checked against the supplied
+context (invented values hard-rejected), required failure modes, no
+postgame language (reuses `FORBIDDEN_POSTGAME_PATTERN` from
+`nfl-evidence-normalizer.ts`).
+
+**Deterministic classification** (`nfl-grok-analysis-pipeline.ts`): reuses
+WU3.2's `classifySideOpinionChange`/`classifyTotalOpinionChange` verbatim to
+compute `strengthened`/`weakened`/`changed_side`/`moved_to_pass`/
+`pass_to_play`/`none` from the model's current opinion vs. the previous
+snapshot's stored opinion — the model itself is never trusted to self-report
+this. `overallChange` and `thesisAssessment.changed` are likewise
+mechanically derived (text-equality for the thesis), never asked of the
+model. Confidence convention: `GrokSideOpinion`/`GrokTotalOpinion` always
+carry a 1-10 confidence (including for `pass`); the mapping into WU3.2's
+`SnapshotAnalysisState` nulls confidence/line for `pass`/`undecided`,
+reconciling the two schemas' conventions in one place.
+
+**Live confirmation** (2026_01_BAL_IND, pregame): one initial handicap
+($0.0548, 130.5s, no web_search) produced a home lean (IND +3.5, confidence
+4/10) and a total pass, citing 11 real Grok evidenceIds and correctly
+distinguishing JKB's fair line (IND -3.0) from the market (BAL -3.5,
+i.e. home +3.5) without inventing either. One immediate update pass
+($0.0508, 125.0s) correctly classified the result as `overallChange: "none"`
+from three minor, offsetting practice-report developments — proving the
+deterministic classifiers, not the model, drive the change verdict.
+
+**Remaining before ChatGPT parity**: the ChatGPT adapter itself does not
+exist yet (§12); once built, it should implement this same
+proposal→validator→pipeline shape, since nothing in
+`nfl-grok-analysis-types.ts`/`-validator.ts`/`-pipeline.ts` is Grok-specific
+except the adapter's own HTTP call.
+
+---
+
+## 26. ChatGPT handicap + update-assessment parity (WU4.4)
+
+Status: **implemented, unit-tested (fixtures A–M + model-isolation suite),
+not yet live-confirmed.** Extends §25's engine to the ChatGPT namespace
+using the exact same validated contract — no second schema, no forked
+business logic. **Do not compare Grok vs. ChatGPT outputs, write the final
+article, build UI, or automate cadence** — those remain explicitly out of
+scope until both handicaps are manually inspected (the WU4.4 stop gate).
+
+### 26.1 The shared contract is now explicitly provider-neutral
+
+`nfl-grok-analysis-types.ts` and `nfl-grok-analysis-validator.ts` are kept
+at their existing filenames/type names (`GrokAnalysisV1`, `GrokUpdateProposal`,
+`validateGrokAnalysis`, `validateGrokUpdateProposal`, schema tag
+`nfl-grok-analysis-v1`) rather than renamed to something provider-neutral —
+a deliberate minimal-diff decision. What changed to make them genuinely
+provider-neutral:
+
+- `GrokAnalysisV1.model` is now typed `EvidenceModel` (`"grok" | "chatgpt"`),
+  not a hardcoded `"grok"` literal.
+- `GrokAnalysisValidationContext` and `GrokUpdateProposalValidationContext`
+  both gained a required `model: EvidenceModel` field. Every check that used
+  to hardcode `"grok"` (the `raw.model !== "grok"` identity check, the
+  evidence-index filter previously named `buildGrokEvidenceIndex`, now
+  `buildModelEvidenceIndex(records, model)`) now reads `context.model`
+  instead. A new "shared validator model-parity" test suite in
+  `nfl-grok-analysis-validator.test.ts` proves the validator behaves
+  identically for `model:"grok"` and `model:"chatgpt"` inputs.
+- Nothing about `MatchupFactor`, `MarketAssessment`, the side/total opinion
+  shapes, `FailureMode`, `EvidenceQualityAssessment`, or the deterministic
+  classification pipeline (`nfl-grok-analysis-pipeline.ts` — `mapGrokSideOpinionToState`,
+  `buildInitialAnalysisState`, `buildUpdateAssessment`, `deriveOverallChange`)
+  changed at all; they were already provider-neutral and are reused by
+  ChatGPT's CLI script unmodified.
+
+### 26.2 ChatGPT-specific: adapter + config only
+
+New files, mirroring `nfl-grok-analysis-adapter.ts`/`-config.ts` exactly in
+structure:
+
+- `nfl-chatgpt-analysis-config.ts` — targets OpenAI `/v1/responses`, never
+  sends `tools`. Model selection: the WU4.4 work order's starting point
+  (`gpt-5.6-sol`) has never been probed in this repo; the only OpenAI model
+  confirmed live here is `gpt-5.6-luna` (§11/WU4's capability probe,
+  `openai-wu4-capability-probe.json`), so this module uses that model per
+  the work order's own fallback rule. `reasoning_effort: "medium"` is
+  therefore **unverified** in this environment without `tools` — the first
+  live run (§26.5) is what actually confirms it works; that one config
+  module is where to change it if not.
+- `nfl-chatgpt-analysis-adapter.ts` — reuses `nfl-chatgpt-research-parsing.ts`'s
+  `parseChatGptResponsesBody`/`parseChatGptUsageTelemetry` unchanged (both
+  are generic to the `/v1/responses` envelope and tolerate an absent `tools`
+  field), exactly as the Grok analysis adapter reuses the Grok research
+  parser. Prompt content mirrors the Grok adapter's prompt verbatim in
+  substance (same anti-hallucination rules, same OBSERVATION → EVIDENCE →
+  FOOTBALL IMPLICATION → MATCHUP CONSEQUENCE → BETTING RELEVANCE discipline,
+  same "value at the current price" framing) — deliberately a separate
+  module, not a shared prompt builder, so a future one-provider tweak can
+  never silently leak into the other (same precedent as the two research
+  adapters). OpenAI's Responses API exposes no per-request USD cost field
+  (unlike xAI's `cost_in_usd_ticks`); `ChatGptAnalysisTelemetry.costUsd` is
+  therefore always `null`, never estimated.
+- No separate ChatGPT pipeline file: `scripts/run-nfl-chatgpt-handicap.ts`
+  calls the exact same `buildInitialAnalysisState`/`buildUpdateAssessment`
+  from `nfl-grok-analysis-pipeline.ts` that the Grok script calls — there is
+  nothing provider-specific left to wrap.
+
+### 26.3 Model isolation guarantees (tested, not just asserted)
+
+- **Evidence**: `nfl-chatgpt-analysis-adapter.ts`'s `buildCitableEvidenceLines`
+  filters strictly to `model === "chatgpt"` records before they ever reach
+  the prompt (mirrors the Grok adapter's filter, flipped) — ChatGPT cannot
+  cite what it never saw. The shared validator independently re-enforces
+  this: citing a Grok-namespace `evidenceId` under a `model:"chatgpt"`
+  validation context is rejected as cross-model, even if it were somehow
+  supplied. Covered by `nfl-chatgpt-analysis-adapter.test.ts` and
+  `nfl-chatgpt-analysis-validator.test.ts`.
+- **Snapshot state**: `scripts/run-nfl-chatgpt-handicap.ts` calls
+  `readLatestSnapshot(..., "chatgpt")` / `evidenceArtifactPath(..., "chatgpt")`
+  exclusively — there is no code path in this script capable of resolving
+  into `.../grok/`. `nfl-chatgpt-analysis-isolation.test.ts` proves this with
+  a real (temp-dir) snapshot store holding both a `grok/` and `chatgpt/`
+  lineage for the identical `gameId`/`season`/`week`: reading the "previous
+  snapshot" for `model:"chatgpt"` returns only ChatGPT's own thesis/lean and
+  never leaks Grok's, and a ChatGPT update assessment built from that read
+  state only ever reflects ChatGPT's own prior opinion.
+- **Fixtures**: `nfl-chatgpt-analysis-fixtures.ts` mirrors
+  `nfl-grok-analysis-fixtures.ts`'s scenario coverage exactly — A. home
+  lean, B. away lean, C. side PASS, D. OVER, E. UNDER, F. total PASS,
+  G. evidence conflict lowers confidence, H. large JKB-market gap but PASS,
+  I–M. update strengthens/weakens/changes side/moves to PASS/no material
+  change — plus a dedicated Grok-only evidence record so cross-model
+  citation tests have a real id to reference.
+
+### 26.4 Validation reuse checklist (all enforced identically to Grok)
+
+Correct model/game (now parameterized), confidence 1–10, legal enums,
+line-at-opinion exact match, evidenceId existence + ChatGPT-only +
+non-rejected + pregame-safe, `jkbContextRefs` resolve against the real
+packet, JKB/market numbers must match the supplied context (invented values
+hard-rejected), no cross-model evidenceIds, no postgame language, ≥2
+failure modes required.
+
+### 26.5 Live run commands (not yet executed in this environment)
+
+No network access / no `OPENAI_API_KEY` is available in the environment
+that implemented WU4.4 — the two commands below are ready to run locally:
+
+```powershell
+$env:OPENAI_API_KEY = "<key>"
+npx tsx scripts/run-nfl-chatgpt-handicap.ts --live --game=2026_01_BAL_IND --mode=initial
+npx tsx scripts/run-nfl-chatgpt-handicap.ts --live --game=2026_01_BAL_IND --mode=update
+```
+
+Each prints `=== TELEMETRY ===` (model, reasoning effort, http status,
+latency, token usage, `costUsd: null`) followed by either
+`=== INITIAL HANDICAP ===` (central thesis, matchup factors, market
+assessment, side/total lean+line+confidence, failure modes, evidence
+quality assessment, evidenceIdsUsed) or `=== UPDATE ASSESSMENT ===`
+(developments, thesis/side/total assessments, `overallChange`, concise
+commentary), and writes a new immutable snapshot into
+`data/nfl/analysis/2026/1/2026_01_BAL_IND/chatgpt/`. Run `--mode=initial`
+first; `--mode=update` requires a snapshot with non-null `analysisState`
+to diff against.
+
+---
+
 ## Appendix: schema/file quick reference
 
 | Concept | New or existing | Path |

@@ -3,8 +3,10 @@ import { normalizeExternalEvidence } from "./nfl-evidence-normalizer";
 import {
   FIXTURE_CONTEXT,
   FIXTURE_CONTEXT_WITH_SUBJECT_IDENTITY,
+  ambiguousDuplicateNameSubjectCandidate,
   chatgptValidIndPlayerSubjectCandidate,
   confirmedInjuryCandidate,
+  drewOgletreeAliasSubjectCandidate,
   unknownPlayerSubjectCandidate,
   validBalPlayerSubjectCandidate,
   validCoachSubjectCandidate,
@@ -106,5 +108,29 @@ describe("normalizeExternalEvidence subject identity validation (WU2.1)", () => 
     // Existing WU2 fixtures use slug-style subject identifiers that don't match
     // this identity source's display names -- unresolved, not a hard failure.
     expect(result.evidence.subjectValidation.players[0].status).toBe("unresolved");
+  });
+
+  it("11. (WU3.1) resolves an explicit name alias ('Drew Ogletree' -> real roster entry 'Andrew Ogletree') deterministically", () => {
+    const result = normalizeExternalEvidence(drewOgletreeAliasSubjectCandidate, FIXTURE_CONTEXT_WITH_SUBJECT_IDENTITY);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const player = result.evidence.subjectValidation.players[0];
+    expect(player.status).toBe("confirmed");
+    expect(player.canonicalName).toBe("Andrew Ogletree");
+    expect(player.canonicalPlayerId).toBe("00-0037292");
+    expect(player.team).toBe("ind");
+    // The provider-supplied display name is preserved separately from the resolved canonical identity.
+    expect(player.input).toBe("Drew Ogletree");
+    expect(player.reason).toBe("matched_roster_via_alias_in_game");
+  });
+
+  it("12. (WU3.1) a name matching two distinct in-game players is 'conflicting', never auto-confirmed -- the same code path an alias-resolved match reuses", () => {
+    const result = normalizeExternalEvidence(ambiguousDuplicateNameSubjectCandidate, FIXTURE_CONTEXT_WITH_SUBJECT_IDENTITY);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const player = result.evidence.subjectValidation.players[0];
+    expect(player.status).toBe("conflicting");
+    expect(player.canonicalPlayerId).toBeNull();
+    expect(player.reason).toBe("ambiguous_multiple_players_in_game");
   });
 });
