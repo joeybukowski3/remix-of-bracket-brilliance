@@ -122,6 +122,69 @@ export default defineConfig({
       "scripts/lib/nfl-totals-performance.test.ts",
       "scripts/lib/nfl-game-context.test.ts",
       "scripts/generate-nfl-totals-performance.test.ts",
+      // Dual-AI handicapping architecture WU1 -- Game Context Packet builder + validators.
+      "scripts/lib/nfl-full-game-context.test.ts",
+      // Dual-AI handicapping architecture WU2 -- external evidence normalization/validation foundation.
+      "scripts/lib/nfl-evidence-normalizer.test.ts",
+      "scripts/lib/nfl-evidence-store.test.ts",
+      // Dual-AI handicapping architecture WU2.1 -- canonical player/coach
+      // subject identity validation.
+      "scripts/lib/nfl-evidence-subject-identity.test.ts",
+      // Dual-AI handicapping architecture WU2.2 -- production subject
+      // identity source loader (pure core + repo-file I/O wrapper).
+      "scripts/lib/nfl-evidence-subject-identity-loader-core.test.ts",
+      "scripts/lib/nfl-evidence-subject-identity-loader.test.ts",
+      // Dual-AI handicapping architecture WU3 -- Grok research adapter
+      // (xAI Agent Tools API /v1/responses) config/parsing/adapter tests.
+      "scripts/lib/nfl-grok-research-config.test.ts",
+      "scripts/lib/nfl-grok-research-parsing.test.ts",
+      "scripts/lib/nfl-grok-research-adapter.test.ts",
+      // Dual-AI handicapping architecture WU3.1 -- Grok research hardening
+      // (citation-specificity policy, research coverage summary).
+      "scripts/lib/nfl-evidence-policy.test.ts",
+      "scripts/lib/nfl-grok-research-coverage.test.ts",
+      // Dual-AI handicapping architecture WU3.2 -- model-agnostic recurring
+      // pregame snapshot framework (evidence/market/opinion deltas, locking,
+      // append-only storage, provider-neutral delta-research context).
+      "scripts/lib/nfl-snapshot-evidence-delta.test.ts",
+      "scripts/lib/nfl-snapshot-market-delta.test.ts",
+      "scripts/lib/nfl-snapshot-opinion-delta.test.ts",
+      "scripts/lib/nfl-snapshot-lock.test.ts",
+      "scripts/lib/nfl-snapshot-store.test.ts",
+      // WU4.4.2 -- analysis-lifecycle bookkeeping (initial vs. update vs.
+      // not_started, independent of snapshotType cadence).
+      "scripts/lib/nfl-snapshot-analysis-lifecycle.test.ts",
+      "scripts/lib/nfl-research-delta-context.test.ts",
+      // Dual-AI handicapping architecture WU3.3 -- Grok delta-update mode
+      // (update-mode prompt/adapter wiring + the append -> evidence-delta ->
+      // market-delta -> snapshot orchestration pipeline).
+      "scripts/lib/nfl-grok-update-pipeline.test.ts",
+      // Dual-AI handicapping architecture WU3.3.1 -- delta-update integration
+      // hardening (shared fresh context loader, stale-context freshness guard).
+      "scripts/lib/nfl-full-game-context-loader.test.ts",
+      "scripts/lib/nfl-snapshot-context-freshness.test.ts",
+      // Dual-AI handicapping architecture WU3.4 -- Grok handicap +
+      // update-assessment engine (structured analysis validation, opinion-
+      // delta reuse for update assessments, reasoning-only adapter).
+      "scripts/lib/nfl-grok-analysis-validator.test.ts",
+      "scripts/lib/nfl-grok-analysis-adapter.test.ts",
+      "scripts/lib/nfl-grok-analysis-pipeline.test.ts",
+      // WU4.5 -- true independent handicapper architecture: JKB fair-line
+      // opinion sanitized out of AI input, mechanical market-edge computation.
+      "scripts/lib/nfl-ai-context-sanitizer.test.ts",
+      "scripts/lib/nfl-market-edge.test.ts",
+      // Dual-AI handicapping architecture WU4 -- ChatGPT research adapter
+      // (OpenAI Responses API /v1/responses) config/parsing/adapter tests.
+      "scripts/lib/nfl-chatgpt-research-adapter.test.ts",
+      // Dual-AI handicapping architecture WU4.4 -- ChatGPT handicap +
+      // update-assessment parity (shared provider-neutral analysis
+      // contract, ChatGPT reasoning-only adapter, model-isolation tests).
+      "scripts/lib/nfl-chatgpt-analysis-validator.test.ts",
+      "scripts/lib/nfl-chatgpt-analysis-adapter.test.ts",
+      "scripts/lib/nfl-chatgpt-analysis-pipeline.test.ts",
+      "scripts/lib/nfl-chatgpt-analysis-isolation.test.ts",
+      // WU5 -- internal snapshot -> sanitized public AI-handicap presentation exporter.
+      "scripts/generate-nfl-ai-handicap-presentation.test.ts",
       // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
       "scripts/lib/nfl-props-performance.test.ts",
       "scripts/generate-nfl-props-performance.test.ts",
