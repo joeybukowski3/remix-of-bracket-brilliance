@@ -1,5 +1,12 @@
 # JKB Football Modeling Master Specification
 
+The offline [2026 Week 1 Spread + ATS Audit](../research/nfl-week1-spread-ats-audit-2026/REPORT.md)
+selects the final valid immutable pre-kickoff production snapshot per game,
+joins separately archived outcomes, and preserves closing/pick evidence gaps.
+It is audit-only and changes no model, rating, HFA, blend, threshold, production
+projection, archive or UI. Its versioned selection policy is documented in
+[Evaluation Standards](EVALUATION_STANDARDS.md#offline-single-week-spread-audit).
+
 The additive [NFL TD Scorer Preview V1](../features/nfl-touchdown-scorer-preview.md) defines `jkb-td-score-v1.0.0`, a transparent relative player rating over a fixed current-week candidate population. Its seven weighted components, full-population percentile normalization, position adjustments, 20-opportunity TD-conversion prior, compact PBP cache, missing-data contract, and non-probability product language are owned by that specification. It does not change any yardage, spread, total, fantasy, or DFS production model and does not create a sportsbook edge or prediction archive.
 
 WU6C adds [NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md)
