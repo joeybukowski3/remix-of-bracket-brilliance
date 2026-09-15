@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "target": "ES2022",
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "scripts/run-nfl-ai-handicap-slate.ts",
+    "scripts/run-nfl-grok-handicap.ts",
+    "scripts/run-nfl-chatgpt-handicap.ts",
+    "scripts/run-nfl-grok-research.ts",
+    "scripts/run-nfl-chatgpt-research.ts",
+    "scripts/replay-nfl-provider-research.ts",
+    "scripts/bootstrap-nfl-grok-initial-snapshot.ts",
+    "scripts/bootstrap-nfl-chatgpt-initial-snapshot.ts"
+  ]
+}

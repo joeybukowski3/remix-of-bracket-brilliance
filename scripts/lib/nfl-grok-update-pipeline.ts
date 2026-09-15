@@ -11,7 +11,7 @@
  * diagram) rather than two subtly different implementations.
  */
 
-import { appendEvidence, type AppendOutcome } from "./nfl-evidence-store";
+import { appendEvidence, type AppendOutcome, type EvidenceStore } from "./nfl-evidence-store";
 import { normalizeExternalEvidence } from "./nfl-evidence-normalizer";
 import type { EvidenceModel, EvidenceNormalizationContext, EvidenceRecord, RawEvidenceCandidate } from "./nfl-evidence-types";
 import { canCreatePregameSnapshot } from "./nfl-snapshot-lock";
@@ -59,7 +59,7 @@ export interface GrokUpdatePipelineInput {
 export type GrokUpdatePipelineResult =
   | {
       ok: true;
-      allRecords: EvidenceRecord[];
+      allRecords: readonly EvidenceRecord[];
       appendedOutcomes: AppendedRecordOutcome[];
       normalizeRejections: NormalizeRejection[];
       snapshot: AnalysisSnapshot;
@@ -113,7 +113,7 @@ export function runGrokUpdatePipeline(input: GrokUpdatePipelineInput): GrokUpdat
     return { ok: false, error: `Stale context guard tripped: ${freshness.reason}` };
   }
 
-  let store = { model: input.model, gameId: input.previousSnapshot.gameId, records: [...input.existingRecords] };
+  let store: EvidenceStore = { model: input.model, gameId: input.previousSnapshot.gameId, records: [...input.existingRecords] };
   const appendedOutcomes: AppendedRecordOutcome[] = [];
   const normalizeRejections: NormalizeRejection[] = [];
 

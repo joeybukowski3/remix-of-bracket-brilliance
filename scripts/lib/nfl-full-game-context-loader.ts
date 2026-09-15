@@ -28,19 +28,17 @@ import {
   type BuildFullGameContextInput,
   type BuildFullGameContextResult,
   type DfsWeekArtifact,
-  type EpaPriorSeasonWindow,
   type GamesArtifact,
   type MatchupInjuriesArtifact,
   type MatchupProjectionsArtifact,
-  type MetricsPriorSeasonWindow,
   type PowerRatingsArtifact,
   type ProvenanceSourceRef,
   type TdPreviewArtifact,
   type TeamsArtifact,
   type TeamTotalsArtifact,
-  type TrenchSeasonData,
   type YardageProjectionsArtifact,
 } from "./nfl-full-game-context";
+import type { EpaPriorSeasonWindow, MetricsPriorSeasonWindow, TrenchSeasonData } from "./nfl-game-context";
 import { createCoachingSnapshotSelector } from "./nfl-coaching-snapshot-source";
 import { buildCurrentMarketView, buildLineMovementView, parseBettingLinesCurrentArtifact, parseBettingLinesHistoryArtifact, toBettingLinesGameToken } from "../../src/lib/nfl/bettingLinesView";
 
