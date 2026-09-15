@@ -153,6 +153,15 @@ function validateStructural(candidate: RawEvidenceCandidate, context: EvidenceNo
     reasons.push(`source.publishedAt "${candidate.source.publishedAt}" is not a parseable ISO timestamp`);
   }
 
+  // WU6.4 -- defense-in-depth: this module's own docstring calls it "the ONLY boundary" a raw
+  // candidate is allowed to cross, so it must independently catch a malformed subjects shape
+  // (e.g. a flat array) even though the current parsing-layer callers (nfl-grok-research-parsing.ts,
+  // nfl-chatgpt-research-parsing.ts) already reject this earlier, in case a future/other caller
+  // ever bypasses that layer.
+  if (candidate.subjects != null && (typeof candidate.subjects !== "object" || Array.isArray(candidate.subjects))) {
+    reasons.push(`subjects: expected object with optional teams/players/coaches arrays, received ${Array.isArray(candidate.subjects) ? "an array" : typeof candidate.subjects}`);
+  }
+
   const teams = candidate.subjects?.teams ?? [];
   const allowedTeams = new Set([context.homeTeam, context.awayTeam]);
   for (const team of teams) {
@@ -346,7 +355,13 @@ export function normalizeExternalEvidence(candidate: RawEvidenceCandidate, conte
     supersedesEvidenceId: candidate.supersedesEvidenceId ?? null,
     normalizedAt,
     provenance: {
-      candidateHash: contentHash(candidate as unknown as JsonValue),
+      // WU6.4 -- defense-in-depth: JSON-round-trip before hashing so an optional field a caller
+      // set to an explicit `undefined` (still an enumerable own property in JS, e.g. `{confidence:
+      // someUndefinedExpr}`) is dropped exactly like JSON.stringify already drops it everywhere
+      // else, instead of tripping contentHash's strict assertJsonValue (which correctly rejects
+      // `undefined` for every OTHER caller -- this is a targeted fix for this one call site's
+      // input, not a relaxation of that shared strictness contract).
+      candidateHash: contentHash(JSON.parse(JSON.stringify(candidate)) as JsonValue),
       normalizerVersion: NORMALIZER_VERSION,
       contextVersionAtNormalization: context.contextVersion,
     },

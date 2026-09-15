@@ -10,6 +10,7 @@ import {
   factualClaimWithVerbatimQuoteCandidate,
   homepageCitationCandidate,
   jkbMetricMasqueradeCandidate,
+  malformedSubjectsArrayCandidate,
   missingUrlCandidate,
   paraphraseAsQuoteCandidate,
   postKickoffContaminationCandidate,
@@ -19,6 +20,7 @@ import {
   sectionIndexCitationCandidate,
   unknownTeamSubjectCandidate,
   unsupportedSharpMoneyCandidate,
+  validCandidateMissingOptionalFieldsCandidate,
   weatherCandidate,
   wrongGameCandidate,
 } from "./__fixtures__/nfl-evidence-fixtures";
@@ -266,5 +268,62 @@ describe("normalizeExternalEvidence quote sanitization (WU3.3.1)", () => {
     const before = JSON.stringify(factualClaimWithNonverbatimQuoteCandidate);
     normalizeExternalEvidence(factualClaimWithNonverbatimQuoteCandidate, FIXTURE_CONTEXT);
     expect(JSON.stringify(factualClaimWithNonverbatimQuoteCandidate)).toBe(before);
+  });
+});
+
+describe("normalizeExternalEvidence -- WU6.4 malformed-candidate quarantine (DET_BUF regression)", () => {
+  it("rejects a candidate with subjects as a flat array (not {teams,players,coaches}), never throwing", () => {
+    expect(() => normalizeExternalEvidence(malformedSubjectsArrayCandidate, FIXTURE_CONTEXT)).not.toThrow();
+    const result = normalizeExternalEvidence(malformedSubjectsArrayCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.join(" ")).toMatch(/subjects: expected object with optional teams\/players\/coaches/);
+  });
+
+  it("does NOT reject the malformed candidate for missing confidence/relevance/quote -- those are optional per the contract", () => {
+    const result = normalizeExternalEvidence(malformedSubjectsArrayCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.join(" ")).not.toMatch(/confidence/i);
+    expect(result.reasons.join(" ")).not.toMatch(/relevance/i);
+    expect(result.reasons.join(" ")).not.toMatch(/quote/i);
+  });
+
+  it("accepts a structurally valid candidate that also omits confidence/relevance/quote, defaulting them mechanically", () => {
+    const result = normalizeExternalEvidence(validCandidateMissingOptionalFieldsCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.confidence).toBeTruthy(); // defaulted by source tier, never left undefined
+    expect(result.evidence.relevance).toEqual({ summary: "", areas: [] });
+    expect(result.evidence.quote).toBeNull();
+  });
+
+  it("hashes a valid candidate missing optional fields successfully (no undefined reaches contentHash)", () => {
+    expect(() => normalizeExternalEvidence(validCandidateMissingOptionalFieldsCandidate, FIXTURE_CONTEXT)).not.toThrow();
+    const result = normalizeExternalEvidence(validCandidateMissingOptionalFieldsCandidate, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.provenance.candidateHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("one malformed candidate in a batch never blocks the valid candidates around it from normalizing", () => {
+    const batch = [confirmedInjuryCandidate, malformedSubjectsArrayCandidate, questionablePlayerCandidate];
+    const results = batch.map((c) => normalizeExternalEvidence(c, FIXTURE_CONTEXT));
+    expect(results[0].ok).toBe(true);
+    expect(results[1].ok).toBe(false);
+    expect(results[2].ok).toBe(true);
+  });
+
+  it("defense-in-depth: an otherwise-valid candidate carrying an explicit `confidence: undefined` own-property (the exact real-world defect shape) still normalizes/hashes rather than throwing", () => {
+    // Reproduces precisely what a buggy candidate-builder produced before the WU6.4 fix:
+    // `{ ...fields, confidence: someUndefinedExpression }` creates a real enumerable own
+    // property whose value is `undefined` -- distinct from the key being absent entirely.
+    const candidateWithExplicitUndefinedConfidence = { ...validCandidateMissingOptionalFieldsCandidate, confidence: undefined };
+    expect(Object.keys(candidateWithExplicitUndefinedConfidence)).toContain("confidence"); // sanity: this IS the defect shape, not mere absence
+    expect(() => normalizeExternalEvidence(candidateWithExplicitUndefinedConfidence, FIXTURE_CONTEXT)).not.toThrow();
+    const result = normalizeExternalEvidence(candidateWithExplicitUndefinedConfidence, FIXTURE_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.evidence.provenance.candidateHash).toMatch(/^[0-9a-f]{64}$/);
   });
 });
