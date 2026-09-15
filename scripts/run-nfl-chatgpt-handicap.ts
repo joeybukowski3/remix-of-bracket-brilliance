@@ -85,6 +85,7 @@ import {
 } from "./lib/nfl-grok-analysis-validator";
 import { combineInitialStages, combineRepricingStage, combineUpdateStages, reconstructLockedStageAFromSnapshot } from "./lib/nfl-grok-analysis-pipeline";
 import { isWu46CompatibleAnalysisState } from "./lib/nfl-snapshot-analysis-lifecycle";
+import { emitTelemetryMarker } from "./lib/nfl-ai-telemetry";
 import type { TeamsArtifact } from "./lib/nfl-full-game-context";
 import type { AnalysisSnapshot, MarketAtDecision, SnapshotAnalysisState, SnapshotMarketState } from "./lib/nfl-snapshot-types";
 
@@ -276,6 +277,7 @@ async function main(): Promise<void> {
       return;
     }
     console.log(JSON.stringify(stageAResult.telemetry, null, 2));
+    emitTelemetryMarker({ provider: MODEL, gameId: game.gameId, cliMode: "initial", stage: "A", telemetry: stageAResult.telemetry });
 
     // WU4.6.5: trusted orchestration timestamp, minted at the moment Stage A's output is accepted
     // for validation -- never read from the provider's own response.
@@ -299,6 +301,7 @@ async function main(): Promise<void> {
       return;
     }
     console.log(JSON.stringify(stageBResult.telemetry, null, 2));
+    emitTelemetryMarker({ provider: MODEL, gameId: game.gameId, cliMode: "initial", stage: "B", telemetry: stageBResult.telemetry });
 
     // WU4.6.5: trusted orchestration timestamp for Stage B, minted fresh here -- always strictly
     // after stageAContext.generatedAt above.
@@ -362,6 +365,7 @@ async function main(): Promise<void> {
       return;
     }
     console.log(JSON.stringify(stageBResult.telemetry, null, 2));
+    emitTelemetryMarker({ provider: MODEL, gameId: game.gameId, cliMode: "repricing", stage: "B", telemetry: stageBResult.telemetry });
 
     const stageBContext: GrokStageBValidationContext = { model: MODEL, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: freshContextHash, currentMarketState, homeTeam: game.homeTeam, lockedPrediction: lockedStageA.prediction };
     const stageB = validateGrokStageB(stageBResult.raw, stageBContext);
@@ -416,6 +420,7 @@ async function main(): Promise<void> {
       return;
     }
     console.log(JSON.stringify(stageAResult.telemetry, null, 2));
+    emitTelemetryMarker({ provider: MODEL, gameId: game.gameId, cliMode: "update", stage: "A", telemetry: stageAResult.telemetry });
 
     // WU4.6.5: trusted orchestration timestamp, minted at the moment this update-mode Stage A
     // output is accepted for validation -- never read from the provider's own response.
@@ -438,6 +443,7 @@ async function main(): Promise<void> {
       return;
     }
     console.log(JSON.stringify(stageBResult.telemetry, null, 2));
+    emitTelemetryMarker({ provider: MODEL, gameId: game.gameId, cliMode: "update", stage: "B", telemetry: stageBResult.telemetry });
 
     // WU4.6.5: trusted orchestration timestamp for this update-mode Stage B, minted fresh here --
     // always strictly after stageAContext.generatedAt above.
