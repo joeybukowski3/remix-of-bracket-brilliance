@@ -6,6 +6,7 @@
  */
 
 import type { NflGameContextPacket, TeamsArtifact } from "./nfl-full-game-context";
+import { normalizeNflTeamAbbr } from "../../src/lib/nfl/identity/identity";
 
 export type ValidationIssue = { code: string; message: string; severity: "error" | "warning" };
 
@@ -29,10 +30,15 @@ export function validateGameIdentity(packet: NflGameContextPacket): ValidationIs
   if (Number(weekStr) !== identity.week) {
     issues.push(issue("identity.gameId.week", `gameId week ${weekStr} does not match identity.week ${identity.week}`));
   }
-  if (awayToken.toLowerCase() !== identity.awayTeam) {
+  // Compare canonical team codes, not raw tokens -- a gameId can spell a team with a different
+  // (but equally valid) broadcast abbreviation than identity.awayTeam/homeTeam do (e.g. gameId
+  // "WAS"/"LA" vs. identity's canonical "wsh"/"lar"). normalizeNflTeamAbbr is the same canonical
+  // resolver already used elsewhere in this NFL stack (nfl-fantasy-projection-archive.ts) -- a
+  // genuinely different team still fails, since only real aliases of the SAME franchise collapse.
+  if (normalizeNflTeamAbbr(awayToken) !== normalizeNflTeamAbbr(identity.awayTeam)) {
     issues.push(issue("identity.gameId.away", `gameId away token ${awayToken} does not match identity.awayTeam ${identity.awayTeam}`));
   }
-  if (homeToken.toLowerCase() !== identity.homeTeam) {
+  if (normalizeNflTeamAbbr(homeToken) !== normalizeNflTeamAbbr(identity.homeTeam)) {
     issues.push(issue("identity.gameId.home", `gameId home token ${homeToken} does not match identity.homeTeam ${identity.homeTeam}`));
   }
   return issues;
