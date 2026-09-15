@@ -8,6 +8,10 @@ import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySn
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
+import MatchupRankTowers from "@/components/nfl/matchups/MatchupRankTowers";
+import MatchupSignatureProfile from "@/components/nfl/matchups/MatchupSignatureProfile";
+import MatchupVisualizationToolbar from "@/components/nfl/matchups/MatchupVisualizationToolbar";
+import { useMatchupVisualizationState } from "@/components/nfl/matchups/useMatchupVisualizationState";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import { cn } from "@/lib/utils";
@@ -21,6 +25,8 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 import { summariseCategoryAdvantages } from "@/lib/nfl/matchupCategorySummary";
+import { chartEligibleMetrics, toVisualMetrics } from "@/lib/nfl/matchupVisualizationModel";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 
 /**
@@ -36,6 +42,83 @@ const COACHING_TAB_ID: StatComparisonTabId = "coaching";
 
 /** How long the arrival highlight stays on the destination group. */
 const JUMP_HIGHLIGHT_MS = 1100;
+
+const NEUTRAL_TEAM_FILL = "#94a3b8";
+
+/**
+ * One category's primary visualization (Rank Towers or Signature Profile),
+ * its toolbar, and the collapsed detailed table beneath it.
+ *
+ * Reads the same resolved `rows` the detailed table renders — the chart
+ * adapter (`toVisualMetrics`) only reshapes them, it never recomputes a rank
+ * or a winner.
+ */
+function CategoryVisualization({
+  category,
+  rows,
+  matchup,
+  awayColor,
+  homeColor,
+  view,
+  onViewChange,
+  selectedIds,
+  onChangeSelection,
+  onReset,
+  isDefault,
+}: {
+  category: (typeof MATCHUP_CATEGORIES)[number];
+  rows: MatchupDisplayMetric[];
+  matchup: NflMatchup;
+  awayColor: string;
+  homeColor: string;
+  view: "towers" | "profile";
+  onViewChange: (view: "towers" | "profile") => void;
+  selectedIds: readonly string[];
+  onChangeSelection: (ids: readonly string[]) => void;
+  onReset: () => void;
+  isDefault: boolean;
+}) {
+  const chartEligible = chartEligibleMetrics(toVisualMetrics(rows, category.id));
+  const selected = chartEligible.filter((metric) => selectedIds.includes(metric.id));
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white">
+      <MatchupVisualizationToolbar
+        view={view}
+        onViewChange={onViewChange}
+        categoryLabel={category.label}
+        availableMetrics={chartEligible}
+        selectedIds={selectedIds}
+        onChangeSelection={onChangeSelection}
+        onReset={onReset}
+        isDefault={isDefault}
+      />
+      <div className="px-1 pb-2 pt-1 sm:px-2">
+        {selected.length === 0 ? (
+          <p className="px-2 py-4 text-center text-[12px] text-slate-500">
+            No metrics selected. Open Metrics to choose at least two.
+          </p>
+        ) : view === "towers" ? (
+          <MatchupRankTowers
+            metrics={selected}
+            away={matchup.away}
+            home={matchup.home}
+            awayColor={awayColor}
+            homeColor={homeColor}
+          />
+        ) : (
+          <MatchupSignatureProfile
+            metrics={selected}
+            away={matchup.away}
+            home={matchup.home}
+            awayColor={awayColor}
+            homeColor={homeColor}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Category advantage on the accordion trigger.
@@ -146,6 +229,9 @@ export default function MatchupComparisonPanel({
   const [activeTab, setActiveTab] = useState<StatComparisonTabId>(MATCHUP_CATEGORIES[0].id);
   const [highlighted, setHighlighted] = useState<StatComparisonTabId | null>(null);
   const triggerRefs = useRef(new Map<StatComparisonTabId, HTMLButtonElement>());
+  const visualization = useMatchupVisualizationState();
+  const awayColor = nflTeamColorFor(matchup.away) ?? NEUTRAL_TEAM_FILL;
+  const homeColor = nflTeamColorFor(matchup.home) ?? NEUTRAL_TEAM_FILL;
 
   useEffect(() => {
     if (!pendingCategory) return;
@@ -265,16 +351,35 @@ export default function MatchupComparisonPanel({
                   </span>
                 </div>
               )}
-              <MatchupComparisonCard
-                title={category.label}
-                titleId={`${category.hash}-card-heading`}
+              <CategoryVisualization
+                category={category}
+                rows={rows}
                 matchup={matchup}
-                metrics={rows}
-                variant="detail"
-                projected={projection || !!dedicatedLabel}
-                stickyHeader
-                caption={`${category.label} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
+                awayColor={awayColor}
+                homeColor={homeColor}
+                view={visualization.view}
+                onViewChange={visualization.setView}
+                selectedIds={visualization.getSelectedMetricIds(category.id)}
+                onChangeSelection={(ids) => visualization.setSelectedMetricIds(category.id, ids)}
+                onReset={() => visualization.resetToDefaults(category.id)}
+                isDefault={visualization.isUsingDefaults(category.id)}
               />
+              <details className="group rounded-lg border border-slate-200">
+                <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
+                  <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+                  All Metrics
+                </summary>
+                <MatchupComparisonCard
+                  title={category.label}
+                  titleId={`${category.hash}-card-heading`}
+                  matchup={matchup}
+                  metrics={rows}
+                  variant="detail"
+                  projected={projection || !!dedicatedLabel}
+                  stickyHeader
+                  caption={`${category.label} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
+                />
+              </details>
             </div>
           );
         })}
