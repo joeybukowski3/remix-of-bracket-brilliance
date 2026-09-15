@@ -12,6 +12,14 @@ const WINDOW_OPTIONS = [
   { value: "last5" as const, label: "Last 5", shortLabel: "Last 5" },
 ];
 
+const LENS_LABELS: Record<MatchupComparisonLens, string> = {
+  observed: "Observed",
+  projection: "2026 Projection",
+  blended: "2026 Blended",
+  season2026: "2026 Season",
+  season2025: "2025 Season",
+};
+
 /**
  * Global sample controls for the analyzer.
  *
@@ -36,11 +44,20 @@ export default function MatchupDataControls({
   onLensChange?: (lens: MatchupComparisonLens) => void;
 }) {
   const blendOn = settings.includePriorSeason;
+  const activeLabel = lens === "observed"
+    ? (settings.window === "last5" ? "Last 5" : "Season")
+    : LENS_LABELS[lens];
 
   return (
-    /* Pale band rather than a white card, so the control bar reads as chrome
-       for the sections below it rather than as another content card. */
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 shadow-sm sm:px-3">
+    <details className="matchup-data-window">
+      <summary className="matchup-data-window__summary">
+        <span className="matchup-data-window__label">Data Window</span>
+        <span className="matchup-data-window__active">{activeLabel}</span>
+        {lens === "observed" && <span className="matchup-data-window__meta">Blend {blendOn ? "on" : "off"}</span>}
+        {sampleLabel && <span className="matchup-data-window__sample">{sampleLabel}</span>}
+        <span className="matchup-summary-chevron" aria-hidden />
+      </summary>
+      <div className="matchup-data-window__controls">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-3">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <span
@@ -132,6 +149,7 @@ export default function MatchupDataControls({
           </span>
         </p>
       )}
-    </div>
+      </div>
+    </details>
   );
 }

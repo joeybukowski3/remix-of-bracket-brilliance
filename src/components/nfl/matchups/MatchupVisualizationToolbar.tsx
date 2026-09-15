@@ -22,6 +22,7 @@ export default function MatchupVisualizationToolbar({
   onChangeSelection,
   onReset,
   isDefault,
+  showViewToggle = true,
 }: {
   view: MatchupVisualizationView;
   onViewChange: (view: MatchupVisualizationView) => void;
@@ -31,10 +32,11 @@ export default function MatchupVisualizationToolbar({
   onChangeSelection: (ids: readonly string[]) => void;
   onReset: () => void;
   isDefault: boolean;
+  showViewToggle?: boolean;
 }) {
   return (
     <div className="matchup-visualization-toolbar">
-      <div className="matchup-visualization-toolbar__views">
+      {showViewToggle && <div className="matchup-visualization-toolbar__views">
         <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">View</span>
         <MatchupSegmentedControl
           options={VIEW_OPTIONS}
@@ -44,7 +46,7 @@ export default function MatchupVisualizationToolbar({
           size="sm"
           className="matchup-visualization-view-toggle"
         />
-      </div>
+      </div>}
       <MatchupMetricsSelector
         categoryLabel={categoryLabel}
         availableMetrics={availableMetrics}

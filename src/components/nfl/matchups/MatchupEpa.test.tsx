@@ -178,9 +178,9 @@ describe("offense vs defense battles", () => {
         <MatchupUnitBattles matchup={MATCHUP} resolver={epaResolver(settings("season", true))} />
       </MemoryRouter>
     );
-    // Team cells show the league rank; the raw three-decimal EPA value is
-    // preserved on the cell hover title.
-    expect(screen.getAllByTitle(/[+-]0\.\d{3}/).length).toBeGreaterThan(0);
+    // Rank Towers (the default, unmocked-viewport view) show the raw
+    // three-decimal EPA value directly on the card, not behind a hover title.
+    expect(screen.getAllByText(/^[+-]0\.\d{3}$/).length).toBeGreaterThan(0);
     const text = container.textContent ?? "";
     // "No matchup score or projected advantage is derived" is the section's own
     // disclaimer, so the assertion targets claims rather than the word alone.
@@ -189,25 +189,22 @@ describe("offense vs defense battles", () => {
   });
 
   it("keeps the away team in the left column of both panels", () => {
-    render(
+    const { container } = render(
       <MemoryRouter>
         <MatchupUnitBattles matchup={MATCHUP} resolver={epaResolver(settings("season", true))} />
       </MemoryRouter>
     );
 
-    // Both panels are rendered; the toggle only hides one below lg.
-    const headings = screen
-      .getAllByText(/New England Patriots (Offense|Defense)|Seattle Seahawks (Offense|Defense)/)
-      .map((node) => node.textContent ?? "");
+    // Both panels are rendered; the toggle only hides one below md. Rank
+    // Towers label each panel's pairing as "{AWAY} {UNIT} vs {HOME} {UNIT}"
+    // instead of the old full-team-name headings.
+    const pairings = Array.from(container.querySelectorAll(".matchup-viz-chart-heading p")).map(
+      (node) => node.textContent ?? ""
+    );
 
     // Panels are keyed by side, so the order is away, home, away, home — never
     // offense-first, which would put the home team on the left in panel two.
-    expect(headings).toEqual([
-      "New England Patriots Offense",
-      "Seattle Seahawks Defense",
-      "New England Patriots Defense",
-      "Seattle Seahawks Offense",
-    ]);
+    expect(pairings).toEqual(["NE OFF vs SEA DEF", "NE DEF vs SEA OFF"]);
   });
 });
 

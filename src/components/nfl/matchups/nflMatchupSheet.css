@@ -1382,6 +1382,31 @@ details[open] > summary .matchup-summary-chevron {
   gap: 0.4rem;
 }
 
+.matchup-rank-towers__context {
+  flex: 0 0 auto;
+  border: 1px solid var(--matchup-viz-border);
+  border-radius: 0.18rem;
+  padding: 0.13rem 0.3rem;
+  color: var(--matchup-viz-text);
+  background: var(--matchup-viz-raised);
+  font-size: 0.55rem;
+  font-weight: 800;
+  line-height: 0.7rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.matchup-rank-towers__pairing {
+  color: var(--matchup-viz-text);
+  font-size: 0.625rem;
+  font-weight: 850;
+  line-height: 0.8rem;
+  letter-spacing: 0.045em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .matchup-rank-towers__metric-label {
   display: -webkit-box;
   min-width: 0;
@@ -1537,6 +1562,109 @@ details[open] > summary .matchup-summary-chevron {
   font-size: 0.625rem;
   font-weight: 650;
   line-height: 0.875rem;
+}
+
+.matchup-all-metrics__desktop {
+  border-top: 1px solid var(--matchup-viz-border);
+  padding-bottom: 0.75rem;
+}
+
+.matchup-context-metrics {
+  margin: 0.25rem 0.75rem 0;
+  border-top: 1px solid var(--matchup-viz-border);
+  padding-top: 0.75rem;
+}
+
+.matchup-context-metrics__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.matchup-context-metrics__heading h4 {
+  color: var(--matchup-viz-text);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.matchup-context-metrics__heading p {
+  color: var(--matchup-viz-muted);
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+}
+
+.matchup-context-metrics__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.625rem;
+}
+
+.matchup-context-metric {
+  border: 1px solid var(--matchup-viz-border);
+  border-radius: 0.5rem;
+  padding: 0.7rem;
+  color: var(--matchup-viz-text);
+  background: var(--matchup-viz-panel);
+}
+
+.matchup-context-metric__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--matchup-viz-border);
+  padding-bottom: 0.5rem;
+}
+
+.matchup-context-metric__label strong { font-size: 0.72rem; line-height: 0.95rem; }
+.matchup-context-metric__label span { color: var(--matchup-viz-muted); font-size: 0.55rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+.matchup-context-metric__values { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.5rem; padding-top: 0.6rem; }
+.matchup-context-metric__values > span { color: var(--matchup-viz-muted); font-size: 0.55rem; text-transform: uppercase; }
+.matchup-context-metric__value { display: flex; min-width: 0; flex-direction: column; gap: 0.15rem; text-align: center; }
+.matchup-context-metric__team { display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; color: var(--matchup-viz-muted); font-size: 0.6rem; font-weight: 800; }
+.matchup-context-metric__value strong { font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.matchup-context-metric__value small { color: var(--matchup-viz-muted); font-size: 0.55rem; font-variant-numeric: tabular-nums; }
+
+@media (min-width: 768px) {
+  .matchup-rank-towers__viewport {
+    overflow: visible !important;
+    touch-action: auto;
+  }
+
+  .matchup-rank-towers__track {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .matchup-rank-towers__card {
+    width: calc((100% - 1.5rem) / 3);
+    min-width: 11rem;
+    max-width: 13rem;
+  }
+
+  .matchup-rank-towers .matchup-viz-swipe-fade,
+  .matchup-rank-towers .matchup-viz-swipe-hint {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .matchup-rank-towers__card {
+    width: calc((100% - 2.25rem) / 4);
+    max-width: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .matchup-rank-towers__card {
+    width: calc((100% - 3rem) / 5);
+  }
 }
 
 .matchup-visualization-shell .matchup-rank-towers [role="status"] {
@@ -2091,4 +2219,301 @@ details[open] > summary .matchup-summary-chevron {
   .matchup-rank-towers__bar-rail { width: 2.75rem; height: 8rem; }
   .matchup-rank-towers__metric-label { font-size: 0.75rem; line-height: 1rem; }
   .matchup-rank-towers__values { font-size: 0.75rem; line-height: 1rem; }
+}
+
+/* -------------------------------------------------------------------------
+ * Stitch-derived matchup visualization world — extension
+ *
+ * The Data Window disclosure, the Success Rate / Unit by Unit telemetry
+ * sections, and the Coaching/Sideline card sit OUTSIDE `.matchup-visualization-shell`
+ * (they're independent `MatchupSectionCard`s on the page), so they don't
+ * automatically inherit the `--matchup-viz-*` palette defined at the top of
+ * this file. Each opts in explicitly here rather than widening the shell
+ * selector, so the rest of the matchup route keeps its existing light/dark
+ * theme and component chrome untouched.
+ * ---------------------------------------------------------------------- */
+.matchup-data-window,
+.matchup-telemetry-section,
+.matchup-coaching-section {
+  --matchup-viz-bg: #0f131c;
+  --matchup-viz-panel: #181b25;
+  --matchup-viz-plot: #1c1f29;
+  --matchup-viz-raised: #262a34;
+  --matchup-viz-border: rgba(59, 73, 76, 0.42);
+  --matchup-viz-grid: #31353f;
+  --matchup-viz-text: #dfe2ef;
+  --matchup-viz-muted: #bac9cc;
+  --matchup-viz-accent: #00e5ff;
+}
+
+/* ---- Data Window: compact collapsed disclosure -------------------------- */
+
+.matchup-data-window {
+  overflow: hidden;
+  border: 1px solid var(--matchup-viz-border);
+  border-radius: 0.5rem;
+  background: var(--matchup-viz-panel);
+  color: var(--matchup-viz-text);
+}
+
+.matchup-data-window__summary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  min-height: 2.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--matchup-viz-raised);
+}
+
+.matchup-data-window__summary::-webkit-details-marker {
+  display: none;
+}
+
+.matchup-data-window__label {
+  flex: 0 0 auto;
+  color: var(--matchup-viz-muted);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.matchup-data-window__active {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--matchup-viz-accent) 40%, var(--matchup-viz-border));
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  color: var(--matchup-viz-text);
+  background: color-mix(in srgb, var(--matchup-viz-accent) 14%, var(--matchup-viz-bg));
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.matchup-data-window__meta {
+  flex: 0 0 auto;
+  color: var(--matchup-viz-muted);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.matchup-data-window__sample {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--matchup-viz-muted);
+  font-size: 0.625rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchup-data-window__summary .matchup-summary-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--matchup-viz-muted);
+}
+
+.matchup-data-window[open] > .matchup-data-window__summary {
+  border-bottom: 1px solid var(--matchup-viz-border);
+}
+
+.matchup-data-window__controls {
+  padding: 0.75rem;
+  background: var(--matchup-viz-panel);
+}
+
+/* Recolour the existing emerald/slate Tailwind utilities used inside the
+ * controls body rather than editing the component — the control markup,
+ * state and behaviour are unchanged. */
+.matchup-data-window__controls .text-emerald-800,
+.matchup-data-window__controls .text-slate-600 {
+  color: var(--matchup-viz-muted) !important;
+}
+
+.matchup-data-window__controls .text-emerald-900,
+.matchup-data-window__controls .text-emerald-900\/80 {
+  color: var(--matchup-viz-text) !important;
+}
+
+.matchup-data-window__controls .border-emerald-200,
+.matchup-data-window__controls .border-slate-300,
+.matchup-data-window__controls .border-slate-200 {
+  border-color: var(--matchup-viz-border) !important;
+}
+
+.matchup-data-window__controls .bg-white {
+  background: var(--matchup-viz-raised) !important;
+}
+
+.matchup-data-window__controls .bg-slate-50 {
+  background: var(--matchup-viz-bg) !important;
+}
+
+.matchup-data-window__controls .text-slate-700 {
+  color: var(--matchup-viz-text) !important;
+}
+
+.matchup-data-window__controls .bg-emerald-600 {
+  background: var(--matchup-viz-accent) !important;
+}
+
+.matchup-data-window__controls .bg-slate-400 {
+  background: var(--matchup-viz-muted) !important;
+}
+
+.matchup-data-window__controls [role="tablist"] {
+  border-color: var(--matchup-viz-border) !important;
+  background: var(--matchup-viz-bg) !important;
+}
+
+.matchup-data-window__controls [role="tab"] {
+  color: var(--matchup-viz-muted) !important;
+}
+
+.matchup-data-window__controls [role="tab"][aria-selected="true"] {
+  color: #071116 !important;
+  background: var(--matchup-viz-accent) !important;
+  box-shadow: none !important;
+}
+
+.matchup-data-window__controls [role="switch"] {
+  border-color: var(--matchup-viz-border) !important;
+  color: var(--matchup-viz-muted) !important;
+  background: var(--matchup-viz-raised) !important;
+}
+
+.matchup-data-window__controls [role="switch"][aria-checked="true"] {
+  border-color: var(--matchup-viz-accent) !important;
+  color: var(--matchup-viz-text) !important;
+  background: color-mix(in srgb, var(--matchup-viz-accent) 16%, var(--matchup-viz-bg)) !important;
+}
+
+@media (max-width: 480px) {
+  .matchup-data-window__summary {
+    min-height: 0;
+  }
+
+  .matchup-data-window__sample {
+    display: none;
+  }
+}
+
+/* ---- Telemetry sections: Success Rate + Unit by Unit -------------------- */
+
+.matchup-telemetry-section {
+  border-color: var(--matchup-viz-border) !important;
+  border-radius: 0.5rem !important;
+  background: var(--matchup-viz-bg) !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2) !important;
+  color: var(--matchup-viz-text);
+  /* Any nested `MatchupComparisonCard` (the mobile Comparison-toggle body)
+   * reads its surface from `--sheet-*`, same remap the visualization shell
+   * already uses, so it sits inside this dark chrome instead of appearing
+   * as a stray legacy-white card. */
+  --sheet-bg: var(--matchup-viz-bg);
+  --sheet-panel: var(--matchup-viz-panel);
+  --sheet-panel-2: var(--matchup-viz-plot);
+  --sheet-band: var(--matchup-viz-raised);
+  --sheet-border: #3b494c;
+  --sheet-border-soft: var(--matchup-viz-border);
+  --sheet-text: var(--matchup-viz-text);
+  --sheet-muted: var(--matchup-viz-muted);
+  --sheet-faint: #829396;
+}
+
+.matchup-telemetry-section > div:first-child {
+  border-bottom: 1px solid var(--matchup-viz-border);
+  background: #0a0e17;
+}
+
+.matchup-telemetry-section .text-emerald-700 {
+  color: var(--matchup-viz-accent) !important;
+}
+
+.matchup-telemetry-section .text-slate-900 {
+  color: var(--matchup-viz-text) !important;
+}
+
+.matchup-telemetry-section .text-slate-500 {
+  color: var(--matchup-viz-muted) !important;
+}
+
+.matchup-mobile-view-control {
+  display: flex;
+  justify-content: center;
+  margin: 0.6rem 0.75rem 0;
+}
+
+.matchup-mobile-view-control [role="tablist"] {
+  gap: 0.15rem !important;
+  border-color: var(--matchup-viz-border) !important;
+  border-radius: 0.35rem !important;
+  background: var(--matchup-viz-bg) !important;
+}
+
+.matchup-mobile-view-control [role="tab"] {
+  color: var(--matchup-viz-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.matchup-mobile-view-control [role="tab"][aria-selected="true"] {
+  color: #071116 !important;
+  background: var(--matchup-viz-accent) !important;
+}
+
+/* ---- Coaching / Sideline: scoped dark variant --------------------------- */
+
+.nfl-coaching-comparison--dark {
+  color: var(--matchup-viz-text);
+}
+
+.nfl-coaching-comparison--dark.border-slate-200,
+.nfl-coaching-comparison--dark .border-slate-200,
+.nfl-coaching-comparison--dark .border-slate-300 {
+  border-color: var(--matchup-viz-border) !important;
+}
+
+.nfl-coaching-comparison--dark.bg-slate-50,
+.nfl-coaching-comparison--dark .bg-slate-50,
+.nfl-coaching-comparison--dark .bg-slate-50\/70 {
+  background: var(--matchup-viz-panel) !important;
+}
+
+.nfl-coaching-comparison--dark .bg-white {
+  background: var(--matchup-viz-raised) !important;
+}
+
+.nfl-coaching-comparison--dark .bg-slate-100 {
+  background: var(--matchup-viz-raised) !important;
+}
+
+.nfl-coaching-comparison--dark .text-slate-400,
+.nfl-coaching-comparison--dark .text-slate-500 {
+  color: var(--matchup-viz-muted) !important;
+}
+
+.nfl-coaching-comparison--dark .text-slate-600,
+.nfl-coaching-comparison--dark .text-slate-700,
+.nfl-coaching-comparison--dark .text-slate-900 {
+  color: var(--matchup-viz-text) !important;
+}
+
+.nfl-coaching-comparison--dark .border-amber-300 {
+  border-color: rgba(245, 191, 66, 0.55) !important;
+}
+
+.nfl-coaching-comparison--dark .bg-amber-50 {
+  background: rgba(245, 191, 66, 0.16) !important;
+}
+
+.nfl-coaching-comparison--dark .text-amber-800 {
+  color: #f5c454 !important;
 }

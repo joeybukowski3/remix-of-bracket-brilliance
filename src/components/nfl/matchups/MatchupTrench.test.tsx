@@ -276,10 +276,11 @@ describe("offense vs defense pairings", () => {
     // "Pass Block vs Pass Rush" lives in the Passing group tab, not the
     // Overall tab shown by default.
     fireEvent.click(screen.getByRole("tab", { name: "Passing" }));
-    // Each pairing renders one row per period, the period carried in the row's
-    // metric cell as a context label.
+    // Each pairing renders one row per period, the period carried on the
+    // Rank Towers card (the default, unmocked-viewport view) as a context
+    // label.
     const contexts = Array.from(
-      document.querySelectorAll(".matchup-metric-table__context")
+      document.querySelectorAll(".matchup-rank-towers__context")
     ).map((n) => n.textContent);
     expect(contexts).toContain("2025 Season");
     expect(contexts).toContain("2026 Through Week 4");

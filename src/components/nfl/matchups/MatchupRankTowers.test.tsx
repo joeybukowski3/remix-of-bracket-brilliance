@@ -61,7 +61,9 @@ describe("MatchupRankTowers", () => {
     const towers = container.querySelectorAll<HTMLElement>("[data-rank-tower]");
 
     expect(groups).toHaveLength(METRICS.length);
-    expect(groups[0].style.getPropertyValue("--tower-card-min-width")).toBe("164px");
+    // Card sizing now comes entirely from CSS (wraps into a grid from 768px
+    // up instead of a fixed swipe-track width), so there's no per-card
+    // inline min-width to assert on any more.
     expect(crests).toHaveLength(METRICS.length * 2);
     expect(crests[0].style.width).toBe("18px");
     expect(crests[0].style.height).toBe("18px");

@@ -215,12 +215,13 @@ describe("offense vs defense", () => {
       </MemoryRouter>
     );
     // NE offense success (rank 2) vs SEA defense success allowed (rank 12).
-    // Team cells show the league rank; the raw percentage stays on the title.
+    // Rank Towers (the default, unmocked-viewport view) show the league rank
+    // as "#N" and the raw percentage directly on the card, not behind a title.
     const blocks = screen.getAllByText("Success Rate");
     expect(blocks.length).toBeGreaterThan(0);
-    expect(screen.getAllByText("2nd").length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/50\.5%/).length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/41\.8%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("50.5%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("41.8%").length).toBeGreaterThan(0);
   });
 
   it("derives no matchup score, edge or winner", () => {
