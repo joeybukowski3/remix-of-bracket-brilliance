@@ -34,7 +34,7 @@ function MetricsChecklist({
 }) {
   const selectedSet = new Set(selectedIds);
   return (
-    <div className="space-y-2">
+    <div className="matchup-metrics-checklist space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-600">
           {categoryLabel} metrics
@@ -129,7 +129,7 @@ export default function MatchupMetricsSelector({
 
   const triggerLabel = `Metrics · ${selectedIds.length}`;
   const triggerClassName =
-    "inline-flex min-h-[32px] items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500";
+    "matchup-metrics-trigger inline-flex min-h-[32px] items-center gap-1 rounded-md border px-2.5 py-1 text-[11px] font-bold focus:outline-none focus-visible:ring-2";
 
   const body = (
     <MetricsChecklist
@@ -147,7 +147,7 @@ export default function MatchupMetricsSelector({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger className={triggerClassName}>{triggerLabel}</DrawerTrigger>
-        <DrawerContent className="max-h-[80vh]">
+        <DrawerContent className="matchup-metrics-drawer max-h-[80vh]">
           <DrawerHeader>
             <DrawerTitle className="text-[13px]">Choose metrics</DrawerTitle>
           </DrawerHeader>
@@ -160,7 +160,7 @@ export default function MatchupMetricsSelector({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className={triggerClassName}>{triggerLabel}</PopoverTrigger>
-      <PopoverContent align="end" className={cn("w-72 p-3")}>
+      <PopoverContent align="end" className={cn("matchup-metrics-popover w-72 p-3")}>
         {body}
       </PopoverContent>
     </Popover>

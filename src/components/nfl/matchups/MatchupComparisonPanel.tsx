@@ -82,7 +82,7 @@ function CategoryVisualization({
   const selected = chartEligible.filter((metric) => selectedIds.includes(metric.id));
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white">
+    <div className="matchup-visualization-stage">
       <MatchupVisualizationToolbar
         view={view}
         onViewChange={onViewChange}
@@ -293,13 +293,13 @@ export default function MatchupComparisonPanel({
       {scheduleContext}
 
       <MatchupSectionCard
-        eyebrow="Metric by metric"
         titleAlign="center"
         title={dedicatedLabel ? `Statistical Comparison — ${dedicatedLabel}` : projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
         titleId="statistical-comparison-heading"
         subtitle={dedicatedLabel ? "Rank 1 is best among teams with available values; N/A rows are excluded from category counts." : projection
           ? "Projected statistics only. Rank 1 is best among teams with available values; N/A rows are excluded from category counts."
           : "League rank out of 32 — 1 is best. Every row states its advantage in words."}
+        className="matchup-visualization-shell"
         bodyClassName="px-0 py-0 sm:px-0"
       >
         {/*
@@ -315,7 +315,7 @@ export default function MatchupComparisonPanel({
           activeId={activeTab}
           onSelect={(id) => setActiveTab(id as StatComparisonTabId)}
           ariaLabel="Statistical comparison categories"
-          className="sm:flex-wrap sm:justify-center"
+          className="matchup-visualization-categories sm:flex-wrap sm:justify-center"
           triggerRef={(id, node) => {
             const tabId = id as StatComparisonTabId;
             if (node) triggerRefs.current.set(tabId, node);
@@ -364,9 +364,9 @@ export default function MatchupComparisonPanel({
                 onReset={() => visualization.resetToDefaults(category.id)}
                 isDefault={visualization.isUsingDefaults(category.id)}
               />
-              <details className="group rounded-lg border border-slate-200">
+              <details className="matchup-all-metrics group rounded-lg border">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
-                  <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+                  <span className="matchup-summary-chevron" aria-hidden />
                   All Metrics
                 </summary>
                 <MatchupComparisonCard
@@ -400,7 +400,7 @@ export default function MatchupComparisonPanel({
             without it. */}
         <details className="group border-t border-slate-200 p-3 sm:p-4">
           <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
-            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+            <span className="matchup-summary-chevron" aria-hidden />
             Rank tier colours
           </summary>
           <div className="mt-2">

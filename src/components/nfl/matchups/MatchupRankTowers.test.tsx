@@ -61,13 +61,16 @@ describe("MatchupRankTowers", () => {
     const towers = container.querySelectorAll<HTMLElement>("[data-rank-tower]");
 
     expect(groups).toHaveLength(METRICS.length);
-    expect(groups[0].style.width).toBe("104px");
+    expect(groups[0].style.getPropertyValue("--tower-card-min-width")).toBe("164px");
     expect(crests).toHaveLength(METRICS.length * 2);
     expect(crests[0].style.width).toBe("18px");
     expect(crests[0].style.height).toBe("18px");
-    expect(badges[0]).toHaveClass("h-[19px]", "text-[10px]", "font-extrabold");
+    expect(badges[0]).toHaveClass("matchup-rank-towers__rank");
+    expect(badges[0]).toHaveTextContent("#1");
     expect(towers).toHaveLength(METRICS.length * 2);
-    expect(towers[0].style.height).toBe("172px");
+    expect(towers[0].querySelector<HTMLElement>(".matchup-rank-towers__bar-fill")?.style.height).toBe("100%");
+    expect(groups[0]).toHaveTextContent("+0.20");
+    expect(groups[0]).toHaveTextContent("AWY +18");
   });
 
   it("renders missing ranks as full-height dashed empty rails", () => {
@@ -86,8 +89,8 @@ describe("MatchupRankTowers", () => {
 
     expect(missingTowers).toHaveLength(2);
     for (const tower of missingTowers) {
-      expect(tower.style.height).toBe("172px");
-      expect(tower).toHaveClass("border-dashed", "bg-slate-50/70");
+      expect(tower).toHaveClass("matchup-rank-towers__bar-rail", "is-missing");
+      expect(tower).toBeEmptyDOMElement();
     }
   });
 });

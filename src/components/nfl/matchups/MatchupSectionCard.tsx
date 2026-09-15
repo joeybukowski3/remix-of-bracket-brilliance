@@ -45,7 +45,7 @@ export default function MatchupSectionCard({
 }: {
   id?: string;
   /** Small coloured label above the title. */
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   /** DOM id of the heading; the section is labelled by it. */
   titleId: string;
@@ -68,8 +68,8 @@ export default function MatchupSectionCard({
       <div className="px-4 pb-3 pt-4 sm:px-5">
         <div className={cn("flex items-start justify-between gap-3", centered && "justify-center")}>
           <div className={cn("min-w-0", centered && "text-center")}>
-            <div className={MATCHUP_EYEBROW}>{eyebrow}</div>
-            <h2 id={titleId} className={`mt-1 ${MATCHUP_SECTION_TITLE}`}>
+            {eyebrow && <div className={MATCHUP_EYEBROW}>{eyebrow}</div>}
+            <h2 id={titleId} className={`${eyebrow ? "mt-1" : ""} ${MATCHUP_SECTION_TITLE}`}>
               {title}
             </h2>
             {subtitle && (

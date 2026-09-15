@@ -33,8 +33,8 @@ export default function MatchupVisualizationToolbar({
   isDefault: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-1.5">
-      <div className="flex items-center gap-2">
+    <div className="matchup-visualization-toolbar">
+      <div className="matchup-visualization-toolbar__views">
         <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">View</span>
         <MatchupSegmentedControl
           options={VIEW_OPTIONS}
@@ -42,6 +42,7 @@ export default function MatchupVisualizationToolbar({
           onChange={onViewChange}
           ariaLabel="Team Comparison visualization"
           size="sm"
+          className="matchup-visualization-view-toggle"
         />
       </div>
       <MatchupMetricsSelector
