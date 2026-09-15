@@ -20,6 +20,7 @@ import { evidenceArtifactPath } from "./nfl-evidence-store";
 import { writeSnapshot } from "./nfl-snapshot-store";
 import { footballContextHash, type NflGameContextPacket } from "./nfl-full-game-context";
 import { nflAiHandicapArtifactPath } from "../../src/lib/nfl/aiHandicapPresentation";
+import { TELEMETRY_MARKER_PREFIX, TELEMETRY_SCHEMA_VERSION } from "./nfl-ai-telemetry";
 import type { AnalysisSnapshot } from "./nfl-snapshot-types";
 
 const REPO_ROOT = join(__dirname, "..", "..");
@@ -114,13 +115,13 @@ function writeWu46Snapshot(model: "grok" | "chatgpt", marketAtDecision?: Paramet
   writeLiveEvidence(model, ["e1", "e2"]);
 }
 
-function fakeRunCommand(overrides: Partial<Record<string, boolean>> = {}): { runner: CommandRunner; calls: { command: string; args: string[] }[] } {
+function fakeRunCommand(overrides: Partial<Record<string, boolean>> = {}, stdoutByScript: Partial<Record<string, string>> = {}): { runner: CommandRunner; calls: { command: string; args: string[] }[] } {
   const calls: { command: string; args: string[] }[] = [];
   const runner: CommandRunner = (command, args) => {
     calls.push({ command, args });
     const scriptArg = args.find((a) => a.endsWith(".ts")) ?? "";
     const ok = overrides[scriptArg] ?? true;
-    const outcome: CommandOutcome = { command, args, ok, exitCode: ok ? 0 : 1, stderr: ok ? "" : "fake failure", stdout: "" };
+    const outcome: CommandOutcome = { command, args, ok, exitCode: ok ? 0 : 1, stderr: ok ? "" : "fake failure", stdout: stdoutByScript[scriptArg] ?? "" };
     return outcome;
   };
   return { runner, calls };
@@ -273,6 +274,84 @@ describe("executeGamePlan -- pregame lock", () => {
     expect(calls).toHaveLength(0);
     expect(result.providers[0].research.action).toBe("none");
     expect(result.providers[0].handicap.action).toBe("none");
+  });
+});
+
+describe("executeGamePlan -- WU6.9 telemetry extraction", () => {
+  function markerLine(overrides: Partial<{ provider: "grok" | "chatgpt"; cliMode: "initial" | "update" | "repricing"; stage: "A" | "B" }> = {}): string {
+    const record = {
+      schemaVersion: TELEMETRY_SCHEMA_VERSION,
+      provider: overrides.provider ?? "grok",
+      gameId: GAME_ID,
+      cliMode: overrides.cliMode ?? "initial",
+      stage: overrides.stage ?? "A",
+      telemetry: { usage: { totalTokens: 300 }, costUsd: 0.1 },
+    };
+    return `${TELEMETRY_MARKER_PREFIX}${JSON.stringify(record)}`;
+  }
+
+  it("attaches parsed telemetry markers to a successful handicap StageOutcome", () => {
+    // grok has an existing research-only snapshot lineage (no analysisState yet) -> handicap:initial.
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    writeSnapshot(root, {
+      schemaVersion: "nfl-snapshot-v1",
+      snapshotId: "grok-initial",
+      model: "grok",
+      gameId: GAME_ID,
+      season: SEASON,
+      week: WEEK,
+      snapshotType: "initial",
+      createdAt: "2026-09-09T12:00:00.000Z",
+      researchCutoff: "2026-09-09T11:00:00.000Z",
+      kickoff: "2026-09-13T17:00:00.000Z",
+      previousSnapshotId: null,
+      context: { contextVersion: "nfl-game-context-v1", contextHash: "x", contextGeneratedAt: "2026-09-09T10:00:00.000Z" },
+      evidence: { evidenceIds: ["e1", "e2"], addedEvidenceIds: ["e1", "e2"], supersededEvidenceIds: [], conflictingEvidenceIds: [] },
+      market: { sportsbook: "draftkings", spread: { homeLine: 3.5, awayLine: -3.5 }, total: { line: 44.5 }, moneyline: null, asOf: "2026-09-09T10:00:00.000Z", previousSpread: null, previousTotal: null, spreadDelta: null, totalDelta: null, moneylineHomeDelta: null, moneylineAwayDelta: null, sportsbookChanged: false, asOfDeltaMs: null },
+      analysisState: null,
+      updateAssessment: null,
+    });
+    const grokPlan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    expect(grokPlan.providers.grok.handicap).toBe("initial");
+
+    const stdout = [markerLine({ stage: "A" }), "some other log line", markerLine({ stage: "B" })].join("\n");
+    const { runner } = fakeRunCommand({}, { "scripts/run-nfl-grok-handicap.ts": stdout });
+    const result = executeGamePlan(grokPlan, { root, live: true, runCommand: runner, now: PRE_KICKOFF_NOW });
+
+    const grokResult = result.providers.find((p) => p.provider === "grok")!;
+    expect(grokResult.handicap.ok).toBe(true);
+    expect(grokResult.handicap.telemetry).toHaveLength(2);
+    expect(grokResult.handicap.telemetry!.map((r) => r.stage).sort()).toEqual(["A", "B"]);
+  });
+
+  it("a handicap stage with no telemetry markers in stdout yields an empty array, never a failure", () => {
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    writeSnapshot(root, {
+      schemaVersion: "nfl-snapshot-v1",
+      snapshotId: "grok-initial",
+      model: "grok",
+      gameId: GAME_ID,
+      season: SEASON,
+      week: WEEK,
+      snapshotType: "initial",
+      createdAt: "2026-09-09T12:00:00.000Z",
+      researchCutoff: "2026-09-09T11:00:00.000Z",
+      kickoff: "2026-09-13T17:00:00.000Z",
+      previousSnapshotId: null,
+      context: { contextVersion: "nfl-game-context-v1", contextHash: "x", contextGeneratedAt: "2026-09-09T10:00:00.000Z" },
+      evidence: { evidenceIds: ["e1", "e2"], addedEvidenceIds: ["e1", "e2"], supersededEvidenceIds: [], conflictingEvidenceIds: [] },
+      market: { sportsbook: "draftkings", spread: { homeLine: 3.5, awayLine: -3.5 }, total: { line: 44.5 }, moneyline: null, asOf: "2026-09-09T10:00:00.000Z", previousSpread: null, previousTotal: null, spreadDelta: null, totalDelta: null, moneylineHomeDelta: null, moneylineAwayDelta: null, sportsbookChanged: false, asOfDeltaMs: null },
+      analysisState: null,
+      updateAssessment: null,
+    });
+    const grokPlan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+
+    const { runner } = fakeRunCommand({}, { "scripts/run-nfl-grok-handicap.ts": "no markers here, just plain log output\n" });
+    const result = executeGamePlan(grokPlan, { root, live: true, runCommand: runner, now: PRE_KICKOFF_NOW });
+
+    const grokResult = result.providers.find((p) => p.provider === "grok")!;
+    expect(grokResult.handicap.ok).toBe(true);
+    expect(grokResult.handicap.telemetry).toEqual([]);
   });
 });
 

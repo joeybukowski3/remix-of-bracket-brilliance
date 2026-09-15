@@ -28,8 +28,10 @@ import { dirname, join } from "node:path";
 import { rebuildAndPersistGameContext } from "./nfl-game-context-preflight";
 import { generatePresentationForGame } from "../generate-nfl-ai-handicap-presentation";
 import { nflAiHandicapArtifactPath } from "../../src/lib/nfl/aiHandicapPresentation";
+import { parseTelemetryMarkers } from "./nfl-ai-telemetry";
 import type { EvidenceModel } from "./nfl-evidence-types";
 import type { GamePlan, ProviderPlan } from "./nfl-ai-slate-plan";
+import type { TelemetryMarkerRecord } from "./nfl-ai-telemetry";
 
 export interface CommandOutcome {
   command: string;
@@ -115,6 +117,14 @@ export interface StageOutcome {
   ran: boolean;
   ok: boolean;
   detail: string;
+  /**
+   * WU6.9 -- telemetry markers parsed from this stage's child-process stdout, if any. Only ever
+   * populated for a handicap stage that actually ran a child process (initial/update/repricing);
+   * "none" actions and dry-runs never set it. A missing or unparseable marker line is NOT an
+   * error -- parseTelemetryMarkers() never throws, so this is simply an empty array in that case,
+   * and it must never affect `ok`/`ran` above.
+   */
+  telemetry?: TelemetryMarkerRecord[];
 }
 
 export interface ProviderExecutionResult {
@@ -193,7 +203,10 @@ function executeHandicapStage(runCommand: CommandRunner, live: boolean, gameId: 
   }
   if (!live) return { stage: "handicap", provider, action: plan.handicap, ran: false, ok: true, detail: `would run (dry-run): ${handicapScriptFor(provider)} --live --game=${gameId} --mode=${plan.handicap}` };
   const result = runScript(runCommand, handicapScriptFor(provider), ["--live", `--game=${gameId}`, `--mode=${plan.handicap}`]);
-  return { stage: "handicap", provider, action: plan.handicap, ran: true, ok: result.ok, detail: result.ok ? "handicap pass completed" : result.stderr };
+  // Telemetry extraction is best-effort and must never affect the outcome above: parseTelemetryMarkers()
+  // never throws, and a repricing run naturally yields only Stage B marker(s) since that's all it emits.
+  const telemetry = parseTelemetryMarkers(result.stdout);
+  return { stage: "handicap", provider, action: plan.handicap, ran: true, ok: result.ok, detail: result.ok ? "handicap pass completed" : result.stderr, telemetry };
 }
 
 function writePresentation(root: string, gameId: string, season: number, week: number): string {

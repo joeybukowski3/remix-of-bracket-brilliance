@@ -22,9 +22,11 @@
  * handicap action the plan calls for.
  */
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { planSlate, AI_SLATE_PROVIDERS, type GamePlan } from "./lib/nfl-ai-slate-plan";
 import { executeGamePlan, type GameExecutionResult } from "./lib/nfl-ai-slate-executor";
+import { aggregateTelemetryByProvider } from "./lib/nfl-ai-telemetry";
+import type { TelemetryMarkerRecord } from "./lib/nfl-ai-telemetry";
 import type { EvidenceModel } from "./lib/nfl-evidence-types";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -130,7 +132,7 @@ function printDryRunSummary(plans: readonly GamePlan[]): void {
   }
 }
 
-function printLiveSummary(results: readonly GameExecutionResult[]): void {
+export function printLiveSummary(results: readonly GameExecutionResult[]): void {
   let contextRebuilds = 0;
   // WU6.4 -- "ran" only means a paid call was ATTEMPTED (a child process was actually spawned,
   // which is what costs money); it says nothing about whether that call ultimately succeeded.
@@ -148,6 +150,11 @@ function printLiveSummary(results: readonly GameExecutionResult[]): void {
   let presentationWrites = 0;
   const structuredFailures: string[] = [];
   let gamesOk = 0;
+  // WU6.9 -- telemetry is aggregated entirely separately from the attempts/successes/failures
+  // counters above: a handicap call that failed (and so is already counted in *FailuresByProvider)
+  // contributes no telemetry marker (emitTelemetryMarker is only ever called for an ACCEPTED
+  // Stage A/B result), so this array can never double-count or mask a failure.
+  const allTelemetryRecords: TelemetryMarkerRecord[] = [];
 
   for (const result of results) {
     if (result.ok) gamesOk += 1;
@@ -165,10 +172,15 @@ function printLiveSummary(results: readonly GameExecutionResult[]): void {
         const target = provider.handicap.ok ? handicapSuccessesByProvider : handicapFailuresByProvider;
         target[provider.provider] = (target[provider.provider] ?? 0) + 1;
       }
+      if (provider.handicap.telemetry) allTelemetryRecords.push(...provider.handicap.telemetry);
       if (!provider.research.ran && !provider.handicap.ran) noOps += 1;
     }
     for (const failure of result.failures) structuredFailures.push(`${result.gameId}: ${failure}`);
   }
+
+  const telemetryByProvider = aggregateTelemetryByProvider(allTelemetryRecords);
+  const repricingMarkerCount = allTelemetryRecords.filter((r) => r.cliMode === "repricing").length;
+  const repricingStageBOnly = allTelemetryRecords.filter((r) => r.cliMode === "repricing" && r.stage !== "B").length === 0;
 
   console.log(`\n=== LIVE RUN SUMMARY ===`);
   console.log(`Games scanned: ${results.length}`);
@@ -183,6 +195,21 @@ function printLiveSummary(results: readonly GameExecutionResult[]): void {
   console.log(`Handicap (Stage A+B) failures by provider: ${JSON.stringify(handicapFailuresByProvider)}`);
   console.log(`No-op provider states: ${noOps}`);
   console.log(`Presentation artifacts written: ${presentationWrites}`);
+
+  // WU6.9 -- machine-readable telemetry (tokens/cost), aggregated from marker lines the handicap
+  // CLIs print for every ACCEPTED Stage A/B result. Missing/malformed telemetry on an otherwise
+  // successful handicap run never reaches here as an error -- it just yields fewer/no records.
+  console.log(`\nTelemetry (${allTelemetryRecords.length} marker(s) captured, ${repricingMarkerCount} from repricing passes${repricingMarkerCount > 0 ? `, Stage B only: ${repricingStageBOnly}` : ""}):`);
+  if (telemetryByProvider.length === 0) {
+    console.log("  (no telemetry captured)");
+  } else {
+    for (const entry of telemetryByProvider) {
+      console.log(
+        `  ${entry.provider}: ${entry.callsWithTelemetry} call(s) with telemetry, ${entry.totalTokens ?? "unavailable"} total tokens, ${entry.totalCostUsd != null ? `$${entry.totalCostUsd.toFixed(4)}` : "unavailable"} total cost`
+      );
+    }
+  }
+
   console.log(`\nStructured failures (${structuredFailures.length}):`);
   for (const failure of structuredFailures) console.log(`  - ${failure}`);
 }
@@ -230,7 +257,12 @@ async function main(): Promise<void> {
   printLiveSummary(results);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
-  process.exitCode = 1;
-});
+// WU6.9 -- entrypoint guard (pathToFileURL, not manual string-building -- see
+// replay-nfl-provider-research.ts's identical pattern) so importing this module for its
+// exported printLiveSummary (test coverage) never triggers a live CLI run as a side effect.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+    process.exitCode = 1;
+  });
+}
