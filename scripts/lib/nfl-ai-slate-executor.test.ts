@@ -353,6 +353,70 @@ describe("executeGamePlan -- WU6.9 telemetry extraction", () => {
     expect(grokResult.handicap.ok).toBe(true);
     expect(grokResult.handicap.telemetry).toEqual([]);
   });
+
+  function researchMarkerLine(overrides: Partial<{ provider: "grok" | "chatgpt"; cliMode: "research_initial" | "research_update" }> = {}): string {
+    const record = {
+      schemaVersion: TELEMETRY_SCHEMA_VERSION,
+      kind: "research",
+      provider: overrides.provider ?? "grok",
+      gameId: GAME_ID,
+      cliMode: overrides.cliMode ?? "research_initial",
+      telemetry: { usage: { totalTokens: 1500 }, costUsd: 0.0375 },
+    };
+    return `${TELEMETRY_MARKER_PREFIX}${JSON.stringify(record)}`;
+  }
+
+  it("WU7.3: attaches parsed telemetry markers to a successful research StageOutcome", () => {
+    // A brand-new game with no evidence/lineage yet -> research:initial for both providers.
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok", "chatgpt"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.research).toBe("initial");
+
+    const { runner } = fakeRunCommand(
+      {},
+      {
+        "scripts/run-nfl-grok-research.ts": [researchMarkerLine({ provider: "grok" }), "some other log line"].join("\n"),
+        "scripts/run-nfl-chatgpt-research.ts": researchMarkerLine({ provider: "chatgpt" }),
+      }
+    );
+    const result = executeGamePlan(plan, { root, live: true, runCommand: runner, now: PRE_KICKOFF_NOW });
+
+    const grokResult = result.providers.find((p) => p.provider === "grok")!;
+    const chatgptResult = result.providers.find((p) => p.provider === "chatgpt")!;
+    expect(grokResult.research.ok).toBe(true);
+    expect(grokResult.research.telemetry).toHaveLength(1);
+    expect(grokResult.research.telemetry![0]).toMatchObject({ kind: "research", cliMode: "research_initial", provider: "grok" });
+    expect(chatgptResult.research.telemetry).toHaveLength(1);
+    expect(chatgptResult.research.telemetry![0]).toMatchObject({ kind: "research", cliMode: "research_initial", provider: "chatgpt" });
+    // A research StageOutcome never carries a `stage` field -- that concept is handicap-only.
+    expect(grokResult.research.telemetry![0].stage).toBeUndefined();
+  });
+
+  it("WU7.3: a research stage with no telemetry markers yields an empty array, never a failure", () => {
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    const { runner } = fakeRunCommand({}, { "scripts/run-nfl-grok-research.ts": "no markers here\n" });
+    const result = executeGamePlan(plan, { root, live: true, runCommand: runner, now: PRE_KICKOFF_NOW });
+
+    const grokResult = result.providers.find((p) => p.provider === "grok")!;
+    expect(grokResult.research.ok).toBe(true);
+    expect(grokResult.research.telemetry).toEqual([]);
+  });
+
+  it("WU7.3: a bootstrap research action (zero-cost) never carries telemetry", () => {
+    writeWu46Snapshot("grok");
+    // Force market change so grok's handicap plans as repricing, keeping this test's focus purely
+    // on whether the OTHER provider's bootstrap research action ever wrongly picks up telemetry --
+    // chatgpt has live evidence but no snapshot lineage yet -> research:bootstrap (zero-cost, no
+    // child stdout to parse markers from in the first place).
+    writeLiveEvidence("chatgpt", ["e1", "e2"]);
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["chatgpt"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.chatgpt.research).toBe("bootstrap");
+
+    const { runner } = fakeRunCommand();
+    const result = executeGamePlan(plan, { root, live: true, runCommand: runner, now: PRE_KICKOFF_NOW });
+    const chatgptResult = result.providers.find((p) => p.provider === "chatgpt")!;
+    expect(chatgptResult.research.action).toBe("bootstrap");
+    expect(chatgptResult.research.telemetry).toBeUndefined();
+  });
 });
 
 describe("spawnTsxCommandRunner -- real process spawn (no network, no provider API calls)", () => {

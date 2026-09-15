@@ -96,8 +96,8 @@ export interface GrokResearchTelemetry {
 }
 
 export type GrokResearchResult =
-  | { ok: true; candidates: RawEvidenceCandidate[]; rejectedFindings: RejectedFinding[]; citationUrls: string[]; coverage: ResearchCoverageSummary; telemetry: GrokResearchTelemetry }
-  | { ok: false; error: string; telemetry: GrokResearchTelemetry | null };
+  | { ok: true; candidates: RawEvidenceCandidate[]; rejectedFindings: RejectedFinding[]; citationUrls: string[]; coverage: ResearchCoverageSummary; telemetry: GrokResearchTelemetry; rawResponseBody: unknown }
+  | { ok: false; error: string; telemetry: GrokResearchTelemetry | null; rawResponseBody: unknown | null };
 
 /**
  * Targeted per the architecture's "RESEARCH STRATEGY" requirement -- this is
@@ -316,6 +316,7 @@ export async function runGrokResearch(input: GrokResearchInput): Promise<GrokRes
       ok: false,
       error: "mode \"update\" requires both deltaContext and currentMarketState -- a delta-focused update pass cannot run without knowing what came before.",
       telemetry: null,
+      rawResponseBody: null,
     };
   }
 
@@ -339,11 +340,11 @@ export async function runGrokResearch(input: GrokResearchInput): Promise<GrokRes
     httpStatus = response.status;
     responseText = await response.text();
     if (!response.ok) {
-      return { ok: false, error: `HTTP ${response.status} from xAI /v1/responses: ${responseText.slice(0, 500)}`, telemetry: buildTelemetry(config, httpStatus, Date.now() - started, null, null) };
+      return { ok: false, error: `HTTP ${response.status} from xAI /v1/responses: ${responseText.slice(0, 500)}`, telemetry: buildTelemetry(config, httpStatus, Date.now() - started, null, null), rawResponseBody: responseText.slice(0, 2000) };
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: `Request to xAI /v1/responses failed: ${message}`, telemetry: buildTelemetry(config, httpStatus, Date.now() - started, null, null) };
+    return { ok: false, error: `Request to xAI /v1/responses failed: ${message}`, telemetry: buildTelemetry(config, httpStatus, Date.now() - started, null, null), rawResponseBody: null };
   } finally {
     clearTimeout(timeoutHandle);
   }
@@ -354,7 +355,7 @@ export async function runGrokResearch(input: GrokResearchInput): Promise<GrokRes
   try {
     data = JSON.parse(responseText);
   } catch {
-    return { ok: false, error: "xAI /v1/responses returned non-JSON body.", telemetry: buildTelemetry(config, httpStatus, latencyMs, null, null) };
+    return { ok: false, error: "xAI /v1/responses returned non-JSON body.", telemetry: buildTelemetry(config, httpStatus, latencyMs, null, null), rawResponseBody: responseText.slice(0, 2000) };
   }
 
   const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
@@ -363,7 +364,7 @@ export async function runGrokResearch(input: GrokResearchInput): Promise<GrokRes
   const telemetry = buildTelemetry(config, httpStatus, latencyMs, parsedOutput, usage);
 
   if (!parsedOutput.messageText) {
-    return { ok: false, error: "No final message text found in xAI /v1/responses output.", telemetry };
+    return { ok: false, error: "No final message text found in xAI /v1/responses output.", telemetry, rawResponseBody: data };
   }
 
   let rawFindings: unknown[];
@@ -371,7 +372,7 @@ export async function runGrokResearch(input: GrokResearchInput): Promise<GrokRes
     rawFindings = parseGrokFindings(parsedOutput.messageText);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: `Failed to parse Grok findings JSON: ${message}`, telemetry };
+    return { ok: false, error: `Failed to parse Grok findings JSON: ${message}`, telemetry, rawResponseBody: data };
   }
 
   const { candidates, rejected } = buildRawEvidenceCandidatesFromFindings(rawFindings, {
@@ -383,5 +384,5 @@ export async function runGrokResearch(input: GrokResearchInput): Promise<GrokRes
 
   const coverage = summarizeResearchCoverage(candidates, parsedOutput.searchQueries);
 
-  return { ok: true, candidates, rejectedFindings: rejected, citationUrls: parsedOutput.citationUrls, coverage, telemetry };
+  return { ok: true, candidates, rejectedFindings: rejected, citationUrls: parsedOutput.citationUrls, coverage, telemetry, rawResponseBody: data };
 }

@@ -38,6 +38,8 @@ import { fileURLToPath } from "node:url";
 import { runGrokResearch } from "./lib/nfl-grok-research-adapter";
 import { resolveGrokResearchConfig, type GrokResearchMode } from "./lib/nfl-grok-research-config";
 import { normalizeExternalEvidence } from "./lib/nfl-evidence-normalizer";
+import { redactSecretsFromRawResponse } from "./lib/nfl-chatgpt-research-parsing";
+import { emitTelemetryMarker } from "./lib/nfl-ai-telemetry";
 import { appendEvidence, createEvidenceStore, evidenceArtifactPath, readEvidenceArtifact, writeEvidenceArtifact } from "./lib/nfl-evidence-store";
 import { loadSubjectIdentitySource } from "./lib/nfl-evidence-subject-identity-loader";
 import type { EvidenceNormalizationContext, EvidenceRecord } from "./lib/nfl-evidence-types";
@@ -146,9 +148,31 @@ async function runInitialOrProbe(args: { gameId: string; mode: GrokResearchMode 
 
   const result = await runGrokResearch({ mode: args.mode, game, apiKey, model: "grok" });
 
+  // WU7.3 -- private per-run diagnostics dir, computed regardless of success/failure, mirroring
+  // ChatGPT's initial-mode pattern (run-nfl-chatgpt-research.ts) -- the raw provider response and
+  // telemetry must be captured EVERY live run, not only successful ones. Previously this branch
+  // (mode="initial"/"probe") wrote NOTHING here -- only mode="update" (below, in runUpdate) did --
+  // so a live Grok initial research call's token usage/cost and raw response were computed in
+  // memory, printed to console, and then silently discarded once the process exited.
+  const now = new Date();
+  const canonicalPath = evidenceArtifactPath(ROOT, game.season, game.week, game.gameId, "grok");
+  const runId = `${args.mode}-${now.toISOString().replace(/[:.]/g, "-")}`;
+  const researchDir = join(dirname(canonicalPath), "research", runId);
+  mkdirSync(researchDir, { recursive: true });
+  if (result.rawResponseBody != null) {
+    const redacted = redactSecretsFromRawResponse(result.rawResponseBody, [apiKey]);
+    writeFileSync(join(researchDir, "provider-response.raw.json"), `${JSON.stringify(redacted, null, 2)}\n`);
+    console.log(`Wrote raw provider response to ${join(researchDir, "provider-response.raw.json")}`);
+  }
+
   if (!result.ok) {
     console.error(`Grok research pass FAILED: ${result.error}`);
     if (result.telemetry) console.error("Telemetry at failure:", JSON.stringify(result.telemetry, null, 2));
+    writeFileSync(
+      join(researchDir, "research-run.json"),
+      `${JSON.stringify({ mode: args.mode, contextVersion: "nfl-game-context-v1", error: result.error, telemetry: result.telemetry }, null, 2)}\n`
+    );
+    console.log(`Wrote research diagnostics (failure) to ${researchDir}`);
     process.exitCode = 1;
     return;
   }
@@ -195,13 +219,46 @@ async function runInitialOrProbe(args: { gameId: string; mode: GrokResearchMode 
   for (const reason of normalizeRejections) console.log(`  - ${reason}`);
   console.log(`append outcomes: ${JSON.stringify(appendOutcomes)}`);
 
-  const canonicalPath = evidenceArtifactPath(ROOT, game.season, game.week, game.gameId, "grok");
   const liveTestPath = join(dirname(canonicalPath), "evidence.live-test.json");
   writeEvidenceArtifact(liveTestPath, store, {
     fixture: false,
     fixtureNote: `WU3 manual live-research test run (mode="${args.mode}"). Not wired into the canonical evidence.json path -- see scripts/run-nfl-grok-research.ts. Canonical fixture at ${canonicalPath} is untouched.`,
   });
   console.log(`\nWrote live-test evidence artifact to ${liveTestPath}`);
+
+  // WU7.3 -- remaining private research diagnostics, mirroring ChatGPT's initial-mode "Step 9"
+  // (run-nfl-chatgpt-research.ts): purely informational, never read back programmatically by
+  // anything else. Grok's parser has no raw-vs-parsed consistency-check concept the way ChatGPT's
+  // WU4.1/WU4.2 diagnostics/groundingProvenance does -- that is not reproduced here since the two
+  // providers' diagnostic provenance does not need to be field-for-field identical, only
+  // comparably present (see WU7.3's provider-parity goal).
+  writeFileSync(join(researchDir, "research-raw.json"), `${JSON.stringify({ candidates: result.candidates, citationUrls: result.citationUrls, coverage: result.coverage }, null, 2)}\n`);
+  writeFileSync(join(researchDir, "rejected-findings.json"), `${JSON.stringify(result.rejectedFindings, null, 2)}\n`);
+  writeFileSync(
+    join(researchDir, "research-run.json"),
+    `${JSON.stringify(
+      {
+        mode: args.mode,
+        contextVersion: "nfl-game-context-v1",
+        telemetry: result.telemetry,
+        coverage: result.coverage,
+        normalizedAccepted: store.records.length,
+        normalizedRejected: normalizeRejections.length,
+        normalizeRejectionReasons: normalizeRejections,
+      },
+      null,
+      2
+    )}\n`
+  );
+  console.log(`Wrote research diagnostics to ${researchDir}`);
+
+  emitTelemetryMarker({
+    kind: "research",
+    provider: "grok",
+    gameId: game.gameId,
+    cliMode: args.mode === "update" ? "research_update" : "research_initial",
+    telemetry: result.telemetry,
+  });
 
   if (result.candidates.length < 2) {
     console.log("\nNOTE: evidence coverage looks thin (<2 accepted candidates). Per cost-guardrail policy, this script does NOT automatically retry with a larger budget -- review the telemetry above and decide manually whether a re-run is warranted.");
@@ -338,6 +395,8 @@ async function runUpdate(args: { gameId: string }, apiKey: string): Promise<void
   writeFileSync(join(researchDir, "rejected-evidence.json"), `${JSON.stringify(result.rejectedFindings, null, 2)}\n`);
   writeFileSync(join(researchDir, "research-run.json"), `${JSON.stringify({ mode: "update", config, deltaContext, currentMarketState, telemetry: result.telemetry }, null, 2)}\n`);
   console.log(`Wrote update research diagnostics to ${researchDir}`);
+
+  emitTelemetryMarker({ kind: "research", provider: "grok", gameId: args.gameId, cliMode: "research_update", telemetry: result.telemetry });
 
   const pipelineResult = runGrokUpdatePipeline({
     model: "grok",
