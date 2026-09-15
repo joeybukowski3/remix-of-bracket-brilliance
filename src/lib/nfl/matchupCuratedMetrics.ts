@@ -14,7 +14,7 @@
 
 import type { MatchupCategoryId } from "@/lib/nfl/matchupCategoryAdvantage";
 
-/** Curated 6-8 headline metrics per category, in registry order. Rendered by Rank Towers and Signature Profile alike — one shared list, two views. */
+/** Curated headline metrics in registry order: up to eight, or every chart-eligible registry metric when fewer exist. Rendered by Rank Towers and Signature Profile alike — one shared list, two views. */
 export const CURATED_METRIC_DEFAULTS: Record<MatchupCategoryId, readonly string[]> = {
   overall: [
     "team.overallRating",
