@@ -1,10 +1,10 @@
 {
   "date": "2026-09-15",
-  "generatedAt": "2026-09-15T18:20:32.608Z",
+  "generatedAt": "2026-09-15T19:11:43.877Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field and Great American Ball Park headline a slate with elevated park factors, while Kyle Freeland and Rhett Lowder face lineups that post strong barrel and exit-velo marks. Left-handed pitching in Citi Field and Nationals Park creates platoon edges for Alonso and Schwarber, and Target Field’s neutral dimensions still allow Judge and Rice to leverage their pull-side power.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over raw xBA, elevating Tatis and Merrill at Coors while discounting Judge’s low recent output despite elite exit velocity."
+    "slateOverview": "Coors Field and Great American Ball Park headline the slate with park factors of 1.4 and 1.25, creating elevated HR environments. Kyle Freeland and Rhett Lowder face lineups with elevated barrel and hard-hit rates, while Citi Field and Target Field offer neutral conditions that still support power against lefty and righty pitching. Weather angles favor the Coors and GABP games where altitude and warm temps amplify fly-ball carry.",
+    "modelNote": "The model is weighting barrel rate, hard-hit rate, and park factor most heavily, elevating Tatis and De Paula to the top despite modest recent HR volume, while downplaying Judge's low last-30 HR output in favor of his elite exit velocity and barrel metrics."
   },
   "bestBets": [
     {
@@ -14,16 +14,35 @@
       "opposingPitcher": "Kyle Freeland",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=80.2",
-        "barrel=12.6%"
-      ],
-      "bullets": [
-        "hrScore=80.2",
+        "barrel=12.6%",
         "HH=54.2%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "park=1.4",
+        "hrScore=80.2"
+      ],
+      "hrOddsYes": "+330",
+      "marketImpliedProbability": 0.23255813953488372,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Josue De Paula",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=22.2%",
+        "HH=66.7%"
+      ],
+      "bullets": [
+        "park=1.25",
+        "hrScore=78.7"
+      ],
+      "hrOddsYes": "+540",
+      "marketImpliedProbability": 0.15625,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -31,18 +50,18 @@
       "team": "SD",
       "opponent": "COL",
       "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 2,
+      "hrScoreRank": 3,
       "topStats": [
-        "hrScore=73.6",
-        "barrel=12.8%"
-      ],
-      "bullets": [
-        "hrScore=73.6",
+        "barrel=12.8%",
         "HH=48.7%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "park=1.4",
+        "hrScore=73.6"
+      ],
+      "hrOddsYes": "+439",
+      "marketImpliedProbability": 0.18552875695732837,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -50,18 +69,18 @@
       "team": "BAL",
       "opponent": "NYM",
       "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=69",
-        "barrel=13.8%"
+        "Pitcher HR VS=71.0",
+        "Hard Hit%=55.8"
       ],
       "bullets": [
-        "hrScore=69",
-        "HH=55.8%"
+        "HR score 68.9 (#4)",
+        "Pitcher HR VS 71.0 at park 1.06"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+303",
+      "marketImpliedProbability": 0.24813895781637718,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -69,58 +88,58 @@
       "team": "STL",
       "opponent": "SF",
       "opposingPitcher": "Blade Tidwell",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "Hard Hit%=69.0",
         "Pitcher HR VS=61.3"
       ],
       "bullets": [
-        "HR score 67.9 (#4)",
+        "HR score 67.9 (#5)",
         "Pitcher HR VS 61.3 at park 0.92"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "MIN",
-      "opposingPitcher": "Bailey Ober",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=58.8",
-        "Hard Hit%=48.3"
-      ],
-      "bullets": [
-        "HR score 67.6 (#5)",
-        "Pitcher HR VS 58.8 at park 0.97"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+630",
+      "marketImpliedProbability": 0.136986301369863,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=13.8%",
+        "HH=55.8%"
+      ],
+      "bullets": [
+        "park=1.06",
+        "hrScore=68.9"
+      ],
+      "hrOddsYes": "+303",
+      "marketImpliedProbability": 0.24813895781637718,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Leo Bernal",
       "team": "STL",
       "opponent": "SF",
       "opposingPitcher": "Blade Tidwell",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "hrScore=67.9",
-        "barrel=11.9%"
-      ],
-      "bullets": [
-        "hrScore=67.9",
+        "barrel=11.9%",
         "HH=69%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "park=0.92",
+        "hrScore=67.9"
+      ],
+      "hrOddsYes": "+630",
+      "marketImpliedProbability": 0.136986301369863,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -128,20 +147,135 @@
       "team": "NYY",
       "opponent": "MIN",
       "opposingPitcher": "Bailey Ober",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
-        "hrScore=67.6",
-        "barrel=14.3%"
-      ],
-      "bullets": [
-        "hrScore=67.6",
+        "barrel=14.3%",
         "HH=48.3%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "park=0.97",
+        "hrScore=67.6"
+      ],
+      "hrOddsYes": "+318",
+      "marketImpliedProbability": 0.23923444976076555,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "MIN",
+      "opposingPitcher": "Bailey Ober",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=58.8",
+        "Hard Hit%=47.3"
+      ],
+      "bullets": [
+        "HR score 67.6 (#7)",
+        "Pitcher HR VS 58.8 at park 0.97"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=67.3",
+        "Hard Hit%=47.2"
+      ],
+      "bullets": [
+        "HR score 65.9 (#8)",
+        "Pitcher HR VS 67.3 at park 1.25"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
-  "longshots": []
+  "longshots": [
+    {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "MIN",
+      "opposingPitcher": "Bailey Ober",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=12.8%",
+        "HH=47.3%"
+      ],
+      "bullets": [
+        "park=0.97",
+        "hrScore=67.6"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=13.1%",
+        "HH=47.2%"
+      ],
+      "bullets": [
+        "park=1.25",
+        "hrScore=65.9"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Victor Mesa Jr.",
+      "team": "TB",
+      "opponent": "ATH",
+      "opposingPitcher": "Jack Perkins",
+      "hrScoreRank": 25,
+      "topStats": [
+        "Pitcher HR VS=54.8",
+        "Hard Hit%=40.5"
+      ],
+      "bullets": [
+        "HR score 57.5 (#25)",
+        "Pitcher HR VS 54.8 at park 0.98"
+      ],
+      "hrOddsYes": "+518",
+      "marketImpliedProbability": 0.16181229773462782,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Corey Seager",
+      "team": "TEX",
+      "opponent": "BOS",
+      "opposingPitcher": "Patrick Sandoval",
+      "hrScoreRank": 14,
+      "topStats": [
+        "Pitcher HR VS=50.2",
+        "Hard Hit%=48.6"
+      ],
+      "bullets": [
+        "HR score 63.1 (#14)",
+        "Pitcher HR VS 50.2 at park 0.99"
+      ],
+      "hrOddsYes": "+460",
+      "marketImpliedProbability": 0.17857142857142858,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ]
 }
