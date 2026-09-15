@@ -122,4 +122,43 @@ describe("buildRawEvidenceCandidatesFromFindings", () => {
     );
     expect(result.candidates).toHaveLength(0);
   });
+
+  describe("WU6.4 -- provider parity: Grok shares ChatGPT's DET_BUF malformed-candidate defect until fixed here too", () => {
+    it("quarantines a candidate whose subjects is a flat array, with an explicit reason", () => {
+      const result = buildRawEvidenceCandidatesFromFindings(
+        [
+          {
+            claim: "A well-formed claim with a malformed subjects shape.",
+            category: "scheduling",
+            sourceName: "Fixture Outlet",
+            sourceUrl: FIXTURE_CITATION_URL_A,
+            sourceType: "official_team",
+            subjects: ["ind", "bal"],
+          },
+        ],
+        { model: "grok", gameId: "2026_01_BAL_IND", citationUrls: [FIXTURE_CITATION_URL_A], retrievedAt: "2026-09-12T00:00:00.000Z" }
+      );
+      expect(result.candidates).toHaveLength(0);
+      expect(result.rejected[0].reason).toMatch(/subjects: expected object with optional teams\/players\/coaches arrays, received an array/);
+    });
+
+    it("a candidate whose finding omits confidence has NO confidence key at all -- never an explicit `confidence: undefined`", () => {
+      const result = buildRawEvidenceCandidatesFromFindings(
+        [
+          {
+            claim: "A well-formed claim with no confidence field at all.",
+            category: "scheduling",
+            sourceName: "Fixture Outlet",
+            sourceUrl: FIXTURE_CITATION_URL_A,
+            sourceType: "official_team",
+            subjects: { teams: ["ind", "bal"], players: [], coaches: [] },
+          },
+        ],
+        { model: "grok", gameId: "2026_01_BAL_IND", citationUrls: [FIXTURE_CITATION_URL_A], retrievedAt: "2026-09-12T00:00:00.000Z" }
+      );
+      expect(result.candidates).toHaveLength(1);
+      expect("confidence" in result.candidates[0]).toBe(false);
+      expect(Object.entries(result.candidates[0]).every(([, value]) => value !== undefined)).toBe(true);
+    });
+  });
 });

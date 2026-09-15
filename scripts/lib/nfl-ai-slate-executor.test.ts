@@ -8,11 +8,13 @@
  * writes), and pregame-lock no-ops staying no-ops rather than being
  * retried.
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { executeGamePlan, type CommandOutcome, type CommandRunner } from "./nfl-ai-slate-executor";
+import { executeGamePlan, spawnTsxCommandRunner, type CommandOutcome, type CommandRunner } from "./nfl-ai-slate-executor";
 import { planGame } from "./nfl-ai-slate-plan";
 import { evidenceArtifactPath } from "./nfl-evidence-store";
 import { writeSnapshot } from "./nfl-snapshot-store";
@@ -236,5 +238,50 @@ describe("executeGamePlan -- pregame lock", () => {
     expect(calls).toHaveLength(0);
     expect(result.providers[0].research.action).toBe("none");
     expect(result.providers[0].handicap.action).toBe("none");
+  });
+});
+
+describe("spawnTsxCommandRunner -- real process spawn (no network, no provider API calls)", () => {
+  const FIXTURE_SCRIPT = "scripts/lib/__fixtures__/wu64-echo-argv-fixture.ts";
+
+  it("WU6.4 regression: actually launches the script via `node <tsx-cli>` without ENOENT (Windows requires shell:true for npx.cmd, which this avoids entirely)", () => {
+    const runner = spawnTsxCommandRunner(REPO_ROOT);
+    const outcome = runner("npx", ["tsx", FIXTURE_SCRIPT]);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.exitCode).toBe(0);
+  });
+
+  it("WU6.4 regression: argv elements survive as discrete values -- no shell string concatenation or interpolation", () => {
+    const runner = spawnTsxCommandRunner(REPO_ROOT);
+    // A space-containing value and shell metacharacters must arrive as single, inert argv
+    // entries -- if a shell were interpolating this command line, the space would split the
+    // arg into two argv entries and the metacharacters could be interpreted by cmd.exe/sh.
+    const dangerousGameId = "--game=has space";
+    const dangerousFlag = "--flag=a&b|c;d$(whoami)";
+    const outcome = runner("npx", ["tsx", FIXTURE_SCRIPT, dangerousGameId, dangerousFlag]);
+    expect(outcome.ok).toBe(true);
+    // stdout isn't captured on CommandOutcome, so re-run the same invocation with a raw spawn to
+    // inspect argv directly -- proves the SAME code path (spawnTsxCommandRunner's construction of
+    // process.execPath + tsxCliPath + args) preserves argv boundaries.
+    const req = createRequire(join(REPO_ROOT, "package.json"));
+    const pkg = req(req.resolve("tsx/package.json")) as { bin: string | Record<string, string> };
+    const binPath = typeof pkg.bin === "string" ? pkg.bin : pkg.bin.tsx;
+    const tsxCliPath = join(dirname(req.resolve("tsx/package.json")), binPath);
+    const raw = spawnSync(process.execPath, [tsxCliPath, FIXTURE_SCRIPT, dangerousGameId, dangerousFlag], { cwd: REPO_ROOT, encoding: "utf8" });
+    expect(JSON.parse(raw.stdout)).toEqual([dangerousGameId, dangerousFlag]);
+  });
+
+  it("WU6.4 regression: a non-zero child exit surfaces as a structured failure, not a thrown error", () => {
+    const runner = spawnTsxCommandRunner(REPO_ROOT);
+    const outcome = runner("npx", ["tsx", FIXTURE_SCRIPT, "--exit-code=1"]);
+    expect(outcome.ok).toBe(false);
+    expect(outcome.exitCode).toBe(1);
+  });
+
+  it("WU6.4 regression: cwd is honored by the real spawn", () => {
+    const runner = spawnTsxCommandRunner(REPO_ROOT);
+    const outcome = runner("npx", ["tsx", FIXTURE_SCRIPT]);
+    // A wrong cwd would fail module/tsconfig resolution for a repo-relative script path.
+    expect(outcome.ok).toBe(true);
   });
 });

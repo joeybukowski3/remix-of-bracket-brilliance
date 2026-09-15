@@ -253,6 +253,13 @@ function validateFindingShape(raw: unknown): { ok: true; finding: GrokResearchFi
   if (raw.confidence != null && !VALID_CONFIDENCE.includes(raw.confidence as EvidenceConfidence)) {
     return { ok: false, reason: `invalid confidence "${String(raw.confidence)}"` };
   }
+  // WU6.4 -- shared with nfl-chatgpt-research-parsing.ts's identical check: subjects is optional
+  // (RawEvidenceCandidate.subjects?), but WHEN present it must be the documented
+  // {teams?, players?, coaches?} object shape, never a flat array -- a malformed shape must be
+  // rejected here, not silently coerced into an empty subjects object downstream.
+  if (raw.subjects != null && (!isRecord(raw.subjects) || Array.isArray(raw.subjects))) {
+    return { ok: false, reason: `subjects: expected object with optional teams/players/coaches arrays, received ${Array.isArray(raw.subjects) ? "an array" : typeof raw.subjects}` };
+  }
   return { ok: true, finding: raw as unknown as GrokResearchFinding };
 }
 
@@ -290,7 +297,11 @@ export function buildRawEvidenceCandidatesFromFindings(
 
     const areas = (finding.relevance?.areas ?? []).filter((a): a is EvidenceRelevanceArea => VALID_RELEVANCE_AREAS.includes(a as EvidenceRelevanceArea));
 
-    candidates.push({
+    // WU6.4 -- see nfl-chatgpt-research-parsing.ts's identical fix: `confidence` must be
+    // genuinely ABSENT when the model omits it, never present with value `undefined` (which still
+    // creates an enumerable own property and later throws inside normalizeExternalEvidence's
+    // canonical hashing).
+    const candidate: RawEvidenceCandidate = {
       model: options.model,
       gameId: options.gameId,
       claim: finding.claim.trim(),
@@ -308,11 +319,14 @@ export function buildRawEvidenceCandidatesFromFindings(
         players: finding.subjects?.players ?? [],
         coaches: finding.subjects?.coaches ?? [],
       },
-      confidence: (finding.confidence as EvidenceConfidence | undefined) ?? undefined,
       relevance: { summary: finding.relevance?.summary ?? "", areas },
       quote: finding.quote ?? null,
       rawExcerpt: finding.rawExcerpt ?? null,
-    });
+    };
+    if (finding.confidence != null) {
+      candidate.confidence = finding.confidence as EvidenceConfidence;
+    }
+    candidates.push(candidate);
   }
 
   return { candidates, rejected };

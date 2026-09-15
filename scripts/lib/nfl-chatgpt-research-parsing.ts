@@ -629,6 +629,13 @@ function validateFindingShape(raw: unknown): { ok: true; finding: ChatGptResearc
   if (raw.confidence != null && !VALID_CONFIDENCE.includes(raw.confidence as EvidenceConfidence)) {
     return { ok: false, reason: `invalid confidence "${String(raw.confidence)}"` };
   }
+  // WU6.4 -- subjects is optional (RawEvidenceCandidate.subjects?), but WHEN present it must be
+  // the documented {teams?, players?, coaches?} object shape. A model returning a flat array
+  // (observed live: subjects: ["buf","det"]) must be rejected here, not silently coerced into an
+  // empty subjects object downstream -- that would discard the team association with no record.
+  if (raw.subjects != null && (!isRecord(raw.subjects) || Array.isArray(raw.subjects))) {
+    return { ok: false, reason: `subjects: expected object with optional teams/players/coaches arrays, received ${Array.isArray(raw.subjects) ? "an array" : typeof raw.subjects}` };
+  }
   return { ok: true, finding: raw as unknown as ChatGptResearchFinding };
 }
 
@@ -698,7 +705,12 @@ export function buildRawEvidenceCandidatesFromFindings(
 
     const areas = (finding.relevance?.areas ?? []).filter((a): a is EvidenceRelevanceArea => VALID_RELEVANCE_AREAS.includes(a as EvidenceRelevanceArea));
 
-    candidates.push({
+    // WU6.4 -- `confidence` is optional on RawEvidenceCandidate; when the model omits it, the key
+    // must be genuinely ABSENT, not present with value `undefined`. An object-literal property
+    // like `confidence: someUndefinedExpr` still creates an enumerable own property in JS, which
+    // later throws inside normalizeExternalEvidence's canonical hashing (assertJsonValue rejects
+    // any `undefined`-valued property) -- this is exactly what crashed the DET_BUF ChatGPT pass.
+    const candidate: RawEvidenceCandidate = {
       model: options.model,
       gameId: options.gameId,
       claim: finding.claim.trim(),
@@ -716,11 +728,14 @@ export function buildRawEvidenceCandidatesFromFindings(
         players: finding.subjects?.players ?? [],
         coaches: finding.subjects?.coaches ?? [],
       },
-      confidence: (finding.confidence as EvidenceConfidence | undefined) ?? undefined,
       relevance: { summary: finding.relevance?.summary ?? "", areas },
       quote: finding.quote ?? null,
       rawExcerpt: finding.rawExcerpt ?? null,
-    });
+    };
+    if (finding.confidence != null) {
+      candidate.confidence = finding.confidence as EvidenceConfidence;
+    }
+    candidates.push(candidate);
     grounding.push({
       groundingState: resolved.state as Extract<ChatGptGroundingState, "cited" | "discovered">,
       providerReturnedUrl: resolved.providerReturnedUrl as string,

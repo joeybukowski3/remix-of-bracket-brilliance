@@ -176,6 +176,10 @@ export default defineConfig({
       // Dual-AI handicapping architecture WU4 -- ChatGPT research adapter
       // (OpenAI Responses API /v1/responses) config/parsing/adapter tests.
       "scripts/lib/nfl-chatgpt-research-adapter.test.ts",
+      // WU6.4 -- dedicated buildRawEvidenceCandidatesFromFindings() coverage,
+      // mirroring nfl-grok-research-parsing.test.ts's separation of concerns
+      // (malformed-candidate quarantine regression from the DET_BUF live run).
+      "scripts/lib/nfl-chatgpt-research-parsing.test.ts",
       // Dual-AI handicapping architecture WU4.4 -- ChatGPT handicap +
       // update-assessment parity (shared provider-neutral analysis
       // contract, ChatGPT reasoning-only adapter, model-isolation tests).

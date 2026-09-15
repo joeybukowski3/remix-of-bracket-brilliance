@@ -297,6 +297,10 @@ async function runInitialOrProbe(args: { gameId: string; mode: ChatGptResearchMo
         groundingProvenance: result.groundingProvenance,
         normalizedAccepted: store.records.length,
         normalizedRejected: normalizeRejections.length,
+        // WU6.4 -- the full reasons, not just the count, so a partial rejection (e.g. one
+        // malformed candidate out of many) is auditable from the persisted artifact alone,
+        // without needing to have captured this run's console output.
+        normalizeRejectionReasons: normalizeRejections,
       },
       null,
       2

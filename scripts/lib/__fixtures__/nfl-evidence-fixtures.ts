@@ -527,3 +527,50 @@ export const CHATGPT_FIXTURE_CANDIDATES: RawEvidenceCandidate[] = [chatgptConfir
   ...c,
   model: "chatgpt",
 }));
+
+/**
+ * WU6.4 -- sanitized regression fixture reproducing the SHAPE of the real WU6.3 DET_BUF live-run
+ * failure (subjects returned as a flat array instead of {teams,players,coaches}, confidence,
+ * relevance, and quote all omitted). No real claim/source content from the live run is reused --
+ * this is a synthetic candidate built to the same defective shape, on the existing ind/bal fixture
+ * game. `as unknown as` mirrors how a raw, untyped provider payload actually reaches this
+ * boundary (TypeScript's `RawEvidenceCandidate.subjects?:` type gives zero runtime protection
+ * against a model returning the wrong shape).
+ */
+export const malformedSubjectsArrayCandidate: RawEvidenceCandidate = {
+  model: "chatgpt",
+  gameId: FIXTURE_GAME_ID,
+  claim: "The official schedule identifies this game's kickoff window and venue.",
+  category: "scheduling",
+  source: {
+    name: "Fixture Official Team Site",
+    url: "https://example-fixture.test/schedule",
+    sourceType: "official_team",
+    author: null,
+    publishedAt: null,
+    retrievedAt: "2026-09-15T12:47:19.000Z",
+  },
+  subjects: ["ind", "bal"] as unknown as RawEvidenceCandidate["subjects"],
+  // confidence, relevance, and quote deliberately absent -- matching the real DET_BUF candidate.
+} as unknown as RawEvidenceCandidate;
+
+/**
+ * WU6.4 -- a structurally VALID candidate that also omits confidence/relevance/quote, to prove
+ * their absence alone (per RawEvidenceCandidate's optional contract) is never a rejection reason
+ * -- only a malformed `subjects` shape is.
+ */
+export const validCandidateMissingOptionalFieldsCandidate: RawEvidenceCandidate = {
+  model: "chatgpt",
+  gameId: FIXTURE_GAME_ID,
+  claim: "The official schedule identifies this game's kickoff window and venue.",
+  category: "scheduling",
+  source: {
+    name: "Fixture Official Team Site",
+    url: "https://example-fixture.test/schedule",
+    sourceType: "official_team",
+    author: null,
+    publishedAt: null,
+    retrievedAt: "2026-09-15T12:47:19.000Z",
+  },
+  subjects: { teams: ["ind", "bal"], players: [], coaches: [] },
+};

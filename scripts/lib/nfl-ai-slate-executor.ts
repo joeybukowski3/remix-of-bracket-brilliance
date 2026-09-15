@@ -23,6 +23,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { rebuildAndPersistGameContext } from "./nfl-game-context-preflight";
 import { generatePresentationForGame } from "../generate-nfl-ai-handicap-presentation";
@@ -40,10 +41,51 @@ export interface CommandOutcome {
 
 export type CommandRunner = (command: string, args: string[]) => CommandOutcome;
 
-/** Real, live command runner: spawns `npx tsx <script> <args>` synchronously. */
+/**
+ * Resolves tsx's own CLI entry point (a plain .mjs file, per its
+ * package.json "bin" field) so it can be launched directly via the current
+ * Node binary -- see spawnTsxCommandRunner for why this exists instead of
+ * shelling out to `npx tsx`.
+ */
+function resolveTsxCliPath(root: string): string {
+  const req = createRequire(join(root, "package.json"));
+  const pkgJsonPath = req.resolve("tsx/package.json");
+  const pkg = req(pkgJsonPath) as { bin: string | Record<string, string> };
+  const binPath = typeof pkg.bin === "string" ? pkg.bin : pkg.bin.tsx;
+  if (!binPath) throw new Error('nfl-ai-slate-executor: could not resolve tsx\'s CLI entry point from its package.json "bin" field');
+  return join(dirname(pkgJsonPath), binPath);
+}
+
+/**
+ * Real, live command runner: spawns `npx tsx <script> <args>` -- except it
+ * never actually spawns `npx`. On Windows, `npx` resolves to `npx.cmd`, and
+ * spawnSync cannot launch a `.cmd` batch file directly (CreateProcess needs
+ * a shell in front of it) -- without a shell this fails before the child
+ * process ever starts, with ENOENT. The tempting fix, `shell: true`, trades
+ * that bug for a worse one: Node's own shell-mode argument handling only
+ * *concatenates* argv into one command-line string rather than escaping each
+ * element (see the DEP0190 deprecation warning), so a gameId/provider value
+ * containing a space or shell metacharacter could silently split across
+ * argv boundaries or be interpreted by cmd.exe -- confirmed empirically
+ * (`--game=has space` arrives as two separate argv entries under
+ * `shell: true` on Windows).
+ *
+ * Instead, this resolves tsx's own CLI entry point (a plain .mjs file, see
+ * resolveTsxCliPath) and launches it directly via the current Node binary
+ * (`process.execPath`) with NO shell involved on any platform. Every
+ * argument stays a discrete, unescaped argv value, exactly like any other
+ * non-shell spawnSync call -- verified with an argument containing a space
+ * and shell metacharacters (`&|;$()`), both of which survive as single,
+ * inert argv entries. `cwd` and `env` (inherited by default, unchanged from
+ * before) are unaffected; non-zero exits still surface via `result.status`.
+ */
 export function spawnTsxCommandRunner(root: string): CommandRunner {
+  const tsxCliPath = resolveTsxCliPath(root);
   return (command, args) => {
-    const result = spawnSync(command, args, { cwd: root, encoding: "utf8" });
+    // Every call site in this codebase invokes runCommand("npx", ["tsx", script, ...restArgs]) --
+    // strip the now-redundant literal "tsx" if present, but tolerate a caller that already omits it.
+    const tsxArgs = args[0] === "tsx" ? args.slice(1) : args;
+    const result = spawnSync(process.execPath, [tsxCliPath, ...tsxArgs], { cwd: root, encoding: "utf8" });
     return {
       command,
       args,

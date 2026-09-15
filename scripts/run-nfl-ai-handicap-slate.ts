@@ -128,8 +128,17 @@ function printDryRunSummary(plans: readonly GamePlan[]): void {
 
 function printLiveSummary(results: readonly GameExecutionResult[]): void {
   let contextRebuilds = 0;
-  const researchByProvider: Record<string, number> = {};
-  const stageAByProvider: Record<string, number> = {};
+  // WU6.4 -- "ran" only means a paid call was ATTEMPTED (a child process was actually spawned,
+  // which is what costs money); it says nothing about whether that call ultimately succeeded.
+  // Tracked separately from "ok" (successfully completed) so a summary reader can never mistake
+  // an attempted-but-failed call (e.g. a research pass that paid for a response and then crashed
+  // during local normalization) for a completed one.
+  const researchAttemptsByProvider: Record<string, number> = {};
+  const researchSuccessesByProvider: Record<string, number> = {};
+  const researchFailuresByProvider: Record<string, number> = {};
+  const handicapAttemptsByProvider: Record<string, number> = {};
+  const handicapSuccessesByProvider: Record<string, number> = {};
+  const handicapFailuresByProvider: Record<string, number> = {};
   let noOps = 0;
   let locked = 0;
   let presentationWrites = 0;
@@ -142,8 +151,16 @@ function printLiveSummary(results: readonly GameExecutionResult[]): void {
     if (result.context.action === "blocked") locked += 1;
     if (result.presentation.ran && result.presentation.ok) presentationWrites += 1;
     for (const provider of result.providers) {
-      if (provider.research.ran) researchByProvider[provider.provider] = (researchByProvider[provider.provider] ?? 0) + 1;
-      if (provider.handicap.ran) stageAByProvider[provider.provider] = (stageAByProvider[provider.provider] ?? 0) + 1;
+      if (provider.research.ran) {
+        researchAttemptsByProvider[provider.provider] = (researchAttemptsByProvider[provider.provider] ?? 0) + 1;
+        const target = provider.research.ok ? researchSuccessesByProvider : researchFailuresByProvider;
+        target[provider.provider] = (target[provider.provider] ?? 0) + 1;
+      }
+      if (provider.handicap.ran) {
+        handicapAttemptsByProvider[provider.provider] = (handicapAttemptsByProvider[provider.provider] ?? 0) + 1;
+        const target = provider.handicap.ok ? handicapSuccessesByProvider : handicapFailuresByProvider;
+        target[provider.provider] = (target[provider.provider] ?? 0) + 1;
+      }
       if (!provider.research.ran && !provider.handicap.ran) noOps += 1;
     }
     for (const failure of result.failures) structuredFailures.push(`${result.gameId}: ${failure}`);
@@ -154,8 +171,12 @@ function printLiveSummary(results: readonly GameExecutionResult[]): void {
   console.log(`Games successfully processed: ${gamesOk}`);
   console.log(`Locked/blocked: ${locked}`);
   console.log(`Context rebuilds: ${contextRebuilds}`);
-  console.log(`Research calls by provider: ${JSON.stringify(researchByProvider)}`);
-  console.log(`Handicap (Stage A+B) passes by provider: ${JSON.stringify(stageAByProvider)}`);
+  console.log(`Research paid-call attempts by provider: ${JSON.stringify(researchAttemptsByProvider)}`);
+  console.log(`Research successes by provider: ${JSON.stringify(researchSuccessesByProvider)}`);
+  console.log(`Research failures by provider: ${JSON.stringify(researchFailuresByProvider)}`);
+  console.log(`Handicap (Stage A+B) paid-call attempts by provider: ${JSON.stringify(handicapAttemptsByProvider)}`);
+  console.log(`Handicap (Stage A+B) successes by provider: ${JSON.stringify(handicapSuccessesByProvider)}`);
+  console.log(`Handicap (Stage A+B) failures by provider: ${JSON.stringify(handicapFailuresByProvider)}`);
   console.log(`No-op provider states: ${noOps}`);
   console.log(`Presentation artifacts written: ${presentationWrites}`);
   console.log(`\nStructured failures (${structuredFailures.length}):`);
