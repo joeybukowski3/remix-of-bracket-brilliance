@@ -194,6 +194,12 @@ export default defineConfig({
       // Grok/OpenAI calls).
       "scripts/lib/nfl-ai-slate-plan.test.ts",
       "scripts/lib/nfl-ai-slate-executor.test.ts",
+      // WU6.5 -- zero-cost replay of an archived provider research response
+      // (ChatGPT only; see nfl-provider-research-replay.ts's header for the
+      // Grok gap). Pure planning/safety-check tests plus the CLI integration
+      // suite for scripts/replay-nfl-provider-research.ts.
+      "scripts/lib/nfl-provider-research-replay.test.ts",
+      "scripts/replay-nfl-provider-research.test.ts",
       // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
       "scripts/lib/nfl-props-performance.test.ts",
       "scripts/generate-nfl-props-performance.test.ts",
