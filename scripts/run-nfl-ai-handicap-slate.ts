@@ -150,11 +150,14 @@ export function printLiveSummary(results: readonly GameExecutionResult[]): void 
   let presentationWrites = 0;
   const structuredFailures: string[] = [];
   let gamesOk = 0;
-  // WU6.9 -- telemetry is aggregated entirely separately from the attempts/successes/failures
-  // counters above: a handicap call that failed (and so is already counted in *FailuresByProvider)
-  // contributes no telemetry marker (emitTelemetryMarker is only ever called for an ACCEPTED
-  // Stage A/B result), so this array can never double-count or mask a failure.
-  const allTelemetryRecords: TelemetryMarkerRecord[] = [];
+  // WU6.9/WU7.3 -- telemetry is aggregated entirely separately from the attempts/successes/failures
+  // counters above: a research/handicap call that failed (and so is already counted in
+  // *FailuresByProvider) contributes no telemetry marker (emitTelemetryMarker is only ever called
+  // for an ACCEPTED result), so these arrays can never double-count or mask a failure. Research
+  // and handicap markers are collected into SEPARATE arrays -- never merged into one ambiguous
+  // total -- since they represent different operations with different cost profiles.
+  const researchTelemetryRecords: TelemetryMarkerRecord[] = [];
+  const handicapTelemetryRecords: TelemetryMarkerRecord[] = [];
 
   for (const result of results) {
     if (result.ok) gamesOk += 1;
@@ -172,15 +175,17 @@ export function printLiveSummary(results: readonly GameExecutionResult[]): void 
         const target = provider.handicap.ok ? handicapSuccessesByProvider : handicapFailuresByProvider;
         target[provider.provider] = (target[provider.provider] ?? 0) + 1;
       }
-      if (provider.handicap.telemetry) allTelemetryRecords.push(...provider.handicap.telemetry);
+      if (provider.research.telemetry) researchTelemetryRecords.push(...provider.research.telemetry);
+      if (provider.handicap.telemetry) handicapTelemetryRecords.push(...provider.handicap.telemetry);
       if (!provider.research.ran && !provider.handicap.ran) noOps += 1;
     }
     for (const failure of result.failures) structuredFailures.push(`${result.gameId}: ${failure}`);
   }
 
-  const telemetryByProvider = aggregateTelemetryByProvider(allTelemetryRecords);
-  const repricingMarkerCount = allTelemetryRecords.filter((r) => r.cliMode === "repricing").length;
-  const repricingStageBOnly = allTelemetryRecords.filter((r) => r.cliMode === "repricing" && r.stage !== "B").length === 0;
+  const researchTelemetryByProvider = aggregateTelemetryByProvider(researchTelemetryRecords);
+  const handicapTelemetryByProvider = aggregateTelemetryByProvider(handicapTelemetryRecords);
+  const repricingMarkerCount = handicapTelemetryRecords.filter((r) => r.cliMode === "repricing").length;
+  const repricingStageBOnly = handicapTelemetryRecords.filter((r) => r.cliMode === "repricing" && r.stage !== "B").length === 0;
 
   console.log(`\n=== LIVE RUN SUMMARY ===`);
   console.log(`Games scanned: ${results.length}`);
@@ -196,19 +201,30 @@ export function printLiveSummary(results: readonly GameExecutionResult[]): void 
   console.log(`No-op provider states: ${noOps}`);
   console.log(`Presentation artifacts written: ${presentationWrites}`);
 
-  // WU6.9 -- machine-readable telemetry (tokens/cost), aggregated from marker lines the handicap
-  // CLIs print for every ACCEPTED Stage A/B result. Missing/malformed telemetry on an otherwise
-  // successful handicap run never reaches here as an error -- it just yields fewer/no records.
-  console.log(`\nTelemetry (${allTelemetryRecords.length} marker(s) captured, ${repricingMarkerCount} from repricing passes${repricingMarkerCount > 0 ? `, Stage B only: ${repricingStageBOnly}` : ""}):`);
-  if (telemetryByProvider.length === 0) {
-    console.log("  (no telemetry captured)");
-  } else {
-    for (const entry of telemetryByProvider) {
+  // WU6.9/WU7.3 -- machine-readable telemetry (tokens/cost), aggregated from marker lines the
+  // research and handicap CLIs print for every ACCEPTED result. Missing/malformed telemetry on an
+  // otherwise successful run never reaches here as an error -- it just yields fewer/no records.
+  // Kept as two clearly separate categories (never summed into one ambiguous total) since research
+  // and handicap calls have different cost profiles and are billed as different operations.
+  const printTelemetrySection = (label: string, records: readonly TelemetryMarkerRecord[], byProvider: ReturnType<typeof aggregateTelemetryByProvider>, extraNote?: string) => {
+    console.log(`\n${label} (${records.length} marker(s) captured${extraNote ?? ""}):`);
+    if (byProvider.length === 0) {
+      console.log("  (no telemetry captured)");
+      return;
+    }
+    for (const entry of byProvider) {
       console.log(
         `  ${entry.provider}: ${entry.callsWithTelemetry} call(s) with telemetry, ${entry.totalTokens ?? "unavailable"} total tokens, ${entry.totalCostUsd != null ? `$${entry.totalCostUsd.toFixed(4)}` : "unavailable"} total cost`
       );
     }
-  }
+  };
+  printTelemetrySection("Research usage", researchTelemetryRecords, researchTelemetryByProvider);
+  printTelemetrySection(
+    "Handicap usage",
+    handicapTelemetryRecords,
+    handicapTelemetryByProvider,
+    repricingMarkerCount > 0 ? `, ${repricingMarkerCount} from repricing passes, Stage B only: ${repricingStageBOnly}` : ""
+  );
 
   console.log(`\nStructured failures (${structuredFailures.length}):`);
   for (const failure of structuredFailures) console.log(`  - ${failure}`);

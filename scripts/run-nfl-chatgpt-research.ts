@@ -47,6 +47,7 @@ import { fileURLToPath } from "node:url";
 import { runChatGptResearch } from "./lib/nfl-chatgpt-research-adapter";
 import { resolveChatGptResearchConfig, type ChatGptResearchMode } from "./lib/nfl-chatgpt-research-config";
 import { redactSecretsFromRawResponse } from "./lib/nfl-chatgpt-research-parsing";
+import { emitTelemetryMarker } from "./lib/nfl-ai-telemetry";
 import { normalizeExternalEvidence } from "./lib/nfl-evidence-normalizer";
 import { appendEvidence, createEvidenceStore, evidenceArtifactPath, readEvidenceArtifact, writeEvidenceArtifact } from "./lib/nfl-evidence-store";
 import { loadSubjectIdentitySource } from "./lib/nfl-evidence-subject-identity-loader";
@@ -308,6 +309,8 @@ async function runInitialOrProbe(args: { gameId: string; mode: ChatGptResearchMo
   );
   console.log(`Wrote research diagnostics to ${researchDir}`);
 
+  emitTelemetryMarker({ kind: "research", provider: "chatgpt", gameId: game.gameId, cliMode: "research_initial", telemetry: result.telemetry });
+
   if (result.candidates.length < 2) {
     console.log("\nNOTE: evidence coverage looks thin (<2 accepted candidates). Per cost-guardrail policy, this script does NOT automatically retry with a larger budget -- review the telemetry above and decide manually whether a re-run is warranted.");
   }
@@ -465,6 +468,8 @@ async function runUpdate(args: { gameId: string }, apiKey: string): Promise<void
   writeFileSync(join(researchDir, "rejected-findings.json"), `${JSON.stringify(result.rejectedFindings, null, 2)}\n`);
   writeFileSync(join(researchDir, "research-run.json"), `${JSON.stringify({ mode: "update", config, deltaContext, currentMarketState, telemetry: result.telemetry, groundingSummary: result.groundingSummary }, null, 2)}\n`);
   console.log(`Wrote update research diagnostics to ${researchDir}`);
+
+  emitTelemetryMarker({ kind: "research", provider: "chatgpt", gameId: args.gameId, cliMode: "research_update", telemetry: result.telemetry });
 
   const pipelineResult = runGrokUpdatePipeline({
     model: "chatgpt",

@@ -118,11 +118,12 @@ export interface StageOutcome {
   ok: boolean;
   detail: string;
   /**
-   * WU6.9 -- telemetry markers parsed from this stage's child-process stdout, if any. Only ever
-   * populated for a handicap stage that actually ran a child process (initial/update/repricing);
-   * "none" actions and dry-runs never set it. A missing or unparseable marker line is NOT an
-   * error -- parseTelemetryMarkers() never throws, so this is simply an empty array in that case,
-   * and it must never affect `ok`/`ran` above.
+   * WU6.9 (handicap) / WU7.3 (research) -- telemetry markers parsed from this stage's
+   * child-process stdout, if any. Only ever populated for a research or handicap stage that
+   * actually ran a child process (research: initial/update; handicap: initial/update/repricing);
+   * "none"/"bootstrap" actions and dry-runs never set it. A missing or unparseable marker line is
+   * NOT an error -- parseTelemetryMarkers() never throws, so this is simply an empty array in that
+   * case, and it must never affect `ok`/`ran` above.
    */
   telemetry?: TelemetryMarkerRecord[];
 }
@@ -189,7 +190,9 @@ function executeResearchStage(runCommand: CommandRunner, live: boolean, gameId: 
   // "initial" | "update"
   if (!live) return { stage: "research", provider, action: plan.research, ran: false, ok: true, detail: `would run (dry-run): ${researchScriptFor(provider)} --live --game=${gameId} --mode=${plan.research}` };
   const result = runScript(runCommand, researchScriptFor(provider), ["--live", `--game=${gameId}`, `--mode=${plan.research}`]);
-  return { stage: "research", provider, action: plan.research, ran: true, ok: result.ok, detail: result.ok ? "research pass completed" : result.stderr };
+  // WU7.3 -- same best-effort telemetry extraction as the handicap stage below: never affects `ok`.
+  const telemetry = parseTelemetryMarkers(result.stdout);
+  return { stage: "research", provider, action: plan.research, ran: true, ok: result.ok, detail: result.ok ? "research pass completed" : result.stderr, telemetry };
 }
 
 function executeHandicapStage(runCommand: CommandRunner, live: boolean, gameId: string, provider: EvidenceModel, plan: ProviderPlan, researchOutcome: StageOutcome): StageOutcome {

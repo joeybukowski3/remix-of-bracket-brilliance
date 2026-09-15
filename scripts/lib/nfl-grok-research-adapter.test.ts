@@ -173,6 +173,37 @@ describe("runGrokResearch", () => {
     expect(result.error).toMatch(/Failed to parse Grok findings JSON/);
   });
 
+  describe("WU7.3 -- rawResponseBody (persisted by run-nfl-grok-research.ts as provider-response.raw.json)", () => {
+    it("returns the full parsed response body verbatim on success", async () => {
+      const result = await runGrokResearch({ mode: "initial", game: GAME, apiKey: "fixture-key", model: "grok", fetchImpl: fakeFetch(FIXTURE_SUCCESS_RESPONSE) });
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected ok result");
+      expect(result.rawResponseBody).toEqual(FIXTURE_SUCCESS_RESPONSE);
+    });
+
+    it("still returns the raw body (for diagnostics) when the output has no parseable findings", async () => {
+      const result = await runGrokResearch({ mode: "initial", game: GAME, apiKey: "fixture-key", model: "grok", fetchImpl: fakeFetch(FIXTURE_MALFORMED_MESSAGE_RESPONSE) });
+      expect(result.ok).toBe(false);
+      if (result.ok) throw new Error("expected failure result");
+      expect(result.rawResponseBody).toEqual(FIXTURE_MALFORMED_MESSAGE_RESPONSE);
+    });
+
+    it("returns null rawResponseBody when the request never reaches a parseable body (network failure)", async () => {
+      const throwingFetch = vi.fn(async () => { throw new Error("network unreachable"); }) as unknown as typeof fetch;
+      const result = await runGrokResearch({ mode: "initial", game: GAME, apiKey: "fixture-key", model: "grok", fetchImpl: throwingFetch });
+      expect(result.ok).toBe(false);
+      if (result.ok) throw new Error("expected failure result");
+      expect(result.rawResponseBody).toBeNull();
+    });
+
+    it("never makes a real network call -- fetchImpl is always the injected fake", async () => {
+      const fetchImpl = fakeFetch(FIXTURE_SUCCESS_RESPONSE);
+      await runGrokResearch({ mode: "initial", game: GAME, apiKey: "fixture-key", model: "grok", fetchImpl });
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      expect(fetchImpl).not.toBe(fetch);
+    });
+  });
+
   it("1. (WU3.3) mode:'update' is no longer rejected outright when deltaContext + currentMarketState are supplied", async () => {
     const result = await runGrokResearch({
       mode: "update",
