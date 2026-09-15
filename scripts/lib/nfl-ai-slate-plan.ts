@@ -11,15 +11,17 @@
  * presentation artifact need to be regenerated. It does not run any of
  * those actions -- see nfl-ai-slate-executor.ts for that.
  *
- * Market-only-change policy (WU6 report, confirmed by product decision):
- * the codebase has no sanctioned way to reuse a locked Stage A projection
- * and rerun only Stage B against a moved market -- run-nfl-grok-handicap.ts
- * / run-nfl-chatgpt-handicap.ts's mode="update" always pays for a full
- * Stage A + Stage B pass. Rather than inventing an unsupported partial-reuse
- * path, a market-only change (context/evidence unchanged) is treated as a
- * handicap no-op: the game keeps its last locked prediction until real
- * football context or evidence changes, or a human explicitly forces a
- * re-run via --force-handicap.
+ * Market-only-change policy (WU6.8 -- supersedes the original WU6 report's
+ * "no sanctioned partial-reuse path exists" note): a market-only change
+ * (football context/evidence unchanged, only the sportsbook price moved or
+ * first became available) is now a SANCTIONED "repricing" action -- Stage
+ * A's locked football prediction is reused byte-for-byte and only Stage B
+ * reruns against the new market (see nfl-grok-analysis-pipeline.ts's
+ * combineRepricingStage / reconstructLockedStageAFromSnapshot, and
+ * run-nfl-grok-handicap.ts / run-nfl-chatgpt-handicap.ts's --mode=repricing).
+ * A full Stage A+B "update" is still reserved for when football
+ * context/evidence has actually changed -- repricing never triggers on that,
+ * and an update never triggers on a market-only move.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -28,12 +30,13 @@ import { evidenceArtifactPath, readEvidenceArtifact } from "./nfl-evidence-store
 import { readSnapshotHistory, readLatestWu46CompatibleAnalysisSnapshot } from "./nfl-snapshot-store";
 import { footballContextHash, type NflGameContextPacket } from "./nfl-full-game-context";
 import type { EvidenceModel } from "./nfl-evidence-types";
+import type { MarketAtDecision } from "./nfl-snapshot-types";
 
 export const AI_SLATE_PROVIDERS: readonly EvidenceModel[] = ["grok", "chatgpt"];
 
 export type ContextAction = "reuse" | "rebuild" | "blocked";
 export type ResearchAction = "none" | "bootstrap" | "initial" | "update";
-export type HandicapAction = "none" | "initial" | "update";
+export type HandicapAction = "none" | "initial" | "update" | "repricing";
 export type PresentationAction = "regenerate" | "skip";
 
 export interface ProviderPlan {
@@ -147,14 +150,25 @@ function planResearch(
   return { action: "none", reason: "snapshot lineage already reflects all persisted evidence" };
 }
 
+/** True when the current authoritative market differs from the market Stage B was last actually shown. Deterministic field-by-field equality -- never a fuzzy/threshold comparison. */
+function marketAtDecisionChanged(current: NflGameContextPacket["market"], previous: MarketAtDecision): boolean {
+  return current.spread.homeLine !== previous.spread.homeLine || current.spread.awayLine !== previous.spread.awayLine || current.total.line !== previous.total;
+}
+
 /**
  * Handicap update is warranted only when the CONTEXT or EVIDENCE the latest
- * snapshot was stamped with has moved since that snapshot was written --
- * never on a market-only change (see this module's header). Detected by
- * comparing the latest snapshot's own context.contextHash/evidence.evidenceIds
- * (re-stamped to "fresh at handicap time" by every prior handicap run, see
- * run-nfl-grok-handicap.ts / run-nfl-chatgpt-handicap.ts) against the
- * CURRENT persisted context artifact hash and live evidence record count.
+ * snapshot was stamped with has moved since that snapshot was written.
+ * Detected by comparing the latest snapshot's own
+ * context.contextHash/evidence.evidenceIds (re-stamped to "fresh at
+ * handicap time" by every prior handicap run, see run-nfl-grok-handicap.ts /
+ * run-nfl-chatgpt-handicap.ts) against the CURRENT persisted context
+ * artifact hash and live evidence record count.
+ *
+ * WU6.8 -- when football context/evidence is UNCHANGED but the current
+ * market differs from the market Stage B was last actually shown
+ * (analysisState.marketDecision.marketAtDecision, guaranteed present on a
+ * WU4.6-compatible snapshot), this is a sanctioned "repricing" action:
+ * Stage A never reruns, only Stage B does (see this module's header).
  */
 function planHandicap(
   root: string,
@@ -197,7 +211,13 @@ function planHandicap(
     return { action: "update", reason: parts.join("; ") };
   }
 
-  return { action: "none", reason: "no material football context/evidence change since the last handicap run (market-only changes never trigger an update -- see this module's header)" };
+  // wu46Compatible is guaranteed (by isWu46CompatibleAnalysisState) to carry a non-null marketDecision.
+  const priorMarketAtDecision = wu46Compatible.analysisState!.marketDecision!.marketAtDecision;
+  if (marketAtDecisionChanged(currentContextPacket.market, priorMarketAtDecision)) {
+    return { action: "repricing", reason: "market changed since the last handicap decision -- football context/evidence unchanged, so only Stage B needs to rerun (locked Stage A prediction is reused)" };
+  }
+
+  return { action: "none", reason: "no material football context/evidence change since the last handicap run, and the market is unchanged since the last Stage B decision" };
 }
 
 function parseGameIdSeasonWeek(gameId: string): { season: number; week: number } {

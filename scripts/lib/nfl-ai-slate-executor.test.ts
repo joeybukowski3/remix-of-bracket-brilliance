@@ -53,15 +53,22 @@ function writeLiveEvidence(model: "grok" | "chatgpt", evidenceIds: string[]): vo
   );
 }
 
-function wu46CompatibleAnalysisState() {
+// marketAtDecision defaults to EXACTLY the real BAL_IND context fixture's current market (spread
+// 3.5/-3.5, total 47.5) so tests relying on a true full no-op (handicap=none) get a genuine
+// market-unchanged baseline, never accidentally landing on handicap=repricing (WU6.8).
+function wu46CompatibleAnalysisState(marketAtDecision: { spread: { homeLine: number | null; awayLine: number | null }; total: number | null; asOf: string | null } = { spread: { homeLine: 3.5, awayLine: -3.5 }, total: 47.5, asOf: "2026-09-09T10:00:00.000Z" }) {
   return {
     thesis: "fixture thesis",
     side: { lean: "home" as const, confidence: 6, spreadLineAtOpinion: { homeLine: 3.5, awayLine: -3.5 } },
     total: { lean: "under" as const, confidence: 5, totalLineAtOpinion: 44.5 },
     blindPrediction: { footballThesis: "fixture blind thesis", fairSpread: { homeLine: 3, awayLine: -3 }, projectedTotal: 44 },
     marketDecision: {
+      generatedAt: "2026-09-09T10:05:00.000Z",
+      marketAtDecision,
       side: { lean: "home" as const, confidence: 6, spreadLineAtOpinion: { homeLine: 3.5, awayLine: -3.5 }, rationale: "fixture" },
       total: { lean: "under" as const, confidence: 5, totalLineAtOpinion: 44.5, rationale: "fixture" },
+      sideEdgePoints: null,
+      totalEdgePoints: null,
     },
   } as unknown as AnalysisSnapshot["analysisState"];
 }
@@ -71,7 +78,7 @@ function currentContextHash(): string {
   return footballContextHash(JSON.parse(raw) as NflGameContextPacket);
 }
 
-function writeWu46Snapshot(model: "grok" | "chatgpt"): void {
+function writeWu46Snapshot(model: "grok" | "chatgpt", marketAtDecision?: Parameters<typeof wu46CompatibleAnalysisState>[0]): void {
   writeSnapshot(root, {
     schemaVersion: "nfl-snapshot-v1",
     snapshotId: `${model}-${GAME_ID}-wu46`,
@@ -101,7 +108,7 @@ function writeWu46Snapshot(model: "grok" | "chatgpt"): void {
       sportsbookChanged: false,
       asOfDeltaMs: null,
     },
-    analysisState: wu46CompatibleAnalysisState(),
+    analysisState: wu46CompatibleAnalysisState(marketAtDecision),
     updateAssessment: null,
   });
   writeLiveEvidence(model, ["e1", "e2"]);
@@ -113,7 +120,7 @@ function fakeRunCommand(overrides: Partial<Record<string, boolean>> = {}): { run
     calls.push({ command, args });
     const scriptArg = args.find((a) => a.endsWith(".ts")) ?? "";
     const ok = overrides[scriptArg] ?? true;
-    const outcome: CommandOutcome = { command, args, ok, exitCode: ok ? 0 : 1, stderr: ok ? "" : "fake failure" };
+    const outcome: CommandOutcome = { command, args, ok, exitCode: ok ? 0 : 1, stderr: ok ? "" : "fake failure", stdout: "" };
     return outcome;
   };
   return { runner, calls };
@@ -214,6 +221,34 @@ describe("executeGamePlan -- failure isolation", () => {
     expect(result.presentation.ran).toBe(true);
     expect(result.presentation.ok).toBe(true);
     expect(result.failures.some((f) => f.includes("grok handicap"))).toBe(true);
+  });
+
+  it("WU6.8: one provider's repricing failure does not block the other provider's repricing or presentation", () => {
+    // Both providers have a valid locked Stage A and a market that's moved since the last decision --
+    // both plan handicap=repricing (Stage B only, generic dispatch: --mode=${plan.handicap}).
+    const movedMarket = { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" };
+    writeWu46Snapshot("grok", movedMarket);
+    writeWu46Snapshot("chatgpt", movedMarket);
+
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok", "chatgpt"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.handicap).toBe("repricing");
+    expect(plan.providers.chatgpt.handicap).toBe("repricing");
+
+    const { runner, calls } = fakeRunCommand({ "scripts/run-nfl-grok-handicap.ts": false });
+    const result = executeGamePlan(plan, { root, live: true, runCommand: runner, now: PRE_KICKOFF_NOW });
+
+    const grokResult = result.providers.find((p) => p.provider === "grok")!;
+    const chatgptResult = result.providers.find((p) => p.provider === "chatgpt")!;
+    expect(grokResult.handicap.action).toBe("repricing");
+    expect(grokResult.handicap.ok).toBe(false);
+    expect(chatgptResult.handicap.action).toBe("repricing");
+    expect(chatgptResult.handicap.ran).toBe(true);
+    expect(chatgptResult.handicap.ok).toBe(true); // chatgpt's repricing succeeds despite grok's failing
+    expect(result.presentation.ran).toBe(true);
+    expect(result.presentation.ok).toBe(true);
+    expect(result.failures.some((f) => f.includes("grok handicap"))).toBe(true);
+    // Confirms the dispatch is generic (--mode=repricing), not a special-cased new code path.
+    expect(calls.some((c) => c.args.includes("--mode=repricing"))).toBe(true);
   });
 
   it("a failed context rebuild is reported but never crashes the caller", () => {

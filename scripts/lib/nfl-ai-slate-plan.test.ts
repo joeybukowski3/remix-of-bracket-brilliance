@@ -93,15 +93,25 @@ function baseSnapshot(model: "grok" | "chatgpt", overrides: Partial<AnalysisSnap
   };
 }
 
-function wu46CompatibleAnalysisState() {
+/**
+ * marketAtDecision defaults to EXACTLY the real BAL_IND context fixture's current market
+ * (spread 3.5/-3.5, total 47.5) so tests that don't care about repricing ("no material change",
+ * "context hash changed", "evidence grew") get a genuine market-unchanged baseline by default,
+ * never accidentally landing on handicap=repricing. Repricing-specific tests override this.
+ */
+function wu46CompatibleAnalysisState(marketAtDecision: { spread: { homeLine: number | null; awayLine: number | null }; total: number | null; asOf: string | null } = { spread: { homeLine: 3.5, awayLine: -3.5 }, total: 47.5, asOf: "2026-09-09T10:00:00.000Z" }) {
   return {
     thesis: "fixture thesis",
     side: { lean: "home" as const, confidence: 6, spreadLineAtOpinion: { homeLine: 3.5, awayLine: -3.5 } },
     total: { lean: "under" as const, confidence: 5, totalLineAtOpinion: 44.5 },
     blindPrediction: { footballThesis: "fixture blind thesis", fairSpread: { homeLine: 3, awayLine: -3 }, projectedTotal: 44 },
     marketDecision: {
+      generatedAt: "2026-09-09T10:05:00.000Z",
+      marketAtDecision,
       side: { lean: "home" as const, confidence: 6, spreadLineAtOpinion: { homeLine: 3.5, awayLine: -3.5 }, rationale: "fixture" },
       total: { lean: "under" as const, confidence: 5, totalLineAtOpinion: 44.5, rationale: "fixture" },
+      sideEdgePoints: null,
+      totalEdgePoints: null,
     },
   } as unknown as AnalysisSnapshot["analysisState"];
 }
@@ -157,19 +167,19 @@ describe("planGame -- research decision", () => {
 });
 
 describe("planGame -- handicap decision", () => {
-  function seedWu46Snapshot(model: "grok" | "chatgpt", contextHash: string, evidenceIds: string[]) {
+  function seedWu46Snapshot(model: "grok" | "chatgpt", contextHash: string, evidenceIds: string[], marketAtDecision?: Parameters<typeof wu46CompatibleAnalysisState>[0]) {
     writeSnapshot(
       root,
       baseSnapshot(model, {
         snapshotId: `${model}-wu46`,
         context: { contextVersion: "nfl-game-context-v1", contextHash, contextGeneratedAt: "2026-09-09T10:00:00.000Z" },
         evidence: { evidenceIds, addedEvidenceIds: evidenceIds, supersededEvidenceIds: [], conflictingEvidenceIds: [] },
-        analysisState: wu46CompatibleAnalysisState(),
+        analysisState: wu46CompatibleAnalysisState(marketAtDecision),
       })
     );
   }
 
-  it("5. no material change since last handicap -> handicap=none (market-only changes never trigger an update)", () => {
+  it("5. no material change since last handicap (context/evidence/market all unchanged) -> true full no-op", () => {
     const contextHash = contentHashOfContextFixture();
     writeLiveEvidence("grok", ["e1", "e2"]);
     seedWu46Snapshot("grok", contextHash, ["e1", "e2"]);
@@ -195,18 +205,24 @@ describe("planGame -- handicap decision", () => {
     expect(plan.providers.grok.handicapReason).toMatch(/context hash changed/);
   });
 
-  it("7b. WU6.1: a market-only move (spread ticks) on the persisted context file never triggers a handicap update", () => {
+  it("7b. WU6.1/WU6.8: a market-only move (spread ticks) on the persisted context file never triggers a full Stage A+B update -- it's a sanctioned Stage-B-only repricing instead", () => {
     const contextHash = contentHashOfContextFixture();
     writeLiveEvidence("grok", ["e1", "e2"]);
     seedWu46Snapshot("grok", contextHash, ["e1", "e2"]);
 
     const contextPath = join(root, "data", "nfl", "game-context", String(SEASON), String(WEEK), `${GAME_ID}.json`);
     const packet = JSON.parse(readFileSync(contextPath, "utf8"));
-    packet.market.spread.homeLine = (packet.market.spread.homeLine ?? 0) + 1.5;
+    // Moves the TOTAL, not the spread -- the fixture's jkbModels.modelMarketEdge.spread is a
+    // static value cross-validated against market.spread.homeLine (validateJkbSpreadOrientation);
+    // moving the spread without recomputing that derived field makes the context artifact itself
+    // invalid (a different code path -- context=blocked) rather than exercising the market-only
+    // repricing case this test targets. Total has no such cross-check.
+    packet.market.total.line = (packet.market.total.line ?? 0) + 2;
     writeFileSync(contextPath, `${JSON.stringify(packet, null, 2)}\n`, "utf8");
 
     const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
-    expect(plan.providers.grok.handicap).toBe("none");
+    expect(plan.providers.grok.handicap).toBe("repricing");
+    expect(plan.providers.grok.handicap).not.toBe("update");
   });
 
   it("7c. WU6.1: rewriting the persisted context file with different formatting/timestamps but no football change never triggers a handicap update", () => {
@@ -231,6 +247,99 @@ describe("planGame -- handicap decision", () => {
     seedWu46Snapshot("grok", contextHash, ["e1", "e2"]);
     const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, true, PRE_KICKOFF_NOW);
     expect(plan.providers.grok.handicap).toBe("update");
+  });
+});
+
+describe("planGame -- WU6.8 Stage B-only market repricing", () => {
+  function seedWu46Snapshot(model: "grok" | "chatgpt", contextHash: string, evidenceIds: string[], marketAtDecision?: Parameters<typeof wu46CompatibleAnalysisState>[0]) {
+    writeSnapshot(
+      root,
+      baseSnapshot(model, {
+        snapshotId: `${model}-wu46`,
+        context: { contextVersion: "nfl-game-context-v1", contextHash, contextGeneratedAt: "2026-09-09T10:00:00.000Z" },
+        evidence: { evidenceIds, addedEvidenceIds: evidenceIds, supersededEvidenceIds: [], conflictingEvidenceIds: [] },
+        analysisState: wu46CompatibleAnalysisState(marketAtDecision),
+      })
+    );
+  }
+
+  it("1. no market at last decision, market now available -> handicap=repricing (Stage B only, football unchanged)", () => {
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    // The prior handicap decision saw NO market at all (matches the real DET_BUF WU6.7 scenario).
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: null, awayLine: null }, total: null, asOf: null });
+
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    // The real committed context fixture DOES have a market (3.5/-3.5/47.5) -- differs from "no market at all".
+    expect(plan.providers.grok.handicap).toBe("repricing");
+    expect(plan.providers.grok.handicapReason).toMatch(/market changed/);
+    expect(plan.providers.grok.handicapReason).not.toMatch(/context hash|evidence grew/);
+  });
+
+  it("2. market changes (spread AND total both move) -> handicap=repricing", () => {
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" });
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.handicap).toBe("repricing");
+  });
+
+  it("3. same market as last decision -> full no-op, not repricing", () => {
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    // Exactly matches the real committed context fixture's current market.
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: 3.5, awayLine: -3.5 }, total: 47.5, asOf: "2026-09-09T10:00:00.000Z" });
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.handicap).toBe("none");
+  });
+
+  it("4. football context hash changed (even with an also-changed market) -> full Stage A+B update, never repricing", () => {
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    seedWu46Snapshot("grok", "a-stale-context-hash-that-does-not-match-current-file", ["e1", "e2"], { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" });
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.handicap).toBe("update");
+  });
+
+  it("5. evidence changed (even with an also-changed market) -> full Stage A+B update, never repricing", () => {
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2", "e3"]);
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" });
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.handicap).toBe("update");
+  });
+
+  it("9. post-kickoff: never reprice, even though the market changed -- pregame lock is authoritative", () => {
+    const POST_KICKOFF_NOW = () => new Date("2026-09-14T00:00:00.000Z");
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" });
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, POST_KICKOFF_NOW);
+    expect(plan.locked).toBe(true);
+    expect(plan.providers.grok.handicap).toBe("none");
+    expect(plan.providers.grok.handicapReason).toMatch(/pregame stream is locked/);
+  });
+
+  it("only the provider with a valid locked Stage A reprices -- the other stays on its own lifecycle action", () => {
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    writeLiveEvidence("chatgpt", ["e1", "e2"]);
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" });
+    // chatgpt has evidence + research lineage but no WU4.6-compatible handicap snapshot yet.
+    writeSnapshot(root, baseSnapshot("chatgpt", { snapshotId: "chatgpt-a", evidence: { evidenceIds: ["e1", "e2"], addedEvidenceIds: ["e1", "e2"], supersededEvidenceIds: [], conflictingEvidenceIds: [] } }));
+
+    const plan = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok", "chatgpt"], false, false, PRE_KICKOFF_NOW);
+    expect(plan.providers.grok.handicap).toBe("repricing");
+    expect(plan.providers.chatgpt.handicap).toBe("initial");
+  });
+
+  it("11. running the same repricing-eligible plan twice (no underlying file changes) yields identical actions -- deterministic, not one-shot", () => {
+    const contextHash = contentHashOfContextFixture();
+    writeLiveEvidence("grok", ["e1", "e2"]);
+    seedWu46Snapshot("grok", contextHash, ["e1", "e2"], { spread: { homeLine: 1, awayLine: -1 }, total: 40, asOf: "2026-09-08T00:00:00.000Z" });
+    const first = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    const second = planGame(root, GAME_ID, SEASON, WEEK, "ind", "bal", ["grok"], false, false, PRE_KICKOFF_NOW);
+    expect(first).toEqual(second);
+    expect(first.providers.grok.handicap).toBe("repricing");
   });
 });
 

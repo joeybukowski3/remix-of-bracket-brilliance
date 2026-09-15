@@ -468,3 +468,67 @@ describe("generate-nfl-ai-handicap-presentation -- WU4.6.1 snapshot eligibility"
     expect(grokowski.centralThesis).toBe("wu4.6 thesis");
   });
 });
+
+describe("generate-nfl-ai-handicap-presentation -- WU6.8 market repricing", () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "nfl-ai-handicap-presentation-reprice-"));
+    const contextDir = join(root, "data", "nfl", "game-context", String(SEASON), String(WEEK));
+    mkdirSync(contextDir, { recursive: true });
+    writeFileSync(
+      join(contextDir, `${GAME_ID}.json`),
+      JSON.stringify({
+        identity: { gameId: GAME_ID, season: SEASON, week: WEEK, homeTeam: "ind", awayTeam: "bal", homeTeamFull: "Indianapolis Colts", awayTeamFull: "Baltimore Ravens" },
+        schedule: { kickoffUtc: KICKOFF },
+      })
+    );
+  });
+  afterEach(() => { rmSync(root, { recursive: true, force: true }); });
+
+  it("12. shows the ORIGINAL locked blind prediction/thesis alongside the NEWEST market decision -- never looks like Stage A was regenerated", () => {
+    const originalFairSpread = { team: "ind", line: -1.5 };
+    const originalProjectedTotal = 46.5;
+    const newMarket = { spread: { homeLine: -2, awayLine: 2 }, total: { line: 45 } };
+    const repricedAnalysisState: SnapshotAnalysisState = {
+      thesis: "ORIGINAL locked football thesis -- must never change on repricing",
+      side: { lean: "home", confidence: 7, spreadLineAtOpinion: { homeLine: -2, awayLine: 2 }, rationale: "repriced" },
+      total: { lean: "over", confidence: 6, totalLineAtOpinion: 45, rationale: "repriced" },
+      independentPrediction: { fairSpread: originalFairSpread, projectedTotal: originalProjectedTotal },
+      blindPrediction: { generatedAt: "2026-09-11T20:00:00.000Z", fairSpread: originalFairSpread, projectedTotal: originalProjectedTotal, footballThesis: "ORIGINAL locked football thesis -- must never change on repricing" },
+      marketDecision: {
+        generatedAt: "2026-09-15T15:00:00.000Z", // NEWER than blindPrediction.generatedAt -- proves the market decision, not the football prediction, moved
+        marketAtDecision: { spread: newMarket.spread, total: newMarket.total.line, asOf: "2026-09-15T15:00:00.000Z" },
+        side: { lean: "home", confidence: 7, spreadLineAtOpinion: { homeLine: -2, awayLine: 2 }, rationale: "repriced" },
+        total: { lean: "over", confidence: 6, totalLineAtOpinion: 45, rationale: "repriced" },
+        sideEdgePoints: -0.5, // marketHomeLine(-2) - modelHomeLine(-1.5) = -0.5
+        totalEdgePoints: 1.5, // projectedTotal(46.5) - marketTotal(45) = 1.5
+      },
+      analysisUpdateKind: "market_reprice",
+    };
+    writeSnapshot(
+      root,
+      makeSnapshot("grok", {
+        snapshotId: "grok-fixture-repriced",
+        createdAt: "2026-09-15T15:00:00.000Z",
+        market: { ...baseMarket(), spread: newMarket.spread, total: newMarket.total },
+        analysisState: repricedAnalysisState,
+      })
+    );
+
+    const presentation = generatePresentationForGame(root, GAME_ID, SEASON, WEEK);
+    const grokowski = presentation.handicappers.grokowski;
+    expect(grokowski.status).toBe("ok");
+    if (grokowski.status !== "ok") throw new Error("expected ok");
+
+    // ORIGINAL locked prediction/thesis -- unchanged by repricing.
+    expect(grokowski.centralThesis).toBe("ORIGINAL locked football thesis -- must never change on repricing");
+    expect(grokowski.prediction).toEqual({ fairSpread: originalFairSpread, projectedTotal: originalProjectedTotal });
+
+    // NEWEST market + deterministic edges recomputed against it.
+    expect(grokowski.market).toEqual({ spread: newMarket.spread, total: newMarket.total.line });
+    expect(grokowski.edges.sidePoints).toBe(-0.5);
+    expect(grokowski.edges.totalPoints).toBe(1.5);
+    expect(grokowski.side.lean).toBe("home");
+    expect(grokowski.total.lean).toBe("over");
+  });
+});

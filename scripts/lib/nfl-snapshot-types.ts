@@ -208,6 +208,18 @@ export interface MarketDecisionRecord {
  * independentPrediction but no blindPrediction/marketDecision, and remains
  * fully valid.
  */
+/**
+ * WU6.8 -- distinguishes a full football re-projection (Stage A re-ran, the
+ * blind prediction may have moved) from a market-only Stage-B-only
+ * repricing (Stage A is byte-for-byte reused from the prior snapshot; only
+ * the market decision changed). Optional so every pre-WU6.8 snapshot (which
+ * never had this concept) keeps parsing unchanged -- absence does NOT imply
+ * either value, it means "written before this distinction existed."
+ * "initial" snapshots (no prior opinion to compare against) never set this.
+ */
+export type AnalysisUpdateKind = "football_update" | "market_reprice";
+export const ANALYSIS_UPDATE_KINDS: readonly AnalysisUpdateKind[] = ["football_update", "market_reprice"];
+
 export interface SnapshotAnalysisState {
   thesis: string | null;
   side: SideOpinionState;
@@ -218,6 +230,7 @@ export interface SnapshotAnalysisState {
   marketDecision?: MarketDecisionRecord;
   evidenceQualityAssessment?: EvidenceQualityAssessment;
   independentPrediction?: IndependentPrediction;
+  analysisUpdateKind?: AnalysisUpdateKind;
 }
 
 /**

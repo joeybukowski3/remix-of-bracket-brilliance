@@ -24,8 +24,8 @@
  */
 
 import { classifySideOpinionChange, classifyTotalOpinionChange } from "./nfl-snapshot-opinion-delta";
-import type { GrokSideOpinion, GrokStageAUpdateProposal, GrokStageAV1, GrokStageBUpdateProposal, GrokStageBV1, GrokTotalOpinion } from "./nfl-grok-analysis-types";
-import type { MarketAtDecision, OverallChange, SideOpinionState, SnapshotAnalysisState, TotalOpinionState, UpdateAssessment } from "./nfl-snapshot-types";
+import { GROK_ANALYSIS_SCHEMA_VERSION, type GrokSideOpinion, type GrokStageAUpdateProposal, type GrokStageAV1, type GrokStageBUpdateProposal, type GrokStageBV1, type GrokTotalOpinion } from "./nfl-grok-analysis-types";
+import type { AnalysisSnapshot, MarketAtDecision, OverallChange, SideOpinionState, SnapshotAnalysisState, TotalOpinionState, UpdateAssessment } from "./nfl-snapshot-types";
 
 /**
  * Maps a GrokSideOpinion (always confidence 1-10, per nfl-grok-analysis-types.ts)
@@ -194,7 +194,83 @@ export function combineUpdateStages(input: CombineUpdateStagesInput): CombineUpd
       sideEdgePoints: stageBUpdate.marketAssessment.sideEdgePoints,
       totalEdgePoints: stageBUpdate.marketAssessment.totalEdgePoints,
     },
+    // WU6.8 -- this path re-ran Stage A (the blind prediction may have moved), distinguishing it
+    // from combineRepricingStage()'s market-only path below.
+    analysisUpdateKind: "football_update",
   };
 
   return { assessment, newAnalysisState };
+}
+
+/**
+ * WU6.8 -- reconstructs the exact GrokStageAV1 shape a prior WU4.6-compatible
+ * snapshot's locked Stage A output had, so a Stage-B-only repricing call can
+ * reuse it verbatim (buildStageBInitialPrompt/runGrokStageBInitial take a
+ * GrokStageAV1, not a bespoke "locked prediction" shape). Every field is read
+ * from the snapshot as persisted -- nothing here re-derives or revises the
+ * football projection. `contextHash`/`generatedAt` are the ORIGINAL Stage A
+ * values, proving (not just asserting) that repricing never re-stamps them.
+ */
+export function reconstructLockedStageAFromSnapshot(snapshot: AnalysisSnapshot & { analysisState: NonNullable<AnalysisSnapshot["analysisState"]> & { blindPrediction: NonNullable<SnapshotAnalysisState["blindPrediction"]> } }): GrokStageAV1 {
+  const state = snapshot.analysisState;
+  const matchupFactors = state.matchupFactors ?? [];
+  return {
+    schemaVersion: GROK_ANALYSIS_SCHEMA_VERSION,
+    model: snapshot.model,
+    gameId: snapshot.gameId,
+    contextHash: snapshot.context.contextHash,
+    evidenceIdsUsed: Array.from(new Set(matchupFactors.flatMap((f) => f.evidenceIds))),
+    footballThesis: state.blindPrediction.footballThesis,
+    matchupFactors,
+    prediction: { fairSpread: state.blindPrediction.fairSpread, projectedTotal: state.blindPrediction.projectedTotal },
+    failureModes: state.failureModes ?? [],
+    evidenceQualityAssessment: state.evidenceQualityAssessment ?? { strengths: [], limitations: [] },
+    generatedAt: state.blindPrediction.generatedAt,
+  };
+}
+
+export interface CombineRepricingStageInput {
+  /** The prior snapshot's analysisState -- Stage A fields (thesis/matchupFactors/failureModes/
+   * evidenceQualityAssessment/independentPrediction/blindPrediction) are carried forward
+   * UNCHANGED; only side/total/marketDecision are replaced. */
+  previous: SnapshotAnalysisState;
+  /** A fresh Stage B result, produced by calling the SAME runGrokStageBInitial/runChatGptStageBInitial
+   * used for a brand-new "initial" pass, but with lockedStageA reconstructed from `previous`
+   * (see reconstructLockedStageAFromSnapshot) instead of a freshly-run Stage A. */
+  stageB: GrokStageBV1;
+  /** Built by the caller from the CURRENT authoritative market read -- never echoed from provider output. */
+  marketAtDecision: MarketAtDecision;
+}
+
+/**
+ * WU6.8 -- Stage-B-only market repricing. Reuses the prior snapshot's locked
+ * Stage A output (thesis/matchupFactors/failureModes/evidenceQualityAssessment/
+ * independentPrediction/blindPrediction) byte-for-byte; only `side`, `total`,
+ * and `marketDecision` are replaced with the new Stage B result. There is
+ * structurally no way for this function to alter the football prediction --
+ * it never reads a `stageA` argument at all.
+ */
+export function combineRepricingStage(input: CombineRepricingStageInput): SnapshotAnalysisState {
+  const { previous, stageB, marketAtDecision } = input;
+  const side = mapGrokSideOpinionToState(stageB.side);
+  const total = mapGrokTotalOpinionToState(stageB.total);
+  return {
+    thesis: previous.thesis,
+    side,
+    total,
+    matchupFactors: previous.matchupFactors,
+    failureModes: previous.failureModes,
+    evidenceQualityAssessment: previous.evidenceQualityAssessment,
+    independentPrediction: previous.independentPrediction,
+    blindPrediction: previous.blindPrediction,
+    marketDecision: {
+      generatedAt: stageB.generatedAt,
+      marketAtDecision,
+      side,
+      total,
+      sideEdgePoints: stageB.marketAssessment.sideEdgePoints,
+      totalEdgePoints: stageB.marketAssessment.totalEdgePoints,
+    },
+    analysisUpdateKind: "market_reprice",
+  };
 }
