@@ -24,6 +24,19 @@
  *     market decision, and produces a fully mechanical UpdateAssessment
  *     (nfl-grok-analysis-pipeline.ts) plus a new snapshot. The previous
  *     sportsbook price is NEVER passed into the Stage A re-projection call.
+ *   --mode=repricing (WU6.8): STAGE B ONLY. Football context/evidence has
+ *     NOT changed since the last handicap run (the WU6 planner only ever
+ *     schedules this mode when that holds) -- only the sportsbook market
+ *     has moved or first became available. Reconstructs the exact locked
+ *     Stage A output from the latest WU4.6-compatible snapshot
+ *     (reconstructLockedStageAFromSnapshot) and calls the SAME
+ *     runGrokStageBInitial used by --mode=initial's Stage B, so there is no
+ *     forked prompt/validation path. combineRepricingStage() carries
+ *     thesis/matchupFactors/failureModes/evidenceQualityAssessment/
+ *     independentPrediction/blindPrediction forward byte-for-byte -- it has
+ *     no parameter through which a revised football prediction could even
+ *     enter. updateAssessment is null (a market-only repricing is not a
+ *     football-development assessment).
  *
  * LIVE DATA REQUIREMENT (both modes, before any Grok call):
  *   1. Rebuild the deterministic Game Context Packet fresh via the shared
@@ -81,13 +94,14 @@ import {
   type GrokStageAValidationContext,
   type GrokStageBValidationContext,
 } from "./lib/nfl-grok-analysis-validator";
-import { combineInitialStages, combineUpdateStages } from "./lib/nfl-grok-analysis-pipeline";
+import { combineInitialStages, combineRepricingStage, combineUpdateStages, reconstructLockedStageAFromSnapshot } from "./lib/nfl-grok-analysis-pipeline";
+import { isWu46CompatibleAnalysisState } from "./lib/nfl-snapshot-analysis-lifecycle";
 import type { TeamsArtifact } from "./lib/nfl-full-game-context";
 import type { AnalysisSnapshot, MarketAtDecision, SnapshotAnalysisState, SnapshotMarketState } from "./lib/nfl-snapshot-types";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-function parseArgs(argv: string[]): { live: boolean; gameId: string; mode: "initial" | "update" } {
+function parseArgs(argv: string[]): { live: boolean; gameId: string; mode: "initial" | "update" | "repricing" } {
   const flags = new Map<string, string>();
   let live = false;
   for (const arg of argv) {
@@ -95,7 +109,7 @@ function parseArgs(argv: string[]): { live: boolean; gameId: string; mode: "init
     const match = /^--([a-z]+)=(.+)$/.exec(arg);
     if (match) flags.set(match[1], match[2]);
   }
-  return { live, gameId: flags.get("game") ?? "2026_01_BAL_IND", mode: (flags.get("mode") as "initial" | "update" | undefined) ?? "initial" };
+  return { live, gameId: flags.get("game") ?? "2026_01_BAL_IND", mode: (flags.get("mode") as "initial" | "update" | "repricing" | undefined) ?? "initial" };
 }
 
 function currentMarketStateFromPacket(packet: import("./lib/nfl-full-game-context").NflGameContextPacket): SnapshotMarketState {
@@ -325,6 +339,67 @@ async function main(): Promise<void> {
     console.log("\n=== INITIAL HANDICAP (LOCKED BLIND PREDICTION + MARKET DECISION) ===");
     console.log(`blindPrediction: ${JSON.stringify(analysisState.blindPrediction)}`);
     console.log(`marketDecision: ${JSON.stringify(analysisState.marketDecision)}`);
+    console.log(`side: ${JSON.stringify(analysisState.side)}`);
+    console.log(`total: ${JSON.stringify(analysisState.total)}`);
+    console.log(`\nWrote snapshot ${snapshot.snapshotId} (previousSnapshotId=${snapshot.previousSnapshotId})`);
+  } else if (args.mode === "repricing") {
+    if (!isWu46CompatibleAnalysisState(previousSnapshot.analysisState)) {
+      console.error("Refusing to run mode=repricing: the latest snapshot has no locked blindPrediction/marketDecision to reprice against. Run mode=initial first.");
+      process.exitCode = 1;
+      return;
+    }
+
+    // Stage A immutability, proved not just asserted: repricing never re-derives a football
+    // context hash and never calls Stage A. This equality check is a defense-in-depth guard
+    // against a race (context moved between the WU6 planner's decision and this run actually
+    // executing) -- the planner already only schedules "repricing" when this holds.
+    if (freshContextHash !== previousSnapshot.context.contextHash) {
+      console.error(`Refusing to run mode=repricing: football context has changed since the locked Stage A prediction (previous=${previousSnapshot.context.contextHash}, current=${freshContextHash}) -- run mode=update instead.`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const lockedStageA = reconstructLockedStageAFromSnapshot({ ...previousSnapshot, analysisState: previousSnapshot.analysisState });
+    console.log(`Reusing LOCKED Stage A (generatedAt=${lockedStageA.generatedAt}): footballThesis="${lockedStageA.footballThesis.slice(0, 80)}..." prediction=${JSON.stringify(lockedStageA.prediction)}`);
+
+    console.log("\n=== STAGE B ONLY: MARKET REPRICING (Stage A reused byte-for-byte) ===");
+    const stageBResult = await runGrokStageBInitial({ game, lockedStageA, currentMarketState, apiKey });
+    if (!stageBResult.ok) {
+      console.error(`Grok Stage B repricing FAILED: ${stageBResult.error}`);
+      if (stageBResult.telemetry) console.error("Telemetry at failure:", JSON.stringify(stageBResult.telemetry, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+    console.log(JSON.stringify(stageBResult.telemetry, null, 2));
+
+    const stageBContext: GrokStageBValidationContext = { model: "grok", gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: freshContextHash, currentMarketState, homeTeam: game.homeTeam, lockedPrediction: lockedStageA.prediction };
+    const stageB = validateGrokStageB(stageBResult.raw, stageBContext);
+    if (!stageB.ok) {
+      console.error("Stage B repricing FAILED validation:");
+      for (const reason of stageB.reasons) console.error(`  - ${reason}`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const analysisState = combineRepricingStage({ previous: previousSnapshot.analysisState, stageB: stageB.analysis, marketAtDecision });
+    const snapshotId = computeSnapshotId({ model: "grok", gameId: game.gameId, snapshotType: "daily_update", researchCutoff: newResearchCutoff, contextHash: freshContextHash, evidenceIds: previousSnapshot.evidence.evidenceIds });
+    const snapshot: AnalysisSnapshot = {
+      ...previousSnapshot,
+      snapshotId,
+      snapshotType: "daily_update",
+      createdAt: now.toISOString(),
+      researchCutoff: newResearchCutoff,
+      previousSnapshotId: previousSnapshot.snapshotId,
+      context: { contextVersion: packet.provenance.contextVersion, contextHash: freshContextHash, contextGeneratedAt: packet.generatedAt },
+      market: marketRecord,
+      analysisState,
+      updateAssessment: null,
+    };
+    writeSnapshot(ROOT, snapshot);
+
+    console.log("\n=== MARKET REPRICING RESULT (Stage A unchanged) ===");
+    console.log(`blindPrediction (unchanged from prior snapshot): ${JSON.stringify(analysisState.blindPrediction)}`);
+    console.log(`marketDecision (new): ${JSON.stringify(analysisState.marketDecision)}`);
     console.log(`side: ${JSON.stringify(analysisState.side)}`);
     console.log(`total: ${JSON.stringify(analysisState.total)}`);
     console.log(`\nWrote snapshot ${snapshot.snapshotId} (previousSnapshotId=${snapshot.previousSnapshotId})`);

@@ -2,7 +2,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { combineInitialStages, combineUpdateStages, deriveOverallChange, mapGrokSideOpinionToState, mapGrokTotalOpinionToState } from "./nfl-grok-analysis-pipeline";
+import { combineInitialStages, combineRepricingStage, combineUpdateStages, deriveOverallChange, mapGrokSideOpinionToState, mapGrokTotalOpinionToState, reconstructLockedStageAFromSnapshot } from "./nfl-grok-analysis-pipeline";
+import { isWu46CompatibleAnalysisState } from "./nfl-snapshot-analysis-lifecycle";
+import { computeSideEdgePoints, computeTotalEdgePoints } from "./nfl-market-edge";
+import type { GrokStageBV1 } from "./nfl-grok-analysis-types";
+import type { SnapshotAnalysisState } from "./nfl-snapshot-types";
 import { validateGrokStageA, validateGrokStageAUpdate, validateGrokStageB, validateGrokStageBUpdate, type GrokStageAValidationContext, type GrokStageBValidationContext } from "./nfl-grok-analysis-validator";
 import { computeSnapshotId, readSnapshotHistory, writeSnapshot } from "./nfl-snapshot-store";
 import type { AnalysisSnapshot, MarketAtDecision } from "./nfl-snapshot-types";
@@ -349,5 +353,157 @@ describe("end-to-end: analysisState/updateAssessment written through the real WU
     // Rewriting the SAME initial snapshotId with different content must throw -- immutability held.
     expect(() => writeSnapshot(root, { ...initialSnapshot, analysisState: { ...initialAnalysisState, thesis: "tampered" } })).toThrow(/Immutable snapshot violation/);
     expect(JSON.stringify(initialSnapshot)).toBe(beforeUpdate);
+  });
+});
+
+describe("WU6.8 -- Stage B-only market repricing (combineRepricingStage / reconstructLockedStageAFromSnapshot)", () => {
+  function freshStageB(overrides: Partial<GrokStageBV1["marketAssessment"]> = {}, side: Partial<GrokStageBV1["side"]> = {}, total: Partial<GrokStageBV1["total"]> = {}): GrokStageBV1 {
+    return {
+      schemaVersion: "nfl-grok-analysis-v1",
+      model: "grok",
+      gameId: "2026_01_BAL_IND",
+      contextHash: FIXTURE_ANALYSIS_CONTEXT_HASH,
+      generatedAt: "2026-09-11T00:00:00.000Z",
+      side: { lean: "home", team: "ind", lineAtOpinion: { homeLine: -2, awayLine: 2 }, confidence: 7, rationale: "repriced side", ...side },
+      total: { lean: "over", totalAtOpinion: 44, confidence: 6, rationale: "repriced total", ...total },
+      marketAssessment: { currentHomeLine: -2, currentAwayLine: 2, currentTotal: 44, sideEdgePoints: 1.5, totalEdgePoints: 1.5, interpretation: "repriced", ...overrides },
+    };
+  }
+
+  function priorLockedState(): SnapshotAnalysisState {
+    const stageA = validStageA();
+    const stageB = validStageB(FIXTURE_STAGE_B_HOME_LEAN);
+    return combineInitialStages({ stageA, stageB, marketAtDecision: MARKET_AT_DECISION });
+  }
+
+  it("4/6. carries thesis/matchupFactors/failureModes/evidenceQualityAssessment/independentPrediction/blindPrediction FORWARD UNCHANGED -- Stage A is provably immutable", () => {
+    const previous = priorLockedState();
+    const newMarketAtDecision: MarketAtDecision = { spread: { homeLine: -2, awayLine: 2 }, total: 44, asOf: "2026-09-11T00:00:00.000Z" };
+    const repriced = combineRepricingStage({ previous, stageB: freshStageB(), marketAtDecision: newMarketAtDecision });
+
+    expect(repriced.thesis).toBe(previous.thesis);
+    expect(repriced.matchupFactors).toBe(previous.matchupFactors);
+    expect(repriced.failureModes).toBe(previous.failureModes);
+    expect(repriced.evidenceQualityAssessment).toBe(previous.evidenceQualityAssessment);
+    expect(repriced.independentPrediction).toBe(previous.independentPrediction);
+    expect(repriced.blindPrediction).toBe(previous.blindPrediction); // same object reference -- not even a clone, structurally cannot differ
+  });
+
+  it("marks the result as a market_reprice, distinct from a football_update", () => {
+    const previous = priorLockedState();
+    const repriced = combineRepricingStage({ previous, stageB: freshStageB(), marketAtDecision: MARKET_AT_DECISION });
+    expect(repriced.analysisUpdateKind).toBe("market_reprice");
+  });
+
+  it("combineUpdateStages marks its result as football_update, never market_reprice", () => {
+    const previous = priorLockedState();
+    const stageAUpdate = validStageAUpdate(FIXTURE_STAGE_A_UPDATE_REAFFIRM);
+    const stageBUpdate = validStageBUpdate(FIXTURE_STAGE_B_UPDATE_STRENGTHENS);
+    const { newAnalysisState } = combineUpdateStages({ previous, stageAUpdate, stageBUpdate, marketAtDecision: MARKET_AT_DECISION });
+    expect(newAnalysisState.analysisUpdateKind).toBe("football_update");
+  });
+
+  it("7/8. replaces side/total/marketDecision with the NEW Stage B result, preserving the authoritative market input exactly", () => {
+    const previous = priorLockedState();
+    const newMarketAtDecision: MarketAtDecision = { spread: { homeLine: -2, awayLine: 2 }, total: 44, asOf: "2026-09-11T00:00:00.000Z" };
+    const stageB = freshStageB();
+    const repriced = combineRepricingStage({ previous, stageB, marketAtDecision: newMarketAtDecision });
+
+    expect(repriced.marketDecision?.marketAtDecision).toEqual(newMarketAtDecision);
+    expect(repriced.side.lean).toBe("home");
+    expect(repriced.side.confidence).toBe(7);
+    expect(repriced.total.lean).toBe("over");
+    // Deterministic edges come from Stage B's mechanically-computed marketAssessment -- never authored by combineRepricingStage itself.
+    expect(repriced.marketDecision?.sideEdgePoints).toBe(stageB.marketAssessment.sideEdgePoints);
+    expect(repriced.marketDecision?.totalEdgePoints).toBe(stageB.marketAssessment.totalEdgePoints);
+  });
+
+  it("reconstructLockedStageAFromSnapshot reproduces the exact locked Stage A fields from a WU4.6-compatible snapshot", () => {
+    const stageA = validStageA();
+    const previous = priorLockedState();
+    const snapshot: AnalysisSnapshot = {
+      schemaVersion: "nfl-snapshot-v1",
+      snapshotId: "grok-2026_01_BAL_IND-initial-fixture",
+      model: "grok",
+      gameId: "2026_01_BAL_IND",
+      season: 2026,
+      week: 1,
+      snapshotType: "initial",
+      createdAt: "2026-09-10T00:00:00.000Z",
+      researchCutoff: "2026-09-10T00:00:00.000Z",
+      kickoff: "2026-09-13T17:00:00.000Z",
+      previousSnapshotId: null,
+      context: { contextVersion: "nfl-game-context-v1", contextHash: FIXTURE_ANALYSIS_CONTEXT_HASH, contextGeneratedAt: "2026-09-09T00:00:00.000Z" },
+      evidence: { evidenceIds: [], addedEvidenceIds: [], supersededEvidenceIds: [], conflictingEvidenceIds: [] },
+      market: { sportsbook: null, spread: { homeLine: null, awayLine: null }, total: { line: null }, moneyline: null, asOf: null, previousSpread: null, previousTotal: null, spreadDelta: null, totalDelta: null, moneylineHomeDelta: null, moneylineAwayDelta: null, sportsbookChanged: false, asOfDeltaMs: null },
+      analysisState: previous,
+      updateAssessment: null,
+    };
+    if (!isWu46CompatibleAnalysisState(previous)) throw new Error("expected priorLockedState() to be WU4.6-compatible");
+    const reconstructed = reconstructLockedStageAFromSnapshot({ ...snapshot, analysisState: previous });
+
+    expect(reconstructed.footballThesis).toBe(stageA.footballThesis);
+    expect(reconstructed.prediction).toEqual(stageA.prediction);
+    expect(reconstructed.generatedAt).toBe(stageA.generatedAt);
+    expect(reconstructed.matchupFactors).toEqual(stageA.matchupFactors);
+    expect(reconstructed.failureModes).toEqual(stageA.failureModes);
+    expect(reconstructed.evidenceQualityAssessment).toEqual(stageA.evidenceQualityAssessment);
+    expect(reconstructed.contextHash).toBe(snapshot.context.contextHash);
+  });
+});
+
+describe("WU6.8 -- DET_BUF regression: deterministic edge math for a real live-validated repricing scenario", () => {
+  // Live-validated locked Stage A values from the first successful WU6 production run (WU6.7):
+  const GROKOWSKI_FAIR_SPREAD = { team: "buf", line: -5.5 };
+  const GROKOWSKI_PROJECTED_TOTAL = 49.5;
+  const CHATTY_ICE_FAIR_SPREAD = { team: "buf", line: -3 };
+  const CHATTY_ICE_PROJECTED_TOTAL = 47;
+  const HOME_TEAM = "buf";
+
+  it("Grokowski: fair BUF -5.5 vs market BUF -4 => side edge +1.5 toward BUF; total 49.5 vs 48 => total edge +1.5 toward OVER", () => {
+    const sideEdge = computeSideEdgePoints({ fairSpread: GROKOWSKI_FAIR_SPREAD }, HOME_TEAM, -4);
+    const totalEdge = computeTotalEdgePoints({ projectedTotal: GROKOWSKI_PROJECTED_TOTAL }, 48);
+    expect(sideEdge).toBe(1.5); // positive => home-oriented => value on BUF (home), per nfl-market-edge.ts's documented sign convention
+    expect(totalEdge).toBe(1.5); // positive => OVER
+  });
+
+  it("Chatty Ice: fair BUF -3 vs market BUF -4 => side edge -1 toward DET; total 47 vs 48 => total edge -1 toward UNDER", () => {
+    const sideEdge = computeSideEdgePoints({ fairSpread: CHATTY_ICE_FAIR_SPREAD }, HOME_TEAM, -4);
+    const totalEdge = computeTotalEdgePoints({ projectedTotal: CHATTY_ICE_PROJECTED_TOTAL }, 48);
+    expect(sideEdge).toBe(-1); // negative => away-oriented => value on DET (away)
+    expect(totalEdge).toBe(-1); // negative => UNDER
+  });
+
+  it("proves Stage A values are unchanged by repricing: combineRepricingStage never alters fairSpread/projectedTotal regardless of the new market", () => {
+    const previous: SnapshotAnalysisState = {
+      thesis: "Buffalo favored on EPA and protection.",
+      side: { lean: "pass", confidence: null, spreadLineAtOpinion: null, rationale: "no market" },
+      total: { lean: "pass", confidence: null, totalLineAtOpinion: null, rationale: "no market" },
+      blindPrediction: { generatedAt: "2026-09-15T14:41:57.181Z", fairSpread: GROKOWSKI_FAIR_SPREAD, projectedTotal: GROKOWSKI_PROJECTED_TOTAL, footballThesis: "Buffalo favored on EPA and protection." },
+      independentPrediction: { fairSpread: GROKOWSKI_FAIR_SPREAD, projectedTotal: GROKOWSKI_PROJECTED_TOTAL },
+      marketDecision: { generatedAt: "2026-09-15T14:42:12.366Z", marketAtDecision: { spread: { homeLine: null, awayLine: null }, total: null, asOf: null }, side: { lean: "pass", confidence: null, spreadLineAtOpinion: null, rationale: "no market" }, total: { lean: "pass", confidence: null, totalLineAtOpinion: null, rationale: "no market" }, sideEdgePoints: null, totalEdgePoints: null },
+    };
+    const newMarketAtDecision: MarketAtDecision = { spread: { homeLine: -4, awayLine: 4 }, total: 48, asOf: "2026-09-18T00:00:00.000Z" };
+    const stageB: GrokStageBV1 = {
+      schemaVersion: "nfl-grok-analysis-v1",
+      model: "grok",
+      gameId: "2026_02_DET_BUF",
+      contextHash: "unchanged-context-hash",
+      generatedAt: "2026-09-18T00:00:05.000Z",
+      side: { lean: "home", team: "buf", lineAtOpinion: { homeLine: -4, awayLine: 4 }, confidence: 6, rationale: "value on Buffalo" },
+      total: { lean: "over", totalAtOpinion: 48, confidence: 5, rationale: "value on the over" },
+      marketAssessment: { currentHomeLine: -4, currentAwayLine: 4, currentTotal: 48, sideEdgePoints: computeSideEdgePoints({ fairSpread: GROKOWSKI_FAIR_SPREAD }, HOME_TEAM, -4), totalEdgePoints: computeTotalEdgePoints({ projectedTotal: GROKOWSKI_PROJECTED_TOTAL }, 48), interpretation: "x" },
+    };
+    const repriced = combineRepricingStage({ previous, stageB, marketAtDecision: newMarketAtDecision });
+
+    expect(repriced.blindPrediction?.fairSpread).toEqual(GROKOWSKI_FAIR_SPREAD);
+    expect(repriced.blindPrediction?.projectedTotal).toBe(GROKOWSKI_PROJECTED_TOTAL);
+    expect(repriced.independentPrediction?.fairSpread).toEqual(GROKOWSKI_FAIR_SPREAD);
+    expect(repriced.independentPrediction?.projectedTotal).toBe(GROKOWSKI_PROJECTED_TOTAL);
+    expect(repriced.marketDecision?.sideEdgePoints).toBe(1.5);
+    expect(repriced.marketDecision?.totalEdgePoints).toBe(1.5);
+    expect(repriced.marketDecision?.marketAtDecision).toEqual(newMarketAtDecision);
+    expect(repriced.side.lean).toBe("home");
+    expect(repriced.total.lean).toBe("over");
   });
 });

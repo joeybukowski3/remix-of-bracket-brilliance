@@ -37,6 +37,17 @@ export interface CommandOutcome {
   ok: boolean;
   exitCode: number | null;
   stderr: string;
+  /**
+   * WU6.8 -- retained on EVERY run (not just failures), since a successful
+   * research/handicap child process's stdout is where Stage A/B token/cost
+   * telemetry is currently only ever printed (console.log'd JSON blocks in
+   * run-nfl-grok-handicap.ts / run-nfl-chatgpt-handicap.ts), and it was
+   * previously discarded entirely on success. This is deliberately just the
+   * raw captured text -- extracting/aggregating structured telemetry out of
+   * it (a real, separate change to how those scripts emit machine-readable
+   * output) is tracked as a follow-up, not built here.
+   */
+  stdout: string;
 }
 
 export type CommandRunner = (command: string, args: string[]) => CommandOutcome;
@@ -92,6 +103,7 @@ export function spawnTsxCommandRunner(root: string): CommandRunner {
       ok: result.status === 0,
       exitCode: result.status,
       stderr: result.status === 0 ? "" : (result.stderr ?? String(result.error ?? "unknown failure")),
+      stdout: result.stdout ?? "",
     };
   };
 }

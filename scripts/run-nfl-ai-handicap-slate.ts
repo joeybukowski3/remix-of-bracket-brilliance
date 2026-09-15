@@ -74,16 +74,18 @@ function parseArgs(argv: string[]): CliArgs {
   };
 }
 
-function countPaidCalls(plans: readonly GamePlan[]): { research: number; handicap: number } {
+function countPaidCalls(plans: readonly GamePlan[]): { research: number; handicap: number; repricing: number } {
   let research = 0;
   let handicap = 0;
+  let repricing = 0;
   for (const plan of plans) {
     for (const provider of Object.values(plan.providers)) {
       if (provider.research === "initial" || provider.research === "update") research += 1;
-      if (provider.handicap === "initial" || provider.handicap === "update") handicap += 1; // Stage A + Stage B, billed as one pass
+      if (provider.handicap === "initial" || provider.handicap === "update") handicap += 1; // Stage A + Stage B, billed as one pass (counted x2 below)
+      if (provider.handicap === "repricing") repricing += 1; // Stage B ONLY -- one call, never x2
     }
   }
-  return { research, handicap };
+  return { research, handicap, repricing };
 }
 
 function printDryRunSummary(plans: readonly GamePlan[]): void {
@@ -102,7 +104,7 @@ function printDryRunSummary(plans: readonly GamePlan[]): void {
     }
   }
 
-  const { research, handicap } = countPaidCalls(plans);
+  const { research, handicap, repricing } = countPaidCalls(plans);
 
   console.log(`\n=== DRY RUN PLAN ===`);
   console.log(`Games scanned: ${plans.length}`);
@@ -115,7 +117,9 @@ function printDryRunSummary(plans: readonly GamePlan[]): void {
     console.log(`  ${key}: ${count}`);
   }
 
-  console.log(`\nEstimated paid calls: ${research + handicap * 2} (${research} research call(s) + ${handicap} handicap pass(es) x2 Stage A/B)\n`);
+  console.log(
+    `\nEstimated paid calls: ${research + handicap * 2 + repricing} (${research} research call(s) + ${handicap} handicap pass(es) x2 Stage A/B + ${repricing} repricing pass(es) x1 Stage B only)\n`
+  );
 
   for (const plan of plans) {
     console.log(`${plan.gameId}${plan.locked ? " [LOCKED]" : ""}${plan.context === "blocked" ? " [BLOCKED]" : ""}`);
