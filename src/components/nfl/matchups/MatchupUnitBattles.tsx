@@ -4,6 +4,11 @@ import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCa
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
+import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
+import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/MatchupTowerMetricCard";
+import MatchupContextMetricGrid from "@/components/nfl/matchups/MatchupContextMetricGrid";
+import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
 import {
   UNIT_BATTLE_GROUPS,
   getMetricDef,
@@ -14,6 +19,8 @@ import {
 import { deriveMetricComparisonFromRanks } from "@/lib/nfl/matchupRailNormalization";
 
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   SUCCESS_PERIOD_LABELS,
   collectPeriodValues,
@@ -202,6 +209,7 @@ function PossessionPanel({
   successRate,
   trench,
   activeGroup,
+  view,
 }: {
   matchup: NflMatchup;
   awayTeam: NflMatchupTeam;
@@ -213,6 +221,7 @@ function PossessionPanel({
   trench?: MatchupTrenchConfig;
   /** Which UNIT_BATTLE_GROUPS id the group tabs currently show. */
   activeGroup: string;
+  view: "comparison" | "towers";
 }) {
   /**
    * Columns are keyed by SIDE, not by role: the away team is always the left
@@ -247,6 +256,44 @@ function PossessionPanel({
               trench,
             })
           );
+        if (view === "towers") {
+          const awayIdentity = `${awayTeam.abbr.toUpperCase()} ${awayUnit === "Offense" ? "OFF" : "DEF"}`;
+          const homeIdentity = `${homeTeam.abbr.toUpperCase()} ${homeUnit === "Offense" ? "OFF" : "DEF"}`;
+          const pairingLabel = `${awayIdentity} vs ${homeIdentity}`;
+          const comparableRows = rows.filter((row) => row.direction !== "context-only" && row.direction !== "none");
+          const contextRows = rows.filter((row) => row.direction === "context-only" || row.direction === "none");
+          const awayColor = nflTeamColorFor(awayTeam) ?? "#94a3b8";
+          const homeColor = nflTeamColorFor(homeTeam) ?? "#94a3b8";
+          const towerMetrics: MatchupTowerMetricPresentation[] = comparableRows.map((row) => ({
+            id: `${ballSide}-${group.id}-${row.key}`,
+            label: row.label,
+            shortLabel: row.shortLabel ?? row.label,
+            contextLabel: row.contextLabel,
+            pairingLabel,
+            away: {
+              team: awayTeam, color: awayColor, identityLabel: awayIdentity,
+              formatted: row.away.formatted, rank: row.away.rank,
+              heightPercent: towerHeightFromRank(row.away.rank),
+            },
+            home: {
+              team: homeTeam, color: homeColor, identityLabel: homeIdentity,
+              formatted: row.home.formatted, rank: row.home.rank,
+              heightPercent: towerHeightFromRank(row.home.rank),
+            },
+          }));
+          return (
+            <div key={group.id} className="space-y-3">
+              <MatchupTowerGrid metrics={towerMetrics} title={group.label} subtitle={pairingLabel} />
+              <MatchupContextMetricGrid
+                metrics={contextRows}
+                matchup={matchup}
+                headingId={`${ballSide}-${group.id}-context-heading`}
+                awayIdentityLabel={awayIdentity}
+                homeIdentityLabel={homeIdentity}
+              />
+            </div>
+          );
+        }
         return (
             <MatchupComparisonCard
               key={group.id}
@@ -278,6 +325,8 @@ export default function MatchupUnitBattles({
 }) {
   const [side, setSide] = useState<PossessionSide>("away-ball");
   const [activeGroup, setActiveGroup] = useState<string>(UNIT_BATTLE_GROUPS[0].id);
+  const [mobileView, setMobileView] = useState<"comparison" | "towers">("comparison");
+  const isMobile = useIsCompactLayout("(max-width: 767px)");
   const { away, home } = matchup;
 
   const groupTabs: MatchupTabDef[] = UNIT_BATTLE_GROUPS.map((group) => ({
@@ -292,16 +341,28 @@ export default function MatchupUnitBattles({
       titleAlign="center"
       subtitle="Direct unit comparison, ranked by league position. No matchup score or projected advantage is derived."
       bodyClassName="matchup-dense-section-body"
+      className="matchup-telemetry-section"
       headerAside={
         <MatchupUnitLever
           awayAbbr={away.abbr}
           homeAbbr={home.abbr}
           side={side}
           onChange={setSide}
-          className="lg:hidden"
+          className="md:hidden"
         />
       }
     >
+      {isMobile && (
+        <div className="matchup-mobile-view-control">
+          <MatchupSegmentedControl
+            options={[{ value: "comparison", label: "Comparison" }, { value: "towers", label: "Towers" }]}
+            value={mobileView}
+            onChange={setMobileView}
+            ariaLabel="Unit by Unit view"
+            size="sm"
+          />
+        </div>
+      )}
       <MatchupTabStrip
         tabs={groupTabs}
         activeId={activeGroup}
@@ -311,7 +372,7 @@ export default function MatchupUnitBattles({
       />
 
       <div className="space-y-2">
-        <div className={side === "away-ball" ? "" : "hidden lg:block"}>
+        <div className={side === "away-ball" ? "" : "hidden md:block"}>
           <PossessionPanel
             matchup={matchup}
             awayTeam={away}
@@ -321,9 +382,10 @@ export default function MatchupUnitBattles({
             successRate={successRate}
             trench={trench}
             activeGroup={activeGroup}
+            view={isMobile ? mobileView : "towers"}
           />
         </div>
-        <div className={side === "home-ball" ? "" : "hidden lg:block"}>
+        <div className={side === "home-ball" ? "" : "hidden md:block"}>
           <PossessionPanel
             matchup={matchup}
             awayTeam={away}
@@ -333,6 +395,7 @@ export default function MatchupUnitBattles({
             successRate={successRate}
             trench={trench}
             activeGroup={activeGroup}
+            view={isMobile ? mobileView : "towers"}
           />
         </div>
       </div>

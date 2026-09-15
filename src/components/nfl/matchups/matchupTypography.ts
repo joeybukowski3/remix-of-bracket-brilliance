@@ -106,6 +106,23 @@ export const MATCHUP_UNIT_ROW_GRID =
  */
 export const MATCHUP_COMPACT_ROW_MAX_WIDTH = "mx-auto w-full max-w-[420px] sm:max-w-[560px]";
 
+/**
+ * Market Profile row grid — side columns floor at the actual content need of
+ * a rank badge plus its value (~90px measured, incl. the worst-case value
+ * string), instead of `MATCHUP_UNIT_ROW_GRID`'s `minmax(72px, 0.7fr)`.
+ *
+ * That 72px floor computes to less than the ~90px a rank badge plus its value
+ * actually needs once the section narrows — which happens across most of the
+ * 1024–1450px viewport band, where the page's right-column card sits pinned
+ * near its own minimum width — so the value spilled past its own column edge.
+ * The centre metric column keeps a small floor of its own so it never
+ * collapses to less than its own padding; `break-words` on the label (see
+ * `MatchupComparisonRow`) is the fallback for the narrowest widths where three
+ * columns genuinely cannot all fit comfortably.
+ */
+export const MATCHUP_MARKET_ROW_GRID =
+  "mx-auto grid w-full max-w-[680px] grid-cols-[4.25rem_minmax(0,1fr)_4.25rem] items-center gap-1.5 sm:grid-cols-[minmax(96px,0.62fr)_minmax(46px,1fr)_minmax(96px,0.62fr)] sm:gap-1.5";
+
 /** Statistical Comparison is the narrower of the two. Reference: 780 / 190. */
 export const MATCHUP_STAT_ROW_GRID =
   "mx-auto grid w-full max-w-[780px] grid-cols-2 items-center gap-x-3 sm:grid-cols-[minmax(72px,0.75fr)_minmax(0,1.2fr)_minmax(72px,0.75fr)] sm:gap-x-0";

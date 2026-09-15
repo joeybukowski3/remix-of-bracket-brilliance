@@ -91,32 +91,31 @@ describe("MatchupPeriodComparison", () => {
     expect(screen.getAllByText("2025 L8").length).toBeGreaterThan(0);
   });
 
-  it("renders each success-rate metric as its own card in the responsive grid", () => {
+  it("renders each success-rate metric as its own Rank Tower card by default", () => {
     const { container } = renderPeriods(0, 0);
-    // Six metrics → six mini cards, each a shared MatchupMetricTable.
-    expect(container.querySelectorAll(".matchup-sr-grid")).toHaveLength(1);
-    expect(container.querySelectorAll(".matchup-comparison-card")).toHaveLength(6);
-    expect(container.querySelectorAll(".matchup-metric-table")).toHaveLength(6);
-    // Every card carries the same compact away/home identity header as Overview.
+    // Six metrics, one visible period → six tower cards (desktop/no-mobile
+    // default; Comparison is only reachable via the mobile view toggle).
+    expect(container.querySelectorAll(".matchup-rank-towers__card")).toHaveLength(6);
+    // Every card carries both teams' away/home identity.
     expect(
-      container.querySelector(".matchup-sr-grid")?.querySelectorAll(".matchup-comparison-card__team-header")
-    ).toHaveLength(6);
+      container.querySelector(".matchup-rank-towers__track")?.querySelectorAll(".matchup-rank-towers__team-id")
+    ).toHaveLength(12);
     expect(screen.getAllByText("NE").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SEA").length).toBeGreaterThan(0);
   });
 
-  it("shows league ranks in the team cells and states the raw percentage-point Edge", () => {
+  it("shows league ranks and raw percentages directly on the towers", () => {
     const { container } = renderPeriods(0, 0);
-    const ranks = Array.from(container.querySelectorAll(".matchup-metric-table__rank")).map(
+    const ranks = Array.from(container.querySelectorAll(".matchup-rank-towers__rank")).map(
       (n) => n.textContent
     );
     // NE 50.5 (#2) leads SEA 45.8 (#9) on Success Rate — higher is better.
-    expect(ranks).toContain("2nd");
-    expect(ranks).toContain("9th");
-    // The raw percentage is preserved on the cell hover title, not shown in the cell.
-    expect(screen.getAllByTitle(/50\.5%/).length).toBeGreaterThan(0);
-    // Edge names the advantaged side with the raw percentage-point gap.
-    expect(screen.getAllByText("+4.7 pp").length).toBeGreaterThan(0);
+    expect(ranks).toContain("#2");
+    expect(ranks).toContain("#9");
+    // Rank Towers show the raw percentage directly in the card, not hidden
+    // behind a hover title.
+    expect(screen.getAllByText("50.5%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("45.8%").length).toBeGreaterThan(0);
   });
 
   it("falls back to the raw percentage when a split has no league rank", () => {

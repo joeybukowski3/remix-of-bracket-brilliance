@@ -1,11 +1,18 @@
+import { useState } from "react";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
 import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
+import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/MatchupTowerMetricCard";
+import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
 import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
 import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { classifyMetricComparison } from "@/lib/nfl/matchupCategoryAdvantage";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup } from "@/lib/nfl/matchups";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   SUCCESS_PERIOD_LABELS,
   SUCCESS_RATE_METRIC_KEYS,
@@ -39,6 +46,10 @@ export default function MatchupPeriodComparison({
 }) {
   const { away, home } = matchup;
   const periods = successRate.periods;
+  const isMobile = useIsCompactLayout("(max-width: 767px)");
+  const [mobileView, setMobileView] = useState<"comparison" | "towers">("comparison");
+  const awayColor = nflTeamColorFor(away) ?? "#94a3b8";
+  const homeColor = nflTeamColorFor(home) ?? "#94a3b8";
 
   const groups = SUCCESS_RATE_METRIC_KEYS.map((key) => {
     const def = getMetricDef(key);
@@ -76,6 +87,23 @@ export default function MatchupPeriodComparison({
     return { key, label, help: def?.help, rows };
   });
 
+  const towerMetrics: MatchupTowerMetricPresentation[] = groups.flatMap((group) => group.rows.map((row) => ({
+    id: `${group.key}-${row.key}`,
+    label: group.label,
+    shortLabel: group.label,
+    contextLabel: row.shortLabel ?? row.label,
+    away: {
+      team: away, color: awayColor, identityLabel: away.abbr.toUpperCase(),
+      formatted: row.away.formatted, rank: row.away.rank,
+      heightPercent: towerHeightFromRank(row.away.rank),
+    },
+    home: {
+      team: home, color: homeColor, identityLabel: home.abbr.toUpperCase(),
+      formatted: row.home.formatted, rank: row.home.rank,
+      heightPercent: towerHeightFromRank(row.home.rank),
+    },
+  })));
+
   return (
     <MatchupSectionCard
       eyebrow="Over time"
@@ -84,25 +112,44 @@ export default function MatchupPeriodComparison({
       titleId="success-periods-heading"
       subtitle={note}
       bodyClassName="px-0 py-0 sm:px-0"
+      className="matchup-telemetry-section"
     >
-      <div className="px-3 py-3 sm:px-4">
-        {/* A section-scoped copy of the same compact team header keeps mobile
-            orientation visible while the full period grid scrolls. */}
-        <MatchupComparisonTeamHeader matchup={matchup} sticky className="sm:hidden" />
-
-        <div className="matchup-sr-grid">
-          {groups.map((group) => (
-            <MatchupComparisonCard
-              key={group.key}
-              title={group.label}
-              titleId={`success-period-${group.key}`}
-              matchup={matchup}
-              metrics={group.rows}
-              variant="detail"
-              caption={`${group.label} by period for ${away.teamName} and ${home.teamName}`}
-            />
-          ))}
+      {isMobile && (
+        <div className="matchup-mobile-view-control">
+          <MatchupSegmentedControl
+            options={[{ value: "comparison", label: "Comparison" }, { value: "towers", label: "Towers" }]}
+            value={mobileView}
+            onChange={setMobileView}
+            ariaLabel="Success Rate view"
+            size="sm"
+          />
         </div>
+      )}
+      <div className="px-3 py-3 sm:px-4">
+        {!isMobile || mobileView === "towers" ? (
+          <MatchupTowerGrid
+            metrics={towerMetrics}
+            title="Success Rate Towers"
+            subtitle={periods.map((period) => SUCCESS_PERIOD_LABELS[period].short).join(" · ")}
+          />
+        ) : (
+          <>
+            <MatchupComparisonTeamHeader matchup={matchup} sticky />
+            <div className="matchup-sr-grid">
+              {groups.map((group) => (
+                <MatchupComparisonCard
+                  key={group.key}
+                  title={group.label}
+                  titleId={`success-period-${group.key}`}
+                  matchup={matchup}
+                  metrics={group.rows}
+                  variant="detail"
+                  caption={`${group.label} by period for ${away.teamName} and ${home.teamName}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <p className="border-t border-slate-100 px-3 py-2 text-[11px] leading-4 text-slate-600 sm:px-4">
