@@ -185,6 +185,11 @@ export default defineConfig({
       "scripts/lib/nfl-chatgpt-analysis-isolation.test.ts",
       // WU5 -- internal snapshot -> sanitized public AI-handicap presentation exporter.
       "scripts/generate-nfl-ai-handicap-presentation.test.ts",
+      // WU6 -- provider-neutral slate orchestrator: zero-cost planning phase
+      // and stage execution (dependency-injected command runner, no real
+      // Grok/OpenAI calls).
+      "scripts/lib/nfl-ai-slate-plan.test.ts",
+      "scripts/lib/nfl-ai-slate-executor.test.ts",
       // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
       "scripts/lib/nfl-props-performance.test.ts",
       "scripts/generate-nfl-props-performance.test.ts",

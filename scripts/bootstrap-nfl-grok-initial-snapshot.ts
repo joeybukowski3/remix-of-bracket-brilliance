@@ -59,7 +59,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { contentHash } from "./lib/nfl-production-prediction-archive";
+import { footballContextHash, type NflGameContextPacket } from "./lib/nfl-full-game-context";
 import { readEvidenceArtifact, evidenceArtifactPath } from "./lib/nfl-evidence-store";
 import { computeSnapshotId, readSnapshotHistory, writeSnapshot } from "./lib/nfl-snapshot-store";
 import type { AnalysisSnapshot } from "./lib/nfl-snapshot-types";
@@ -117,9 +117,10 @@ function main(): void {
   }
   const contextRaw = readFileSync(contextPath, "utf8");
   const context = JSON.parse(contextRaw) as GameContextPacketShape;
+  const fullContextPacket = JSON.parse(contextRaw) as NflGameContextPacket;
 
   const researchCutoff = liveArtifact.generatedAt;
-  const contextHash = contentHash(contextRaw);
+  const contextHash = footballContextHash(fullContextPacket);
   const evidenceIds = liveArtifact.evidence.map((e) => e.evidenceId);
 
   const snapshotId = computeSnapshotId({ model: "grok", gameId, snapshotType: "initial", researchCutoff, contextHash, evidenceIds });

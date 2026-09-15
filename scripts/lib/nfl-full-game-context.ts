@@ -734,6 +734,40 @@ export type NflGameContextPacket = {
   generatedAt: string;
 };
 
+/**
+ * WU6.1 -- the canonical football-context identity: every packet section
+ * EXCEPT `market` (live sportsbook odds -- see nfl-ai-slate-plan.ts's
+ * market-only-change policy), `provenance` (source contentHashes/builtAt --
+ * bookkeeping about how the packet was assembled, not what it says), and
+ * `generatedAt` (wall-clock stamp used only for the PROVENANCE freshness
+ * check in nfl-snapshot-context-freshness.ts, never for value comparison).
+ *
+ * This is the ONLY input `footballContextHash` below may hash. Every caller
+ * that needs to know "did the football context actually change" (snapshot
+ * writers in run-nfl-grok-handicap.ts/run-nfl-chatgpt-handicap.ts/
+ * run-nfl-grok-research.ts/run-nfl-chatgpt-research.ts, the bootstrap
+ * scripts, and the WU6 planner in nfl-ai-slate-plan.ts) must go through
+ * footballContextHash(packet) rather than hashing the packet or its raw
+ * serialized file text directly -- hashing a re-serialized
+ * `JSON.stringify(packet)` string or the persisted file's raw bytes bypasses
+ * contentHash's canonical (key-sorted) JSON path entirely (contentHash only
+ * canonicalizes when given a JsonValue, not a pre-stringified string), so
+ * two byte-different-but-semantically-identical serializations of the same
+ * packet (compact vs. the pretty-printed 2-space-indent file persisted by
+ * nfl-game-context-preflight.ts) hash to different values even with zero
+ * football change.
+ */
+export type FootballContextIdentity = Omit<NflGameContextPacket, "market" | "provenance" | "generatedAt">;
+
+export function footballContextIdentity(packet: NflGameContextPacket): FootballContextIdentity {
+  const { market: _market, provenance: _provenance, generatedAt: _generatedAt, ...identity } = packet;
+  return identity;
+}
+
+export function footballContextHash(packet: NflGameContextPacket): string {
+  return contentHash(footballContextIdentity(packet) as unknown as JsonValue);
+}
+
 export type BuildFullGameContextInput = {
   games: GamesArtifact;
   teams: TeamsArtifact;

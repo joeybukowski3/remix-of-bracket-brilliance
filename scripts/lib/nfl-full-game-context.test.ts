@@ -12,6 +12,7 @@ import {
   buildTeamMetricsSection,
   buildTrendsSection,
   buildWeatherSection,
+  footballContextHash,
   type BuildFullGameContextInput,
   type DfsWeekArtifact,
   type GamesArtifact,
@@ -457,5 +458,50 @@ describe("buildFullGameContext + validators (BAL@IND fixture)", () => {
     expect(result.packet.weather.status).toBe("not_available");
     expect(result.packet.availability.feedStale).toBe(true);
     expect(result.packet.availability.provenance_status).toBe("stale");
+  });
+});
+
+describe("footballContextHash (WU6.1 canonical hash contract)", () => {
+  function buildOkPacket(overrides: Partial<BuildFullGameContextInput> = {}) {
+    const result = buildFullGameContext(buildFixtureInput(overrides));
+    if (result.status !== "ok") throw new Error("expected ok");
+    return result.packet;
+  }
+
+  it("is stable across serialization-format-only differences (compact vs. pretty-printed-with-trailing-newline)", () => {
+    const packet = buildOkPacket();
+    const compact = JSON.parse(JSON.stringify(packet));
+    const prettyRoundTripped = JSON.parse(`${JSON.stringify(packet, null, 2)}\n`);
+    expect(footballContextHash(compact)).toBe(footballContextHash(prettyRoundTripped));
+  });
+
+  it("is stable across top-level key reordering (order-only difference)", () => {
+    const packet = buildOkPacket();
+    const reordered = Object.fromEntries(Object.entries(packet).reverse()) as typeof packet;
+    expect(footballContextHash(reordered)).toBe(footballContextHash(packet));
+  });
+
+  it("does NOT change when only `generatedAt` (volatile bookkeeping) changes", () => {
+    const a = buildOkPacket({ generatedAt: "2026-09-09T10:00:00.000Z" });
+    const b = buildOkPacket({ generatedAt: "2026-09-09T11:30:00.000Z" });
+    expect(footballContextHash(a)).toBe(footballContextHash(b));
+  });
+
+  it("does NOT change when only the market (live sportsbook line) moves", () => {
+    const a = buildOkPacket();
+    const b = { ...a, market: { ...a.market, spread: { ...a.market.spread, homeLine: (a.market.spread.homeLine ?? 0) + 1.5 } } };
+    expect(footballContextHash(a)).toBe(footballContextHash(b));
+  });
+
+  it("does NOT change when only `provenance` (source hashes/builtAt bookkeeping) changes", () => {
+    const a = buildOkPacket();
+    const b = { ...a, provenance: { ...a.provenance, builtAt: "2026-09-10T00:00:00.000Z" } };
+    expect(footballContextHash(a)).toBe(footballContextHash(b));
+  });
+
+  it("DOES change when a real football field changes (e.g. situational restDifferential)", () => {
+    const a = buildOkPacket();
+    const b = { ...a, situational: { ...a.situational, restDifferential: (a.situational.restDifferential ?? 0) + 3 } };
+    expect(footballContextHash(a)).not.toBe(footballContextHash(b));
   });
 });

@@ -51,7 +51,6 @@ import { normalizeExternalEvidence } from "./lib/nfl-evidence-normalizer";
 import { appendEvidence, createEvidenceStore, evidenceArtifactPath, readEvidenceArtifact, writeEvidenceArtifact } from "./lib/nfl-evidence-store";
 import { loadSubjectIdentitySource } from "./lib/nfl-evidence-subject-identity-loader";
 import type { EvidenceNormalizationContext, EvidenceRecord } from "./lib/nfl-evidence-types";
-import { contentHash } from "./lib/nfl-production-prediction-archive";
 import { canCreatePregameSnapshot, isPregameStreamLocked } from "./lib/nfl-snapshot-lock";
 import { readLatestSnapshot, snapshotModelDirPath, writeSnapshot } from "./lib/nfl-snapshot-store";
 import { buildResearchDeltaContext } from "./lib/nfl-research-delta-context";
@@ -60,7 +59,7 @@ import { loadFreshGameContextPacket } from "./lib/nfl-full-game-context-loader";
 import { validateGameContextPacket } from "./lib/nfl-game-context-validators";
 import { ensureGameContextArtifact } from "./lib/nfl-game-context-preflight";
 import { checkContextFreshness } from "./lib/nfl-snapshot-context-freshness";
-import type { NflGameContextPacket, TeamsArtifact } from "./lib/nfl-full-game-context";
+import { footballContextHash, type NflGameContextPacket, type TeamsArtifact } from "./lib/nfl-full-game-context";
 import type { SnapshotMarketState } from "./lib/nfl-snapshot-types";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -408,7 +407,7 @@ async function runUpdate(args: { gameId: string }, apiKey: string): Promise<void
 
   const deltaContext = buildResearchDeltaContext({ previousSnapshot: previous, priorEvidenceClaims });
   const currentMarketState = currentMarketStateFromPacket(packet);
-  const freshContextHash = contentHash(JSON.stringify(packet));
+  const freshContextHash = footballContextHash(packet);
 
   console.log(`Refreshed Game Context Packet: generatedAt=${packet.generatedAt} (previous snapshot's context generatedAt=${previous.context.contextGeneratedAt ?? "unknown/pre-WU4.3"}) -- ${preRunFreshness.reason}`);
 
