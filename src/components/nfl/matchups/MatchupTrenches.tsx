@@ -115,7 +115,6 @@ export default function MatchupTrenches({
             key={key}
             title={`${offense.abbr.toUpperCase()} Offense`}
             matchup={matchup}
-            stickyHeader
             possession={`${offense.teamName} has the ball`}
             unit={{
               away: awayIsOffense ? "Offense" : "Defense",
