@@ -42,6 +42,7 @@ import { appendEvidence, createEvidenceStore, evidenceArtifactPath, readEvidence
 import { loadSubjectIdentitySource } from "./lib/nfl-evidence-subject-identity-loader";
 import type { EvidenceNormalizationContext, EvidenceRecord } from "./lib/nfl-evidence-types";
 import { contentHash } from "./lib/nfl-production-prediction-archive";
+import { footballContextHash } from "./lib/nfl-full-game-context";
 import { canCreatePregameSnapshot, isPregameStreamLocked } from "./lib/nfl-snapshot-lock";
 import { readLatestSnapshot, snapshotModelDirPath, writeSnapshot } from "./lib/nfl-snapshot-store";
 import { buildResearchDeltaContext } from "./lib/nfl-research-delta-context";
@@ -300,7 +301,7 @@ async function runUpdate(args: { gameId: string }, apiKey: string): Promise<void
 
   const deltaContext = buildResearchDeltaContext({ previousSnapshot: previous, priorEvidenceClaims });
   const currentMarketState = currentMarketStateFromPacket(packet);
-  const freshContextHash = contentHash(JSON.stringify(packet));
+  const freshContextHash = footballContextHash(packet);
 
   console.log(`Refreshed Game Context Packet: generatedAt=${packet.generatedAt} (previous snapshot's context generatedAt=${previous.context.contextGeneratedAt ?? "unknown/pre-WU3.3.1"}) -- ${preRunFreshness.reason}`);
 

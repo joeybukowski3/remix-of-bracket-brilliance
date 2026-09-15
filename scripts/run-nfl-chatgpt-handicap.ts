@@ -63,7 +63,7 @@ import { canCreatePregameSnapshot, isPregameStreamLocked } from "./lib/nfl-snaps
 import { computeMarketDelta } from "./lib/nfl-snapshot-market-delta";
 import { computeSnapshotId, readLatestSnapshot, readPreviousAnalysisSnapshot, writeSnapshot } from "./lib/nfl-snapshot-store";
 import { evidenceArtifactPath, readEvidenceArtifact, resolveEvidenceAuthority } from "./lib/nfl-evidence-store";
-import { contentHash } from "./lib/nfl-production-prediction-archive";
+import { footballContextHash } from "./lib/nfl-full-game-context";
 import { auditStageAPromptForMarketPricing, filterEvidenceRecordsForBlindStageA, sanitizeGameContextPacketForBlindStageA } from "./lib/nfl-ai-context-sanitizer";
 import {
   buildStageAInitialPrompt,
@@ -215,7 +215,7 @@ async function main(): Promise<void> {
 
   // step 4: current market from the FRESH context (not any older snapshot's stored market). Stage A never sees this.
   const currentMarketState = currentMarketStateFromPacket(packet);
-  const freshContextHash = contentHash(JSON.stringify(packet));
+  const freshContextHash = footballContextHash(packet);
 
   // MODEL ISOLATION: reads the "chatgpt" snapshot lineage only -- never "grok".
   const previousSnapshot = readLatestSnapshot(ROOT, season, week, args.gameId, MODEL);
