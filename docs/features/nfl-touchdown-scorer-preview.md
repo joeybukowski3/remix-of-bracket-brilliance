@@ -50,4 +50,40 @@ The extractor excludes postseason, two-point, kneel, spike, passing-only, and un
 
 Before team/opponent joins and team-game key construction, the generator uses the shared canonical NFL identity normalizer. The reviewed alias families are `AZ`/`ARI` -> `ari`, `JAC`/`JAX` -> `jax`, `LA`/`LAR` -> `lar`, and `WAS`/`WSH` -> `wsh`; other abbreviations are lowercased unchanged. This applies consistently to current candidates, player-week stats, compact touchdown context, results-side comparisons, and opponent positional-TD history.
 
-Anytime-touchdown sportsbook prices remain optional and unavailable. The current NFL market ingestion does not support `player_anytime_td`; TD Edge is outside V1.
+Anytime-touchdown sportsbook prices are optional presentation context from
+`nfl:anytime-td-market` (ParlayAPI). Exact current-game and pre-kickoff selection
+is handled by `nfl-anytime-td-selection.mjs`; missing credentials or a failed
+refresh preserves the prior market artifact. Odds never feed JKB TD Score.
+TD Edge is outside V1.
+
+## Current-slate production refresh
+
+`nfl-touchdown-preview.yml` is the independent canonical preview workflow,
+scheduled at 10:30 ET daily in Sep-Feb, after Tuesday fantasy rollover at
+04:00, NFL upstream refreshes at 06:10-08:10, and yardage at 09:30. No earlier
+scheduled preview workflow existed. `nfl-yardage-market.yml` retains its existing
+anytime-TD ingestion cadence. Scheduled times are intended order, not dependency
+guarantees: the preview workflow validates the resolved current-week yardage
+source before generation and fails closed if yardage has not rolled over.
+
+The sequence refreshes prior/current player-week stats (requiring Week N-1 for
+Week N), compact PBP context, optional anytime-TD odds, then generates and
+validates the preview before staging its exact output/cache paths. Manual
+dispatch checks out and publishes to the selected branch.
+
+The preview generator defaults to the shared schedule-based current week,
+rejects mismatched yardage targets, requires completed entering-week games to
+have verified weekly stats and PBP coverage, and joins kickoff from schedules
+because canonical result rows omit it. Only final games strictly before the
+target week and first target kickoff enter player/opponent history. Missing
+current PBP cannot become zero usage merely because historical PBP exists.
+Refreshes after the first target kickoff fail closed and retain the previously
+generated pregame board. The standalone validator checks candidate identities,
+matchups, kickoffs, full game/candidate coverage and absence of target/future-week
+history; validated output replaces the live file atomically. These gates restore
+documented completed-game/pregame behavior without changing score methodology.
+
+The TD page loader independently resolves the current schedule week and rejects
+a stale season/week artifact. It no longer labels missing data as Week 1.
+Matchup filter labels use sourced home/away context (for example DET @ BUF);
+their order-independent canonical team-pair values remain unchanged.

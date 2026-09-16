@@ -4,6 +4,8 @@ import { MemoryRouter } from "react-router-dom";
 import NFLYardagePropsReview from "./NFLYardagePropsReview";
 import type { NflCurrentWeekProjectionArtifact, NflCurrentWeekPassingRow } from "@/lib/nfl/props/types/currentWeekProjection";
 import type { NflYardageMarketArtifact } from "@/lib/nfl/props/review/yardageMarketJoin";
+const currentSlate = vi.hoisted(() => ({ week: 1 }));
+vi.mock("@/hooks/useCurrentNflWeek", () => ({ useCurrentNflWeek: () => ({ loading: false, error: null, week: currentSlate.week }) }));
 
 function passingRow(overrides: Partial<NflCurrentWeekPassingRow> = {}): NflCurrentWeekPassingRow {
   return {
@@ -249,6 +251,7 @@ function stubMatchMedia(matches: boolean) {
 }
 
 beforeEach(() => {
+  currentSlate.week = 1;
   vi.unstubAllGlobals();
 });
 
@@ -260,6 +263,16 @@ afterEach(() => {
 });
 
 describe("NFLYardagePropsReview", () => {
+  it("shows current Week 2 projections automatically", async () => {
+    currentSlate.week = 2;
+    const data = projectionsArtifact([passingRow({ week: 2, gameId: "2026_02_DET_BUF", team: "det", opponent: "buf", playerName: "Week Two Passer", kickoff: "2026-09-18T00:15:00Z" })]);
+    data.week = 2;
+    stubFetch(data, marketArtifact());
+    render(<MemoryRouter><NFLYardagePropsReview /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText("Week Two Passer")).toBeInTheDocument());
+    expect(screen.getByText("Week 2")).toBeInTheDocument();
+    expect(screen.queryByText("Week 1")).not.toBeInTheDocument();
+  });
   it("renders the research notice", async () => {
     stubFetch(projectionsArtifact([passingRow()]), marketArtifact());
     renderPage();

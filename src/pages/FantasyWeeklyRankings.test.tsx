@@ -63,7 +63,16 @@ function renderPage(entry = `${ROUTE}?week=1`) {
 }
 
 describe("Weekly Rankings consumer", () => {
-  afterEach(() => vi.unstubAllGlobals());
+  it("rolls from Week 1 to Week 2 automatically on Tuesday and shows missing Week 2 explicitly", () => {
+    vi.setSystemTime(new Date("2026-09-15T13:09:00Z"));
+    mockWeekly.mockReturnValue({ status: "missing", season: 2026, week: 2, error: new Error("missing") });
+    renderPage(ROUTE);
+    expect(mockWeekly).toHaveBeenCalledWith(2026, 2);
+    expect(screen.getByRole("heading", { name: "Week 2 rankings are not available yet" })).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+  afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
   beforeEach(() => {
     mockWeekly.mockReset();

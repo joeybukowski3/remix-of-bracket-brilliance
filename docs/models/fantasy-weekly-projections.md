@@ -277,6 +277,14 @@ availability/eligibility elsewhere, never the projection formula.
   Rest-of-Season or another week (`FantasyWeeklyRankings.tsx`).
 - A failed generation run never overwrites or relabels the previous week's
   canonical artifact.
+
+Publication also checks the candidate team/opponent union against the exact
+season/week schedule. Empty, partial, or cross-week slate coverage fails before
+the atomic write and in the standalone validator. This is a publication gate;
+identity resolution, eligibility, projection formulas and ranks are unchanged.
+The Tuesday workflow refreshes current roster identity and player-week history,
+materializes the gitignored historical history/training dataset on each clean
+runner, and trusts its scheduled trigger even if runner execution is delayed.
 - DFS compatibility (`assessDfsSlateCompatibility`): season/week mismatch is a
   **blocking** `error`; artifact age > 24h is a **warning only** (no in-repo
   hard age-fail threshold — a stale artifact is displayed, never blocked or
@@ -342,7 +350,7 @@ projection / research inputs".
 - Carries per-player: leakage-safe usage evidence
   (`WEEKLY_RESEARCH_CONTEXT_VERSION` context — season PPG, last-5 PPG, opponent
   FPA season / last-5, plus touches / RZ touches / YPC / targets / target share /
-  air yards per game / targets per game), NFL matchup edges (trenches / EPA /
+  air yards per game / targets per game / last-5 targets per game), NFL matchup edges (trenches / EPA /
   success, `mode` pass|rush), and a `matchupGrade`.
 - **Matchup grade authority (in the artifact):** input `opponentFpaSeason.rank`,
   bands `1–6 Great · 7–12 Good · 13–20 Neutral · 21–26 Tough · 27–32 Very Tough`.
@@ -352,6 +360,15 @@ projection / research inputs".
 - Season/week mismatch → treated as `missing`, research simply not joined
   (`loadWeeklyFantasyResearchState`, `assessDfsResearchArtifactCompatibility`).
 - This artifact is **context**. It never feeds the projection or the rank.
+- `context.evidence.targetsPerGameL5` is canonical research evidence, computed
+  for WR/TE over the same strictly-prior appearance chronology as `last5Ppg`
+  (including the existing prior-season fallback and Week 18 exclusion), ranked
+  within position. QB/RB carry an empty metric. The strict research schema
+  validates the complete metric; older v1 companions lacking it decode to an
+  empty metric (null value/rank, zero sample/pool, no games). This restores
+  compatibility with the existing builder/type without changing model formulas
+  or schema versions. The production projection context has no `evidence`
+  property; this field belongs only to the separately generated companion.
 
 ### Matchup composite (`calculateWeeklyMatchupComposite`)
 
