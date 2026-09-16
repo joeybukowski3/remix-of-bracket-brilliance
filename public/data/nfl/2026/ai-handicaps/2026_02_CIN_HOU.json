@@ -1,0 +1,272 @@
+{
+  "schemaVersion": "nfl-ai-handicap-presentation-v1",
+  "gameId": "2026_02_CIN_HOU",
+  "season": 2026,
+  "week": 2,
+  "kickoff": "2026-09-20T17:00:00.000Z",
+  "homeTeam": "hou",
+  "awayTeam": "cin",
+  "generatedAt": "2026-09-15T20:31:24.564Z",
+  "handicappers": {
+    "grokowski": {
+      "status": "ok",
+      "provider": "grok",
+      "displayName": "Grokowski",
+      "analysisSnapshotId": "grok-2026_02_CIN_HOU-daily_update-a73253e5e21f03f8",
+      "analyzedAt": "2026-09-15T20:29:00.312Z",
+      "prediction": {
+        "fairSpread": {
+          "line": -1,
+          "team": "cin"
+        },
+        "projectedTotal": 44.5
+      },
+      "market": {
+        "spread": {
+          "homeLine": -3,
+          "awayLine": 3
+        },
+        "total": 46.5
+      },
+      "edges": {
+        "sidePoints": -4,
+        "totalPoints": -2
+      },
+      "side": {
+        "lean": "away",
+        "team": "cin",
+        "line": 3,
+        "confidence": 6,
+        "rationale": "Locked fair is CIN -1; market HOU -3/CIN +3 is ~4 pts off that number, so the road dog is the value side. Week-2 priors and injury-thinned Houston LBs keep this from being high-conviction."
+      },
+      "total": {
+        "lean": "pass",
+        "line": null,
+        "confidence": null,
+        "rationale": "Locked 44.5 vs 46.5 is only a modest under lean in a mid-40s prior-season scoring environment; not enough edge after uncertainty to force a total."
+      },
+      "centralThesis": "Cincinnati holds a modest prior-season offensive efficiency and trench edge and is the cleaner personnel side against a Houston linebacker group thinned by injury; that combination is enough to offset typical home-field value and make the Bengals a slight road favorite. Both prior-season offenses sit near league-average efficiency, so the independent scoring environment is a mid-40s game rather than an explosive one.",
+      "keyFactors": [
+        {
+          "area": "passing",
+          "finding": "FACT: prior-season full-window off.epaPerPlay favors the away team (away 0.012008216958735642 vs home -0.00835527612132793) and off.yardsPerPlay also favors away (5.52 vs 5.34); matchup.offenseVsDefense lists passing as away. INTERPRETATION: Cincinnati should be able to move the ball through the air against a Houston defense already missing linebacker depth, but the EPA gap is small so this is a modest, not decisive, passing edge.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "rushing",
+          "finding": "FACT: matchup.offenseVsDefense lists rushing as away; away off_run_block_win_rate is 72 vs home 68. INTERPRETATION: Cincinnati's run game is the cleaner trench-and-matchup side, and Houston's linebacker attrition raises the chance that this rushing edge actually shows up on early downs rather than being neutralized at the second level.",
+          "supports": "away",
+          "importance": "major"
+        },
+        {
+          "area": "protection",
+          "finding": "FACT: away off_pass_block_win_rate 58 vs home 56 and away off_run_block_win_rate 72 vs home 68; trenches_advantage_team is away with trenches_differential -6. INTERPRETATION: Cincinnati should keep its offense on schedule slightly more often; Houston's protection is not a clear liability, so this is incremental rather than a collapse matchup.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "pass_rush",
+          "finding": "FACT: home def_pass_rush_win_rate is 35 vs away 29. FACT: Cincinnati DE Shemar Stewart is listed doubtful or questionable with a knee injury. INTERPRETATION: Houston owns the prior-season pass-rush win-rate edge, and Stewart's status can widen that gap; that is the main counter to Cincinnati's offensive lean if Houston can still generate pressure without a healthy linebacker level.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "run_defense",
+          "finding": "FACT: home def_run_stop_win_rate 32 vs away 29, both poor on the supplied composite. FACT: beat reporting says starter Henry To'oTo'o is expected to miss after a Week 1 shoulder injury, backup Jake Hummel is expected to miss/doubtful with a groin, and E.J. Speed is on IR/PUP; a separate listing has To'oTo'o only as questionable. INTERPRETATION: Houston's already-weak run-stop profile is the unit most exposed if the starter sits; if he plays, this factor shrinks toward mixed.",
+          "supports": "away",
+          "importance": "major"
+        },
+        {
+          "area": "coverage",
+          "finding": "FACT: no separate coverage metric is supplied. FACT: Houston is missing or likely missing multiple linebackers (To'oTo'o, Hummel, Speed). INTERPRETATION: Second-level and checkdown coverage is the hidden risk for Houston, especially versus Cincinnati's slight passing/YPP edge; this is inferred from personnel, not from a coverage rating.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "personnel",
+          "finding": "FACT: Zac Taylor said Cincinnati came out pretty clean after Week 1; Houston has overlapping LB absences (To'oTo'o miss vs questionable conflict, Hummel miss/doubtful, Speed IR/PUP) plus Cincinnati's Stewart knee listing. INTERPRETATION: Net availability favors Cincinnati on defense-against-the-run and second-level defense, with Stewart as the only notable Bengals offset on the edge.",
+          "supports": "away",
+          "importance": "major"
+        },
+        {
+          "area": "coaching",
+          "finding": "FACT: coaching fields are null and coaching_context_status is SOURCE_UNAVAILABLE. INTERPRETATION: No independent coaching edge can be assigned; do not smuggle in a staff reputation.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "situational",
+          "finding": "FACT: restDifferential 0, divisionalGame false, revengeGame false; kickoff at Reliant Stadium with isDome false. INTERPRETATION: No rest or rivalry overlay; remaining situational value is ordinary home venue, which is the primary offset to Cincinnati's on-field edges and is already baked into a small road-favorite number rather than a large one.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "weather",
+          "finding": "FACT: weather status is not_available and no internal NFL weather provider is supplied. INTERPRETATION: Conditions cannot be treated as a known indoor or outdoor factor; weather is a non-input, not a dome assumption.",
+          "supports": "neutral",
+          "importance": "minor"
+        }
+      ],
+      "failureModes": [
+        {
+          "scenario": "Henry To'oTo'o is active and effective (the questionable listing is correct, and the 'expected to miss' beat report is wrong).",
+          "whyItMatters": "The thesis treats Houston's second-level defense as compromised; a healthy starting linebacker would restore run-fit and checkdown defense and let ordinary home-field value make Houston the better side."
+        },
+        {
+          "scenario": "Shemar Stewart sits and Houston's 35 def_pass_rush_win_rate actually wins early downs against Cincinnati.",
+          "whyItMatters": "Cincinnati's offensive lean is small in EPA/YPP; if Houston's pass rush, not Cincinnati's protection, controls the game, the Bengals' projected scoring edge disappears."
+        },
+        {
+          "scenario": "2026 Week 1-2 Houston offensive quality is materially better than the 2025 prior-season off.epaPerPlay of -0.00835527612132793 used here, while Cincinnati is not.",
+          "whyItMatters": "Power ratings are unavailable and all efficiency inputs are lagged full-season 2025; a true 2026 talent gap the other way would flip both the spread lean and the mid-40s total."
+        }
+      ],
+      "evidenceQualitySummary": {
+        "strengths": [
+          "Prior-season EPA, YPP, trench composites, and offense-vs-defense tags are internally supplied with provenance_status available.",
+          "Situational rest/division/revenge flags are complete and unambiguous.",
+          "Injury theme for Houston linebackers is repeated across multiple evidence ids even though statuses conflict."
+        ],
+        "limitations": [
+          "jkbModels.powerRating is unavailable (home=? away=?), so there is no current-season team-strength prior.",
+          "No quarterback, coverage, or defensive EPA splits are supplied; coaching is SOURCE_UNAVAILABLE.",
+          "Injury evidence is single-source, tagged stale, and internally conflicting on To'oTo'o (expected to miss vs questionable) and on Stewart (doubtful or questionable).",
+          "Weather is explicitly not_available; venue isDome is false, so outdoor effects cannot be scored.",
+          "All on-field metrics are 2025 full-season, not 2026 Week 1 performance."
+        ]
+      }
+    },
+    "chattyIce": {
+      "status": "ok",
+      "provider": "chatgpt",
+      "displayName": "Chatty Ice",
+      "analysisSnapshotId": "chatgpt-2026_02_CIN_HOU-daily_update-71eab79da628dc91",
+      "analyzedAt": "2026-09-15T20:30:51.005Z",
+      "prediction": {
+        "fairSpread": {
+          "line": -1,
+          "team": "cin"
+        },
+        "projectedTotal": 45.5
+      },
+      "market": {
+        "spread": {
+          "homeLine": -3,
+          "awayLine": 3
+        },
+        "total": 46.5
+      },
+      "edges": {
+        "sidePoints": -4,
+        "totalPoints": -1
+      },
+      "side": {
+        "lean": "away",
+        "team": "cin",
+        "line": 3,
+        "confidence": 6,
+        "rationale": "Cincinnati is valued as the stronger side, and the +3 market spread provides a two-point cushion versus the matchup-based fair assessment."
+      },
+      "total": {
+        "lean": "under",
+        "line": 46.5,
+        "confidence": 5,
+        "rationale": "The market total is modestly above the projected scoring environment, offering a small under edge."
+      },
+      "centralThesis": "Cincinnati has the stronger established offensive profile, with advantages in prior-season EPA, yards per play, and both offensive blocking measures. Houston's home venue and pass-rush edge keep the game close, but linebacker and receiver losses weaken the Texans' defensive depth and offensive ceiling enough for Cincinnati to rate as a narrow favorite in a moderately scoring game.",
+      "keyFactors": [
+        {
+          "area": "quarterback",
+          "finding": "No quarterback-specific performance or availability data is supplied, so the projection makes no quarterback adjustment.",
+          "supports": "neutral",
+          "importance": "major"
+        },
+        {
+          "area": "passing",
+          "finding": "Fact: Cincinnati led Houston in prior-season offensive EPA per play and yards per play, and the matchup data assigns the passing advantage to Cincinnati. Interpretation: Cincinnati has the more reliable baseline for sustaining drives through the air.",
+          "supports": "away",
+          "importance": "major"
+        },
+        {
+          "area": "rushing",
+          "finding": "Fact: Cincinnati held the prior-season offensive run-blocking advantage, while the matchup data assigns the rushing advantage to Cincinnati. Interpretation: Cincinnati should have a better chance to maintain efficiency when Houston emphasizes pass-rush pressure.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "protection",
+          "finding": "Fact: Cincinnati's pass-block win rate and run-block win rate were both higher than Houston's offensive blocking figures. Interpretation: the Bengals' offensive line gives their offense a more stable foundation, particularly on early downs.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "pass_rush",
+          "finding": "Fact: Houston's defensive pass-rush win rate was higher than Cincinnati's, and Will Anderson Jr. was listed as a Week 1 Thursday nonparticipant. Interpretation: Houston's pressure edge could materially narrow Cincinnati's offensive advantage, with Anderson's status a key uncertainty.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "run_defense",
+          "finding": "Fact: Houston's prior-season defensive run-stop win rate exceeded Cincinnati's. Interpretation: the Texans have a counter to Cincinnati's rushing advantage, although that edge is modest relative to Cincinnati's offensive blocking profile.",
+          "supports": "home",
+          "importance": "minor"
+        },
+        {
+          "area": "personnel",
+          "finding": "Fact: Houston expected Jake Hansen to replace injured linebacker Henry To'oTo'o, with Wade Woodaz also potentially receiving snaps; Jake Hummel was week-to-week with a groin injury. Interpretation: linebacker turnover can reduce Houston's second-level communication and run-fit consistency against Cincinnati's balanced offense.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "personnel",
+          "finding": "Fact: Jayden Higgins is out for the season, Tank Dell remains on reserve/injured, and Houston is expected to rely on Xavier Hutchinson, Jaylin Noel, and Justin Watson for replacement snaps. Interpretation: Houston's receiving depth and explosive-play margin are reduced, lowering its offensive scoring ceiling.",
+          "supports": "under",
+          "importance": "moderate"
+        },
+        {
+          "area": "personnel",
+          "finding": "Fact: Cincinnati placed cornerback Ja'Sir Taylor and guard Brian Parker II on injured reserve through the first four games, while Shemar Stewart was listed doubtful in the Week 1 report. Interpretation: Cincinnati has some defensive-back, interior-line, and front-seven depth concerns that give Houston paths to outperform its baseline.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "situational",
+          "finding": "Fact: rest differential is zero and the game is not divisional. Interpretation: neither team has a meaningful rest or rivalry-based situational edge; Houston receives the normal home-venue benefit.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "weather",
+          "finding": "Fact: the available forecast called for very warm, humid conditions, a 55 percent shower chance, and no projected major wind concern; the venue is marked as not a dome in the supplied context. Interpretation: humidity may create some late-game fatigue, but wind is unlikely to materially disrupt the passing matchup.",
+          "supports": "neutral",
+          "importance": "minor"
+        }
+      ],
+      "failureModes": [
+        {
+          "scenario": "Houston's pass rush converts its measured advantage into repeated early-down pressure, particularly if Will Anderson Jr. is available and effective.",
+          "whyItMatters": "That would erase Cincinnati's protection and offensive-efficiency advantages, forcing a lower-quality passing game and making Houston's home edge more decisive."
+        },
+        {
+          "scenario": "Houston's replacement receivers generate explosive plays against a Cincinnati secondary missing Ja'Sir Taylor.",
+          "whyItMatters": "A higher-than-expected explosive-pass rate would overcome Houston's personnel losses and push the game above the projected scoring range."
+        },
+        {
+          "scenario": "Cincinnati fails to exploit Houston's linebacker turnover and instead allows the Texans to control early downs with their stronger run-defense profile.",
+          "whyItMatters": "That would suppress Cincinnati's rushing efficiency, create third-and-long situations, and leave Houston's defensive front in the matchup it handles best."
+        }
+      ],
+      "evidenceQualitySummary": {
+        "strengths": [
+          "The prior-season efficiency and trench data consistently point toward a Cincinnati offensive advantage.",
+          "Houston's receiver and linebacker availability issues are supported by multiple supplied evidence items, while the weather item addresses wind and precipitation risk."
+        ],
+        "limitations": [
+          "No quarterback performance, roster power-rating, coaching, or current full injury-status data was supplied.",
+          "Several injury and weather items are stale or single-source, and Houston's Week 1 report does not establish final Week 2 availability for every player."
+        ]
+      }
+    }
+  }
+}
