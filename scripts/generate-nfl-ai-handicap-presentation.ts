@@ -34,6 +34,7 @@ import { fileURLToPath } from "node:url";
 import { readLatestWu46CompatibleAnalysisSnapshot, readPreviousAnalysisSnapshot } from "./lib/nfl-snapshot-store";
 import { isWu46CompatibleAnalysisState } from "./lib/nfl-snapshot-analysis-lifecycle";
 import { computeSideEdgePoints, computeTotalEdgePoints } from "./lib/nfl-market-edge";
+import { buildLegacyEditorialArticle } from "./lib/nfl-legacy-editorial-adapter";
 import type { AnalysisSnapshot } from "./lib/nfl-snapshot-types";
 import {
   nflAiHandicapArtifactPath,
@@ -48,6 +49,18 @@ const DISPLAY_NAMES: Record<AiHandicapProvider, string> = {
   grok: "Grokowski",
   chatgpt: "Chatty Ice",
 };
+
+/** Matches the presentation card's own side/total pick text -- kept in sync manually since the legacy adapter needs the same public-safe summary the UI renders, computed once here rather than duplicating formatting logic in two places. */
+function formatSideSummary(team: string | null, line: number | null): string {
+  if (team == null || line == null) return "PASS";
+  const signed = line > 0 ? `+${line}` : `${line}`;
+  return `${team.toUpperCase()} ${signed}`;
+}
+
+function formatTotalSummary(lean: "over" | "under" | "pass" | "undecided", line: number | null): string {
+  if ((lean !== "over" && lean !== "under") || line == null) return "PASS";
+  return `${lean === "over" ? "Over" : "Under"} ${line}`;
+}
 
 interface GameIdentity {
   gameId: string;
@@ -142,6 +155,21 @@ function buildHandicapCard(
     evidenceQualitySummary: analysisState.evidenceQualityAssessment
       ? { strengths: [...analysisState.evidenceQualityAssessment.strengths], limitations: [...analysisState.evidenceQualityAssessment.limitations] }
       : null,
+    // WU7.9 -- a freshly-authored article (marketDecision.editorialArticle) is passed through
+    // as-is (it is already public-safe prose, validated by nfl-grok-analysis-validator.ts); a
+    // snapshot written before that field existed gets a deterministic, zero-fabrication legacy
+    // preview instead -- see nfl-legacy-editorial-adapter.ts.
+    editorial:
+      marketDecision.editorialArticle ??
+      buildLegacyEditorialArticle({
+        homeTeam: identity.homeTeam,
+        awayTeam: identity.awayTeam,
+        week: identity.week,
+        displayName,
+        analysisState,
+        sideSummary: formatSideSummary(sideTeam, sideLine),
+        totalSummary: formatTotalSummary(total.lean, total.totalLineAtOpinion),
+      }),
   };
 }
 

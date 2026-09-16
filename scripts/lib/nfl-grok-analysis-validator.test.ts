@@ -261,6 +261,82 @@ describe("validateGrokStageB", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("accepts and passes through a well-formed editorialArticle, marked isLegacyPreview: false", () => {
+    const result = validateGrokStageB(extractPayload(FIXTURE_STAGE_B_HOME_LEAN), STAGE_B_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.editorialArticle.isLegacyPreview).toBe(false);
+    expect(result.analysis.editorialArticle.headline.length).toBeGreaterThan(0);
+    expect(result.analysis.editorialArticle.matchupKeys.length).toBeGreaterThan(0);
+  });
+
+  it("rejects editorialArticle entirely missing from the payload", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const missing = { ...payload };
+    delete missing.editorialArticle;
+    const result = validateGrokStageB(missing, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.some((reason) => reason.includes("editorialArticle"))).toBe(true);
+  });
+
+  it("accepts a nullable section (e.g. gameScript: null) as a fully valid 'not enough evidence' state, never coercing it", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const article = { ...(payload.editorialArticle as Record<string, unknown>), gameScript: null, personnelAndAvailability: null };
+    const result = validateGrokStageB({ ...payload, editorialArticle: article }, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.editorialArticle.gameScript).toBeNull();
+    expect(result.analysis.editorialArticle.personnelAndAvailability).toBeNull();
+  });
+
+  it("rejects an editorialArticle missing required sections (matchupKeys)", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const article = { ...(payload.editorialArticle as Record<string, unknown>) };
+    delete article.matchupKeys;
+    const result = validateGrokStageB({ ...payload, editorialArticle: article }, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.some((reason) => reason.includes("matchupKeys"))).toBe(true);
+  });
+
+  it("rejects an editorialArticle whose prose exposes internal FACT:/INTERPRETATION: labels", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const article = { ...(payload.editorialArticle as Record<string, unknown>), headline: "FACT: this leaked from the internal schema" };
+    const result = validateGrokStageB({ ...payload, editorialArticle: article }, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.some((reason) => reason.includes("machine/internal language"))).toBe(true);
+  });
+
+  it("rejects an editorialArticle whose prose exposes a raw snake_case internal field name", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const article = { ...(payload.editorialArticle as Record<string, unknown>), openingRead: ["The def_pass_rush_win_rate favors the home team."] };
+    const result = validateGrokStageB({ ...payload, editorialArticle: article }, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.some((reason) => reason.includes("snake_case"))).toBe(true);
+  });
+
+  it("rejects an editorialArticle whose prose exposes a raw camelCase internal field name", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const article = { ...(payload.editorialArticle as Record<string, unknown>), finalWord: ["The team's offEpaPerPlay was the deciding factor."] };
+    const result = validateGrokStageB({ ...payload, editorialArticle: article }, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reasons.some((reason) => reason.includes("camelCase"))).toBe(true);
+  });
+
+  it("Stage B has structurally no field for a revised fair spread/projected total -- the editorial article cannot carry one either", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    expect(payload).not.toHaveProperty("prediction");
+    expect(payload).not.toHaveProperty("fairSpread");
+    expect(payload).not.toHaveProperty("projectedTotal");
+    const article = payload.editorialArticle as Record<string, unknown>;
+    expect(article).not.toHaveProperty("fairSpread");
+    expect(article).not.toHaveProperty("projectedTotal");
+  });
+
   // WU7.5 -- root cause of the WU7.4 CAR_ATL incident: the model was asked to echo
   // currentHomeLine/currentAwayLine/currentTotal and side.lineAtOpinion/total.totalAtOpinion back,
   // and inverted home/away in doing so. Neither is part of the raw contract anymore -- the engine

@@ -39,7 +39,7 @@ import { resolveChatGptAnalysisConfig, type ChatGptAnalysisConfig, type ChatGptA
 import { parseChatGptResponsesBody, parseChatGptUsageTelemetry } from "./nfl-chatgpt-research-parsing";
 import { MATCHUP_FACTOR_AREAS, type GrokStageAV1 } from "./nfl-grok-analysis-types";
 import type { SnapshotMarketRecord, SnapshotMarketState } from "./nfl-snapshot-types";
-import { buildValidTeamCodesLines, formatCurrentMarketLine, formatMarketDeltaLines, type AnalysisGameFacts, type PreviousBlindState } from "./nfl-grok-analysis-adapter";
+import { EDITORIAL_ARTICLE_INSTRUCTIONS, buildValidTeamCodesLines, editorialArticleSchemaExample, formatCurrentMarketLine, formatMarketDeltaLines, type AnalysisGameFacts, type PreviousBlindState } from "./nfl-grok-analysis-adapter";
 
 const RESPONSES_API_URL = "https://api.openai.com/v1/responses";
 
@@ -302,6 +302,7 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
     "Do not assume the sportsbook line is correct, and do not try to force disagreement with it either -- follow your locked projection and the market numbers where they lead.",
     "Confidence (1-10) reflects evidence quality + matchup clarity + market value + uncertainty -- a strong football advantage does NOT automatically mean high betting confidence.",
     "Never write 'sharp money', 'smart money', or 'professional action' unless you have independent evidence supporting that claim.",
+    ...EDITORIAL_ARTICLE_INSTRUCTIONS,
     "",
     "=== OUTPUT SCHEMA (JSON object) ===",
     "Respond with ONLY a single JSON object (no prose before or after, no markdown code fence). Do NOT include a `prediction`, `fairSpread`, or `projectedTotal` field -- those are already locked from Stage 1 and are not yours to resubmit here.",
@@ -319,6 +320,7 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
           totalEdgePoints: 0,
           interpretation: "<concise interpretation of your locked fair line vs the market>",
         },
+        editorialArticle: editorialArticleSchemaExample(game),
       },
       null,
       2

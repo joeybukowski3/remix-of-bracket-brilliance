@@ -171,6 +171,8 @@ export default defineConfig({
       "scripts/lib/nfl-grok-analysis-validator.test.ts",
       "scripts/lib/nfl-grok-analysis-adapter.test.ts",
       "scripts/lib/nfl-grok-analysis-pipeline.test.ts",
+      // WU7.9 -- long-form editorial article: deterministic legacy-article preview adapter.
+      "scripts/lib/nfl-legacy-editorial-adapter.test.ts",
       // WU4.5 -- true independent handicapper architecture: JKB fair-line
       // opinion sanitized out of AI input, mechanical market-edge computation.
       "scripts/lib/nfl-ai-context-sanitizer.test.ts",

@@ -98,6 +98,58 @@ export interface AiHandicapEvidenceQualitySummary {
   limitations: string[];
 }
 
+/** WU7.9 -- one named section of a long-form article: a heading plus one or more prose paragraphs. */
+export interface AiHandicapArticleSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+/** One "Matchup Keys" callout. `supportingStats` are prose-formatted (e.g. "41% pressure rate"), never a raw metric key/value pair. */
+export interface AiHandicapMatchupKey {
+  title: string;
+  analysis: string;
+  supportingStats?: string[];
+}
+
+/** One "What Could Flip the Handicap" swing factor. */
+export interface AiHandicapSwingFactor {
+  title: string;
+  analysis: string;
+}
+
+/**
+ * WU7.9 -- the finished long-form public handicap article. Produced by the
+ * SAME Stage B provider call that already writes side/total/marketAssessment
+ * (see scripts/lib/nfl-snapshot-types.ts's EditorialArticle) -- never a
+ * separate paid call, and structurally incapable of carrying a "revised"
+ * fair spread/projected total (this shape has no numeric field at all).
+ *
+ * Nullable sections are the analyst's own "not enough validated evidence to
+ * write this section" signal -- the presentation layer never fabricates
+ * prose to fill one in. `isLegacyPreview` is true only when this article was
+ * assembled by the deterministic legacy adapter
+ * (scripts/lib/nfl-legacy-editorial-adapter.ts) from a snapshot written
+ * before this schema existed, rather than authored by the provider in one
+ * pass -- the UI must disclose this, never present it as the provider's own
+ * finished long-form work.
+ */
+export interface AiHandicapEditorialArticle {
+  isLegacyPreview: boolean;
+  headline: string;
+  dek: string;
+  openingRead: string[];
+  awayOffenseVsHomeDefense: AiHandicapArticleSection | null;
+  homeOffenseVsAwayDefense: AiHandicapArticleSection | null;
+  trenchesAndGameControl: string[] | null;
+  personnelAndAvailability: string[] | null;
+  gameScript: string[] | null;
+  matchupKeys: AiHandicapMatchupKey[];
+  swingFactors: AiHandicapSwingFactor[];
+  sideAnalysis: string[] | null;
+  totalAnalysis: string[] | null;
+  finalWord: string[];
+}
+
 /** A handicapper with a resolved, analysis-bearing opinion. */
 export interface AiHandicapReady {
   status: "ok";
@@ -117,6 +169,8 @@ export interface AiHandicapReady {
   keyFactors: AiHandicapKeyFactor[];
   failureModes: AiHandicapFailureMode[];
   evidenceQualitySummary: AiHandicapEvidenceQualitySummary | null;
+  /** WU7.9 -- always present (the legacy adapter guarantees a fallback for pre-WU7.9 snapshots), so the UI never needs a third "no article" branch. */
+  editorial: AiHandicapEditorialArticle;
 }
 
 /**

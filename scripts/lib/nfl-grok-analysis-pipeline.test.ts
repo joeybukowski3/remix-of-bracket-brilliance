@@ -15,6 +15,7 @@ import {
   FIXTURE_ANALYSIS_CONTEXT_HASH,
   FIXTURE_ANALYSIS_CONTEXT_PACKET,
   FIXTURE_ANALYSIS_CURRENT_MARKET,
+  FIXTURE_EDITORIAL_ARTICLE,
   FIXTURE_PREDICTION,
   FIXTURE_PREVIOUS_ANALYSIS_STATE_HOME_LEAN,
   FIXTURE_STAGE_A_BASE,
@@ -367,6 +368,7 @@ describe("WU6.8 -- Stage B-only market repricing (combineRepricingStage / recons
       side: { lean: "home", team: "ind", lineAtOpinion: { homeLine: -2, awayLine: 2 }, confidence: 7, rationale: "repriced side", ...side },
       total: { lean: "over", totalAtOpinion: 44, confidence: 6, rationale: "repriced total", ...total },
       marketAssessment: { currentHomeLine: -2, currentAwayLine: 2, currentTotal: 44, sideEdgePoints: 1.5, totalEdgePoints: 1.5, interpretation: "repriced", ...overrides },
+      editorialArticle: FIXTURE_EDITORIAL_ARTICLE,
     };
   }
 
@@ -493,6 +495,7 @@ describe("WU6.8 -- DET_BUF regression: deterministic edge math for a real live-v
       side: { lean: "home", team: "buf", lineAtOpinion: { homeLine: -4, awayLine: 4 }, confidence: 6, rationale: "value on Buffalo" },
       total: { lean: "over", totalAtOpinion: 48, confidence: 5, rationale: "value on the over" },
       marketAssessment: { currentHomeLine: -4, currentAwayLine: 4, currentTotal: 48, sideEdgePoints: computeSideEdgePoints({ fairSpread: GROKOWSKI_FAIR_SPREAD }, HOME_TEAM, -4), totalEdgePoints: computeTotalEdgePoints({ projectedTotal: GROKOWSKI_PROJECTED_TOTAL }, 48), interpretation: "x" },
+      editorialArticle: FIXTURE_EDITORIAL_ARTICLE,
     };
     const repriced = combineRepricingStage({ previous, stageB, marketAtDecision: newMarketAtDecision });
 
