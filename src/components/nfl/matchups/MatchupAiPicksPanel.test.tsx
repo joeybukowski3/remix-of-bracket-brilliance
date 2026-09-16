@@ -267,3 +267,113 @@ describe("MatchupAiPicksPanel -- Full Analysis (one long-form article at a time,
     expect(screen.getAllByText("No handicap opinion available yet for this game.").length).toBeGreaterThan(0);
   });
 });
+
+describe("MatchupAiPicksPanel -- WU7.10 provider visual identity", () => {
+  it("stamps each summary card with a distinct data-provider hook, never the same for both", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    const grokCard = screen.getByTestId("ai-handicap-summary-grok");
+    const chatgptCard = screen.getByTestId("ai-handicap-summary-chatgpt");
+    expect(grokCard).toHaveAttribute("data-provider", "grok");
+    expect(chatgptCard).toHaveAttribute("data-provider", "chatgpt");
+  });
+
+  it("gives Grokowski and Chatty Ice visually distinct masthead background classes -- not the same treatment with different labels", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    const grokMasthead = screen.getByTestId("ai-handicap-masthead-grok");
+    const chatgptMasthead = screen.getByTestId("ai-handicap-masthead-chatgpt");
+    expect(grokMasthead.className).toContain("bg-slate-950");
+    expect(grokMasthead.className).toContain("border-red-600");
+    expect(chatgptMasthead.className).toContain("bg-blue-950");
+    expect(chatgptMasthead.className).toContain("border-cyan-400");
+    expect(grokMasthead.className).not.toBe(chatgptMasthead.className);
+  });
+
+  it("each summary card masthead carries the provider name and a fixed tagline, distinct per provider", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    const grokCard = screen.getByTestId("ai-handicap-summary-grok");
+    const chatgptCard = screen.getByTestId("ai-handicap-summary-chatgpt");
+    expect(within(grokCard).getByText("Grokowski")).toBeInTheDocument();
+    expect(within(grokCard).getByText("Independent Handicap")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("Chatty Ice")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("Independent Handicap")).toBeInTheDocument();
+  });
+
+  it("the unavailable-state summary card still carries its own provider masthead identity", () => {
+    const withMissingChatgpt: NflAiHandicapPresentation = {
+      ...BASE_PRESENTATION,
+      handicappers: {
+        ...BASE_PRESENTATION.handicappers,
+        chattyIce: { status: "analysis_unavailable", provider: "chatgpt", displayName: "Chatty Ice" },
+      },
+    };
+    render(<MatchupAiPicksPanel presentation={withMissingChatgpt} loading={false} error={null} />);
+    const chatgptCard = screen.getByTestId("ai-handicap-summary-chatgpt");
+    expect(chatgptCard).toHaveAttribute("data-provider", "chatgpt");
+    expect(within(chatgptCard).getByText("Chatty Ice")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("Independent Handicap")).toBeInTheDocument();
+  });
+
+  it("the active Full Analysis tab adopts the selected provider's masthead treatment, and only the active one", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    const grokTab = screen.getByRole("tab", { name: "Grokowski" });
+    const chatgptTab = screen.getByRole("tab", { name: "Chatty Ice" });
+    expect(grokTab).toHaveAttribute("aria-selected", "true");
+    expect(grokTab.className).toContain("bg-slate-950");
+    expect(chatgptTab).toHaveAttribute("aria-selected", "false");
+    expect(chatgptTab.className).not.toContain("bg-blue-950");
+
+    fireEvent.click(chatgptTab);
+    expect(chatgptTab).toHaveAttribute("aria-selected", "true");
+    expect(chatgptTab.className).toContain("bg-blue-950");
+    expect(grokTab).toHaveAttribute("aria-selected", "false");
+    expect(grokTab.className).not.toContain("bg-slate-950");
+  });
+
+  it("the full-analysis article masthead matches the active provider's identity (Grokowski by default)", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    const article = screen.getByTestId("ai-handicap-article-grok");
+    expect(article).toHaveAttribute("data-provider", "grok");
+    expect(within(article).getByText("NFL Game Analysis")).toBeInTheDocument();
+  });
+
+  it("switching to Chatty Ice swaps the article masthead identity to Chatty Ice, never mixing the two", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Chatty Ice" }));
+    const article = screen.getByTestId("ai-handicap-article-chatgpt");
+    expect(article).toHaveAttribute("data-provider", "chatgpt");
+    expect(screen.queryByTestId("ai-handicap-article-grok")).toBeNull();
+  });
+
+  it("WU7.10: exact CAR_ATL numeric values are unchanged by the visual restyle (presentation only, no analysis-logic change)", () => {
+    const carAtlPresentation: NflAiHandicapPresentation = {
+      ...BASE_PRESENTATION,
+      homeTeam: "atl",
+      awayTeam: "car",
+      handicappers: {
+        grokowski: { ...BASE_PRESENTATION.handicappers.grokowski, prediction: { fairSpread: { team: "atl", line: -1.5 }, projectedTotal: 42.5 }, market: { spread: { homeLine: 2.5, awayLine: -2.5 }, total: 43.5 }, edges: { sidePoints: 4, totalPoints: -1 }, side: { lean: "home", team: "atl", line: 2.5, confidence: 5, rationale: null }, total: { lean: "pass", line: null, confidence: null, rationale: null } },
+        chattyIce: { ...BASE_PRESENTATION.handicappers.chattyIce, prediction: { fairSpread: { team: "atl", line: -3 }, projectedTotal: 44 }, market: { spread: { homeLine: 2.5, awayLine: -2.5 }, total: 43.5 }, edges: { sidePoints: 5.5, totalPoints: 0.5 }, side: { lean: "home", team: "atl", line: 2.5, confidence: 5, rationale: null }, total: { lean: "over", line: 43.5, confidence: 5, rationale: null } },
+      },
+    };
+    render(<MatchupAiPicksPanel presentation={carAtlPresentation} loading={false} error={null} />);
+    const grokCard = screen.getByTestId("ai-handicap-summary-grok");
+    const chatgptCard = screen.getByTestId("ai-handicap-summary-chatgpt");
+
+    expect(within(grokCard).getByText("ATL -1.5")).toBeInTheDocument();
+    expect(within(grokCard).getAllByText("ATL +2.5").length).toBeGreaterThan(0); // baseline spread + side pick
+    expect(within(grokCard).getByText("4.0 pts ATL")).toBeInTheDocument();
+    expect(within(grokCard).getByText("42.5")).toBeInTheDocument();
+    expect(within(grokCard).getByText("43.5")).toBeInTheDocument();
+    expect(within(grokCard).getByText("1.0 pts Under")).toBeInTheDocument();
+    expect(within(grokCard).getByText("Confidence 5/10")).toBeInTheDocument();
+    expect(within(grokCard).getByText("PASS")).toBeInTheDocument();
+
+    expect(within(chatgptCard).getByText("ATL -3")).toBeInTheDocument();
+    expect(within(chatgptCard).getAllByText("ATL +2.5").length).toBeGreaterThan(0);
+    expect(within(chatgptCard).getByText("5.5 pts ATL")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("44")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("43.5")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("0.5 pts Over")).toBeInTheDocument();
+    expect(within(chatgptCard).getByText("Over 43.5")).toBeInTheDocument();
+    expect(within(chatgptCard).getAllByText("Confidence 5/10").length).toBeGreaterThan(0);
+  });
+});

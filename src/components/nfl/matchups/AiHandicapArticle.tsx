@@ -1,6 +1,7 @@
 import { useState } from "react";
 import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import type { AiHandicapReady } from "@/lib/nfl/aiHandicapPresentation";
+import { getProviderTheme } from "@/lib/nfl/aiHandicapProviderTheme";
 import {
   confidenceLabel,
   formatBaselineSpreadForTeam,
@@ -49,18 +50,32 @@ function BettingStat({ label, value }: { label: string; value: string }) {
 export default function AiHandicapArticle({ card, homeTeam, awayTeam }: { card: AiHandicapReady; homeTeam: string; awayTeam: string }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const { editorial } = card;
+  const theme = getProviderTheme(card.provider);
   const analyzedLabel = formatTimestamp(card.analyzedAt);
   const sideIsPass = !isPlayLean(card.side.lean);
   const totalIsPass = !isPlayLean(card.total.lean);
 
   return (
-    <article data-testid={`ai-handicap-article-${card.provider}`} className="mx-auto w-full max-w-[820px] space-y-6 px-1 py-1">
+    <article data-testid={`ai-handicap-article-${card.provider}`} data-provider={card.provider} className="mx-auto w-full max-w-[820px] space-y-6">
       {editorial.isLegacyPreview && (
-        <p className="rounded border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+        <p className="mx-1 rounded border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
           Layout preview -- this article was assembled from {card.displayName}&apos;s pre-editorial analysis, not written in this format by the model.
         </p>
       )}
 
+      {/*
+        WU7.10 -- article provider masthead: a strong, provider-branded eyebrow
+        block before the headline, so the reading surface starts by making
+        unmistakably clear which analyst wrote this article. The article body
+        itself stays a clean, uncolored editorial surface below this point --
+        no per-section coloring past the masthead.
+      */}
+      <div className={`${theme.headerBg} ${theme.headerAccentBorder} rounded-t-lg px-4 py-3`}>
+        <p className={`text-base font-black leading-tight ${theme.headerText}`}>{theme.displayName}</p>
+        <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${theme.headerSubtext}`}>NFL Game Analysis</p>
+      </div>
+
+      <div className="space-y-6 px-1">
       <header className="space-y-2 border-b border-slate-200 pb-4">
         <h2 className="text-xl font-black leading-tight text-slate-900 sm:text-2xl">{editorial.headline}</h2>
         <p className="text-[14px] leading-6 text-slate-600">{editorial.dek}</p>
@@ -268,6 +283,7 @@ export default function AiHandicapArticle({ card, homeTeam, awayTeam }: { card: 
           </MatchupCollapsibleGroup>
         </section>
       )}
+      </div>
     </article>
   );
 }
