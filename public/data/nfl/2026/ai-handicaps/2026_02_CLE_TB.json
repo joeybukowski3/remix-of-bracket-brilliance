@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "nfl-ai-handicap-presentation-v1",
+  "gameId": "2026_02_CLE_TB",
+  "season": 2026,
+  "week": 2,
+  "kickoff": "2026-09-20T17:00:00.000Z",
+  "homeTeam": "tb",
+  "awayTeam": "cle",
+  "generatedAt": "2026-09-15T20:34:23.021Z",
+  "handicappers": {
+    "grokowski": {
+      "status": "ok",
+      "provider": "grok",
+      "displayName": "Grokowski",
+      "analysisSnapshotId": "grok-2026_02_CLE_TB-daily_update-f5f0f65c9bc88d5a",
+      "analyzedAt": "2026-09-15T20:31:40.932Z",
+      "prediction": {
+        "fairSpread": {
+          "line": -5.5,
+          "team": "tb"
+        },
+        "projectedTotal": 43.5
+      },
+      "market": {
+        "spread": {
+          "homeLine": -8.5,
+          "awayLine": 8.5
+        },
+        "total": 40.5
+      },
+      "edges": {
+        "sidePoints": -3,
+        "totalPoints": 3
+      },
+      "side": {
+        "lean": "away",
+        "team": "cle",
+        "line": 8.5,
+        "confidence": 6,
+        "rationale": "Locked fair is TB -5.5 vs market TB -8.5; the extra 3 points of home favorite make CLE +8.5 the value side on a modest-home-win script."
+      },
+      "total": {
+        "lean": "over",
+        "line": 40.5,
+        "confidence": 5,
+        "rationale": "Locked 43.5 is 3 points above the 40.5 market, so the over is the directional lean, with only moderate conviction given scoring-constraint uncertainty."
+      },
+      "centralThesis": "Tampa Bay should win at home on the back of a large prior-season offensive efficiency gap and designated passing and rushing matchup edges, while Cleveland’s strongly negative 2025 offensive EPA, locked-in Watson start, and Sampson absence cap away scoring. The game scripts as a modest home win with a compressed total because Cleveland’s offense is the primary scoring constraint and Tampa Bay’s own pass-rush win rate was weak.",
+      "keyFactors": [
+        {
+          "area": "quarterback",
+          "finding": "FACT: Todd Monken said he anticipates Deshaun Watson remaining the Week 2 starter; Dillon Gabriel is on IR with a back injury and not expected until around Week 5. No Tampa Bay quarterback evidence was supplied. INTERPRETATION: Cleveland is locked into Watson with no near-term alternative, so any 2025 offensive inefficiency that was QB-driven is more likely to persist than to be schemed around this week.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "passing",
+          "finding": "FACT: Prior-season off.epaPerPlay is 0.005688207621997466 (home) vs -0.176094912225762 (away), epa_differential 0.18178311984775947 favoring home; off.yardsPerPlay is 5.34 vs 4.66; matchup.offenseVsDefense.passing is home. Jalen McMillan is questionable (knee). INTERPRETATION: The passing-game efficiency gap is large enough to be the central scoring driver if it carries into 2026 Week 2, with McMillan’s status as a secondary subtractor on the home side rather than a reason to flip the matchup.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "rushing",
+          "finding": "FACT: matchup.offenseVsDefense.rushing is home. Dylan Sampson is Out (knee) with a return targeted around Week 6; Reheim Sanders has taken Cleveland’s change-of-pace/passing-down role. Sean Tucker is questionable (hamstring). Both clubs had off_run_block_win_rate 70. INTERPRETATION: Cleveland’s already-weaker prior-season offense loses a featured runner, which further limits explosive play diversity; Tucker’s questionability is a real but lesser offset because the designated rushing matchup still sits with the home offense.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "protection",
+          "finding": "FACT: Prior-season off_pass_block_win_rate is 64 (home) vs 63 (away). Teven Jenkins (back) and Parker Brailsford (thumb) are questionable for Cleveland; Justin Skule (oblique) is questionable for Tampa Bay. INTERPRETATION: Baseline pass protection is nearly even, so Week 2 availability of those interior/tackle pieces matters more than the 1-point composite trench edge; Cleveland’s two questionable interior starters are the larger structural risk to an already inefficient offense.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "pass_rush",
+          "finding": "FACT: Prior-season def_pass_rush_win_rate is 40 (home) vs 46 (away). INTERPRETATION: This is the clearest football path for Cleveland to keep the game close—winning the line of scrimmage as a rusher against a home offense that was only barely positive in EPA—rather than through its own 2025 passing efficiency.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "run_defense",
+          "finding": "FACT: Prior-season def_run_stop_win_rate is 30 (home) vs 34 (away); trenches_advantage_team is home with trenches_differential 1. INTERPRETATION: Both run defenses graded poorly, so neither side should be trusted to stonewall the run; the tiny composite home trench edge should not be read as a decisive run-defense advantage.",
+          "supports": "mixed",
+          "importance": "moderate"
+        },
+        {
+          "area": "coverage",
+          "finding": "FACT: Jacob Parrish is questionable after a Week 1 back sprain. No coverage efficiency metrics were supplied. INTERPRETATION: Any home secondary thinning is a limited, unquantified leak; it does not outweigh the supplied passing-matchup designation for the home offense.",
+          "supports": "away",
+          "importance": "minor"
+        },
+        {
+          "area": "personnel",
+          "finding": "FACT: Cleveland’s confirmed Out is Sampson; Gabriel is on IR. Tampa Bay’s listed issues are all questionable (McMillan, Tucker, Skule, Parrish). Sanders is already in the passing-down RB role. INTERPRETATION: Cleveland’s absences are more certain and more central to offense; Tampa Bay’s list is broader but unresolved, so the personnel edge is home unless several Buccaneers questionables actually sit.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "coaching",
+          "finding": "FACT: coaching ratings, coaches, and coaching differential are SOURCE_UNAVAILABLE; the only coaching content is Monken’s Watson-start comment. INTERPRETATION: No independent coaching edge can be claimed; coaching enters only as confirmation of Cleveland’s QB plan.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "situational",
+          "finding": "FACT: restDifferential 0, divisionalGame false, revengeGame false; kickoff at Raymond James Stadium, isDome false. Power ratings are unknown. INTERPRETATION: No rest or rivalry overlay; standard home venue without a dome, so home-field is a modest, generic overlay on the efficiency gap rather than a special situational spike.",
+          "supports": "home",
+          "importance": "minor"
+        },
+        {
+          "area": "weather",
+          "finding": "FACT: weather status is not_available; venue is not a dome. INTERPRETATION: No usable weather adjustment; outdoor conditions cannot be treated as a scoring or spread factor from the supplied data.",
+          "supports": "neutral",
+          "importance": "minor"
+        }
+      ],
+      "failureModes": [
+        {
+          "scenario": "Watson’s Cleveland offense plays far above its prior-season off.epaPerPlay of -0.176094912225762 and 4.66 yards per play, including if Jenkins and Brailsford both play and stabilize protection.",
+          "whyItMatters": "The thesis treats Cleveland’s 2025 offensive inefficiency plus the Watson lock-in as the main reason Tampa Bay should win by multiple scores and why the total stays compressed."
+        },
+        {
+          "scenario": "McMillan, Tucker, Skule, and Parrish all sit, and Cleveland’s 46 def_pass_rush_win_rate actually disrupts Tampa Bay’s barely positive 2025 offense.",
+          "whyItMatters": "That combination removes the home skill/OL/coverage margin and activates the one trench split that favors Cleveland, which is the explicit path to a one-score or Cleveland win."
+        },
+        {
+          "scenario": "Cleveland’s remaining run game, with Sanders in the passing-down role, consistently exploits Tampa Bay’s 30 def_run_stop_win_rate even without Sampson.",
+          "whyItMatters": "A functional Browns ground game would both raise Cleveland’s scoring floor and shorten the game, breaking the modest-home-win plus compressed-total script."
+        }
+      ],
+      "evidenceQualitySummary": {
+        "strengths": [
+          "Full prior-season offensive EPA and yards-per-play are available with an explicit home/away differential.",
+          "Trench win-rate components are split by pass block, run block, pass rush, and run stop rather than only a composite.",
+          "Passing and rushing matchup designations are supplied, and QB/RB availability has named-source evidence."
+        ],
+        "limitations": [
+          "Power ratings are unknown and coaching ratings are SOURCE_UNAVAILABLE.",
+          "No defensive EPA, coverage metrics, or Week 1 2026 box-score production were supplied; 2025 offense is being used as a 2026 Week 2 proxy.",
+          "Injury items are mostly single-source and tagged stale/aging; several key Tampa Bay players are only questionable, not confirmed out or active.",
+          "Weather is not available for an outdoor, non-dome site."
+        ]
+      }
+    },
+    "chattyIce": {
+      "status": "ok",
+      "provider": "chatgpt",
+      "displayName": "Chatty Ice",
+      "analysisSnapshotId": "chatgpt-2026_02_CLE_TB-daily_update-17d1f8f1827d7f76",
+      "analyzedAt": "2026-09-15T20:33:57.462Z",
+      "prediction": {
+        "fairSpread": {
+          "line": -4,
+          "team": "tb"
+        },
+        "projectedTotal": 43.5
+      },
+      "market": {
+        "spread": {
+          "homeLine": -8.5,
+          "awayLine": 8.5
+        },
+        "total": 40.5
+      },
+      "edges": {
+        "sidePoints": -4.5,
+        "totalPoints": 3
+      },
+      "side": {
+        "lean": "away",
+        "team": "cle",
+        "line": 8.5,
+        "confidence": 7,
+        "rationale": "Tampa Bay remains the more likely winner, but the market spread is substantially higher than the locked fair line, creating value on Cleveland plus the points."
+      },
+      "total": {
+        "lean": "over",
+        "line": 40.5,
+        "confidence": 6,
+        "rationale": "The market total is below the locked projection, providing a modest over edge despite quarterback and offensive-line uncertainty."
+      },
+      "centralThesis": "Tampa Bay has the more reliable offensive profile, with clear prior-season advantages in EPA per play, yards per play, and both passing and rushing matchup indicators. Cleveland's stronger defensive trench metrics can keep the game competitive, but quarterback uncertainty, possible offensive-line availability issues, and a limited offensive baseline make Tampa Bay the more likely winner in a moderate-scoring game.",
+      "keyFactors": [
+        {
+          "area": "quarterback",
+          "finding": "Fact: Cleveland's coach anticipated Deshaun Watson would start, but that evidence is stale. Interpretation: Cleveland's quarterback situation carries more uncertainty than Tampa Bay's offensive setup, lowering the Browns' offensive floor.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "passing",
+          "finding": "Fact: Tampa Bay held the prior-season EPA-per-play advantage, and the matchup data favors Tampa Bay in passing. Interpretation: Tampa Bay is better positioned to sustain drives through the air against Cleveland.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "rushing",
+          "finding": "Fact: Tampa Bay had the higher prior-season yards-per-play figure, and the matchup data favors Tampa Bay in rushing. Interpretation: Tampa Bay's more efficient overall offense should face the easier path to staying ahead of schedule.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "protection",
+          "finding": "Fact: Tampa Bay's prior-season offensive pass-block and run-block rates were close to Cleveland's, while Cleveland had a guard injury in Week 1 and an entering-Week-1 report listed center Parker Brailsford as questionable and guard Teven Jenkins out. Interpretation: Cleveland's interior availability creates more protection volatility.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "pass_rush",
+          "finding": "Fact: Cleveland's prior-season defensive pass-rush win rate exceeded Tampa Bay's. Interpretation: Cleveland's pressure ability is its clearest path to disrupting Tampa Bay's passing advantage and preventing the home offense from operating efficiently.",
+          "supports": "away",
+          "importance": "major"
+        },
+        {
+          "area": "run_defense",
+          "finding": "Fact: Cleveland also posted the better prior-season defensive run-stop rate, while both teams had the same listed offensive run-block rate. Interpretation: Cleveland can limit Tampa Bay's rushing efficiency, which helps keep the projected scoring environment contained.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "personnel",
+          "finding": "Fact: Tampa Bay expected Emeka Egbuka to be a full go, while Jalen McMillan remained doubtful and Ted Hurst was identified as a possible replacement for increased receiver work. Cleveland's Dylan Sampson was still being evaluated after a knee injury. Interpretation: Tampa Bay has some receiver-depth uncertainty, while Cleveland may also face backfield availability risk.",
+          "supports": "mixed",
+          "importance": "moderate"
+        },
+        {
+          "area": "coaching",
+          "finding": "Fact: Coaching ratings and coach context are unavailable. Cleveland planned to simplify offensive calls and improve pre-snap communication. Interpretation: The stated adjustment could reduce Cleveland's operational errors, but there is insufficient verified coaching information to assign a meaningful coaching edge.",
+          "supports": "mixed",
+          "importance": "minor"
+        },
+        {
+          "area": "situational",
+          "finding": "Fact: Rest is even, the game is nondivisional, and no revenge-game designation is supplied. Interpretation: There is no meaningful scheduling adjustment away from the baseline matchup.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "weather",
+          "finding": "Fact: No internal weather data is available for the outdoor venue. Interpretation: I make no deterministic weather adjustment to the scoring projection.",
+          "supports": "neutral",
+          "importance": "minor"
+        }
+      ],
+      "failureModes": [
+        {
+          "scenario": "Cleveland's defensive pass rush consistently wins early downs and forces Tampa Bay into long-yardage situations.",
+          "whyItMatters": "That would neutralize Tampa Bay's passing and offensive-efficiency advantages, producing a lower-scoring game and materially narrowing the home-team margin."
+        },
+        {
+          "scenario": "Deshaun Watson plays efficiently while Cleveland's simplified pre-snap operation avoids the communication problems anticipated by the coaching staff.",
+          "whyItMatters": "A competent Cleveland passing performance would raise the Browns' offensive floor and could make Tampa Bay's projected four-point edge too large."
+        },
+        {
+          "scenario": "Cleveland's interior offensive line is fully available and Tampa Bay's receiver absences materially reduce its passing-game depth.",
+          "whyItMatters": "That combination would weaken Tampa Bay's matchup advantage while removing the protection and personnel concerns supporting the home-team projection."
+        }
+      ],
+      "evidenceQualitySummary": {
+        "strengths": [
+          "The prior-season EPA, yards-per-play, offense-versus-defense, and trench data provide multiple independent indicators favoring Tampa Bay's offense while identifying Cleveland's defensive strengths.",
+          "Availability evidence comes from verified official-team or injury-report sources, even though much of it is stale."
+        ],
+        "limitations": [
+          "JKB power ratings are unavailable.",
+          "Coaching ratings and context are unavailable.",
+          "Weather is unavailable for the outdoor venue.",
+          "The quarterback and injury evidence is stale or tied to earlier reporting windows, so final Week 2 availability may differ.",
+          "No current-season performance sample is provided beyond the referenced Week 1 availability context."
+        ]
+      }
+    }
+  }
+}

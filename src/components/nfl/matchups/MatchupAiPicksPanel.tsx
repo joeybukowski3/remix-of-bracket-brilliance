@@ -45,8 +45,13 @@ function formatFairSpread(fairSpread: { team: string; line: number } | null): st
   return `${fairSpread.team.toUpperCase()} ${signed}`;
 }
 
-/** Market spread shown for the SAME team as the handicapper's fair line -- home line negated when the fair-line team is the away team. */
-function formatMarketSpreadForTeam(fairSpread: { team: string; line: number } | null, homeTeam: string, market: { homeLine: number | null; awayLine: number | null }): string {
+/**
+ * WU7.7 -- the FROZEN baseline spread (the sportsbook line in effect when this
+ * handicapper's opinion was formed, never today's live line), shown for the
+ * SAME team as the handicapper's fair line -- home line negated when the
+ * fair-line team is the away team.
+ */
+function formatBaselineSpreadForTeam(fairSpread: { team: string; line: number } | null, homeTeam: string, market: { homeLine: number | null; awayLine: number | null }): string {
   if (!fairSpread) return NA;
   const line = fairSpread.team === homeTeam ? market.homeLine : market.awayLine;
   if (line == null) return NA;
@@ -54,7 +59,8 @@ function formatMarketSpreadForTeam(fairSpread: { team: string; line: number } | 
   return `${fairSpread.team.toUpperCase()} ${signed}`;
 }
 
-function formatMarketTotal(total: number | null): string {
+/** WU7.7 -- the FROZEN baseline total (never today's live total). */
+function formatBaselineTotal(total: number | null): string {
   return total == null ? NA : `${total}`;
 }
 
@@ -67,7 +73,15 @@ function formatSideEdge(sidePoints: number | null, homeTeam: string, awayTeam: s
   return `${Math.abs(sidePoints).toFixed(1)} pts ${team.toUpperCase()}`;
 }
 
-/** Small labeled stat -- used for the fair line / market / projected total row that displays even when the handicapper is passing. */
+/** WU7.7 -- "1.5 pts Over"/"1.5 pts Under" style label, mirroring formatSideEdge for the total. `totalPoints` is over-oriented (positive = value on the over). */
+function formatTotalEdge(totalPoints: number | null): string {
+  if (totalPoints == null) return NA;
+  if (totalPoints === 0) return "No edge";
+  const direction = totalPoints > 0 ? "Over" : "Under";
+  return `${Math.abs(totalPoints).toFixed(1)} pts ${direction}`;
+}
+
+/** Small labeled stat -- used for the fair spread / baseline / projected total row that displays even when the handicapper is passing. */
 function PredictionStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -135,12 +149,20 @@ function HandicapCard({ card, homeTeam, awayTeam }: { card: AiHandicapCard; home
       </div>
 
       <div className="space-y-2 px-3 py-3 sm:px-4">
-        <div className="grid grid-cols-2 gap-2 rounded-md border border-slate-200 bg-white px-3 py-2.5 sm:grid-cols-5">
-          <PredictionStat label="Fair line" value={formatFairSpread(card.prediction?.fairSpread ?? null)} />
-          <PredictionStat label="Market" value={formatMarketSpreadForTeam(card.prediction?.fairSpread ?? null, homeTeam, card.market.spread)} />
-          <PredictionStat label="Edge" value={formatSideEdge(card.edges.sidePoints, homeTeam, awayTeam)} />
-          <PredictionStat label="Projected total" value={card.prediction ? `${card.prediction.projectedTotal}` : NA} />
-          <PredictionStat label="Market total" value={formatMarketTotal(card.market.total)} />
+        <div className="rounded-md border border-slate-200 bg-white px-3 py-2.5">
+          {analyzedLabel && (
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+              Analysis Baseline &middot; As of {analyzedLabel}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <PredictionStat label="Fair Spread" value={formatFairSpread(card.prediction?.fairSpread ?? null)} />
+            <PredictionStat label="Baseline Spread" value={formatBaselineSpreadForTeam(card.prediction?.fairSpread ?? null, homeTeam, card.market.spread)} />
+            <PredictionStat label="Edge" value={formatSideEdge(card.edges.sidePoints, homeTeam, awayTeam)} />
+            <PredictionStat label="Projected Total" value={card.prediction ? `${card.prediction.projectedTotal}` : NA} />
+            <PredictionStat label="Baseline Total" value={formatBaselineTotal(card.market.total)} />
+            <PredictionStat label="Total Edge" value={formatTotalEdge(card.edges.totalPoints)} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -262,9 +284,10 @@ export default function MatchupAiPicksPanel({
   return (
     <div className="space-y-2">
       <p className="text-[11px] leading-4 text-slate-500">
-        Two independent AI handicappers form their own opinions from public evidence and the current market line.
-        They never see each other&apos;s work, and nothing on this page averages, compares, or declares a winner
-        between them.
+        Two independent AI handicappers form their own opinions from public evidence and the sportsbook line in
+        effect at analysis time. That baseline is frozen to whichever run produced it -- it will not track today&apos;s
+        live market. They never see each other&apos;s work, and nothing on this page averages, compares, or declares
+        a winner between them.
       </p>
       <div className="grid grid-cols-1 gap-3 @container sm:grid-cols-2">
         <HandicapCard card={presentation.handicappers.grokowski} homeTeam={presentation.homeTeam} awayTeam={presentation.awayTeam} />
