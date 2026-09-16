@@ -36,7 +36,6 @@ import {
 import type { NflProjectionMarket } from "@/lib/nfl/props/types/projectionOutput";
 
 const SEASON = 2026;
-const WEEK_OPTIONS = [1] as const;
 
 const MARKET_TABS: readonly NflProjectionMarket[] = ["passing", "rushing", "receiving"];
 const MARKET_LABEL: Record<NflProjectionMarket, string> = { passing: "Passing", rushing: "Rushing", receiving: "Receiving" };
@@ -68,7 +67,6 @@ export default function NFLYardagePropsReview() {
     path: "/nfl/yardage-props-review",
   });
 
-  const [week, setWeek] = useState<(typeof WEEK_OPTIONS)[number]>(1);
   const [market, setMarket] = useState<NflProjectionMarket>("passing");
   const [filters, setFilters] = useState<NflYardageReviewFilters>(defaultFiltersForViewport);
   // Default sort is highest projection first, on initial load and after every market change; a user
@@ -81,6 +79,7 @@ export default function NFLYardagePropsReview() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const projections = useNflYardageProjections(SEASON);
+  const week = projections.data?.week ?? null;
   const marketData = useNflYardageMarket();
   const altMarketData = useNflYardageAltMarket();
   const opponentContextData = useNflYardageOpponentContext();
@@ -195,7 +194,7 @@ export default function NFLYardagePropsReview() {
         description="A read-only preview of current-week passing, rushing and receiving yardage projections, shown alongside any matching sportsbook line. This is research context, not a betting recommendation."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <NflFilterChips label="Week" options={WEEK_OPTIONS} value={week} onChange={setWeek} formatOption={(w) => `Week ${w}`} />
+          <span className="text-xs font-semibold">{week === null ? "Current week" : `Week ${week}`}</span>
           {/* Market stays a chip group on desktop; mobile gets its own dedicated prop-type row below (NflYardageMobilePropTypeRow). */}
           <div className="hidden md:flex md:items-center">
             <NflFilterChips label="Market" options={MARKET_TABS} value={market} onChange={handleMarketChange} formatOption={(m) => MARKET_LABEL[m]} />

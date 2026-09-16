@@ -19,8 +19,10 @@ models or duplicate their formulas.
   [`src/lib/nfl/props/`](../../src/lib/nfl/props/) and its durable phase
   architecture note [`README.md`](../../src/lib/nfl/props/README.md).
 
-The committed page is currently fixed to season 2026 and exposes Week 1 as its
-only week option. Passing, rushing, and receiving are separate market tabs.
+The page uses season 2026 and resolves the current week from the canonical NFL
+schedule through `useCurrentNflWeek` / `resolveNflWeekSelection`. The loader
+rejects a projection artifact or row targeting another season/week and shows
+an explicit unavailable state. Passing, rushing, and receiving are separate market tabs.
 Filters cover game, position where applicable, Matchup Score band, and line
 availability; sorting is presentation-only. Desktop uses a table and compact
 layouts use cards.
@@ -52,6 +54,13 @@ The scheduled producers are
 and [`nfl-yardage-market.yml`](../../.github/workflows/nfl-yardage-market.yml).
 They are production-writing workflows; ordinary feature verification must not
 trigger them.
+
+Core yardage publication occurs after its complete dependency sequence,
+projection validation and starter-cohort generation, before DFS lineup-context
+generation. DFS has a separate generation, validation and commit/push phase.
+Its failure leaves valid core caches, team opportunity, totals, yardage and
+starter artifacts already published; actual core dependency failures still stop
+core publication. A failed DFS generation or validation never stages its artifact.
 
 ## Freshness and current-week behavior
 

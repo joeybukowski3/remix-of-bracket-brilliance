@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertFantasySlateCoverage } from "../src/lib/fantasy/weekly/projections/production/slateCoverage.ts";
 import {
   weeklyFantasyProjectionProductionArtifactSchema,
   assertProductionArtifactRankInvariants,
@@ -43,6 +44,8 @@ function main(): void {
   const rowCounts = Object.fromEntries((["QB", "RB", "WR", "TE"] as const).map((p) => [p, parsed.rows[p].length]));
   const totalRows = Object.values(rowCounts).reduce((a, b) => a + b, 0);
   if (totalRows === 0) throw new Error("Artifact has zero rows across all positions.");
+  const schedule = JSON.parse(readFileSync(join(ROOT, "public", "data", "nfl", String(season), "games.json"), "utf8"));
+  assertFantasySlateCoverage(Object.values(parsed.rows).flat(), schedule.games, season, week);
 
   console.log(JSON.stringify({ status: "valid", path, season, week, rowCounts }, null, 2));
 }

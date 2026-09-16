@@ -7,10 +7,10 @@ run-name: NFL Yardage Projections • ${{ github.event_name }} • ${{ github.re
 # matchup-market artifact itself before regenerating
 # public/data/nfl/{season}/yardage-projections.json, rather than depending on
 # nfl-matchup-market.yml (a separate, independently-scheduled workflow) to
-# have already run. Every step below runs WITHOUT continue-on-error: a
+# have already run. Every core step below runs WITHOUT continue-on-error: a
 # failure in any prerequisite step stops the job before the commit step is
 # ever reached, so last-known-good projections are never overwritten by a
-# partial or degraded refresh. This mirrors -- never loosens -- the
+# partial or degraded refresh. DFS runs after core publication. This mirrors -- never loosens -- the
 # fail-closed behavior each underlying script already implements on its own
 # (see the scripts themselves for their individual fail-closed contracts).
 #
@@ -261,50 +261,6 @@ jobs:
       - name: Generate NFL starter cohort
         run: npm run nfl:starter-cohort -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
-      # Regenerate the DFS lineup-context artifact
-      # (public/data/nfl/dfs/<season>/week-<NN>.json) on this same fresh
-      # runner, AFTER every input it reads has been refreshed above: the
-      # depth-chart + weekly-roster caches (steps 1-2), matchup-market (step
-      # 3), team-totals view, and this run's own current-week yardage
-      # projections (step 4). Without this step the artifact was only ever
-      # produced by a manual local run, so its embedded depth-chart / usage
-      # / implied-market snapshots aged past the 48h freshness windows in
-      # optimizerEligibilityV1 / dstMatchupV1 within ~2 days -- after which
-      # every uploaded slate degraded to "0 optimizer-eligible offense / 0
-      # DST with usable matchup context" while the board still rendered
-      # (see src/lib/nfl/dfs/optimizer/realSlateLineupContext.test.ts).
-      # Same fail-closed convention as every step above: the generator exits
-      # non-zero on any source target/as-of mismatch, stopping the job
-      # before the commit step and leaving the last-known-good artifact in
-      # place.
-      - name: Regenerate NFL DFS lineup-context artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          week_padded="$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
-          npm run nfl:dfs-lineup-context -- \
-            --season=${{ steps.current-week.outputs.season }} \
-            --week=${{ steps.current-week.outputs.week }} \
-            --output="public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-${week_padded}.json"
-
-      # Independently re-parse the artifact against its published schema and
-      # assert it carries role + defense evidence, before it can be staged.
-      - name: Validate generated DFS lineup-context artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          week_padded="$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
-          node -e "
-            const { readFileSync } = require('fs');
-            const file = 'public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-' + '${week_padded}' + '.json';
-            const parsed = JSON.parse(readFileSync(file, 'utf8'));
-            if (parsed.schemaVersion !== 'nfl-dfs-lineup-context-v1') throw new Error(file + ' unexpected schemaVersion ' + parsed.schemaVersion);
-            if (parsed.season !== ${{ steps.current-week.outputs.season }} || parsed.week !== ${{ steps.current-week.outputs.week }}) throw new Error(file + ' season/week mismatch');
-            if (!Array.isArray(parsed.roles) || parsed.roles.length === 0) throw new Error(file + ' has no role evidence');
-            if (!Array.isArray(parsed.defenses) || parsed.defenses.length === 0) throw new Error(file + ' has no defense evidence');
-            console.log('Generated NFL DFS lineup-context artifact is valid (' + parsed.roles.length + ' roles, ' + parsed.defenses.length + ' defenses).');
-          "
-
       # Defense-in-depth only, NOT a real no-op/commit-skip mechanism: both
       # matchup-market.json and yardage-projections.json write a fresh
       # provenance/generatedAt timestamp on every successful run regardless
@@ -329,7 +285,6 @@ jobs:
             'public/data/nfl/${{ steps.current-week.outputs.season }}/team-opportunity.json' \
             'public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json' \
             'public/data/nfl/team-totals.json' \
-            ':(glob)public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-[0-9][0-9].json' \
             ':(glob)data/nfl/predictions/${{ steps.current-week.outputs.season }}/[0-9][0-9]/nfl-*.jsonl' \
             ':(glob)data/nfl/predictions/manifests/sources/[0-9a-f]*.json' \
             ':(glob)data/nfl/predictions/manifests/fitted-models/[0-9a-f]*.json' \
@@ -382,16 +337,6 @@ jobs:
             public/data/nfl/${{ steps.current-week.outputs.season }}/team-opportunity.json \
             public/data/nfl/${{ steps.current-week.outputs.season }}/yardage-projections.json \
             public/data/nfl/team-totals.json
-
-          # DFS lineup-context: guarded the same way as the scoring-support
-          # cache below -- the week-NN.json path is week-specific, so stage it
-          # only when this run actually produced it.
-          dfs_lineup_context="public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-$(printf '%02d' "${{ steps.current-week.outputs.week }}").json"
-          if [ -f "$dfs_lineup_context" ]; then
-            git add -- "$dfs_lineup_context"
-          else
-            echo "NFL DFS lineup-context: no file at $dfs_lineup_context -- not staging."
-          fi
 
           # Scoring-support cache: guarded (not part of the unconditional git
           # add above) because the current season's file will not exist yet
@@ -458,3 +403,74 @@ jobs:
           fi
 
           echo "NFL yardage projections pushed successfully to ${target_branch}."
+
+      # Regenerate the DFS lineup-context artifact
+      # (public/data/nfl/dfs/<season>/week-<NN>.json) on this same fresh
+      # runner, AFTER every input it reads has been refreshed above: the
+      # depth-chart + weekly-roster caches (steps 1-2), matchup-market (step
+      # 3), team-totals view, and this run's own current-week yardage
+      # projections (step 4). Without this step the artifact was only ever
+      # produced by a manual local run, so its embedded depth-chart / usage
+      # / implied-market snapshots aged past the 48h freshness windows in
+      # optimizerEligibilityV1 / dstMatchupV1 within ~2 days -- after which
+      # every uploaded slate degraded to "0 optimizer-eligible offense / 0
+      # DST with usable matchup context" while the board still rendered
+      # (see src/lib/nfl/dfs/optimizer/realSlateLineupContext.test.ts).
+      # Core data is already published. A derivative failure stops only DFS
+      # publication; its own generation/validation remain fail-closed.
+      - name: Regenerate NFL DFS lineup-context artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          week_padded="$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
+          npm run nfl:dfs-lineup-context -- \
+            --season=${{ steps.current-week.outputs.season }} \
+            --week=${{ steps.current-week.outputs.week }} \
+            --output="public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-${week_padded}.json"
+
+      # Independently re-parse the artifact against its published schema and
+      # assert it carries role + defense evidence, before it can be staged.
+      - name: Validate generated DFS lineup-context artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          week_padded="$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
+          node -e "
+            const { readFileSync } = require('fs');
+            const file = 'public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-' + '${week_padded}' + '.json';
+            const parsed = JSON.parse(readFileSync(file, 'utf8'));
+            if (parsed.schemaVersion !== 'nfl-dfs-lineup-context-v1') throw new Error(file + ' unexpected schemaVersion ' + parsed.schemaVersion);
+            if (parsed.season !== ${{ steps.current-week.outputs.season }} || parsed.week !== ${{ steps.current-week.outputs.week }}) throw new Error(file + ' season/week mismatch');
+            if (!Array.isArray(parsed.roles) || parsed.roles.length === 0) throw new Error(file + ' has no role evidence');
+            if (!Array.isArray(parsed.defenses) || parsed.defenses.length === 0) throw new Error(file + ' has no defense evidence');
+            console.log('Generated NFL DFS lineup-context artifact is valid (' + parsed.roles.length + ' roles, ' + parsed.defenses.length + ' defenses).');
+          "
+
+      - name: Commit and push validated DFS derivative
+        shell: bash
+        run: |
+          set -euo pipefail
+          target_branch="${{ steps.target-branch.outputs.branch }}"
+          test "$(git branch --show-current)" = "$target_branch"
+          dfs_file="public/data/nfl/dfs/${{ steps.current-week.outputs.season }}/week-$(printf '%02d' "${{ steps.current-week.outputs.week }}").json"
+          git add -- "$dfs_file"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "data(nfl): refresh validated DFS lineup context"
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5 -> ${target_branch}"
+            git fetch origin "$target_branch"
+            if ! git rebase "origin/$target_branch"; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin "HEAD:$target_branch"; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — NFL yardage projections were not committed to ${target_branch}." >&2
+            exit 1
+          fi

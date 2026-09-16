@@ -323,6 +323,66 @@
       "upstreamSourceRows": 48771,
       "eligiblePlays": 34301,
       "compactRowCount": 544
+    },
+    {
+      "season": 2026,
+      "filename": "scoring_support_team_game_2026.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-16",
+      "byteSize": 2039,
+      "sha256": "c2662c0f497830e41bf0d74cfa9bd675e22724dfe02159f5a1f370de3fcc1257",
+      "rowCount": 32,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "eligible_plays",
+        "off_epa_sum",
+        "success_num",
+        "success_den",
+        "explosive_count"
+      ],
+      "upstream": {
+        "byteSize": 1077502,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 2756,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "qtr",
+          "down",
+          "ydstogo",
+          "yards_gained",
+          "pass",
+          "rush",
+          "two_point_attempt",
+          "epa"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "eligible_plays",
+        "off_epa_sum",
+        "success_num",
+        "success_den",
+        "explosive_count"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+      "upstreamCompressedBytes": 1077502,
+      "upstreamSourceRows": 2756,
+      "eligiblePlays": 2006,
+      "compactRowCount": 32
     }
   ],
   "notPublished": []

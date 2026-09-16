@@ -1,14 +1,28 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, rename } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { buildAllTouchdownWindows, TD_OPPORTUNITY_WEIGHTS, TD_SCORE_WEIGHTS, TD_SUCCESS_PRIOR_OPPORTUNITIES } from "../src/lib/nfl/touchdown-preview/model.ts";
 import { NFL_TOUCHDOWN_PREVIEW_SCHEMA_VERSION, type TouchdownCandidateInput, type TouchdownOpponentGame, type TouchdownPlayerGame, type TouchdownPosition, type TouchdownPreviewArtifact } from "../src/lib/nfl/touchdown-preview/types.ts";
 import { aggregateOpponentPositionTouchdowns, indexOpponentGamesByDefense, normalizeTouchdownTeam, opponentGamesForTeam, touchdownTeamGameKey } from "../src/lib/nfl/touchdown-preview/opponentHistory.ts";
 import { resolveAnytimeTdForCandidate } from "./lib/nfl-anytime-td-selection.mjs";
+import { resolveNflWeekSelection } from "../src/lib/nfl/weekSelection.ts";
+import type { NflGameRecord } from "../src/lib/nfl/standings.ts";
+import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+import { assertTouchdownPreviewArtifact } from "./lib/nfl-touchdown-preview-validation.mjs";
 
 const root = process.cwd();
 const season = Number(process.argv.find((arg) => arg.startsWith("--season="))?.split("=")[1] ?? 2026);
-const week = Number(process.argv.find((arg) => arg.startsWith("--week="))?.split("=")[1] ?? 1);
+const schedule = JSON.parse(await readFile(path.join(root, "public", "data", "nfl", String(season), "games.json"), "utf8")) as { games: NflGameRecord[] };
+const weekArg = process.argv.find((arg) => arg.startsWith("--week="))?.split("=")[1];
+const week = weekArg ? Number(weekArg) : resolveNflWeekSelection(schedule.games).week;
+if (season !== 2026 || week == null || !Number.isInteger(week) || week < 1 || week > 18) throw new Error("TD preview requires season 2026 and a resolved regular-season week.");
+const targetGames = schedule.games.filter((game) => game.season === season && game.week === week && game.seasonType === "REG");
+if (!targetGames.length || targetGames.some((game) => !game.dateUtc || Date.parse(game.dateUtc) <= Date.now())) throw new Error("TD preview requires an entirely pregame target slate.");
+const cutoff = Math.min(...targetGames.map((game) => Date.parse(game.dateUtc!)));
+
+function enteringWeek(sourceSeason: number, sourceWeek: number) {
+  return sourceSeason < season || (sourceSeason === season && sourceWeek < week!);
+}
 
 function csvLine(line: string): string[] {
   const out: string[] = []; let value = ""; let quoted = false;
@@ -38,12 +52,19 @@ const position = (value: unknown): TouchdownPosition | null => ["QB", "RB", "WR"
 
 type WeekStat = Record<string, string> & { _position: TouchdownPosition; _playerId: string; _team: string; _opponent: string };
 const stats: WeekStat[] = [];
+const statsSourceSeasons = new Set<number>();
 for (const sourceSeason of [2025, 2026]) {
   const file = path.join(root, "data", "nfl", "nflverse", "player-week-stats", `stats_player_week_${sourceSeason}.csv`);
   if (!existsSync(file)) continue;
+  const manifest = JSON.parse(await readFile(path.join(path.dirname(file), "manifest.json"), "utf8"));
+  const entry = manifest.files?.find((entry: { season: number }) => entry.season === sourceSeason);
+  if (!entry) throw new Error(`Missing verified TD player-week source for ${sourceSeason}.`);
+  const problems = verifyCacheEntry(entry, (await readFile(file, "utf8")).replace(/\r\n/g, "\n"));
+  if (problems.length) throw new Error(problems.join("\n"));
+  statsSourceSeasons.add(sourceSeason);
   for (const row of await csvRecords(file)) {
     const pos = position(row.position);
-    if (row.season_type === "REG" && pos && row.player_id) stats.push({
+    if (row.season_type === "REG" && pos && row.player_id && enteringWeek(Number(row.season), Number(row.week))) stats.push({
       ...row,
       _position: pos,
       _playerId: normalizedId(row.player_id),
@@ -57,7 +78,12 @@ type ContextEvent = Record<string, string>;
 const context: ContextEvent[] = [];
 for (const sourceSeason of [2025, 2026]) {
   const file = path.join(root, "data", "nfl", "nflverse", "touchdown-context", `touchdown_context_${sourceSeason}.csv`);
-  if (existsSync(file)) context.push(...await csvRecords(file));
+  if (existsSync(file)) {
+    const manifest = JSON.parse(await readFile(file.replace(/\.csv$/, ".manifest.json"), "utf8"));
+    const problems = verifyCacheEntry({ ...manifest, filename: path.basename(file), headerColumns: manifest.compactColumns, byteSize: Buffer.byteLength((await readFile(file, "utf8")).replace(/\r\n/g, "\n")), rowCount: manifest.compactRows }, (await readFile(file, "utf8")).replace(/\r\n/g, "\n"));
+    if (manifest.sourceState !== "available" || problems.length) throw new Error(`Invalid TD context cache: ${problems.join("\n")}`);
+    context.push(...(await csvRecords(file)).filter((row) => enteringWeek(Number(row.season), Number(row.week))));
+  }
 }
 const touchdownContextAvailable = context.length > 0;
 
@@ -77,8 +103,26 @@ for (const sourceSeason of [2025, 2026]) {
   const file = path.join(root, "public", "data", "nfl", String(sourceSeason), "results.json");
   if (!existsSync(file)) continue;
   const parsed = JSON.parse(await readFile(file, "utf8")) as { results?: ResultGame[] };
-  for (const game of parsed.results ?? []) if (game.seasonType === "REG" && game.final) resultsByGame.set(game.gameId, game);
+  const sourceSchedule = sourceSeason === season ? schedule : JSON.parse(await readFile(path.join(root, "public", "data", "nfl", String(sourceSeason), "games.json"), "utf8")) as { games: NflGameRecord[] };
+  const dates = new Map(sourceSchedule.games.map((game) => [game.gameId, game.dateUtc]));
+  for (const game of parsed.results ?? []) {
+    if (game.seasonType !== "REG" || !game.final || !enteringWeek(Number(game.gameId.split("_")[0]), Number(game.gameId.split("_")[1]))) continue;
+    // Canonical results omit kickoff; schedules own it.
+    const dateUtc = game.dateUtc ?? dates.get(game.gameId);
+    if (!dateUtc || !Number.isFinite(Date.parse(dateUtc))) throw new Error(`Completed TD history game ${game.gameId} has no canonical kickoff.`);
+    if (Date.parse(dateUtc) < cutoff) resultsByGame.set(game.gameId, { ...game, dateUtc });
+  }
 }
+// Never count missing current-season PBP as zero just because historical PBP exists.
+for (const sourceSeason of [2025, 2026]) {
+  const completed = [...resultsByGame.keys()].filter((id) => Number(id.split("_")[0]) === sourceSeason);
+  if (completed.length && !statsSourceSeasons.has(sourceSeason)) throw new Error(`Completed ${sourceSeason} games require player-week stats.`);
+  for (const gameId of completed) {
+    if (!stats.some((row) => row.game_id === gameId) || !context.some((row) => row.game_id === gameId)) throw new Error(`Completed game ${gameId} requires current player-week and touchdown context inputs.`);
+  }
+}
+for (let index = stats.length - 1; index >= 0; index--) if (!resultsByGame.has(stats[index].game_id)) stats.splice(index, 1);
+for (let index = context.length - 1; index >= 0; index--) if (!resultsByGame.has(context[index].game_id)) context.splice(index, 1);
 
 const contextByPlayerGame = new Map<string, { total: number; rz: number; i10: number; gl: number; yardlinesKnown: boolean }>();
 const contextByTeamGame = new Map<string, { total: number; rz: number; gl: number; yardlinesKnown: boolean }>();
@@ -163,6 +207,7 @@ const opponentGamesByDefense = indexOpponentGamesByDefense(opponentGames);
 
 const yardagePath = path.join(root, "public", "data", "nfl", String(season), "yardage-projections.json");
 const yardage = JSON.parse(await readFile(yardagePath, "utf8"));
+if (yardage.season !== season || yardage.week !== week || !Array.isArray(yardage.rows)) throw new Error("TD candidate yardage source season/week mismatch.");
 
 // Anytime-TD odds are presentation/market context only -- never a JKB TD
 // Score input. A missing artifact (never fetched, or the fetch failed and
@@ -199,7 +244,7 @@ const impliedCount = players.filter((player) => player.impliedTeamPoints != null
 const anytimeTdAvailableCount = players.filter((player) => player.anytimeTdOdds != null).length;
 const artifact: TouchdownPreviewArtifact = {
   schemaVersion: NFL_TOUCHDOWN_PREVIEW_SCHEMA_VERSION, modelVersion: "jkb-td-score-v1.0.0", season, week,
-  generatedAt: yardage.generatedAt ?? null, defaultWindow: "last8",
+  generatedAt: new Date().toISOString(), defaultWindow: "last8",
   sourceStatus: {
     playerWeekStats: stats.length ? "available" : "missing", touchdownContext: touchdownContextAvailable ? "available" : "missing",
     marketImpliedPoints: impliedCount === 0 ? "missing" : impliedCount === players.length ? "available" : "partial",
@@ -214,5 +259,8 @@ const artifact: TouchdownPreviewArtifact = {
   players,
 };
 const output = path.join(root, "public", "data", "nfl", String(season), "touchdown-preview.json");
-await writeFile(output, `${JSON.stringify(artifact)}\n`, "utf8");
+assertTouchdownPreviewArtifact(artifact, { season, week, games: targetGames, yardage });
+const staged = `${output}.${process.pid}.tmp`;
+await writeFile(staged, `${JSON.stringify(artifact)}\n`, "utf8");
+await rename(staged, output);
 console.log(`Wrote ${players.length} touchdown candidates to ${output}; context=${artifact.sourceStatus.touchdownContext}`);

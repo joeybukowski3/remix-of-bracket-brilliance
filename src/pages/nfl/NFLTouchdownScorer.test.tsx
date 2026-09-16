@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TouchdownMetric, TouchdownPreviewArtifact, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "@/lib/nfl/touchdown-preview/types";
 import NFLTouchdownScorer from "./NFLTouchdownScorer";
+const currentSlate = vi.hoisted(() => ({ week: 1 }));
+vi.mock("@/hooks/useCurrentNflWeek", () => ({ useCurrentNflWeek: () => ({ loading: false, error: null, week: currentSlate.week }) }));
 
 const metric = (value: number | null, percentile: number | null = value): TouchdownMetric => ({ value, percentile, rank: value == null ? null : 1, poolSize: value == null ? 0 : 2 });
 
@@ -44,10 +46,23 @@ function stubFetch(data: TouchdownPreviewArtifact) {
 }
 
 beforeEach(() => {
+  currentSlate.week = 1;
   vi.unstubAllGlobals();
 });
 
 describe("NFLTouchdownScorer matchup filter", () => {
+  it("shows the Week 2 DET @ BUF board automatically", async () => {
+    currentSlate.week = 2;
+    const data = artifact();
+    data.week = 2;
+    data.players = [player("Week Two Scorer", "det", "buf", "away")];
+    data.players[0].gameId = "2026_02_DET_BUF";
+    stubFetch(data);
+    render(<NFLTouchdownScorer />);
+    await waitFor(() => expect(screen.getByText("Week Two Scorer")).toBeInTheDocument());
+    expect(screen.getByText("2026 Week 2 candidate board")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /det @ buf/i })).toBeInTheDocument();
+  });
   it("shows the NE @ SEA candidates when that matchup is selected, instead of a false empty state", async () => {
     stubFetch(artifact());
     render(<NFLTouchdownScorer />);

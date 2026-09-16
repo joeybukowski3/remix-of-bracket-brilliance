@@ -2,12 +2,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { getMatchupGrade } from "@/lib/fantasy/matchupGrade";
+import { normalizeHistoricalPlayerWeek } from "@/lib/fantasy/weekly/history";
+import { buildWeeklyFantasyResearchContexts } from "@/lib/fantasy/weekly/researchContext";
 import { weeklyFantasyProjectionProductionArtifactSchema } from "@/lib/fantasy/weekly/projections/production/artifactContract";
 import {
   assertWeeklyFantasyResearchArtifactIdentity,
   nflMatchupEdgeSchema,
   weeklyFantasyResearchArtifactPath,
   weeklyFantasyResearchArtifactSchema,
+  weeklyFantasyResearchContextSchema,
 } from "@/lib/fantasy/weekly/researchArtifact";
 
 function fixture(relativePath: string): unknown {
@@ -29,6 +32,52 @@ describe("weekly fantasy research artifact", () => {
       expect(row).not.toHaveProperty("positionRank");
       expect(row).not.toHaveProperty("projectedFantasyPoints");
     }
+  });
+
+  it("generates and validates companion evidence for a production projection row", () => {
+    const projected = projection.rows.WR[0];
+    const history = normalizeHistoricalPlayerWeek({
+      season_type: "REG", season: 2026, week: 1,
+      player_id: projected.playerId.replace("gsis:", ""),
+      player_display_name: projected.playerName, position: projected.position,
+      recent_team: projected.team, opponent_team: projected.opponent,
+      passing_yards: 0, attempts: 0, completions: 0, passing_tds: 0, interceptions: 0,
+      carries: 0, rushing_yards: 0, rushing_tds: 0,
+      receptions: 4, targets: 8, receiving_yards: 40, receiving_tds: 0,
+      sack_fumbles_lost: 0, rushing_fumbles_lost: 0, receiving_fumbles_lost: 0,
+      passing_2pt_conversions: 0, rushing_2pt_conversions: 0,
+      receiving_2pt_conversions: 0, special_teams_tds: 0,
+    });
+    expect(history).not.toBeNull();
+    const context = buildWeeklyFantasyResearchContexts([projected], [history!], 2026, 2).get(projected.playerId)!;
+    // Exercise the same output boundary as the CLI, without modifying artifacts.
+    const parsed = weeklyFantasyResearchArtifactSchema.parse({
+      ...research, week: 2,
+      rows: [{ ...research.rows.find((row) => row.playerId === projected.playerId)!, context }],
+    });
+    expect(parsed.rows[0].context.evidence.targetsPerGameL5).toEqual({
+      value: 8, rank: 1, poolSize: 1, sampleSize: 1, sampleSeason: 2026,
+      games: [{ season: 2026, week: 1 }],
+    });
+  });
+
+  it("decodes absent legacy L5 evidence as missing without inventing a value", () => {
+    const context = structuredClone(research.rows[0].context);
+    const { targetsPerGameL5: omitted, ...evidence } = context.evidence;
+    expect(omitted).toBeDefined();
+    expect(weeklyFantasyResearchContextSchema.parse({ ...context, evidence }).evidence.targetsPerGameL5).toEqual({
+      value: null, rank: null, poolSize: 0, sampleSize: 0, sampleSeason: null, games: [],
+    });
+  });
+
+  it("rejects malformed L5 evidence and unrelated evidence keys", () => {
+    const context = research.rows[0].context;
+    expect(() => weeklyFantasyResearchContextSchema.parse({
+      ...context, evidence: { ...context.evidence, targetsPerGameL5: { ...context.evidence.targetsPerGameL5, value: "8" } },
+    })).toThrow();
+    expect(() => weeklyFantasyResearchContextSchema.parse({
+      ...context, evidence: { ...context.evidence, arbitraryEvidence: 8 },
+    })).toThrow(/Unrecognized key/);
   });
 
   it("upgrades legacy v1 normalized edges with explicit rank differences", () => {

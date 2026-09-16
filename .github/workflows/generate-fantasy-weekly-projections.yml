@@ -55,27 +55,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Defense-in-depth America/New_York Tuesday-4-AM guard
-        if: github.event_name == 'schedule'
-        shell: bash
-        run: |
-          # The cron trigger above already fires only at Tuesday 04:00 ET
-          # (GitHub converts the given timezone to UTC, including DST), so
-          # this is a belt-and-suspenders check, not the primary guard: if a
-          # GitHub Actions scheduling delay or a future edit to the cron ever
-          # causes a different local time to invoke this job, it no-ops
-          # cleanly instead of publishing.
-          now_et="$(TZ=America/New_York date '+%u %H:%M')"
-          echo "Current America/New_York day/time: ${now_et}"
-          day="$(echo "$now_et" | cut -d' ' -f1)"
-          hour="$(TZ=America/New_York date '+%H')"
-          if [ "$day" != "2" ] || [ "$hour" != "04" ]; then
-            echo "Not Tuesday 04:xx America/New_York (day=${day}, hour=${hour}); no-op."
-            echo "SKIP_ROLLOVER=true" >> "$GITHUB_ENV"
-          else
-            echo "SKIP_ROLLOVER=false" >> "$GITHUB_ENV"
-          fi
-
+      # Trust the scheduled trigger, not runner wall time: queued/delayed
+      # Tuesday invocations must still resolve and generate the current slate.
       - name: Resolve season/week
         if: env.SKIP_ROLLOVER != 'true'
         id: target
@@ -87,15 +68,18 @@ jobs:
           STATUS=$?
           set -e
           if [ $STATUS -ne 0 ]; then
-            echo "Could not resolve a target week; no-op." >&2
-            echo "SKIP_ROLLOVER=true" >> "$GITHUB_ENV"
-            exit 0
+            echo "Could not resolve a target week; refusing to publish." >&2
+            exit "$STATUS"
           fi
           echo "$OUTPUT"
           SEASON_OUT="$(node -e "console.log(JSON.parse(process.argv[1]).season)" "$OUTPUT")"
           WEEK_OUT="$(node -e "console.log(JSON.parse(process.argv[1]).week)" "$OUTPUT")"
           echo "season=${SEASON_OUT}" >> "$GITHUB_OUTPUT"
           echo "week=${WEEK_OUT}" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh current weekly roster identity source
+        if: env.SKIP_ROLLOVER != 'true'
+        run: npm run nfl:weekly-roster-cache
 
       - name: Refresh required fantasy/NFL source caches
         if: env.SKIP_ROLLOVER != 'true'
@@ -127,6 +111,10 @@ jobs:
         if: env.SKIP_ROLLOVER != 'true'
         shell: bash
         run: |
+          # These deployment-fit inputs are gitignored; every clean runner
+          # must materialize them from the committed historical caches.
+          npx tsx scripts/generate-fantasy-player-week-history.ts
+          npx tsx scripts/generate-fantasy-player-week-projection-dataset.ts
           for attempt in 1 2 3; do
             echo "Projection generation attempt ${attempt}/3"
             if npx tsx scripts/generate-fantasy-weekly-projections.ts --season="${{ steps.target.outputs.season }}" --week="${{ steps.target.outputs.week }}"; then
