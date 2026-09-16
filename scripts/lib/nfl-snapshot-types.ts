@@ -177,6 +177,65 @@ export interface MarketAtDecision {
 }
 
 /**
+ * WU7.9 -- one named section of a long-form editorial article: a heading
+ * plus one or more prose paragraphs. Used for the two offense-vs-defense
+ * breakdowns, which are the only sections structured enough to warrant their
+ * own heading distinct from the section title the UI already renders.
+ */
+export interface EditorialArticleSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+/** One "Matchup Keys" callout -- a short, named analytical point with 1-3 sentences of explanation. `supportingStats` are prose-formatted (e.g. "41% pressure rate"), never a raw metric key/value pair. */
+export interface EditorialMatchupKey {
+  title: string;
+  analysis: string;
+  supportingStats?: string[];
+}
+
+/** One "What Could Flip the Handicap" swing factor -- a legitimate way the analyst's view could be wrong, never a generic disclaimer. */
+export interface EditorialSwingFactor {
+  title: string;
+  analysis: string;
+}
+
+/**
+ * WU7.9 -- the finished long-form public handicap article, written during
+ * the SAME Stage B call that already produces side/total/marketAssessment
+ * (see MarketDecisionRecord.editorialArticle below) -- no new paid provider
+ * call. Pure editorial prose: this shape has no numeric fairSpread/
+ * projectedTotal field of its own, so it structurally cannot carry a
+ * "revised" football judgment -- Stage A's blindPrediction remains the only
+ * source of those numbers, exactly as before this article existed.
+ *
+ * Nullable sections are a deliberate first-class "not enough validated
+ * evidence to write this section" state -- never backfilled with invented
+ * prose. `isLegacyPreview` is true only for a snapshot written before this
+ * schema existed, whose article was assembled by the deterministic
+ * nfl-legacy-editorial-adapter.ts from pre-existing thesis/factors/failure
+ * modes/rationale (see that module) rather than authored by the provider in
+ * one pass -- it is a preview of the new layout, never presented as the
+ * provider's own finished long-form work.
+ */
+export interface EditorialArticle {
+  isLegacyPreview: boolean;
+  headline: string;
+  dek: string;
+  openingRead: string[];
+  awayOffenseVsHomeDefense: EditorialArticleSection | null;
+  homeOffenseVsAwayDefense: EditorialArticleSection | null;
+  trenchesAndGameControl: string[] | null;
+  personnelAndAvailability: string[] | null;
+  gameScript: string[] | null;
+  matchupKeys: EditorialMatchupKey[];
+  swingFactors: EditorialSwingFactor[];
+  sideAnalysis: string[] | null;
+  totalAnalysis: string[] | null;
+  finalWord: string[];
+}
+
+/**
  * WU4.6 -- the Stage B bet/pass decision, persisted as an audit record
  * distinct from the locked `blindPrediction` above. `sideEdgePoints`/
  * `totalEdgePoints` are the SAME mechanically-computed values
@@ -184,6 +243,12 @@ export interface MarketAtDecision {
  * from provider arithmetic, and computed from `blindPrediction` (never from
  * anything Stage B itself reports as a "revised" prediction, which does not
  * structurally exist on the Stage B contract in the first place).
+ *
+ * `editorialArticle` is optional so every pre-WU7.9 snapshot (written before
+ * this field existed) keeps parsing unchanged; those historical snapshots
+ * are immutable and never backfilled -- the public presentation layer
+ * synthesizes a legacy preview for them instead (see
+ * nfl-legacy-editorial-adapter.ts).
  */
 export interface MarketDecisionRecord {
   generatedAt: string;
@@ -192,6 +257,7 @@ export interface MarketDecisionRecord {
   total: TotalOpinionState;
   sideEdgePoints: number | null;
   totalEdgePoints: number | null;
+  editorialArticle?: EditorialArticle;
 }
 
 /**

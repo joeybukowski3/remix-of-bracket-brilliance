@@ -360,6 +360,100 @@ describe("generate-nfl-ai-handicap-presentation", () => {
 });
 
 /**
+ * WU7.9 -- long-form editorial article: a freshly-authored article
+ * (marketDecision.editorialArticle) is passed through as-is; a snapshot
+ * written before that field existed gets a deterministic, zero-fabrication
+ * legacy preview instead (nfl-legacy-editorial-adapter.ts).
+ */
+describe("generate-nfl-ai-handicap-presentation -- WU7.9 editorial article", () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "nfl-ai-handicap-presentation-editorial-"));
+    const contextDir = join(root, "data", "nfl", "game-context", String(SEASON), String(WEEK));
+    mkdirSync(contextDir, { recursive: true });
+    writeFileSync(
+      join(contextDir, `${GAME_ID}.json`),
+      JSON.stringify({
+        identity: { gameId: GAME_ID, season: SEASON, week: WEEK, homeTeam: "ind", awayTeam: "bal", homeTeamFull: "Indianapolis Colts", awayTeamFull: "Baltimore Ravens" },
+        schedule: { kickoffUtc: KICKOFF },
+      })
+    );
+  });
+
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  it("a snapshot written before the editorial schema existed gets a legacy preview, never a crash or a fabricated article", () => {
+    writeSnapshot(
+      root,
+      makeSnapshot("grok", {
+        analysisState: {
+          ...wu46State({ thesis: "Colts thesis.", side: { lean: "home", confidence: 4, spreadLineAtOpinion: { homeLine: 3.5, awayLine: -3.5 }, rationale: "side rationale" }, total: { lean: "pass", confidence: null, totalLineAtOpinion: null } }),
+          matchupFactors: [
+            { area: "personnel", finding: "Personnel finding.", supports: "home", importance: "moderate", jkbContextRefs: [], evidenceIds: [] },
+            { area: "quarterback", finding: "QB finding.", supports: "home", importance: "major", jkbContextRefs: [], evidenceIds: [] },
+          ],
+          failureModes: [{ scenario: "A scenario.", whyItMatters: "It matters." }],
+        },
+      })
+    );
+    const presentation = generatePresentationForGame(root, GAME_ID, SEASON, WEEK);
+    const grokowski = presentation.handicappers.grokowski;
+    if (grokowski.status !== "ok") throw new Error("expected ok");
+    expect(grokowski.editorial.isLegacyPreview).toBe(true);
+    expect(grokowski.editorial.headline).toContain("BAL");
+    expect(grokowski.editorial.headline).toContain("IND");
+    expect(grokowski.editorial.openingRead).toEqual(["Colts thesis."]);
+    // "personnel" factors become Personnel & Availability; every other factor becomes a Matchup Key.
+    expect(grokowski.editorial.personnelAndAvailability).toEqual(["Personnel finding."]);
+    expect(grokowski.editorial.matchupKeys).toEqual([{ title: "Quarterback", analysis: "QB finding." }]);
+    // failureModes map directly onto swingFactors.
+    expect(grokowski.editorial.swingFactors).toEqual([{ title: "A scenario.", analysis: "It matters." }]);
+    expect(grokowski.editorial.sideAnalysis).toEqual(["side rationale"]);
+    // no legacy data supports these sections -- omitted, never fabricated.
+    expect(grokowski.editorial.awayOffenseVsHomeDefense).toBeNull();
+    expect(grokowski.editorial.homeOffenseVsAwayDefense).toBeNull();
+    expect(grokowski.editorial.trenchesAndGameControl).toBeNull();
+    expect(grokowski.editorial.gameScript).toBeNull();
+    expect(grokowski.editorial.totalAnalysis).toBeNull(); // total is a pass with no rationale.
+    expect(grokowski.editorial.finalWord.length).toBeGreaterThan(0);
+  });
+
+  it("passes through a freshly-authored editorial article verbatim, never regenerating or altering it", () => {
+    const freshArticle = {
+      isLegacyPreview: false,
+      headline: "Fresh headline.",
+      dek: "Fresh dek.",
+      openingRead: ["Fresh opening paragraph."],
+      awayOffenseVsHomeDefense: { heading: "When BAL Has the Ball", paragraphs: ["Fresh away-offense paragraph."] },
+      homeOffenseVsAwayDefense: { heading: "When IND Has the Ball", paragraphs: ["Fresh home-offense paragraph."] },
+      trenchesAndGameControl: ["Fresh trenches paragraph."],
+      personnelAndAvailability: null,
+      gameScript: ["Fresh game-script paragraph."],
+      matchupKeys: [{ title: "Fresh matchup key", analysis: "Fresh analysis." }],
+      swingFactors: [{ title: "Fresh swing factor", analysis: "Fresh analysis." }],
+      sideAnalysis: ["Fresh side analysis."],
+      totalAnalysis: null,
+      finalWord: ["Fresh closing paragraph."],
+    };
+    const base = wu46State({ thesis: "t", side: { lean: "home", confidence: 4, spreadLineAtOpinion: { homeLine: 3.5, awayLine: -3.5 } }, total: { lean: "pass", confidence: null, totalLineAtOpinion: null } });
+    writeSnapshot(
+      root,
+      makeSnapshot("grok", {
+        analysisState: {
+          ...base,
+          marketDecision: { ...base.marketDecision!, editorialArticle: freshArticle },
+        },
+      })
+    );
+    const presentation = generatePresentationForGame(root, GAME_ID, SEASON, WEEK);
+    const grokowski = presentation.handicappers.grokowski;
+    if (grokowski.status !== "ok") throw new Error("expected ok");
+    expect(grokowski.editorial).toEqual(freshArticle);
+  });
+});
+
+/**
  * WU4.6.1 -- PART D/E: the exporter must reject legacy (pre-WU4.6)
  * analysis-bearing snapshots for the public AI Picks card. A snapshot with
  * a non-null analysisState but no blindPrediction/marketDecision (the exact

@@ -29,7 +29,7 @@ import { FIXTURE_CONTEXT, confirmedInjuryCandidate, conflictingInjuryCandidate, 
 import type { NflGameContextPacket } from "../nfl-full-game-context";
 import type { AnalysisGameFacts, PreviousBlindState } from "../nfl-chatgpt-analysis-adapter";
 import type { GrokStageAV1 } from "../nfl-grok-analysis-types";
-import type { SnapshotAnalysisState, SnapshotMarketRecord, SnapshotMarketState } from "../nfl-snapshot-types";
+import type { EditorialArticle, SnapshotAnalysisState, SnapshotMarketRecord, SnapshotMarketState } from "../nfl-snapshot-types";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -144,6 +144,29 @@ function baseFailureModes() {
   ];
 }
 
+/** WU7.9 -- a minimal but schema-valid long-form editorial article for Stage B initial fixtures. */
+function baseEditorialArticle(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    headline: "Synthetic: Baltimore at Indianapolis, a Week 1 read.",
+    dek: "Synthetic: a front-seven question mark keeps this closer than the raw talent gap suggests.",
+    openingRead: ["Synthetic opening paragraph one.", "Synthetic opening paragraph two."],
+    awayOffenseVsHomeDefense: { heading: "When Baltimore Has the Ball", paragraphs: ["Synthetic paragraph about the away offense."] },
+    homeOffenseVsAwayDefense: { heading: "When Indianapolis Has the Ball", paragraphs: ["Synthetic paragraph about the home offense."] },
+    trenchesAndGameControl: ["Synthetic trenches paragraph."],
+    personnelAndAvailability: ["Synthetic personnel paragraph."],
+    gameScript: ["Synthetic game-script paragraph."],
+    matchupKeys: [{ title: "Synthetic matchup key title", analysis: "Synthetic matchup key analysis." }],
+    swingFactors: [{ title: "Synthetic swing factor title", analysis: "Synthetic swing factor analysis." }],
+    sideAnalysis: ["Synthetic side analysis paragraph."],
+    totalAnalysis: ["Synthetic total analysis paragraph."],
+    finalWord: ["Synthetic closing paragraph."],
+    ...overrides,
+  };
+}
+
+/** The TRUSTED (already-validated-shaped) editorial article, for tests that construct a GrokStageBV1/MarketDecisionRecord directly without going through the validator. */
+export const FIXTURE_EDITORIAL_ARTICLE: EditorialArticle = { isLegacyPreview: false, ...baseEditorialArticle() } as EditorialArticle;
+
 /** OpenAI `/v1/responses` envelope shape -- no web_search_call item (tools is never sent for analysis calls), matching the real captured shape's usage field names. */
 function analysisResponse(payload: unknown) {
   return {
@@ -229,6 +252,7 @@ function stageBPayload(overrides: Partial<Record<string, unknown>> = {}) {
     side: { lean: "undecided", confidence: 5, rationale: "Synthetic placeholder rationale." },
     total: { lean: "undecided", confidence: 5, rationale: "Synthetic placeholder rationale." },
     marketAssessment: baseMarketAssessment(),
+    editorialArticle: baseEditorialArticle(),
     ...overrides,
   };
 }

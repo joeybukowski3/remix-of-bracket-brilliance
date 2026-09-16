@@ -35,6 +35,7 @@ import {
   MATCHUP_FACTOR_AREAS,
   MATCHUP_FACTOR_IMPORTANCE,
   MATCHUP_FACTOR_SUPPORTS,
+  type EditorialArticle,
   type FailureMode,
   type GrokSideOpinion,
   type GrokStageAProposal,
@@ -402,6 +403,152 @@ function validateModelAndGameId(raw: Record<string, unknown>, context: { model: 
 }
 
 /**
+ * WU7.9 -- literal substrings that must never reach the reader-facing
+ * article (see docs on EditorialArticle). Checked case-insensitively against
+ * every prose field the editorial contract carries. This is a content gate,
+ * not a UI filter -- an article containing any of these fails validation
+ * outright rather than being sanitized/truncated.
+ */
+const BANNED_EDITORIAL_PHRASES = ["fact:", "interpretation:", "source_unavailable", "context packet", "evidence record", "supplied context", "data object", "json key", "json object", " sql ", "schema", "pipeline", "validator", "artifact"];
+
+/** Snake_case/camelCase are essentially never legitimate English prose -- both are a strong signal of a leaked internal field name (e.g. `off_epaPerPlay`, `def_pass_rush_win_rate`). */
+function containsMachineLanguage(text: string): string | null {
+  const lower = text.toLowerCase();
+  for (const phrase of BANNED_EDITORIAL_PHRASES) {
+    if (lower.includes(phrase)) return phrase;
+  }
+  if (/[a-zA-Z]_[a-zA-Z]/.test(text)) return "a snake_case token";
+  if (/\b[a-z]+[A-Z][a-zA-Z]*\b/.test(text)) return "a camelCase token";
+  return null;
+}
+
+/** Runs containsPostgameLanguage + containsMachineLanguage against every string in `texts`, prefixing violations with `label`. */
+function validateProseStrings(texts: readonly string[], label: string): string[] {
+  const reasons: string[] = [];
+  texts.forEach((text, index) => {
+    const postgame = containsPostgameLanguage(text);
+    if (postgame) reasons.push(`${label}[${index}] contains postgame language: "${postgame}"`);
+    const machine = containsMachineLanguage(text);
+    if (machine) reasons.push(`${label}[${index}] contains machine/internal language (${machine}): "${text}"`);
+  });
+  return reasons;
+}
+
+function validateNonEmptyStringArray(value: unknown, label: string): string[] {
+  const reasons: string[] = [];
+  if (!Array.isArray(value) || value.length === 0) {
+    reasons.push(`${label} must be a non-empty array of strings`);
+    return reasons;
+  }
+  value.forEach((entry, index) => {
+    if (typeof entry !== "string" || entry.trim().length === 0) reasons.push(`${label}[${index}] must be a non-empty string`);
+  });
+  if (reasons.length === 0) reasons.push(...validateProseStrings(value as string[], label));
+  return reasons;
+}
+
+/** Same as validateNonEmptyStringArray, but `null` (the section's "not enough validated evidence" state) is a fully valid, expected result -- never coerced to an empty array. */
+function validateNullableStringArray(value: unknown, label: string): string[] {
+  if (value === null) return [];
+  return validateNonEmptyStringArray(value, label);
+}
+
+function validateEditorialSection(value: unknown, label: string): string[] {
+  if (value === null) return [];
+  if (!isRecord(value)) return [`${label} must be an object or null`];
+  const reasons: string[] = [];
+  if (typeof value.heading !== "string" || value.heading.trim().length === 0) reasons.push(`${label}.heading must be a non-empty string`);
+  else reasons.push(...validateProseStrings([value.heading], `${label}.heading`));
+  reasons.push(...validateNonEmptyStringArray(value.paragraphs, `${label}.paragraphs`));
+  return reasons;
+}
+
+function validateMatchupKeys(value: unknown): string[] {
+  const reasons: string[] = [];
+  if (!Array.isArray(value) || value.length === 0) return ["editorialArticle.matchupKeys must be a non-empty array"];
+  value.forEach((key: unknown, index) => {
+    const label = `editorialArticle.matchupKeys[${index}]`;
+    if (!isRecord(key)) {
+      reasons.push(`${label} is not an object`);
+      return;
+    }
+    if (typeof key.title !== "string" || key.title.trim().length === 0) reasons.push(`${label}.title must be a non-empty string`);
+    if (typeof key.analysis !== "string" || key.analysis.trim().length === 0) reasons.push(`${label}.analysis must be a non-empty string`);
+    else reasons.push(...validateProseStrings([key.analysis], `${label}.analysis`));
+    if (key.supportingStats !== undefined) reasons.push(...validateNonEmptyStringArray(key.supportingStats, `${label}.supportingStats`));
+  });
+  return reasons;
+}
+
+function validateSwingFactors(value: unknown): string[] {
+  const reasons: string[] = [];
+  if (!Array.isArray(value) || value.length === 0) return ["editorialArticle.swingFactors must be a non-empty array"];
+  value.forEach((factor: unknown, index) => {
+    const label = `editorialArticle.swingFactors[${index}]`;
+    if (!isRecord(factor)) {
+      reasons.push(`${label} is not an object`);
+      return;
+    }
+    if (typeof factor.title !== "string" || factor.title.trim().length === 0) reasons.push(`${label}.title must be a non-empty string`);
+    if (typeof factor.analysis !== "string" || factor.analysis.trim().length === 0) reasons.push(`${label}.analysis must be a non-empty string`);
+    else reasons.push(...validateProseStrings([factor.analysis], `${label}.analysis`));
+  });
+  return reasons;
+}
+
+/**
+ * WU7.9 -- validates the Stage B-authored long-form editorial article.
+ * Purely a content/shape gate: there is no numeric field anywhere on this
+ * contract, so nothing here can smuggle a "revised" fair spread/total past
+ * Stage A's lock. Nullable sections (the analyst's own "not enough validated
+ * evidence" signal) are accepted as-is, never coerced or padded.
+ */
+function validateEditorialArticle(raw: unknown): string[] {
+  if (!isRecord(raw)) return ["editorialArticle is not an object"];
+  const reasons: string[] = [];
+
+  if (typeof raw.headline !== "string" || raw.headline.trim().length === 0) reasons.push("editorialArticle.headline must be a non-empty string");
+  else reasons.push(...validateProseStrings([raw.headline], "editorialArticle.headline"));
+
+  if (typeof raw.dek !== "string" || raw.dek.trim().length === 0) reasons.push("editorialArticle.dek must be a non-empty string");
+  else reasons.push(...validateProseStrings([raw.dek], "editorialArticle.dek"));
+
+  reasons.push(...validateNonEmptyStringArray(raw.openingRead, "editorialArticle.openingRead"));
+  reasons.push(...validateEditorialSection(raw.awayOffenseVsHomeDefense, "editorialArticle.awayOffenseVsHomeDefense"));
+  reasons.push(...validateEditorialSection(raw.homeOffenseVsAwayDefense, "editorialArticle.homeOffenseVsAwayDefense"));
+  reasons.push(...validateNullableStringArray(raw.trenchesAndGameControl ?? null, "editorialArticle.trenchesAndGameControl"));
+  reasons.push(...validateNullableStringArray(raw.personnelAndAvailability ?? null, "editorialArticle.personnelAndAvailability"));
+  reasons.push(...validateNullableStringArray(raw.gameScript ?? null, "editorialArticle.gameScript"));
+  reasons.push(...validateMatchupKeys(raw.matchupKeys));
+  reasons.push(...validateSwingFactors(raw.swingFactors));
+  reasons.push(...validateNullableStringArray(raw.sideAnalysis ?? null, "editorialArticle.sideAnalysis"));
+  reasons.push(...validateNullableStringArray(raw.totalAnalysis ?? null, "editorialArticle.totalAnalysis"));
+  reasons.push(...validateNonEmptyStringArray(raw.finalWord, "editorialArticle.finalWord"));
+
+  return reasons;
+}
+
+/** Builds the trusted EditorialArticle by explicit field selection -- never by spreading the raw payload. Call only after validateEditorialArticle() returns zero reasons. `isLegacyPreview` is always false here: this is the provider's own freshly-authored article, never the deterministic legacy adapter's output (see nfl-legacy-editorial-adapter.ts). */
+function mechanicalizeEditorialArticle(raw: Record<string, unknown>): EditorialArticle {
+  return {
+    isLegacyPreview: false,
+    headline: raw.headline as string,
+    dek: raw.dek as string,
+    openingRead: raw.openingRead as string[],
+    awayOffenseVsHomeDefense: (raw.awayOffenseVsHomeDefense ?? null) as EditorialArticle["awayOffenseVsHomeDefense"],
+    homeOffenseVsAwayDefense: (raw.homeOffenseVsAwayDefense ?? null) as EditorialArticle["homeOffenseVsAwayDefense"],
+    trenchesAndGameControl: (raw.trenchesAndGameControl ?? null) as string[] | null,
+    personnelAndAvailability: (raw.personnelAndAvailability ?? null) as string[] | null,
+    gameScript: (raw.gameScript ?? null) as string[] | null,
+    matchupKeys: raw.matchupKeys as EditorialArticle["matchupKeys"],
+    swingFactors: raw.swingFactors as EditorialArticle["swingFactors"],
+    sideAnalysis: (raw.sideAnalysis ?? null) as string[] | null,
+    totalAnalysis: (raw.totalAnalysis ?? null) as string[] | null,
+    finalWord: raw.finalWord as string[],
+  };
+}
+
+/**
  * WU4.6 -- Validates one raw STAGE A (blind football projection) proposal.
  * jkbContextRefs are checked against the BLIND packet (no `market` section
  * exists on it at all), and `prediction` is validated/locked here -- nothing
@@ -488,6 +635,7 @@ export function validateGrokStageB(raw: unknown, context: GrokStageBValidationCo
   reasons.push(...validateMarketAssessmentAgainstContext(raw.marketAssessment));
   reasons.push(...validateSideOpinion(raw.side, "side"));
   reasons.push(...validateTotalOpinion(raw.total, "total"));
+  reasons.push(...validateEditorialArticle(raw.editorialArticle));
 
   if (reasons.length > 0) return { ok: false, reasons };
 
@@ -514,6 +662,7 @@ export function validateGrokStageB(raw: unknown, context: GrokStageBValidationCo
       computeSideEdgePoints(context.lockedPrediction, context.homeTeam, context.currentMarketState.spread.homeLine),
       computeTotalEdgePoints(context.lockedPrediction, context.currentMarketState.total.line)
     ),
+    editorialArticle: mechanicalizeEditorialArticle(raw.editorialArticle as Record<string, unknown>),
   };
   return { ok: true, analysis };
 }

@@ -39,6 +39,7 @@ import {
   MATCHUP_FACTOR_AREAS,
   MATCHUP_FACTOR_IMPORTANCE,
   MATCHUP_FACTOR_SUPPORTS,
+  type EditorialArticle,
   type EvidenceQualityAssessment,
   type FailureMode,
   type IndependentPrediction,
@@ -63,7 +64,7 @@ export const GROK_ANALYSIS_SCHEMA_VERSION = "nfl-grok-analysis-v1" as const;
  * unaffected.
  */
 export { MATCHUP_FACTOR_AREAS, MATCHUP_FACTOR_IMPORTANCE, MATCHUP_FACTOR_SUPPORTS };
-export type { EvidenceQualityAssessment, FailureMode, IndependentPrediction, MatchupFactor, MatchupFactorArea, MatchupFactorImportance, MatchupFactorSupports, PredictedFairSpread };
+export type { EditorialArticle, EvidenceQualityAssessment, FailureMode, IndependentPrediction, MatchupFactor, MatchupFactorArea, MatchupFactorImportance, MatchupFactorSupports, PredictedFairSpread };
 
 /**
  * WU4.5 -- market interpretation ONLY, built entirely from JKB's underlying
@@ -161,6 +162,14 @@ export interface GrokStageBProposal {
   side: GrokSideOpinion;
   total: GrokTotalOpinion;
   marketAssessment: MarketAssessment;
+  /**
+   * WU7.9 -- the finished long-form public handicap article, written in this
+   * SAME Stage B call (no new paid provider call). Has no field anywhere for
+   * a fair spread/projected total, so it structurally cannot carry a
+   * "revised" football judgment -- see nfl-snapshot-types.ts's
+   * EditorialArticle doc comment.
+   */
+  editorialArticle: EditorialArticle;
 }
 
 /** The TRUSTED Stage B record, produced ONLY by a successful validateGrokStageB() call. `generatedAt` is the trusted orchestration timestamp the validator assigned -- never provider-authored. */

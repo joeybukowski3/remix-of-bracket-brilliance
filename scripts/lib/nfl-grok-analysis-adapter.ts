@@ -276,11 +276,47 @@ export function formatMarketDeltaLines(game: AnalysisGameFacts, marketRecord: Sn
  * the prompt explicitly forbids revising it, and the output schema has no
  * field for a replacement prediction.
  */
+/**
+ * WU7.9 -- shared long-form editorial-article instructions for Stage B
+ * initial, reused verbatim by both this adapter and
+ * nfl-chatgpt-analysis-adapter.ts (imported from here) so both providers are
+ * held to the identical editorial standard -- same rule as every other
+ * Stage A/B prompt rule in this file. Written during this SAME Stage B call
+ * (no new paid provider call); the schema below has no field anywhere for a
+ * fair spread/projected total, so nothing here can override Stage 1.
+ */
+export const EDITORIAL_ARTICLE_INSTRUCTIONS: readonly string[] = [
+  "STEP 6 -- LONG-FORM ARTICLE: write `editorialArticle`, a genuine long-form NFL handicap article (roughly 1200-2000 words when the evidence supports it -- do not pad a thin game to hit a word count; a section with insufficient evidence should be `null`, never invented prose). Write like a professional analyst at a sports analytics outlet, not a database dump or a FACT/INTERPRETATION list: synthesize the evidence into a football argument, connect causes to consequences (a pressure advantage means more obvious passing downs, which means lower QB efficiency, which means a lower scoring ceiling -- reason like that, in your own words), and describe a realistic game script for both teams and both sides of the ball.",
+  "Round statistics for a reader (\"41%\", \"5.6 yards per play\") instead of raw decimals, and never expose an internal field name, snake_case or camelCase token, a 'FACT:'/'INTERPRETATION:' label, or any other implementation/schema/pipeline language anywhere in the article -- write only in plain football English, as if for a human reader who has never seen your underlying data.",
+  "sideAnalysis/totalAnalysis must explain WHY your locked fair spread/total differ from the market, tying that number back to the football argument developed earlier in the article -- never a bare 'my fair line is X versus Y' statement with no reasoning attached.",
+  "swingFactors must be legitimate ways your own view could be wrong (e.g. an uncertain quarterback, an offensive-line absence, turnover variance, weather) -- never a generic disclaimer.",
+  "Write in your own voice. Do not mirror a template mechanically -- choose which facts matter most, and do not lean on filler phrasing like 'this matchup will come down to', 'it is important to note', 'ultimately', or symmetrical paragraph patterns.",
+];
+
+/** Placeholder JSON shape shown to the provider for `editorialArticle` -- mirrors src/lib/nfl/aiHandicapPresentation.ts's AiHandicapEditorialArticle exactly (minus `isLegacyPreview`, which the engine always sets to `false` for a freshly-authored article and which the provider never reports). */
+export function editorialArticleSchemaExample(game: AnalysisGameFacts): Record<string, unknown> {
+  return {
+    headline: "<article headline>",
+    dek: "<1-2 sentence subheadline stating the central matchup tension>",
+    openingRead: ["<paragraph>", "<paragraph>", "<paragraph>"],
+    awayOffenseVsHomeDefense: { heading: `When ${game.awayTeam.toUpperCase()} Has the Ball`, paragraphs: ["<paragraph>"] },
+    homeOffenseVsAwayDefense: { heading: `When ${game.homeTeam.toUpperCase()} Has the Ball`, paragraphs: ["<paragraph>"] },
+    trenchesAndGameControl: ["<paragraph, or null if not enough evidence>"],
+    personnelAndAvailability: ["<paragraph, or null if not enough evidence>"],
+    gameScript: ["<paragraph, or null if not enough evidence>"],
+    matchupKeys: [{ title: "<short analytical callout title>", analysis: "<1-3 sentences>", supportingStats: ["<optional stat in prose form, e.g. '41% pressure rate'>"] }],
+    swingFactors: [{ title: "<short title>", analysis: "<1-3 sentences>" }],
+    sideAnalysis: ["<paragraph, or null if passing>"],
+    totalAnalysis: ["<paragraph, or null if passing>"],
+    finalWord: ["<1-2 closing paragraphs>"],
+  };
+}
+
 export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: GrokStageAV1, currentMarketState: SnapshotMarketState): string {
   return [
     `This is STAGE 2 of a two-stage handicap for ${game.awayTeamFull} at ${game.homeTeamFull} (gameId ${game.gameId}). ` +
       "STAGE 1 already produced your LOCKED, independent, blind football projection below -- you formed it with zero knowledge of the sportsbook price. " +
-      "You may NOT revise, restate differently, or second-guess that projection here. Your only job now is to compare it to the market and decide whether there is a bet.",
+      "You may NOT revise, restate differently, or second-guess that projection here. Your only job now is to compare it to the market, decide whether there is a bet, and write it up.",
     "",
     "=== YOUR LOCKED STAGE 1 PROJECTION (immutable -- do not alter) ===",
     `footballThesis: ${lockedStageA.footballThesis}`,
@@ -297,6 +333,7 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
     "Do not assume the sportsbook line is correct, and do not try to force disagreement with it either -- follow your locked projection and the market numbers where they lead.",
     "Confidence (1-10) reflects evidence quality + matchup clarity + market value + uncertainty -- a strong football advantage does NOT automatically mean high betting confidence.",
     "Never write 'sharp money', 'smart money', or 'professional action' unless you have independent evidence supporting that claim.",
+    ...EDITORIAL_ARTICLE_INSTRUCTIONS,
     "",
     "=== OUTPUT SCHEMA (JSON object) ===",
     "Respond with ONLY a single JSON object (no prose before or after, no markdown code fence). Do NOT include a `prediction`, `fairSpread`, or `projectedTotal` field -- those are already locked from Stage 1 and are not yours to resubmit here.",
@@ -314,6 +351,7 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
           totalEdgePoints: 0,
           interpretation: "<concise interpretation of your locked fair line vs the market>",
         },
+        editorialArticle: editorialArticleSchemaExample(game),
       },
       null,
       2

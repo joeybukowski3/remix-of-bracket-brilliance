@@ -105,6 +105,7 @@ export function combineInitialStages(input: CombineInitialStagesInput): Snapshot
       total,
       sideEdgePoints: input.stageB.marketAssessment.sideEdgePoints,
       totalEdgePoints: input.stageB.marketAssessment.totalEdgePoints,
+      editorialArticle: input.stageB.editorialArticle,
     },
   };
 }
@@ -270,6 +271,7 @@ export function combineRepricingStage(input: CombineRepricingStageInput): Snapsh
       total,
       sideEdgePoints: stageB.marketAssessment.sideEdgePoints,
       totalEdgePoints: stageB.marketAssessment.totalEdgePoints,
+      editorialArticle: stageB.editorialArticle,
     },
     analysisUpdateKind: "market_reprice",
   };
