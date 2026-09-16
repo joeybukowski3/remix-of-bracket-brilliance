@@ -1,10 +1,10 @@
 {
   "date": "2026-09-16",
-  "generatedAt": "2026-09-16T12:40:34.067Z",
+  "generatedAt": "2026-09-16T15:36:18.702Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field and Chase Field anchor today's slate with park factors of 1.4 and 1.01 respectively, creating elevated HR environments for Tatis and Merrill against Mason Adams plus Conine versus Merrill Kelly. Right-handed pitching dominates the top matchups, with Adams, Ritchie, Matthews, and Bassitt all facing lineups that have posted elevated barrel and hard-hit rates in favorable venues.",
-    "modelNote": "The model is heavily weighting Coors Field's 1.4 park factor and Adams' 78.2 HR/9 rate against Tatis, while incorporating recent barrel trends and opposing pitcher vulnerability metrics to rank the top slate options."
+    "slateOverview": "Coors Field and Chase Field headline today's slate with park factors of 1.4 and 1.01 respectively, creating elevated HR environments for Tatis and Conine against right-handers Adams and Kelly. Citi Field's 1.06 factor and favorable matchup for Alonso against Stock adds another strong venue, while Target Field's 0.97 factor still offers value for Rice and García Jr. against Matthews.",
+    "modelNote": "The model heavily weights barrel rate, hard-hit rate, and park factors above recent HR volume, elevating Tatis to the top spot despite only three HR in his last seven games due to his elite 12.7% barrel rate and Coors boost."
   },
   "bestBets": [
     {
@@ -19,10 +19,10 @@
       ],
       "bullets": [
         "park=1.4",
-        "hrScore=78.4"
+        "hrScore=78.7"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
+      "hrOddsYes": "+293",
+      "marketImpliedProbability": 0.2544529262086514,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -38,7 +38,7 @@
       ],
       "bullets": [
         "park=1.06",
-        "hrScore=77.3"
+        "hrScore=77.8"
       ],
       "hrOddsYes": "+290",
       "marketImpliedProbability": 0.2564102564102564,
@@ -52,15 +52,15 @@
       "opposingPitcher": "JR Ritchie",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=13.2%",
-        "HH=49%"
+        "Pitcher HR VS=63.0",
+        "Hard Hit%=49.0"
       ],
       "bullets": [
-        "park=1",
-        "hrScore=72.7"
+        "HR score 72.4 (#3)",
+        "Pitcher HR VS 63.0 at park 1.00"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
+      "hrOddsYes": "+406",
+      "marketImpliedProbability": 0.1976284584980237,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -75,7 +75,7 @@
         "Hard Hit%=48.2"
       ],
       "bullets": [
-        "HR score 69.4 (#4)",
+        "HR score 69.8 (#4)",
         "Pitcher HR VS 65.7 at park 0.97"
       ],
       "hrOddsYes": "+350",
@@ -94,16 +94,35 @@
         "Pitcher HR VS=41.2"
       ],
       "bullets": [
-        "HR score 69.1 (#5)",
+        "HR score 69.0 (#5)",
         "Pitcher HR VS 41.2 at park 1.06"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+321",
+      "marketImpliedProbability": 0.2375296912114014,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "ATL",
+      "opposingPitcher": "JR Ritchie",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=13.2%",
+        "HH=49%"
+      ],
+      "bullets": [
+        "park=1",
+        "hrScore=72.4"
+      ],
+      "hrOddsYes": "+406",
+      "marketImpliedProbability": 0.1976284584980237,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Ben Rice",
       "team": "NYY",
@@ -116,7 +135,7 @@
       ],
       "bullets": [
         "park=0.97",
-        "hrScore=69.4"
+        "hrScore=69.8"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -135,13 +154,72 @@
       ],
       "bullets": [
         "park=1.06",
-        "hrScore=69.1"
+        "hrScore=69"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
+      "hrOddsYes": "+321",
+      "marketImpliedProbability": 0.2375296912114014,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
+    {
+      "player": "Griffin Conine",
+      "team": "MIA",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Pitcher HR VS=81.9",
+        "Hard Hit%=49.7"
+      ],
+      "bullets": [
+        "HR score 67.8 (#6)",
+        "Pitcher HR VS 81.9 at park 1.01"
+      ],
+      "hrOddsYes": "+442",
+      "marketImpliedProbability": 0.18450184501845018,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=65.7",
+        "Hard Hit%=47.3"
+      ],
+      "bullets": [
+        "HR score 66.9 (#7)",
+        "Pitcher HR VS 65.7 at park 0.97"
+      ],
+      "hrOddsYes": "+440",
+      "marketImpliedProbability": 0.18518518518518517,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "COL",
+      "opposingPitcher": "Mason Adams",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=78.2",
+        "Hard Hit%=49.0"
+      ],
+      "bullets": [
+        "HR score 66.8 (#8)",
+        "Pitcher HR VS 78.2 at park 1.40"
+      ],
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
     {
       "player": "Griffin Conine",
       "team": "MIA",
@@ -154,29 +232,10 @@
       ],
       "bullets": [
         "park=1.01",
-        "hrScore=68.5"
+        "hrScore=67.8"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Merrill",
-      "team": "SD",
-      "opponent": "COL",
-      "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=78.2",
-        "Hard Hit%=49.0"
-      ],
-      "bullets": [
-        "HR score 66.6 (#7)",
-        "Pitcher HR VS 78.2 at park 1.40"
-      ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
+      "hrOddsYes": "+442",
+      "marketImpliedProbability": 0.18450184501845018,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,76 +244,17 @@
       "team": "NYY",
       "opponent": "MIN",
       "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=65.7",
-        "Hard Hit%=47.3"
-      ],
-      "bullets": [
-        "HR score 66.6 (#8)",
-        "Pitcher HR VS 65.7 at park 0.97"
-      ],
-      "hrOddsYes": "+440",
-      "marketImpliedProbability": 0.18518518518518517,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Jackson Merrill",
-      "team": "SD",
-      "opponent": "COL",
-      "opposingPitcher": "Mason Adams",
       "hrScoreRank": 7,
-      "topStats": [
-        "barrel=12.7%",
-        "HH=49%"
-      ],
-      "bullets": [
-        "park=1.4",
-        "hrScore=66.6"
-      ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Luis García Jr.",
-      "team": "NYY",
-      "opponent": "MIN",
-      "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 8,
       "topStats": [
         "barrel=12.7%",
         "HH=47.3%"
       ],
       "bullets": [
         "park=0.97",
-        "hrScore=66.6"
+        "hrScore=66.9"
       ],
       "hrOddsYes": "+440",
       "marketImpliedProbability": 0.18518518518518517,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "MIA",
-      "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 24,
-      "topStats": [
-        "Pitcher HR VS=64.4",
-        "Hard Hit%=42.0"
-      ],
-      "bullets": [
-        "HR score 58.6 (#24)",
-        "Pitcher HR VS 64.4 at park 1.01"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +263,36 @@
       "team": "LAD",
       "opponent": "CIN",
       "opposingPitcher": "Andrew Abbott",
-      "hrScoreRank": 17,
+      "hrScoreRank": 16,
       "topStats": [
         "Pitcher HR VS=60.2",
         "Hard Hit%=58.3"
       ],
       "bullets": [
-        "HR score 60.6 (#17)",
+        "HR score 60.5 (#16)",
         "Pitcher HR VS 60.2 at park 1.25"
       ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
+      "hrOddsYes": "+680",
+      "marketImpliedProbability": 0.1282051282051282,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Leo Bernal",
+      "team": "STL",
+      "opponent": "SF",
+      "opposingPitcher": "Anthony Molina",
+      "hrScoreRank": 12,
+      "topStats": [
+        "Hard Hit%=65.2",
+        "Pitcher HR VS=49.0"
+      ],
+      "bullets": [
+        "HR score 62.6 (#12)",
+        "Pitcher HR VS 49.0 at park 0.92"
+      ],
+      "hrOddsYes": "+600",
+      "marketImpliedProbability": 0.14285714285714285,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
