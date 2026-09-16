@@ -69,12 +69,22 @@ describe("MatchupAiPicksPanel", () => {
   it("shows the side/total picks and confidence for each handicapper", () => {
     render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
     // both handicappers happen to agree on the side pick (IND +3.5), and both also show IND +3.5 as
-    // the market line next to their (differing) fair lines -- 4 total occurrences of this exact text.
+    // the baseline line next to their (differing) fair lines -- 4 total occurrences of this exact text.
     expect(screen.getAllByText("IND +3.5")).toHaveLength(4);
     expect(screen.getByText("Confidence 4/10")).toBeInTheDocument();
     expect(screen.getByText("Confidence 6/10")).toBeInTheDocument();
     expect(screen.getByText("Over 47.5")).toBeInTheDocument();
     expect(screen.getByText("Confidence 5/10")).toBeInTheDocument();
+  });
+
+  it("WU7.7: labels the frozen sportsbook line as a baseline, never as the current/live market", () => {
+    render(<MatchupAiPicksPanel presentation={BASE_PRESENTATION} loading={false} error={null} />);
+    expect(screen.getAllByText("Baseline Spread")).toHaveLength(2);
+    expect(screen.getAllByText("Baseline Total")).toHaveLength(2);
+    expect(screen.queryAllByText("Market", { exact: true })).toHaveLength(0);
+    expect(screen.queryAllByText("Market total", { exact: true })).toHaveLength(0);
+    // the baseline is stamped with when the analysis actually ran, not a live "now".
+    expect(screen.getAllByText(/Analysis Baseline/)).toHaveLength(2);
   });
 
   it("WU4.5: shows each handicapper's own independent fair line and projected total, distinct from the market", () => {
