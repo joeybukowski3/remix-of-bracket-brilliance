@@ -9,10 +9,10 @@
     },
     "LOW": {
       "insufficient_sample": false,
-      "n": 236,
-      "receiving_yards_mae": 17.580152429119686,
-      "target_bias": 0.43667416313121865,
-      "target_mae": 1.7438211721433283
+      "n": 218,
+      "receiving_yards_mae": 17.970696196868868,
+      "target_bias": 0.32463991262165814,
+      "target_mae": 1.7397164911852256
     },
     "MEDIUM": {
       "insufficient_sample": true,
@@ -23,30 +23,30 @@
     },
     "NULL": {
       "insufficient_sample": false,
-      "n": 53,
-      "receiving_yards_mae": 11.68727495868425,
-      "target_bias": 0.8533364818771735,
-      "target_mae": 1.100034287361945
+      "n": 44,
+      "receiving_yards_mae": 12.542381678354277,
+      "target_bias": 0.8108631461305538,
+      "target_mae": 1.1080218663735741
     }
   },
   "cohorts": {
     "noHistory": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.0617389585124117,
-      "mean_signed_target_error": 0.8102969644606252,
-      "n": 52
+      "mean_absolute_target_error": 1.1080218663735741,
+      "mean_signed_target_error": 0.8108631461305538,
+      "n": 44
     },
     "orderingConflict": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.705151698708849,
-      "mean_signed_target_error": 0.35498999134641573,
-      "n": 126
+      "mean_absolute_target_error": 1.7180902163310279,
+      "mean_signed_target_error": 0.26406991609456126,
+      "n": 117
     },
     "overall": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.6623088885323112,
-      "mean_signed_target_error": 0.5251478571173457,
-      "n": 303
+      "mean_absolute_target_error": 1.6733591904641245,
+      "mean_signed_target_error": 0.4249541451063901,
+      "n": 276
     },
     "roleConflictHigh": {
       "insufficient_sample": true,
@@ -56,9 +56,9 @@
     },
     "roleConflictLow": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.7438211721433283,
-      "mean_signed_target_error": 0.43667416313121865,
-      "n": 236
+      "mean_absolute_target_error": 1.7397164911852256,
+      "mean_signed_target_error": 0.32463991262165814,
+      "n": 218
     },
     "roleConflictMedium": {
       "insufficient_sample": true,
@@ -68,15 +68,15 @@
     },
     "sameTeam": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.722600288360162,
-      "mean_signed_target_error": 0.5131363387431752,
-      "n": 205
+      "mean_absolute_target_error": 1.714931692167455,
+      "mean_signed_target_error": 0.4099837465280741,
+      "n": 190
     },
     "sourcedTE1": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 2.1309653905614696,
-      "mean_signed_target_error": 0.6563341276739056,
-      "n": 32
+      "mean_absolute_target_error": 2.0095676764679706,
+      "mean_signed_target_error": 0.48736766316467883,
+      "n": 31
     },
     "sourcedWR1": {
       "insufficient_sample": false,
@@ -92,29 +92,29 @@
     },
     "teamChanged": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.9725501119938553,
-      "mean_signed_target_error": 0.26755625165591196,
-      "n": 49
+      "mean_absolute_target_error": 1.9927693813536873,
+      "mean_signed_target_error": 0.17658026925457362,
+      "n": 46
     },
     "week1": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.6623088885323112,
-      "mean_signed_target_error": 0.5251478571173457,
-      "n": 303
+      "mean_absolute_target_error": 1.6733591904641245,
+      "mean_signed_target_error": 0.4249541451063901,
+      "n": 276
     },
     "weeks1to4": {
       "insufficient_sample": false,
-      "mean_absolute_target_error": 1.6623088885323112,
-      "mean_signed_target_error": 0.5251478571173457,
-      "n": 303
+      "mean_absolute_target_error": 1.6733591904641245,
+      "mean_signed_target_error": 0.4249541451063901,
+      "n": 276
     }
   },
   "completed_weeks": 1,
-  "diagnostic_available": 302,
-  "diagnostic_coverage_rate": 0.9966996699669967,
-  "diagnostic_unavailable": 1,
-  "evaluated_player_games": 303,
-  "generated_at": "2026-09-15T14:59:00.133Z",
+  "diagnostic_available": 276,
+  "diagnostic_coverage_rate": 1,
+  "diagnostic_unavailable": 0,
+  "evaluated_player_games": 276,
+  "generated_at": "2026-09-16T14:56:57.067Z",
   "high_conflict_by_team_change": {
     "high_conflict_same_team": {
       "n": 8,
@@ -126,19 +126,19 @@
     }
   },
   "prediction_type": "receiving",
-  "receiving_yards_mae": 16.572403894155574,
+  "receiving_yards_mae": 17.110773183375482,
   "same_team_vs_team_changed": {
     "same_team": {
-      "n": 205,
-      "target_mae": 1.722600288360162
+      "n": 190,
+      "target_mae": 1.714931692167455
     },
     "team_changed": {
-      "n": 49,
-      "target_mae": 1.9725501119938553
+      "n": 46,
+      "target_mae": 1.9927693813536873
     }
   },
   "schema_version": "jkb-football-forward-evaluation-v1",
   "season": 2026,
-  "target_bias": 0.5251478571173457,
-  "target_mae": 1.6623088885323112
+  "target_bias": 0.4249541451063901,
+  "target_mae": 1.6733591904641245
 }
