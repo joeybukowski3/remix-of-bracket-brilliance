@@ -39,7 +39,7 @@ import { resolveChatGptAnalysisConfig, type ChatGptAnalysisConfig, type ChatGptA
 import { parseChatGptResponsesBody, parseChatGptUsageTelemetry } from "./nfl-chatgpt-research-parsing";
 import { MATCHUP_FACTOR_AREAS, type GrokStageAV1 } from "./nfl-grok-analysis-types";
 import type { SnapshotMarketRecord, SnapshotMarketState } from "./nfl-snapshot-types";
-import { buildValidTeamCodesLines, type AnalysisGameFacts, type PreviousBlindState } from "./nfl-grok-analysis-adapter";
+import { buildValidTeamCodesLines, formatCurrentMarketLine, formatMarketDeltaLines, type AnalysisGameFacts, type PreviousBlindState } from "./nfl-grok-analysis-adapter";
 
 const RESPONSES_API_URL = "https://api.openai.com/v1/responses";
 
@@ -293,7 +293,8 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
     `projectedTotal: ${lockedStageA.prediction.projectedTotal}`,
     "",
     "=== CURRENT DETERMINISTIC MARKET STATE (do not search for these numbers -- you have no web_search tool in this call; this is the FIRST time you are seeing a market price for this game) ===",
-    `sportsbook=${currentMarketState.sportsbook ?? "unavailable"} spread(home)=${currentMarketState.spread.homeLine ?? "?"} total=${currentMarketState.total.line ?? "?"} asOf=${currentMarketState.asOf ?? "unknown"}`,
+    formatCurrentMarketLine(game, currentMarketState),
+    `HOME team is ${game.homeTeam} (${game.homeTeamFull}). AWAY team is ${game.awayTeam} (${game.awayTeamFull}). These are the exact, authoritative lines -- you do not restate or echo them anywhere in your output below; the engine attaches them mechanically. Never invert HOME/AWAY, never flip a sign, and never convert a favorite-centric line into a team-centric one.`,
     "",
     "=== YOUR TASK ===",
     "STEP 4 -- MARKET COMPARISON: compare your locked fair spread/total to the current market price.",
@@ -304,19 +305,16 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
     "",
     "=== OUTPUT SCHEMA (JSON object) ===",
     "Respond with ONLY a single JSON object (no prose before or after, no markdown code fence). Do NOT include a `prediction`, `fairSpread`, or `projectedTotal` field -- those are already locked from Stage 1 and are not yours to resubmit here.",
-    "marketAssessment.currentHomeLine/currentAwayLine/currentTotal must exactly match the deterministic current market values supplied above, or be null if genuinely unavailable. Leave marketAssessment.sideEdgePoints/totalEdgePoints as 0 -- the engine computes those mechanically from your locked Stage 1 prediction.",
+    "Do NOT include `side.lineAtOpinion`, `total.totalAtOpinion`, or `marketAssessment.currentHomeLine`/`currentAwayLine`/`currentTotal` -- the engine attaches the authoritative market values to your decision mechanically after validation, so there is nothing for you to copy or compute here. Leave marketAssessment.sideEdgePoints/totalEdgePoints as 0 -- the engine computes those mechanically from your locked Stage 1 prediction.",
     JSON.stringify(
       {
         schemaVersion: "<leave as empty string -- the engine fills this in>",
         model: "chatgpt",
         gameId: game.gameId,
         contextHash: "<leave as empty string -- the engine fills this in>",
-        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", lineAtOpinion: { homeLine: 0, awayLine: 0 }, confidence: 5, rationale: "<concise>" },
-        total: { lean: "over|under|pass|undecided", totalAtOpinion: 0, confidence: 5, rationale: "<concise>" },
+        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", confidence: 5, rationale: "<concise>" },
+        total: { lean: "over|under|pass|undecided", confidence: 5, rationale: "<concise>" },
         marketAssessment: {
-          currentHomeLine: 0,
-          currentAwayLine: 0,
-          currentTotal: 0,
           sideEdgePoints: 0,
           totalEdgePoints: 0,
           interpretation: "<concise interpretation of your locked fair line vs the market>",
@@ -392,9 +390,8 @@ export function buildStageBUpdatePrompt(game: AnalysisGameFacts, lockedFairSprea
     `projectedTotal: ${lockedProjectedTotal}`,
     "",
     "=== DETERMINISTIC MARKET DELTA (do not search for these numbers -- you have no web_search tool in this call) ===",
-    `previous: spread(home)=${marketRecord.previousSpread?.homeLine ?? "?"} total=${marketRecord.previousTotal ?? "?"}`,
-    `current: spread(home)=${marketRecord.spread.homeLine ?? "?"} total=${marketRecord.total.line ?? "?"} asOf=${marketRecord.asOf ?? "unknown"}`,
-    `spreadDelta=${marketRecord.spreadDelta ?? "n/a"} totalDelta=${marketRecord.totalDelta ?? "n/a"}`,
+    ...formatMarketDeltaLines(game, marketRecord),
+    `HOME team is ${game.homeTeam} (${game.homeTeamFull}). AWAY team is ${game.awayTeam} (${game.awayTeamFull}). These are the exact, authoritative lines -- you do not restate or echo them anywhere in your output below; the engine attaches them mechanically. Never invert HOME/AWAY, never flip a sign, and never convert a favorite-centric line into a team-centric one.`,
     "If the market moved, do not assume or claim a reason (e.g. \"sharp money\") unless you have independent evidence for it.",
     "",
     "=== YOUR TASK ===",
@@ -402,18 +399,16 @@ export function buildStageBUpdatePrompt(game: AnalysisGameFacts, lockedFairSprea
     "",
     "=== OUTPUT SCHEMA (JSON object) ===",
     "Respond with ONLY a single JSON object (no prose before or after, no markdown code fence). Do NOT include a `prediction`, `fairSpread`, or `projectedTotal` field -- those are already locked from Stage 1.",
+    "Do NOT include `side.lineAtOpinion`, `total.totalAtOpinion`, or `marketAssessment.currentHomeLine`/`currentAwayLine`/`currentTotal` -- the engine attaches the authoritative market values to your decision mechanically after validation.",
     JSON.stringify(
       {
         schemaVersion: "<leave as empty string -- the engine fills this in>",
         model: "chatgpt",
         gameId: game.gameId,
         contextHash: "<leave as empty string -- the engine fills this in>",
-        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", lineAtOpinion: { homeLine: 0, awayLine: 0 }, confidence: 5, rationale: "<concise>" },
-        total: { lean: "over|under|pass|undecided", totalAtOpinion: 0, confidence: 5, rationale: "<concise>" },
+        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", confidence: 5, rationale: "<concise>" },
+        total: { lean: "over|under|pass|undecided", confidence: 5, rationale: "<concise>" },
         marketAssessment: {
-          currentHomeLine: 0,
-          currentAwayLine: 0,
-          currentTotal: 0,
           sideEdgePoints: 0,
           totalEdgePoints: 0,
           interpretation: "<concise interpretation of your locked fair line vs the current market>",

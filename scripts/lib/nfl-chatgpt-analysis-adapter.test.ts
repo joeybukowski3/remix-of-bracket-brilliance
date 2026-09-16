@@ -122,7 +122,8 @@ describe("buildStageBInitialPrompt (chatgpt)", () => {
   it("reveals the locked Stage A projection verbatim, the market for the first time, and forbids revising the projection", () => {
     const prompt = buildStageBInitialPrompt(FIXTURE_CHATGPT_ANALYSIS_GAME, FIXTURE_LOCKED_STAGE_A, FIXTURE_CHATGPT_ANALYSIS_CURRENT_MARKET);
     expect(prompt).toContain(FIXTURE_LOCKED_STAGE_A.footballThesis);
-    expect(prompt).toContain(`spread(home)=${FIXTURE_CHATGPT_ANALYSIS_CURRENT_MARKET.spread.homeLine}`);
+    expect(prompt).toContain(`HOME(${FIXTURE_CHATGPT_ANALYSIS_GAME.homeTeam})=${FIXTURE_CHATGPT_ANALYSIS_CURRENT_MARKET.spread.homeLine}`);
+    expect(prompt).toContain(`AWAY(${FIXTURE_CHATGPT_ANALYSIS_GAME.awayTeam})=${FIXTURE_CHATGPT_ANALYSIS_CURRENT_MARKET.spread.awayLine}`);
     expect(prompt).toMatch(/may NOT revise/);
     expect(prompt).toMatch(/Do NOT include a `prediction`/);
   });

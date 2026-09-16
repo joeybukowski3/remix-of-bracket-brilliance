@@ -45,6 +45,7 @@ import {
   type GrokStageBV1,
   type GrokTotalOpinion,
   type IndependentPrediction,
+  type MarketAssessment,
   type MatchupFactor,
 } from "./nfl-grok-analysis-types";
 import { SIDE_LEANS, TOTAL_LEANS, type SnapshotMarketState } from "./nfl-snapshot-types";
@@ -233,24 +234,65 @@ function validateMatchupFactor(factor: unknown, index: number): { reasons: strin
   return { reasons, normalized };
 }
 
-function validateMarketAssessmentAgainstContext(assessment: unknown, currentMarketState: SnapshotMarketState): string[] {
+/**
+ * WU7.5 -- the model is no longer asked for (and this no longer validates)
+ * `currentHomeLine`/`currentAwayLine`/`currentTotal` at all: the WU7.4
+ * CAR_ATL incident showed a provider can invert home/away when asked to
+ * echo the market back, and there was never any information value in that
+ * echo -- once validated it is guaranteed equal to the deterministic value
+ * already known in code (see mechanicalizeMarketAssessment below, which now
+ * attaches those three fields directly from `currentMarketState`, never
+ * from the raw payload). Only `interpretation` -- genuine provider-authored
+ * free text -- is still validated here.
+ */
+function validateMarketAssessmentAgainstContext(assessment: unknown): string[] {
   const reasons: string[] = [];
   if (!isRecord(assessment)) return ["marketAssessment is not an object"];
-  const checks: [string, unknown, number | null][] = [
-    ["currentHomeLine", assessment.currentHomeLine, currentMarketState.spread.homeLine],
-    ["currentAwayLine", assessment.currentAwayLine, currentMarketState.spread.awayLine],
-    ["currentTotal", assessment.currentTotal, currentMarketState.total.line],
-  ];
-  for (const [field, reported, actual] of checks) {
-    if (reported == null) continue; // null is honest ("unavailable"), never a violation
-    if (typeof reported !== "number" || reported !== actual) {
-      reasons.push(`marketAssessment.${field} (${JSON.stringify(reported)}) does not match the supplied deterministic market value (${JSON.stringify(actual)}) -- invented market values are forbidden`);
-    }
-  }
   if (typeof assessment.interpretation !== "string" || assessment.interpretation.trim().length === 0) reasons.push("marketAssessment.interpretation is required");
   const postgame = containsPostgameLanguage(typeof assessment.interpretation === "string" ? assessment.interpretation : null);
   if (postgame) reasons.push(`marketAssessment.interpretation contains postgame language: "${postgame}"`);
   return reasons;
+}
+
+/** WU7.5 -- attaches the authoritative deterministic market values to a validated marketAssessment,
+ * mechanically overwriting sideEdgePoints/totalEdgePoints (unchanged from before WU7.5) AND
+ * currentHomeLine/currentAwayLine/currentTotal (new in WU7.5 -- these are no longer ever sourced
+ * from the raw payload, so a provider can no longer invert or misreport them). */
+function mechanicalizeMarketAssessment(raw: { interpretation: string }, currentMarketState: SnapshotMarketState, sideEdgePoints: number | null, totalEdgePoints: number | null): MarketAssessment {
+  return {
+    currentHomeLine: currentMarketState.spread.homeLine,
+    currentAwayLine: currentMarketState.spread.awayLine,
+    currentTotal: currentMarketState.total.line,
+    sideEdgePoints,
+    totalEdgePoints,
+    interpretation: raw.interpretation,
+  };
+}
+
+/** WU7.5 -- `lineAtOpinion` is no longer asked of (or validated from) the model: when `lean` is a
+ * real pick, its only correct value is always exactly `currentMarketState.spread`, so the code
+ * attaches it directly rather than trusting the provider to copy it without inverting home/away. */
+function mechanicalizeSideOpinion(raw: GrokSideOpinion, currentMarketState: SnapshotMarketState): GrokSideOpinion {
+  const isPlay = raw.lean === "home" || raw.lean === "away";
+  return {
+    lean: raw.lean,
+    team: isPlay ? (raw.team ?? null) : null,
+    confidence: raw.confidence,
+    rationale: raw.rationale,
+    lineAtOpinion: isPlay ? { homeLine: currentMarketState.spread.homeLine, awayLine: currentMarketState.spread.awayLine } : null,
+  };
+}
+
+/** WU7.5 -- same reasoning as mechanicalizeSideOpinion: `totalAtOpinion`'s only correct value when
+ * `lean` is over/under is always exactly `currentMarketState.total.line`. */
+function mechanicalizeTotalOpinion(raw: GrokTotalOpinion, currentMarketState: SnapshotMarketState): GrokTotalOpinion {
+  const isPlay = raw.lean === "over" || raw.lean === "under";
+  return {
+    lean: raw.lean,
+    confidence: raw.confidence,
+    rationale: raw.rationale,
+    totalAtOpinion: isPlay ? currentMarketState.total.line : null,
+  };
 }
 
 /**
@@ -308,7 +350,14 @@ function validatePrediction(prediction: unknown, homeTeam: string, awayTeam: str
   return { reasons, normalized: { ...prediction, fairSpread: normalizedFairSpread } };
 }
 
-function validateSideOpinion(side: unknown, currentMarketState: SnapshotMarketState, label: string): string[] {
+/**
+ * WU7.5 -- `lineAtOpinion` is no longer part of the raw contract at all (see
+ * mechanicalizeSideOpinion): the model is never asked to echo the market
+ * spread back, so there is nothing here to require or cross-check anymore.
+ * Only lean/confidence/rationale (and team, structurally, via `isRecord`)
+ * are genuine provider judgment.
+ */
+function validateSideOpinion(side: unknown, label: string): string[] {
   const reasons: string[] = [];
   if (!isRecord(side)) return [`${label} is not an object`];
   if (!SIDE_LEANS.includes(side.lean as (typeof SIDE_LEANS)[number])) reasons.push(`${label}.lean "${String(side.lean)}" is invalid`);
@@ -316,19 +365,11 @@ function validateSideOpinion(side: unknown, currentMarketState: SnapshotMarketSt
   if (typeof side.rationale !== "string" || side.rationale.trim().length === 0) reasons.push(`${label}.rationale is required`);
   const postgame = containsPostgameLanguage(typeof side.rationale === "string" ? side.rationale : null);
   if (postgame) reasons.push(`${label}.rationale contains postgame language: "${postgame}"`);
-
-  if (side.lean === "home" || side.lean === "away") {
-    const line = side.lineAtOpinion;
-    if (!isRecord(line) || typeof line.homeLine !== "number" || typeof line.awayLine !== "number") {
-      reasons.push(`${label}.lineAtOpinion is required (with homeLine/awayLine) when lean is "${String(side.lean)}"`);
-    } else if (line.homeLine !== currentMarketState.spread.homeLine || line.awayLine !== currentMarketState.spread.awayLine) {
-      reasons.push(`${label}.lineAtOpinion (${JSON.stringify(line)}) does not match the supplied current market spread (${JSON.stringify(currentMarketState.spread)})`);
-    }
-  }
   return reasons;
 }
 
-function validateTotalOpinion(total: unknown, currentMarketState: SnapshotMarketState, label: string): string[] {
+/** WU7.5 -- `totalAtOpinion` is no longer part of the raw contract at all (see mechanicalizeTotalOpinion). */
+function validateTotalOpinion(total: unknown, label: string): string[] {
   const reasons: string[] = [];
   if (!isRecord(total)) return [`${label} is not an object`];
   if (!TOTAL_LEANS.includes(total.lean as (typeof TOTAL_LEANS)[number])) reasons.push(`${label}.lean "${String(total.lean)}" is invalid`);
@@ -336,14 +377,6 @@ function validateTotalOpinion(total: unknown, currentMarketState: SnapshotMarket
   if (typeof total.rationale !== "string" || total.rationale.trim().length === 0) reasons.push(`${label}.rationale is required`);
   const postgame = containsPostgameLanguage(typeof total.rationale === "string" ? total.rationale : null);
   if (postgame) reasons.push(`${label}.rationale contains postgame language: "${postgame}"`);
-
-  if (total.lean === "over" || total.lean === "under") {
-    if (typeof total.totalAtOpinion !== "number") {
-      reasons.push(`${label}.totalAtOpinion is required when lean is "${String(total.lean)}"`);
-    } else if (total.totalAtOpinion !== currentMarketState.total.line) {
-      reasons.push(`${label}.totalAtOpinion (${total.totalAtOpinion}) does not match the supplied current market total (${currentMarketState.total.line})`);
-    }
-  }
   return reasons;
 }
 
@@ -452,24 +485,20 @@ export function validateGrokStageB(raw: unknown, context: GrokStageBValidationCo
   if (!isRecord(raw)) return { ok: false, reasons: ["stage B proposal is not an object"] };
 
   reasons.push(...validateModelAndGameId(raw, context));
-  reasons.push(...validateMarketAssessmentAgainstContext(raw.marketAssessment, context.currentMarketState));
-  reasons.push(...validateSideOpinion(raw.side, context.currentMarketState, "side"));
-  reasons.push(...validateTotalOpinion(raw.total, context.currentMarketState, "total"));
+  reasons.push(...validateMarketAssessmentAgainstContext(raw.marketAssessment));
+  reasons.push(...validateSideOpinion(raw.side, "side"));
+  reasons.push(...validateTotalOpinion(raw.total, "total"));
 
   if (reasons.length > 0) return { ok: false, reasons };
 
-  // Simple arithmetic is never trusted from the model -- sideEdgePoints/totalEdgePoints are
-  // computed mechanically here from the LOCKED Stage A prediction against the current market,
-  // overwriting whatever placeholder the model submitted. Raw Stage B fields other than
+  // WU7.5 -- market values (currentHomeLine/currentAwayLine/currentTotal, side.lineAtOpinion,
+  // total.totalAtOpinion) are never trusted from the model at all anymore -- see
+  // mechanicalizeMarketAssessment/mechanicalizeSideOpinion/mechanicalizeTotalOpinion. Simple
+  // arithmetic (sideEdgePoints/totalEdgePoints) is likewise always computed mechanically here from
+  // the LOCKED Stage A prediction against the current market. Raw Stage B fields other than
   // side/total/marketAssessment/schemaVersion/model/gameId/generatedAt/contextHash are
   // deliberately never copied onto the trusted shape -- there is no `prediction` field to
   // even consider, by construction.
-  const mechanicalMarketAssessment = {
-    ...(raw.marketAssessment as GrokStageBProposal["marketAssessment"]),
-    sideEdgePoints: computeSideEdgePoints(context.lockedPrediction, context.homeTeam, context.currentMarketState.spread.homeLine),
-    totalEdgePoints: computeTotalEdgePoints(context.lockedPrediction, context.currentMarketState.total.line),
-  };
-
   const analysis: GrokStageBV1 = {
     schemaVersion: GROK_ANALYSIS_SCHEMA_VERSION,
     model: context.model,
@@ -477,9 +506,14 @@ export function validateGrokStageB(raw: unknown, context: GrokStageBValidationCo
     // WU4.6.5 -- the trusted orchestration timestamp, never the raw payload's own `generatedAt`.
     generatedAt: context.generatedAt,
     contextHash: context.contextHash,
-    side: raw.side as GrokSideOpinion,
-    total: raw.total as GrokTotalOpinion,
-    marketAssessment: mechanicalMarketAssessment,
+    side: mechanicalizeSideOpinion(raw.side as GrokSideOpinion, context.currentMarketState),
+    total: mechanicalizeTotalOpinion(raw.total as GrokTotalOpinion, context.currentMarketState),
+    marketAssessment: mechanicalizeMarketAssessment(
+      raw.marketAssessment as { interpretation: string },
+      context.currentMarketState,
+      computeSideEdgePoints(context.lockedPrediction, context.homeTeam, context.currentMarketState.spread.homeLine),
+      computeTotalEdgePoints(context.lockedPrediction, context.currentMarketState.total.line)
+    ),
   };
   return { ok: true, analysis };
 }
@@ -549,18 +583,14 @@ export function validateGrokStageBUpdate(raw: unknown, context: GrokStageBValida
   const postgame = containsPostgameLanguage(typeof raw.conciseCommentary === "string" ? raw.conciseCommentary : null);
   if (postgame) reasons.push(`update proposal contains postgame language: "${postgame}"`);
 
-  reasons.push(...validateMarketAssessmentAgainstContext(raw.marketAssessment, context.currentMarketState));
-  reasons.push(...validateSideOpinion(raw.side, context.currentMarketState, "side"));
-  reasons.push(...validateTotalOpinion(raw.total, context.currentMarketState, "total"));
+  reasons.push(...validateMarketAssessmentAgainstContext(raw.marketAssessment));
+  reasons.push(...validateSideOpinion(raw.side, "side"));
+  reasons.push(...validateTotalOpinion(raw.total, "total"));
 
   if (reasons.length > 0) return { ok: false, reasons };
 
-  const mechanicalMarketAssessment = {
-    ...(raw.marketAssessment as GrokStageBUpdateProposal["marketAssessment"]),
-    sideEdgePoints: computeSideEdgePoints(context.lockedPrediction, context.homeTeam, context.currentMarketState.spread.homeLine),
-    totalEdgePoints: computeTotalEdgePoints(context.lockedPrediction, context.currentMarketState.total.line),
-  };
-
+  // WU7.5 -- see validateGrokStageB's identical comment: market values are never trusted from the
+  // model, always attached mechanically from context.currentMarketState.
   const proposal: GrokStageBUpdateProposal = {
     schemaVersion: GROK_ANALYSIS_SCHEMA_VERSION,
     model: context.model,
@@ -568,9 +598,14 @@ export function validateGrokStageBUpdate(raw: unknown, context: GrokStageBValida
     // WU4.6.5 -- the trusted orchestration timestamp, never the raw payload's own `generatedAt`.
     generatedAt: context.generatedAt,
     contextHash: context.contextHash,
-    side: raw.side as GrokSideOpinion,
-    total: raw.total as GrokTotalOpinion,
-    marketAssessment: mechanicalMarketAssessment,
+    side: mechanicalizeSideOpinion(raw.side as GrokSideOpinion, context.currentMarketState),
+    total: mechanicalizeTotalOpinion(raw.total as GrokTotalOpinion, context.currentMarketState),
+    marketAssessment: mechanicalizeMarketAssessment(
+      raw.marketAssessment as { interpretation: string },
+      context.currentMarketState,
+      computeSideEdgePoints(context.lockedPrediction, context.homeTeam, context.currentMarketState.spread.homeLine),
+      computeTotalEdgePoints(context.lockedPrediction, context.currentMarketState.total.line)
+    ),
     conciseCommentary: raw.conciseCommentary as string,
   };
   return { ok: true, proposal };

@@ -242,6 +242,35 @@ export function buildStageAInitialPrompt(game: AnalysisGameFacts, packet: NflGam
 }
 
 /**
+ * WU7.5 -- shared, provider-neutral Stage B market-line formatting (grok and
+ * chatgpt's Stage B prompts both import this rather than each hand-rolling
+ * their own copy of the same string). Root cause of the WU7.4 CAR_ATL
+ * incident: the old format printed a single bare number labeled only
+ * `spread(home)=X`, with the away line never shown at all and no team
+ * abbreviation next to either number. ChatGPT inverted home/away in its
+ * response -- the strict validator correctly rejected it, but the prompt
+ * itself gave the model nothing to anchor "home" and "away" to other than
+ * inference. This format explicitly labels every line with its team
+ * abbreviation and states both directions, so there is no longer a bare
+ * number for the model to misattribute.
+ */
+export function formatCurrentMarketLine(game: AnalysisGameFacts, currentMarketState: SnapshotMarketState): string {
+  return (
+    `sportsbook=${currentMarketState.sportsbook ?? "unavailable"} total=${currentMarketState.total.line ?? "?"} asOf=${currentMarketState.asOf ?? "unknown"} -- ` +
+    `spread: HOME(${game.homeTeam})=${currentMarketState.spread.homeLine ?? "?"}, AWAY(${game.awayTeam})=${currentMarketState.spread.awayLine ?? "?"}`
+  );
+}
+
+/** WU7.5 -- same team-labeled treatment as formatCurrentMarketLine, for the update-mode market delta (previous vs current). */
+export function formatMarketDeltaLines(game: AnalysisGameFacts, marketRecord: SnapshotMarketRecord): string[] {
+  return [
+    `previous: spread: HOME(${game.homeTeam})=${marketRecord.previousSpread?.homeLine ?? "?"}, AWAY(${game.awayTeam})=${marketRecord.previousSpread?.awayLine ?? "?"} total=${marketRecord.previousTotal ?? "?"}`,
+    `current: spread: HOME(${game.homeTeam})=${marketRecord.spread.homeLine ?? "?"}, AWAY(${game.awayTeam})=${marketRecord.spread.awayLine ?? "?"} total=${marketRecord.total.line ?? "?"} asOf=${marketRecord.asOf ?? "unknown"}`,
+    `spreadDelta=${marketRecord.spreadDelta ?? "n/a"} totalDelta=${marketRecord.totalDelta ?? "n/a"}`,
+  ];
+}
+
+/**
  * WU4.6 STAGE B -- the market decision. `lockedStageA` is the ALREADY
  * VALIDATED Stage A output, revealed here verbatim as a locked fact --
  * the prompt explicitly forbids revising it, and the output schema has no
@@ -259,7 +288,8 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
     `projectedTotal: ${lockedStageA.prediction.projectedTotal}`,
     "",
     "=== CURRENT DETERMINISTIC MARKET STATE (do not search for these numbers; this is the FIRST time you are seeing a market price for this game) ===",
-    `sportsbook=${currentMarketState.sportsbook ?? "unavailable"} spread(home)=${currentMarketState.spread.homeLine ?? "?"} total=${currentMarketState.total.line ?? "?"} asOf=${currentMarketState.asOf ?? "unknown"}`,
+    formatCurrentMarketLine(game, currentMarketState),
+    `HOME team is ${game.homeTeam} (${game.homeTeamFull}). AWAY team is ${game.awayTeam} (${game.awayTeamFull}). These are the exact, authoritative lines -- you do not restate or echo them anywhere in your output below; the engine attaches them mechanically. Never invert HOME/AWAY, never flip a sign, and never convert a favorite-centric line into a team-centric one.`,
     "",
     "=== YOUR TASK ===",
     "STEP 4 -- MARKET COMPARISON: compare your locked fair spread/total to the current market price.",
@@ -270,19 +300,16 @@ export function buildStageBInitialPrompt(game: AnalysisGameFacts, lockedStageA: 
     "",
     "=== OUTPUT SCHEMA (JSON object) ===",
     "Respond with ONLY a single JSON object (no prose before or after, no markdown code fence). Do NOT include a `prediction`, `fairSpread`, or `projectedTotal` field -- those are already locked from Stage 1 and are not yours to resubmit here.",
-    "marketAssessment.currentHomeLine/currentAwayLine/currentTotal must exactly match the deterministic current market values supplied above, or be null if genuinely unavailable. Leave marketAssessment.sideEdgePoints/totalEdgePoints as 0 -- the engine computes those mechanically from your locked Stage 1 prediction.",
+    "Do NOT include `side.lineAtOpinion`, `total.totalAtOpinion`, or `marketAssessment.currentHomeLine`/`currentAwayLine`/`currentTotal` -- the engine attaches the authoritative market values to your decision mechanically after validation, so there is nothing for you to copy or compute here. Leave marketAssessment.sideEdgePoints/totalEdgePoints as 0 -- the engine computes those mechanically from your locked Stage 1 prediction.",
     JSON.stringify(
       {
         schemaVersion: "nfl-grok-analysis-v1",
         model: "grok",
         gameId: game.gameId,
         contextHash: "<leave as empty string -- the engine fills this in>",
-        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", lineAtOpinion: { homeLine: 0, awayLine: 0 }, confidence: 5, rationale: "<concise>" },
-        total: { lean: "over|under|pass|undecided", totalAtOpinion: 0, confidence: 5, rationale: "<concise>" },
+        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", confidence: 5, rationale: "<concise>" },
+        total: { lean: "over|under|pass|undecided", confidence: 5, rationale: "<concise>" },
         marketAssessment: {
-          currentHomeLine: 0,
-          currentAwayLine: 0,
-          currentTotal: 0,
           sideEdgePoints: 0,
           totalEdgePoints: 0,
           interpretation: "<concise interpretation of your locked fair line vs the market>",
@@ -364,9 +391,8 @@ export function buildStageBUpdatePrompt(game: AnalysisGameFacts, lockedFairSprea
     `projectedTotal: ${lockedProjectedTotal}`,
     "",
     "=== DETERMINISTIC MARKET DELTA (do not search for these numbers) ===",
-    `previous: spread(home)=${marketRecord.previousSpread?.homeLine ?? "?"} total=${marketRecord.previousTotal ?? "?"}`,
-    `current: spread(home)=${marketRecord.spread.homeLine ?? "?"} total=${marketRecord.total.line ?? "?"} asOf=${marketRecord.asOf ?? "unknown"}`,
-    `spreadDelta=${marketRecord.spreadDelta ?? "n/a"} totalDelta=${marketRecord.totalDelta ?? "n/a"}`,
+    ...formatMarketDeltaLines(game, marketRecord),
+    `HOME team is ${game.homeTeam} (${game.homeTeamFull}). AWAY team is ${game.awayTeam} (${game.awayTeamFull}). These are the exact, authoritative lines -- you do not restate or echo them anywhere in your output below; the engine attaches them mechanically. Never invert HOME/AWAY, never flip a sign, and never convert a favorite-centric line into a team-centric one.`,
     "If the market moved, do not assume or claim a reason (e.g. \"sharp money\") unless you have independent evidence for it.",
     "",
     "=== YOUR TASK ===",
@@ -374,18 +400,16 @@ export function buildStageBUpdatePrompt(game: AnalysisGameFacts, lockedFairSprea
     "",
     "=== OUTPUT SCHEMA (JSON object) ===",
     "Respond with ONLY a single JSON object (no prose before or after, no markdown code fence). Do NOT include a `prediction`, `fairSpread`, or `projectedTotal` field -- those are already locked from Stage 1.",
+    "Do NOT include `side.lineAtOpinion`, `total.totalAtOpinion`, or `marketAssessment.currentHomeLine`/`currentAwayLine`/`currentTotal` -- the engine attaches the authoritative market values to your decision mechanically after validation.",
     JSON.stringify(
       {
         schemaVersion: "nfl-grok-analysis-v1",
         model: "grok",
         gameId: game.gameId,
         contextHash: "<leave as empty string -- the engine fills this in>",
-        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", lineAtOpinion: { homeLine: 0, awayLine: 0 }, confidence: 5, rationale: "<concise>" },
-        total: { lean: "over|under|pass|undecided", totalAtOpinion: 0, confidence: 5, rationale: "<concise>" },
+        side: { lean: "home|away|pass|undecided", team: "<team abbr or omit>", confidence: 5, rationale: "<concise>" },
+        total: { lean: "over|under|pass|undecided", confidence: 5, rationale: "<concise>" },
         marketAssessment: {
-          currentHomeLine: 0,
-          currentAwayLine: 0,
-          currentTotal: 0,
           sideEdgePoints: 0,
           totalEdgePoints: 0,
           interpretation: "<concise interpretation of your locked fair line vs the current market>",
