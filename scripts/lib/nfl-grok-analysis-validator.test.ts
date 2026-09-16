@@ -261,22 +261,44 @@ describe("validateGrokStageB", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("rejects a marketAssessment current-market number that does not match the supplied deterministic market state", () => {
+  // WU7.5 -- root cause of the WU7.4 CAR_ATL incident: the model was asked to echo
+  // currentHomeLine/currentAwayLine/currentTotal and side.lineAtOpinion/total.totalAtOpinion back,
+  // and inverted home/away in doing so. Neither is part of the raw contract anymore -- the engine
+  // always attaches the authoritative currentMarketState mechanically, so a provider literally
+  // cannot invert, flip, or otherwise misreport these values: whatever garbage (or nothing) it
+  // sends for them is ignored, never validated, and never reaches the trusted output.
+  it("WU7.5: ignores an inverted/garbage marketAssessment.currentHomeLine -- the trusted output always reflects the authoritative currentMarketState instead", () => {
     const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
-    const bad = { ...payload, marketAssessment: { ...(payload.marketAssessment as Record<string, unknown>), currentHomeLine: -99 } };
+    const bad = { ...payload, marketAssessment: { ...(payload.marketAssessment as Record<string, unknown>), currentHomeLine: -99, currentAwayLine: 99 } };
     const result = validateGrokStageB(bad, STAGE_B_CONTEXT);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.reasons.join(" ")).toMatch(/invented market values are forbidden/);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.marketAssessment.currentHomeLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.homeLine);
+    expect(result.analysis.marketAssessment.currentAwayLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.awayLine);
   });
 
-  it("rejects a lineAtOpinion that does not match the supplied current market state", () => {
+  it("WU7.5: ignores an inverted/garbage side.lineAtOpinion -- the trusted output always reflects the authoritative currentMarketState instead", () => {
     const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
     const bad = { ...payload, side: { ...(payload.side as Record<string, unknown>), lineAtOpinion: { homeLine: 999, awayLine: -999 } } };
     const result = validateGrokStageB(bad, STAGE_B_CONTEXT);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.reasons.join(" ")).toMatch(/does not match the supplied current market spread/);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.side.lineAtOpinion).toEqual({ homeLine: STAGE_B_CONTEXT.currentMarketState.spread.homeLine, awayLine: STAGE_B_CONTEXT.currentMarketState.spread.awayLine });
+  });
+
+  it("WU7.5: an entirely missing marketAssessment.currentHomeLine/side.lineAtOpinion in the raw payload is fine -- neither is part of the contract anymore", () => {
+    const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
+    const marketAssessment = { ...(payload.marketAssessment as Record<string, unknown>) };
+    delete marketAssessment.currentHomeLine;
+    delete marketAssessment.currentAwayLine;
+    delete marketAssessment.currentTotal;
+    const side = { ...(payload.side as Record<string, unknown>) };
+    delete side.lineAtOpinion;
+    const result = validateGrokStageB({ ...payload, marketAssessment, side }, STAGE_B_CONTEXT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.marketAssessment.currentHomeLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.homeLine);
+    expect(result.analysis.side.lineAtOpinion).toEqual({ homeLine: STAGE_B_CONTEXT.currentMarketState.spread.homeLine, awayLine: STAGE_B_CONTEXT.currentMarketState.spread.awayLine });
   });
 
   it("side and total are validated/accepted independently -- a side PASS and a total OVER-shaped payload both validate on their own terms", () => {
@@ -333,11 +355,14 @@ describe("validateGrokStageB", () => {
       expect(result.analysis.marketAssessment.totalEdgePoints).not.toBe(-999);
     });
 
-    it("14. marketAtDecision-equivalent inputs (currentHomeLine/currentAwayLine/currentTotal) must match the authoritative currentMarketState, never an arbitrary provider value", () => {
+    it("14. (WU7.5) marketAtDecision-equivalent fields (currentHomeLine/currentAwayLine/currentTotal) always reflect the authoritative currentMarketState, never an arbitrary provider value", () => {
       const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
       const bad = { ...payload, marketAssessment: { ...(payload.marketAssessment as Record<string, unknown>), currentTotal: 12345 } };
       const result = validateGrokStageB(bad, STAGE_B_CONTEXT);
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.analysis.marketAssessment.currentTotal).toBe(STAGE_B_CONTEXT.currentMarketState.total.line);
+      expect(result.analysis.marketAssessment.currentTotal).not.toBe(12345);
     });
   });
 });

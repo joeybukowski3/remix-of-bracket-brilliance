@@ -5,11 +5,15 @@ import {
   buildStageAUpdatePrompt,
   buildStageBInitialPrompt,
   buildStageBUpdatePrompt,
+  formatCurrentMarketLine,
+  formatMarketDeltaLines,
   runGrokStageAInitial,
   runGrokStageAUpdate,
   runGrokStageBInitial,
   runGrokStageBUpdate,
+  type AnalysisGameFacts,
 } from "./nfl-grok-analysis-adapter";
+import type { SnapshotMarketRecord, SnapshotMarketState } from "./nfl-snapshot-types";
 import { resolveGrokAnalysisConfig } from "./nfl-grok-analysis-config";
 import { filterEvidenceRecordsForBlindStageA } from "./nfl-ai-context-sanitizer";
 import { MATCHUP_FACTOR_AREAS } from "./nfl-grok-analysis-types";
@@ -108,7 +112,8 @@ describe("buildStageBInitialPrompt", () => {
 
   it("reveals the current market for the first time and asks for a bet/pass decision", () => {
     const prompt = buildStageBInitialPrompt(FIXTURE_ANALYSIS_GAME, FIXTURE_LOCKED_STAGE_A, FIXTURE_ANALYSIS_CURRENT_MARKET);
-    expect(prompt).toContain(`spread(home)=${FIXTURE_ANALYSIS_CURRENT_MARKET.spread.homeLine}`);
+    expect(prompt).toContain(`HOME(${FIXTURE_ANALYSIS_GAME.homeTeam})=${FIXTURE_ANALYSIS_CURRENT_MARKET.spread.homeLine}`);
+    expect(prompt).toContain(`AWAY(${FIXTURE_ANALYSIS_GAME.awayTeam})=${FIXTURE_ANALYSIS_CURRENT_MARKET.spread.awayLine}`);
     expect(prompt).toContain(`total=${FIXTURE_ANALYSIS_CURRENT_MARKET.total.line}`);
     expect(prompt).toMatch(/STEP 4 -- MARKET COMPARISON/);
     expect(prompt).toMatch(/STEP 5 -- BETTING DECISION/);
@@ -226,5 +231,82 @@ describe("runGrokStageAUpdate / runGrokStageBUpdate", () => {
     const stageAUpdate = resolveGrokAnalysisConfig("stageAUpdate");
     const stageAInitial = resolveGrokAnalysisConfig("stageAInitial");
     expect(stageAUpdate.maxOutputTokens).toBeLessThan(stageAInitial.maxOutputTokens);
+  });
+});
+
+// WU7.5 -- regression coverage for the WU7.4 CAR_ATL incident: Stage B's prompt-side market-line
+// formatting must always label every spread number with its team code, so the model has no bare,
+// unlabeled number to misattribute. This exercises formatCurrentMarketLine/formatMarketDeltaLines
+// directly (both grok and chatgpt Stage B prompts import the same shared functions) against the
+// exact supplied CAR_ATL market: away CAR -2.5, home ATL +2.5, total 43.5.
+describe("formatCurrentMarketLine / formatMarketDeltaLines -- CAR_ATL market-orientation regression", () => {
+  const CAR_ATL_GAME: AnalysisGameFacts = {
+    gameId: "2026_02_CAR_ATL",
+    homeTeamFull: "Atlanta Falcons",
+    awayTeamFull: "Carolina Panthers",
+    homeTeam: "atl",
+    awayTeam: "car",
+    kickoffUtc: "2026-09-21T17:00:00Z",
+  };
+
+  const CAR_ATL_MARKET: SnapshotMarketState = {
+    sportsbook: "fixture-book",
+    spread: { homeLine: 2.5, awayLine: -2.5 },
+    total: { line: 43.5 },
+    moneyline: { homePrice: null, awayPrice: null },
+    asOf: "2026-09-16T12:00:00Z",
+  };
+
+  it("labels the away favorite's line with its own team code, never inverted onto the home team", () => {
+    const line = formatCurrentMarketLine(CAR_ATL_GAME, CAR_ATL_MARKET);
+    expect(line).toContain("HOME(atl)=2.5");
+    expect(line).toContain("AWAY(car)=-2.5");
+    expect(line).toContain("total=43.5");
+    // The exact inverted shape ChatGPT produced in the WU7.4 incident must never appear.
+    expect(line).not.toContain("HOME(atl)=-2.5");
+    expect(line).not.toContain("AWAY(car)=2.5");
+  });
+
+  it("home favorite: labels the home team's negative line under HOME, never AWAY", () => {
+    const homeFavoriteMarket: SnapshotMarketState = { ...CAR_ATL_MARKET, spread: { homeLine: -3, awayLine: 3 } };
+    const line = formatCurrentMarketLine(CAR_ATL_GAME, homeFavoriteMarket);
+    expect(line).toContain("HOME(atl)=-3");
+    expect(line).toContain("AWAY(car)=3");
+  });
+
+  it("away favorite: labels the away team's negative line under AWAY, never HOME", () => {
+    const line = formatCurrentMarketLine(CAR_ATL_GAME, CAR_ATL_MARKET);
+    expect(line).toContain("AWAY(car)=-2.5");
+    expect(line).not.toContain("HOME(atl)=-2.5");
+  });
+
+  it("formatMarketDeltaLines applies the same team-labeled treatment to both previous and current spreads", () => {
+    const marketRecord: SnapshotMarketRecord = {
+      ...CAR_ATL_MARKET,
+      previousSpread: { homeLine: 3, awayLine: -3 },
+      previousTotal: 44,
+      spreadDelta: -0.5,
+      totalDelta: -0.5,
+      moneylineHomeDelta: null,
+      moneylineAwayDelta: null,
+      sportsbookChanged: false,
+      asOfDeltaMs: 3_600_000,
+    };
+    const lines = formatMarketDeltaLines(CAR_ATL_GAME, marketRecord);
+    expect(lines[0]).toContain("HOME(atl)=3");
+    expect(lines[0]).toContain("AWAY(car)=-3");
+    expect(lines[1]).toContain("HOME(atl)=2.5");
+    expect(lines[1]).toContain("AWAY(car)=-2.5");
+  });
+
+  it("Stage B initial prompt includes the CAR_ATL team-labeled market line and the anti-inversion instruction", () => {
+    const prompt = buildStageBInitialPrompt(CAR_ATL_GAME, FIXTURE_LOCKED_STAGE_A, CAR_ATL_MARKET);
+    expect(prompt).toContain("HOME(atl)=2.5");
+    expect(prompt).toContain("AWAY(car)=-2.5");
+    expect(prompt).toMatch(/Never invert HOME\/AWAY/);
+    // The schema instructs the model NOT to include these fields -- they must never appear as
+    // placeholder values for it to fill in (i.e. never inside the JSON.stringify'd example object).
+    expect(prompt).not.toMatch(/"currentHomeLine":\s*0/);
+    expect(prompt).not.toMatch(/"lineAtOpinion":/);
   });
 });

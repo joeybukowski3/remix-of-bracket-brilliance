@@ -131,22 +131,37 @@ describe("validateGrokStageB (chatgpt namespace)", () => {
     expect(result.analysis.model).toBe("chatgpt");
   });
 
-  it("rejects a marketAssessment current-market number that does not match the supplied deterministic market state", () => {
+  // WU7.5 -- root cause of the WU7.4 CAR_ATL incident (this exact "chatgpt namespace" validator):
+  // the model was asked to echo currentHomeLine/currentAwayLine/currentTotal and
+  // side.lineAtOpinion back, and inverted home/away doing so. Neither is part of the raw contract
+  // anymore -- the engine always attaches the authoritative currentMarketState mechanically, so a
+  // provider literally cannot invert, flip, or otherwise misreport these values.
+  it("WU7.5: ignores an inverted/garbage marketAssessment.currentHomeLine -- the trusted output always reflects the authoritative currentMarketState instead", () => {
     const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
-    const bad = { ...payload, marketAssessment: { ...(payload.marketAssessment as Record<string, unknown>), currentHomeLine: -99 } };
+    const bad = { ...payload, marketAssessment: { ...(payload.marketAssessment as Record<string, unknown>), currentHomeLine: -99, currentAwayLine: 99 } };
     const result = validateGrokStageB(bad, STAGE_B_CONTEXT);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.reasons.join(" ")).toMatch(/invented market values are forbidden/);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.marketAssessment.currentHomeLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.homeLine);
+    expect(result.analysis.marketAssessment.currentAwayLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.awayLine);
   });
 
-  it("rejects a lineAtOpinion that does not match the supplied current market state", () => {
+  it("WU7.5: reproduces the exact CAR_ATL incident shape (inverted side.lineAtOpinion) and confirms it is now ignored, never rejected or trusted", () => {
+    // Away: CAR, Home: ATL. Supplied market: home ATL +2.5, away CAR -2.5. The model in the real
+    // incident reported currentHomeLine=-2.5/currentAwayLine=+2.5 (inverted) and a matching
+    // inverted side.lineAtOpinion -- exactly reproduced here.
     const payload = extractPayload(FIXTURE_STAGE_B_HOME_LEAN) as Record<string, unknown>;
-    const bad = { ...payload, side: { ...(payload.side as Record<string, unknown>), lineAtOpinion: { homeLine: 999, awayLine: -999 } } };
+    const bad = {
+      ...payload,
+      marketAssessment: { ...(payload.marketAssessment as Record<string, unknown>), currentHomeLine: -2.5, currentAwayLine: 2.5 },
+      side: { ...(payload.side as Record<string, unknown>), lineAtOpinion: { homeLine: -2.5, awayLine: 2.5 } },
+    };
     const result = validateGrokStageB(bad, STAGE_B_CONTEXT);
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.reasons.join(" ")).toMatch(/does not match the supplied current market spread/);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.analysis.marketAssessment.currentHomeLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.homeLine);
+    expect(result.analysis.marketAssessment.currentAwayLine).toBe(STAGE_B_CONTEXT.currentMarketState.spread.awayLine);
+    expect(result.analysis.side.lineAtOpinion).toEqual({ homeLine: STAGE_B_CONTEXT.currentMarketState.spread.homeLine, awayLine: STAGE_B_CONTEXT.currentMarketState.spread.awayLine });
   });
 
   it("side and total validate independently -- side PASS and total OVER both validate on their own terms", () => {
