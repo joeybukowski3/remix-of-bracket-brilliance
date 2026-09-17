@@ -1,15 +1,14 @@
 import { useMemo, useState } from "react";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
-import TeamLogo from "@/components/TeamLogo";
 import AllowedByPositionTable from "@/components/nfl/allowed-by-position/AllowedByPositionTable";
+import { renderAllowedByPositionTeamCell } from "@/components/nfl/allowed-by-position/TeamCell";
 import {
   DEFAULT_ALLOWED_BY_POSITION_DISPLAY_MODE,
   DEFAULT_ALLOWED_BY_POSITION_SORT,
   type AllowedByPositionDisplayMode,
   type AllowedByPositionSortState,
 } from "@/components/nfl/allowed-by-position/types";
-import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useNflTdsAllowedByPosition } from "@/hooks/useNflTdsAllowedByPosition";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { JKB_HEAT_LEGEND, jkbHeatStyle } from "@/lib/shared/jkbHeat";
@@ -86,12 +85,7 @@ export default function NFLTdsAllowedByPosition() {
             scrollLabel="Touchdowns allowed by position"
             rankTone={tdsAllowedRankTone}
             displayMode={displayMode}
-            renderTeam={(row) => (
-              <span className="flex items-center gap-1.5">
-                <TeamLogo name={row.team.toUpperCase()} logo={nflLogoUrl(row.team)} className="h-5 w-5 shrink-0" />
-                {row.team.toUpperCase()}
-              </span>
-            )}
+            renderTeam={(row) => renderAllowedByPositionTeamCell(row.team)}
           />
         )}
       </section>

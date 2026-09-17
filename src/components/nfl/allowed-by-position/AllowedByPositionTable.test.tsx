@@ -97,3 +97,78 @@ describe("AllowedByPositionTable display modes", () => {
     expect(bodyCells[3].className).not.toContain("border-l-2");
   });
 });
+
+describe("AllowedByPositionTable responsive column widths and sticky header", () => {
+  it("gives every position column header and body cell the same width classes", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const headerCells = screen.getAllByRole("columnheader");
+    const qbHeader = headerCells[2];
+    const rbHeader = headerCells[3];
+    // Both columns must share the exact same width/min-width utility classes so neither absorbs extra space.
+    expect(qbHeader.className).toContain("w-[46px]");
+    expect(qbHeader.className).toContain("sm:w-20");
+    expect(rbHeader.className).toContain("w-[46px]");
+    expect(rbHeader.className).toContain("sm:w-20");
+
+    const kcRow = screen.getByText("KC").closest("tr") as HTMLElement;
+    const bodyCells = within(kcRow).getAllByRole("cell");
+    expect(bodyCells[2].className).toContain("w-[46px]");
+    expect(bodyCells[3].className).toContain("w-[46px]");
+  });
+
+  it("gives the table a shrink-to-fit width instead of stretching to fill the scroller", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const table = screen.getAllByRole("columnheader")[0].closest("table") as HTMLElement;
+    expect(table.className).toContain("w-fit");
+    expect(table.className).not.toContain("w-full");
+  });
+
+  it("overrides the scroller's overflow-x-auto so sticky positioning is relative to the page, not the scroller", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const scroller = screen.getByRole("region", { name: "test table" });
+    expect(scroller.className).toContain("overflow-visible");
+  });
+
+  it("allows position header labels to wrap instead of forcing nowrap", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const qbButton = screen.getByRole("button", { name: "Sort by QB" });
+    expect(qbButton.className).toContain("whitespace-normal");
+    expect(qbButton.className).not.toContain("whitespace-nowrap");
+  });
+
+  it("keeps the Team column compact on mobile and unchanged on desktop, with Opponent's sticky offset matching it", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const headerCells = screen.getAllByRole("columnheader");
+    const teamHeader = headerCells[0];
+    const oppHeader = headerCells[1];
+    expect(teamHeader.className).toContain("w-11");
+    expect(teamHeader.className).toContain("sm:w-[92px]");
+    // Opponent's sticky `left` must equal the Team column's width at every breakpoint.
+    expect(oppHeader.className).toContain("left-11");
+    expect(oppHeader.className).toContain("sm:left-[92px]");
+  });
+
+  it("makes the header row sticky, offset below the site header, and above the frozen body columns", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const thead = screen.getAllByRole("columnheader")[0].closest("thead") as HTMLElement;
+    expect(thead.className).toContain("sticky");
+    expect(thead.className).toContain("top-[72px]");
+    expect(thead.className).toContain("z-20");
+  });
+
+  it("layers the Team/Opp header intersection above the sticky header and above the frozen body column", () => {
+    renderTable([row("kc", { rank: 5 })], "rank");
+    const headerCells = screen.getAllByRole("columnheader");
+    const teamHeader = headerCells[0];
+    const oppHeader = headerCells[1];
+    // Team/Opp header cells sit at the top-left intersection: highest layer (z-30), above the
+    // sticky header row itself (z-20) and above the ordinary frozen body column (z-10).
+    expect(teamHeader.className).toContain("z-30");
+    expect(oppHeader.className).toContain("z-30");
+
+    const kcRow = screen.getByText("KC").closest("tr") as HTMLElement;
+    const bodyCells = within(kcRow).getAllByRole("cell");
+    expect(bodyCells[0].className).toContain("z-10");
+    expect(bodyCells[1].className).toContain("z-10");
+  });
+});

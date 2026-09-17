@@ -12,9 +12,18 @@ import { cn } from "@/lib/utils";
 import { nextAllowedByPositionSort, sortAllowedByPositionRows } from "./sort";
 import type { AllowedByPositionColumn, AllowedByPositionDisplayMode, AllowedByPositionRow, AllowedByPositionSortState } from "./types";
 
-/** Fixed pixel widths so the second frozen column's `left` offset is exact. */
-const TEAM_COL_WIDTH = 92;
-const OPPONENT_COL_WIDTH = 68;
+/**
+ * Column widths as Tailwind classes (not inline styles) so they can differ
+ * by breakpoint: mobile is aggressively compact to fit all five position
+ * columns without horizontal scroll, desktop keeps the original geometry.
+ * The Opponent column's sticky `left` offset must match the Team column's
+ * width exactly at each breakpoint, hence the paired *_LEFT constant.
+ */
+const TEAM_COL_WIDTH_CLASS = "w-11 min-w-[44px] sm:w-[92px] sm:min-w-[92px]";
+const OPPONENT_COL_WIDTH_CLASS = "w-14 min-w-[56px] sm:w-[68px] sm:min-w-[68px]";
+const OPPONENT_LEFT_CLASS = "left-11 sm:left-[92px]";
+/** Equal width for every position column (QB/RB/Wide WR/Slot WR/TE) so none absorbs extra space from its label. */
+const POSITION_COL_WIDTH_CLASS = "w-[46px] min-w-[46px] sm:w-20 sm:min-w-[80px]";
 
 export type RankTone = { className?: string; style?: CSSProperties };
 export type RankToneResolver = (rank: number | null) => RankTone;
@@ -43,9 +52,11 @@ function SortHeaderButton({
       onClick={() => onSortChange(nextAllowedByPositionSort(sort, sortKey))}
       aria-label={`Sort by ${label}`}
       className={cn(
-        "flex w-full items-center gap-1 whitespace-nowrap uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1",
+        "flex w-full items-center gap-1 uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1",
         align === "center" ? "justify-center" : "justify-start",
-        emphasis ? "text-[13px] font-bold text-white" : cn("text-[10px] font-bold", active ? "text-slate-950" : "text-current"),
+        emphasis
+          ? "flex-col gap-0.5 whitespace-normal text-center text-[11px] font-bold leading-tight text-white sm:text-[13px]"
+          : cn("whitespace-nowrap text-[10px] font-bold", active ? "text-slate-950" : "text-current"),
       )}
     >
       {label}
@@ -105,15 +116,27 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
   const sortedRows = sortAllowedByPositionRows(rows, sort.key, sort.direction, displayMode);
 
   return (
-    <DenseTableScroller label={scrollLabel} className="rounded-lg border border-slate-200 bg-white">
-      <table className="w-full min-w-[560px] border-separate border-spacing-0 text-sm">
-        <thead className={stickyDenseHeader("bg-slate-100")}>
+    // `overflow-visible` overrides DenseTableScroller's default `overflow-x-auto` -- same
+    // override WeeklyFantasyRankingsTable uses (`sticky top-[73px]` there) for the same reason:
+    // `overflow-x: auto` forces the used `overflow-y` to `auto` too (CSS coupling rule), which
+    // silently turns the scroller into `position: sticky`'s containing block instead of the
+    // page, breaking the header's stickiness relative to the viewport. Safe here because the
+    // five equal-width position columns plus the compact Team/Opp columns now fit within the
+    // page at every supported breakpoint (verified at 390px and desktop), so horizontal
+    // clipping is not needed.
+    <DenseTableScroller label={scrollLabel} className="overflow-visible rounded-lg border border-slate-200 bg-white">
+      {/* `w-fit` is load-bearing: a block-level <table> otherwise stretches to fill the
+          scroller, and with `table-layout: fixed` the leftover space silently lands on
+          whichever column the browser picks (observed: the whole remainder goes into the
+          first column), breaking the equal-width columns below. */}
+      <table className="w-fit table-fixed border-separate border-spacing-0 text-sm sm:mx-auto">
+        <thead className={stickyDenseHeader("top-[72px] bg-slate-100")}>
           <tr className={DENSE_TABLE_HEAD_ROW}>
             <th
               scope="col"
-              style={{ width: TEAM_COL_WIDTH, minWidth: TEAM_COL_WIDTH }}
               className={cn(
-                "border-b border-r border-slate-200 px-2 py-2 text-left",
+                "border-b border-r border-slate-200 px-1 py-2 text-left",
+                TEAM_COL_WIDTH_CLASS,
                 frozenDenseColumn({ isHeader: true, surface: "bg-slate-100" }),
               )}
             >
@@ -121,9 +144,10 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
             </th>
             <th
               scope="col"
-              style={{ width: OPPONENT_COL_WIDTH, minWidth: OPPONENT_COL_WIDTH, left: TEAM_COL_WIDTH }}
               className={cn(
-                "sticky border-b border-r border-slate-200 bg-slate-100 px-2 py-2 text-left",
+                "sticky border-b border-r border-slate-200 bg-slate-100 px-1.5 py-2 text-left",
+                OPPONENT_COL_WIDTH_CLASS,
+                OPPONENT_LEFT_CLASS,
                 TABLE_LAYER.frozenHeaderCell,
               )}
             >
@@ -134,7 +158,8 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                 key={column.key}
                 scope="col"
                 className={cn(
-                  "min-w-[52px] border-y-2 border-r-2 border-black/20 px-1.5 py-3 text-center",
+                  "border-y-2 border-r-2 border-black/20 px-1 py-2 text-center sm:py-3",
+                  POSITION_COL_WIDTH_CLASS,
                   positionHeaderDividerClassName(index),
                   column.headerClassName,
                 )}
@@ -155,17 +180,21 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
           {sortedRows.map((row) => (
             <tr key={row.id} className={DENSE_TABLE_ROW}>
               <td
-                style={{ width: TEAM_COL_WIDTH, minWidth: TEAM_COL_WIDTH }}
                 className={cn(
-                  "border-r border-slate-100 px-2 py-1.5 text-left font-semibold uppercase text-slate-800",
+                  "border-r border-slate-100 px-1 py-1.5 text-left font-semibold uppercase text-slate-800",
+                  TEAM_COL_WIDTH_CLASS,
                   frozenDenseColumn({ surface: "bg-white" }),
                 )}
               >
                 {renderTeam(row)}
               </td>
               <td
-                style={{ width: OPPONENT_COL_WIDTH, minWidth: OPPONENT_COL_WIDTH, left: TEAM_COL_WIDTH }}
-                className={cn("sticky border-r border-slate-100 bg-white px-2 py-1.5 text-left uppercase text-slate-500", TABLE_LAYER.frozenColumn)}
+                className={cn(
+                  "sticky border-r border-slate-100 bg-white px-1.5 py-1.5 text-left text-[11px] uppercase text-slate-500 sm:text-sm",
+                  OPPONENT_COL_WIDTH_CLASS,
+                  OPPONENT_LEFT_CLASS,
+                  TABLE_LAYER.frozenColumn,
+                )}
               >
                 {row.opponent ? `${row.location} ${row.opponent.toUpperCase()}` : <span className="text-slate-400">—</span>}
               </td>
@@ -177,7 +206,8 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                   <td
                     key={column.key}
                     className={cn(
-                      "px-1.5 py-1.5 text-center tabular-nums font-semibold text-slate-800",
+                      "px-1 py-1.5 text-center text-xs tabular-nums font-semibold text-slate-800 sm:px-1.5 sm:text-sm",
+                      POSITION_COL_WIDTH_CLASS,
                       positionDividerClassName(index),
                       tone.className,
                     )}
@@ -185,9 +215,9 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                   >
                     {displayMode === "raw" ? (
                       cell?.rawDisplay != null ? (
-                        <span className="inline-flex items-baseline gap-1">
+                        <span className="inline-flex items-baseline gap-0.5 sm:gap-1">
                           <span>{cell.rawDisplay}</span>
-                          <span className="text-[10px] font-normal opacity-70">({rank ?? "—"})</span>
+                          <span className="text-[9px] font-normal opacity-70 sm:text-[10px]">({rank ?? "—"})</span>
                         </span>
                       ) : (
                         <span className="font-normal text-slate-400">—</span>
