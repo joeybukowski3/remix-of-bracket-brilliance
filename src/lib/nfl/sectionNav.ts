@@ -183,6 +183,22 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         match: "prefix",
       },
       {
+        to: "/nfl/fantasy-points-allowed",
+        label: "Fantasy Points Allowed",
+        shortLabel: "Points Allowed",
+        description: "Defense rank by position for fantasy points allowed -- QB, RB, Wide WR, Slot WR, TE.",
+        icon: "🛡️",
+        status: "new",
+      },
+      {
+        to: "/nfl/tds-allowed-by-position",
+        label: "TDs Allowed by Position",
+        shortLabel: "TDs Allowed",
+        description: "Defense rank by position for touchdowns allowed -- QB, RB, Wide WR, Slot WR, TE.",
+        icon: "🎯",
+        status: "new",
+      },
+      {
         to: "/nfl/dfs",
         label: "DFS Contest Analyzer",
         shortLabel: "DFS Analyzer",

@@ -56,6 +56,8 @@ import NFLYardagePropsReview from "./pages/nfl/NFLYardagePropsReview";
 import NFLTouchdownScorer from "./pages/nfl/NFLTouchdownScorer";
 import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
 import NFLPerformance from "./pages/nfl/NFLPerformance";
+import NFLFantasyPointsAllowed from "./pages/nfl/NFLFantasyPointsAllowed";
+import NFLTdsAllowedByPosition from "./pages/nfl/NFLTdsAllowedByPosition";
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
@@ -171,6 +173,8 @@ const App = () => (
             <Route path="performance/:tab" element={<NFLPerformance />} />
             <Route path="yardage-props-review" element={<NFLYardagePropsReview />} />
             <Route path="td-scorer" element={<NFLTouchdownScorer />} />
+            <Route path="fantasy-points-allowed" element={<NFLFantasyPointsAllowed />} />
+            <Route path="tds-allowed-by-position" element={<NFLTdsAllowedByPosition />} />
             <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />

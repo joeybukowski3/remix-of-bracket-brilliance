@@ -25,6 +25,8 @@ const LIVE_NFL_ROUTES = new Set([
   "/nfl/guide",
   "/nfl/guide/regression",
   "/fantasy-football",
+  "/nfl/fantasy-points-allowed",
+  "/nfl/tds-allowed-by-position",
   "/nfl/dfs",
 ]);
 
@@ -47,8 +49,18 @@ describe("NFL section navigation", () => {
       "/nfl/guide",
       "/nfl/guide/regression",
       "/fantasy-football",
+      "/nfl/fantasy-points-allowed",
+      "/nfl/tds-allowed-by-position",
       "/nfl/dfs",
     ]);
+  });
+
+  it("places TDs Allowed by Position directly after Fantasy Points Allowed in the Fantasy category", () => {
+    const fantasy = NFL_SECTION_NAV_CATEGORIES.find((category) => category.id === "fantasy");
+    const paths = fantasy?.items.map((item) => item.to) ?? [];
+    const fpaIndex = paths.indexOf("/nfl/fantasy-points-allowed");
+    expect(fpaIndex).toBeGreaterThanOrEqual(0);
+    expect(paths[fpaIndex + 1]).toBe("/nfl/tds-allowed-by-position");
   });
 
   it("exposes Fantasy Football as its own category, active on nested routes", () => {
@@ -63,6 +75,8 @@ describe("NFL section navigation", () => {
     expect(getActiveNflSectionLabel("/nfl/power-ratings")).toBe("Power Ratings");
     expect(getActiveNflSectionLabel("/nfl/standings")).toBe("Standings by Division");
     expect(getActiveNflSectionLabel("/nfl/td-scorer")).toBe("TD Scorer");
+    expect(getActiveNflSectionLabel("/nfl/fantasy-points-allowed")).toBe("Fantasy Points Allowed");
+    expect(getActiveNflSectionLabel("/nfl/tds-allowed-by-position")).toBe("TDs Allowed by Position");
     expect(getActiveNflSectionLabel("/nfl/guide/team/seattle-seahawks")).toBe("2026 Team Guide");
     expect(getActiveNflSectionLabel("/fantasy-football")).toBe("Fantasy Football");
     expect(getActiveNflSectionLabel("/mlb")).toBeNull();
