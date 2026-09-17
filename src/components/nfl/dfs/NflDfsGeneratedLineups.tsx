@@ -1,7 +1,8 @@
 import { Fragment, useMemo, useState } from "react";
 import { FantasyPlayerIdentity, FantasyOpponentIdentity } from "@/components/fantasy/FantasyTable";
 import { DenseTableScroller, DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW } from "@/components/ui/dense-table";
-import { DfsHeatLegend, DfsHeatValue, DfsPositionBadge, DfsSortButton } from "./DfsTableCells";
+import { DfsHeatLegend, DfsHeatValue, DfsPositionBadge, DfsSortButton, FantasyPpgCell, MatchupCell } from "./DfsTableCells";
+import { FpaSignal } from "./NflDfsHistory";
 import { DFS_POSITION_ACCENT, dfsValueStyles, dfsWeeklyRankStyle } from "@/lib/nfl/dfs/tablePresentation";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -144,9 +145,9 @@ function LineupCard({ lineup, rows, projectionRows }: { lineup: GeneratedLineup;
       </dl>
 
       <DenseTableScroller label="Generated lineup roster" className="rounded-lg border border-slate-200 bg-white">
-        <table className="w-full min-w-[48rem] border-collapse whitespace-nowrap text-left text-[11px]" aria-label="Generated lineup roster">
+        <table className="w-full min-w-[60rem] border-collapse whitespace-nowrap text-left text-[11px]" aria-label="Generated lineup roster">
           <thead><tr className={DENSE_TABLE_HEAD_ROW}>
-            {["Slot", "Player", "Matchup", "Salary", "JKB RK", "JKB Proj", "DK Avg PPG", "Score"].map(label => <th key={label} scope="col"
+            {["Slot", "Player", "Opp", "Matchup", "Salary", "JKB RK", "JKB Proj", "Fantasy PPG", "FPA SZN", "DK Avg PPG", "Score"].map(label => <th key={label} scope="col"
               aria-sort={label === "JKB RK" ? weeklySort === "asc" ? "ascending" : weeklySort === "desc" ? "descending" : "none" : undefined}
               className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
               {label === "JKB RK" ? <DfsSortButton label={label} active={weeklySort != null} direction={weeklySort ?? "asc"} onClick={() => setWeeklySort(current => current === "asc" ? "desc" : "asc")} /> : label}
@@ -163,13 +164,16 @@ function LineupCard({ lineup, rows, projectionRows }: { lineup: GeneratedLineup;
                   <FantasyPlayerIdentity player={slot.playerName} team={slot.team} compact />
                 </button></td>
                 <td className="px-2 py-1.5">{slot.opponent ? <FantasyOpponentIdentity opponent={slot.opponent} homeAway={row?.homeAway ?? "neutral"} compact /> : "—"}</td>
+                <td className="px-2 py-1.5 text-right">{row ? <MatchupCell row={row} /> : "—"}</td>
                 <td className="px-2 py-1.5 text-right font-bold tabular-nums">{money(slot.salary)}</td>
                 <td className="px-2 py-1.5 text-right"><DfsHeatValue style={row ? dfsWeeklyRankStyle(row, projectionRows) : undefined}>{row?.jkbWeeklyPositionRank == null ? "—" : `${slot.position}${row.jkbWeeklyPositionRank}`}</DfsHeatValue></td>
                 <td className="px-2 py-1.5 text-right"><DfsHeatValue style={projectionStyles.get(slot.dkId)}>{slot.projectedFantasyPoints == null ? "—" : num(slot.projectedFantasyPoints, 2)}</DfsHeatValue></td>
+                <td className="px-2 py-1.5 text-right">{row ? <FantasyPpgCell row={row} period="season" /> : "—"}</td>
+                <td className="px-2 py-1.5 text-right">{row ? <FpaSignal row={row} period="season" /> : "—"}</td>
                 <td className="px-2 py-1.5 text-right"><DfsHeatValue style={benchmarkStyles.get(slot.dkId)}>{slot.dkAvgPointsPerGame == null ? "—" : num(slot.dkAvgPointsPerGame, 1)}</DfsHeatValue></td>
                 <td className="px-2 py-1.5 text-right font-bold tabular-nums" title="Weighted strategy score, not a percentile or fantasy-point projection">{num(slot.strategyScore.score, 1)}</td>
               </tr>
-              {expanded === slot.dkId && <tr><td colSpan={8} className="whitespace-normal p-0"><PlayerReasoning slot={slot} /></td></tr>}
+              {expanded === slot.dkId && <tr><td colSpan={11} className="whitespace-normal p-0"><PlayerReasoning slot={slot} /></td></tr>}
             </Fragment>;
           })}</tbody>
         </table>

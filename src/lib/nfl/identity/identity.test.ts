@@ -45,6 +45,13 @@ describe("canonical NFL identity", () => {
     expect(normalizeNflTeamAbbr("az")).toBe("ari");
   });
 
+  it("normalizes Razzball's broadcast-style team codes", () => {
+    expect(normalizeNflTeamAbbr("ARZ")).toBe("ari");
+    expect(normalizeNflTeamAbbr("BLT")).toBe("bal");
+    expect(normalizeNflTeamAbbr("CLV")).toBe("cle");
+    expect(normalizeNflTeamAbbr("HST")).toBe("hou");
+  });
+
   it("reports missing IDs instead of joining by name", () => {
     expect(resolveCanonicalPlayerIdentity({ playerName: "No Id", position: "RB" }))
       .toEqual({ resolved: false, reason: "missing-gsis-id" });

@@ -31,11 +31,12 @@ export default function MatchupCoaching({
       eyebrow="Sideline"
       title="Coaching"
       subtitle="JKB Coaching Rating v1. Context only — not an input to the JKB spread or total."
+      className="matchup-coaching-section matchup-telemetry-section"
     >
       {loading ? (
         <p className="text-[12px] text-slate-500">Loading coaching context…</p>
       ) : (
-        <NflCoachingComparison coaching={coaching} homeTeam={home.abbr} awayTeam={away.abbr} />
+        <NflCoachingComparison coaching={coaching} homeTeam={home.abbr} awayTeam={away.abbr} theme="matchup-dark" />
       )}
     </MatchupSectionCard>
   );

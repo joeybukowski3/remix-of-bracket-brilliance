@@ -1,5 +1,12 @@
 # JKB Football Modeling Master Specification
 
+The offline [2026 Week 1 Spread + ATS Audit](../research/nfl-week1-spread-ats-audit-2026/REPORT.md)
+selects the final valid immutable pre-kickoff production snapshot per game,
+joins separately archived outcomes, and preserves closing/pick evidence gaps.
+It is audit-only and changes no model, rating, HFA, blend, threshold, production
+projection, archive or UI. Its versioned selection policy is documented in
+[Evaluation Standards](EVALUATION_STANDARDS.md#offline-single-week-spread-audit).
+
 The additive [NFL TD Scorer Preview V1](../features/nfl-touchdown-scorer-preview.md) defines `jkb-td-score-v1.0.0`, a transparent relative player rating over a fixed current-week candidate population. Its seven weighted components, full-population percentile normalization, position adjustments, 20-opportunity TD-conversion prior, compact PBP cache, missing-data contract, and non-probability product language are owned by that specification. It does not change any yardage, spread, total, fantasy, or DFS production model and does not create a sportsbook edge or prediction archive.
 
 WU6C adds [NFL DFS Lineup Intelligence](../features/nfl-dfs-lineup-intelligence.md)
@@ -50,6 +57,62 @@ Earlier NFL reports remain evidence and provenance. When they describe an earlie
 JKB is building one football modeling platform for game spreads, game totals, passing yards, rushing yards, and receiving yards. The platform must preserve immutable production prediction history, the market state actually available for comparison, separately attached outcomes, and research-grade evaluation. A current browser artifact or reproducible backtest is not a substitute for an archived production prediction.
 
 ## Governing principles
+
+### NFL Situational Trends Study v1 (research only)
+
+The [NFL Situational Trends Study v1](../research/nfl-situational-trends-v1.md)
+is a descriptive historical research layer over 12 predefined ATS/SU angles.
+It owns versioned deterministic qualification rules, team-relative ATS grading,
+95% Wilson uncertainty context, fixed FULL HISTORY (2011-2025) and RECENT FORM
+(2021-2025) reporting, a non-optimized 2011-2018 / 2019-2025 stability split,
+and a reusable team-game research artifact. All 12 approved common/classic
+angles remain in the artifact regardless of measured ATS strength. It is not a JKB predictive model, does not promote a trend
+into a feature, and does not alter power ratings, projected spreads, totals,
+props, prediction archives, outcome resolution, or production performance
+grading. Its nflverse market input is explicitly an unnamed, untimestamped
+settled historical line and is never described as an independently verified
+closing line. Any future use as a production model input requires a separately
+approved versioned feature and temporal validation under this specification.
+
+The [Phase 2 robustness layer](../research/nfl-situational-trends-phase2.md)
+preserves those Phase 1 definitions and results. It studies only pre-bye,
+West-to-East early, divisional underdogs, rest advantage/disadvantage, and the
+pre-bye/post-bye comparison using fixed first-order splits. Current-season
+quality context is calculated strictly from completed prior games; divisional
+meeting order is same-season and chronological; rest structures are declared as
+mutually exclusive bands or nested flags; and coarse travel distance does not
+redefine the Phase 1 qualifier. Phase 2 remains descriptive research and does
+not promote any subgroup into production behavior.
+
+The [Phase 2B reference expansion](../research/nfl-situational-trends-phase2b.md)
+is another additive descriptive layer over the same locked Phase 1 team-game
+artifact. It adds exactly 12 predefined classic/common ATS and SU angle
+families: home underdogs, road favorites, double-digit favorites and
+underdogs, games after outright upset wins and favorite losses, games after
+overtime/Monday night/Sunday night, second same-season divisional meetings,
+and games after scoring or allowing 40+ points. Requested sibling variants use
+only fixed football-relevant thresholds. Explicit nflverse overtime and
+weekday/kickoff fields are joined by game ID from the exact Phase 1 source
+snapshot; night thresholds and meeting chronology are deterministic. Phase 2B
+uses the existing grading, fixed windows, uncertainty, evidence, and confidence
+conventions, retains weak angles, and changes no Phase 1/2 artifact or
+production behavior.
+
+The [Phase 2C Early Season Study](../research/nfl-situational-trends-phase2c.md)
+adds a predeclared Week 1 / Week 2 angle family restricted to those two weeks
+of the same locked Phase 1 team-game artifact: 13 Week 1 families (home/road
+favorite and underdog roles, divisional home role, fixed spread bands,
+double-digit role, and prior-season playoff/winning-vs-losing record status)
+and 18 Week 2 bounce-back families (0-1/1-0 starts, Week 1 ATS win/loss,
+favorite-failed-to-cover, outright upset follow-ups, win/loss margin bands,
+and current-role/opponent-record combinations). Prior-season playoff
+participation and regular-season win-loss record are computed from the same
+locked nflverse snapshot Phase 1 hashes; a team's own record is never
+classified winning or losing when it is exactly .500. Week 1/2 sample sizes
+are treated conservatively and a high raw ATS% never implies a noteworthy
+label on its own. Phase 2C reuses the Phase 1 grading/market/spread-band
+primitives and the Phase 2B variant builder and evidence classifier
+unchanged, and changes no Phase 1/2/2B artifact or production behavior.
 
 ### Team Comparison projection lens
 

@@ -77,6 +77,8 @@ export type LineupConstraintStatus = {
   distinctGames: number;
   minimumGamesSatisfied: boolean;
   allOffenseOptimizerEligible: boolean;
+  /** Every offensive slot also satisfies the DFS practical-pool gate (see dfsPlayerPool.ts). */
+  allOffenseInDfsPool: boolean;
   dstContextUsable: boolean;
   allFromUploadedSlate: boolean;
 };

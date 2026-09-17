@@ -39,6 +39,8 @@ export const NFL_YARDAGE_FRESHNESS_THRESHOLDS = {
   projection: { freshMaxHours: 24, agingMaxHours: 72 },
   depthChart: { freshMaxHours: 24, agingMaxHours: 48 },
   sportsbook: { freshMaxHours: 6, agingMaxHours: 24 },
+  // Kalshi alt-market shares the sportsbook refresh cadence (same workflow).
+  altMarket: { freshMaxHours: 6, agingMaxHours: 24 },
   opponentContext: { freshMaxHours: 168, agingMaxHours: 336 },
 } as const satisfies Record<string, NflFreshnessThresholds>;
 
@@ -82,6 +84,7 @@ export type NflYardageFreshnessInputs = {
   projectionGeneratedAt: string | null | undefined;
   depthChartSnapshotAt: string | null | undefined;
   sportsbookGeneratedAt: string | null | undefined;
+  altMarketGeneratedAt: string | null | undefined;
   opponentContextGeneratedAts: readonly (string | null | undefined)[];
 };
 
@@ -89,6 +92,7 @@ const SOURCE_LABELS: Record<NflYardageFreshnessSourceKey, string> = {
   projection: "Projections",
   depthChart: "Depth chart",
   sportsbook: "Sportsbook",
+  altMarket: "Kalshi",
   opponentContext: "Opponent context",
 };
 
@@ -101,6 +105,7 @@ export function buildYardageReviewFreshness(
     ["projection", inputs.projectionGeneratedAt],
     ["depthChart", inputs.depthChartSnapshotAt],
     ["sportsbook", inputs.sportsbookGeneratedAt],
+    ["altMarket", inputs.altMarketGeneratedAt],
     ["opponentContext", opponentContextGeneratedAt],
   ];
   return entries.map(([key, generatedAt]) => ({

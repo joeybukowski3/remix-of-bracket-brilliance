@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "nfl-td-score-calibrator-candidate-v2",
+  "status": "RESEARCH ONLY — not wired into production; not validated vs market; favorite region thin",
+  "method": "global-logistic",
+  "version": "td-score-calibrator-candidate-trailing8-2022-2024",
+  "generatedAt": "2026-09-09T21:07:57.415Z",
+  "trailingWindowStrategy": "trailing8",
+  "trainSeasons": [
+    2022,
+    2023,
+    2024
+  ],
+  "input": "jkbTdScore (0-100 production JKB TD Score, computed with the trailingWindowStrategy window)",
+  "transform": "x = jkbTdScore / 100",
+  "coefficients": {
+    "intercept": -3.687695,
+    "slope": 4.334307
+  },
+  "predict": "p_anytime_td = 1 / (1 + exp(-(intercept + slope * x)))",
+  "optionalTeamChangedTerm": {
+    "rationale": "The base calibrator over-predicts players in their first games with a new team by ~5pp (prior-team role does not transfer). Adding a teamChanged dummy to the CALIBRATOR (not the score) removes it at ~zero cost to everyone else.",
+    "predict": "p = 1 / (1 + exp(-(a + bScore*x + cTeamChanged*isTeamChanged)))",
+    "coefficients": {
+      "a": -3.6702,
+      "bScore": 4.3197,
+      "cTeamChanged": -0.6617
+    },
+    "isTeamChanged": "1 if the player's most recent prior game was for a different team than this week's team, else 0",
+    "caveat": "c is estimated on ~180 mover player-games/season — re-estimate as seasons accrue."
+  },
+  "heldOut2025": {
+    "full": {
+      "band": "full",
+      "n": 5913,
+      "actualRate": 0.184,
+      "meanPred": 0.18601,
+      "brier": 0.136117,
+      "logLoss": 0.43125,
+      "ece": 0.00797,
+      "auc": 0.72062,
+      "calIntercept": 0.0833,
+      "calSlope": 1.0757
+    },
+    "w1": {
+      "band": "w1",
+      "n": 301,
+      "actualRate": 0.18272,
+      "meanPred": 0.18531,
+      "brier": 0.130993,
+      "logLoss": 0.420651,
+      "ece": 0.03855,
+      "auc": 0.73865,
+      "calIntercept": 0.3028,
+      "calSlope": 1.2511
+    },
+    "w2to4": {
+      "band": "w2-4",
+      "n": 1038,
+      "actualRate": 0.20135,
+      "meanPred": 0.18485,
+      "brier": 0.148976,
+      "logLoss": 0.465605,
+      "ece": 0.01873,
+      "auc": 0.694,
+      "calIntercept": 0.0195,
+      "calSlope": 0.9285
+    },
+    "w5to18": {
+      "band": "w5-18",
+      "n": 4574,
+      "actualRate": 0.18015,
+      "meanPred": 0.18633,
+      "brier": 0.133536,
+      "logLoss": 0.424151,
+      "ece": 0.01171,
+      "auc": 0.72604,
+      "calIntercept": 0.0887,
+      "calSlope": 1.1044
+    }
+  },
+  "caveats": [
+    "No historical sportsbook odds — market edge untested.",
+    "Predicted P > 0.5 region has < 25 observations in 2025 — unvalidated; do not extrapolate. Prefer a confidence flag above ~P 0.45 over a hard cap (P 0.40-0.50 is well calibrated).",
+    "Weeks 2-4 remain the weakest band even under the recommended strategy (cal slope ~0.93) — see early-season-results.json.",
+    "The recommended strategy changes the live default window from season-to-date to 'last 8' — a visible behaviour change that needs its own shadow validation."
+  ]
+}

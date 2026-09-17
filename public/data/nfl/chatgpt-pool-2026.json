@@ -1,0 +1,91 @@
+{
+  "season": 2026,
+  "entryName": "JoeKnowsBall.com",
+  "currentWeek": 1,
+  "strategyVersion": "1.0",
+  "lastUpdated": "2026-09-09T12:00:00-04:00",
+  "mainPool": {
+    "startingBankroll": 3600,
+    "currentBankroll": 3600,
+    "currentRank": null,
+    "totalEntries": null,
+    "leaderBankroll": null,
+    "tenthPlaceBankroll": null,
+    "distanceFromLeader": null,
+    "distanceFromTop10": null,
+    "totalPointsWagered": 0,
+    "netPoints": 0,
+    "atsWins": 0,
+    "atsLosses": 0,
+    "atsPushes": 0,
+    "atsWinPct": null,
+    "roiOnPointsWagered": null
+  },
+  "mainPoolWagers": [],
+  "sidePool": {
+    "status": "ACTIVE",
+    "cumulativeScore": 0,
+    "currentRank": null,
+    "totalRemaining": null,
+    "nextCutWeek": 5,
+    "currentCutLine": null,
+    "distanceFromCut": null,
+    "eliminated": false
+  },
+  "sidePoolWeeks": [],
+  "performanceBreakdowns": {
+    "byConfidence": [],
+    "favoriteVsUnderdog": [],
+    "homeVsAway": [],
+    "closingLineValue": [],
+    "jkbAlignment": []
+  },
+  "strategyChangelog": [
+    {
+      "version": "1.0",
+      "weekImplemented": 1,
+      "reason": "Initial 2026 pool strategy",
+      "evidence": "Pool rules and historical results review",
+      "exactChanges": [
+        "Main Pool uses conservative estimated ATS probabilities",
+        "Roughly half-Kelly-inspired wager sizing",
+        "Normal early-season exposure cap around 20% of bankroll",
+        "No requirement to force 2nd or 3rd wagers",
+        "Frozen pool-line value vs current market receives heavy weight",
+        "Early games receive an information-loss penalty",
+        "Top-10 position is protected unless first place is realistically attainable",
+        "Side Pool minimizes expected absolute margin error",
+        "Underdog 2-point bonus is explicitly incorporated",
+        "Near elimination cuts, survival probability may take priority over pure expected score minimization"
+      ]
+    }
+  ],
+  "poolRules": {
+    "mainPool": [
+      "Start with 3,600 points",
+      "Must wager at least 100 points each week",
+      "May wager on 1, 2, or 3 games",
+      "Wagers may be any whole number",
+      "Total weekly wagers cannot exceed current bankroll",
+      "ATS only",
+      "Pool spreads are permanently frozen once posted",
+      "Win = wager added",
+      "Loss = wager subtracted",
+      "Push = no change",
+      "Zero bankroll = eliminated",
+      "Goal for this entry: strong Top 10 probability while pursuing first if realistically within reach"
+    ],
+    "sidePool": [
+      "One designated game each week",
+      "Predict outright winner and whole-number winning margin",
+      "Weekly score = absolute prediction error",
+      "Lower is better",
+      "Correct posted underdog winner receives a 2-point deduction",
+      "Exact correct underdog margin may produce a -2 weekly score",
+      "Pool spread is permanently frozen once posted",
+      "Elimination cuts occur after Weeks 5, 8, 11, 15, and 18",
+      "Scores carry forward",
+      "Playoff survivors continue through Super Bowl"
+    ]
+  }
+}

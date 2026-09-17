@@ -228,13 +228,38 @@ describe("MlbStrikeoutPropRowDetail", () => {
       const opponentPanel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
       const opponentTable = opponentPanel.querySelector("table") as HTMLElement;
       expect(within(opponentTable).getAllByTestId("recent-performance-home-away").length).toBe(2);
-      const pushRow = within(opponentTable).getByText("Starter Push").closest("tr") as HTMLElement;
+      const pushRow = within(opponentTable).getByText("S. Push").closest("tr") as HTMLElement;
       expect(within(pushRow).queryByTestId("recent-performance-home-away")).not.toBeInTheDocument();
     });
 
     it("renders no badges at all when no historical row has known location data (existing fixtures without isHome/site)", () => {
       render(<MlbStrikeoutPropRowDetail detail={rateDetail} row={currentLineRow} />);
       expect(screen.queryAllByTestId("recent-performance-home-away").length).toBe(0);
+    });
+
+    it("renders the H/A tile before the opposing starter's name, in the same cell, in the desktop Opposing SP column", () => {
+      render(<MlbStrikeoutPropRowDetail detail={homeAwayDetail} row={currentLineRow} />);
+      const opponentPanel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+      const opponentTable = opponentPanel.querySelector("table") as HTMLElement;
+      const spNameCell = within(opponentTable).getByText("S. Over").closest("td") as HTMLElement;
+      expect(spNameCell).not.toBeNull();
+      const badge = within(spNameCell).getByTestId("recent-performance-home-away");
+      // The badge must precede the name text node in document order (badge first, name second).
+      const position = badge.compareDocumentPosition(within(spNameCell).getByText("S. Over"));
+      expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      // The Opp (team) column no longer duplicates the badge -- it now lives only with the starter name.
+      const oppCell = within(opponentTable).getByText("TOR").closest("td") as HTMLElement;
+      expect(within(oppCell).queryByTestId("recent-performance-home-away")).not.toBeInTheDocument();
+    });
+
+    it("formats the desktop Opposing SP column as 'F. Last', not the full starter name", () => {
+      render(<MlbStrikeoutPropRowDetail detail={homeAwayDetail} row={currentLineRow} />);
+      const opponentPanel = screen.getByText("TB — Last 10 Games vs SP").parentElement as HTMLElement;
+      const opponentTable = opponentPanel.querySelector("table") as HTMLElement;
+      expect(within(opponentTable).getByText("S. Over")).toBeInTheDocument();
+      expect(within(opponentTable).getByText("S. Under")).toBeInTheDocument();
+      expect(within(opponentTable).getByText("S. Push")).toBeInTheDocument();
+      expect(within(opponentTable).queryByText("Starter Over")).not.toBeInTheDocument();
     });
   });
 
@@ -472,12 +497,15 @@ describe("opponent Last 10 games", () => {
 });
 
 describe("Opponent Last 10 vs SP mobile collapsed row -- opposing starter name", () => {
-  it("shows the opposing starter's last name above the team abbreviation when opposingStartingPitcher exists on the history record", () => {
+  it("shows the opposing starter's 'F. Last' name above the team abbreviation when opposingStartingPitcher exists on the history record", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
     fireEvent.click(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }));
     // Source: detail.opponentLastFiveGames[0].opposingStartingPitcher ("Braydon Fisher") -- the same
     // field already rendered in the desktop "Opposing SP" column, not inferred from any lineup data.
-    expect(screen.getByText("Fisher")).toBeInTheDocument();
+    // Rendered twice: once in the always-in-DOM desktop table cell, once in the mobile collapsed card.
+    expect(screen.getAllByText("B. Fisher").length).toBe(2);
+    expect(screen.queryByText("Braydon Fisher")).not.toBeInTheDocument();
+    expect(screen.queryByText("Fisher")).not.toBeInTheDocument();
   });
 
   it("does not fabricate a starter name when opposingStartingPitcher is missing on the history record -- falls back to the team-only cell", () => {
@@ -489,8 +517,20 @@ describe("Opponent Last 10 vs SP mobile collapsed row -- opposing starter name",
     };
     render(<MlbStrikeoutPropRowDetail detail={noStarterDetail} compactLayout />);
     fireEvent.click(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }));
-    expect(screen.queryByText("Fisher")).not.toBeInTheDocument();
+    expect(screen.queryByText("B. Fisher")).not.toBeInTheDocument();
     expect(screen.getAllByText("TOR").length).toBeGreaterThan(0);
+  });
+
+  it("keeps the full opposing starter name intact in the underlying detail record and in the mobile expanded 'Opposing SP' field", () => {
+    render(<MlbStrikeoutPropRowDetail detail={detail} compactLayout />);
+    expect(detail.opponentLastFiveGames[0].opposingStartingPitcher).toBe("Braydon Fisher");
+    fireEvent.click(screen.getByRole("button", { name: "Opponent Last 10 Games vs SP" }));
+    // Both the desktop table cell and the mobile collapsed card show "B. Fisher" -- expand the mobile
+    // card specifically (its ancestor carries the sm:hidden class) to reveal its detail field list.
+    const mobileNameEl = screen.getAllByText("B. Fisher").find((el) => el.closest(".sm\\:hidden"));
+    expect(mobileNameEl).toBeDefined();
+    fireEvent.click(mobileNameEl as HTMLElement);
+    expect(screen.getByText("Braydon Fisher")).toBeInTheDocument();
   });
 });
 

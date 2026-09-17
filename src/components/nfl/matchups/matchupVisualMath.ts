@@ -1,5 +1,15 @@
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import type { CategoryAdvantageResult } from "@/lib/nfl/matchupCategoryAdvantage";
+import { NFL_TEAM_COUNT } from "@/lib/nfl/rankTier";
+
+const MIN_TOWER_PERCENT = 8;
+
+/** Rank-to-height presentation mapping. Missing ranks remain missing, never worst. */
+export function towerHeightFromRank(rank: number | null): number | null {
+  if (rank == null || !Number.isFinite(rank)) return null;
+  const percentile = Math.max(0, Math.min(1, (rank - 1) / (NFL_TEAM_COUNT - 1)));
+  return Math.max(MIN_TOWER_PERCENT, (1 - percentile) * 100);
+}
 
 /** Visual magnitude comes directly from the existing category lead counts. */
 export function categorySideStrength(

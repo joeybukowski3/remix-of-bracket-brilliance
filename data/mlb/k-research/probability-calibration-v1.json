@@ -1,0 +1,97 @@
+{
+  "rowCounts": {
+    "totalCandidateRows": 944,
+    "usableRows": 906,
+    "skippedNoV4": 11,
+    "skippedNoMarket": 27,
+    "skippedNoOutcome": 0,
+    "gradedRows": 906
+  },
+  "simulationsPerRow": 3000,
+  "model": {
+    "brierScore": 0.2564,
+    "logLoss": 0.7067,
+    "calibrationBuckets": [
+      {
+        "bucket": "50-54%",
+        "n": 311,
+        "predictedMean": 0.5236,
+        "actualHitRate": 0.5402,
+        "calibrationError": 0.0166
+      },
+      {
+        "bucket": "55-59%",
+        "n": 298,
+        "predictedMean": 0.5733,
+        "actualHitRate": 0.5034,
+        "calibrationError": -0.0699
+      },
+      {
+        "bucket": "60-64%",
+        "n": 170,
+        "predictedMean": 0.6214,
+        "actualHitRate": 0.5588,
+        "calibrationError": -0.0626
+      },
+      {
+        "bucket": "65-69%",
+        "n": 77,
+        "predictedMean": 0.6682,
+        "actualHitRate": 0.4805,
+        "calibrationError": -0.1877
+      },
+      {
+        "bucket": "70%+",
+        "n": 50,
+        "predictedMean": 0.7567,
+        "actualHitRate": 0.54,
+        "calibrationError": -0.2167
+      }
+    ]
+  },
+  "poissonBaseline": {
+    "brierScore": 0.2604,
+    "logLoss": 0.7171,
+    "calibrationBuckets": [
+      {
+        "bucket": "50-54%",
+        "n": 313,
+        "predictedMean": 0.5263,
+        "actualHitRate": 0.4569,
+        "calibrationError": -0.0694
+      },
+      {
+        "bucket": "55-59%",
+        "n": 243,
+        "predictedMean": 0.5731,
+        "actualHitRate": 0.5144,
+        "calibrationError": -0.0587
+      },
+      {
+        "bucket": "60-64%",
+        "n": 177,
+        "predictedMean": 0.6232,
+        "actualHitRate": 0.5763,
+        "calibrationError": -0.0469
+      },
+      {
+        "bucket": "65-69%",
+        "n": 93,
+        "predictedMean": 0.6733,
+        "actualHitRate": 0.4516,
+        "calibrationError": -0.2217
+      },
+      {
+        "bucket": "70%+",
+        "n": 80,
+        "predictedMean": 0.7733,
+        "actualHitRate": 0.5375,
+        "calibrationError": -0.2358
+      }
+    ]
+  },
+  "marketNoVig": {
+    "brierScore": 0.2474,
+    "logLoss": 0.6879
+  }
+}

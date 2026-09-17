@@ -123,6 +123,7 @@ export default function MatchupMarketProfile({
               home={toSideValue(resolver(matchup.home.slug, metric.key))}
               awayTeamName={matchup.away.teamName}
               homeTeamName={matchup.home.teamName}
+              variant="market"
             />
           ))
         )}
@@ -192,6 +193,7 @@ export default function MatchupMarketProfile({
             home={{ formattedValue: row.value(matchup.home), rank: row.rank(matchup.home) }}
             awayTeamName={matchup.away.teamName}
             homeTeamName={matchup.home.teamName}
+            variant="market"
           />
         ))}
       </div>

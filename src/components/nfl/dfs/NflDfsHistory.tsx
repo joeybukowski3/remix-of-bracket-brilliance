@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller } from "@/components/ui/dense-table";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
-import { NflYardageHomeAwayPill, NflYardageVsAverageCell } from "@/components/nfl/yardage-review/NflYardageHistoryCells";
+import { NflHistoryHomeAwayPill, NflHistoryVsAverageCell } from "@/components/nfl/history/NflHistoryCells";
+import { NflHistoryTable, type NflHistoryColumn } from "@/components/nfl/history/NflHistoryTable";
 import { weeklyHeatStyle, weeklyRankHeatTone } from "@/lib/shared/jkbHeat";
 import { DfsHeatValue } from "./DfsTableCells";
 import { adaptDfsFantasyPointsAllowed } from "@/lib/nfl/dfs/history";
 import { defenseSummary, dfsHistoryLoader, historyKeys, historyNumber, historySigned, summarizeHistoryRows,
   type DfsHistoryDetail, type DfsHistoryIndex, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
+import type { PlayerYardageHistoryRow, DefenseIndividualMatchupRow } from "@/lib/nfl/history/contracts";
+
+type DfsHistoryRow = PlayerYardageHistoryRow | DefenseIndividualMatchupRow;
 
 export const HISTORY_NOTE = "Historical averages are reconstructed using only games before each matchup; underlying stat corrections may reflect later official revisions.";
 export const DEF_AVG_HELP = "Average yardage allowed by this defense versus each opposing player's own entering-game trailing-10 average. QB: passing; RB: rushing; WR/TE: receiving. Above/below counts use valid comparisons only.";
@@ -26,7 +29,7 @@ export function DefenseSignal({ row, index, loading }: { row: DfsEnrichedAnalyze
   const summary = defenseSummary(index, row);
   return <div className="whitespace-nowrap text-[11px] leading-tight" title={`${DEF_AVG_HELP} ${HISTORY_NOTE}`}>
     {loading ? "Loading…" : !index ? "—" : !summary.comparisonCount ? "—" : <>
-      <NflYardageVsAverageCell diff={summary.mean} />
+      <NflHistoryVsAverageCell diff={summary.mean} />
     </>}
   </div>;
 }
@@ -52,6 +55,50 @@ export default function NflDfsHistory({ row, target, index }: { row: DfsEnriched
   const rows = view === "player" ? (keys.player ? detail?.data?.players[keys.player] ?? [] : []) : (keys.defense ? detail?.data?.defenseMatchups[keys.defense] ?? [] : []);
   const summary = summarizeHistoryRows(rows);
   const delta = summary.delta;
+  const isPlayerRow = (game: DfsHistoryRow): game is PlayerYardageHistoryRow => "actualMinusOpponentAllowance" in game;
+  // No Fantasy Pts / Fantasy Pts Allowed column here: this history source carries only
+  // `actualYards` (no TDs, INTs, or receptions), so no DK Classic score -- partial or full --
+  // can be honestly computed from it. The archived sportsbook line/O-U kept below is DFS's
+  // only real historical signal from this data and is retained on its own merits, not as a
+  // fallback for the missing fantasy-points figure.
+  const columns: NflHistoryColumn<DfsHistoryRow>[] = [
+    { key: "date", header: "Date", render: (game) => game.dateUtc.slice(0, 10) },
+    { key: "who", header: view === "player" ? "Opp" : "Opposing player", render: (game) => (isPlayerRow(game) ? game.opponent.toUpperCase() : game.playerName) },
+    {
+      key: "context",
+      header: view === "player" ? "H/A" : "Team",
+      render: (game) => (isPlayerRow(game) ? <NflHistoryHomeAwayPill homeAway={game.homeAway === "home" || game.homeAway === "away" ? game.homeAway : null} /> : game.team.toUpperCase()),
+    },
+    { key: "yards", header: "Yards", className: "font-bold", render: (game) => historyNumber(game.actualYards) },
+    {
+      key: "avg",
+      header: view === "player" ? "Pos. allowance" : "Player avg",
+      render: (game) => (
+        <span title={`${isPlayerRow(game) ? game.opponentPregamePositionalAllowanceSampleSize : game.playerReferenceSampleSize} prior games`}>
+          {historyNumber(isPlayerRow(game) ? game.opponentPregamePositionalAllowance : game.playerPregameTrailing10Average)}
+        </span>
+      ),
+    },
+    {
+      key: "delta",
+      header: "Δ Yds",
+      className: "font-semibold",
+      render: (game) => <NflHistoryVsAverageCell diff={isPlayerRow(game) ? game.actualMinusOpponentAllowance : game.actualMinusPlayerAverage} />,
+    },
+    {
+      key: "line",
+      header: "Archived line",
+      render: (game) => {
+        const line = game.historicalSportsbookLine;
+        return (
+          <span title={line ? `${line.bookmaker}; observed ${line.observedAt}; selected pre-kickoff observation` : "No archived line"}>
+            {line ? <>{historyNumber(line.point)} <span className="text-slate-500">{line.bookmaker}</span></> : "—"}
+          </span>
+        );
+      },
+    },
+    { key: "result", header: "O/U", render: (game) => (game.lineResult === "unavailable" ? "—" : game.lineResult) },
+  ];
   return <section aria-label="Historical yardage context" className="mt-3 min-w-0 space-y-2 border-t border-slate-200 pt-3 text-[11px]">
     <div role="tablist" aria-label="Historical view" className="flex gap-1">
       {([['player', 'Player Last 10'], ['opponent', 'Opponent Last 10']] as const).map(([value, label]) =>
@@ -65,25 +112,13 @@ export default function NflDfsHistory({ row, target, index }: { row: DfsEnriched
         <span>{delta.belowCount} below · {delta.equalCount} equal · {delta.missingCount} missing comparison</span>
         <span>Archived lines: {summary.over} over / {summary.under} under / {summary.push} push ({summary.lines}/{rows.length} available)</span>
       </div>
-      <DenseTableScroller label={`${view === "player" ? "Player" : "Opponent"} Last 10 yardage`} className="max-w-full overflow-x-auto rounded border border-slate-200 bg-white">
-        <table className="w-full min-w-[600px] border-collapse whitespace-nowrap text-left text-[11px] tabular-nums">
-          <thead><tr className={DENSE_TABLE_HEAD_ROW}>{["Date", ...(view === "player" ? ["Opp", "H/A"] : ["Opposing player", "Team"]), "Yards", view === "player" ? "Pos. allowance" : "Player avg", "Δ Yds", "Archived line", "O/U"].map((label) => <th scope="col" key={label} className="whitespace-nowrap px-2 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">{label}</th>)}</tr></thead>
-          <tbody>{rows.map((game) => {
-            const player = "actualMinusOpponentAllowance" in game;
-            const line = game.historicalSportsbookLine;
-            return <tr key={game.rowId} className={DENSE_TABLE_ROW}>
-              <td className="whitespace-nowrap px-2 py-1.5">{game.dateUtc.slice(0, 10)}</td>
-              <td className="px-2 py-1.5">{player ? game.opponent.toUpperCase() : game.playerName}</td>
-              <td className="px-2 py-1.5">{player ? <NflYardageHomeAwayPill homeAway={game.homeAway === "home" || game.homeAway === "away" ? game.homeAway : null} /> : game.team.toUpperCase()}</td>
-              <td className="px-2 py-1.5 font-bold">{historyNumber(game.actualYards)}</td>
-              <td className="px-2 py-1.5" title={`${player ? game.opponentPregamePositionalAllowanceSampleSize : game.playerReferenceSampleSize} prior games`}>{historyNumber(player ? game.opponentPregamePositionalAllowance : game.playerPregameTrailing10Average)}</td>
-              <td className="px-2 py-1.5 font-semibold">{<NflYardageVsAverageCell diff={player ? game.actualMinusOpponentAllowance : game.actualMinusPlayerAverage} />}</td>
-              <td className="px-2 py-1.5" title={line ? `${line.bookmaker}; observed ${line.observedAt}; selected pre-kickoff observation` : "No archived line"}>{line ? <>{historyNumber(line.point)} <span className="text-slate-500">{line.bookmaker}</span></> : "—"}</td>
-              <td className="px-2 py-1.5">{game.lineResult === "unavailable" ? "—" : game.lineResult}</td>
-            </tr>;
-          })}</tbody>
-        </table>
-      </DenseTableScroller>
+      <NflHistoryTable
+        rows={rows}
+        rowKey={(game) => game.rowId}
+        columns={columns}
+        minWidthClassName="min-w-[600px]"
+        scrollLabel={`${view === "player" ? "Player" : "Opponent"} Last 10 yardage`}
+      />
     </>}
     <p className="text-[10px] text-slate-500">{HISTORY_NOTE} {index && `As of ${index.asOf}.`} No archived line means no historical O/U comparison.</p>
   </section>;

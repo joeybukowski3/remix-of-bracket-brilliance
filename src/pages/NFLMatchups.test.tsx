@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
@@ -42,6 +42,17 @@ vi.mock("@/hooks/useNflMatchupMarket", () => {
   return { useNflMatchupMarket: () => ({ loading: false, error: null, artifact }) };
 });
 
+vi.mock("@/hooks/useNflSituationalTrends", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { readFileSync } = require("node:fs") as typeof import("node:fs");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { join } = require("node:path") as typeof import("node:path");
+  const artifact = JSON.parse(
+    readFileSync(join(process.cwd(), "public/data/nfl/2026/situational-trend-matchups.json"), "utf-8")
+  );
+  return { useNflSituationalTrends: () => ({ loading: false, error: null, artifact }) };
+});
+
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div data-testid="site-shell">{children}</div>,
 }));
@@ -82,6 +93,7 @@ function renderRoute(path: string) {
         <Route path="/nfl" element={<NflPlatformLayout />}>
           <Route path="matchups" element={<NFLMatchups />} />
           <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
+          <Route path="trends" element={<h1>NFL Trends Page</h1>} />
           <Route path="schedule" element={<h1>Schedule Page</h1>} />
           <Route path="guide/team/:teamSlug" element={<h1>Team Dashboard</h1>} />
         </Route>
@@ -92,6 +104,10 @@ function renderRoute(path: string) {
 }
 
 const OPENER = "new-england-patriots-at-seattle-seahawks";
+
+beforeEach(() => {
+  window.history.replaceState(null, "", "/nfl/matchups");
+});
 
 describe("NFLMatchups landing", () => {
   it("renders inside the shared NFL platform layout", () => {
@@ -169,6 +185,12 @@ describe("NFLMatchupDetail", () => {
     for (const tab of MATCHUP_TABS) {
       expect(document.getElementById(matchupPanelId(tab.id)), tab.id).toBeTruthy();
     }
+  });
+
+  it("links the Situational Trends panel to the standalone trend library", () => {
+    renderRoute(`/nfl/matchups/${OPENER}`);
+    fireEvent.click(screen.getByRole("tab", { name: "Situational Trends" }));
+    expect(screen.getByRole("link", { name: /View all NFL trends/i }).getAttribute("href")).toBe("/nfl/trends");
   });
 
   it("renders every comparison category anchor, in registry order", () => {

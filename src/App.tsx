@@ -46,6 +46,7 @@ import NFLSchedule from "./pages/NFLSchedule";
 import NFLTeamSchedules from "./pages/NFLTeamSchedules";
 import NFLMatchups from "./pages/NFLMatchups";
 import NFLMatchupDetail from "./pages/NFLMatchupDetail";
+import NFLTrends from "./pages/NFLTrends";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
 import NFLRegression2026 from "./pages/NFLRegression2026";
@@ -92,7 +93,9 @@ import {
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
 const NflV03Review = lazy(() => import("./pages/NflV03Review"));
+const WalterResearch = lazy(() => import("./pages/WalterResearch"));
 const SixteenZeroPage = lazy(() => import("./features/sixteen-zero/SixteenZeroPage"));
+const StevePoolDashboard = lazy(() => import("./pages/StevePoolDashboard"));
 
 function LegacyScheduleRedirect() {
   const { gameId = "" } = useParams();
@@ -168,6 +171,7 @@ const App = () => (
             <Route path="team-schedules/:teamSlug" element={<NFLTeamSchedules />} />
             <Route path="matchups" element={<NFLMatchups />} />
             <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
+            <Route path="trends" element={<NFLTrends />} />
             <Route path="analytics" element={<NFLAnalytics />} />
             <Route path="performance" element={<Navigate to="/nfl/performance/overview" replace />} />
             <Route path="performance/:tab" element={<NFLPerformance />} />
@@ -194,6 +198,22 @@ const App = () => (
             element={
               <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading internal NFL review…</div>}>
                 <NflV03Review />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/walter"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading Walter research…</div>}>
+                <WalterResearch />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/steve"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-50 p-6 text-sm text-slate-600">Loading pool dashboard…</div>}>
+                <StevePoolDashboard />
               </Suspense>
             }
           />

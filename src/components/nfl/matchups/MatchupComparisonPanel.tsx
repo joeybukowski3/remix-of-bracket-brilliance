@@ -5,15 +5,19 @@ import MatchupCategoryAdvantageChip, {
 } from "@/components/nfl/matchups/MatchupCategoryAdvantageChip";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
 import MatchupCategorySnapshot from "@/components/nfl/matchups/MatchupCategorySnapshot";
-import MatchupCollapsibleGroup from "@/components/nfl/matchups/MatchupCollapsibleGroup";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
-import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
+import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
 import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
-import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import MatchupRankTowers from "@/components/nfl/matchups/MatchupRankTowers";
+import { toTeamComparisonTowerMetrics } from "@/components/nfl/matchups/MatchupRankTowers";
+import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
+import MatchupContextMetricGrid from "@/components/nfl/matchups/MatchupContextMetricGrid";
+import MatchupSignatureProfile from "@/components/nfl/matchups/MatchupSignatureProfile";
+import MatchupVisualizationToolbar from "@/components/nfl/matchups/MatchupVisualizationToolbar";
+import { useMatchupVisualizationState } from "@/components/nfl/matchups/useMatchupVisualizationState";
 import { prefersReducedMotion } from "@/components/nfl/matchups/matchupNavigation";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import { cn } from "@/lib/utils";
-import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import {
   MATCHUP_CATEGORIES,
@@ -24,7 +28,10 @@ import {
   type MatchupCategoryId,
 } from "@/lib/nfl/matchupCategoryAdvantage";
 import { summariseCategoryAdvantages } from "@/lib/nfl/matchupCategorySummary";
+import { chartEligibleMetrics, toVisualMetrics } from "@/lib/nfl/matchupVisualizationModel";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 
 /**
  * The Statistical Comparison tab set: every registry category plus one
@@ -40,30 +47,143 @@ const COACHING_TAB_ID: StatComparisonTabId = "coaching";
 /** How long the arrival highlight stays on the destination group. */
 const JUMP_HIGHLIGHT_MS = 1100;
 
+const NEUTRAL_TEAM_FILL = "#94a3b8";
+
 /**
- * Away/home identity for a comparison group: the two crests and abbreviations
- * over the value columns the new head-to-head rows align to. One quiet line,
- * not the former full table header.
+ * One category's primary visualization (Rank Towers or Signature Profile),
+ * its toolbar, and the collapsed detailed table beneath it.
+ *
+ * Reads the same resolved `rows` the detailed table renders — the chart
+ * adapter (`toVisualMetrics`) only reshapes them, it never recomputes a rank
+ * or a winner.
  */
-function ComparisonSideHeader({ matchup }: { matchup: NflMatchup }) {
+function CategoryVisualization({
+  category,
+  rows,
+  matchup,
+  awayColor,
+  homeColor,
+  view,
+  onViewChange,
+  selectedIds,
+  onChangeSelection,
+  onReset,
+  isDefault,
+  isMobile,
+}: {
+  category: (typeof MATCHUP_CATEGORIES)[number];
+  rows: MatchupDisplayMetric[];
+  matchup: NflMatchup;
+  awayColor: string;
+  homeColor: string;
+  view: "towers" | "profile";
+  onViewChange: (view: "towers" | "profile") => void;
+  selectedIds: readonly string[];
+  onChangeSelection: (ids: readonly string[]) => void;
+  onReset: () => void;
+  isDefault: boolean;
+  isMobile: boolean;
+}) {
+  const chartEligible = chartEligibleMetrics(toVisualMetrics(rows, category.id));
+  const selected = chartEligible.filter((metric) => selectedIds.includes(metric.id));
+
   return (
-    <div className="mx-auto grid w-full grid-cols-[3.75rem_minmax(0,1fr)_3.75rem] items-center gap-x-2 border-b border-slate-200 pb-1.5 sm:max-w-[760px] sm:grid-cols-[5rem_minmax(0,1fr)_5rem] sm:gap-x-4">
-      <span className="flex items-center justify-end gap-1">
-        <NflTeamCrest team={matchup.away} side="away" size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          {matchup.away.abbr.toUpperCase()}
-        </span>
-      </span>
-      <span aria-hidden className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
-        Advantage
-      </span>
-      <span className="flex items-center justify-start gap-1">
-        <NflTeamCrest team={matchup.home} side="home" size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          {matchup.home.abbr.toUpperCase()}
-        </span>
-      </span>
+    <div className="matchup-visualization-stage">
+      <MatchupVisualizationToolbar
+        view={view}
+        onViewChange={onViewChange}
+        categoryLabel={category.label}
+        availableMetrics={chartEligible}
+        selectedIds={selectedIds}
+        onChangeSelection={onChangeSelection}
+        onReset={onReset}
+        isDefault={isDefault}
+        showViewToggle={!isMobile}
+      />
+      <div className="px-1 pb-2 pt-1 sm:px-2">
+        {selected.length === 0 ? (
+          <p className="px-2 py-4 text-center text-[12px] text-slate-500">
+            No metrics selected. Open Metrics to choose at least two.
+          </p>
+        ) : isMobile || view === "towers" ? (
+          <MatchupRankTowers
+            metrics={selected}
+            away={matchup.away}
+            home={matchup.home}
+            awayColor={awayColor}
+            homeColor={homeColor}
+          />
+        ) : (
+          <MatchupSignatureProfile
+            metrics={selected}
+            away={matchup.away}
+            home={matchup.home}
+            awayColor={awayColor}
+            homeColor={homeColor}
+          />
+        )}
+      </div>
     </div>
+  );
+}
+
+function ResponsiveAllMetrics({ category, rows, matchup, awayColor, homeColor, projection, isMobile }: {
+  category: (typeof MATCHUP_CATEGORIES)[number];
+  rows: MatchupDisplayMetric[];
+  matchup: NflMatchup;
+  awayColor: string;
+  homeColor: string;
+  projection: boolean;
+  isMobile: boolean;
+}) {
+  const [open, setOpen] = useState(isMobile);
+  const [manuallyChanged, setManuallyChanged] = useState(false);
+
+  useEffect(() => {
+    if (!manuallyChanged) setOpen(isMobile);
+  }, [isMobile, manuallyChanged]);
+
+  const visualMetrics = toVisualMetrics(rows, category.id);
+  const comparable = chartEligibleMetrics(visualMetrics);
+  const contextOnly = rows.filter((row) => row.direction === "context-only" || row.direction === "none");
+  const towers = toTeamComparisonTowerMetrics({ metrics: comparable, away: matchup.away, home: matchup.home, awayColor, homeColor });
+
+  return (
+    <details className="matchup-all-metrics group rounded-lg border" open={open}>
+      <summary
+        className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden"
+        onClick={(event) => {
+          event.preventDefault();
+          setManuallyChanged(true);
+          setOpen((current) => !current);
+        }}
+      >
+        <span className="matchup-summary-chevron" aria-hidden />
+        All Metrics
+      </summary>
+      <div className="md:hidden">
+        <MatchupComparisonCard
+          title={category.label}
+          titleId={`${category.hash}-card-heading`}
+          matchup={matchup}
+          metrics={rows}
+          variant="detail"
+          projected={projection}
+          stickyHeader
+          caption={`${category.label} metrics for ${matchup.away.teamName} and ${matchup.home.teamName}`}
+        />
+      </div>
+      <div className="matchup-all-metrics__desktop hidden md:block">
+        {towers.length > 0 && (
+          <MatchupTowerGrid
+            metrics={towers}
+            title="Ranked comparisons"
+            subtitle={`${towers.length} ${towers.length === 1 ? "metric" : "metrics"} · complete category registry`}
+          />
+        )}
+        <MatchupContextMetricGrid metrics={contextOnly} matchup={matchup} headingId={`${category.hash}-context-heading`} />
+      </div>
+    </details>
   );
 }
 
@@ -176,30 +296,15 @@ export default function MatchupComparisonPanel({
   const [activeTab, setActiveTab] = useState<StatComparisonTabId>(MATCHUP_CATEGORIES[0].id);
   const [highlighted, setHighlighted] = useState<StatComparisonTabId | null>(null);
   const triggerRefs = useRef(new Map<StatComparisonTabId, HTMLButtonElement>());
-  const isMobile = useIsCompactLayout("(max-width: 639px)");
-
-  // Mobile-only accordion state: every category starts collapsed, per the
-  // mobile density spec — the tab strip below is the desktop presentation of
-  // this exact same content and needs no such state, since every panel is
-  // already mounted and only one is unhidden.
-  const [openCategories, setOpenCategories] = useState<Set<StatComparisonTabId>>(new Set());
-  const toggleCategory = (id: StatComparisonTabId) => {
-    setOpenCategories((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const visualization = useMatchupVisualizationState();
+  const isMobile = useIsCompactLayout("(max-width: 767px)");
+  const awayColor = nflTeamColorFor(matchup.away) ?? NEUTRAL_TEAM_FILL;
+  const homeColor = nflTeamColorFor(matchup.home) ?? NEUTRAL_TEAM_FILL;
 
   useEffect(() => {
     if (!pendingCategory) return;
     setActiveTab(pendingCategory);
     setHighlighted(pendingCategory);
-    // A jump must reveal the destination even when its accordion group starts
-    // collapsed — arriving at a category is expected to open it, not leave it
-    // closed behind the highlight.
-    setOpenCategories((current) => new Set(current).add(pendingCategory));
 
     const destination = document.getElementById(getMatchupCategory(pendingCategory).hash);
     destination?.scrollIntoView({
@@ -230,36 +335,6 @@ export default function MatchupComparisonPanel({
     matchup.home.teamName
   );
 
-  /** Every metric row for one category, shared by the mobile accordion and the desktop tab panel. */
-  const renderRows = (rows: MatchupDisplayMetric[]) =>
-    rows.map((metric) => (
-      <NflHeadToHeadMetricRow
-        key={metric.key}
-        label={metric.label}
-        shortLabel={metric.shortLabel}
-        help={metric.help}
-        leftValue={metric.away.formatted}
-        rightValue={metric.home.formatted}
-        leftRank={metric.away.rank}
-        rightRank={metric.home.rank}
-        projected={(projection || !!dedicatedLabel) && metric.key !== "team.overallRating"}
-        leftRawValue={metric.away.value}
-        rightRawValue={metric.home.value}
-        higherIsBetter={
-          metric.direction === "higher-is-better"
-            ? true
-            : metric.direction === "lower-is-better"
-              ? false
-              : null
-        }
-        comparison={metric.comparison}
-        leftTeamName={matchup.away.teamName}
-        rightTeamName={matchup.home.teamName}
-        leftTeamAbbr={matchup.away.abbr}
-        rightTeamAbbr={matchup.home.abbr}
-      />
-    ));
-
   const tabs: MatchupTabDef[] = [
     ...MATCHUP_CATEGORIES.map((category) => ({
       id: category.id,
@@ -270,7 +345,7 @@ export default function MatchupComparisonPanel({
   ];
 
   return (
-    <div className="matchup-comparison-density @container space-y-2">
+    <div className="@container space-y-2">
       {categorySummary && (
         <p className="px-0.5 text-[12px] leading-5 text-slate-700">{categorySummary}</p>
       )}
@@ -286,128 +361,100 @@ export default function MatchupComparisonPanel({
       {scheduleContext}
 
       <MatchupSectionCard
-        eyebrow="Metric by metric"
+        titleAlign="center"
         title={dedicatedLabel ? `Statistical Comparison — ${dedicatedLabel}` : projection ? "Statistical Comparison — 2026 Projection" : "Statistical Comparison"}
         titleId="statistical-comparison-heading"
         subtitle={dedicatedLabel ? "Rank 1 is best among teams with available values; N/A rows are excluded from category counts." : projection
           ? "Projected statistics only. Rank 1 is best among teams with available values; N/A rows are excluded from category counts."
           : "League rank out of 32 — 1 is best. Every row states its advantage in words."}
+        className="matchup-visualization-shell"
         bodyClassName="px-0 py-0 sm:px-0"
       >
-        {isMobile ? (
-          <div>
-            {MATCHUP_CATEGORIES.map((category) => {
-              const rows = categoryMetrics[category.id] ?? [];
-              const result = categoryResults?.[category.id];
-              const decided = result?.result === "away" || result?.result === "home";
-              return (
-                <div
-                  key={category.id}
-                  className={cn(decided ? "border-l-4 border-l-emerald-600" : "border-l-4 border-l-slate-300")}
-                >
-                  <MatchupCollapsibleGroup
-                    id={category.hash}
-                    triggerId={matchupCategoryTriggerId(category.id)}
-                    title={category.label}
-                    meta={result && (
-                      <CategoryAdvantageMeta
-                        result={result}
-                        categoryLabel={category.label}
-                        away={matchup.away}
-                        home={matchup.home}
-                      />
-                    )}
-                    open={openCategories.has(category.id)}
-                    onToggle={() => toggleCategory(category.id)}
-                    highlighted={highlighted === category.id}
-                    triggerRef={(node) => {
-                      if (node) triggerRefs.current.set(category.id, node);
-                      else triggerRefs.current.delete(category.id);
-                    }}
-                  >
-                    <ComparisonSideHeader matchup={matchup} />
-                    {renderRows(rows)}
-                  </MatchupCollapsibleGroup>
-                </div>
-              );
-            })}
-            {coaching && (
-              <MatchupCollapsibleGroup
-                id="comparison-coaching"
-                triggerId="comparison-coaching-tab"
-                title="Coaching / Sideline"
-                open={openCategories.has(COACHING_TAB_ID)}
-                onToggle={() => toggleCategory(COACHING_TAB_ID)}
-                highlighted={highlighted === COACHING_TAB_ID}
-                triggerRef={(node) => {
-                  if (node) triggerRefs.current.set(COACHING_TAB_ID, node);
-                  else triggerRefs.current.delete(COACHING_TAB_ID);
-                }}
-              >
-                {coaching}
-              </MatchupCollapsibleGroup>
-            )}
-          </div>
-        ) : (
-          <>
-            <MatchupTabStrip
-              tabs={tabs}
-              activeId={activeTab}
-              onSelect={(id) => setActiveTab(id as StatComparisonTabId)}
-              ariaLabel="Statistical comparison categories"
-              triggerRef={(id, node) => {
-                const tabId = id as StatComparisonTabId;
-                if (node) triggerRefs.current.set(tabId, node);
-                else triggerRefs.current.delete(tabId);
-              }}
-            />
+        {/*
+          One presentation at every width, matching the approved mockup: a
+          single centred category control that becomes a horizontal pill
+          scroller on phones (never a stack of wrapped rows), a leader pill for
+          the active category, then that category's split-header comparison
+          table. Every panel stays mounted so a deep-link jump has its
+          destination in the DOM the instant the effect runs.
+        */}
+        <MatchupTabStrip
+          tabs={tabs}
+          activeId={activeTab}
+          onSelect={(id) => setActiveTab(id as StatComparisonTabId)}
+          ariaLabel="Statistical comparison categories"
+          className="matchup-visualization-categories sm:flex-wrap sm:justify-center"
+          triggerRef={(id, node) => {
+            const tabId = id as StatComparisonTabId;
+            if (node) triggerRefs.current.set(tabId, node);
+            else triggerRefs.current.delete(tabId);
+          }}
+        />
 
-            {MATCHUP_CATEGORIES.map((category) => {
-              const rows = categoryMetrics[category.id] ?? [];
-              // Optional-chained for the same reason `categoryMetrics` is: a
-              // category with no resolved result renders without a meta chip
-              // rather than taking the whole panel down.
-              const result = categoryResults?.[category.id];
-              return (
-                <div
-                  key={category.id}
-                  id={category.hash}
-                  role="tabpanel"
-                  aria-labelledby={matchupCategoryTriggerId(category.id)}
-                  hidden={activeTab !== category.id}
-                  className={cn(
-                    MATCHUP_SECTION_SCROLL_MT,
-                    "px-2.5 pb-2 pt-2 sm:px-3 motion-safe:transition-colors motion-safe:duration-700",
-                    highlighted === category.id && "bg-sky-50"
-                  )}
-                >
-                  <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-slate-600">
-                    {result && (
-                      <CategoryAdvantageMeta
-                        result={result}
-                        categoryLabel={category.label}
-                        away={matchup.away}
-                        home={matchup.home}
-                      />
-                    )}
-                  </div>
-                  <ComparisonSideHeader matchup={matchup} />
-                  {renderRows(rows)}
-                </div>
-              );
-            })}
-
+        {MATCHUP_CATEGORIES.map((category) => {
+          const rows = categoryMetrics[category.id] ?? [];
+          const result = categoryResults?.[category.id];
+          return (
             <div
-              id="comparison-coaching"
+              key={category.id}
+              id={category.hash}
               role="tabpanel"
-              aria-labelledby="comparison-coaching-tab"
-              hidden={activeTab !== COACHING_TAB_ID}
-              className={cn(MATCHUP_SECTION_SCROLL_MT, "px-2.5 pb-2 pt-2 sm:px-3")}
+              aria-labelledby={matchupCategoryTriggerId(category.id)}
+              hidden={activeTab !== category.id}
+              className={cn(
+                MATCHUP_SECTION_SCROLL_MT,
+                "space-y-2 px-3 py-2 sm:px-4 sm:py-2 motion-safe:transition-colors motion-safe:duration-700",
+                highlighted === category.id && "bg-sky-50"
+              )}
             >
-              {coaching}
+              {result && (
+                <div className="flex justify-center sm:pb-0.5">
+                  <span className="matchup-lead-pill">
+                    <CategoryAdvantageMeta
+                      result={result}
+                      categoryLabel={category.label}
+                      away={matchup.away}
+                      home={matchup.home}
+                    />
+                  </span>
+                </div>
+              )}
+              <CategoryVisualization
+                category={category}
+                rows={rows}
+                matchup={matchup}
+                awayColor={awayColor}
+                homeColor={homeColor}
+                view={visualization.view}
+                onViewChange={visualization.setView}
+                selectedIds={visualization.getSelectedMetricIds(category.id)}
+                onChangeSelection={(ids) => visualization.setSelectedMetricIds(category.id, ids)}
+                onReset={() => visualization.resetToDefaults(category.id)}
+                isDefault={visualization.isUsingDefaults(category.id)}
+                isMobile={isMobile}
+              />
+              <ResponsiveAllMetrics
+                category={category}
+                rows={rows}
+                matchup={matchup}
+                awayColor={awayColor}
+                homeColor={homeColor}
+                projection={projection || !!dedicatedLabel}
+                isMobile={isMobile}
+              />
             </div>
-          </>
-        )}
+          );
+        })}
+
+        <div
+          id="comparison-coaching"
+          role="tabpanel"
+          aria-labelledby="comparison-coaching-tab"
+          hidden={activeTab !== COACHING_TAB_ID}
+          className={cn(MATCHUP_SECTION_SCROLL_MT, "px-3 py-3 sm:px-4")}
+        >
+          {coaching}
+        </div>
 
         {/* One compact, collapsed-by-default legend beneath the tab panels,
             rather than a raised card repeated in view. Rank colours stay
@@ -415,7 +462,7 @@ export default function MatchupComparisonPanel({
             without it. */}
         <details className="group border-t border-slate-200 p-3 sm:p-4">
           <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 [&::-webkit-details-marker]:hidden">
-            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+            <span className="matchup-summary-chevron" aria-hidden />
             Rank tier colours
           </summary>
           <div className="mt-2">

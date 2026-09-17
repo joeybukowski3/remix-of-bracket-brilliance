@@ -68,13 +68,13 @@
       "schemaVersion": "nfl-touchdown-context-v1",
       "season": 2026,
       "source": "nflverse play-by-play",
-      "sourceState": "unavailable",
+      "sourceState": "available",
       "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
-      "httpStatus": 404,
-      "completedRegularSeasonGames": 0,
-      "compactFilename": null,
-      "sourceRows": null,
-      "compactRows": 0,
+      "httpStatus": 200,
+      "completedRegularSeasonGames": null,
+      "compactFilename": "touchdown_context_2026.csv",
+      "sourceRows": 2756,
+      "compactRows": 1707,
       "sourceColumns": [
         "game_id",
         "play_id",
@@ -115,11 +115,11 @@
         "goal_line_opportunity",
         "touchdown"
       ],
-      "sha256": null,
-      "unavailableReason": "nflverse_pbp_not_published_before_completed_regular_season_games",
+      "sha256": "bffa62b170f63eec322099466752f658466eb12ee49c4f6e1e50a45cd6a1f656",
+      "unavailableReason": null,
       "notes": [
-        "The current-season nflverse PBP release asset returned 404 while the canonical results artifact contained zero completed regular-season games.",
-        "No compact rows were fabricated and no current-season CSV was published."
+        "Raw compressed play-by-play is streamed and discarded.",
+        "Rows contain only eligible scorer carries and targets; passing, special-teams, two-point, kneel, spike, and play_type=no_play records are excluded."
       ]
     }
   ]

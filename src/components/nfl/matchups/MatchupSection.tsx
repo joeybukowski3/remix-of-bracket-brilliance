@@ -34,6 +34,7 @@ export default function MatchupSection({
   eyebrow,
   subtitle,
   headerAside,
+  titleAlign = "left",
   collapsible = true,
   defaultOpen = true,
   className = "",
@@ -48,6 +49,8 @@ export default function MatchupSection({
   subtitle?: string;
   /** Right-aligned header slot (legend, sample note, segmented control). */
   headerAside?: ReactNode;
+  /** "center" centres the eyebrow/title/subtitle; controls stay top-right. */
+  titleAlign?: "left" | "center";
   collapsible?: boolean;
   defaultOpen?: boolean;
   className?: string;
@@ -66,6 +69,7 @@ export default function MatchupSection({
       // one family. Other NflSection callers keep the platform defaults.
       eyebrowClassName={MATCHUP_CARD_EYEBROW}
       titleClassName={MATCHUP_CARD_TITLE}
+      titleAlign={titleAlign}
       subtitle={subtitle}
       // Sub-group controls get their own full-width row: at 375px they do not
       // fit beside the heading without squeezing it to two or three lines.

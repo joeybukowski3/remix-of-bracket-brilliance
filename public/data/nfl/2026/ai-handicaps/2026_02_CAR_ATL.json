@@ -1,0 +1,420 @@
+{
+  "schemaVersion": "nfl-ai-handicap-presentation-v1",
+  "gameId": "2026_02_CAR_ATL",
+  "season": 2026,
+  "week": 2,
+  "kickoff": "2026-09-20T17:00:00.000Z",
+  "homeTeam": "atl",
+  "awayTeam": "car",
+  "generatedAt": "2026-09-16T15:13:57.359Z",
+  "handicappers": {
+    "grokowski": {
+      "status": "ok",
+      "provider": "grok",
+      "displayName": "Grokowski",
+      "analysisSnapshotId": "grok-2026_02_CAR_ATL-daily_update-ad3860be1809dba2",
+      "analyzedAt": "2026-09-15T20:25:14.571Z",
+      "prediction": {
+        "fairSpread": {
+          "line": -1.5,
+          "team": "atl"
+        },
+        "projectedTotal": 42.5
+      },
+      "market": {
+        "spread": {
+          "homeLine": 2.5,
+          "awayLine": -2.5
+        },
+        "total": 43.5
+      },
+      "edges": {
+        "sidePoints": 4,
+        "totalPoints": -1
+      },
+      "side": {
+        "lean": "home",
+        "team": "atl",
+        "line": 2.5,
+        "confidence": 5,
+        "rationale": "Locked fair is ATL -1.5 versus market home +2.5, a large gap toward Atlanta at plus money despite the modest projected home lean."
+      },
+      "total": {
+        "lean": "pass",
+        "line": null,
+        "confidence": null,
+        "rationale": "Locked 42.5 versus market 43.5 is only a one-point gap, too thin to play given the low-clarity Week 2 setup."
+      },
+      "centralThesis": "Atlanta holds small prior-season edges in offensive EPA, yards per play, and trench rates, plus home-division context, but Week 2 quarterback identity is unresolved after Cooper Rush started and Tua Tagovailoa and Michael Penix Jr. are both listed as questionable. Interior losses (Chris Lindstrom in concussion protocol, Da'Shawn Hand out for the season) further cap that edge, so this projects as a tight, low-efficiency division game with only a slight home lean.",
+      "keyFactors": [
+        {
+          "area": "quarterback",
+          "finding": "FACT: Kevin Stefanski declined to name a Week 2 starter and had no updates on Penix or Tua; Tua was ruled out Week 1 with an oblique and Cooper Rush started (143 yards, 1 TD, 2 INT); Penix practiced as a full participant last week but did not play Week 1 after an ACL tear last season; ESPN lists both Falcons QBs as questionable. INTERPRETATION: Atlanta's passing ceiling is unstable and may resemble the Week 1 backup profile, which undercuts the small 2025 offensive EPA/YPP edge until a starter is actually established.",
+          "supports": "mixed",
+          "importance": "major"
+        },
+        {
+          "area": "passing",
+          "finding": "FACT: Prior-season offense-versus-defense passing is assigned to home; Atlanta off.yardsPerPlay was 5.57 versus Carolina 5.22; off.epaPerPlay favored home by 0.016849161811672165, with both clubs negative. INTERPRETATION: On 2025 rates Atlanta should win passing downs, but that implication is conditional on functional QB play rather than a Rush-level outing.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "rushing",
+          "finding": "FACT: Prior-season rushing matchup is assigned to home; both teams had off_run_block_win_rate of 70; Carolina def_run_stop_win_rate was 26 versus Atlanta 31. INTERPRETATION: The run game is the more stable path this week; Atlanta's offense has a slight scheme/personnel edge versus a weaker Panthers run-stop front, while Carolina still has a viable ground plan against Atlanta's modest stop rate.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "protection",
+          "finding": "FACT: Atlanta off_pass_block_win_rate was 64 versus Carolina 59; Chris Lindstrom is in the concussion protocol after leaving Week 1 and is listed as questionable. INTERPRETATION: Atlanta's 2025 pass-protection edge is real but is sensitive to whether its starting right guard is available in Week 2.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "pass_rush",
+          "finding": "FACT: Atlanta def_pass_rush_win_rate was 41 versus Carolina 34; Da'Shawn Hand tore a quad in Week 1 and is expected to miss the remainder of the season. INTERPRETATION: Atlanta should still generate more pressure on 2025 rates, but losing Hand for the year trims interior disruption and makes the pass-rush edge thinner than the composite implies.",
+          "supports": "home",
+          "importance": "minor"
+        },
+        {
+          "area": "run_defense",
+          "finding": "FACT: Atlanta def_run_stop_win_rate was 31 versus Carolina 26; Hand is out for the season. INTERPRETATION: Neither run defense graded well in 2025, and Atlanta's interior is further weakened, which supports a grind with some rushing volume rather than efficient, high-scoring drives.",
+          "supports": "mixed",
+          "importance": "moderate"
+        },
+        {
+          "area": "personnel",
+          "finding": "FACT: Carolina WR Jalen Coker is questionable (ankle; precautionary boot Monday, said he expects to play) and LB Patrick Jones II is questionable (back); Atlanta lists Tua, Penix, and Lindstrom as questionable with Hand out. INTERPRETATION: Carolina's listed issues are narrower and more skill/edge than Atlanta's combination of QB and interior-line uncertainty; net personnel risk sits more on the home side until Wednesday's first official report.",
+          "supports": "away",
+          "importance": "moderate"
+        },
+        {
+          "area": "coaching",
+          "finding": "FACT: JKB coaching ratings, coaches, and differentials are SOURCE_UNAVAILABLE; a beat report identifies Kevin Stefanski as Falcons head coach in the Week 2 QB discussion. INTERPRETATION: No usable coaching edge can be assigned from the supplied ratings; QB-management opacity is already captured in the quarterback factor.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "situational",
+          "finding": "FACT: restDifferential is 0, divisionalGame is true, revengeGame is true. INTERPRETATION: Even rest removes a rest-advantage lean; division/revenge context typically compresses rather than expands a modest home edge and raises the chance of a tighter, more physical game.",
+          "supports": "mixed",
+          "importance": "minor"
+        },
+        {
+          "area": "weather",
+          "finding": "FACT: Weather status is not_available; kickoff is at Mercedes-Benz Stadium with isDome=false. INTERPRETATION: No usable weather adjustment; do not treat outdoor/dome conditions as known.",
+          "supports": "neutral",
+          "importance": "minor"
+        }
+      ],
+      "failureModes": [
+        {
+          "scenario": "Tua or a fully functional Penix is named and plays at a normal starting-QB level rather than the Week 1 Rush profile.",
+          "whyItMatters": "That would restore Atlanta's prior-season passing and EPA edges and turn a 1.5-point home lean into a clearer home win, breaking the compressed-margin thesis."
+        },
+        {
+          "scenario": "Lindstrom is inactive while Hand is already out for the year, and Carolina leans on its 70 off_run_block_win_rate.",
+          "whyItMatters": "Atlanta's trench/home-run-matchup thesis fails if the interior cannot hold; Carolina can control time of possession and flip a slight Falcons lean."
+        },
+        {
+          "scenario": "Rush starts again and repeats multi-interception, low-yardage play that creates Carolina short fields.",
+          "whyItMatters": "Turnovers would score points that 2025 EPA/YPP do not capture and would invalidate using Atlanta's prior-season offensive edge as the basis for even a small home favorite."
+        }
+      ],
+      "evidenceQualitySummary": {
+        "strengths": [
+          "Official-team items on Tua being out Week 1, Rush starting, and Penix's full-practice / unclear-status combination are verified.",
+          "Hand's season-ending quad injury is specific and consistent across sources.",
+          "Prior-season-full EPA, YPP, trench win rates, and offense-versus-defense assignments provide a complete 2025 baseline when 2026 team metrics and power ratings are missing."
+        ],
+        "limitations": [
+          "Most injury items are tagged stale; the only fresh scheduling note is that Atlanta's first official injury report is Wednesday, so Week 2 statuses are not locked.",
+          "jkbModels.powerRating is unavailable (home=? away=?), coaching ratings are SOURCE_UNAVAILABLE, and weather is not_available.",
+          "No current-season EPA/YPP window is supplied; Week 1 is represented only by a single Rush box-score snapshot, and QB/starter identity remains unnamed."
+        ]
+      },
+      "editorial": {
+        "isLegacyPreview": true,
+        "headline": "CAR at ATL -- Week 2: Grokowski's Handicap",
+        "dek": "Atlanta holds small prior-season edges in offensive EPA, yards per play, and trench rates, plus home-division context, but Week 2 quarterback identity is unresolved after Cooper Rush started and Tua Tagovailoa and Michael Penix Jr.",
+        "openingRead": [
+          "Atlanta holds small prior-season edges in offensive EPA, yards per play, and trench rates, plus home-division context, but Week 2 quarterback identity is unresolved after Cooper Rush started and Tua Tagovailoa and Michael Penix Jr. are both listed as questionable. Interior losses (Chris Lindstrom in concussion protocol, Da'Shawn Hand out for the season) further cap that edge, so this projects as a tight, low-efficiency division game with only a slight home lean."
+        ],
+        "awayOffenseVsHomeDefense": null,
+        "homeOffenseVsAwayDefense": null,
+        "trenchesAndGameControl": null,
+        "personnelAndAvailability": [
+          "Carolina WR Jalen Coker is questionable (ankle; precautionary boot Monday, said he expects to play) and LB Patrick Jones II is questionable (back); Atlanta lists Tua, Penix, and Lindstrom as questionable with Hand out. Carolina's listed issues are narrower and more skill/edge than Atlanta's combination of QB and interior-line uncertainty; net personnel risk sits more on the home side until Wednesday's first official report."
+        ],
+        "gameScript": null,
+        "matchupKeys": [
+          {
+            "title": "Quarterback",
+            "analysis": "Kevin Stefanski declined to name a Week 2 starter and had no updates on Penix or Tua; Tua was ruled out Week 1 with an oblique and Cooper Rush started (143 yards, 1 TD, 2 INT); Penix practiced as a full participant last week but did not play Week 1 after an ACL tear last season; ESPN lists both Falcons QBs as questionable. Atlanta's passing ceiling is unstable and may resemble the Week 1 backup profile, which undercuts the small 2025 offensive EPA/YPP edge until a starter is actually established."
+          },
+          {
+            "title": "Passing",
+            "analysis": "Prior-season offense-versus-defense passing is assigned to home; Atlanta off.yardsPerPlay was 5.57 versus Carolina 5.22; off.epaPerPlay favored home by 0.016849161811672165, with both clubs negative. On 2025 rates Atlanta should win passing downs, but that implication is conditional on functional QB play rather than a Rush-level outing."
+          },
+          {
+            "title": "Rushing",
+            "analysis": "Prior-season rushing matchup is assigned to home; both teams had off run block win rate of 70; Carolina def run stop win rate was 26 versus Atlanta 31. The run game is the more stable path this week; Atlanta's offense has a slight scheme/personnel edge versus a weaker Panthers run-stop front, while Carolina still has a viable ground plan against Atlanta's modest stop rate."
+          },
+          {
+            "title": "Protection",
+            "analysis": "Atlanta off pass block win rate was 64 versus Carolina 59; Chris Lindstrom is in the concussion protocol after leaving Week 1 and is listed as questionable. Atlanta's 2025 pass-protection edge is real but is sensitive to whether its starting right guard is available in Week 2."
+          },
+          {
+            "title": "Pass Rush",
+            "analysis": "Atlanta def pass rush win rate was 41 versus Carolina 34; Da'Shawn Hand tore a quad in Week 1 and is expected to miss the remainder of the season. Atlanta should still generate more pressure on 2025 rates, but losing Hand for the year trims interior disruption and makes the pass-rush edge thinner than the composite implies."
+          },
+          {
+            "title": "Run Defense",
+            "analysis": "Atlanta def run stop win rate was 31 versus Carolina 26; Hand is out for the season. Neither run defense graded well in 2025, and Atlanta's interior is further weakened, which supports a grind with some rushing volume rather than efficient, high-scoring drives."
+          },
+          {
+            "title": "Coaching",
+            "analysis": "JKB coaching ratings, coaches, and differentials are SOURCE UNAVAILABLE; a beat report identifies Kevin Stefanski as Falcons head coach in the Week 2 QB discussion. No usable coaching edge can be assigned from the supplied ratings; QB-management opacity is already captured in the quarterback factor."
+          },
+          {
+            "title": "Situational",
+            "analysis": "restDifferential is 0, divisionalGame is true, revengeGame is true. Even rest removes a rest-advantage lean; division/revenge context typically compresses rather than expands a modest home edge and raises the chance of a tighter, more physical game."
+          },
+          {
+            "title": "Weather",
+            "analysis": "Weather status is not available; kickoff is at Mercedes-Benz Stadium with isDome=false. No usable weather adjustment; do not treat outdoor/dome conditions as known."
+          }
+        ],
+        "swingFactors": [
+          {
+            "title": "Tua or a fully functional Penix is named and plays at a normal starting-QB level rather than the Week 1 Rush profile.",
+            "analysis": "That would restore Atlanta's prior-season passing and EPA edges and turn a 1.5-point home lean into a clearer home win, breaking the compressed-margin thesis."
+          },
+          {
+            "title": "Lindstrom is inactive while Hand is already out for the year, and Carolina leans on its 70 off run block win rate.",
+            "analysis": "Atlanta's trench/home-run-matchup thesis fails if the interior cannot hold; Carolina can control time of possession and flip a slight Falcons lean."
+          },
+          {
+            "title": "Rush starts again and repeats multi-interception, low-yardage play that creates Carolina short fields.",
+            "analysis": "Turnovers would score points that 2025 EPA/YPP do not capture and would invalidate using Atlanta's prior-season offensive edge as the basis for even a small home favorite."
+          }
+        ],
+        "sideAnalysis": [
+          "Locked fair is ATL -1.5 versus market home +2.5, a large gap toward Atlanta at plus money despite the modest projected home lean."
+        ],
+        "totalAnalysis": [
+          "Locked 42.5 versus market 43.5 is only a one-point gap, too thin to play given the low-clarity Week 2 setup."
+        ],
+        "finalWord": [
+          "Grokowski leans ATL +2.5 on the side (confidence 5/10) and passes on the total.",
+          "This is a layout preview built from Grokowski's existing pre-editorial analysis, not the finished long-form article this matchup will receive under the new weekly format."
+        ]
+      }
+    },
+    "chattyIce": {
+      "status": "ok",
+      "provider": "chatgpt",
+      "displayName": "Chatty Ice",
+      "analysisSnapshotId": "chatgpt-2026_02_CAR_ATL-daily_update-9513fc10565de071",
+      "analyzedAt": "2026-09-16T12:51:13.371Z",
+      "prediction": {
+        "fairSpread": {
+          "line": -3,
+          "team": "atl"
+        },
+        "projectedTotal": 44
+      },
+      "market": {
+        "spread": {
+          "homeLine": 2.5,
+          "awayLine": -2.5
+        },
+        "total": 43.5
+      },
+      "edges": {
+        "sidePoints": 5.5,
+        "totalPoints": 0.5
+      },
+      "side": {
+        "lean": "home",
+        "team": "atl",
+        "line": 2.5,
+        "confidence": 5,
+        "rationale": "Locked fair spread makes Atlanta modestly undervalued by the market, but the quarterback-availability uncertainty limits conviction."
+      },
+      "total": {
+        "lean": "over",
+        "line": 43.5,
+        "confidence": 5,
+        "rationale": "Locked projection is slightly higher than the market total, creating a small over lean without a large margin of safety."
+      },
+      "centralThesis": "Atlanta has the more efficient prior-season offense, the better passing and rushing matchup profile, and a modest trench advantage at home. Carolina's quarterback continuity is clearer, but Atlanta's quarterback availability remains less certain, keeping the matchup closer than the team-level efficiency data alone would suggest.",
+      "keyFactors": [
+        {
+          "area": "quarterback",
+          "finding": "Fact: Bryce Young is listed as Carolina's starting quarterback, while Michael Penix Jr. was inactive for Atlanta's opener after returning to practice without preseason game action. Interpretation: Atlanta's Week 2 quarterback projection carries more uncertainty, creating some counterweight to the Falcons' broader team advantages.",
+          "supports": "away",
+          "importance": "major"
+        },
+        {
+          "area": "passing",
+          "finding": "Fact: Atlanta held the prior-season advantage in offensive EPA per play, and the matchup data favors Atlanta in passing. Interpretation: The Falcons have the stronger baseline expectation for sustaining efficient drives through the air.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "rushing",
+          "finding": "Fact: Atlanta led the prior-season offensive yards-per-play metric, and the matchup data favors Atlanta in rushing. Bijan Robinson also accounted for 29 touches or receptions on 57 Week 1 plays and 73 percent of Atlanta's total offense. Interpretation: Atlanta can build the offense around its most reliable playmaker and reduce quarterback exposure.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "protection",
+          "finding": "Fact: Atlanta's prior-season offensive pass-block win rate was 64 versus Carolina's 59, while both teams posted a 70 offensive run-block win rate. Interpretation: Atlanta's cleaner pass protection should help its offense more consistently access its passing advantage.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "pass_rush",
+          "finding": "Fact: Atlanta had the higher prior-season defensive pass-rush win rate, 41 versus 34, and Za'Darius Smith recorded two sacks on 16 defensive snaps in the opener. Interpretation: Atlanta has a credible path to creating pressure against Carolina and forcing lower-efficiency quarterback decisions.",
+          "supports": "home",
+          "importance": "major"
+        },
+        {
+          "area": "run_defense",
+          "finding": "Fact: Atlanta's prior-season defensive run-stop win rate was 31 versus Carolina's 26. Interpretation: The Falcons are better positioned to limit Carolina's preferred path to offensive stability and make the Panthers rely more heavily on quarterback play.",
+          "supports": "home",
+          "importance": "moderate"
+        },
+        {
+          "area": "personnel",
+          "finding": "Fact: Carolina's listed starters include Chuba Hubbard, Jalen Coker, and Monroe Freeling, while Atlanta's offense was highly concentrated around Robinson in Week 1. Interpretation: Atlanta has the more established featured-player usage signal, although that concentration also creates predictability if Carolina can contain Robinson.",
+          "supports": "mixed",
+          "importance": "moderate"
+        },
+        {
+          "area": "situational",
+          "finding": "Fact: This is a divisional game, both teams have equal rest, and the matchup is tagged as a revenge game. Interpretation: Familiarity and competitive intensity should reduce the likelihood of a major situational edge and support a relatively tight margin.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "coaching",
+          "finding": "Fact: Coaching ratings and coach context are unavailable. Interpretation: No coaching adjustment is applied; the projection relies on team performance, personnel, and matchup data instead.",
+          "supports": "neutral",
+          "importance": "minor"
+        },
+        {
+          "area": "weather",
+          "finding": "Fact: The game is scheduled at Mercedes-Benz Stadium, which is identified as not a dome, and no weather forecast is available in the supplied data. Interpretation: Weather is not adjusted into the projection because wind, precipitation, and temperature are unknown.",
+          "supports": "neutral",
+          "importance": "minor"
+        }
+      ],
+      "failureModes": [
+        {
+          "scenario": "Atlanta's quarterback situation remains unsettled or the starter is limited, forcing the Falcons to operate below the efficiency baseline implied by their prior-season metrics.",
+          "whyItMatters": "The projection gives Atlanta the passing and overall offensive edge; losing quarterback stability would remove the primary reason for favoring the Falcons."
+        },
+        {
+          "scenario": "Carolina consistently contains Bijan Robinson and prevents Atlanta from sustaining its Week 1 usage-centered offensive approach.",
+          "whyItMatters": "Atlanta's offense was heavily concentrated around Robinson, so neutralizing him could make the Falcons more predictable and lower their scoring ceiling."
+        },
+        {
+          "scenario": "Carolina's offensive line holds up better than its prior-season pass-blocking profile and Bryce Young converts enough extended drives against Atlanta's pressure.",
+          "whyItMatters": "That would erase Atlanta's protection and pass-rush advantages while allowing Carolina to keep the game within one possession or win outright."
+        }
+      ],
+      "evidenceQualitySummary": {
+        "strengths": [
+          "The prior-season EPA, yards-per-play, matchup, and trench metrics consistently favor Atlanta.",
+          "The Atlanta usage and pass-rush evidence is verified and directly relevant to the expected game plan.",
+          "The analysis avoids assigning a coaching edge because the supplied coaching source is unavailable."
+        ],
+        "limitations": [
+          "The core performance metrics are from the 2025 season and may not fully represent 2026 personnel or scheme changes.",
+          "Quarterback availability evidence is stale relative to the Week 2 kickoff and does not establish Atlanta's final starter.",
+          "Weather data is unavailable, and no current verified injury report is supplied for the full Week 2 personnel picture."
+        ]
+      },
+      "editorial": {
+        "isLegacyPreview": true,
+        "headline": "CAR at ATL -- Week 2: Chatty Ice's Handicap",
+        "dek": "Atlanta has the more efficient prior-season offense, the better passing and rushing matchup profile, and a modest trench advantage at home.",
+        "openingRead": [
+          "Atlanta has the more efficient prior-season offense, the better passing and rushing matchup profile, and a modest trench advantage at home. Carolina's quarterback continuity is clearer, but Atlanta's quarterback availability remains less certain, keeping the matchup closer than the team-level efficiency data alone would suggest."
+        ],
+        "awayOffenseVsHomeDefense": null,
+        "homeOffenseVsAwayDefense": null,
+        "trenchesAndGameControl": null,
+        "personnelAndAvailability": [
+          "Carolina's listed starters include Chuba Hubbard, Jalen Coker, and Monroe Freeling, while Atlanta's offense was highly concentrated around Robinson in Week 1. Atlanta has the more established featured-player usage signal, although that concentration also creates predictability if Carolina can contain Robinson."
+        ],
+        "gameScript": null,
+        "matchupKeys": [
+          {
+            "title": "Quarterback",
+            "analysis": "Bryce Young is listed as Carolina's starting quarterback, while Michael Penix Jr. was inactive for Atlanta's opener after returning to practice without preseason game action. Atlanta's Week 2 quarterback projection carries more uncertainty, creating some counterweight to the Falcons' broader team advantages."
+          },
+          {
+            "title": "Passing",
+            "analysis": "Atlanta held the prior-season advantage in offensive EPA per play, and the matchup data favors Atlanta in passing. The Falcons have the stronger baseline expectation for sustaining efficient drives through the air."
+          },
+          {
+            "title": "Rushing",
+            "analysis": "Atlanta led the prior-season offensive yards-per-play metric, and the matchup data favors Atlanta in rushing. Bijan Robinson also accounted for 29 touches or receptions on 57 Week 1 plays and 73 percent of Atlanta's total offense. Atlanta can build the offense around its most reliable playmaker and reduce quarterback exposure."
+          },
+          {
+            "title": "Protection",
+            "analysis": "Atlanta's prior-season offensive pass-block win rate was 64 versus Carolina's 59, while both teams posted a 70 offensive run-block win rate. Atlanta's cleaner pass protection should help its offense more consistently access its passing advantage."
+          },
+          {
+            "title": "Pass Rush",
+            "analysis": "Atlanta had the higher prior-season defensive pass-rush win rate, 41 versus 34, and Za'Darius Smith recorded two sacks on 16 defensive snaps in the opener. Atlanta has a credible path to creating pressure against Carolina and forcing lower-efficiency quarterback decisions."
+          },
+          {
+            "title": "Run Defense",
+            "analysis": "Atlanta's prior-season defensive run-stop win rate was 31 versus Carolina's 26. The Falcons are better positioned to limit Carolina's preferred path to offensive stability and make the Panthers rely more heavily on quarterback play."
+          },
+          {
+            "title": "Situational",
+            "analysis": "This is a divisional game, both teams have equal rest, and the matchup is tagged as a revenge game. Familiarity and competitive intensity should reduce the likelihood of a major situational edge and support a relatively tight margin."
+          },
+          {
+            "title": "Coaching",
+            "analysis": "Coaching ratings and coach context are unavailable. No coaching adjustment is applied; the projection relies on team performance, personnel, and matchup data instead."
+          },
+          {
+            "title": "Weather",
+            "analysis": "The game is scheduled at Mercedes-Benz Stadium, which is identified as not a dome, and no weather forecast is available in the supplied data. Weather is not adjusted into the projection because wind, precipitation, and temperature are unknown."
+          }
+        ],
+        "swingFactors": [
+          {
+            "title": "Atlanta's quarterback situation remains unsettled or the starter is limited, forcing the Falcons to operate below the efficiency baseline implied by their prior-season metrics.",
+            "analysis": "The projection gives Atlanta the passing and overall offensive edge; losing quarterback stability would remove the primary reason for favoring the Falcons."
+          },
+          {
+            "title": "Carolina consistently contains Bijan Robinson and prevents Atlanta from sustaining its Week 1 usage-centered offensive approach.",
+            "analysis": "Atlanta's offense was heavily concentrated around Robinson, so neutralizing him could make the Falcons more predictable and lower their scoring ceiling."
+          },
+          {
+            "title": "Carolina's offensive line holds up better than its prior-season pass-blocking profile and Bryce Young converts enough extended drives against Atlanta's pressure.",
+            "analysis": "That would erase Atlanta's protection and pass-rush advantages while allowing Carolina to keep the game within one possession or win outright."
+          }
+        ],
+        "sideAnalysis": [
+          "Locked fair spread makes Atlanta modestly undervalued by the market, but the quarterback-availability uncertainty limits conviction."
+        ],
+        "totalAnalysis": [
+          "Locked projection is slightly higher than the market total, creating a small over lean without a large margin of safety."
+        ],
+        "finalWord": [
+          "Chatty Ice leans ATL +2.5 on the side (confidence 5/10) and leans Over 43.5 on the total (confidence 5/10).",
+          "This is a layout preview built from Chatty Ice's existing pre-editorial analysis, not the finished long-form article this matchup will receive under the new weekly format."
+        ]
+      }
+    }
+  }
+}

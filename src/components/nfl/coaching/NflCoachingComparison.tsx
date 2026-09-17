@@ -103,6 +103,7 @@ export type NflCoachingComparisonProps = {
   showHeading?: boolean;
   headingLabel?: string;
   className?: string;
+  theme?: "default" | "matchup-dark";
 };
 
 export default function NflCoachingComparison({
@@ -113,6 +114,7 @@ export default function NflCoachingComparison({
   showHeading = true,
   headingLabel = "Coaching advantage",
   className = "",
+  theme = "default",
 }: NflCoachingComparisonProps) {
   const resolved = view ?? buildCoachingComparisonView(coaching, homeTeam, awayTeam);
 
@@ -120,7 +122,7 @@ export default function NflCoachingComparison({
     return (
       <div
         data-testid="nfl-coaching-comparison"
-        className={cn("rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2", className)}
+        className={cn("rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2", theme === "matchup-dark" && "nfl-coaching-comparison--dark", className)}
       >
         {showHeading && (
           <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{headingLabel}</h4>
@@ -134,7 +136,7 @@ export default function NflCoachingComparison({
     <section
       data-testid="nfl-coaching-comparison"
       aria-label="Coaching advantage"
-      className={cn("@container space-y-1.5", className)}
+      className={cn("@container space-y-1.5", theme === "matchup-dark" && "nfl-coaching-comparison--dark", className)}
     >
       {showHeading && (
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">

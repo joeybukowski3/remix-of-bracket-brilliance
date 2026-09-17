@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupComparisonPanel from "@/components/nfl/matchups/MatchupComparisonPanel";
 import {
@@ -63,6 +63,7 @@ function buildCategoryData(sources: MatchupMetricSources) {
   return { metrics, results };
 }
 
+/** The approved mockup uses one horizontal pill scroller on phones — no wrap. */
 function mockCompactViewport() {
   const original = window.matchMedia;
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -80,89 +81,76 @@ function mockCompactViewport() {
   };
 }
 
-/**
- * The harness renders every category's full metric set at once, which jsdom
- * renders slowly under load — the same reason MatchupRedesign.test.tsx gives
- * its heavy suites headroom over the 5s default.
- */
 const HEAVY_RENDER_TIMEOUT_MS = 30_000;
 
-describe("MatchupComparisonPanel accordion on a compact (mobile) viewport", () => {
+function renderPanel(pendingCategory: MatchupCategoryId | null = null, navigationToken = 0) {
+  const { metrics, results } = buildCategoryData({ resolver: leadingResolver });
+  return render(
+    <MemoryRouter>
+      <MatchupComparisonPanel
+        matchup={MATCHUP}
+        categoryMetrics={metrics}
+        categoryResults={results}
+        pendingCategory={pendingCategory}
+        navigationToken={navigationToken}
+      />
+    </MemoryRouter>
+  );
+}
+
+describe("MatchupComparisonPanel category controls (compact / mobile viewport)", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("renders every category as a collapsed accordion row by default", () => {
+  it("renders the categories as a single horizontal pill scroller, not a wrapped stack", () => {
     const restore = mockCompactViewport();
-    const { metrics, results } = buildCategoryData({ resolver: leadingResolver });
-    render(
-      <MemoryRouter>
-        <MatchupComparisonPanel
-          matchup={MATCHUP}
-          categoryMetrics={metrics}
-          categoryResults={results}
-          pendingCategory={null}
-          navigationToken={0}
-        />
-      </MemoryRouter>
-    );
+    renderPanel();
     restore();
 
+    const tablist = screen.getByRole("tablist", { name: "Statistical comparison categories" });
+    expect(tablist.className).toMatch(/flex-nowrap/);
+    expect(tablist.className).toMatch(/overflow-x-auto/);
     for (const category of MATCHUP_CATEGORIES) {
-      const trigger = screen.getByRole("button", { name: new RegExp(`^${category.label}`) });
-      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(screen.getByRole("tab", { name: category.label })).toBeInTheDocument();
     }
   }, HEAVY_RENDER_TIMEOUT_MS);
 
-  it("expands a category's content when its row is tapped, and collapses it again on a second tap", () => {
+  it("shows one category's table at a time and switches on selection", () => {
     const restore = mockCompactViewport();
-    const { metrics, results } = buildCategoryData({ resolver: leadingResolver });
-    render(
-      <MemoryRouter>
-        <MatchupComparisonPanel
-          matchup={MATCHUP}
-          categoryMetrics={metrics}
-          categoryResults={results}
-          pendingCategory={null}
-          navigationToken={0}
-        />
-      </MemoryRouter>
-    );
+    renderPanel();
     restore();
 
-    const trigger = screen.getByRole("button", { name: /^Offense/ });
-    const panel = document.getElementById("comparison-offense-panel");
-    expect(panel).toHaveAttribute("hidden");
+    const firstCategory = MATCHUP_CATEGORIES[0];
+    const other = MATCHUP_CATEGORIES.find((c) => c.id !== firstCategory.id)!;
+    const firstPanel = document.getElementById(firstCategory.hash);
+    const otherPanel = document.getElementById(other.hash);
+    // The first registry category is selected by default.
+    expect(firstPanel).not.toHaveAttribute("hidden");
+    expect(otherPanel).toHaveAttribute("hidden");
+    // Rank tiles carry the league rank only (away rank 4 → "4th"); the raw stat
+    // lives under the bar, never inside the tile.
+    const tiles = Array.from(
+      (firstPanel as HTMLElement).querySelectorAll(".matchup-metric-table__value")
+    ).map((t) => t.textContent ?? "");
+    expect(tiles.some((t) => /4th/.test(t))).toBe(true);
+    expect(tiles.every((t) => !/10\.0/.test(t))).toBe(true);
+    // The raw value is present in the row, under its side of the bar.
+    expect(
+      (firstPanel as HTMLElement).querySelectorAll(".matchup-metric-table__val").length
+    ).toBeGreaterThan(0);
 
-    fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(panel).not.toHaveAttribute("hidden");
-    expect(within(panel as HTMLElement).getAllByText("10.0").length).toBeGreaterThan(0);
-
-    fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(panel).toHaveAttribute("hidden");
+    fireEvent.click(screen.getByRole("tab", { name: other.label }));
+    expect(firstPanel).toHaveAttribute("hidden");
+    expect(otherPanel).not.toHaveAttribute("hidden");
   });
 
-  it("opens the destination category's accordion row when arriving via the category navigation", () => {
+  it("selects the destination category when arriving via the category navigation", () => {
     const restore = mockCompactViewport();
-    const { metrics, results } = buildCategoryData({ resolver: leadingResolver });
-    render(
-      <MemoryRouter>
-        <MatchupComparisonPanel
-          matchup={MATCHUP}
-          categoryMetrics={metrics}
-          categoryResults={results}
-          pendingCategory="defense"
-          navigationToken={1}
-        />
-      </MemoryRouter>
-    );
+    renderPanel("defense", 1);
     restore();
 
-    const trigger = screen.getByRole("button", { name: /^Defense/ });
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    const panel = document.getElementById("comparison-defense-panel");
-    expect(panel).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("tab", { name: "Defense" })).toHaveAttribute("aria-selected", "true");
+    expect(document.getElementById("comparison-defense")).not.toHaveAttribute("hidden");
   });
 });

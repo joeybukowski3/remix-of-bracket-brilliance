@@ -35,24 +35,27 @@ entry point) → `publishCanonicalSocialPost` in
 The workflow has two jobs — `publish-hr` and `publish-k` — each with its own
 `concurrency` group (`mlb-x-canonical-hr`, `mlb-x-canonical-k`), its own image
 directory, its own lease directory, its own state-work dir, and its own
-canonical receipt namespace. One product's failure (X API error, image render
-failure, missing production data) can never block, delay, or duplicate the
-other. There is deliberately no workflow-wide concurrency group.
+canonical receipt namespace. Within a canonical run, one product's failure
+(X API error, image render failure, missing production data) does not block the
+other product's job. A workflow-wide group serializes delayed/retried runs;
+receipts and leases still prevent duplicates at the publication boundary.
 
 ### Schedule / cadence
 
-Two cron expressions, `*/15 12-23 * * *` and `*/15 0-2 * * *` — every 15 minutes
-across roughly 8am–10pm ET on both DST offsets, reusing the retired poll
-workflow's exact pregame window. Plus `workflow_dispatch`. Most firings resolve
-to a cheap `NO_POST_YET` / `ALREADY_PUBLISHED`; canonical readiness decides per
-firing whether there is anything to do.
+Four timezone-aware checks run at 8:40, 9:20, 10:20, and 11:05 AM
+`America/New_York`, plus `workflow_dispatch`. The non-top-of-hour cadence gives
+the publisher multiple recovery opportunities before an early-game cutoff even
+when GitHub delays an individual scheduled event. The daily production-data
+workflow refreshes at 7:47 AM ET, ahead of the first publisher check, so the
+publisher's bounded ensure-data dispatch is normally only a fallback.
 
 ### Concurrency behavior
 
-`concurrency: { group: mlb-x-canonical-<product>, cancel-in-progress: false }`.
-This only prevents two overlapping **scheduled runs for the same product** from
-racing before the lease/receipt becomes visible. The authoritative one-post
-guarantee is the receipt + lease, not the concurrency group.
+Workflow-level concurrency serializes canonical runs without cancellation.
+Each product also retains
+`concurrency: { group: mlb-x-canonical-<product>, cancel-in-progress: false }`
+around its publishing job. The authoritative one-post guarantee remains the
+receipt + lease, not either concurrency group.
 
 ## Duplicate-protection machinery
 

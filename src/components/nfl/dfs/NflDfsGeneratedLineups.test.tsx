@@ -96,7 +96,29 @@ describe("NflDfsGeneratedLineups", () => {
     renderPanel(slate());
     await generate();
     const dstRow = within(panel()).getByText("DST").closest("tr") as HTMLElement;
-    expect(within(dstRow).getAllByText("—")).toHaveLength(2);
+    // DST has no JKB projection and no player fantasy research, so every
+    // projection/research-derived cell is an explicit em dash, never a
+    // fabricated number: JKB RK, JKB Proj, Matchup, Fantasy PPG, FPA SZN.
+    expect(within(dstRow).getAllByText("—")).toHaveLength(5);
+  });
+
+  it("adds Matchup, Fantasy PPG and FPA SZN columns sourced from the canonical enriched row", async () => {
+    const enriched = slate().rows.map((row) =>
+      row.kind === "offense"
+        ? buildOffensiveRow({ ...defaults, dkId: row.dkId, position: row.position, team: row.team, gameKey: row.gameInfoRaw,
+            projectedFantasyPoints: row.projectedFantasyPoints ?? 15, seasonPpg: 18.6, opponentFpaSeasonRank: 4, opponentFpaSeasonValue: 24.1 })
+        : row,
+    );
+    renderPanel({ rows: enriched });
+    await generate();
+    const roster = within(panel()).getByRole("table", { name: /generated lineup roster/i });
+    expect(within(roster).getByRole("columnheader", { name: "Matchup" })).toBeInTheDocument();
+    expect(within(roster).getByRole("columnheader", { name: "Fantasy PPG" })).toBeInTheDocument();
+    expect(within(roster).getByRole("columnheader", { name: "FPA SZN" })).toBeInTheDocument();
+    // Rank 4 -> "Great"; seasonPpg 18.6; opponent FPA 24.1 all come off the enriched row.
+    expect(within(roster).getAllByText("Great").length).toBeGreaterThan(0);
+    expect(within(roster).getAllByText("18.6").length).toBeGreaterThan(0);
+    expect(within(roster).getAllByText(/24\.1/).length).toBeGreaterThan(0);
   });
 
   it("exposes the v1 weights from policy for every strategy in the methodology disclosure", async () => {

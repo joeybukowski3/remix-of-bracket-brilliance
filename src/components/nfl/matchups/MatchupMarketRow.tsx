@@ -84,7 +84,7 @@ export default function MatchupMarketRow({
   homeTeamName: string;
 }) {
   return (
-    <div className="border-b border-slate-100 py-1.5 last:border-0">
+    <div className="matchup-market-row border-b border-slate-100 py-1.5 last:border-0">
       <div className={MATCHUP_COMPACT_ROW_MAX_WIDTH}>
       <div className="mb-0.5 text-center" title={help}>
         {shortLabel && shortLabel !== metricLabel ? (

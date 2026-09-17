@@ -9,9 +9,11 @@ import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
 import { useNflCoachingRatings } from "@/hooks/useNflCoachingRatings";
 import { useNflMatchupInjuries } from "@/hooks/useNflMatchupInjuries";
 import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
+import { useNflSituationalTrends } from "@/hooks/useNflSituationalTrends";
 import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
 import { projectionFor } from "@/lib/nfl/projectionData";
 import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
+import { useNflGameAiHandicaps } from "@/hooks/useNflGameAiHandicaps";
 import { teamTotalFor } from "@/lib/nfl/totalsProjectionData";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
@@ -70,8 +72,10 @@ import MatchupMarketProfile from "@/components/nfl/matchups/MatchupMarketProfile
 import MatchupMobileStickyHeader from "@/components/nfl/matchups/MatchupMobileStickyHeader";
 import MatchupModelDetails from "@/components/nfl/matchups/MatchupModelDetails";
 import MatchupOverviewPanel from "@/components/nfl/matchups/MatchupOverviewPanel";
+import MatchupAiPicksPanel from "@/components/nfl/matchups/MatchupAiPicksPanel";
 import MatchupPeriodComparison from "@/components/nfl/matchups/MatchupPeriodComparison";
 import MatchupScheduleContext from "@/components/nfl/matchups/MatchupScheduleContext";
+import MatchupSituationalTrendsPanel from "@/components/nfl/matchups/MatchupSituationalTrendsPanel";
 import MatchupThemeToggle from "@/components/nfl/matchups/MatchupThemeToggle";
 import { CONVENTIONAL_STATS_METHODOLOGY } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupTabRow from "@/components/nfl/matchups/MatchupTabRow";
@@ -110,10 +114,10 @@ const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
  * matchup the route selected, so every generated matchup URL renders through
  * exactly this code path.
  *
- * Four content tabs replace the former jump navigation. There is deliberately
- * no Trends tab: the only genuine multi-period data is `resolveSuccessPeriods()`
- * — no home/away splits and no week-indexed series exist in any artifact — so
- * that comparison lives inside Team Comparison instead.
+ * Five content tabs replace the former jump navigation. Situational Trends is
+ * a descriptive research/context panel backed by its own generated current-
+ * season artifact; it remains separate from every projection and comparison
+ * resolver on this page.
  *
  * Metrics absent from the artifacts (first downs, third down, time of
  * possession) resolve to null and keep rendering "N/A". Nothing is ever
@@ -139,6 +143,7 @@ export default function NFLMatchupDetail() {
   // Independent optional enrichment: a missing market artifact leaves only the
   // market rows unavailable.
   const { artifact: marketArtifact } = useNflMatchupMarket();
+  const situationalTrends = useNflSituationalTrends();
   // Independent optional enrichment: a missing EPA artifact leaves only the six
   // EPA rows unavailable.
   const { artifact: epaArtifact } = useNflMatchupEpa();
@@ -194,6 +199,11 @@ export default function NFLMatchupDetail() {
     () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
     [data, gameSlug]
   );
+
+  // Independent optional enrichment: a game with no generated AI-handicap
+  // artifact yet leaves only the AI Picks tab unavailable; every other
+  // section of the page keeps working.
+  const { presentation: aiHandicapPresentation, loading: aiHandicapLoading, error: aiHandicapError } = useNflGameAiHandicaps(CURRENT_SEASON, matchup?.gameId ?? null);
 
   // The UI addresses teams by guide slug; the artifact is keyed by the canonical
   // abbreviation, so the resolver is built with an explicit two-entry map.
@@ -450,7 +460,10 @@ export default function NFLMatchupDetail() {
         {isLegacyObserved && <MatchupExplainer sampleLabel={sample?.label} sampleSettings={sampleSettings} />}
       </div>
 
-      <div {...panelProps("comparison")} className="space-y-2">
+      <div
+        {...panelProps("comparison")}
+        className="matchup-team-comparison-density space-y-2"
+      >
         <MatchupDataControls
           settings={sampleSettings}
           onChange={setSampleSettings}
@@ -539,6 +552,15 @@ export default function NFLMatchupDetail() {
         )}
       </div>
 
+      <div {...panelProps("trends")}>
+        <MatchupSituationalTrendsPanel
+          matchup={matchup}
+          artifact={situationalTrends.artifact}
+          loading={situationalTrends.loading}
+          error={situationalTrends.error}
+        />
+      </div>
+
       <div {...panelProps("availability")}>
         <MatchupAvailabilityPanel
           matchup={matchup}
@@ -555,6 +577,14 @@ export default function NFLMatchupDetail() {
           generatedAt={projectionArtifact?._meta?.generatedAt ?? null}
           loading={projectionLoading}
           error={projectionError}
+        />
+      </div>
+
+      <div {...panelProps("aiPicks")}>
+        <MatchupAiPicksPanel
+          presentation={aiHandicapPresentation}
+          loading={aiHandicapLoading}
+          error={aiHandicapError}
         />
       </div>
 
@@ -600,9 +630,17 @@ export default function NFLMatchupDetail() {
         </p>
       )}
 
+      {aiHandicapPresentation && (
+        <p className="text-[11px] leading-5 text-slate-400">
+          AI Picks (Grokowski / Chatty Ice): independent third-party AI opinions, not JKB&apos;s own model and not
+          betting advice. Each forms its own side/total lean and confidence from public evidence; they never see
+          each other&apos;s work, and this page never averages, compares or declares a winner between them.
+        </p>
+      )}
+
       <p className="text-[11px] leading-5 text-slate-400">
         Informational model preview only — not betting advice. No pick, best bet, confidence
-        rating or stake size is produced anywhere on this page.
+        rating or stake size is produced by JKB&apos;s own model anywhere on this page.
       </p>
     </div>
   );

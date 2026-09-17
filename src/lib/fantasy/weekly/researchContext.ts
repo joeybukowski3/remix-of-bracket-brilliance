@@ -27,6 +27,14 @@ export type WeeklyPositionEvidence = {
   targetShare: WeeklyResearchMetric;
   airYardsPerGame: WeeklyResearchMetric;
   targetsPerGame: WeeklyResearchMetric;
+  /**
+   * Targets/game over the same trailing-five chronology as `last5Ppg`
+   * (`lastFiveSample()`), not the season sample `targetsPerGame` uses.
+   * Computed separately in `buildWeeklyFantasyResearchContexts` and merged in
+   * -- `evidenceFor` only ever sees one rows sample, so it cannot produce this
+   * on its own. WR/TE only, matching `targetsPerGame`'s scope.
+   */
+  targetsPerGameL5: WeeklyResearchMetric;
 };
 
 export type WeeklyFantasyResearchContext = {
@@ -74,6 +82,7 @@ export function createEmptyWeeklyFantasyResearchContext(): WeeklyFantasyResearch
       targetShare: blank(),
       airYardsPerGame: blank(),
       targetsPerGame: blank(),
+      targetsPerGameL5: blank(),
     },
   };
 }
@@ -175,6 +184,7 @@ function evidenceFor(rows: readonly HistoricalPlayerWeek[], position: FantasyPos
       targetShare: blank(),
       airYardsPerGame: blank(),
       targetsPerGame: blank(),
+      targetsPerGameL5: blank(),
     };
   }
 
@@ -193,13 +203,28 @@ function evidenceFor(rows: readonly HistoricalPlayerWeek[], position: FantasyPos
       targetShare: from(mean(targetShares)),
       airYardsPerGame: from(games > 0 && airYards.length > 0 ? airYards.reduce((sum, value) => sum + value, 0) / games : null),
       targetsPerGame: from(games > 0 ? total((row) => row.stats.targets) / games : null),
+      targetsPerGameL5: blank(),
     };
   }
 
   return {
     touches: blank(), redZoneTouches: blank(), yardsPerCarry: blank(), receivingTargets: blank(),
-    targetShare: blank(), airYardsPerGame: blank(), targetsPerGame: blank(),
+    targetShare: blank(), airYardsPerGame: blank(), targetsPerGame: blank(), targetsPerGameL5: blank(),
   };
+}
+
+/**
+ * Targets/game over the candidate's trailing-five applicable games (the same
+ * `lastFiveSample()` chronology `last5Ppg` uses), WR/TE only. Kept out of
+ * `evidenceFor` because that function only ever sees one rows sample per call
+ * (season OR last-5), never both, so it cannot itself compute a season metric
+ * alongside an L5 one.
+ */
+function targetsPerGameL5For(rows: readonly HistoricalPlayerWeek[], position: FantasyPosition): WeeklyResearchMetric {
+  if (position !== "WR" && position !== "TE") return createEmptyWeeklyResearchMetric();
+  const games = rows.length;
+  const total = rows.reduce((sum, row) => sum + row.stats.targets, 0);
+  return metric(games > 0 ? total / games : null, rows);
 }
 
 function rankMetrics(metrics: WeeklyResearchMetric[]): void {
@@ -276,7 +301,7 @@ export function buildWeeklyFantasyResearchContexts(
         fpaForGames(history, candidate.position, candidate.opponent, last5DefenseRows),
         last5DefenseRows,
       ),
-      evidence: evidenceFor(seasonRows, candidate.position),
+      evidence: { ...evidenceFor(seasonRows, candidate.position), targetsPerGameL5: targetsPerGameL5For(last5Rows, candidate.position) },
     });
   }
 
@@ -290,7 +315,7 @@ export function buildWeeklyFantasyResearchContexts(
     rankMetric(contexts, (context) => context.last5Ppg);
     rankMetricByKey(entries, (context) => context.opponentFpaSeason);
     rankMetricByKey(entries, (context) => context.opponentFpaLast5);
-    for (const key of ["touches", "redZoneTouches", "yardsPerCarry", "receivingTargets", "targetShare", "airYardsPerGame", "targetsPerGame"] as const) {
+    for (const key of ["touches", "redZoneTouches", "yardsPerCarry", "receivingTargets", "targetShare", "airYardsPerGame", "targetsPerGame", "targetsPerGameL5"] as const) {
       rankMetric(contexts, (context) => context.evidence[key]);
     }
   }

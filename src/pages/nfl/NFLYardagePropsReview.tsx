@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNflYardageProjections } from "@/hooks/useNflYardageProjections";
 import { useNflYardageMarket } from "@/hooks/useNflYardageMarket";
+import { useNflYardageAltMarket } from "@/hooks/useNflYardageAltMarket";
 import { useNflYardageOpponentContext } from "@/hooks/useNflYardageOpponentContext";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
@@ -35,7 +36,6 @@ import {
 import type { NflProjectionMarket } from "@/lib/nfl/props/types/projectionOutput";
 
 const SEASON = 2026;
-const WEEK_OPTIONS = [1] as const;
 
 const MARKET_TABS: readonly NflProjectionMarket[] = ["passing", "rushing", "receiving"];
 const MARKET_LABEL: Record<NflProjectionMarket, string> = { passing: "Passing", rushing: "Rushing", receiving: "Receiving" };
@@ -67,7 +67,6 @@ export default function NFLYardagePropsReview() {
     path: "/nfl/yardage-props-review",
   });
 
-  const [week, setWeek] = useState<(typeof WEEK_OPTIONS)[number]>(1);
   const [market, setMarket] = useState<NflProjectionMarket>("passing");
   const [filters, setFilters] = useState<NflYardageReviewFilters>(defaultFiltersForViewport);
   // Default sort is highest projection first, on initial load and after every market change; a user
@@ -80,7 +79,9 @@ export default function NFLYardagePropsReview() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const projections = useNflYardageProjections(SEASON);
+  const week = projections.data?.week ?? null;
   const marketData = useNflYardageMarket();
+  const altMarketData = useNflYardageAltMarket();
   const opponentContextData = useNflYardageOpponentContext();
 
   const marketRows = useMemo(
@@ -88,7 +89,10 @@ export default function NFLYardagePropsReview() {
     [projections.data, market, week],
   );
 
-  const reviewEntries = useMemo(() => buildYardageReviewRows(marketRows, marketData.data), [marketRows, marketData.data]);
+  const reviewEntries = useMemo(
+    () => buildYardageReviewRows(marketRows, marketData.data, altMarketData.data),
+    [marketRows, marketData.data, altMarketData.data],
+  );
 
   const freshnessSources = useMemo(
     () =>
@@ -96,13 +100,14 @@ export default function NFLYardagePropsReview() {
         projectionGeneratedAt: projections.data?.generatedAt ?? null,
         depthChartSnapshotAt: projections.data?.depthChartSource.snapshotAt ?? null,
         sportsbookGeneratedAt: marketData.data?.generatedAt ?? null,
+        altMarketGeneratedAt: altMarketData.data?.generatedAt ?? null,
         opponentContextGeneratedAts: [
           opponentContextData.epa?._meta.generatedAt,
           opponentContextData.success?._meta.generatedAt,
           opponentContextData.productionAllowed?._meta.generatedAt,
         ],
       }),
-    [projections.data, marketData.data, opponentContextData],
+    [projections.data, marketData.data, altMarketData.data, opponentContextData],
   );
 
   // Opponent-defense context (yards allowed, EPA/Success allowed, matchup edge) is
@@ -172,7 +177,8 @@ export default function NFLYardagePropsReview() {
 
   const loading = projections.loading;
   const hasProjectionError = Boolean(projections.error);
-  const availableLineCount = reviewEntries.filter((e) => e.marketInfo.available).length;
+  const sportsbookLineCount = reviewEntries.filter((e) => e.marketInfo.available && e.marketInfo.source === "sportsbook").length;
+  const kalshiLineCount = reviewEntries.filter((e) => e.marketInfo.available && e.marketInfo.source === "kalshi").length;
   const activeFilterCount = [
     filters.matchup !== "all",
     filters.position !== "all",
@@ -188,7 +194,7 @@ export default function NFLYardagePropsReview() {
         description="A read-only preview of current-week passing, rushing and receiving yardage projections, shown alongside any matching sportsbook line. This is research context, not a betting recommendation."
       >
         <div className="flex flex-wrap items-center gap-3">
-          <NflFilterChips label="Week" options={WEEK_OPTIONS} value={week} onChange={setWeek} formatOption={(w) => `Week ${w}`} />
+          <span className="text-xs font-semibold">{week === null ? "Current week" : `Week ${week}`}</span>
           {/* Market stays a chip group on desktop; mobile gets its own dedicated prop-type row below (NflYardageMobilePropTypeRow). */}
           <div className="hidden md:flex md:items-center">
             <NflFilterChips label="Market" options={MARKET_TABS} value={market} onChange={handleMarketChange} formatOption={(m) => MARKET_LABEL[m]} />
@@ -262,8 +268,10 @@ export default function NFLYardagePropsReview() {
           </div>
 
           <p className="text-[11px] text-slate-500">
-            {sorted.length} of {reviewEntries.length} {MARKET_LABEL[market].toLowerCase()} candidates shown · {availableLineCount} with a
-            matching sportsbook line{marketData.error ? " · sportsbook data unavailable this run" : ""}
+            {sorted.length} of {reviewEntries.length} {MARKET_LABEL[market].toLowerCase()} candidates shown · {sportsbookLineCount} with a
+            sportsbook line{kalshiLineCount > 0 ? ` · ${kalshiLineCount} with a Kalshi fallback line` : ""}
+            {marketData.error ? " · sportsbook data unavailable this run" : ""}
+            {altMarketData.error ? " · Kalshi data unavailable this run" : ""}
             {opponentContextData.errors.length > 0 ? ` · ${opponentContextData.errors.join(" ")}` : ""}
           </p>
 

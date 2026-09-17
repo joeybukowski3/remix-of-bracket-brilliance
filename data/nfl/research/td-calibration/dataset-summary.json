@@ -1,0 +1,1012 @@
+{
+  "schemaVersion": "nfl-td-calibration-dataset-v2",
+  "generatedAt": "2026-09-09T20:52:02.399Z",
+  "targetSeasons": [
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "contextSeasons": [
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "contextSeasonNote": "player-week stats cover 2022+ only, so 2022 Week 1 has an empty prior-season window and null scores (fail-closed). 2021 compact touchdown-context was backfilled but is unused pending a 2021 player-week-stats cache.",
+  "strategies": {
+    "production": "Week 1 -> prior full regular season (S-1); Week 2+ -> season S weeks < W. Mirrors the live site's defaultWindow. Baseline.",
+    "trailing8": "Latest 8 games before the target game, crossing seasons. Live 'last 8' toggle, made as-of.",
+    "trailing10": "Latest 10 games before the target game. Crude sample-size shrinkage (strategy C).",
+    "priorSeasonThruW4": "Weeks 1-4 -> prior full season (S-1); Week 5+ -> season S to date. Hard switch (strategy B, coarse).",
+    "blendThruW4": "Week 1 -> S-1 full; Weeks 2-4 -> (S-1 full) union (S to date); Week 5+ -> S to date. Prior-season weight self-fades (strategy B)."
+  },
+  "leakageProtections": [
+    "Score math is the unmodified production buildTouchdownScores.",
+    "Every candidate's playerGames/opponentGames pre-filtered to games with an earlier (season, week) than the target.",
+    "League TD/opportunity prior (empirical-Bayes) computed inside buildTouchdownScores from the pre-filtered pool games only.",
+    "Position usage mean and league positional-TD mean computed from the pre-filtered pool only.",
+    "Percentile population = that week's reconstructed candidate pool; all percentile inputs are trailing-window values.",
+    "Implied team points from closing spread/total (pregame proxy); no postgame market data.",
+    "actualTd is the only field derived from the target game and is the label, never a feature."
+  ],
+  "membershipAssumption": "Candidate pool for (season, week) = players with a REG player-week stat line that week (QB/RB/WR/TE) on a team that played. This is ex-post 'appeared', the one unavoidable deviation from the live yardage-projection pool; feature values remain strictly pregame. A sensitivity cut to established contributors (playerPriorGames >= 1) is reported in the calibration run.",
+  "crossCheck": {
+    "description": "player-week (rushing_tds+receiving_tds>=1) vs compact-PBP touchdown flag sum per player-game (production strategy rows).",
+    "total": 23510,
+    "mismatch": 117,
+    "mismatchRate": 0.00498,
+    "examples": [
+      {
+        "playerId": "gsis:00-0034855",
+        "playerName": "B.Mayfield",
+        "gameId": "2022_01_CLE_CAR",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0034857",
+        "playerName": "J.Allen",
+        "gameId": "2022_01_BUF_LA",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036389",
+        "playerName": "J.Hurts",
+        "gameId": "2022_01_PHI_DET",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0035228",
+        "playerName": "K.Murray",
+        "gameId": "2022_02_ARI_LV",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036972",
+        "playerName": "M.Jones",
+        "gameId": "2022_03_BAL_NE",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0033119",
+        "playerName": "J.Brissett",
+        "gameId": "2022_04_CLE_ATL",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0035710",
+        "playerName": "D.Jones",
+        "gameId": "2022_04_CHI_NYG",
+        "position": "QB",
+        "weekStatTds": 2,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036389",
+        "playerName": "J.Hurts",
+        "gameId": "2022_04_JAX_PHI",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0037013",
+        "playerName": "Z.Wilson",
+        "gameId": "2022_05_MIA_NYJ",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036442",
+        "playerName": "J.Burrow",
+        "gameId": "2022_06_CIN_NO",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0026498",
+        "playerName": "M.Stafford",
+        "gameId": "2022_08_SF_LA",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0029604",
+        "playerName": "K.Cousins",
+        "gameId": "2022_08_ARI_MIN",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0033119",
+        "playerName": "J.Brissett",
+        "gameId": "2022_08_CIN_CLE",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0033873",
+        "playerName": "P.Mahomes",
+        "gameId": "2022_09_TEN_KC",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036945",
+        "playerName": "J.Fields",
+        "gameId": "2022_09_MIA_CHI",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036898",
+        "playerName": "D.Mills",
+        "gameId": "2022_11_WAS_HOU",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0035228",
+        "playerName": "K.Murray",
+        "gameId": "2022_12_LAC_ARI",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0033873",
+        "playerName": "P.Mahomes",
+        "gameId": "2022_13_KC_CIN",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0037834",
+        "playerName": "B.Purdy",
+        "gameId": "2022_14_TB_SF",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0033873",
+        "playerName": "P.Mahomes",
+        "gameId": "2022_15_KC_HOU",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0036898",
+        "playerName": "D.Mills",
+        "gameId": "2022_15_KC_HOU",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0033873",
+        "playerName": "P.Mahomes",
+        "gameId": "2022_16_SEA_KC",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0034857",
+        "playerName": "J.Allen",
+        "gameId": "2022_16_BUF_CHI",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0023459",
+        "playerName": "A.Rodgers",
+        "gameId": "2022_17_MIN_GB",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      },
+      {
+        "playerId": "gsis:00-0037077",
+        "playerName": "S.Howell",
+        "gameId": "2023_01_ARI_WAS",
+        "position": "QB",
+        "weekStatTds": 1,
+        "contextTds": 0
+      }
+    ]
+  },
+  "overall": {
+    "n": 117550,
+    "scored": 110142,
+    "nullScore": 7408,
+    "actualTdRate": 0.1823,
+    "scoredActualTdRate": 0.1857,
+    "bySeason": {
+      "2022": 29040,
+      "2023": 29005,
+      "2024": 29320,
+      "2025": 30185
+    },
+    "scoredBySeason": {
+      "2022": 25100,
+      "2023": 27865,
+      "2024": 28205,
+      "2025": 28972
+    },
+    "byPosition": {
+      "QB": 13120,
+      "WR": 49075,
+      "RB": 30830,
+      "TE": 24525
+    },
+    "earlySeason": 27410,
+    "earlySeasonScored": 22337,
+    "rookieOrNoPrior": 4975,
+    "rookieOrNoPriorScored": 0,
+    "componentMissing": {
+      "tdOpportunitiesComponent": 7408,
+      "playerUsageComponent": 7408,
+      "teamUsageComponent": 7408,
+      "tdSuccessComponent": 7408,
+      "oppTdOpportunitiesComponent": 2717,
+      "oppTdAllowedPositionComponent": 2717,
+      "impliedTeamPointsComponent": 0
+    },
+    "scoreBins": [
+      {
+        "bin": "0-10",
+        "n": 15,
+        "avgScore": 9.51,
+        "actualTdRate": 0.1333,
+        "se": 0.0878
+      },
+      {
+        "bin": "10-20",
+        "n": 6239,
+        "avgScore": 16.93,
+        "actualTdRate": 0.0559,
+        "se": 0.0029
+      },
+      {
+        "bin": "20-30",
+        "n": 18695,
+        "avgScore": 25.2,
+        "actualTdRate": 0.0645,
+        "se": 0.0018
+      },
+      {
+        "bin": "30-40",
+        "n": 17938,
+        "avgScore": 34.97,
+        "actualTdRate": 0.1039,
+        "se": 0.0023
+      },
+      {
+        "bin": "40-50",
+        "n": 18394,
+        "avgScore": 44.99,
+        "actualTdRate": 0.1543,
+        "se": 0.0027
+      },
+      {
+        "bin": "50-60",
+        "n": 18093,
+        "avgScore": 55.02,
+        "actualTdRate": 0.2091,
+        "se": 0.003
+      },
+      {
+        "bin": "60-70",
+        "n": 17344,
+        "avgScore": 64.86,
+        "actualTdRate": 0.2886,
+        "se": 0.0034
+      },
+      {
+        "bin": "70-80",
+        "n": 11366,
+        "avgScore": 74.24,
+        "actualTdRate": 0.3851,
+        "se": 0.0046
+      },
+      {
+        "bin": "80-90",
+        "n": 2047,
+        "avgScore": 82.89,
+        "actualTdRate": 0.5022,
+        "se": 0.0111
+      },
+      {
+        "bin": "90-100",
+        "n": 11,
+        "avgScore": 90.71,
+        "actualTdRate": 0.5455,
+        "se": 0.1501
+      }
+    ]
+  },
+  "byStrategy": {
+    "production": {
+      "n": 23510,
+      "scored": 21999,
+      "nullScore": 1511,
+      "actualTdRate": 0.1823,
+      "scoredActualTdRate": 0.1873,
+      "bySeason": {
+        "2022": 5808,
+        "2023": 5801,
+        "2024": 5864,
+        "2025": 6037
+      },
+      "scoredBySeason": {
+        "2022": 5200,
+        "2023": 5512,
+        "2024": 5566,
+        "2025": 5721
+      },
+      "byPosition": {
+        "QB": 2624,
+        "WR": 9815,
+        "RB": 6166,
+        "TE": 4905
+      },
+      "earlySeason": 5482,
+      "earlySeasonScored": 4544,
+      "rookieOrNoPrior": 995,
+      "rookieOrNoPriorScored": 0,
+      "componentMissing": {
+        "tdOpportunitiesComponent": 1511,
+        "playerUsageComponent": 1511,
+        "teamUsageComponent": 1511,
+        "tdSuccessComponent": 1511,
+        "oppTdOpportunitiesComponent": 341,
+        "oppTdAllowedPositionComponent": 341,
+        "impliedTeamPointsComponent": 0
+      },
+      "scoreBins": [
+        {
+          "bin": "0-10",
+          "n": 1,
+          "avgScore": 9.92,
+          "actualTdRate": 0,
+          "se": 0
+        },
+        {
+          "bin": "10-20",
+          "n": 1310,
+          "avgScore": 16.89,
+          "actualTdRate": 0.0595,
+          "se": 0.0065
+        },
+        {
+          "bin": "20-30",
+          "n": 3941,
+          "avgScore": 25.21,
+          "actualTdRate": 0.0665,
+          "se": 0.004
+        },
+        {
+          "bin": "30-40",
+          "n": 3747,
+          "avgScore": 34.88,
+          "actualTdRate": 0.1158,
+          "se": 0.0052
+        },
+        {
+          "bin": "40-50",
+          "n": 3559,
+          "avgScore": 44.95,
+          "actualTdRate": 0.1596,
+          "se": 0.0061
+        },
+        {
+          "bin": "50-60",
+          "n": 3492,
+          "avgScore": 55.06,
+          "actualTdRate": 0.2168,
+          "se": 0.007
+        },
+        {
+          "bin": "60-70",
+          "n": 3329,
+          "avgScore": 64.85,
+          "actualTdRate": 0.2917,
+          "se": 0.0079
+        },
+        {
+          "bin": "70-80",
+          "n": 2202,
+          "avgScore": 74.25,
+          "actualTdRate": 0.3842,
+          "se": 0.0104
+        },
+        {
+          "bin": "80-90",
+          "n": 414,
+          "avgScore": 82.94,
+          "actualTdRate": 0.4903,
+          "se": 0.0246
+        },
+        {
+          "bin": "90-100",
+          "n": 4,
+          "avgScore": 90.55,
+          "actualTdRate": 0.5,
+          "se": 0.25
+        }
+      ]
+    },
+    "trailing8": {
+      "n": 23510,
+      "scored": 22515,
+      "nullScore": 995,
+      "actualTdRate": 0.1823,
+      "scoredActualTdRate": 0.1846,
+      "bySeason": {
+        "2022": 5808,
+        "2023": 5801,
+        "2024": 5864,
+        "2025": 6037
+      },
+      "scoredBySeason": {
+        "2022": 5200,
+        "2023": 5663,
+        "2024": 5739,
+        "2025": 5913
+      },
+      "byPosition": {
+        "QB": 2624,
+        "WR": 9815,
+        "RB": 6166,
+        "TE": 4905
+      },
+      "earlySeason": 5482,
+      "earlySeasonScored": 4795,
+      "rookieOrNoPrior": 995,
+      "rookieOrNoPriorScored": 0,
+      "componentMissing": {
+        "tdOpportunitiesComponent": 995,
+        "playerUsageComponent": 995,
+        "teamUsageComponent": 995,
+        "tdSuccessComponent": 995,
+        "oppTdOpportunitiesComponent": 341,
+        "oppTdAllowedPositionComponent": 341,
+        "impliedTeamPointsComponent": 0
+      },
+      "scoreBins": [
+        {
+          "bin": "0-10",
+          "n": 2,
+          "avgScore": 9.58,
+          "actualTdRate": 0,
+          "se": 0
+        },
+        {
+          "bin": "10-20",
+          "n": 1254,
+          "avgScore": 16.95,
+          "actualTdRate": 0.0542,
+          "se": 0.0064
+        },
+        {
+          "bin": "20-30",
+          "n": 3885,
+          "avgScore": 25.19,
+          "actualTdRate": 0.0654,
+          "se": 0.004
+        },
+        {
+          "bin": "30-40",
+          "n": 3693,
+          "avgScore": 35,
+          "actualTdRate": 0.0996,
+          "se": 0.0049
+        },
+        {
+          "bin": "40-50",
+          "n": 3870,
+          "avgScore": 44.97,
+          "actualTdRate": 0.1579,
+          "se": 0.0059
+        },
+        {
+          "bin": "50-60",
+          "n": 3684,
+          "avgScore": 54.92,
+          "actualTdRate": 0.209,
+          "se": 0.0067
+        },
+        {
+          "bin": "60-70",
+          "n": 3460,
+          "avgScore": 64.86,
+          "actualTdRate": 0.2864,
+          "se": 0.0077
+        },
+        {
+          "bin": "70-80",
+          "n": 2258,
+          "avgScore": 74.31,
+          "actualTdRate": 0.3928,
+          "se": 0.0103
+        },
+        {
+          "bin": "80-90",
+          "n": 408,
+          "avgScore": 82.9,
+          "actualTdRate": 0.5074,
+          "se": 0.0248
+        },
+        {
+          "bin": "90-100",
+          "n": 1,
+          "avgScore": 91.02,
+          "actualTdRate": 0,
+          "se": 0
+        }
+      ]
+    },
+    "trailing10": {
+      "n": 23510,
+      "scored": 22515,
+      "nullScore": 995,
+      "actualTdRate": 0.1823,
+      "scoredActualTdRate": 0.1846,
+      "bySeason": {
+        "2022": 5808,
+        "2023": 5801,
+        "2024": 5864,
+        "2025": 6037
+      },
+      "scoredBySeason": {
+        "2022": 5200,
+        "2023": 5663,
+        "2024": 5739,
+        "2025": 5913
+      },
+      "byPosition": {
+        "QB": 2624,
+        "WR": 9815,
+        "RB": 6166,
+        "TE": 4905
+      },
+      "earlySeason": 5482,
+      "earlySeasonScored": 4795,
+      "rookieOrNoPrior": 995,
+      "rookieOrNoPriorScored": 0,
+      "componentMissing": {
+        "tdOpportunitiesComponent": 995,
+        "playerUsageComponent": 995,
+        "teamUsageComponent": 995,
+        "tdSuccessComponent": 995,
+        "oppTdOpportunitiesComponent": 341,
+        "oppTdAllowedPositionComponent": 341,
+        "impliedTeamPointsComponent": 0
+      },
+      "scoreBins": [
+        {
+          "bin": "0-10",
+          "n": 3,
+          "avgScore": 9.6,
+          "actualTdRate": 0,
+          "se": 0
+        },
+        {
+          "bin": "10-20",
+          "n": 1281,
+          "avgScore": 16.99,
+          "actualTdRate": 0.05,
+          "se": 0.0061
+        },
+        {
+          "bin": "20-30",
+          "n": 3636,
+          "avgScore": 25.21,
+          "actualTdRate": 0.0655,
+          "se": 0.0041
+        },
+        {
+          "bin": "30-40",
+          "n": 3677,
+          "avgScore": 35.05,
+          "actualTdRate": 0.0971,
+          "se": 0.0049
+        },
+        {
+          "bin": "40-50",
+          "n": 3863,
+          "avgScore": 44.96,
+          "actualTdRate": 0.1476,
+          "se": 0.0057
+        },
+        {
+          "bin": "50-60",
+          "n": 3754,
+          "avgScore": 54.99,
+          "actualTdRate": 0.2083,
+          "se": 0.0066
+        },
+        {
+          "bin": "60-70",
+          "n": 3561,
+          "avgScore": 64.82,
+          "actualTdRate": 0.2937,
+          "se": 0.0076
+        },
+        {
+          "bin": "70-80",
+          "n": 2312,
+          "avgScore": 74.21,
+          "actualTdRate": 0.3832,
+          "se": 0.0101
+        },
+        {
+          "bin": "80-90",
+          "n": 427,
+          "avgScore": 82.8,
+          "actualTdRate": 0.4965,
+          "se": 0.0242
+        },
+        {
+          "bin": "90-100",
+          "n": 1,
+          "avgScore": 90.85,
+          "actualTdRate": 1,
+          "se": 0
+        }
+      ]
+    },
+    "priorSeasonThruW4": {
+      "n": 23510,
+      "scored": 20890,
+      "nullScore": 2620,
+      "actualTdRate": 0.1823,
+      "scoredActualTdRate": 0.1862,
+      "bySeason": {
+        "2022": 5808,
+        "2023": 5801,
+        "2024": 5864,
+        "2025": 6037
+      },
+      "scoredBySeason": {
+        "2022": 4300,
+        "2023": 5443,
+        "2024": 5516,
+        "2025": 5631
+      },
+      "byPosition": {
+        "QB": 2624,
+        "WR": 9815,
+        "RB": 6166,
+        "TE": 4905
+      },
+      "earlySeason": 5482,
+      "earlySeasonScored": 3435,
+      "rookieOrNoPrior": 995,
+      "rookieOrNoPriorScored": 0,
+      "componentMissing": {
+        "tdOpportunitiesComponent": 2620,
+        "playerUsageComponent": 2620,
+        "teamUsageComponent": 2620,
+        "tdSuccessComponent": 2620,
+        "oppTdOpportunitiesComponent": 1353,
+        "oppTdAllowedPositionComponent": 1353,
+        "impliedTeamPointsComponent": 0
+      },
+      "scoreBins": [
+        {
+          "bin": "0-10",
+          "n": 6,
+          "avgScore": 9.36,
+          "actualTdRate": 0.1667,
+          "se": 0.1521
+        },
+        {
+          "bin": "10-20",
+          "n": 1145,
+          "avgScore": 16.89,
+          "actualTdRate": 0.0576,
+          "se": 0.0069
+        },
+        {
+          "bin": "20-30",
+          "n": 3474,
+          "avgScore": 25.19,
+          "actualTdRate": 0.0628,
+          "se": 0.0041
+        },
+        {
+          "bin": "30-40",
+          "n": 3288,
+          "avgScore": 34.98,
+          "actualTdRate": 0.101,
+          "se": 0.0053
+        },
+        {
+          "bin": "40-50",
+          "n": 3448,
+          "avgScore": 45.06,
+          "actualTdRate": 0.152,
+          "se": 0.0061
+        },
+        {
+          "bin": "50-60",
+          "n": 3483,
+          "avgScore": 55.09,
+          "actualTdRate": 0.2053,
+          "se": 0.0068
+        },
+        {
+          "bin": "60-70",
+          "n": 3422,
+          "avgScore": 64.9,
+          "actualTdRate": 0.2867,
+          "se": 0.0077
+        },
+        {
+          "bin": "70-80",
+          "n": 2240,
+          "avgScore": 74.24,
+          "actualTdRate": 0.3821,
+          "se": 0.0103
+        },
+        {
+          "bin": "80-90",
+          "n": 382,
+          "avgScore": 82.86,
+          "actualTdRate": 0.5105,
+          "se": 0.0256
+        },
+        {
+          "bin": "90-100",
+          "n": 2,
+          "avgScore": 90.53,
+          "actualTdRate": 0.5,
+          "se": 0.3536
+        }
+      ]
+    },
+    "blendThruW4": {
+      "n": 23510,
+      "scored": 22223,
+      "nullScore": 1287,
+      "actualTdRate": 0.1823,
+      "scoredActualTdRate": 0.1861,
+      "bySeason": {
+        "2022": 5808,
+        "2023": 5801,
+        "2024": 5864,
+        "2025": 6037
+      },
+      "scoredBySeason": {
+        "2022": 5200,
+        "2023": 5584,
+        "2024": 5645,
+        "2025": 5794
+      },
+      "byPosition": {
+        "QB": 2624,
+        "WR": 9815,
+        "RB": 6166,
+        "TE": 4905
+      },
+      "earlySeason": 5482,
+      "earlySeasonScored": 4768,
+      "rookieOrNoPrior": 995,
+      "rookieOrNoPriorScored": 0,
+      "componentMissing": {
+        "tdOpportunitiesComponent": 1287,
+        "playerUsageComponent": 1287,
+        "teamUsageComponent": 1287,
+        "tdSuccessComponent": 1287,
+        "oppTdOpportunitiesComponent": 341,
+        "oppTdAllowedPositionComponent": 341,
+        "impliedTeamPointsComponent": 0
+      },
+      "scoreBins": [
+        {
+          "bin": "0-10",
+          "n": 3,
+          "avgScore": 9.51,
+          "actualTdRate": 0.3333,
+          "se": 0.2722
+        },
+        {
+          "bin": "10-20",
+          "n": 1249,
+          "avgScore": 16.92,
+          "actualTdRate": 0.0584,
+          "se": 0.0066
+        },
+        {
+          "bin": "20-30",
+          "n": 3759,
+          "avgScore": 25.22,
+          "actualTdRate": 0.0623,
+          "se": 0.0039
+        },
+        {
+          "bin": "30-40",
+          "n": 3533,
+          "avgScore": 34.96,
+          "actualTdRate": 0.1053,
+          "se": 0.0052
+        },
+        {
+          "bin": "40-50",
+          "n": 3654,
+          "avgScore": 45.01,
+          "actualTdRate": 0.1546,
+          "se": 0.006
+        },
+        {
+          "bin": "50-60",
+          "n": 3680,
+          "avgScore": 55.03,
+          "actualTdRate": 0.2065,
+          "se": 0.0067
+        },
+        {
+          "bin": "60-70",
+          "n": 3572,
+          "avgScore": 64.86,
+          "actualTdRate": 0.2844,
+          "se": 0.0075
+        },
+        {
+          "bin": "70-80",
+          "n": 2354,
+          "avgScore": 74.21,
+          "actualTdRate": 0.3832,
+          "se": 0.01
+        },
+        {
+          "bin": "80-90",
+          "n": 416,
+          "avgScore": 82.93,
+          "actualTdRate": 0.5072,
+          "se": 0.0245
+        },
+        {
+          "bin": "90-100",
+          "n": 3,
+          "avgScore": 90.89,
+          "actualTdRate": 0.6667,
+          "se": 0.2722
+        }
+      ]
+    }
+  },
+  "productionStrategy_2023_2025": {
+    "n": 17702,
+    "scored": 16799,
+    "nullScore": 903,
+    "actualTdRate": 0.1834,
+    "scoredActualTdRate": 0.1891,
+    "bySeason": {
+      "2023": 5801,
+      "2024": 5864,
+      "2025": 6037
+    },
+    "scoredBySeason": {
+      "2023": 5512,
+      "2024": 5566,
+      "2025": 5721
+    },
+    "byPosition": {
+      "QB": 1991,
+      "WR": 7428,
+      "RB": 4585,
+      "TE": 3698
+    },
+    "earlySeason": 4129,
+    "earlySeasonScored": 3644,
+    "rookieOrNoPrior": 387,
+    "rookieOrNoPriorScored": 0,
+    "componentMissing": {
+      "tdOpportunitiesComponent": 903,
+      "playerUsageComponent": 903,
+      "teamUsageComponent": 903,
+      "tdSuccessComponent": 903,
+      "oppTdOpportunitiesComponent": 0,
+      "oppTdAllowedPositionComponent": 0,
+      "impliedTeamPointsComponent": 0
+    },
+    "scoreBins": [
+      {
+        "bin": "0-10",
+        "n": 0,
+        "avgScore": null,
+        "actualTdRate": null,
+        "se": null
+      },
+      {
+        "bin": "10-20",
+        "n": 967,
+        "avgScore": 16.92,
+        "actualTdRate": 0.061,
+        "se": 0.0077
+      },
+      {
+        "bin": "20-30",
+        "n": 3110,
+        "avgScore": 25.22,
+        "actualTdRate": 0.064,
+        "se": 0.0044
+      },
+      {
+        "bin": "30-40",
+        "n": 2863,
+        "avgScore": 34.82,
+        "actualTdRate": 0.1163,
+        "se": 0.006
+      },
+      {
+        "bin": "40-50",
+        "n": 2660,
+        "avgScore": 45.01,
+        "actualTdRate": 0.1571,
+        "se": 0.0071
+      },
+      {
+        "bin": "50-60",
+        "n": 2656,
+        "avgScore": 55.01,
+        "actualTdRate": 0.2165,
+        "se": 0.008
+      },
+      {
+        "bin": "60-70",
+        "n": 2526,
+        "avgScore": 64.89,
+        "actualTdRate": 0.3017,
+        "se": 0.0091
+      },
+      {
+        "bin": "70-80",
+        "n": 1696,
+        "avgScore": 74.23,
+        "actualTdRate": 0.395,
+        "se": 0.0119
+      },
+      {
+        "bin": "80-90",
+        "n": 318,
+        "avgScore": 82.86,
+        "actualTdRate": 0.4969,
+        "se": 0.028
+      },
+      {
+        "bin": "90-100",
+        "n": 3,
+        "avgScore": 90.38,
+        "actualTdRate": 0.6667,
+        "se": 0.2722
+      }
+    ]
+  }
+}

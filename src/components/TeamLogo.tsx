@@ -4,10 +4,12 @@ import { cn } from "@/lib/utils";
 export default function TeamLogo({
   name,
   logo,
+  fallbackLabel,
   className,
 }: {
   name: string;
   logo?: string | null;
+  fallbackLabel?: string;
   className?: string;
 }) {
   const [hasError, setHasError] = useState(false);
@@ -32,7 +34,7 @@ export default function TeamLogo({
 
   return (
     <div className={cn("flex shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary-foreground", className)}>
-      {initials}
+      {fallbackLabel ?? initials}
     </div>
   );
 }

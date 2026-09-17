@@ -145,3 +145,63 @@ describe("weekly fantasy research windows", () => {
     expect(context.evidence.redZoneTouches.rank).toBeNull();
   });
 });
+
+describe("targetsPerGameL5", () => {
+  const wrCandidate = { playerId: "gsis:wr", position: "WR" as const, opponent: "mia" };
+
+  it("computes targets/game over the exact trailing-five sample, not the season sample", () => {
+    const history: HistoricalPlayerWeek[] = [];
+    for (let week = 1; week <= 8; week += 1) {
+      history.push(row({ playerId: wrCandidate.playerId, season: 2026, week, position: "WR", targets: week }));
+    }
+    const context = buildWeeklyFantasyResearchContexts([wrCandidate], history, 2026, 9).get(wrCandidate.playerId)!;
+    // Season sample is weeks 1-8 (mean targets 4.5); L5 is weeks 4-8 (mean 6).
+    expect(context.evidence.targetsPerGame.value).toBeCloseTo(4.5);
+    expect(context.evidence.targetsPerGameL5.value).toBeCloseTo(6);
+    expect(context.evidence.targetsPerGameL5.games.map((game) => game.week)).toEqual([4, 5, 6, 7, 8]);
+  });
+
+  it("never leaks the target week or future games into the L5 sample", () => {
+    const history = [
+      row({ playerId: wrCandidate.playerId, season: 2026, week: 1, position: "WR", targets: 2 }),
+      row({ playerId: wrCandidate.playerId, season: 2026, week: 2, position: "WR", targets: 999 }), // future, excluded
+    ];
+    const context = buildWeeklyFantasyResearchContexts([wrCandidate], history, 2026, 2).get(wrCandidate.playerId)!;
+    expect(context.evidence.targetsPerGameL5.value).toBe(2);
+    expect(context.evidence.targetsPerGameL5.games).toEqual([{ season: 2026, week: 1 }]);
+  });
+
+  it("crosses the season boundary the same way last5Ppg does", () => {
+    const history: HistoricalPlayerWeek[] = [];
+    for (let week = 15; week <= 17; week += 1) history.push(row({ playerId: wrCandidate.playerId, season: 2025, week, position: "WR", targets: 10 }));
+    history.push(row({ playerId: wrCandidate.playerId, season: 2026, week: 1, position: "WR", targets: 2 }));
+    const context = buildWeeklyFantasyResearchContexts([wrCandidate], history, 2026, 2).get(wrCandidate.playerId)!;
+    expect(context.evidence.targetsPerGameL5.games).toEqual([
+      { season: 2025, week: 15 }, { season: 2025, week: 16 }, { season: 2025, week: 17 }, { season: 2026, week: 1 },
+    ]);
+  });
+
+  it("is null for positions other than WR/TE", () => {
+    const rbCandidate = { playerId: "gsis:rb-tgt", position: "RB" as const, opponent: "mia" };
+    const context = buildWeeklyFantasyResearchContexts(
+      [rbCandidate],
+      [row({ playerId: rbCandidate.playerId, season: 2026, week: 1, position: "RB", targets: 5 })],
+      2026,
+      2,
+    ).get(rbCandidate.playerId)!;
+    expect(context.evidence.targetsPerGameL5.value).toBeNull();
+  });
+
+  it("ranks targetsPerGameL5 within the position pool", () => {
+    const a = { playerId: "gsis:wr-a", position: "WR" as const, opponent: "mia" };
+    const b = { playerId: "gsis:wr-b", position: "WR" as const, opponent: "mia" };
+    const history = [
+      row({ playerId: a.playerId, season: 2026, week: 1, position: "WR", targets: 10 }),
+      row({ playerId: b.playerId, season: 2026, week: 1, position: "WR", targets: 3 }),
+    ];
+    const results = buildWeeklyFantasyResearchContexts([a, b], history, 2026, 2);
+    expect(results.get(a.playerId)!.evidence.targetsPerGameL5.rank).toBe(1);
+    expect(results.get(b.playerId)!.evidence.targetsPerGameL5.rank).toBe(2);
+    expect(results.get(a.playerId)!.evidence.targetsPerGameL5.poolSize).toBe(2);
+  });
+});

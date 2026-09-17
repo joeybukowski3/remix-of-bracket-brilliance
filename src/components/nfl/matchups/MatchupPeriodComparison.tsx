@@ -1,42 +1,23 @@
+import { useState } from "react";
 import MatchupSectionCard from "@/components/nfl/matchups/MatchupSectionCard";
-import NflHeadToHeadMetricRow from "@/components/nfl/matchups/NflHeadToHeadMetricRow";
-import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
+import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
+import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
+import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/MatchupTowerMetricCard";
+import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
+import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
 import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
 import { classifyMetricComparison } from "@/lib/nfl/matchupCategoryAdvantage";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
 import type { NflMatchup } from "@/lib/nfl/matchups";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   SUCCESS_PERIOD_LABELS,
   SUCCESS_RATE_METRIC_KEYS,
   formatSuccessRate,
 } from "@/lib/nfl/successRateData";
-
-/**
- * Away/home identity for the comparison rows below — the same quiet one-line
- * header the Statistical Comparison accordions use, so both surfaces read with
- * one comparison language.
- */
-function ComparisonSideHeader({ matchup }: { matchup: NflMatchup }) {
-  return (
-    <div className="mx-auto grid w-full grid-cols-[3.75rem_minmax(0,1fr)_3.75rem] items-center gap-x-2 border-b border-slate-200 px-3 pb-1.5 pt-3 sm:max-w-[760px] sm:grid-cols-[5rem_minmax(0,1fr)_5rem] sm:gap-x-4 sm:px-4">
-      <span className="flex items-center justify-end gap-1">
-        <NflTeamCrest team={matchup.away} side="away" size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          {matchup.away.abbr.toUpperCase()}
-        </span>
-      </span>
-      <span aria-hidden className="text-center text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">
-        Advantage
-      </span>
-      <span className="flex items-center justify-start gap-1">
-        <NflTeamCrest team={matchup.home} side="home" size={16} />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          {matchup.home.abbr.toUpperCase()}
-        </span>
-      </span>
-    </div>
-  );
-}
 
 /**
  * Success rate by period.
@@ -46,12 +27,13 @@ function ComparisonSideHeader({ matchup }: { matchup: NflMatchup }) {
  * and no week-indexed series exist in any artifact.
  *
  * Which periods appear is decided once per matchup by `resolveSuccessPeriods()`
- * and both teams always move together — a comparison where one side showed Last
- * 5 and the other Last 8 would not be a comparison.
+ * and both teams always move together.
  *
- * Every paired stat renders through the shared `NflHeadToHeadMetricRow`, one row
- * per metric and visible period, with the period carried in the row's context
- * sub-label. Nothing here scrolls sideways.
+ * Presentation is the same responsive comparison-card system used by the
+ * Overview snapshot. The detail table preserves one row per visible period and
+ * adds raw percentages beneath the shared rail. RBSDM publishes a rank per
+ * split, so team cells show the league rank when it exists and fall back to the
+ * raw percentage when a split is unranked.
  */
 export default function MatchupPeriodComparison({
   matchup,
@@ -64,68 +46,109 @@ export default function MatchupPeriodComparison({
 }) {
   const { away, home } = matchup;
   const periods = successRate.periods;
-  const rows = SUCCESS_RATE_METRIC_KEYS.map((key) => {
+  const isMobile = useIsCompactLayout("(max-width: 767px)");
+  const [mobileView, setMobileView] = useState<"comparison" | "towers">("comparison");
+  const awayColor = nflTeamColorFor(away) ?? "#94a3b8";
+  const homeColor = nflTeamColorFor(home) ?? "#94a3b8";
+
+  const groups = SUCCESS_RATE_METRIC_KEYS.map((key) => {
     const def = getMetricDef(key);
-    return {
-      key,
-      label: def?.label ?? key,
-      shortLabel: def?.shortLabel,
-      help: def?.help,
-      direction: def?.direction ?? "context-only",
-      away: periods.map((period) => successRate.resolve(away.abbr, key, period)),
-      home: periods.map((period) => successRate.resolve(home.abbr, key, period)),
-    };
+    const label = def?.label ?? key;
+    const direction = def?.direction ?? "context-only";
+
+    const rows: MatchupMetricTableRow[] = periods.map((period) => {
+      const awayValue = successRate.resolve(away.abbr, key, period);
+      const homeValue = successRate.resolve(home.abbr, key, period);
+      return {
+        key: `${key}-${period}`,
+        label: SUCCESS_PERIOD_LABELS[period].label,
+        shortLabel: SUCCESS_PERIOD_LABELS[period].short,
+        help: def?.help,
+        direction,
+        away: {
+          value: awayValue?.pct ?? null,
+          rank: awayValue?.rank ?? null,
+          formatted: formatSuccessRate(awayValue),
+        },
+        home: {
+          value: homeValue?.pct ?? null,
+          rank: homeValue?.rank ?? null,
+          formatted: formatSuccessRate(homeValue),
+        },
+        comparison: classifyMetricComparison({
+          key,
+          direction,
+          awayValue: awayValue?.pct ?? null,
+          homeValue: homeValue?.pct ?? null,
+        }),
+      };
+    });
+
+    return { key, label, help: def?.help, rows };
   });
+
+  const towerMetrics: MatchupTowerMetricPresentation[] = groups.flatMap((group) => group.rows.map((row) => ({
+    id: `${group.key}-${row.key}`,
+    label: group.label,
+    shortLabel: group.label,
+    contextLabel: row.shortLabel ?? row.label,
+    away: {
+      team: away, color: awayColor, identityLabel: away.abbr.toUpperCase(),
+      formatted: row.away.formatted, rank: row.away.rank,
+      heightPercent: towerHeightFromRank(row.away.rank),
+    },
+    home: {
+      team: home, color: homeColor, identityLabel: home.abbr.toUpperCase(),
+      formatted: row.home.formatted, rank: row.home.rank,
+      heightPercent: towerHeightFromRank(row.home.rank),
+    },
+  })));
 
   return (
     <MatchupSectionCard
       eyebrow="Over time"
+      titleAlign="center"
       title="Success Rate by Period"
       titleId="success-periods-heading"
       subtitle={note}
       bodyClassName="px-0 py-0 sm:px-0"
+      className="matchup-telemetry-section"
     >
-      <ComparisonSideHeader matchup={matchup} />
-
-      <div>
-        {rows.flatMap((row) =>
-          periods.map((period, index) => {
-            const awayValue = row.away[index];
-            const homeValue = row.home[index];
-            const higherIsBetter =
-              row.direction === "higher-is-better"
-                ? true
-                : row.direction === "lower-is-better"
-                  ? false
-                  : null;
-            const comparison = classifyMetricComparison({
-              key: row.key,
-              direction: row.direction,
-              awayValue: awayValue?.pct ?? null,
-              homeValue: homeValue?.pct ?? null,
-            });
-            return (
-              <NflHeadToHeadMetricRow
-                key={`${row.key}-${period}`}
-                label={row.label}
-                shortLabel={row.shortLabel}
-                contextLabel={SUCCESS_PERIOD_LABELS[period].short}
-                help={row.help}
-                leftValue={formatSuccessRate(awayValue)}
-                rightValue={formatSuccessRate(homeValue)}
-                leftRank={awayValue?.rank ?? null}
-                rightRank={homeValue?.rank ?? null}
-                leftRawValue={awayValue?.pct ?? null}
-                rightRawValue={homeValue?.pct ?? null}
-                higherIsBetter={higherIsBetter}
-                comparison={comparison}
-                leftTeamName={away.teamName}
-                rightTeamName={home.teamName}
-                leftTeamAbbr={away.abbr}
-                rightTeamAbbr={home.abbr}
-              />
-            );
-          })
+      {isMobile && (
+        <div className="matchup-mobile-view-control">
+          <MatchupSegmentedControl
+            options={[{ value: "comparison", label: "Comparison" }, { value: "towers", label: "Towers" }]}
+            value={mobileView}
+            onChange={setMobileView}
+            ariaLabel="Success Rate view"
+            size="sm"
+          />
+        </div>
+      )}
+      <div className="px-3 py-3 sm:px-4">
+        {!isMobile || mobileView === "towers" ? (
+          <MatchupTowerGrid
+            metrics={towerMetrics}
+            title="Success Rate Towers"
+            subtitle={periods.map((period) => SUCCESS_PERIOD_LABELS[period].short).join(" · ")}
+          />
+        ) : (
+          <>
+            <MatchupComparisonTeamHeader matchup={matchup} sticky />
+            <div className="matchup-sr-grid">
+              {groups.map((group) => (
+                <MatchupComparisonCard
+                  key={group.key}
+                  title={group.label}
+                  titleId={`success-period-${group.key}`}
+                  matchup={matchup}
+                  metrics={group.rows}
+                  variant="detail"
+                  caption={`${group.label} by period for ${away.teamName} and ${home.teamName}`}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

@@ -28,6 +28,10 @@ const evidenceSchema = z.object({
   targetShare: weeklyResearchMetricSchema,
   airYardsPerGame: weeklyResearchMetricSchema,
   targetsPerGame: weeklyResearchMetricSchema,
+  // Older v1 companions predate this metric; absence remains missing evidence.
+  targetsPerGameL5: weeklyResearchMetricSchema.default(() => ({
+    value: null, rank: null, poolSize: 0, sampleSize: 0, sampleSeason: null, games: [],
+  })),
 }).strict();
 
 export const weeklyFantasyResearchContextSchema = z.object({

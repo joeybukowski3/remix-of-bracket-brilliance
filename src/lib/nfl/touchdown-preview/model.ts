@@ -2,6 +2,7 @@ import { computePercentileRanks } from "@/lib/shared/jkbHeat";
 import type {
   TouchdownCandidateInput,
   TouchdownMetric,
+  TouchdownOpponentGame,
   TouchdownPosition,
   TouchdownPreviewPlayer,
   TouchdownSampleState,
@@ -41,6 +42,57 @@ export function selectPlayerGames<T extends { season: number; week: number }>(ga
   const ordered = [...games].sort((a, b) => b.season - a.season || b.week - a.week);
   if (window === "last8") return ordered.slice(0, 8);
   return ordered.filter((game) => game.season === Number(window));
+}
+
+/**
+ * Opponent "TDs allowed to this position, per game" over two fixed, entirely
+ * window-independent samples:
+ *
+ * - `season` -- current-season / YTD games when the opponent has played at least
+ *   one, otherwise the opponent's FULL prior regular-season rate as a fallback
+ *   (`seasonSource` records which). Opponent-specific, never a calendar gate: an
+ *   opponent flips to true current-season YTD the moment it completes its first
+ *   current-season game. Never a blend of the two seasons. `null` only when
+ *   neither season has an applicable game.
+ * - `last5`  -- the opponent's trailing five applicable games in strict
+ *   `(season, week)` reverse-chronological order. It crosses the season boundary
+ *   until five current-season games exist, so 2026 Week 1 is five 2025 games,
+ *   Week 3 is the final three 2025 games plus Weeks 1-2 2026, and from Week 6 on
+ *   it is normally five current-season games. Divides by the games actually
+ *   present (<= 5), never by a fixed 5.
+ *
+ * Neither figure is derived from `selectPlayerGames`/the Last 8 UI window.
+ */
+export function opponentPositionTdAllowedRates(
+  opponentGames: readonly TouchdownOpponentGame[] | null,
+  position: TouchdownPosition,
+  currentSeason: number,
+): { season: number | null; seasonSource: "current_season" | "prior_season_fallback" | null; last5: number | null } {
+  if (opponentGames == null || opponentGames.length === 0) return { season: null, seasonSource: null, last5: null };
+  const chronological = [...opponentGames].sort((a, b) => b.season - a.season || b.week - a.week);
+  const perGame = (games: readonly TouchdownOpponentGame[]): number | null =>
+    games.length > 0 ? sum(games.map((game) => game.touchdownsAllowedByPosition[position])) / games.length : null;
+  const currentGames = chronological.filter((game) => game.season === currentSeason);
+  const priorGames = chronological.filter((game) => game.season === currentSeason - 1);
+  const [season, seasonSource]: [number | null, "current_season" | "prior_season_fallback" | null] =
+    currentGames.length > 0 ? [perGame(currentGames), "current_season"]
+      : priorGames.length > 0 ? [perGame(priorGames), "prior_season_fallback"]
+      : [null, null];
+  return {
+    season: round(season),
+    seasonSource,
+    last5: round(perGame(chronological.slice(0, 5))),
+  };
+}
+
+function resolveCurrentSeason(candidates: readonly TouchdownCandidateInput[], explicit?: number): number {
+  if (explicit != null && Number.isFinite(explicit)) return explicit;
+  let max = 0;
+  for (const candidate of candidates) {
+    for (const game of candidate.playerGames ?? []) if (game.season > max) max = game.season;
+    for (const game of candidate.opponentGames ?? []) if (game.season > max) max = game.season;
+  }
+  return max;
 }
 
 function sampleState(source: readonly unknown[] | null, selected: readonly unknown[]): TouchdownSampleState {
@@ -135,8 +187,9 @@ function blendedMetric(parts: readonly TouchdownMetric[], weights: readonly numb
   return { value: round(value), percentile: round(value), rank: null, poolSize: Math.min(...parts.map((part) => part.poolSize)) };
 }
 
-export function buildTouchdownScores(candidates: readonly TouchdownCandidateInput[], window: TouchdownWindowKey): TouchdownPreviewPlayer[] {
+export function buildTouchdownScores(candidates: readonly TouchdownCandidateInput[], window: TouchdownWindowKey, currentSeason?: number): TouchdownPreviewPlayer[] {
   const raw = candidates.map((candidate) => buildRaw(candidate, window));
+  const resolvedSeason = resolveCurrentSeason(candidates, currentSeason);
   const populationGames = raw.flatMap((row) => row.playerGames).filter((game) => finite(game.scorerOpportunities));
   const populationTd = sum(populationGames.map((game) => game.touchdowns));
   const populationOpp = sum(populationGames.map((game) => game.scorerOpportunities).filter(finite));
@@ -163,6 +216,13 @@ export function buildTouchdownScores(candidates: readonly TouchdownCandidateInpu
   const success = raw.map((row) => row.tdSuccessRate); const oppPos = raw.map((row) => row.oppPositionIndex);
   const implied = raw.map((row) => row.candidate.impliedTeamPoints);
 
+  // Opponent position TD allowed -- SZN + trailing-5 raw rates for every
+  // candidate, then their favorable percentiles over the full fixed population
+  // (same `computePercentileRanks` the board heat lookups use; higher = better).
+  const oppPositionRates = raw.map((row) => opponentPositionTdAllowedRates(row.candidate.opponentGames ?? null, row.candidate.position, resolvedSeason));
+  const oppSeasonPercentiles = computePercentileRanks(oppPositionRates.map((rates) => rates.season));
+  const oppLast5Percentiles = computePercentileRanks(oppPositionRates.map((rates) => rates.last5));
+
   const built = raw.map((row, index) => {
     const tdOpportunities = blendedMetric([metric(rz, index), metric(i10, index), metric(gl, index)], [0.25, 0.35, 0.40]);
     const opponentTdOpportunities = blendedMetric([metric(oppRz, index), metric(oppI10, index), metric(oppGl, index)], [0.25, 0.35, 0.40]);
@@ -183,7 +243,13 @@ export function buildTouchdownScores(candidates: readonly TouchdownCandidateInpu
       opponentTdOpportunitiesPerGame: row.oppRzPerGame != null && row.oppI10PerGame != null && row.oppGlPerGame != null
         ? round(row.oppRzPerGame * 0.25 + row.oppI10PerGame * 0.35 + row.oppGlPerGame * 0.40)
         : null,
-      opponentPositionTdsAllowedPerGame: round(row.oppPositionTdPerGame), tdSuccessRate: round(row.tdSuccessRate),
+      opponentPositionTdsAllowedPerGame: round(row.oppPositionTdPerGame),
+      opponentPositionTdsAllowedPerGameSeason: oppPositionRates[index].season,
+      opponentPositionTdsAllowedPerGameSeasonSource: oppPositionRates[index].seasonSource,
+      opponentPositionTdsAllowedPerGameLast5: oppPositionRates[index].last5,
+      opponentPositionTdsAllowedPerGameSeasonPercentile: round(oppSeasonPercentiles[index]),
+      opponentPositionTdsAllowedPerGameLast5Percentile: round(oppLast5Percentiles[index]),
+      tdSuccessRate: round(row.tdSuccessRate),
       components, jkbTdScore, scoreRank: null, scorePoolSize: 0,
     };
     return { row, windowMetrics };
@@ -203,8 +269,9 @@ export function buildTouchdownScores(candidates: readonly TouchdownCandidateInpu
   }));
 }
 
-export function buildAllTouchdownWindows(candidates: readonly TouchdownCandidateInput[]): TouchdownPreviewPlayer[] {
-  const byWindow = { 2025: buildTouchdownScores(candidates, "2025"), 2026: buildTouchdownScores(candidates, "2026"), last8: buildTouchdownScores(candidates, "last8") };
+export function buildAllTouchdownWindows(candidates: readonly TouchdownCandidateInput[], currentSeason?: number): TouchdownPreviewPlayer[] {
+  const season = resolveCurrentSeason(candidates, currentSeason);
+  const byWindow = { 2025: buildTouchdownScores(candidates, "2025", season), 2026: buildTouchdownScores(candidates, "2026", season), last8: buildTouchdownScores(candidates, "last8", season) };
   return candidates.map((candidate, index) => ({
     ...byWindow["2025"][index],
     windows: { 2025: byWindow["2025"][index].windows["2025"], 2026: byWindow["2026"][index].windows["2026"], last8: byWindow.last8[index].windows.last8 },

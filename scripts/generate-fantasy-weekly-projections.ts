@@ -40,6 +40,7 @@ import { normalizeHistoricalPlayerWeek, type HistoricalPlayerWeek } from "../src
 import type { MarketArtifact } from "../src/lib/nfl/marketData.ts";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+import { assertFantasySlateCoverage } from "../src/lib/fantasy/weekly/projections/production/slateCoverage.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAR_INPUT_AS_OF = "2026-08-16T16:13:26.000Z";
@@ -145,6 +146,7 @@ function main(): void {
   if (universe.duplicateGsisIds.length > 0) {
     throw new Error(`Duplicate GSIS ids resolved in player universe: ${universe.duplicateGsisIds.join(", ")}`);
   }
+  assertFantasySlateCoverage(universe.resolved, schedule.games, season, week);
 
   // --- 3. Pregame player history from the manifest-verified nflverse regular-season cache ---
   const priorHistorySource = loadPlayerWeekHistory(season - 1);

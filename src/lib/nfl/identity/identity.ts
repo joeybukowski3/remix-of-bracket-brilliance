@@ -53,6 +53,14 @@ const TEAM_ALIASES: Readonly<Record<string, string>> = {
   // alias -- no fuzzy matching.
   AZ: "ari",
   ARI: "ari",
+  // Razzball's defensive slot/wide PPG-allowed table uses old broadcast-style
+  // 3-letter codes for these four teams (verified against the live page,
+  // football.razzball.com/defensive-slot-vs-wide-ppg-allowed/, 2026-09-11).
+  // Exact, reviewed aliases -- no fuzzy matching.
+  ARZ: "ari",
+  BLT: "bal",
+  CLV: "cle",
+  HST: "hou",
 };
 
 export function normalizeNflTeamAbbr(value: string | null | undefined): string | null {

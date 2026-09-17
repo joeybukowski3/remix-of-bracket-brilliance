@@ -20,8 +20,9 @@ name: MLB X Canonical Publisher
 # GitHub Actions scheduling pressure (ticks fired hours apart or not at all),
 # and even when it did fire it only ever evaluated whatever production data
 # happened to already be committed -- it never tried to get fresher data. This
-# workflow now (1) runs on a small, fixed 9/10/11/12 AM ET schedule instead of
-# relying on a high-frequency cron GitHub does not reliably deliver, and (2)
+# workflow now (1) runs on a small, staggered 8:40/9:20/10:20/11:05 AM ET
+# schedule instead of relying on top-of-hour cron delivery GitHub does not
+# reliably provide, and (2)
 # a single upstream `ensure-data` job checks committed production-data
 # freshness for today's ET slate and, if stale, dispatches (or reuses an
 # already-running) "Generate MLB Data" run and does a bounded recheck BEFORE
@@ -39,15 +40,22 @@ name: MLB X Canonical Publisher
 # regardless of how many products need fresh data.
 on:
   schedule:
-    - cron: "0 9 * * *"
-      timezone: "America/New_York" # 9:00 AM ET
-    - cron: "0 10 * * *"
-      timezone: "America/New_York" # 10:00 AM ET
-    - cron: "0 11 * * *"
-      timezone: "America/New_York" # 11:00 AM ET
-    - cron: "0 12 * * *"
-      timezone: "America/New_York" # 12:00 PM ET
+    - cron: "40 8 * * *"
+      timezone: "America/New_York" # 8:40 AM ET
+    - cron: "20 9 * * *"
+      timezone: "America/New_York" # 9:20 AM ET
+    - cron: "20 10 * * *"
+      timezone: "America/New_York" # 10:20 AM ET
+    - cron: "5 11 * * *"
+      timezone: "America/New_York" # 11:05 AM ET
   workflow_dispatch: {}
+
+# A delayed tick must finish before the next recovery tick starts. The
+# product-specific groups below remain the final race guards around posting;
+# receipts and leases remain the authoritative one-post guarantee.
+concurrency:
+  group: mlb-x-canonical-${{ github.repository }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -197,6 +205,12 @@ jobs:
             echo "| Generator already active? | ${{ needs.ensure-data.outputs.generator_active }} |"
             echo "| Generator dispatched? | ${{ needs.ensure-data.outputs.generator_dispatched }} |"
             echo "| Final production data date | ${{ needs.ensure-data.outputs.final_data_date }} |"
+            echo "| data_ready | ${{ needs.ensure-data.outputs.data_ready }} |"
+            echo "| HR readiness status | WAITING_FOR_TODAYS_DATA |"
+            echo "| HR readiness reason | PRODUCTION_DATA_NOT_READY_AFTER_ENSURE_DATA |"
+            echo "| Publication cutoff | Not evaluated (data unavailable) |"
+            echo "| Earliest included game start | Not evaluated (data unavailable) |"
+            echo "| HR wouldCallX | false |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install Playwright
@@ -290,6 +304,12 @@ jobs:
             echo "| Generator already active? | ${{ needs.ensure-data.outputs.generator_active }} |"
             echo "| Generator dispatched? | ${{ needs.ensure-data.outputs.generator_dispatched }} |"
             echo "| Final production data date | ${{ needs.ensure-data.outputs.final_data_date }} |"
+            echo "| data_ready | ${{ needs.ensure-data.outputs.data_ready }} |"
+            echo "| K readiness status | WAITING_FOR_TODAYS_DATA |"
+            echo "| K readiness reason | PRODUCTION_DATA_NOT_READY_AFTER_ENSURE_DATA |"
+            echo "| Publication cutoff | Not evaluated (data unavailable) |"
+            echo "| Earliest included game start | Not evaluated (data unavailable) |"
+            echo "| K wouldCallX | false |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install Playwright

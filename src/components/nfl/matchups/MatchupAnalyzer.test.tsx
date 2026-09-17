@@ -325,9 +325,9 @@ describe("Placeholder sections stay honest", () => {
 
     // The card stays visible and every battle reads a neutral "Not compared"
     // state when the ESPN artifact is absent — no fabricated win rate, no winner.
-    expect(screen.getAllByRole("img", { name: /Pass Block vs Pass Rush/ })).toHaveLength(2);
-    expect(screen.getAllByRole("img", { name: /Run Block vs Run Stop/ })).toHaveLength(2);
-    expect(screen.getAllByText("Not compared")).toHaveLength(4);
+    expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
+    expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
+    expect(screen.getAllByTitle("Not compared")).toHaveLength(4);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Sacks/i)).toBeNull();
   });

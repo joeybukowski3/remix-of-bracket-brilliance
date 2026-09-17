@@ -1,0 +1,91 @@
+name: NFL Touchdown Scorer Preview
+
+on:
+  schedule:
+    # After fantasy 04:00 Tuesday, NFL upstream 06:10-08:10, yardage 09:30.
+    - cron: "30 10 * 1,2,9,10,11,12 *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-touchdown-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Resolve current NFL week
+        id: current-week
+        run: npm run --silent nfl:resolve-current-week >> "$GITHUB_OUTPUT"
+      - name: Validate current-week yardage candidate source
+        run: npm run nfl:validate-current-week-projections -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+      - name: Refresh entering-week player stats
+        shell: bash
+        run: |
+          set -euo pipefail
+          season="${{ steps.current-week.outputs.season }}"
+          week="${{ steps.current-week.outputs.week }}"
+          if [ "$week" -gt 1 ]; then
+            npm run nfl:player-week-stats-cache -- --seasons="$((season - 1)),${season}" --partial-season="$season" --through-week="$((week - 1))"
+          else
+            npm run nfl:player-week-stats-cache -- --seasons="$((season - 1))"
+          fi
+      - name: Refresh canonical touchdown PBP context
+        run: npm run nfl:touchdown-context-cache -- --seasons=2025,2026
+      - name: Refresh optional anytime-TD odds
+        run: npm run nfl:anytime-td-market
+        env:
+          PARLAYAPI: ${{ secrets.PARLAYAPI }}
+      - name: Generate current-week touchdown preview
+        run: npm run nfl:touchdown-preview -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+      - name: Validate current-week touchdown preview
+        run: npm run nfl:validate-touchdown-preview -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+      - name: Publish validated TD artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          target_branch="${{ github.event_name == 'schedule' && 'main' || github.ref_name }}"
+          test "$(git branch --show-current)" = "$target_branch"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for file in \
+            "public/data/nfl/${{ steps.current-week.outputs.season }}/touchdown-preview.json" \
+            data/nfl/nflverse/player-week-stats/manifest.json \
+            data/nfl/nflverse/player-week-stats/stats_player_week_2025.csv \
+            data/nfl/nflverse/player-week-stats/stats_player_week_2026.csv \
+            data/nfl/nflverse/touchdown-context/manifest.json \
+            data/nfl/nflverse/touchdown-context/touchdown_context_2025.csv \
+            data/nfl/nflverse/touchdown-context/touchdown_context_2025.manifest.json \
+            data/nfl/nflverse/touchdown-context/touchdown_context_2026.csv \
+            data/nfl/nflverse/touchdown-context/touchdown_context_2026.manifest.json \
+            public/data/nfl/nfl-anytime-td-market.json \
+            data/nfl/props/market-archive/nfl-anytime-td-market-archive.jsonl; do
+            if [ -f "$file" ] || git ls-files --error-unmatch "$file" >/dev/null 2>&1; then git add -- "$file"; fi
+          done
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "data(nfl): refresh current-week TD Scorer preview"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$target_branch"
+            if ! git rebase "origin/$target_branch"; then
+              git rebase --abort
+            elif git push origin "HEAD:$target_branch"; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "TD publication failed after five attempts." >&2
+          exit 1

@@ -1,0 +1,1328 @@
+{
+  "schemaVersion": "nfl-td-early-season-results-v1",
+  "generatedAt": "2026-09-09T21:07:57.350Z",
+  "calibrator": "global one-parameter logistic  logit(p) = a + b * (jkbTdScore / 100)  (unchanged)",
+  "strategiesEvaluated": [
+    "production",
+    "trailing8",
+    "trailing10",
+    "priorSeasonThruW4",
+    "blendThruW4"
+  ],
+  "perStrategy": {
+    "production": {
+      "folds": [
+        {
+          "fold": "train2022_test2023",
+          "coefficients": {
+            "a": -3.3919,
+            "b": 3.755
+          },
+          "full": {
+            "band": "full",
+            "n": 5512,
+            "actualRate": 0.18414,
+            "meanPred": 0.18146,
+            "brier": 0.138074,
+            "logLoss": 0.438602,
+            "ece": 0.01047,
+            "auc": 0.70346,
+            "calIntercept": 0.1908,
+            "calSlope": 1.126
+          },
+          "w1": {
+            "band": "w1",
+            "n": 288,
+            "actualRate": 0.14931,
+            "meanPred": 0.18998,
+            "brier": 0.124774,
+            "logLoss": 0.410101,
+            "ece": 0.04068,
+            "auc": 0.64983,
+            "calIntercept": -0.478,
+            "calSlope": 0.8693
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 898,
+            "actualRate": 0.18486,
+            "meanPred": 0.15766,
+            "brier": 0.14571,
+            "logLoss": 0.464727,
+            "ece": 0.03294,
+            "auc": 0.63927,
+            "calIntercept": -0.1828,
+            "calSlope": 0.7569
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4326,
+            "actualRate": 0.18632,
+            "meanPred": 0.18583,
+            "brier": 0.137375,
+            "logLoss": 0.435076,
+            "ece": 0.0183,
+            "auc": 0.72152,
+            "calIntercept": 0.3335,
+            "calSlope": 1.2505
+          }
+        },
+        {
+          "fold": "train2022-2023_test2024",
+          "coefficients": {
+            "a": -3.513,
+            "b": 3.9979
+          },
+          "full": {
+            "band": "full",
+            "n": 5566,
+            "actualRate": 0.19511,
+            "meanPred": 0.18208,
+            "brier": 0.142014,
+            "logLoss": 0.446426,
+            "ece": 0.0159,
+            "auc": 0.71998,
+            "calIntercept": 0.2909,
+            "calSlope": 1.1475
+          },
+          "w1": {
+            "band": "w1",
+            "n": 291,
+            "actualRate": 0.189,
+            "meanPred": 0.19406,
+            "brier": 0.133436,
+            "logLoss": 0.425588,
+            "ece": 0.04782,
+            "auc": 0.75073,
+            "calIntercept": 0.4732,
+            "calSlope": 1.4162
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 914,
+            "actualRate": 0.19256,
+            "meanPred": 0.15616,
+            "brier": 0.141698,
+            "logLoss": 0.448558,
+            "ece": 0.03645,
+            "auc": 0.71432,
+            "calIntercept": 0.3685,
+            "calSlope": 1.0582
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4361,
+            "actualRate": 0.19606,
+            "meanPred": 0.18671,
+            "brier": 0.142653,
+            "logLoss": 0.447369,
+            "ece": 0.01581,
+            "auc": 0.7209,
+            "calIntercept": 0.2975,
+            "calSlope": 1.1768
+          }
+        },
+        {
+          "fold": "train2022-2024_test2025",
+          "coefficients": {
+            "a": -3.5921,
+            "b": 4.2028
+          },
+          "full": {
+            "band": "full",
+            "n": 5721,
+            "actualRate": 0.1879,
+            "meanPred": 0.18589,
+            "brier": 0.139899,
+            "logLoss": 0.441547,
+            "ece": 0.00678,
+            "auc": 0.70825,
+            "calIntercept": 0.0235,
+            "calSlope": 1.0069
+          },
+          "w1": {
+            "band": "w1",
+            "n": 294,
+            "actualRate": 0.18707,
+            "meanPred": 0.19782,
+            "brier": 0.13593,
+            "logLoss": 0.432751,
+            "ece": 0.02447,
+            "auc": 0.73108,
+            "calIntercept": 0.2019,
+            "calSlope": 1.2279
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 959,
+            "actualRate": 0.21168,
+            "meanPred": 0.15813,
+            "brier": 0.160003,
+            "logLoss": 0.497234,
+            "ece": 0.0622,
+            "auc": 0.67853,
+            "calIntercept": 0.1141,
+            "calSlope": 0.826
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4468,
+            "actualRate": 0.18286,
+            "meanPred": 0.19106,
+            "brier": 0.135845,
+            "logLoss": 0.430173,
+            "ece": 0.00889,
+            "auc": 0.72038,
+            "calIntercept": 0.0493,
+            "calSlope": 1.086
+          }
+        }
+      ],
+      "selection_pre2025": {
+        "w2to4_meanBrier": 0.1437,
+        "w2to4_meanEce": 0.0347,
+        "w2to4_meanPredMinusActual": -0.0318,
+        "w5to18_meanBrier": 0.14001,
+        "w5to18_meanEce": 0.01706,
+        "full_meanBrier": 0.14004
+      }
+    },
+    "trailing8": {
+      "folds": [
+        {
+          "fold": "train2022_test2023",
+          "coefficients": {
+            "a": -3.3726,
+            "b": 3.7535
+          },
+          "full": {
+            "band": "full",
+            "n": 5663,
+            "actualRate": 0.18171,
+            "meanPred": 0.18627,
+            "brier": 0.135986,
+            "logLoss": 0.432821,
+            "ece": 0.01564,
+            "auc": 0.71133,
+            "calIntercept": 0.2333,
+            "calSlope": 1.2012
+          },
+          "w1": {
+            "band": "w1",
+            "n": 288,
+            "actualRate": 0.14931,
+            "meanPred": 0.18555,
+            "brier": 0.124311,
+            "logLoss": 0.40901,
+            "ece": 0.03726,
+            "auc": 0.64936,
+            "calIntercept": -0.4894,
+            "calSlope": 0.8416
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 970,
+            "actualRate": 0.18041,
+            "meanPred": 0.18596,
+            "brier": 0.139625,
+            "logLoss": 0.447841,
+            "ece": 0.02378,
+            "auc": 0.66307,
+            "calIntercept": -0.1689,
+            "calSlope": 0.9047
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4405,
+            "actualRate": 0.18411,
+            "meanPred": 0.18638,
+            "brier": 0.135948,
+            "logLoss": 0.431071,
+            "ece": 0.01904,
+            "auc": 0.72514,
+            "calIntercept": 0.362,
+            "calSlope": 1.2883
+          }
+        },
+        {
+          "fold": "train2022-2023_test2024",
+          "coefficients": {
+            "a": -3.5935,
+            "b": 4.1313
+          },
+          "full": {
+            "band": "full",
+            "n": 5739,
+            "actualRate": 0.19063,
+            "meanPred": 0.18401,
+            "brier": 0.139384,
+            "logLoss": 0.439601,
+            "ece": 0.01236,
+            "auc": 0.72145,
+            "calIntercept": 0.2328,
+            "calSlope": 1.1402
+          },
+          "w1": {
+            "band": "w1",
+            "n": 298,
+            "actualRate": 0.18792,
+            "meanPred": 0.18519,
+            "brier": 0.135138,
+            "logLoss": 0.429963,
+            "ece": 0.03319,
+            "auc": 0.73332,
+            "calIntercept": 0.2639,
+            "calSlope": 1.1889
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 1000,
+            "actualRate": 0.177,
+            "meanPred": 0.18323,
+            "brier": 0.131021,
+            "logLoss": 0.418947,
+            "ece": 0.01437,
+            "auc": 0.72525,
+            "calIntercept": 0.1573,
+            "calSlope": 1.1553
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4441,
+            "actualRate": 0.19388,
+            "meanPred": 0.18411,
+            "brier": 0.141553,
+            "logLoss": 0.444898,
+            "ece": 0.01396,
+            "auc": 0.71972,
+            "calIntercept": 0.2475,
+            "calSlope": 1.1341
+          }
+        },
+        {
+          "fold": "train2022-2024_test2025",
+          "coefficients": {
+            "a": -3.6877,
+            "b": 4.3343
+          },
+          "full": {
+            "band": "full",
+            "n": 5913,
+            "actualRate": 0.184,
+            "meanPred": 0.18601,
+            "brier": 0.136117,
+            "logLoss": 0.43125,
+            "ece": 0.00797,
+            "auc": 0.72062,
+            "calIntercept": 0.0833,
+            "calSlope": 1.0757
+          },
+          "w1": {
+            "band": "w1",
+            "n": 301,
+            "actualRate": 0.18272,
+            "meanPred": 0.18531,
+            "brier": 0.130993,
+            "logLoss": 0.420651,
+            "ece": 0.03855,
+            "auc": 0.73865,
+            "calIntercept": 0.3028,
+            "calSlope": 1.2511
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 1038,
+            "actualRate": 0.20135,
+            "meanPred": 0.18485,
+            "brier": 0.148976,
+            "logLoss": 0.465605,
+            "ece": 0.01873,
+            "auc": 0.694,
+            "calIntercept": 0.0195,
+            "calSlope": 0.9285
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4574,
+            "actualRate": 0.18015,
+            "meanPred": 0.18633,
+            "brier": 0.133536,
+            "logLoss": 0.424151,
+            "ece": 0.01171,
+            "auc": 0.72604,
+            "calIntercept": 0.0887,
+            "calSlope": 1.1044
+          }
+        }
+      ],
+      "selection_pre2025": {
+        "w2to4_meanBrier": 0.13532,
+        "w2to4_meanEce": 0.01908,
+        "w2to4_meanPredMinusActual": 0.00589,
+        "w5to18_meanBrier": 0.13875,
+        "w5to18_meanEce": 0.0165,
+        "full_meanBrier": 0.13769
+      }
+    },
+    "trailing10": {
+      "folds": [
+        {
+          "fold": "train2022_test2023",
+          "coefficients": {
+            "a": -3.3959,
+            "b": 3.7791
+          },
+          "full": {
+            "band": "full",
+            "n": 5663,
+            "actualRate": 0.18171,
+            "meanPred": 0.18738,
+            "brier": 0.135907,
+            "logLoss": 0.432716,
+            "ece": 0.01616,
+            "auc": 0.71164,
+            "calIntercept": 0.2324,
+            "calSlope": 1.208
+          },
+          "w1": {
+            "band": "w1",
+            "n": 288,
+            "actualRate": 0.14931,
+            "meanPred": 0.18654,
+            "brier": 0.124207,
+            "logLoss": 0.408973,
+            "ece": 0.03745,
+            "auc": 0.65192,
+            "calIntercept": -0.4768,
+            "calSlope": 0.8551
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 970,
+            "actualRate": 0.18041,
+            "meanPred": 0.18689,
+            "brier": 0.139318,
+            "logLoss": 0.446545,
+            "ece": 0.03084,
+            "auc": 0.66794,
+            "calIntercept": -0.1504,
+            "calSlope": 0.9225
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4405,
+            "actualRate": 0.18411,
+            "meanPred": 0.18754,
+            "brier": 0.135921,
+            "logLoss": 0.431223,
+            "ece": 0.01994,
+            "auc": 0.72454,
+            "calIntercept": 0.3575,
+            "calSlope": 1.2932
+          }
+        },
+        {
+          "fold": "train2022-2023_test2024",
+          "coefficients": {
+            "a": -3.6284,
+            "b": 4.1679
+          },
+          "full": {
+            "band": "full",
+            "n": 5739,
+            "actualRate": 0.19063,
+            "meanPred": 0.18442,
+            "brier": 0.139443,
+            "logLoss": 0.439168,
+            "ece": 0.01306,
+            "auc": 0.72299,
+            "calIntercept": 0.2412,
+            "calSlope": 1.1493
+          },
+          "w1": {
+            "band": "w1",
+            "n": 298,
+            "actualRate": 0.18792,
+            "meanPred": 0.1861,
+            "brier": 0.136184,
+            "logLoss": 0.43217,
+            "ece": 0.02103,
+            "auc": 0.73214,
+            "calIntercept": 0.2311,
+            "calSlope": 1.169
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 1000,
+            "actualRate": 0.177,
+            "meanPred": 0.18315,
+            "brier": 0.130636,
+            "logLoss": 0.417328,
+            "ece": 0.02586,
+            "auc": 0.73019,
+            "calIntercept": 0.1975,
+            "calSlope": 1.1861
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4441,
+            "actualRate": 0.19388,
+            "meanPred": 0.18459,
+            "brier": 0.141645,
+            "logLoss": 0.444555,
+            "ece": 0.0157,
+            "auc": 0.721,
+            "calIntercept": 0.2514,
+            "calSlope": 1.1403
+          }
+        },
+        {
+          "fold": "train2022-2024_test2025",
+          "coefficients": {
+            "a": -3.7319,
+            "b": 4.3844
+          },
+          "full": {
+            "band": "full",
+            "n": 5913,
+            "actualRate": 0.184,
+            "meanPred": 0.18639,
+            "brier": 0.136181,
+            "logLoss": 0.431205,
+            "ece": 0.00822,
+            "auc": 0.72058,
+            "calIntercept": 0.0754,
+            "calSlope": 1.0719
+          },
+          "w1": {
+            "band": "w1",
+            "n": 301,
+            "actualRate": 0.18272,
+            "meanPred": 0.18598,
+            "brier": 0.132095,
+            "logLoss": 0.42461,
+            "ece": 0.0269,
+            "auc": 0.73045,
+            "calIntercept": 0.2087,
+            "calSlope": 1.1811
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 1038,
+            "actualRate": 0.20135,
+            "meanPred": 0.18498,
+            "brier": 0.149583,
+            "logLoss": 0.466718,
+            "ece": 0.01738,
+            "auc": 0.69193,
+            "calIntercept": 0.0011,
+            "calSlope": 0.9156
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4574,
+            "actualRate": 0.18015,
+            "meanPred": 0.18673,
+            "brier": 0.133409,
+            "logLoss": 0.423581,
+            "ece": 0.01022,
+            "auc": 0.72704,
+            "calIntercept": 0.088,
+            "calSlope": 1.1067
+          }
+        }
+      ],
+      "selection_pre2025": {
+        "w2to4_meanBrier": 0.13498,
+        "w2to4_meanEce": 0.02835,
+        "w2to4_meanPredMinusActual": 0.00632,
+        "w5to18_meanBrier": 0.13878,
+        "w5to18_meanEce": 0.01782,
+        "full_meanBrier": 0.13767
+      }
+    },
+    "priorSeasonThruW4": {
+      "folds": [
+        {
+          "fold": "train2022_test2023",
+          "coefficients": {
+            "a": -3.4817,
+            "b": 3.8323
+          },
+          "full": {
+            "band": "full",
+            "n": 5443,
+            "actualRate": 0.18354,
+            "meanPred": 0.18027,
+            "brier": 0.13691,
+            "logLoss": 0.434938,
+            "ece": 0.01347,
+            "auc": 0.71181,
+            "calIntercept": 0.2614,
+            "calSlope": 1.1749
+          },
+          "w1": {
+            "band": "w1",
+            "n": 288,
+            "actualRate": 0.14931,
+            "meanPred": 0.18319,
+            "brier": 0.124224,
+            "logLoss": 0.408468,
+            "ece": 0.03389,
+            "auc": 0.64983,
+            "calIntercept": -0.461,
+            "calSlope": 0.8518
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 829,
+            "actualRate": 0.18094,
+            "meanPred": 0.18483,
+            "brier": 0.138493,
+            "logLoss": 0.44388,
+            "ece": 0.03171,
+            "auc": 0.68034,
+            "calIntercept": -0.0396,
+            "calSlope": 0.9912
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4326,
+            "actualRate": 0.18632,
+            "meanPred": 0.1792,
+            "brier": 0.137451,
+            "logLoss": 0.434986,
+            "ece": 0.01567,
+            "auc": 0.72152,
+            "calIntercept": 0.358,
+            "calSlope": 1.2253
+          }
+        },
+        {
+          "fold": "train2022-2023_test2024",
+          "coefficients": {
+            "a": -3.6735,
+            "b": 4.2044
+          },
+          "full": {
+            "band": "full",
+            "n": 5516,
+            "actualRate": 0.19362,
+            "meanPred": 0.18166,
+            "brier": 0.14136,
+            "logLoss": 0.444856,
+            "ece": 0.01428,
+            "auc": 0.71828,
+            "calIntercept": 0.2332,
+            "calSlope": 1.1103
+          },
+          "w1": {
+            "band": "w1",
+            "n": 291,
+            "actualRate": 0.189,
+            "meanPred": 0.1877,
+            "brier": 0.133101,
+            "logLoss": 0.424373,
+            "ece": 0.03878,
+            "auc": 0.75073,
+            "calIntercept": 0.445,
+            "calSlope": 1.3466
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 864,
+            "actualRate": 0.18287,
+            "meanPred": 0.18705,
+            "brier": 0.137177,
+            "logLoss": 0.43851,
+            "ece": 0.02053,
+            "auc": 0.69676,
+            "calIntercept": -0.0233,
+            "calSlope": 1.0051
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4361,
+            "actualRate": 0.19606,
+            "meanPred": 0.18019,
+            "brier": 0.142739,
+            "logLoss": 0.44748,
+            "ece": 0.01974,
+            "auc": 0.7209,
+            "calIntercept": 0.2741,
+            "calSlope": 1.1191
+          }
+        },
+        {
+          "fold": "train2022-2024_test2025",
+          "coefficients": {
+            "a": -3.7363,
+            "b": 4.374
+          },
+          "full": {
+            "band": "full",
+            "n": 5631,
+            "actualRate": 0.18665,
+            "meanPred": 0.1856,
+            "brier": 0.138296,
+            "logLoss": 0.436604,
+            "ece": 0.00718,
+            "auc": 0.71589,
+            "calIntercept": 0.0504,
+            "calSlope": 1.033
+          },
+          "w1": {
+            "band": "w1",
+            "n": 294,
+            "actualRate": 0.18707,
+            "meanPred": 0.1908,
+            "brier": 0.13572,
+            "logLoss": 0.431905,
+            "ece": 0.02522,
+            "auc": 0.73108,
+            "calIntercept": 0.1994,
+            "calSlope": 1.1799
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 869,
+            "actualRate": 0.20598,
+            "meanPred": 0.19128,
+            "brier": 0.152069,
+            "logLoss": 0.473396,
+            "ece": 0.01866,
+            "auc": 0.6886,
+            "calIntercept": 0.0101,
+            "calSlope": 0.9311
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4468,
+            "actualRate": 0.18286,
+            "meanPred": 0.18415,
+            "brier": 0.135787,
+            "logLoss": 0.429757,
+            "ece": 0.00746,
+            "auc": 0.72038,
+            "calIntercept": 0.0471,
+            "calSlope": 1.0435
+          }
+        }
+      ],
+      "selection_pre2025": {
+        "w2to4_meanBrier": 0.13783,
+        "w2to4_meanEce": 0.02612,
+        "w2to4_meanPredMinusActual": 0.00403,
+        "w5to18_meanBrier": 0.14009,
+        "w5to18_meanEce": 0.0177,
+        "full_meanBrier": 0.13914
+      }
+    },
+    "blendThruW4": {
+      "folds": [
+        {
+          "fold": "train2022_test2023",
+          "coefficients": {
+            "a": -3.3919,
+            "b": 3.755
+          },
+          "full": {
+            "band": "full",
+            "n": 5584,
+            "actualRate": 0.18338,
+            "meanPred": 0.18687,
+            "brier": 0.13702,
+            "logLoss": 0.435883,
+            "ece": 0.01876,
+            "auc": 0.70925,
+            "calIntercept": 0.2164,
+            "calSlope": 1.1829
+          },
+          "w1": {
+            "band": "w1",
+            "n": 288,
+            "actualRate": 0.14931,
+            "meanPred": 0.18998,
+            "brier": 0.124774,
+            "logLoss": 0.410101,
+            "ece": 0.04068,
+            "auc": 0.64983,
+            "calIntercept": -0.478,
+            "calSlope": 0.8693
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 970,
+            "actualRate": 0.18041,
+            "meanPred": 0.19058,
+            "brier": 0.139073,
+            "logLoss": 0.44714,
+            "ece": 0.03995,
+            "auc": 0.67044,
+            "calIntercept": -0.1484,
+            "calSlope": 0.9418
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4326,
+            "actualRate": 0.18632,
+            "meanPred": 0.18583,
+            "brier": 0.137375,
+            "logLoss": 0.435076,
+            "ece": 0.0183,
+            "auc": 0.72152,
+            "calIntercept": 0.3335,
+            "calSlope": 1.2505
+          }
+        },
+        {
+          "fold": "train2022-2023_test2024",
+          "coefficients": {
+            "a": -3.5917,
+            "b": 4.0978
+          },
+          "full": {
+            "band": "full",
+            "n": 5645,
+            "actualRate": 0.19256,
+            "meanPred": 0.18469,
+            "brier": 0.140314,
+            "logLoss": 0.441914,
+            "ece": 0.01284,
+            "auc": 0.72163,
+            "calIntercept": 0.2639,
+            "calSlope": 1.1578
+          },
+          "w1": {
+            "band": "w1",
+            "n": 291,
+            "actualRate": 0.189,
+            "meanPred": 0.19078,
+            "brier": 0.133264,
+            "logLoss": 0.424942,
+            "ece": 0.0464,
+            "auc": 0.75073,
+            "calIntercept": 0.4607,
+            "calSlope": 1.3816
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 993,
+            "actualRate": 0.17825,
+            "meanPred": 0.18875,
+            "brier": 0.131953,
+            "logLoss": 0.422895,
+            "ece": 0.02604,
+            "auc": 0.71909,
+            "calIntercept": 0.1264,
+            "calSlope": 1.1589
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4361,
+            "actualRate": 0.19606,
+            "meanPred": 0.18336,
+            "brier": 0.142689,
+            "logLoss": 0.447378,
+            "ece": 0.01638,
+            "auc": 0.7209,
+            "calIntercept": 0.2871,
+            "calSlope": 1.1482
+          }
+        },
+        {
+          "fold": "train2022-2024_test2025",
+          "coefficients": {
+            "a": -3.6954,
+            "b": 4.3214
+          },
+          "full": {
+            "band": "full",
+            "n": 5794,
+            "actualRate": 0.1864,
+            "meanPred": 0.18697,
+            "brier": 0.138175,
+            "logLoss": 0.436233,
+            "ece": 0.00622,
+            "auc": 0.71629,
+            "calIntercept": 0.0541,
+            "calSlope": 1.0451
+          },
+          "w1": {
+            "band": "w1",
+            "n": 294,
+            "actualRate": 0.18707,
+            "meanPred": 0.19243,
+            "brier": 0.135773,
+            "logLoss": 0.432098,
+            "ece": 0.02664,
+            "auc": 0.73108,
+            "calIntercept": 0.2042,
+            "calSlope": 1.1942
+          },
+          "w2to4": {
+            "band": "w2-4",
+            "n": 1032,
+            "actualRate": 0.20155,
+            "meanPred": 0.19064,
+            "brier": 0.149174,
+            "logLoss": 0.465152,
+            "ece": 0.01091,
+            "auc": 0.69477,
+            "calIntercept": 0.0213,
+            "calSlope": 0.9586
+          },
+          "w5to18": {
+            "band": "w5-18",
+            "n": 4468,
+            "actualRate": 0.18286,
+            "meanPred": 0.18576,
+            "brier": 0.135793,
+            "logLoss": 0.429825,
+            "ece": 0.00761,
+            "auc": 0.72038,
+            "calIntercept": 0.0514,
+            "calSlope": 1.0562
+          }
+        }
+      ],
+      "selection_pre2025": {
+        "w2to4_meanBrier": 0.13551,
+        "w2to4_meanEce": 0.03299,
+        "w2to4_meanPredMinusActual": 0.01034,
+        "w5to18_meanBrier": 0.14003,
+        "w5to18_meanEce": 0.01734,
+        "full_meanBrier": 0.13867
+      }
+    }
+  },
+  "recommendedStrategy": "trailing8",
+  "recommendationRule": "Among strategies whose pre-2025 Weeks 5-18 mean Brier is within 0.001 of production, take those within 0.0005 W2-4 Brier of the best, and prefer one that already exists as a production window (trailing8 = the live 'last 8' toggle). Confirm on held-out 2025.",
+  "heldOut2025": {
+    "production": {
+      "full": {
+        "band": "full",
+        "n": 5721,
+        "actualRate": 0.1879,
+        "meanPred": 0.18589,
+        "brier": 0.139899,
+        "logLoss": 0.441547,
+        "ece": 0.00678,
+        "auc": 0.70825,
+        "calIntercept": 0.0235,
+        "calSlope": 1.0069
+      },
+      "w1": {
+        "band": "w1",
+        "n": 294,
+        "actualRate": 0.18707,
+        "meanPred": 0.19782,
+        "brier": 0.13593,
+        "logLoss": 0.432751,
+        "ece": 0.02447,
+        "auc": 0.73108,
+        "calIntercept": 0.2019,
+        "calSlope": 1.2279
+      },
+      "w2to4": {
+        "band": "w2-4",
+        "n": 959,
+        "actualRate": 0.21168,
+        "meanPred": 0.15813,
+        "brier": 0.160003,
+        "logLoss": 0.497234,
+        "ece": 0.0622,
+        "auc": 0.67853,
+        "calIntercept": 0.1141,
+        "calSlope": 0.826
+      },
+      "w5to18": {
+        "band": "w5-18",
+        "n": 4468,
+        "actualRate": 0.18286,
+        "meanPred": 0.19106,
+        "brier": 0.135845,
+        "logLoss": 0.430173,
+        "ece": 0.00889,
+        "auc": 0.72038,
+        "calIntercept": 0.0493,
+        "calSlope": 1.086
+      }
+    },
+    "recommended": {
+      "full": {
+        "band": "full",
+        "n": 5913,
+        "actualRate": 0.184,
+        "meanPred": 0.18601,
+        "brier": 0.136117,
+        "logLoss": 0.43125,
+        "ece": 0.00797,
+        "auc": 0.72062,
+        "calIntercept": 0.0833,
+        "calSlope": 1.0757
+      },
+      "w1": {
+        "band": "w1",
+        "n": 301,
+        "actualRate": 0.18272,
+        "meanPred": 0.18531,
+        "brier": 0.130993,
+        "logLoss": 0.420651,
+        "ece": 0.03855,
+        "auc": 0.73865,
+        "calIntercept": 0.3028,
+        "calSlope": 1.2511
+      },
+      "w2to4": {
+        "band": "w2-4",
+        "n": 1038,
+        "actualRate": 0.20135,
+        "meanPred": 0.18485,
+        "brier": 0.148976,
+        "logLoss": 0.465605,
+        "ece": 0.01873,
+        "auc": 0.694,
+        "calIntercept": 0.0195,
+        "calSlope": 0.9285
+      },
+      "w5to18": {
+        "band": "w5-18",
+        "n": 4574,
+        "actualRate": 0.18015,
+        "meanPred": 0.18633,
+        "brier": 0.133536,
+        "logLoss": 0.424151,
+        "ece": 0.01171,
+        "auc": 0.72604,
+        "calIntercept": 0.0887,
+        "calSlope": 1.1044
+      }
+    }
+  },
+  "recommendedCoefficients2022_2024": {
+    "a": -3.687695,
+    "b": 4.334307
+  },
+  "movementStrata2025": {
+    "production": {
+      "returning_same_team": {
+        "n": 5639,
+        "actualRate": 0.18886,
+        "meanPred": 0.18622,
+        "brier": 0.140598,
+        "logLoss": 0.443387,
+        "ece": 0.00667,
+        "auc": 0.70684,
+        "calIntercept": 0.017,
+        "calSlope": 0.9985,
+        "w2to4": {
+          "n": 958,
+          "actualRate": 0.2119,
+          "meanPred": 0.15822,
+          "brier": 0.160163,
+          "logLoss": 0.497667,
+          "ece": 0.06235,
+          "auc": 0.67823,
+          "calIntercept": 0.1129,
+          "calSlope": 0.8247
+        }
+      },
+      "returning_new_team": {
+        "n": 82,
+        "actualRate": 0.12195,
+        "meanPred": 0.16323,
+        "brier": 0.091806,
+        "logLoss": 0.315016,
+        "ece": 0.08274,
+        "auc": 0.82083,
+        "calIntercept": 0.861,
+        "calSlope": 1.9506,
+        "w2to4": {
+          "n": 1,
+          "actualRate": 0,
+          "meanPred": 0.07875,
+          "brier": 0.006202,
+          "logLoss": 0.082028,
+          "ece": 0.07875,
+          "auc": null,
+          "calIntercept": -1.8711,
+          "calSlope": 4.6019
+        }
+      },
+      "rookie_or_no_prior": {
+        "n": 0,
+        "w2to4": {
+          "n": 0
+        },
+        "totalRows": 124,
+        "nullScoreRows": 124
+      },
+      "__limited_history_1to4": {
+        "n": 415,
+        "actualRate": 0.12771,
+        "meanPred": 0.11946,
+        "brier": 0.108237,
+        "logLoss": 0.36756,
+        "ece": 0.01586,
+        "auc": 0.65681,
+        "calIntercept": -0.2664,
+        "calSlope": 0.8164,
+        "w2to4": {
+          "n": 160,
+          "actualRate": 0.175,
+          "meanPred": 0.12508,
+          "brier": 0.135757,
+          "logLoss": 0.435999,
+          "ece": 0.04992,
+          "auc": 0.70942,
+          "calIntercept": 0.768,
+          "calSlope": 1.1896
+        }
+      }
+    },
+    "recommended": {
+      "returning_same_team": {
+        "n": 5734,
+        "actualRate": 0.18696,
+        "meanPred": 0.18745,
+        "brier": 0.138045,
+        "logLoss": 0.436074,
+        "ece": 0.00735,
+        "auc": 0.71826,
+        "calIntercept": 0.0762,
+        "calSlope": 1.0619,
+        "w2to4": {
+          "n": 1004,
+          "actualRate": 0.20717,
+          "meanPred": 0.18641,
+          "brier": 0.152611,
+          "logLoss": 0.47498,
+          "ece": 0.02225,
+          "auc": 0.69011,
+          "calIntercept": 0.0201,
+          "calSlope": 0.908
+        }
+      },
+      "returning_new_team": {
+        "n": 179,
+        "actualRate": 0.08939,
+        "meanPred": 0.1402,
+        "brier": 0.074348,
+        "logLoss": 0.276718,
+        "ece": 0.07434,
+        "auc": 0.74674,
+        "calIntercept": 0.2883,
+        "calSlope": 1.5419,
+        "w2to4": {
+          "n": 34,
+          "actualRate": 0.02941,
+          "meanPred": 0.13858,
+          "brier": 0.04166,
+          "logLoss": 0.188765,
+          "ece": 0.10917,
+          "auc": 0.90909,
+          "calIntercept": -0.4886,
+          "calSlope": 1.9033
+        }
+      },
+      "rookie_or_no_prior": {
+        "n": 0,
+        "w2to4": {
+          "n": 0
+        },
+        "totalRows": 124,
+        "nullScoreRows": 124
+      },
+      "__limited_history_1to4": {
+        "n": 441,
+        "actualRate": 0.12698,
+        "meanPred": 0.11634,
+        "brier": 0.109641,
+        "logLoss": 0.372725,
+        "ece": 0.02697,
+        "auc": 0.64587,
+        "calIntercept": -0.5357,
+        "calSlope": 0.6678,
+        "w2to4": {
+          "n": 168,
+          "actualRate": 0.17262,
+          "meanPred": 0.12294,
+          "brier": 0.13626,
+          "logLoss": 0.437579,
+          "ece": 0.05194,
+          "auc": 0.71049,
+          "calIntercept": 0.4394,
+          "calSlope": 1.0066
+        }
+      }
+    }
+  },
+  "favoriteRegion2025": {
+    "production": [
+      {
+        "band": "0.00-0.10",
+        "n": 1780,
+        "predMean": 0.0735,
+        "actualRate": 0.0697,
+        "wilson95": [
+          0.0587,
+          0.0824
+        ]
+      },
+      {
+        "band": "0.10-0.20",
+        "n": 1724,
+        "predMean": 0.1449,
+        "actualRate": 0.1485,
+        "wilson95": [
+          0.1325,
+          0.1661
+        ]
+      },
+      {
+        "band": "0.20-0.30",
+        "n": 1126,
+        "predMean": 0.2482,
+        "actualRate": 0.2638,
+        "wilson95": [
+          0.2389,
+          0.2903
+        ]
+      },
+      {
+        "band": "0.30-0.40",
+        "n": 814,
+        "predMean": 0.3459,
+        "actualRate": 0.3403,
+        "wilson95": [
+          0.3086,
+          0.3735
+        ]
+      },
+      {
+        "band": "0.40-0.50",
+        "n": 259,
+        "predMean": 0.4342,
+        "actualRate": 0.4402,
+        "wilson95": [
+          0.381,
+          0.501
+        ]
+      },
+      {
+        "band": "0.50-1.00",
+        "n": 18,
+        "predMean": 0.5123,
+        "actualRate": 0.3889,
+        "wilson95": [
+          0.203,
+          0.6138
+        ]
+      }
+    ],
+    "recommended": [
+      {
+        "band": "0.00-0.10",
+        "n": 1820,
+        "predMean": 0.0717,
+        "actualRate": 0.0648,
+        "wilson95": [
+          0.0544,
+          0.0771
+        ]
+      },
+      {
+        "band": "0.10-0.20",
+        "n": 1788,
+        "predMean": 0.146,
+        "actualRate": 0.1365,
+        "wilson95": [
+          0.1213,
+          0.1532
+        ]
+      },
+      {
+        "band": "0.20-0.30",
+        "n": 1184,
+        "predMean": 0.2483,
+        "actualRate": 0.2593,
+        "wilson95": [
+          0.2351,
+          0.285
+        ]
+      },
+      {
+        "band": "0.30-0.40",
+        "n": 834,
+        "predMean": 0.3458,
+        "actualRate": 0.3489,
+        "wilson95": [
+          0.3173,
+          0.3819
+        ]
+      },
+      {
+        "band": "0.40-0.50",
+        "n": 273,
+        "predMean": 0.4352,
+        "actualRate": 0.4396,
+        "wilson95": [
+          0.3819,
+          0.4989
+        ]
+      },
+      {
+        "band": "0.50-1.00",
+        "n": 14,
+        "predMean": 0.519,
+        "actualRate": 0.5714,
+        "wilson95": [
+          0.3259,
+          0.7862
+        ]
+      }
+    ]
+  },
+  "teamChangedDummyProbe": {
+    "coefficients": {
+      "a": -3.6702,
+      "bScore": 4.3197,
+      "cTeamChanged": -0.6617
+    },
+    "all2025": {
+      "n": 5913,
+      "actualRate": 0.184,
+      "meanPred": 0.18549,
+      "brier": 0.136084,
+      "logLoss": 0.430907,
+      "ece": 0.00796,
+      "auc": 0.72144,
+      "calIntercept": 0.0755,
+      "calSlope": 1.0667
+    },
+    "movers2025": {
+      "n": 179,
+      "actualRate": 0.08939,
+      "meanPred": 0.08072,
+      "brier": 0.073246,
+      "logLoss": 0.264547,
+      "ece": 0.02655,
+      "auc": 0.74674,
+      "calIntercept": 1.3042,
+      "calSlope": 1.5471
+    },
+    "nonMovers2025": {
+      "n": 5734,
+      "actualRate": 0.18696,
+      "meanPred": 0.18876,
+      "brier": 0.138045,
+      "logLoss": 0.4361,
+      "ece": 0.0076,
+      "auc": 0.71826,
+      "calIntercept": 0.0709,
+      "calSlope": 1.0655
+    },
+    "note": "Research probe only. c<0 means the calibrator shrinks team-changers' probability. Compare movers2025 ECE here vs movementStrata2025.returning_new_team."
+  }
+}

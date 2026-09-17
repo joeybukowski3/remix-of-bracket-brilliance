@@ -6,6 +6,7 @@ import type { NflYardageReviewRow } from "@/lib/nfl/props/review/yardageMarketJo
 import { weeklyHeatClass, weeklyHeatStyle, type NflYardageOpponentContextWithHeat, type WeeklyHeatTone } from "@/lib/nfl/props/review/yardageHeat";
 import type { NflYardageReviewSortKey, NflYardageReviewSortState } from "@/lib/nfl/props/review/reviewFilters";
 import NflYardageReviewTeamCell from "./NflYardageReviewTeamCell";
+import { NflYardageMarketCell } from "./NflYardageMarketCell";
 import { NflMatchupScoreBadge } from "./NflYardageReviewBadges";
 import { marketRoleStat } from "./marketRoleStat";
 import {
@@ -125,7 +126,7 @@ export default function NflYardageReviewTable({
         <th scope="col" className="px-2 py-2 text-center align-bottom">Pos</th>
         {showRoleStat && <th scope="col" className="px-2 py-2 text-center align-bottom">Role</th>}
         <SortHeader label="Proj Yds" sortKey="projectedYards" sort={sort} onSort={onSort} />
-        <th scope="col" className="px-2 py-2 text-center align-bottom">Sportsbook</th>
+        <th scope="col" className="px-2 py-2 text-center align-bottom" title="Sportsbook line when available; otherwise a Kalshi market-implied reference line (~), otherwise Unavailable">Market</th>
         <SortHeader label="Diff" sortKey="difference" sort={sort} onSort={onSort} />
         <SortHeader label="Matchup" sortKey="matchupScore" sort={sort} onSort={onSort} />
         <SortHeader
@@ -217,21 +218,14 @@ export default function NflYardageReviewTable({
             <span className="text-sm font-bold text-slate-900">—</span>
           )}
         </td>
-        {/* Sportsbook line is deliberately smaller/lighter than the projection above -- distinct, but secondary. */}
+        {/* Market line is deliberately smaller/lighter than the projection above -- distinct, but secondary. Source label distinguishes a real sportsbook line from a Kalshi market-implied reference. */}
         <td className="px-2 py-1.5 text-center tabular-nums">
-          {marketInfo.available ? (
-            <span className="inline-flex flex-col leading-tight">
-              <span className="font-semibold text-slate-700">{marketInfo.line.toFixed(1)}</span>
-              <span className="text-[9px] font-normal text-slate-400">{marketInfo.overPrice} / {marketInfo.underPrice}</span>
-            </span>
-          ) : (
-            <span className="text-slate-400" title="No matching sportsbook line for this player">Unavailable</span>
-          )}
+          <NflYardageMarketCell info={marketInfo} />
         </td>
         {/* Research context only -- neutral color on purpose, never green/red "bet this side" styling. */}
         <td className="px-2 py-1.5 text-center tabular-nums text-slate-600">
           {marketInfo.available ? (
-            <span title="Projection minus sportsbook line -- research context only, not a recommendation">
+            <span title="Projection minus the shown market line -- research context only, not a recommendation">
               {marketInfo.rawDifference >= 0 ? "+" : ""}
               {marketInfo.rawDifference.toFixed(1)}
             </span>

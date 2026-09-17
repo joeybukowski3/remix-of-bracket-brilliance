@@ -4,7 +4,7 @@ import MatchupCategoryAdvantage from "@/components/nfl/matchups/MatchupCategoryA
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import type { CategoryAdvantageResult, MatchupCategoryId } from "@/lib/nfl/matchupCategoryAdvantage";
 import type { MatchupDisplayMetric } from "@/components/nfl/matchups/matchupDisplayMetrics";
-import MatchupComparisonSnapshot from "@/components/nfl/matchups/MatchupComparisonSnapshot";
+import MatchupSpine from "@/components/nfl/matchups/MatchupSpine";
 import type { MatchupAdvantageNote, MatchupAngle } from "@/lib/nfl/matchupComparison";
 import { formatMarketFavoriteSpread, type MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
@@ -212,7 +212,7 @@ export default function MatchupOverviewPanel({
       </div>
 
       <div className="matchup-overview__snapshot">
-        <MatchupComparisonSnapshot matchup={matchup} categoryMetrics={categoryMetrics} />
+        <MatchupSpine matchup={matchup} categoryMetrics={categoryMetrics} />
       </div>
 
     </div>

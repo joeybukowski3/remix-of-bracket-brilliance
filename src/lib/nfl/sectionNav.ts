@@ -101,6 +101,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         match: "prefix",
       },
       {
+        to: "/nfl/trends",
+        label: "NFL Trends",
+        shortLabel: "Trends",
+        description: "Search the full situational research library and scan confirmed or awaiting matchup qualifiers.",
+        icon: "🔬",
+        status: "new",
+      },
+      {
         to: "/nfl/analytics",
         label: "Team Performance Analytics",
         shortLabel: "Analytics",

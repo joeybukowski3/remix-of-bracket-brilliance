@@ -20,8 +20,8 @@ run-name: MLB Data Watchdog • ${{ github.event_name }}
 # Sep 3), so it could not reliably backstop "Generate MLB Data" in time for
 # the pregame window anyway. mlb-x-canonical.yml now performs this same
 # freshness-check-and-dispatch logic itself, inline, on every one of its own
-# (now 9/10/11/12 AM ET) scheduled ticks -- see its "Ensure today's production
-# data is fresh" step. This workflow's schedule trigger is retired; its
+# (now 8:40/9:20/10:20/11:05 AM ET) scheduled ticks -- see its "Ensure
+# today's production data is fresh" step. This workflow's schedule trigger is retired; its
 # workflow_dispatch mode remains as a manual diagnostic/recovery path.
 on:
   workflow_dispatch:

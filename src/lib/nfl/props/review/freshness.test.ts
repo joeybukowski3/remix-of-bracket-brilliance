@@ -74,12 +74,13 @@ describe("buildYardageReviewFreshness", () => {
         projectionGeneratedAt: "2026-08-26T06:00:00.000Z",
         depthChartSnapshotAt: "2026-08-25T07:39:23Z",
         sportsbookGeneratedAt: "2026-08-26T14:09:24.393Z",
+        altMarketGeneratedAt: "2026-08-26T14:11:02.000Z",
         opponentContextGeneratedAts: ["2026-08-26T16:32:53.409Z", "2026-08-04T12:23:37.931Z", "2026-08-03T10:13:18.750Z"],
       },
       NOW,
     );
 
-    expect(sources.map((s) => s.key)).toEqual(["projection", "depthChart", "sportsbook", "opponentContext"]);
+    expect(sources.map((s) => s.key)).toEqual(["projection", "depthChart", "sportsbook", "altMarket", "opponentContext"]);
     const opponentContext = sources.find((s) => s.key === "opponentContext");
     expect(opponentContext?.generatedAt).toBe("2026-08-03T10:13:18.750Z");
     expect(opponentContext?.tier).toBe("stale");
@@ -91,6 +92,7 @@ describe("buildYardageReviewFreshness", () => {
         projectionGeneratedAt: null,
         depthChartSnapshotAt: null,
         sportsbookGeneratedAt: null,
+        altMarketGeneratedAt: null,
         opponentContextGeneratedAts: [null, null, null],
       },
       NOW,
@@ -106,6 +108,7 @@ describe("worstFreshnessTier", () => {
         projectionGeneratedAt: NOW.toISOString(),
         depthChartSnapshotAt: NOW.toISOString(),
         sportsbookGeneratedAt: NOW.toISOString(),
+        altMarketGeneratedAt: NOW.toISOString(),
         opponentContextGeneratedAts: [NOW.toISOString()],
       },
       NOW,

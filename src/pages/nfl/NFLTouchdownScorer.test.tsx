@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TouchdownMetric, TouchdownPreviewArtifact, TouchdownPreviewPlayer, TouchdownWindowMetrics } from "@/lib/nfl/touchdown-preview/types";
 import NFLTouchdownScorer from "./NFLTouchdownScorer";
+const currentSlate = vi.hoisted(() => ({ week: 1 }));
+vi.mock("@/hooks/useCurrentNflWeek", () => ({ useCurrentNflWeek: () => ({ loading: false, error: null, week: currentSlate.week }) }));
 
 const metric = (value: number | null, percentile: number | null = value): TouchdownMetric => ({ value, percentile, rank: value == null ? null : 1, poolSize: value == null ? 0 : 2 });
 
@@ -9,6 +11,8 @@ function windowMetrics(): TouchdownWindowMetrics {
   return { sampleState: "available", sampleGames: 1, sampleLabel: "2025 regular season · 1 game", tdPerGame: 1, tdLast5PerGame: 1, usagePerGame: 14,
     teamUsageShare: 0.28, rzOpportunitiesPerGame: 3, inside10OpportunitiesPerGame: 2, goalLineOpportunitiesPerGame: 1, rzOpportunityShare: 0.375,
     goalLineOpportunityShare: 0.333, impliedTeamPoints: 25, opponentTdOpportunitiesPerGame: 4.1, opponentPositionTdsAllowedPerGame: 1,
+    opponentPositionTdsAllowedPerGameSeason: 1, opponentPositionTdsAllowedPerGameSeasonSource: "current_season", opponentPositionTdsAllowedPerGameLast5: 1,
+    opponentPositionTdsAllowedPerGameSeasonPercentile: 50, opponentPositionTdsAllowedPerGameLast5Percentile: 50,
     tdSuccessRate: 0.08, components: { playerUsage: metric(1, 80), tdOpportunities: metric(75, 75), teamUsage: metric(0.28, 80), tdSuccess: metric(0.08, 80),
       opponentTdOpportunities: metric(70, 70), opponentPositionTdsAllowed: metric(1, 80), impliedTeamPoints: metric(25, 80) }, jkbTdScore: 79.5, scoreRank: 1, scorePoolSize: 6 };
 }
@@ -25,7 +29,7 @@ function player(name: string, team: string, opponent: string, homeAway: "home" |
 
 function artifact(): TouchdownPreviewArtifact {
   return {
-    schemaVersion: "nfl-touchdown-preview-v1", modelVersion: "jkb-td-score-v1.0.0", season: 2026, week: 1, generatedAt: null, defaultWindow: "2025",
+    schemaVersion: "nfl-touchdown-preview-v1", modelVersion: "jkb-td-score-v1.0.0", season: 2026, week: 1, generatedAt: null, defaultWindow: "last8",
     sourceStatus: { playerWeekStats: "available", touchdownContext: "available", marketImpliedPoints: "available", anytimeTdOdds: "unsupported" },
     methodology: { normalization: "", tdSuccess: "", positionAdjustment: "", componentWeights: { playerUsage: 0.2, tdOpportunities: 0.25, teamUsage: 0.15, tdSuccess: 0.15, opponentTdOpportunities: 0.1, opponentPositionTdsAllowed: 0.1, impliedTeamPoints: 0.05 }, opportunityWeights: { rz: 0.25, inside10: 0.35, goalLine: 0.4 } },
     players: [
@@ -42,10 +46,23 @@ function stubFetch(data: TouchdownPreviewArtifact) {
 }
 
 beforeEach(() => {
+  currentSlate.week = 1;
   vi.unstubAllGlobals();
 });
 
 describe("NFLTouchdownScorer matchup filter", () => {
+  it("shows the Week 2 DET @ BUF board automatically", async () => {
+    currentSlate.week = 2;
+    const data = artifact();
+    data.week = 2;
+    data.players = [player("Week Two Scorer", "det", "buf", "away")];
+    data.players[0].gameId = "2026_02_DET_BUF";
+    stubFetch(data);
+    render(<NFLTouchdownScorer />);
+    await waitFor(() => expect(screen.getByText("Week Two Scorer")).toBeInTheDocument());
+    expect(screen.getByText("2026 Week 2 candidate board")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /det @ buf/i })).toBeInTheDocument();
+  });
   it("shows the NE @ SEA candidates when that matchup is selected, instead of a false empty state", async () => {
     stubFetch(artifact());
     render(<NFLTouchdownScorer />);

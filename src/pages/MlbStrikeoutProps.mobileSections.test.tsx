@@ -233,7 +233,7 @@ describe("Mobile compact rows -- dense sortable table with Pitcher Stats / Oppon
     // (K Score / +EV view toggle) elsewhere, so an unscoped getByText("K Score") is ambiguous.
     const detailRow = collapsedRow.nextElementSibling as HTMLElement;
     expect(detailRow).toBeTruthy();
-    for (const label of ["K Line", "Proj K", "Edge", "K Score"]) {
+    for (const label of ["K Line", "Proj K", "Projection Diff", "K Score"]) {
       expect(within(detailRow).getByText(label)).toBeInTheDocument();
     }
     const pitcherStats = within(detailRow).getByRole("tab", { name: "Pitcher Stats" });
@@ -394,11 +394,11 @@ describe("How to use this page / Understanding Edge -- collapsed by default belo
     const guideHeading = await screen.findByText("How to use this page");
     const guide = within(guideHeading.closest("section") as HTMLElement);
     expect(screen.queryByText(/This board ranks today's probable starters by K Score/)).not.toBeInTheDocument();
-    expect(screen.queryByText("Edge compares our projected strikeouts to the sportsbook line.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Projection Diff compares our projected strikeouts to the sportsbook line.")).not.toBeInTheDocument();
 
     fireEvent.click(guide.getByRole("button", { name: "Click to expand" }));
     expect(screen.getByText(/This board ranks today's probable starters by K Score/)).toBeInTheDocument();
-    expect(screen.getByText("Edge compares our projected strikeouts to the sportsbook line.")).toBeInTheDocument();
+    expect(screen.getByText("Projection Diff compares our projected strikeouts to the sportsbook line.")).toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("is expanded by default at lg and above with no collapse control", async () => {

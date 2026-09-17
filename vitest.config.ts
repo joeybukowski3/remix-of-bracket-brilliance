@@ -22,6 +22,11 @@ export default defineConfig({
       "scripts/lib/pga-best-bets-schema.test.mjs",
       "scripts/lib/mlb-opponent-k-context.test.mjs",
       "scripts/lib/mlb-strikeout-reference-context.test.mjs",
+      // MLB K probability/value shadow layer (informational, does not drive
+      // Best K Prop Bets) -- see docs/features/mlb-k.md.
+      "scripts/lib/mlb-k-odds-math.test.mjs",
+      "scripts/lib/mlb-k-probability-model.test.mjs",
+      "scripts/lib/mlb-k-probability-shadow-core.test.mjs",
       // MLB K table column updates -- K/Inning Last 5 (total/total, not an
       // average of per-game rates) and opponent last-10-games home/away
       // passthrough.
@@ -41,6 +46,10 @@ export default defineConfig({
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
       "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL Anytime TD market -- ParlayAPI canonical scorer-market pipeline.
+      "scripts/lib/nfl-anytime-td-selection.test.mjs",
+      // NFL yardage alt-market (secondary source) -- Kalshi ladder normalization.
+      "scripts/lib/nfl-kalshi-yardage.test.mjs",
       // NFL Yardage Player Detail v2 -- Last-10 history pipeline.
       "scripts/lib/nfl-epa-week-rank-core.test.mjs",
       "scripts/lib/nfl-yardage-rolling-core.test.mjs",
@@ -52,6 +61,10 @@ export default defineConfig({
       "scripts/lib/nfl-research-buckets.test.mjs",
       "scripts/lib/nfl-research-time-split.test.mjs",
       "scripts/lib/nfl-research-bias.test.mjs",
+      // NFL prospective 2026 JKB TD Score forward-validation (research only).
+      "scripts/research/lib/nfl-td-forward-core.test.mjs",
+      "scripts/research/lib/nfl-td-forward-metrics.test.mjs",
+      "scripts/research/lib/nfl-td-forward-summary.test.mjs",
       // NFL Performance Analytics pipeline (Phase 6) -- TS generator test,
       // enumerated for the same reason as the PGA suites above.
       "scripts/generate-nfl-team-performance-analytics.test.ts",
@@ -76,6 +89,8 @@ export default defineConfig({
       "scripts/generate-nfl-yardage-outcomes.test.ts",
       // NFL yardage-prop Phase 2 -- play-by-play classification/aggregation core.
       "scripts/lib/nfl-play-volume-core.test.mjs",
+      // Phase 3 DFS -- Razzball defensive slot/wide PPG-allowed scraper core (parse/normalize/validate).
+      "scripts/lib/nfl-slot-wide-defense-context-core.test.mjs",
       // WU4C.1 -- scheduled-workflow commit-path allowlist (predictions/outcomes/evaluations).
       "scripts/lib/nfl-prediction-archive-allowlist.test.mjs",
       // WU4G -- forward evaluation (rushing shadow-vs-production / receiving role-conflict) operational layer.
@@ -107,6 +122,91 @@ export default defineConfig({
       "scripts/lib/nfl-totals-performance.test.ts",
       "scripts/lib/nfl-game-context.test.ts",
       "scripts/generate-nfl-totals-performance.test.ts",
+      // Dual-AI handicapping architecture WU1 -- Game Context Packet builder + validators.
+      "scripts/lib/nfl-full-game-context.test.ts",
+      // WU7.1 -- gameId/identity team-code alias normalization regression coverage.
+      "scripts/lib/nfl-game-context-validators.test.ts",
+      // Dual-AI handicapping architecture WU2 -- external evidence normalization/validation foundation.
+      "scripts/lib/nfl-evidence-normalizer.test.ts",
+      "scripts/lib/nfl-evidence-store.test.ts",
+      // Dual-AI handicapping architecture WU2.1 -- canonical player/coach
+      // subject identity validation.
+      "scripts/lib/nfl-evidence-subject-identity.test.ts",
+      // Dual-AI handicapping architecture WU2.2 -- production subject
+      // identity source loader (pure core + repo-file I/O wrapper).
+      "scripts/lib/nfl-evidence-subject-identity-loader-core.test.ts",
+      "scripts/lib/nfl-evidence-subject-identity-loader.test.ts",
+      // Dual-AI handicapping architecture WU3 -- Grok research adapter
+      // (xAI Agent Tools API /v1/responses) config/parsing/adapter tests.
+      "scripts/lib/nfl-grok-research-config.test.ts",
+      "scripts/lib/nfl-grok-research-parsing.test.ts",
+      "scripts/lib/nfl-grok-research-adapter.test.ts",
+      // Dual-AI handicapping architecture WU3.1 -- Grok research hardening
+      // (citation-specificity policy, research coverage summary).
+      "scripts/lib/nfl-evidence-policy.test.ts",
+      "scripts/lib/nfl-grok-research-coverage.test.ts",
+      // Dual-AI handicapping architecture WU3.2 -- model-agnostic recurring
+      // pregame snapshot framework (evidence/market/opinion deltas, locking,
+      // append-only storage, provider-neutral delta-research context).
+      "scripts/lib/nfl-snapshot-evidence-delta.test.ts",
+      "scripts/lib/nfl-snapshot-market-delta.test.ts",
+      "scripts/lib/nfl-snapshot-opinion-delta.test.ts",
+      "scripts/lib/nfl-snapshot-lock.test.ts",
+      "scripts/lib/nfl-snapshot-store.test.ts",
+      // WU4.4.2 -- analysis-lifecycle bookkeeping (initial vs. update vs.
+      // not_started, independent of snapshotType cadence).
+      "scripts/lib/nfl-snapshot-analysis-lifecycle.test.ts",
+      "scripts/lib/nfl-research-delta-context.test.ts",
+      // Dual-AI handicapping architecture WU3.3 -- Grok delta-update mode
+      // (update-mode prompt/adapter wiring + the append -> evidence-delta ->
+      // market-delta -> snapshot orchestration pipeline).
+      "scripts/lib/nfl-grok-update-pipeline.test.ts",
+      // Dual-AI handicapping architecture WU3.3.1 -- delta-update integration
+      // hardening (shared fresh context loader, stale-context freshness guard).
+      "scripts/lib/nfl-full-game-context-loader.test.ts",
+      "scripts/lib/nfl-snapshot-context-freshness.test.ts",
+      // Dual-AI handicapping architecture WU3.4 -- Grok handicap +
+      // update-assessment engine (structured analysis validation, opinion-
+      // delta reuse for update assessments, reasoning-only adapter).
+      "scripts/lib/nfl-grok-analysis-validator.test.ts",
+      "scripts/lib/nfl-grok-analysis-adapter.test.ts",
+      "scripts/lib/nfl-grok-analysis-pipeline.test.ts",
+      // WU7.9 -- long-form editorial article: deterministic legacy-article preview adapter.
+      "scripts/lib/nfl-legacy-editorial-adapter.test.ts",
+      // WU4.5 -- true independent handicapper architecture: JKB fair-line
+      // opinion sanitized out of AI input, mechanical market-edge computation.
+      "scripts/lib/nfl-ai-context-sanitizer.test.ts",
+      "scripts/lib/nfl-market-edge.test.ts",
+      // Dual-AI handicapping architecture WU4 -- ChatGPT research adapter
+      // (OpenAI Responses API /v1/responses) config/parsing/adapter tests.
+      "scripts/lib/nfl-chatgpt-research-adapter.test.ts",
+      // WU6.4 -- dedicated buildRawEvidenceCandidatesFromFindings() coverage,
+      // mirroring nfl-grok-research-parsing.test.ts's separation of concerns
+      // (malformed-candidate quarantine regression from the DET_BUF live run).
+      "scripts/lib/nfl-chatgpt-research-parsing.test.ts",
+      // Dual-AI handicapping architecture WU4.4 -- ChatGPT handicap +
+      // update-assessment parity (shared provider-neutral analysis
+      // contract, ChatGPT reasoning-only adapter, model-isolation tests).
+      "scripts/lib/nfl-chatgpt-analysis-validator.test.ts",
+      "scripts/lib/nfl-chatgpt-analysis-adapter.test.ts",
+      "scripts/lib/nfl-chatgpt-analysis-pipeline.test.ts",
+      "scripts/lib/nfl-chatgpt-analysis-isolation.test.ts",
+      // WU5 -- internal snapshot -> sanitized public AI-handicap presentation exporter.
+      "scripts/generate-nfl-ai-handicap-presentation.test.ts",
+      // WU6 -- provider-neutral slate orchestrator: zero-cost planning phase
+      // and stage execution (dependency-injected command runner, no real
+      // Grok/OpenAI calls).
+      "scripts/lib/nfl-ai-slate-plan.test.ts",
+      "scripts/lib/nfl-ai-slate-executor.test.ts",
+      // WU6.9 -- machine-readable Stage A/B telemetry markers (emit/parse/aggregate).
+      "scripts/lib/nfl-ai-telemetry.test.ts",
+      "scripts/run-nfl-ai-handicap-slate.test.ts",
+      // WU6.5 -- zero-cost replay of an archived provider research response
+      // (ChatGPT only; see nfl-provider-research-replay.ts's header for the
+      // Grok gap). Pure planning/safety-check tests plus the CLI integration
+      // suite for scripts/replay-nfl-provider-research.ts.
+      "scripts/lib/nfl-provider-research-replay.test.ts",
+      "scripts/replay-nfl-provider-research.test.ts",
       // NFL Performance Center WU4 -- automation wiring + overview/health/props artifacts.
       "scripts/lib/nfl-props-performance.test.ts",
       "scripts/generate-nfl-props-performance.test.ts",
@@ -129,6 +229,14 @@ export default defineConfig({
       // NFL Coaching Rating v1 Phase C -- current-season adapter + per-game snapshot selection.
       "scripts/lib/nfl-coach-rating-current-adapter.test.ts",
       "scripts/lib/nfl-coaching-snapshot-source.test.ts",
+      // WalterFootball private research dashboard -- page parser, normalizer, diff.
+      "scripts/lib/walter/parseGamePage.test.mjs",
+      "scripts/lib/walter/normalizeGame.test.mjs",
+      "scripts/lib/walter/diffCapture.test.mjs",
+      "scripts/lib/walter/storage.test.mjs",
+      // Canonical-schedule coverage diagnostics (sources/panels/canonical
+      // match counts, premium-gate detection) -- see scheduleCoverage.mjs.
+      "scripts/lib/walter/scheduleCoverage.test.mjs",
     ],
   },
   resolve: {

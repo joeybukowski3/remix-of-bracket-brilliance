@@ -23,6 +23,9 @@ export function FantasyPlayerIdentity({
   showTeamAbbreviation = true,
   nameClassName,
   teamClassName,
+  onNameClick,
+  nameExpanded,
+  nameAriaLabel,
 }: {
   player: string;
   team?: string;
@@ -31,6 +34,10 @@ export function FantasyPlayerIdentity({
   showTeamAbbreviation?: boolean;
   nameClassName?: string;
   teamClassName?: string;
+  /** When provided, the player name becomes a clickable, keyboard-accessible toggle (e.g. to expand a detail row) instead of static text. */
+  onNameClick?: () => void;
+  nameExpanded?: boolean;
+  nameAriaLabel?: string;
 }) {
   const normalizedTeam = team?.toUpperCase();
   const hasTeam = Boolean(normalizedTeam && normalizedTeam !== "FA");
@@ -46,7 +53,23 @@ export function FantasyPlayerIdentity({
         className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
       />
       <div className={cn("flex min-w-0 gap-1.5", wrapName ? "items-start" : "items-center")}>
-        {player && (
+        {player && (onNameClick ? (
+          <button
+            type="button"
+            data-player-name
+            aria-expanded={nameExpanded}
+            aria-label={nameAriaLabel}
+            onClick={(event) => { event.stopPropagation(); onNameClick(); }}
+            className={cn(
+              "rounded font-bold text-slate-950 underline-offset-2 hover:underline focus:outline-none focus-visible:underline focus-visible:ring-2 focus-visible:ring-sky-500",
+              "text-[12px] leading-4",
+              wrapName ? "min-w-0 whitespace-normal break-words text-left" : "truncate",
+              nameClassName,
+            )}
+          >
+            {player}
+          </button>
+        ) : (
           <div
             data-player-name
             className={cn(
@@ -58,7 +81,7 @@ export function FantasyPlayerIdentity({
           >
             {player}
           </div>
-        )}
+        ))}
         {showTeamAbbreviation && (
           <div
             data-player-team-abbreviation
@@ -80,28 +103,43 @@ export function FantasyOpponentIdentity({
   opponent,
   homeAway,
   compact = false,
+  showAbbreviation = true,
 }: {
   opponent: string;
   homeAway: "home" | "away" | "neutral";
   compact?: boolean;
+  /**
+   * When false, the opponent abbreviation text is dropped and only the
+   * "vs"/"@" prefix + team logo render. The opponent identity is still exposed
+   * to assistive tech via a visually-hidden label and the logo's alt text.
+   */
+  showAbbreviation?: boolean;
 }) {
   const normalizedOpponent = opponent.toUpperCase();
   const prefix = homeAway === "away" ? "@" : "vs";
+  const spokenLabel = `${homeAway === "away" ? "at" : "versus"} ${normalizedOpponent}`;
 
   return (
     <div
       data-opponent-logo={normalizedOpponent}
       className={cn("flex min-w-0 items-center", compact ? "gap-1" : "gap-1.5")}
     >
+      {!showAbbreviation && (
+        <span aria-hidden className="font-bold lowercase text-slate-500">{prefix}</span>
+      )}
       <TeamLogo
         name={normalizedOpponent}
         logo={nflLogoUrl(normalizedOpponent.toLowerCase())}
         className={cn("shrink-0", compact ? "h-4 w-4" : "h-5 w-5")}
       />
-      <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
-        <span className="font-bold lowercase text-slate-500">{prefix}</span>
-        <span className="font-black uppercase text-slate-950">{normalizedOpponent}</span>
-      </div>
+      {showAbbreviation ? (
+        <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap">
+          <span className="font-bold lowercase text-slate-500">{prefix}</span>
+          <span className="font-black uppercase text-slate-950">{normalizedOpponent}</span>
+        </div>
+      ) : (
+        <span className="sr-only">{spokenLabel}</span>
+      )}
     </div>
   );
 }

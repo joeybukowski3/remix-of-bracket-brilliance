@@ -32,6 +32,7 @@ export default function NflSection({
   collapse = "never",
   defaultOpen = true,
   headingLevel = 2,
+  titleAlign = "left",
   focusable = false,
   className = "",
   bodyClassName = "",
@@ -51,6 +52,14 @@ export default function NflSection({
   collapse?: NflSectionCollapseMode;
   defaultOpen?: boolean;
   headingLevel?: 2 | 3;
+  /**
+   * "center" visually centres the eyebrow / title / subtitle across the full
+   * card width; any `headerAside` and the collapse toggle float to the top-right
+   * corner instead of sharing the title's row, so the title stays centred
+   * regardless of the controls' width. Defaults to "left" — every existing
+   * caller renders exactly as before.
+   */
+  titleAlign?: "left" | "center";
   /**
    * Makes the section a programmatic focus target. Set this when an in-page
    * anchor points at it, so following the link moves screen-reader focus onto
@@ -76,6 +85,7 @@ export default function NflSection({
   const Heading = headingLevel === 3 ? "h3" : "h2";
 
   const collapsible = collapse !== "never";
+  const centered = titleAlign === "center";
   // Below `lg` in "mobile" mode the toggle governs visibility; from `lg` up the
   // body is forced visible so a two-column grid never renders a half-empty row.
   const bodyHidden = collapsible && !open;
@@ -97,8 +107,13 @@ export default function NflSection({
       )}
     >
       <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div
+          className={cn(
+            "flex items-start justify-between gap-3",
+            centered && "flex-wrap justify-center",
+          )}
+        >
+          <div className={cn("min-w-0", centered && "w-full text-center")}>
             {eyebrow && <div className={eyebrowClassName}>{eyebrow}</div>}
             <Heading id={headingId} className={titleClassName}>
               {title}
@@ -108,7 +123,14 @@ export default function NflSection({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          {/* In centred mode the controls wrap to their own centred row below so
+              the title stays optically centred across the whole card. */}
+          <div
+            className={cn(
+              "flex shrink-0 items-center gap-2",
+              centered && "mt-2 w-full justify-center",
+            )}
+          >
             {headerAside}
             {collapsible && (
               <button
