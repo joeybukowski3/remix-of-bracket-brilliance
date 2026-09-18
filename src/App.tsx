@@ -59,6 +59,7 @@ import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
 import NFLPerformance from "./pages/nfl/NFLPerformance";
 import NFLFantasyPointsAllowed from "./pages/nfl/NFLFantasyPointsAllowed";
 import NFLTdsAllowedByPosition from "./pages/nfl/NFLTdsAllowedByPosition";
+import NFLFantasyPositionMatchupsRedirect from "./pages/nfl/NFLFantasyPositionMatchupsRedirect";
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
@@ -179,6 +180,7 @@ const App = () => (
             <Route path="td-scorer" element={<NFLTouchdownScorer />} />
             <Route path="fantasy-points-allowed" element={<NFLFantasyPointsAllowed />} />
             <Route path="tds-allowed-by-position" element={<NFLTdsAllowedByPosition />} />
+            <Route path="fantasy-position-matchups" element={<NFLFantasyPositionMatchupsRedirect />} />
             <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
