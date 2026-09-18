@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-17T14:59:53.749Z",
+    "generatedAt": "2026-09-18T14:29:34.115Z",
     "source": "generated (data/nfl/starter-cohorts/** + data/nfl/starter-prop-evaluations/**)",
     "season": null,
     "week": null,
@@ -15,7 +15,7 @@
   "schemaVersion": "nfl-props-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-props-performance-v1",
-    "generatedAt": "2026-09-17T14:59:53.749Z",
+    "generatedAt": "2026-09-18T14:29:34.115Z",
     "seasons": [
       2026
     ],
@@ -24,30 +24,30 @@
       "nfl-receiving-share-x-efficiency-v2.0.0",
       "nfl-rushing-carries-x-shrunk-ypc-production-2022-2025-v1"
     ],
-    "gradedStarterProps": 88,
-    "latestPredictionTimestamp": "2026-09-09T17:12:04.411Z"
+    "gradedStarterProps": 100,
+    "latestPredictionTimestamp": "2026-09-17T17:40:34.145Z"
   },
   "summary": {
-    "graded_starter_props": 88,
-    "passing_n": 16,
-    "rushing_n": 14,
-    "receiving_n": 58,
-    "wins": 43,
-    "losses": 45,
+    "graded_starter_props": 100,
+    "passing_n": 18,
+    "rushing_n": 16,
+    "receiving_n": 66,
+    "wins": 50,
+    "losses": 50,
     "pushes": 0,
     "neutral": 0,
-    "directional_hit_rate": 0.48863636363636365,
-    "over_wins": 26,
-    "over_losses": 24,
-    "over_hit_rate": 0.52,
-    "under_wins": 17,
-    "under_losses": 21,
-    "under_hit_rate": 0.4473684210526316,
-    "projection_mae": 35.446985400408046,
-    "projection_rmse": 52.188656826975055,
+    "directional_hit_rate": 0.5,
+    "over_wins": 29,
+    "over_losses": 25,
+    "over_hit_rate": 0.5370370370370371,
+    "under_wins": 21,
+    "under_losses": 25,
+    "under_hit_rate": 0.45652173913043476,
+    "projection_mae": 35.45254294864106,
+    "projection_rmse": 51.445362074267486,
     "median_absolute_error": 22.27806957493575,
-    "mean_signed_projection_error": -5.513648845433517,
-    "average_abs_jkb_line_difference": 7.887217763073341
+    "mean_signed_projection_error": -7.117748587170754,
+    "average_abs_jkb_line_difference": 8.42173188712475
   },
   "buckets": {
     "by_week": [
@@ -60,206 +60,216 @@
         "losses": 45,
         "pushes": 0,
         "hit_rate": 0.48863636363636365
+      },
+      {
+        "key": "2",
+        "n": 12,
+        "mae": 35.49329830234982,
+        "bias": -18.88114669324382,
+        "wins": 7,
+        "losses": 5,
+        "pushes": 0,
+        "hit_rate": 0.5833333333333334
       }
     ],
     "by_market": [
       {
         "key": "passing_yards",
-        "n": 16,
-        "mae": 73.01517967751572,
-        "bias": -14.853215020192362,
+        "n": 18,
+        "mae": 71.16300055359196,
+        "bias": -17.17890193088689,
         "wins": 9,
-        "losses": 7,
+        "losses": 9,
         "pushes": 0,
-        "hit_rate": 0.5625
+        "hit_rate": 0.5
       },
       {
         "key": "receiving_yards",
-        "n": 58,
-        "mae": 25.877755657585215,
-        "bias": -3.7391125001810734,
-        "wins": 30,
-        "losses": 28,
+        "n": 66,
+        "mae": 26.502034269532174,
+        "bias": -4.995192822965326,
+        "wins": 35,
+        "losses": 31,
         "pushes": 0,
-        "hit_rate": 0.5172413793103449
+        "hit_rate": 0.5303030303030303
       },
       {
         "key": "rushing_yards",
-        "n": 14,
-        "mae": 32.15585801826529,
-        "bias": -2.191509504612107,
-        "wins": 4,
+        "n": 16,
+        "mae": 32.19912644439547,
+        "bias": -4.554493602837486,
+        "wins": 6,
         "losses": 10,
         "pushes": 0,
-        "hit_rate": 0.2857142857142857
+        "hit_rate": 0.375
       }
     ],
     "by_position": [
       {
         "key": "QB",
-        "n": 16,
-        "mae": 73.01517967751572,
-        "bias": -14.853215020192362,
+        "n": 18,
+        "mae": 71.16300055359196,
+        "bias": -17.17890193088689,
         "wins": 9,
-        "losses": 7,
+        "losses": 9,
         "pushes": 0,
-        "hit_rate": 0.5625
+        "hit_rate": 0.5
       },
       {
         "key": "WR",
-        "n": 41,
-        "mae": 26.823736967092394,
-        "bias": -6.097802688589171,
-        "wins": 22,
-        "losses": 19,
+        "n": 47,
+        "mae": 27.29837251034755,
+        "bias": -6.337233409015553,
+        "wins": 27,
+        "losses": 20,
         "pushes": 0,
-        "hit_rate": 0.5365853658536586
+        "hit_rate": 0.574468085106383
       },
       {
         "key": "RB",
-        "n": 14,
-        "mae": 32.15585801826529,
-        "bias": -2.191509504612107,
-        "wins": 4,
+        "n": 16,
+        "mae": 32.19912644439547,
+        "bias": -4.554493602837486,
+        "wins": 6,
         "losses": 10,
         "pushes": 0,
-        "hit_rate": 0.2857142857142857
+        "hit_rate": 0.375
       },
       {
         "key": "TE",
-        "n": 17,
-        "mae": 23.59627132289141,
-        "bias": 1.949493248332575,
+        "n": 19,
+        "mae": 24.53214493698886,
+        "bias": -1.6754082153673966,
         "wins": 8,
-        "losses": 9,
+        "losses": 11,
         "pushes": 0,
-        "hit_rate": 0.47058823529411764
+        "hit_rate": 0.42105263157894735
       }
     ],
     "by_direction": [
       {
         "key": "OVER",
-        "n": 50,
-        "mae": 27.984238405398386,
-        "bias": 1.8787406475230481,
-        "wins": 26,
-        "losses": 24,
+        "n": 54,
+        "mae": 28.01985422851647,
+        "bias": 0.39257712958703506,
+        "wins": 29,
+        "losses": 25,
         "pushes": 0,
-        "hit_rate": 0.52
+        "hit_rate": 0.5370370370370371
       },
       {
         "key": "UNDER",
-        "n": 38,
-        "mae": 45.26638934121021,
-        "bias": -15.240477125639526,
-        "wins": 17,
-        "losses": 21,
+        "n": 46,
+        "mae": 44.177873185309046,
+        "bias": -15.934217906842944,
+        "wins": 21,
+        "losses": 25,
         "pushes": 0,
-        "hit_rate": 0.4473684210526316
+        "hit_rate": 0.45652173913043476
       }
     ],
     "by_starter_basis": [
       {
         "key": "QB1_BY_ARCHIVED_DEPTH_CHART",
-        "n": 16,
-        "mae": 73.01517967751572,
-        "bias": -14.853215020192362,
+        "n": 18,
+        "mae": 71.16300055359196,
+        "bias": -17.17890193088689,
         "wins": 9,
-        "losses": 7,
+        "losses": 9,
         "pushes": 0,
-        "hit_rate": 0.5625
+        "hit_rate": 0.5
       },
       {
         "key": "WR1_BY_PROJECTED_TARGETS",
-        "n": 18,
-        "mae": 32.618526423421194,
-        "bias": -8.257214002022376,
-        "wins": 9,
-        "losses": 9,
+        "n": 20,
+        "mae": 35.70347863729218,
+        "bias": -8.66904036131418,
+        "wins": 10,
+        "losses": 10,
         "pushes": 0,
         "hit_rate": 0.5
       },
       {
         "key": "RB1_BY_PROJECTED_CARRIES",
-        "n": 14,
-        "mae": 32.15585801826529,
-        "bias": -2.191509504612107,
-        "wins": 4,
+        "n": 16,
+        "mae": 32.19912644439547,
+        "bias": -4.554493602837486,
+        "wins": 6,
         "losses": 10,
         "pushes": 0,
-        "hit_rate": 0.2857142857142857
+        "hit_rate": 0.375
       },
       {
         "key": "WR2_BY_PROJECTED_TARGETS",
-        "n": 16,
-        "mae": 24.410725273045497,
-        "bias": -4.862355906216214,
-        "wins": 8,
+        "n": 18,
+        "mae": 22.62134164297351,
+        "bias": -3.399174960814678,
+        "wins": 10,
         "losses": 8,
         "pushes": 0,
-        "hit_rate": 0.5
+        "hit_rate": 0.5555555555555556
       },
       {
         "key": "TE1_BY_PROJECTED_TARGETS",
-        "n": 17,
-        "mae": 23.59627132289141,
-        "bias": 1.949493248332575,
+        "n": 19,
+        "mae": 24.53214493698886,
+        "bias": -1.6754082153673966,
         "wins": 8,
-        "losses": 9,
+        "losses": 11,
         "pushes": 0,
-        "hit_rate": 0.47058823529411764
+        "hit_rate": 0.42105263157894735
       },
       {
         "key": "WR3_BY_PROJECTED_TARGETS",
-        "n": 7,
-        "mae": 17.438305094354096,
-        "bias": -3.368909099470551,
-        "wins": 5,
+        "n": 9,
+        "mae": 17.97442062966312,
+        "bias": -7.031557078087027,
+        "wins": 7,
         "losses": 2,
         "pushes": 0,
-        "hit_rate": 0.7142857142857143
+        "hit_rate": 0.7777777777777778
       }
     ],
     "by_jkb_line_difference_bucket": [
       {
         "key": "15+",
-        "n": 13,
-        "mae": 47.57858090706553,
-        "bias": -17.85935880557595,
-        "wins": 6,
-        "losses": 7,
+        "n": 16,
+        "mae": 46.41370687832169,
+        "bias": -18.270864735530132,
+        "wins": 7,
+        "losses": 9,
         "pushes": 0,
-        "hit_rate": 0.46153846153846156
+        "hit_rate": 0.4375
       },
       {
         "key": "10-15",
-        "n": 17,
-        "mae": 19.852859223622914,
-        "bias": 12.036555447483895,
-        "wins": 11,
-        "losses": 6,
+        "n": 22,
+        "mae": 25.908900117550516,
+        "bias": 4.632968179567952,
+        "wins": 14,
+        "losses": 8,
         "pushes": 0,
-        "hit_rate": 0.6470588235294118
+        "hit_rate": 0.6363636363636364
       },
       {
         "key": "3-6",
-        "n": 19,
-        "mae": 32.749152545358854,
-        "bias": -10.184874010929176,
-        "wins": 7,
+        "n": 21,
+        "mae": 29.944898659105704,
+        "bias": -9.262495260517856,
+        "wins": 9,
         "losses": 12,
         "pushes": 0,
-        "hit_rate": 0.3684210526315789
+        "hit_rate": 0.42857142857142855
       },
       {
         "key": "<3",
-        "n": 23,
-        "mae": 33.06158503905372,
-        "bias": -9.028912735813664,
-        "wins": 12,
-        "losses": 11,
+        "n": 25,
+        "mae": 32.92528432004858,
+        "bias": -10.815225801067736,
+        "wins": 13,
+        "losses": 12,
         "pushes": 0,
-        "hit_rate": 0.5217391304347826
+        "hit_rate": 0.52
       },
       {
         "key": "6-10",
@@ -275,14 +285,14 @@
   },
   "coverage": {
     "total_cohort_rows": 375,
-    "gradeable_rows": 88,
-    "excluded_rows": 287,
+    "gradeable_rows": 100,
+    "excluded_rows": 275,
     "exclusions_by_reason": {
       "NO_VALID_PROJECTION": 0,
       "MODEL_STATUS_NOT_PROJECTED": 0,
       "POST_KICKOFF_ONLY_PROJECTION": 0,
-      "NO_VALID_COMPARISON_LINE": 185,
-      "GAME_NOT_FINAL": 98,
+      "NO_VALID_COMPARISON_LINE": 143,
+      "GAME_NOT_FINAL": 128,
       "ACTUAL_UNRESOLVED": 4,
       "MARKET_MISMATCH": 0
     }
@@ -330,7 +340,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 10.236094738659915,
         "squared_projection_error": 104.7776354988212,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_3ed6e1fe7d753730f076464ea7594cabedcea158742e06f5992f268b0da92b31",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -597,7 +607,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 20.857359848064895,
         "squared_projection_error": 435.02945983166967,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_cfce383a875c4956061e8d01439e90ddc8f1fddcaa7b9a9af06dfc4f354f8158",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -908,7 +918,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 45.2651590474967,
         "squared_projection_error": 2048.9346235951725,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_1a5c4409fd7ab81cb6ce276afe4f8b75b2f6e26b420b3bd1e43aefe990d3a0fe",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -1180,7 +1190,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -13.455555517060638,
         "squared_projection_error": 181.051974272701,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_08c1193e073d335329fc5175f64e38ea47132a897b6ade1db5464f0353f4b4db",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -1491,7 +1501,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -10.32545460837877,
         "squared_projection_error": 106.61501286969037,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_ba8672fb9fc364a9bf7459f6f817e0ffe8d8338e5863465caf7ac3eb47c88f37",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -1802,7 +1812,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 42.71911973439267,
         "squared_projection_error": 1824.9231908813772,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_2ffa040caaa6eef8f8f8b33bbd0bed3345edb0032a7616b80e7b4d67a2dae1b0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -2113,7 +2123,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 33.9357309674303,
         "squared_projection_error": 1151.633836293808,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_dc1be3dc9a9cc1520d3a6833c54ce91b77d378dd52c6a5f0f9fe8efbc1b3a171",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -2424,7 +2434,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 13.51539397450614,
         "squared_projection_error": 182.66587428611686,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_6f47cf599ef417dd293fe483963cc3cb5f3d005e099957442bad9999e122f1eb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -2735,7 +2745,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -7.71761939363499,
         "squared_projection_error": 59.561649105010915,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_c5af20840ea901275b55f9615bf91ca56ae9be4c44820f03aa2b0002453a3e03",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3007,7 +3017,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -63.306713592002666,
         "squared_projection_error": 4007.739985819855,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_f088c7fe41213ff407c70c387a259295c84d5e9e96a6a2202e9f5c8e2c3238eb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3279,7 +3289,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -17.499823935492167,
         "squared_projection_error": 306.2438377732245,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_6d3102946018005711e126b5ff9e90ecdaebcd2c1a7a1bc9a3067e9468eafceb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3590,7 +3600,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -101.32001521172072,
         "squared_projection_error": 10265.745482503316,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_9e36eec1af9c371b0b00b37a67e8e449ba7b32d3d62823a438a6ecd2602f5218",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3857,7 +3867,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 69.64169182491338,
         "squared_projection_error": 4849.965240236207,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_965f2395f239a6ec74248d98ad46a9a2605fb5d580c71ebc72e84bc8b8574568",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -4124,7 +4134,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -14.196812480108576,
         "squared_projection_error": 201.54948459536664,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_9715874f6af2a9f7a1407d2e83d86ce1b1ae7675590e98a4967a5d5e2390e088",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -4396,7 +4406,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 30.866446571853768,
         "squared_projection_error": 952.7375239731032,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_3a0965482d1d2cd8118e8c7d7d827f029da8e94ad5aee23a5ebad26159848d8f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -4707,7 +4717,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.945515471505715,
         "squared_projection_error": 15.567092335890964,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_105da6f4899c2fbbcd63953051275d6e2d86e77d9b5d59e2ecd26cc990e0b502",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5018,7 +5028,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 6.286715069722888,
         "squared_projection_error": 39.522786367880855,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_98fd791460680f4e7cace150c79f3d6f84bcb5ca005a88e56bf8a70cf7196e67",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5329,7 +5339,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.06613822830829,
         "squared_projection_error": 8476.173808273968,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_09271bd1b37d88f7d7f6390b2ce006df1d0d3cfdee00e43911a3d1a273532b21",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5640,7 +5650,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 31.072247909669244,
         "squared_projection_error": 965.4845901599447,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_aa9d1d4fc5fc4fc708ffa48b3420605b16cfe7b321939b90f954d911767cdbfc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5951,7 +5961,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.843483595724635,
         "squared_projection_error": 14.77236615060437,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_d58eac71f8ecf046766099e505dbc78ccc0cad7052f42584c8f39e6affeafde8",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -6262,7 +6272,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -51.47305462085518,
         "squared_projection_error": 2649.4753520015406,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_83c6b71eaed0724c7bb0a94b136f583ab3bb938c9195484737b5cb0a42381a5b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -6573,7 +6583,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -110.83757849418927,
         "squared_projection_error": 12284.968806455568,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_2604f978f6e91c9abe28e1b56bb62bc808e3bd926f5fa9334991dad7bdab0a1a",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -6840,7 +6850,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -14.80174459506592,
         "squared_projection_error": 219.09164305756315,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_219e815d5c1461b35573a8e44ac7da1f37929444514cbbd975741adc19258a12",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -7151,7 +7161,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.4026122822782,
         "squared_projection_error": 595.4874861991948,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_a5bd16907107929c3621bbd9e2c3004e45f820778b562496c24e5cbcd7f55226",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -7423,7 +7433,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -11.24442255212061,
         "squared_projection_error": 126.43703853063859,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_06117c39370eb8332af3194965f88abd758edad060ef4a11ca3fffc4a6c955d0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -7734,7 +7744,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.15116018934102,
         "squared_projection_error": 366.7669365978004,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_d08ec3c9d382f1c02ef6796f7377485209e52417f6d230c3a887289d384925b5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8045,7 +8055,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -7.078820737466156,
         "squared_projection_error": 50.10970303318089,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_078ac9b2c02c99e46119b24bb2c0e36b17f58b868319b35e162c538b8cb95bfc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8356,7 +8366,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.82150836701919,
         "squared_projection_error": 8615.832415528614,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_7b635be5df95c1876ed7d25b360821499d679952c28792e70b5fec47044a0484",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8667,7 +8677,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -59.08065721997059,
         "squared_projection_error": 3490.524057543663,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_6a6b99ad5f3809faea014e57146d71e1707b5bfbc8780a566a496d25f1acf58e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8934,7 +8944,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 11.45660645051884,
         "squared_projection_error": 131.25383136206992,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_bf14209507ad432cc20a533c107bccfe0e61111bb588e3bf8caeb4f1b2db8fbd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -9206,7 +9216,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -60.90416952064133,
         "squared_projection_error": 3709.317864999017,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_7f4e3e49feb87a5c730cc85470ae791fdb42d897a0715e63609aa9212bf5ccdc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -9517,7 +9527,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -62.617050331287075,
         "squared_projection_error": 3920.894992190939,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_86b32b16ab074867659ae1c9374626667963b92863cf4fb0d804ea9d993afb67",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -9789,7 +9799,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.598796556893525,
         "squared_projection_error": 12.951336657908692,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_0d6ced5b51dda2cda43185d4b12baeb0ad4abbe63fec7cea9cc2c8f4eea5f75c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10100,7 +10110,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -146.4428728737192,
         "squared_projection_error": 21445.515015508285,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_a3dc92655b57802ab9f6302eb3f6ae2213c6405165166fa0fd21540c1874f2f1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10367,7 +10377,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.44594095894401,
         "squared_projection_error": 597.6040293681764,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_48ef7188b635d377913ba5489a5373df13fa8c2e681acf2b615a9d41423f1ecd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10678,7 +10688,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -99.99051066745115,
         "squared_projection_error": 9998.102223537662,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_14ba1fccff58ac27337427796e80c6ff01b5705d0b5b26c64d4d1a1d79187037",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10989,7 +10999,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -46.751418666066314,
         "squared_projection_error": 2185.6951472898136,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_a9495c07af75d5c9a2e858edc529909a2dd11802e61afc84d5c8bf453aed0585",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -11256,7 +11266,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.905959570310202,
         "squared_projection_error": 8.444601024277453,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_5c22732a14678cfbe29011e45b02aff79baafbf30e8cb4b1227dc53ab1490aba",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -11567,7 +11577,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -19.3034604382269,
         "squared_projection_error": 372.62358489019107,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_711099cca7dafdc401b8392806b72615652a332cdb47f20bdb17a4e16d224004",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -11878,7 +11888,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 38.69606137090083,
         "squared_projection_error": 1497.3851656205234,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_7c9df43c5936a9638721aa539a6a8789cd3c6a621cef23bff579cb314cdcebb2",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -12189,7 +12199,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -21.84766773751528,
         "squared_projection_error": 477.320585568866,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_d369f1fd357ea21d95f217583b8313a87c806f9553f77642bcafd78f9f1c6677",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -12500,7 +12510,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -1.1017183965666675,
         "squared_projection_error": 1.2137834253334288,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_77e3829b55542b48affe57b165fbc40c04dac3348db5936552786233d6e22008",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -12811,7 +12821,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 23.408532826053936,
         "squared_projection_error": 547.9594090684446,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_ff351d1d3f3c08ba5a50871dbcbe7e136c9f0f10e67b04fd3ed835e7f25a3ca5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13122,7 +13132,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -15.702439043917963,
         "squared_projection_error": 246.56659192795925,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_2549592ac0533576d62c75d03ea6b5bb64e4156703005007baddd85b52aa6fd1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13389,7 +13399,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -34.946701891566846,
         "squared_projection_error": 1221.2719730980418,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_111f79020f0609903e6cfdbc65dd7438765dc36e0053f1e1b9244a1165dbc499",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13700,7 +13710,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 11.577016593956941,
         "squared_projection_error": 134.02731321675438,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_c1b3d00657157aa4e4a07c2949f54ecb7b60527a10617f2c71efcb3f49775368",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13972,7 +13982,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 21.06859349170903,
         "squared_projection_error": 443.88563171888416,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_8d83fccc26fc4e69cc94cbe47e99cfd23ca90cc969ea240baf9b25e4fa179abf",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -14283,7 +14293,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 22.30126216429216,
         "squared_projection_error": 497.3462941204891,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_00131d29d76ae0a6ca17d9ec2895e6192395a0a1422308d6b83d79e0a28d6f42",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -14594,7 +14604,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 17.029246122860343,
         "squared_projection_error": 289.995223512954,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_376f46f4fbaf4362538e0e13e40f8d9170b1cfdbfb05e3b8388ba8a1a0770012",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -14905,7 +14915,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 36.81841422348033,
         "squared_projection_error": 1355.5956259317788,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_e4d8b57ca0fe8fbe0743c308edc384dfac87cb550b96708dd7ab412362a05a66",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -15177,7 +15187,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 58.34464724208104,
         "squared_projection_error": 3404.0978618028744,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_21b5e91a69546c5fbbc4c49918cdb4bc77ba6ffa35678542626c299c4b279b38",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -15444,7 +15454,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.344120093824095,
         "squared_projection_error": 374.19498220428915,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_50af6fb5850c8221222fca9d29f3759b5124ab8f7a4b6480c4751343c4543a87",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -15755,7 +15765,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 9.445800834121975,
         "squared_projection_error": 89.22315339789941,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_aefa661081372a7a221647fc3bdc56ff4f1bba2fb928b9a8b1963ad1d2295385",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16066,7 +16076,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -43.70590041171337,
         "squared_projection_error": 1910.2057307986072,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_6b8bb6f3383984211a44e27a542396a43e3ab0e02d71f23cc3fa56b682cda5aa",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16333,7 +16343,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 25.90889092886988,
         "squared_projection_error": 671.270629164076,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_a2bcbd9735cd5deb34252b94480ae5942823e4b6ee84c92e3de26898087098d4",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16644,7 +16654,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 31.88539022938869,
         "squared_projection_error": 1016.6781100803958,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_16a1f04483091706020d51a80999b2882089935348af00def77f2256a28978ba",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16916,7 +16926,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -9.329051001472727,
         "squared_projection_error": 87.03119258807929,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_c0a40c6eb806ae1653ab480bfdc5a81580fc159fc39ff0908c5361bda5eb13bc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -17227,7 +17237,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 8.723608310188709,
         "squared_projection_error": 76.1013419495935,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_8a710da926debe277cf6c8cd94b8b4200a1cda2c4a7589dc2a1262b496589098",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -17538,7 +17548,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -3.7405410237121046,
         "squared_projection_error": 13.9916471500732,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_5d023774f74ab49d835f6ac31afdc37a548c716db4358f72f1ca80798c7f406a",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -17849,7 +17859,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 206.79133762217478,
         "squared_projection_error": 42762.65731556828,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_4527477ac828df108537584ac792599304bd32eba5b09f0e923e6dac7b9a2c6c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -18116,7 +18126,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 28.577947244248328,
         "squared_projection_error": 816.6990686950406,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_29f4955d69707aee20523ee99e166e37380fe35ef07d5094ce84392ec4c6850b",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -18427,7 +18437,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 37.33784370516595,
         "squared_projection_error": 1394.1145725514007,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_ea457b10cdd39fbfb8fd3ca9338f094260af0d14941e80ffeaa74b02f66c543c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -18738,7 +18748,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 37.85066478471341,
         "squared_projection_error": 1432.6728246447437,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_f53429e30502bb2fc889647fe2e65bfb1af01433186bc273aec89344db6ec986",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19049,7 +19059,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -45.09501056541741,
         "squared_projection_error": 2033.559977895108,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_a428e8744bb5659b6ed4289c24da4e691c4bbf6092afa5627b6c90db2f8ebacf",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19360,7 +19370,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.5420680375690665,
         "squared_projection_error": 6.462109907630245,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_c4c012701f95ec7d4f4937b729726da61cadecb16c0e68431b784d063a6718f8",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19671,7 +19681,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.29278046592963,
         "squared_projection_error": 590.1391827658523,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_372d9cf921c76668c4ee4c79131a6203da532a0a1c5c8dcf9969ecce9fbb614c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19982,7 +19992,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 50.26562274766982,
         "squared_projection_error": 2526.632830211062,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_4b62a12a9da61bb9a419ab2547b27679af4a13eb707c9e38dc95f30c8a96578e",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -20249,7 +20259,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 47.657147219293904,
         "squared_projection_error": 2271.2036810814525,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_80174c80bf22deae83f99c4d06552ac4320cf1640482bd8915996ba2770e3fef",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -20516,7 +20526,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -15.470163405990945,
         "squared_projection_error": 239.32595580806137,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_f43c4ad3eb2a9eb1033049c16508800129c808d5d65846cc065c195348a29a7c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -20827,7 +20837,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -0.6668926585439294,
         "squared_projection_error": 0.4447458180197901,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_978f64289a44011eac398d0daa1f7f32cada53abd2755666885c108636f27cf7",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -21138,7 +21148,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.471187185926084,
         "squared_projection_error": 379.12713042937213,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_11676b3998f8f9d0e8257c3a016d5a6f1022a48c140310169c733a74c8469ec3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -21410,7 +21420,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -122.47023686970587,
         "squared_projection_error": 14998.958918921864,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_bf773c44dc94ca52f131cfaaa90be142157b40ceb31c69211ee2c3c79d0fd0de",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -21721,7 +21731,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 1.9329298052091488,
         "squared_projection_error": 3.7362176318658777,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_dd4407868366fc4cc4937d4884c2d8084657fd6b7396b9bfff2f8270065216ee",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22032,7 +22042,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -5.003772929703899,
         "squared_projection_error": 25.037743532037542,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_214bff1732c033464bf7346844c27ff15fd9473f126e660ae9c496cfd3519c85",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22343,7 +22353,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.59337686310846,
         "squared_projection_error": 8573.53343891363,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_561c3bdf6a47900dfde1d089a4189d3f61d0d533a2eb13d04037427018bc75c0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22615,7 +22625,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -35.37175454383364,
         "squared_projection_error": 1251.1610195092157,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_c8de65e889d292b5b09390b7ac221ae76226e9e46f8654207261f7a798e5b2f7",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22926,7 +22936,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 22.254876985579333,
         "squared_projection_error": 495.27954964326864,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_d31d834d690d6a151549fb264d2239bdb2affa7ee33092c6faa3cd593602cc1c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -23237,7 +23247,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -179.1062756603672,
         "squared_projection_error": 32079.057980927446,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_a6f319364ba402174db902460fd6ad45067e88197a82ddab2679fafc40263b7b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -23504,7 +23514,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -4.75869208145177,
         "squared_projection_error": 22.645150326071775,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_9fa716cb776d072f537b91946ea220098f6412f30d114551c20eec214afa2734",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -23815,7 +23825,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -42.876890387165176,
         "squared_projection_error": 1838.4277292729776,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_7af355fd108bafc689031a63f0cd11f8b4b160ec58c6cf1afa484f90df55395d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24126,7 +24136,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 13.938864080170106,
         "squared_projection_error": 194.29193184545642,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_45583f8fe64137358bc5349aaf0fda8da46853e526e624297409b891fde1d12a",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24393,7 +24403,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -12.569344443093769,
         "squared_projection_error": 157.9884197291322,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_f84195085fbbb7e9475bf18cad0905d9daef8b4f484f0483e85d47b92f886442",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24704,7 +24714,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 8.420311783623902,
         "squared_projection_error": 70.90165053343553,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_9a649e933b2c9411702d033cfd527df63220f7b576e96736f14f0af4ddfaf8e3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24971,7 +24981,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 57.410612771813916,
         "squared_projection_error": 3295.978458835163,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_99ef962fa8a1b1b1df0cfbe5392c44b8de6efd12e978b00d49eb52ed3f1c70da",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -25282,7 +25292,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 6.750941203311214,
         "squared_projection_error": 45.57520713056506,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_6c88df08d8f11fee39e1d6bc466a69c477c9bfe7db1e7c13141e6a3ab81c999f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -25593,7 +25603,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.787683769523177,
         "squared_projection_error": 7.77118079886295,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_dfecd1af22f38d6de8fe6b713b6df09fd37f39f32eeb2a9ce4e952b3e48ab1d4",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -25865,7 +25875,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 26.0863698130033,
         "squared_projection_error": 680.4986900207699,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_3642a1f06d8df5cf943fb606b14470e92150f61b222b0b06526e2c6e107031ab",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -26137,7 +26147,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -12.67607485139591,
         "squared_projection_error": 160.68287363819184,
-        "generated_at": "2026-09-17T14:59:43.717Z",
+        "generated_at": "2026-09-18T14:29:24.044Z",
         "outcome_id": "outcome_d43c03bc34323ee39357f84ede312162ffb9fd82301581e6ad36af8f8d6ca7c2",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -26402,6 +26412,3572 @@
           "rushing_role_conflict_v2": null,
           "shadow_availability": null,
           "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_f2dad5f80396ec202066952b78f4d70f89d685365267fe84a630873572bef305",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0033106",
+      "player": "Jared Goff",
+      "position": "QB",
+      "team": "det",
+      "opponent": "buf",
+      "market": "passing_yards",
+      "line": 262.5,
+      "jkb_projection": 234.87003522135504,
+      "difference": -27.62996477864496,
+      "actual": 327,
+      "direction": "UNDER",
+      "result": "LOSS",
+      "absolute_error": 92.12996477864496,
+      "starter_basis": "QB1_BY_ARCHIVED_DEPTH_CHART",
+      "model_version": "nfl-passing-direct-ridge-alpha10-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "depth_rank",
+        "starter_metric_value": 1,
+        "prediction_id": "pred_8d6894b8b4f3339d72a6ef25a3b5431b9b486678c87b7f19bea4c6da12921313",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "passing",
+        "fitted_model_hash": "8f87884149813c4eb4c00c4aec9d7c86770a0dab62b3f790fb48706ff7dcc616",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.941Z",
+        "market_snapshot_ref": "yardage_30a4ff7b60333385d35b5900c234da534452ec3dfc3380e4acac91375a374eda",
+        "over_price": -112,
+        "under_price": -112,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -92.12996477864496,
+        "squared_projection_error": 8487.93041011436,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_3d05bad2d54d32fe1deece3e3f9c7ed9835068a0eb0075c70e8ccb9f4daed57a",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "df3a200c91bc928bece591af88ed21d3e3ba7477ee096988542a53202e0b6029",
+        "feature_payload_hash": "b126c487f639b9ed03b703e7f55d0a84c64686d1080b7fc00775c7f9053797f4",
+        "context": {
+          "allocation_diagnostics": null,
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesStartedPriorThisSeason": 0,
+            "sourceAmbiguous": false,
+            "starterResolution": "sourcedDepthChart"
+          },
+          "estimated_range": {
+            "estimatedHigh": 356.7489642059626,
+            "estimatedLow": 135.18298973366205,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "gameEnvironment": {
+                "indicatorScores": {
+                  "dome": 34.11042944785276,
+                  "gameTotal": 99.69325153374233,
+                  "impliedTeamTotal": 74.6319018404908,
+                  "trailingScriptSpread": 81.87116564417178
+                },
+                "score": 72.57668711656441
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "dropbackRateAllowed": 16.458072590738425,
+                  "passAttemptsAllowed": 4.130162703379224,
+                  "passEpaAllowed": 21.714643304130163
+                },
+                "score": 14.100959532749272
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "dropbackRate": 36.35794743429287,
+                  "neutralPassRate": 27.221526908635795,
+                  "passRateOverExpected": 25.46933667083855,
+                  "qbAttemptRole": 63.261296660117885,
+                  "teamOffensivePlays": 42.99123904881101,
+                  "teamPassAttempts": 36.23279098873592
+                },
+                "score": 38.589022951905335
+              },
+              "passingQuality": {
+                "indicatorScores": {
+                  "qbCompletionRate": 72.82252783235101,
+                  "qbYardsPerAttempt": 81.40144073346431
+                },
+                "score": 77.11198428290766
+              }
+            },
+            "environmentScore": 54.59654364407378,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "passing",
+            "matchupScore": 50.050554875025355,
+            "opponent": "buf",
+            "opportunityScore": 38.589022951905335,
+            "playerId": "gsis:00-0033106",
+            "playerName": "Jared Goff",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "det",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "overallDropbackRateAllowed": {
+                "last3": null,
+                "priorSeason": 0.5695159629248198,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 32.529411764705884,
+                "seasonPrior": null
+              },
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.049058728089223964,
+                "seasonPrior": null
+              }
+            },
+            "opportunity": {
+              "offensivePlaysPerGame": {
+                "last3": null,
+                "priorSeason": 63.94117647058823,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.23529411764706,
+                "seasonPrior": null
+              },
+              "qbAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 34,
+                "seasonPrior": null
+              }
+            },
+            "proePassTendency": {
+              "earlyDownNeutralPassRate": {
+                "last3": null,
+                "priorSeason": 0.4904051172707889,
+                "seasonPrior": null
+              },
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5979760809567617,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.251478059969587,
+                "seasonPrior": null
+              }
+            },
+            "qbEfficiency": {
+              "completionPct": {
+                "last3": null,
+                "priorSeason": 0.6799307958477508,
+                "seasonPrior": null
+              },
+              "yardsPerAttempt": {
+                "last3": null,
+                "priorSeason": 7.896193771626297,
+                "seasonPrior": null
+              }
+            },
+            "qbRollingPassingYardsPerGame": {
+              "last3": null,
+              "priorSeason": 268.47058823529414,
+              "seasonPrior": null
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "completionPct": {
+              "last3": null,
+              "priorSeason": 0.6799307958477508,
+              "seasonPrior": null
+            },
+            "earlyDownNeutralPassRate": {
+              "last3": null,
+              "priorSeason": 0.4904051172707889,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "passRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.251478059969587,
+              "seasonPrior": null
+            },
+            "qbAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 34,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5979760809567617,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.23529411764706,
+              "seasonPrior": null
+            },
+            "yardsPerAttempt": {
+              "last3": null,
+              "priorSeason": 7.896193771626297,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_d5c3b55143323785857df6eaf2e473d077ed3a1ca03fcf1c71f73016beba5ad8",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0034827",
+      "player": "DJ Moore",
+      "position": "WR",
+      "team": "buf",
+      "opponent": "det",
+      "market": "receiving_yards",
+      "line": 63.5,
+      "jkb_projection": 51.092570967190596,
+      "difference": -12.407429032809404,
+      "actual": 0,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 51.092570967190596,
+      "starter_basis": "WR1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 7.112173520143143,
+        "prediction_id": "pred_ea34062a91ec33b23f5e40f16f90cb2d76ca78a76228f61765e3da99fa615cb4",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_7ab54ad0c9865c01beb79865b5682dd3cf7a0fa0e3bda4e2649cd702166aea44",
+        "over_price": -110,
+        "under_price": -114,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 51.092570967190596,
+        "squared_projection_error": 2610.4508080374076,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_59c0737100e10e3b2e86527465a1607cc520eae1dd941210b59816a09abab938",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "7ec9a0da7d22eea7ab9db87a83e06d06757bc1970f7b294949f71547bfd1a599",
+        "feature_payload_hash": "623543b189ec9d3069e22f17e6421edb44bffe094ec8566a1a43a3d6bba44bc6",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8167833313575742,
+            "priorOpportunityShare": 0.12735241157587293,
+            "priorTeam": "chi",
+            "projectedOpportunityShare": 0.21847261643815488,
+            "projectedTargetablePool": 32.55407307375958,
+            "projectedTeamOpportunity": 39.85643661416488,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": true
+            },
+            "teamResidualUnallocated": -7.105427357601002e-15,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 99.34303344910306,
+            "estimatedLow": 20.350970509805542,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": true,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 62.547326972588216,
+                  "yardsPerTarget": 57.45873087990307
+                },
+                "score": 60.00302892624565
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 48.50451467268623,
+                  "targetsAllowed": 53.096783295711056
+                },
+                "score": 50.800648984198645
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 63.27374796868075,
+                  "targetsPerGame": 62.40951396070321,
+                  "teamDropbackRate": 14.799661399548533,
+                  "teamPassAttempts": 18.92635440180587,
+                  "teamPassRateOverExpected": 32.57618510158014
+                },
+                "score": 38.397092566463705
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 53.6012259701481,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 47.27951985952541,
+            "opponent": "det",
+            "opportunityScore": 38.397092566463705,
+            "playerId": "gsis:00-0034827",
+            "playerName": "DJ Moore",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "buf",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 11.623529411764705,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.04012707736014993,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.5882352941176471,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 13.64,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 8.023529411764706,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.12735241157587293,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 5,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5578851412944393,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 36,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -3.3274452138349155,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 40,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 8.023529411764706,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.12735241157587293,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 5,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5578851412944393,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 36,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -3.3274452138349155,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "high",
+              "conflict_score": 0.10189152493094644,
+              "depth_rank": 1,
+              "historical_share": 0.12735241157587293,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": true,
+              "role_prior_share": 0.22924393650681937,
+              "role_sourced": true,
+              "team_changed": true
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": true
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_87fe166db2f0d5e6849536e517ece9aa957d1d69302bbfd4909d2fb21f22fdd9",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0034857",
+      "player": "Josh Allen",
+      "position": "QB",
+      "team": "buf",
+      "opponent": "det",
+      "market": "passing_yards",
+      "line": 250.5,
+      "jkb_projection": 268.5611703457587,
+      "difference": 18.061170345758683,
+      "actual": 248,
+      "direction": "OVER",
+      "result": "LOSS",
+      "absolute_error": 20.561170345758683,
+      "starter_basis": "QB1_BY_ARCHIVED_DEPTH_CHART",
+      "model_version": "nfl-passing-direct-ridge-alpha10-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "depth_rank",
+        "starter_metric_value": 1,
+        "prediction_id": "pred_28e53d4d38561efe1101b9c6048ba5d49f0693ac11843851a5027d4367be254e",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "passing",
+        "fitted_model_hash": "8f87884149813c4eb4c00c4aec9d7c86770a0dab62b3f790fb48706ff7dcc616",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.941Z",
+        "market_snapshot_ref": "yardage_7a21b4e47df02e8954a093e226ee2e09dcece1d649ba5d96f743ee045aa644ec",
+        "over_price": -113,
+        "under_price": -111,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 20.561170345758683,
+        "squared_projection_error": 422.76172598730625,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_8ba152b73923e7cdf0aec8f894278cb1e0a915b411786366506b421aee914cd2",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "8e8f7cdd93864d10b2de4d37694cfd4b8aa5c39b4e0c03bab61352d179d45a47",
+        "feature_payload_hash": "66d5c4399c694e2270529fc9caf09bb852c972fefce2ace5b6ee7fe9cbc4d387",
+        "context": {
+          "allocation_diagnostics": null,
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesStartedPriorThisSeason": 0,
+            "sourceAmbiguous": false,
+            "starterResolution": "sourcedDepthChart"
+          },
+          "estimated_range": {
+            "estimatedHigh": 390.44009933036625,
+            "estimatedLow": 168.8741248580657,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "gameEnvironment": {
+                "indicatorScores": {
+                  "dome": 34.11042944785276,
+                  "gameTotal": 99.69325153374233,
+                  "impliedTeamTotal": 98.83435582822085,
+                  "trailingScriptSpread": 18.12883435582822
+                },
+                "score": 62.691717791411044
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "dropbackRateAllowed": 62.45306633291614,
+                  "passAttemptsAllowed": 53.191489361702125,
+                  "passEpaAllowed": 48.310387984981226
+                },
+                "score": 54.65164789319983
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "dropbackRate": 15.644555694618273,
+                  "neutralPassRate": 42.5531914893617,
+                  "passRateOverExpected": 33.479349186483105,
+                  "qbAttemptRole": 22.134905042567123,
+                  "teamOffensivePlays": 47.74718397997496,
+                  "teamPassAttempts": 19.774718397997496
+                },
+                "score": 30.222317298500446
+              },
+              "passingQuality": {
+                "indicatorScores": {
+                  "qbCompletionRate": 82.58022265880813,
+                  "qbYardsPerAttempt": 82.90766208251473
+                },
+                "score": 82.74394237066143
+              }
+            },
+            "environmentScore": 66.69576935175743,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "passing",
+            "matchupScore": 61.806706555065716,
+            "opponent": "det",
+            "opportunityScore": 30.222317298500446,
+            "playerId": "gsis:00-0034857",
+            "playerName": "Josh Allen",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "buf",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "overallDropbackRateAllowed": {
+                "last3": null,
+                "priorSeason": 0.6296296296296297,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40,
+                "seasonPrior": null
+              },
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.04012707736014993,
+                "seasonPrior": null
+              }
+            },
+            "opportunity": {
+              "offensivePlaysPerGame": {
+                "last3": null,
+                "priorSeason": 64.52941176470588,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 36,
+                "seasonPrior": null
+              },
+              "qbAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 28.75,
+                "seasonPrior": null
+              }
+            },
+            "proePassTendency": {
+              "earlyDownNeutralPassRate": {
+                "last3": null,
+                "priorSeason": 0.5123042505592841,
+                "seasonPrior": null
+              },
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5578851412944393,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -3.3274452138349155,
+                "seasonPrior": null
+              }
+            },
+            "qbEfficiency": {
+              "completionPct": {
+                "last3": null,
+                "priorSeason": 0.6934782608695652,
+                "seasonPrior": null
+              },
+              "yardsPerAttempt": {
+                "last3": null,
+                "priorSeason": 7.973913043478261,
+                "seasonPrior": null
+              }
+            },
+            "qbRollingPassingYardsPerGame": {
+              "last3": null,
+              "priorSeason": 229.25,
+              "seasonPrior": null
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "completionPct": {
+              "last3": null,
+              "priorSeason": 0.6934782608695652,
+              "seasonPrior": null
+            },
+            "earlyDownNeutralPassRate": {
+              "last3": null,
+              "priorSeason": 0.5123042505592841,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "passRateOverExpected": {
+              "last3": null,
+              "priorSeason": -3.3274452138349155,
+              "seasonPrior": null
+            },
+            "qbAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 28.75,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5578851412944393,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 36,
+              "seasonPrior": null
+            },
+            "yardsPerAttempt": {
+              "last3": null,
+              "priorSeason": 7.973913043478261,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_119f104e2d2dbadd3fc9037a9b45a1df7be3f16581d10a0b5f4db770116c2188",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0036963",
+      "player": "Amon-Ra St. Brown",
+      "position": "WR",
+      "team": "det",
+      "opponent": "buf",
+      "market": "receiving_yards",
+      "line": 79.5,
+      "jkb_projection": 66.1564738429286,
+      "difference": -13.343526157071395,
+      "actual": 142,
+      "direction": "UNDER",
+      "result": "LOSS",
+      "absolute_error": 75.8435261570714,
+      "starter_basis": "WR1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 9.177967612703874,
+        "prediction_id": "pred_41a66356673394bf7fc3c62c80a028ce193b7096ed9d69ae67421cd61fb59017",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_149ff6493179db09ad4d283a54beb4bf02657ec2966c0b18319abb81bf286804",
+        "over_price": -114,
+        "under_price": -110,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -75.8435261570714,
+        "squared_projection_error": 5752.240459938373,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_6ae3821f6fb0526ca4d07f85c105a95157f0cc7513fa6bb6f185ec1b9ff401c9",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "4ca7883b48fb06225711a662c83d5b4317866a0b212656200ffb18fa710b7da2",
+        "feature_payload_hash": "1567a62255f37123116fc3d3d435bead4cb091bdd752e31b602b5c9f9f7c6c5b",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8807632644679422,
+            "priorOpportunityShare": 0.26844408226209426,
+            "priorTeam": "det",
+            "projectedOpportunityShare": 0.2765081635543433,
+            "projectedTargetablePool": 33.19239292875376,
+            "projectedTeamOpportunity": 37.68594157796177,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 114.40693632484107,
+            "estimatedLow": 35.41487338554355,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 26.65455096168408,
+                  "yardsPerTarget": 59.12464031500833
+                },
+                "score": 42.88959563834621
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 21.656320541760724,
+                  "targetsAllowed": 3.9503386004514676
+                },
+                "score": 12.803329571106095
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 98.33062490766731,
+                  "targetsPerGame": 96.32146550450584,
+                  "teamDropbackRate": 35.651805869074494,
+                  "teamPassAttempts": 35.284988713318285,
+                  "teamPassRateOverExpected": 24.435665914221218
+                },
+                "score": 58.00491018175743
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 35.23097506981744,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 48.149666739493185,
+            "opponent": "buf",
+            "opportunityScore": 58.00491018175743,
+            "playerId": "gsis:00-0036963",
+            "playerName": "Amon-Ra St. Brown",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "det",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 8.081395348837209,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.049058728089223964,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 32.529411764705884,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.6802325581395349,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 11.974358974358974,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 8.145348837209303,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.26844408226209426,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 10.117647058823529,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5979760809567617,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.23529411764706,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.251478059969587,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 32.529411764705884,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 8.145348837209303,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.26844408226209426,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 10.117647058823529,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5979760809567617,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.23529411764706,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.251478059969587,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.03920014575527489,
+              "depth_rank": 1,
+              "historical_share": 0.26844408226209426,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.22924393650681937,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_b75c0b41172165701131338b27ae39449c103dc8e32c37e8c99ab2e55445a689",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0037240",
+      "player": "Jameson Williams",
+      "position": "WR",
+      "team": "det",
+      "opponent": "buf",
+      "market": "receiving_yards",
+      "line": 58.5,
+      "jkb_projection": 46.80795559670471,
+      "difference": -11.692044403295291,
+      "actual": 33,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 13.807955596704709,
+      "starter_basis": "WR2_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 2,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 6.024725143447635,
+        "prediction_id": "pred_b59096ce232a893ebc0d5bb76ae8fc0971da93cbbc4c8eb03ac83d68f1deee4f",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_80b951f862a1c4cb73963919d90f2ad0ea1d45fc74e344f5bcdd8bde776da9f8",
+        "over_price": -114,
+        "under_price": -110,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 13.807955596704709,
+        "squared_projection_error": 190.65963776056887,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_16328c74cb820e007385b503423689a604562e6d21eed00c8fcbdc3fc1f0a567",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "8c2973aa6edb6335bfc1850819ffb4c1764b5be040e0885d083ce40b5a63e245",
+        "feature_payload_hash": "ebcc0d82fa0bc57a74f986edb8b2b75059e612294473c4770b420759127e085e",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8807632644679422,
+            "priorOpportunityShare": 0.1581082549931603,
+            "priorTeam": "det",
+            "projectedOpportunityShare": 0.18150921376411408,
+            "projectedTargetablePool": 33.19239292875376,
+            "projectedTeamOpportunity": 37.68594157796177,
+            "roleConfidenceEvidence": {
+              "depthRank": 2,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 2,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 95.05841807861717,
+            "estimatedLow": 16.066355139319654,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 73.57261850673936,
+                  "yardsPerTarget": 88.71724973496895
+                },
+                "score": 81.14493412085415
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 21.656320541760724,
+                  "targetsAllowed": 3.9503386004514676
+                },
+                "score": 12.803329571106095
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 73.80706160437288,
+                  "targetsPerGame": 71.28822573496824,
+                  "teamDropbackRate": 35.651805869074494,
+                  "teamPassAttempts": 35.284988713318285,
+                  "teamPassRateOverExpected": 24.435665914221218
+                },
+                "score": 48.09354956719102
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 47.98275456398675,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 54.670587976962366,
+            "opponent": "buf",
+            "opportunityScore": 48.09354956719102,
+            "playerId": "gsis:00-0037240",
+            "playerName": "Jameson Williams",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "det",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 12.637254901960784,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.049058728089223964,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 32.529411764705884,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.6372549019607843,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 17.184615384615384,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 10.950980392156863,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.1581082549931603,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 6,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5979760809567617,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.23529411764706,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.251478059969587,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 32.529411764705884,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 10.950980392156863,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.1581082549931603,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 6,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5979760809567617,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.23529411764706,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.251478059969587,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.0014288510674141108,
+              "depth_rank": 2,
+              "historical_share": 0.1581082549931603,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.15953710606057442,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 2,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": false
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": false,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_07877d8e8c8efd0191dc33e6967297d81945316dabf5f45f679a7dd321cd22c7",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0037248",
+      "player": "James Cook",
+      "position": "RB",
+      "team": "buf",
+      "opponent": "det",
+      "market": "rushing_yards",
+      "line": 78.5,
+      "jkb_projection": 81.4026122822782,
+      "difference": 2.9026122822781986,
+      "actual": 135,
+      "direction": "OVER",
+      "result": "WIN",
+      "absolute_error": 53.5973877177218,
+      "starter_basis": "RB1_BY_PROJECTED_CARRIES",
+      "model_version": "nfl-rushing-carries-x-shrunk-ypc-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "projected_carries",
+        "starter_metric_value": 18.176470588235293,
+        "prediction_id": "pred_45d7701845b6147910a68be77d4467b4306e2074e1b61cd9f4085a1a9c1dadd3",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "rushing",
+        "fitted_model_hash": "bf98f3949e344d12a9e14f684db82cb0772bc431d785b055a95e049006678988",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "fanduel",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.945Z",
+        "market_snapshot_ref": "yardage_9d3ae528f0a2a83133e8c9f81aa25069b40aa1ad33153f61b3c7a4891bef481a",
+        "over_price": -113,
+        "under_price": -113,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -53.5973877177218,
+        "squared_projection_error": 2872.6799701637956,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_8f9cde933c7a969442c8f64a19f4010616b254f20a499ea3af593be7ea16390f",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "2e380410dc22a175cb91e4fe8952ed071f49150b922d21367a97404db874bdc4",
+        "feature_payload_hash": "0fef93f725269995dc25eaa7d0252625854d6c7b3e70660597853d76ee4a03b3",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationModelVersion": "nfl-rushing-role-allocation-shadow-v1.0.0",
+            "finalProjectedShare": 0.7309043862506458,
+            "historicalSharePrior": 0.6612360718594434,
+            "projectedCarries": 16.155786573692932,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 0,
+              "roleSourced": true,
+              "rosterCompetitionCount": null,
+              "teamChanged": false
+            },
+            "roleConflictFlag": true,
+            "roleConflictScore": 0.3990411744390978,
+            "roleSharePrior": 1.0602772462985413,
+            "teamChangeCalibrationApplied": false
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithCarriesPriorThisSeason": 0,
+            "recentTeamTopCarryShareConcentration": null
+          },
+          "estimated_range": {
+            "estimatedHigh": 119.4793138367271,
+            "estimatedLow": 49.737622703181145,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "opponent": {
+                "indicatorScores": {
+                  "rushAttemptsAllowed": 36.1609907120743,
+                  "rushEpaAllowed": 71.89886480908153
+                },
+                "score": 54.02992776057792
+              },
+              "roleQuality": {
+                "indicatorScores": {
+                  "teamTopRbCarryShare": 50
+                },
+                "score": 50
+              },
+              "teamRushingEnvironment": {
+                "indicatorScores": {
+                  "teamDropbackRate": 84.91228070175438,
+                  "teamPassRateOverExpected": 66.97626418988648,
+                  "teamRushAttempts": 83.13209494324045
+                },
+                "score": 78.34021327829377
+              },
+              "workload": {
+                "indicatorScores": {
+                  "carriesPerGame": 97.88648000871555,
+                  "carryShare": 95.87100991393397
+                },
+                "score": 96.87874496132477
+              }
+            },
+            "environmentScore": 60.79004701295724,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "rushing",
+            "matchupScore": 79.91340068843672,
+            "opponent": "det",
+            "opportunityScore": 96.87874496132477,
+            "playerId": "gsis:00-0037248",
+            "playerName": "James Cook",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "buf",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentRushDefense": {
+              "rushAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 23.529411764705884,
+                "seasonPrior": null
+              },
+              "rushEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.036895684494543106,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "yardsPerCarry": {
+                "last3": null,
+                "priorSeason": 5.2459546925566345,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "carriesPerGame": {
+                "last3": null,
+                "priorSeason": 18.176470588235293,
+                "seasonPrior": null
+              },
+              "carryShare": {
+                "last3": null,
+                "priorSeason": 0.6612360718594434,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5578851412944393,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -3.3274452138349155,
+                "seasonPrior": null
+              },
+              "rushAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 28.529411764705884,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "carriesPerGame": {
+              "last3": null,
+              "priorSeason": 18.176470588235293,
+              "seasonPrior": null
+            },
+            "carryShare": {
+              "last3": null,
+              "priorSeason": 0.6612360718594434,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentRushAttemptsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 23.529411764705884,
+              "seasonPrior": null
+            },
+            "rollingYardsPerCarry": {
+              "last3": null,
+              "priorSeason": 5.2459546925566345,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5578851412944393,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -3.3274452138349155,
+              "seasonPrior": null
+            },
+            "teamRushAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 28.529411764705884,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": true,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": 0,
+          "rushing_role_conflict_v2": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.007280418308997061,
+              "depth_rank": 1,
+              "historical_share": 0.6612360718594434,
+              "no_history": false,
+              "role_prior_share": 0.6685164901684405,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "shadow_availability": {
+            "shadow_status": "available",
+            "shadow_unavailable_reason": null
+          },
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_8f14246e6fffc1be931fcf27e4c9a7e7b25dd5e0e594f93b0a05e5ab946e961c",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0037261",
+      "player": "Khalil Shakir",
+      "position": "WR",
+      "team": "buf",
+      "opponent": "det",
+      "market": "receiving_yards",
+      "line": 44.5,
+      "jkb_projection": 40.80458960809052,
+      "difference": -3.6954103919094834,
+      "actual": 38,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 2.8045896080905166,
+      "starter_basis": "WR2_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 2,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 5.752961028731426,
+        "prediction_id": "pred_febf2fc4c101999e763a86c76b28af169c40d9e2bcf5dec402bfd27d5afe2cd8",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_2853d34d503d90daf4924a28c8abc441b2c308af0e9c421d77158babfb53ba41",
+        "over_price": -110,
+        "under_price": -114,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 2.8045896080905166,
+        "squared_projection_error": 7.865722869809318,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_97c4cc5d3155caf4b2687868e8b2382b450b13919922cb7a2115805a40a1558e",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "76d9d82718c7c8dd06d96ac5fa195c9ac6d399aa8f0092ad13220678b20234d0",
+        "feature_payload_hash": "84e903b87171066c90d66ccf539c359c6b7a06e6f934e480e1e99b4c5384d1d1",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8167833313575742,
+            "priorOpportunityShare": 0.1548057230012096,
+            "priorTeam": "buf",
+            "projectedOpportunityShare": 0.17672016081356764,
+            "projectedTargetablePool": 32.55407307375958,
+            "projectedTeamOpportunity": 39.85643661416488,
+            "roleConfidenceEvidence": {
+              "depthRank": 2,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": -7.105427357601002e-15,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 2,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 89.05505209000299,
+            "estimatedLow": 10.062989150705462,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 5.270331667423898,
+                  "yardsPerTarget": 49.901559897016504
+                },
+                "score": 27.5859457822202
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 48.50451467268623,
+                  "targetsAllowed": 53.096783295711056
+                },
+                "score": 50.800648984198645
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 73.00930713547052,
+                  "targetsPerGame": 68.23755355296204,
+                  "teamDropbackRate": 14.799661399548533,
+                  "teamPassAttempts": 18.92635440180587,
+                  "teamPassRateOverExpected": 32.57618510158014
+                },
+                "score": 41.50981231827342
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 42.795531588806284,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 39.110754792222636,
+            "opponent": "det",
+            "opportunityScore": 41.50981231827342,
+            "playerId": "gsis:00-0037261",
+            "playerName": "Khalil Shakir",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "buf",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 3.6736842105263157,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.04012707736014993,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.7578947368421053,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 9.98611111111111,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 7.568421052631579,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.1548057230012096,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 5.588235294117647,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5578851412944393,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 36,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -3.3274452138349155,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 40,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 7.568421052631579,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.1548057230012096,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 5.588235294117647,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5578851412944393,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 36,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -3.3274452138349155,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.004731383059364824,
+              "depth_rank": 2,
+              "historical_share": 0.1548057230012096,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.15953710606057442,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 2,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": false
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": false,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_e8655b2e51271a1d6bcdaf6c6bf794679199d3832835698e5be8b027aac63bbc",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0038933",
+      "player": "Dalton Kincaid",
+      "position": "TE",
+      "team": "buf",
+      "opponent": "det",
+      "market": "receiving_yards",
+      "line": 52.5,
+      "jkb_projection": 39.14412307162305,
+      "difference": -13.35587692837695,
+      "actual": 95,
+      "direction": "UNDER",
+      "result": "LOSS",
+      "absolute_error": 55.85587692837695,
+      "starter_basis": "TE1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 4.948859625531237,
+        "prediction_id": "pred_cc9f790ec87ec4122d051d73875a78366b2e75dcbb8b814847bb628d5ab977f5",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_fc00821801ed9b8befd23961f49fb1dac4c96b6448053e88c55caf3fdcaf9300",
+        "over_price": -112,
+        "under_price": -112,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -55.85587692837695,
+        "squared_projection_error": 3119.8789874379927,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_3d9b5a56cb079e152e16e7539c2a48d4a40ab2c5e4db1c6dc115562f5d0acfb4",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "9f3d4647a020fd1a794a8b64b84b40fb2e0ea5b5878c30888daaa7d43eda7492",
+        "feature_payload_hash": "0b84028f84f284af33e09f86ea168b7a85f7e745cb817696f44a195b638d8513",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8167833313575742,
+            "priorOpportunityShare": 0.11620389671429181,
+            "priorTeam": "buf",
+            "projectedOpportunityShare": 0.1520196755201209,
+            "projectedTargetablePool": 32.55407307375958,
+            "projectedTeamOpportunity": 39.85643661416488,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": -7.105427357601002e-15,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 87.3945855535355,
+            "estimatedLow": 8.402522614237995,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 88.8733965421082,
+                  "yardsPerTarget": 94.59007250418293
+                },
+                "score": 91.73173452314556
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 48.53816300129366,
+                  "targetsAllowed": 53.363518758085384
+                },
+                "score": 50.95084087968952
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 79.97835497835499,
+                  "targetsPerGame": 74.9594155844156,
+                  "teamDropbackRate": 14.566623544631307,
+                  "teamPassAttempts": 19.301423027166884,
+                  "teamPassRateOverExpected": 34.35963777490297
+                },
+                "score": 44.633090981894355
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 64.22752513427837,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 59.93114993585981,
+            "opponent": "det",
+            "opportunityScore": 44.633090981894355,
+            "playerId": "gsis:00-0038933",
+            "playerName": "Dalton Kincaid",
+            "position": "TE",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "buf",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 9.489795918367347,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.04012707736014993,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.7959183673469388,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 14.64102564102564,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 11.653061224489797,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.11620389671429181,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 4.083333333333333,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5578851412944393,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 36,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -3.3274452138349155,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 40,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 11.653061224489797,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.11620389671429181,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 4.083333333333333,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5578851412944393,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 36,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -3.3274452138349155,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.029516609710037625,
+              "depth_rank": 1,
+              "historical_share": 0.11620389671429181,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.14572050642432943,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_824c01ee0b8b3a3c3cc11e0b85a8ae7e700f9fcdf254ffb060a8fa6eb419c053",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0039065",
+      "player": "Sam LaPorta",
+      "position": "TE",
+      "team": "det",
+      "opponent": "buf",
+      "market": "receiving_yards",
+      "line": 45.5,
+      "jkb_projection": 42.88173561474264,
+      "difference": -2.618264385257362,
+      "actual": 52,
+      "direction": "UNDER",
+      "result": "LOSS",
+      "absolute_error": 9.118264385257362,
+      "starter_basis": "TE1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 5.660931278394473,
+        "prediction_id": "pred_5f41cbabebc9da0a12a8186647fa1d50c7e16341bb01354b40f575fcbeea6a32",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "betmgm",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_e9464fcca0e53c394587f48208491d747e92b21412407818afede2f7f1134ed5",
+        "over_price": -115,
+        "under_price": -115,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -9.118264385257362,
+        "squared_projection_error": 83.14274539945282,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_0d7ece30c5fd9f5510ac47e4b3e22f311c58e4af37b3d10af0edbca9f5fac5f0",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "8b9e6510df8ad84a8944e37331117e58e123c1b5d21b40ff6c1ff8a011bc13fa",
+        "feature_payload_hash": "10e5c80bb3dd1441d7ef2376b549e2de1d2313ad9769986c5396092ea5bdb45f",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8807632644679422,
+            "priorOpportunityShare": 0.1569275167143384,
+            "priorTeam": "det",
+            "projectedOpportunityShare": 0.17054905594018038,
+            "projectedTargetablePool": 33.19239292875376,
+            "projectedTeamOpportunity": 37.68594157796177,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 91.1321980966551,
+            "estimatedLow": 12.140135157357584,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 45.621862799776906,
+                  "yardsPerTarget": 87.5627440044618
+                },
+                "score": 66.59230340211936
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 21.138421733505822,
+                  "targetsAllowed": 3.596377749029754
+                },
+                "score": 12.36739974126779
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 92.04545454545455,
+                  "targetsPerGame": 86.45833333333334,
+                  "teamDropbackRate": 35.316946959896505,
+                  "teamPassAttempts": 36.403622250970244,
+                  "teamPassRateOverExpected": 26.235446313065975
+                },
+                "score": 55.291960680544115
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 42.98656771446238,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 53.86041133503464,
+            "opponent": "buf",
+            "opportunityScore": 55.291960680544115,
+            "playerId": "gsis:00-0039065",
+            "playerName": "Sam LaPorta",
+            "position": "TE",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "det",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 5.653061224489796,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.049058728089223964,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 32.529411764705884,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.8163265306122449,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 12.225,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 9.979591836734693,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.1569275167143384,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 5.444444444444445,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5979760809567617,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.23529411764706,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.251478059969587,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 32.529411764705884,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 9.979591836734693,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.1569275167143384,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 5.444444444444445,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5979760809567617,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.23529411764706,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.251478059969587,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.011207010290008979,
+              "depth_rank": 1,
+              "historical_share": 0.1569275167143384,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.14572050642432943,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_ce03061f7dc4d7101423319743ab5e7bc9871d09f5f9eb7c632e0bb157ef76a6",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0039139",
+      "player": "Jahmyr Gibbs",
+      "position": "RB",
+      "team": "det",
+      "opponent": "buf",
+      "market": "rushing_yards",
+      "line": 87.5,
+      "jkb_projection": 63.40662313689155,
+      "difference": -24.093376863108453,
+      "actual": 52,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 11.406623136891547,
+      "starter_basis": "RB1_BY_PROJECTED_CARRIES",
+      "model_version": "nfl-rushing-carries-x-shrunk-ypc-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "projected_carries",
+        "starter_metric_value": 14.294117647058824,
+        "prediction_id": "pred_e88e74d3a0b0f7b30bfdf6f3c725e408a75057c00c079234c1ab4e6186f912f4",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "rushing",
+        "fitted_model_hash": "bf98f3949e344d12a9e14f684db82cb0772bc431d785b055a95e049006678988",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.945Z",
+        "market_snapshot_ref": "yardage_8705510198076a8aece9750c81023aa3217c7bea716b750ce1dd8d6016c14146",
+        "over_price": -113,
+        "under_price": -111,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 11.406623136891547,
+        "squared_projection_error": 130.11105138706955,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_242d772abe9979a0b1d31fcc127eeb3304eda47c8289a244a8bd87ccff1b6e5c",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "fdd85e647fb0fdd42ce82357abd2a7a39a8e1b442ffd128d5ab40c523ebdf845",
+        "feature_payload_hash": "11910ba23e49f04fe4f2e4f7c4cb19cb5075b3b5a5d20a976ed710f8044710f0",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationModelVersion": "nfl-rushing-role-allocation-shadow-v1.0.0",
+            "finalProjectedShare": 0.7309043862506458,
+            "historicalSharePrior": 0.5634208010357162,
+            "projectedCarries": 17.436774689332243,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 0,
+              "roleSourced": true,
+              "rosterCompetitionCount": null,
+              "teamChanged": false
+            },
+            "roleConflictFlag": true,
+            "roleConflictScore": 0.496856445262825,
+            "roleSharePrior": 1.0602772462985413,
+            "teamChangeCalibrationApplied": false
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithCarriesPriorThisSeason": 0,
+            "recentTeamTopCarryShareConcentration": null
+          },
+          "estimated_range": {
+            "estimatedHigh": 101.48332469134044,
+            "estimatedLow": 31.741633557794493,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "opponent": {
+                "indicatorScores": {
+                  "rushAttemptsAllowed": 47.80185758513932,
+                  "rushEpaAllowed": 93.03405572755418
+                },
+                "score": 70.41795665634675
+              },
+              "roleQuality": {
+                "indicatorScores": {
+                  "teamTopRbCarryShare": 50
+                },
+                "score": 50
+              },
+              "teamRushingEnvironment": {
+                "indicatorScores": {
+                  "teamDropbackRate": 63.0030959752322,
+                  "teamPassRateOverExpected": 74.92260061919504,
+                  "teamRushAttempts": 61.60990712074303
+                },
+                "score": 66.51186790505676
+              },
+              "workload": {
+                "indicatorScores": {
+                  "carriesPerGame": 91.81828085848132,
+                  "carryShare": 90.77241529578386
+                },
+                "score": 91.29534807713259
+              }
+            },
+            "environmentScore": 62.30994152046784,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "rushing",
+            "matchupScore": 78.03363895084699,
+            "opponent": "buf",
+            "opportunityScore": 91.29534807713259,
+            "playerId": "gsis:00-0039139",
+            "playerName": "Jahmyr Gibbs",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "det",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentRushDefense": {
+              "rushAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 24.58823529411765,
+                "seasonPrior": null
+              },
+              "rushEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.049093667833307514,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "yardsPerCarry": {
+                "last3": null,
+                "priorSeason": 5.032921810699588,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "carriesPerGame": {
+                "last3": null,
+                "priorSeason": 14.294117647058824,
+                "seasonPrior": null
+              },
+              "carryShare": {
+                "last3": null,
+                "priorSeason": 0.5634208010357162,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5979760809567617,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.251478059969587,
+                "seasonPrior": null
+              },
+              "rushAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 25.705882352941178,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "carriesPerGame": {
+              "last3": null,
+              "priorSeason": 14.294117647058824,
+              "seasonPrior": null
+            },
+            "carryShare": {
+              "last3": null,
+              "priorSeason": 0.5634208010357162,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentRushAttemptsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 24.58823529411765,
+              "seasonPrior": null
+            },
+            "rollingYardsPerCarry": {
+              "last3": null,
+              "priorSeason": 5.032921810699588,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5979760809567617,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.251478059969587,
+              "seasonPrior": null
+            },
+            "teamRushAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 25.705882352941178,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": true,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": 0,
+          "rushing_role_conflict_v2": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.10509568913272427,
+              "depth_rank": 1,
+              "historical_share": 0.5634208010357162,
+              "no_history": false,
+              "role_prior_share": 0.6685164901684405,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "shadow_availability": {
+            "shadow_status": "available",
+            "shadow_unavailable_reason": null
+          },
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_5c5ee7d2e0c46a2b36cbfbb07bad29a9dadb32c04ecd3cff86be50a8be425e18",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0039901",
+      "player": "Keon Coleman",
+      "position": "WR",
+      "team": "buf",
+      "opponent": "det",
+      "market": "receiving_yards",
+      "line": 13.5,
+      "jkb_projection": 27.10273386482173,
+      "difference": 13.60273386482173,
+      "actual": 63,
+      "direction": "OVER",
+      "result": "WIN",
+      "absolute_error": 35.89726613517827,
+      "starter_basis": "WR3_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 3,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 3.900456743018096,
+        "prediction_id": "pred_48b9132ce47f28a8789ff71e320a8f0ce80acaa2d103f26cc8e4d5e7706d96d7",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_5e8658a7461631348d2d6611b456bb753a9e60ea6c797132a9e01010613ca84b",
+        "over_price": -115,
+        "under_price": -109,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -35.89726613517827,
+        "squared_projection_error": 1288.6137159798168,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_3d1c0ca8f8c837aa313b452c7b11c533a69d025239b9e1b3c994271e6f12800c",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "97940ec3977d95d95b1caade81a2534fa52eb7974c18e19e6431effa63b3b5ef",
+        "feature_payload_hash": "b805e15ccd88cb581d3760bc0fa7d55aa06ed04f80043f4b3325cfe4dee4996c",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8167833313575742,
+            "priorOpportunityShare": 0.12187975482042888,
+            "priorTeam": "buf",
+            "projectedOpportunityShare": 0.11981470749238085,
+            "projectedTargetablePool": 32.55407307375958,
+            "projectedTeamOpportunity": 39.85643661416488,
+            "roleConfidenceEvidence": {
+              "depthRank": 3,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": -7.105427357601002e-15,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 3,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 75.3531963467342,
+            "estimatedLow": 0,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 58.2916855974557,
+                  "yardsPerTarget": 39.36089656216871
+                },
+                "score": 48.82629107981221
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 48.50451467268623,
+                  "targetsAllowed": 53.096783295711056
+                },
+                "score": 50.800648984198645
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 60.80661840744571,
+                  "targetsPerGame": 58.147436844437884,
+                  "teamDropbackRate": 14.799661399548533,
+                  "teamPassAttempts": 18.92635440180587,
+                  "teamPassRateOverExpected": 32.57618510158014
+                },
+                "score": 37.05125123096363
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 49.87564668800362,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 43.25357783784534,
+            "opponent": "det",
+            "opportunityScore": 37.05125123096363,
+            "playerId": "gsis:00-0039901",
+            "playerName": "Keon Coleman",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "buf",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 11.169491525423728,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.04012707736014993,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.6440677966101694,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 10.631578947368421,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 6.8474576271186445,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.12187975482042888,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 4.538461538461538,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5578851412944393,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 36,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -3.3274452138349155,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 30,
+              "isDome": false,
+              "spread": -5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 40,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 6.8474576271186445,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.12187975482042888,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 4.538461538461538,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5578851412944393,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 36,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -3.3274452138349155,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.022176427879182906,
+              "depth_rank": 3,
+              "historical_share": 0.12187975482042888,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.09970332694124598,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 3,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": false
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": false,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_900e6324cc5071b6ef170379eab13b31570fc802948936e69732f0011bd83715",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_DET_BUF",
+      "player_id": "gsis:00-0040669",
+      "player": "Isaac TeSlaa",
+      "position": "WR",
+      "team": "det",
+      "opponent": "buf",
+      "market": "receiving_yards",
+      "line": 17.5,
+      "jkb_projection": 22.19561612868888,
+      "difference": 4.695616128688879,
+      "actual": 26,
+      "direction": "OVER",
+      "result": "WIN",
+      "absolute_error": 3.8043838713111207,
+      "starter_basis": "WR3_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-18T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 3,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 3.033192771239057,
+        "prediction_id": "pred_a9c62e7c0bec22000fe79ea4b5dbf096bc5027f38da5fd0a9f9192ec88a8b0be",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_2dffed0ebcc55c473577c7656da412a3de454beb5f419e1a839e7882fe709d31",
+        "over_price": -115,
+        "under_price": -109,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -3.8043838713111207,
+        "squared_projection_error": 14.473336640292189,
+        "generated_at": "2026-09-18T14:29:25.807Z",
+        "outcome_id": "outcome_ba797c8b2b95c4ce47a0ed3548006e00099f26f3f99206d08ba09b9691c34ae6",
+        "outcome_revision": 1,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "a98fb7807bc6172067325f298eb8dc17eebdbba2b7c45bcc1355079d5d1e5075",
+        "feature_payload_hash": "f1f6e02755960c0471ec7d52a51cd90616325c8b22660270f0be8515f24e3f8b",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8807632644679422,
+            "priorOpportunityShare": 0.04083441527022921,
+            "priorTeam": "det",
+            "projectedOpportunityShare": 0.09138216632195494,
+            "projectedTargetablePool": 33.19239292875376,
+            "projectedTeamOpportunity": 37.68594157796177,
+            "roleConfidenceEvidence": {
+              "depthRank": 3,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 3,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 70.44607861060135,
+            "estimatedLow": 0,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": true
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 77.52536725730728,
+                  "yardsPerTarget": 67.43904285930637
+                },
+                "score": 72.48220505830682
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 21.656320541760724,
+                  "targetsAllowed": 3.9503386004514676
+                },
+                "score": 12.803329571106095
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 23.991726990692865,
+                  "targetsPerGame": 24.235485300635247,
+                  "teamDropbackRate": 35.651805869074494,
+                  "teamPassAttempts": 35.284988713318285,
+                  "teamPassRateOverExpected": 24.435665914221218
+                },
+                "score": 28.71993455758842
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 45.09517820980431,
+            "gameId": "2026_02_DET_BUF",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 42.384961753396865,
+            "opponent": "buf",
+            "opportunityScore": 28.71993455758842,
+            "playerId": "gsis:00-0040669",
+            "playerName": "Isaac TeSlaa",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "det",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 13.038461538461538,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.049058728089223964,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 32.529411764705884,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.5769230769230769,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 15.066666666666666,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 8.692307692307692,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.04083441527022921,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 1.625,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5979760809567617,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.23529411764706,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.251478059969587,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 24.5,
+              "isDome": false,
+              "spread": 5.5,
+              "total": 54.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 32.529411764705884,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 8.692307692307692,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.04083441527022921,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 1.625,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5979760809567617,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.23529411764706,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.251478059969587,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.058868911671016766,
+              "depth_rank": 3,
+              "historical_share": 0.04083441527022921,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": true,
+              "role_prior_share": 0.09970332694124598,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 3,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": false
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": false,
           "team_changed": false
         }
       }
