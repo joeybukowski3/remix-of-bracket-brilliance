@@ -1,10 +1,10 @@
 {
   "date": "2026-09-18",
-  "generatedAt": "2026-09-18T12:18:52.321Z",
+  "generatedAt": "2026-09-18T15:13:22.579Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a pronounced home-run environment at Great American Ball Park (1.25 PF) where both Elly De La Cruz and Pete Crow-Armstrong draw favorable right-handed pitching, while Angel Stadium (1.02 PF) and Daikin Park (1.04 PF) provide modest boosts for Emmanuel Rodriguez and Yordan Alvarez. The model is overweighting barrel and hard-hit rates in hitter-friendly parks, especially when the opposing pitcher has allowed elevated HR/FB ratios on the season.",
-    "modelNote": "HR scores are being driven primarily by park-adjusted barrel rates and recent opposing-pitcher HR vulnerability, with secondary weight on pull-rate and exit-velo spikes for players like Rodriguez and Alvarez."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Great American Ball Park (1.25) and Citi Field (1.06) leading the way, while Angel Stadium (1.02) and Daikin Park (1.04) offer modest boosts. The top model targets face right-handed pitching in favorable venues, with Grayson Rodriguez and Tyler Mahle among the more vulnerable arms on the slate. Weather is neutral across most venues, so park factors and recent barrel trends are driving the edge.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park-adjusted hrFBRatio over raw recent HR totals, which explains why Emmanuel Rodriguez ranks first despite modest last-30 volume while players like Pete Crow-Armstrong sit lower despite higher recent power output."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=26.7%",
-        "HH=66.7%"
+        "hrScore=79.1",
+        "barrel=26.7%"
       ],
       "bullets": [
-        "barrel=26.7%",
-        "park=1.02"
+        "hrScore=79.1",
+        "barrel=26.7%"
       ],
-      "hrOddsYes": "+550",
-      "marketImpliedProbability": 0.15384615384615385,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Tyler Mahle",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=16.4%",
-        "HH=53.4%"
+        "hrScore=71.6",
+        "barrel=16.4%"
       ],
       "bullets": [
-        "barrel=16.4%",
-        "park=1.04"
+        "hrScore=71.6",
+        "barrel=16.4%"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Tyler Phillips",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=12.7%",
-        "HH=53.7%"
+        "Pitcher HR VS=56.6",
+        "Hard Hit%=53.7"
       ],
       "bullets": [
-        "barrel=12.7%",
-        "park=0.89"
+        "HR score 70.0 (#3)",
+        "Pitcher HR VS 56.6 at park 0.89"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -71,16 +71,16 @@
       "opposingPitcher": "Andrew Painter",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=13.5%",
-        "HH=48.5%"
+        "Pitcher HR VS=51.2",
+        "Hard Hit%=48.5"
       ],
       "bullets": [
-        "barrel=13.5%",
-        "park=1.06"
+        "HR score 68.8 (#4)",
+        "Pitcher HR VS 51.2 at park 1.06"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -90,115 +90,77 @@
       "opposingPitcher": "Chase Burns",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=13.6%",
-        "HH=49.4%"
+        "Hard Hit%=49.4",
+        "Pitcher HR VS=46.8"
       ],
       "bullets": [
-        "barrel=13.6%",
-        "park=1.25"
+        "HR score 66.9 (#5)",
+        "Pitcher HR VS 46.8 at park 1.25"
       ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "STL",
-      "opposingPitcher": "Kyle Leahy",
-      "hrScoreRank": 6,
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "MIA",
+      "opposingPitcher": "Tyler Phillips",
+      "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=66.9",
-        "Hard Hit%=58.7"
+        "hrScore=70",
+        "barrel=12.7%"
       ],
       "bullets": [
-        "HR score 66.3 (#6)",
-        "Pitcher HR VS 66.9 at park 0.92"
+        "hrScore=70",
+        "barrel=12.7%"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "CHC",
-      "opposingPitcher": "Clay Holmes",
-      "hrScoreRank": 7,
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "PHI",
+      "opposingPitcher": "Andrew Painter",
+      "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=53.8",
-        "Pitcher HR VS=32.5"
+        "hrScore=68.8",
+        "barrel=13.5%"
       ],
       "bullets": [
-        "HR score 64.7 (#7)",
-        "Pitcher HR VS 32.5 at park 1.25"
+        "hrScore=68.8",
+        "barrel=13.5%"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "Zac Thornton",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=62.2",
-        "Hard Hit%=49.6"
-      ],
-      "bullets": [
-        "HR score 64.3 (#8)",
-        "Pitcher HR VS 62.2 at park 1.06"
-      ],
-      "hrOddsYes": "+275",
-      "marketImpliedProbability": 0.26666666666666666,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "NYY",
-      "opposingPitcher": "Gerrit Cole",
-      "hrScoreRank": 17,
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "CIN",
+      "opposingPitcher": "Chase Burns",
+      "hrScoreRank": 5,
       "topStats": [
-        "barrel=8%",
-        "HH=42.1%"
+        "hrScore=66.9",
+        "barrel=13.6%"
       ],
       "bullets": [
-        "barrel=8%",
-        "park=1.01"
+        "hrScore=66.9",
+        "barrel=13.6%"
       ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Spencer Jones",
-      "team": "NYY",
-      "opponent": "AZ",
-      "opposingPitcher": "Eduardo Rodriguez",
-      "hrScoreRank": 20,
-      "topStats": [
-        "barrel=15.6%",
-        "HH=55%"
-      ],
-      "bullets": [
-        "barrel=15.6%",
-        "park=1.01"
-      ],
-      "hrOddsYes": "+625",
-      "marketImpliedProbability": 0.13793103448275862,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]
