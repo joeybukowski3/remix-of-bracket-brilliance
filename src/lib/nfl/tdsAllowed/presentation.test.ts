@@ -37,14 +37,16 @@ describe("buildTdsAllowedTableRows", () => {
         location: "@",
         samples: {
           "2026": {
+            // rank is deliberately based on a per-game value that disagrees with the raw total's
+            // ordering, so tests can tell the two fields apart.
             qb: { rank: 5, gamesSampled: 2, touchdownsAllowedTotal: 3, touchdownsAllowedPerGame: 1.5, source: "nflverse-player-week" },
             rb: null,
+            wr: { rank: 12, gamesSampled: 2, touchdownsAllowedTotal: 5, touchdownsAllowedPerGame: 2.5, source: "nflverse-player-week" },
             te: null,
-            wideWr: null,
-            slotWr: null,
           },
-          "2025": { qb: null, rb: null, te: null, wideWr: null, slotWr: null },
-          last5: { qb: null, rb: null, te: null, wideWr: null, slotWr: null },
+          "2025": { qb: null, rb: null, wr: null, te: null },
+          last5: { qb: null, rb: null, wr: null, te: null },
+          last8: { qb: null, rb: null, wr: null, te: null },
         },
       },
     ],
@@ -59,10 +61,10 @@ describe("buildTdsAllowedTableRows", () => {
     expect(rows[0].cells.qb.rank).toBe(5);
   });
 
-  it("maps touchdownsAllowedPerGame to rawValue/rawDisplay with one decimal place", () => {
+  it("maps touchdownsAllowedTotal (not per-game) to rawValue/rawDisplay as a whole number", () => {
     const rows = buildTdsAllowedTableRows(artifact, "2026");
-    expect(rows[0].cells.qb.rawValue).toBe(1.5);
-    expect(rows[0].cells.qb.rawDisplay).toBe("1.5");
+    expect(rows[0].cells.qb.rawValue).toBe(3);
+    expect(rows[0].cells.qb.rawDisplay).toBe("3");
   });
 
   it("maps a null sample cell to a null rank and null rawValue/rawDisplay", () => {
@@ -70,8 +72,13 @@ describe("buildTdsAllowedTableRows", () => {
     expect(rows[0].cells.rb.rank).toBeNull();
     expect(rows[0].cells.rb.rawValue).toBeNull();
     expect(rows[0].cells.rb.rawDisplay).toBeNull();
-    expect(rows[0].cells.wideWr.rank).toBeNull();
-    expect(rows[0].cells.wideWr.rawDisplay).toBeNull();
+  });
+
+  it("maps the combined WR cell to its rank and whole-number total, same as any other position", () => {
+    const rows = buildTdsAllowedTableRows(artifact, "2026");
+    expect(rows[0].cells.wr.rank).toBe(12);
+    expect(rows[0].cells.wr.rawValue).toBe(5);
+    expect(rows[0].cells.wr.rawDisplay).toBe("5");
   });
 
   it("carries team/opponent/location through unchanged", () => {
@@ -79,7 +86,7 @@ describe("buildTdsAllowedTableRows", () => {
     expect(rows[0]).toMatchObject({ id: "buf", team: "buf", opponent: "mia", location: "@" });
   });
 
-  it("formats a whole-number per-game value with a trailing .0", () => {
+  it("never appends a decimal place, even for values that were whole under the old per-game format", () => {
     const wholeArtifact: TdsAllowedArtifact = {
       ...artifact,
       rows: [
@@ -89,13 +96,34 @@ describe("buildTdsAllowedTableRows", () => {
             ...artifact.rows[0].samples,
             "2026": {
               ...artifact.rows[0].samples["2026"],
-              qb: { rank: 3, gamesSampled: 2, touchdownsAllowedTotal: 2, touchdownsAllowedPerGame: 1, source: "nflverse-player-week" },
+              qb: { rank: 3, gamesSampled: 2, touchdownsAllowedTotal: 4, touchdownsAllowedPerGame: 2, source: "nflverse-player-week" },
             },
           },
         },
       ],
     };
     const rows = buildTdsAllowedTableRows(wholeArtifact, "2026");
-    expect(rows[0].cells.qb.rawDisplay).toBe("1.0");
+    expect(rows[0].cells.qb.rawDisplay).toBe("4");
+  });
+
+  it("displays zero as \"0\", not null", () => {
+    const zeroArtifact: TdsAllowedArtifact = {
+      ...artifact,
+      rows: [
+        {
+          ...artifact.rows[0],
+          samples: {
+            ...artifact.rows[0].samples,
+            "2026": {
+              ...artifact.rows[0].samples["2026"],
+              qb: { rank: 32, gamesSampled: 2, touchdownsAllowedTotal: 0, touchdownsAllowedPerGame: 0, source: "nflverse-player-week" },
+            },
+          },
+        },
+      ],
+    };
+    const rows = buildTdsAllowedTableRows(zeroArtifact, "2026");
+    expect(rows[0].cells.qb.rawValue).toBe(0);
+    expect(rows[0].cells.qb.rawDisplay).toBe("0");
   });
 });

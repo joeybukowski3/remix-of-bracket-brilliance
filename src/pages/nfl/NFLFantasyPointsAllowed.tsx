@@ -15,8 +15,8 @@ import { JKB_HEAT_LEGEND, jkbHeatStyle } from "@/lib/shared/jkbHeat";
 import { FANTASY_ALLOWED_COLUMNS, buildFantasyAllowedTableRows, fantasyAllowedRankTone } from "@/lib/nfl/fantasyAllowed/presentation";
 import type { FantasyAllowedSampleKey } from "@/lib/nfl/fantasyAllowed/types";
 
-const SAMPLE_OPTIONS: readonly FantasyAllowedSampleKey[] = ["2026", "2025", "last5"];
-const SAMPLE_LABEL: Record<FantasyAllowedSampleKey, string> = { "2026": "2026", "2025": "2025", last5: "Last 5" };
+const SAMPLE_OPTIONS: readonly FantasyAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
+const SAMPLE_LABEL: Record<FantasyAllowedSampleKey, string> = { "2026": "2026", "2025": "2025", last5: "Last 5", last8: "Last 8" };
 
 const DISPLAY_MODE_OPTIONS: readonly AllowedByPositionDisplayMode[] = ["rank", "raw"];
 const DISPLAY_MODE_LABEL: Record<AllowedByPositionDisplayMode, string> = { rank: "Rank", raw: "Raw" };

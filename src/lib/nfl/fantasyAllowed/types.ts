@@ -10,9 +10,9 @@
  * where that data exists (see FantasyAllowedPositionSample.source).
  */
 
-export type FantasyAllowedSampleKey = "2026" | "2025" | "last5";
+export type FantasyAllowedSampleKey = "2026" | "2025" | "last5" | "last8";
 
-export const FANTASY_ALLOWED_SAMPLE_KEYS: readonly FantasyAllowedSampleKey[] = ["2026", "2025", "last5"];
+export const FANTASY_ALLOWED_SAMPLE_KEYS: readonly FantasyAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
 
 export type FantasyAllowedPositionKey = "qb" | "rb" | "wideWr" | "slotWr" | "te";
 

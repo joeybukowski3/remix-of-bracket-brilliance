@@ -5,26 +5,27 @@
  * docs/research/nfl-fantasy-points-allowed for the audit this contract
  * extends to touchdown counts.
  *
- * Position keys are UI-facing labels, not raw nflverse positions: "wideWr"
- * and "slotWr" both source from nflverse position "WR". Unlike Fantasy
- * Points Allowed, there is no trustworthy alignment-split touchdown source
- * (the Razzball slot/wide snapshot only carries PPG-allowed, not TD counts),
- * so wideWr/slotWr are always null here -- see presentation.ts.
+ * Position keys are UI-facing labels, not raw nflverse positions. Unlike
+ * Fantasy Points Allowed, there is no trustworthy alignment-split touchdown
+ * source (the Razzball slot/wide snapshot only carries PPG-allowed, not TD
+ * counts -- re-audited and reconfirmed against every public nflverse release
+ * plus NGS/PFF/Fantasy Points/SIS; none publish a slot/wide tag joinable to a
+ * touchdown event), so this table uses a single combined "wr" column
+ * (nflverse position "WR", rushingTouchdowns + receivingTouchdowns) instead
+ * of a wideWr/slotWr split -- see buildRows.ts.
+ *
+ * `rank` is always computed from touchdownsAllowedPerGame (comparable across
+ * samples with different game counts); the table's Raw display mode instead
+ * shows touchdownsAllowedTotal as a whole number -- see presentation.ts.
  */
 
-export type TdsAllowedSampleKey = "2026" | "2025" | "last5";
+export type TdsAllowedSampleKey = "2026" | "2025" | "last5" | "last8";
 
-export const TDS_ALLOWED_SAMPLE_KEYS: readonly TdsAllowedSampleKey[] = ["2026", "2025", "last5"];
+export const TDS_ALLOWED_SAMPLE_KEYS: readonly TdsAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
 
-export type TdsAllowedPositionKey = "qb" | "rb" | "wideWr" | "slotWr" | "te";
+export type TdsAllowedPositionKey = "qb" | "rb" | "wr" | "te";
 
-export const TDS_ALLOWED_POSITION_KEYS: readonly TdsAllowedPositionKey[] = [
-  "qb",
-  "rb",
-  "wideWr",
-  "slotWr",
-  "te",
-];
+export const TDS_ALLOWED_POSITION_KEYS: readonly TdsAllowedPositionKey[] = ["qb", "rb", "wr", "te"];
 
 /** Provenance of a single position-sample cell. Only one source exists today. */
 export type TdsAllowedSource = "nflverse-player-week";
