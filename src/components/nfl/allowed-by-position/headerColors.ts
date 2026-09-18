@@ -6,12 +6,16 @@
  * dark, desaturated per-position accents, not a second heat scale.
  */
 
-export type AllowedByPositionHeaderKey = "qb" | "rb" | "wideWr" | "slotWr" | "te";
+export type AllowedByPositionHeaderKey = "qb" | "rb" | "wideWr" | "slotWr" | "wr" | "te";
 
 export const ALLOWED_BY_POSITION_HEADER_CLASSNAMES: Record<AllowedByPositionHeaderKey, string> = {
   qb: "bg-[#6F3C57] text-white",
   rb: "bg-[#2E5D7B] text-white",
   wideWr: "bg-[#8A6A1F] text-white",
   slotWr: "bg-[#5F6B2F] text-white",
+  // Combined WR column (TDs Allowed only, see tdsAllowed/presentation.ts): a
+  // distinct teal so it doesn't read as a re-tint of wideWr/slotWr, which
+  // stay their own colors for Fantasy Points Allowed's split columns.
+  wr: "bg-[#2F6B63] text-white",
   te: "bg-[#5A4B7A] text-white",
 };

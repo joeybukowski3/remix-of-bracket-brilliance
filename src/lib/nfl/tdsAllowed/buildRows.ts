@@ -2,12 +2,10 @@
  * Combines the per-position aggregation core (aggregate.ts) into the full
  * TdsAllowedRow[] the artifact/page consume, one row per team.
  *
- * Wide WR / Slot WR are always null: there is no trustworthy per-game
- * historical alignment-split touchdown source in this repo (the Razzball
- * slot/wide snapshot only carries PPG-allowed, not touchdown counts -- see
- * the work-unit data audit). Fabricating a split from fantasy points would
- * misrepresent the data, so those two columns render "-" for every sample,
- * same as any other null cell.
+ * WR is a single combined column (nflverse position "WR", rushing + receiving
+ * touchdowns) -- there is no trustworthy per-game alignment-split (wide vs.
+ * slot) touchdown source in this repo, so this table never attempts that
+ * split (see the work-unit data audit and types.ts doc comment).
  */
 
 import type { HistoricalPlayerWeek } from "@/lib/fantasy/weekly/history";
@@ -27,28 +25,32 @@ export type BuildTdsAllowedRowsInput = {
 
 const SOURCE = "nflverse-player-week" as const;
 
+/** Rolling-window sample keys mapped to their game count, so adding a new window (e.g. last10) is a one-line change. */
+const ROLLING_SAMPLE_GAME_COUNTS: Partial<Record<TdsAllowedSampleKey, number>> = { last5: 5, last8: 8 };
+
 function selectorForSample(sampleKey: TdsAllowedSampleKey, currentSeason: number, priorSeason: number) {
   if (sampleKey === "2026") return { kind: "season" as const, season: currentSeason };
   if (sampleKey === "2025") return { kind: "season" as const, season: priorSeason };
-  return { kind: "last-n" as const, n: 5 };
+  const n = ROLLING_SAMPLE_GAME_COUNTS[sampleKey];
+  if (n == null) throw new Error(`Unknown rolling sample key: ${sampleKey}`);
+  return { kind: "last-n" as const, n };
 }
 
 export function buildTdsAllowedRows(input: BuildTdsAllowedRowsInput): TdsAllowedRow[] {
-  // No "WR" column exists in this table -- the shared table only shows the
-  // Wide WR / Slot WR split, which has no trustworthy per-game touchdown
-  // source (see module doc comment), so a combined WR game log is never built.
-  const gameLogs: Record<"QB" | "RB" | "TE", DefenseGameTouchdowns[]> = {
+  const gameLogs: Record<"QB" | "RB" | "WR" | "TE", DefenseGameTouchdowns[]> = {
     QB: buildDefenseTouchdownGameLog(input.historicalRows, "QB"),
     RB: buildDefenseTouchdownGameLog(input.historicalRows, "RB"),
+    WR: buildDefenseTouchdownGameLog(input.historicalRows, "WR"),
     TE: buildDefenseTouchdownGameLog(input.historicalRows, "TE"),
   };
 
-  const samplesByKey = new Map<TdsAllowedSampleKey, Record<"qb" | "rb" | "te", ReturnType<typeof computeTouchdownPositionSample>>>();
+  const samplesByKey = new Map<TdsAllowedSampleKey, Record<"qb" | "rb" | "wr" | "te", ReturnType<typeof computeTouchdownPositionSample>>>();
   for (const sampleKey of TDS_ALLOWED_SAMPLE_KEYS) {
     const selector = selectorForSample(sampleKey, input.currentSeason, input.priorSeason);
     samplesByKey.set(sampleKey, {
       qb: computeTouchdownPositionSample(gameLogs.QB, input.teams, selector, SOURCE),
       rb: computeTouchdownPositionSample(gameLogs.RB, input.teams, selector, SOURCE),
+      wr: computeTouchdownPositionSample(gameLogs.WR, input.teams, selector, SOURCE),
       te: computeTouchdownPositionSample(gameLogs.TE, input.teams, selector, SOURCE),
     });
   }
@@ -61,10 +63,8 @@ export function buildTdsAllowedRows(input: BuildTdsAllowedRowsInput): TdsAllowed
       samples[sampleKey] = {
         qb: positionSamples.qb.get(team) ?? null,
         rb: positionSamples.rb.get(team) ?? null,
+        wr: positionSamples.wr.get(team) ?? null,
         te: positionSamples.te.get(team) ?? null,
-        // No trustworthy per-game slot/wide touchdown split exists -- see module doc comment.
-        wideWr: null,
-        slotWr: null,
       };
     }
     return {

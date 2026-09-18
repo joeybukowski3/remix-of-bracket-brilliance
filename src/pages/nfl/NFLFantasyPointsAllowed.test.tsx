@@ -27,6 +27,7 @@ function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: nu
       },
       "2025": { qb: sample(30), rb: sample(31), te: sample(32), wideWr: null, slotWr: null },
       last5: { qb: sample(10), rb: sample(11), te: sample(12), wideWr: null, slotWr: null },
+      last8: { qb: sample(15), rb: sample(16), te: sample(17), wideWr: null, slotWr: null },
     },
     ...rest,
   };
@@ -83,6 +84,19 @@ describe("NFLFantasyPointsAllowed", () => {
 
     const bufRowAfter = screen.getByText("BUF").closest("tr") as HTMLElement;
     expect(within(bufRowAfter).getByText("30")).toBeInTheDocument(); // 2025 QB rank
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a Last 8 sample tab and switches to it without refetching", async () => {
+    const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(artifact()) } as Response));
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<NFLFantasyPointsAllowed />);
+    await waitFor(() => screen.getByText("BUF"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Last 8" }));
+
+    const bufRow = screen.getByText("BUF").closest("tr") as HTMLElement;
+    expect(within(bufRow).getByText("15")).toBeInTheDocument(); // last8 qb rank for buf
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -197,6 +211,17 @@ describe("NFLFantasyPointsAllowed", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Sort by QB" }));
     expect(bodyTeams()).toEqual(["DAL", "BUF"]);
+  });
+
+  it("renders all four sample controls (mobile chip row wraps, never hides options)", async () => {
+    stubFetch(artifact());
+    render(<NFLFantasyPointsAllowed />);
+    await waitFor(() => screen.getByText("BUF"));
+
+    expect(screen.getByRole("button", { name: "2026" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "2025" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Last 5" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Last 8" })).toBeInTheDocument();
   });
 
   it("Rank mode position sorting still uses rank when raw values are present", async () => {

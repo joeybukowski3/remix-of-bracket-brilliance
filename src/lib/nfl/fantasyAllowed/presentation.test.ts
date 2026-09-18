@@ -47,6 +47,7 @@ describe("buildFantasyAllowedTableRows", () => {
           },
           "2025": { qb: null, rb: null, te: null, wideWr: null, slotWr: null },
           last5: { qb: null, rb: null, te: null, wideWr: null, slotWr: null },
+          last8: { qb: null, rb: null, te: null, wideWr: null, slotWr: null },
         },
       },
     ],

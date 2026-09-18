@@ -15,13 +15,9 @@ import { TDS_ALLOWED_POSITION_KEYS, type TdsAllowedArtifact, type TdsAllowedPosi
 export const TDS_ALLOWED_COLUMNS: readonly AllowedByPositionColumn<TdsAllowedPositionKey>[] = [
   { key: "qb", label: "QB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.qb },
   { key: "rb", label: "RB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.rb },
-  { key: "wideWr", label: "Wide WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wideWr },
-  { key: "slotWr", label: "Slot WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.slotWr },
+  { key: "wr", label: "WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wr },
   { key: "te", label: "TE", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.te },
 ];
-
-/** No trustworthy per-game slot/wide touchdown split exists -- see buildRows.ts. Shown once at page level, never per cell. */
-export const TDS_ALLOWED_WIDE_SLOT_NOTICE = "Wide/Slot WR touchdown splits are not currently available.";
 
 /**
  * Direct (un-inverted) reading of the shared 32-team JKB Heat rank scale:
@@ -37,9 +33,10 @@ export function tdsAllowedRankTone(rank: number | null): RankTone {
   return { style: { backgroundColor: style.backgroundColor, color: style.color } };
 }
 
-function formatTouchdownsAllowedPerGame(perGame: number | null | undefined): string | null {
-  if (perGame == null) return null;
-  return perGame.toFixed(1);
+/** Raw display uses total touchdowns allowed for the selected sample, as a whole number (never toFixed(1) -- rank alone carries the per-game rate). */
+function formatTouchdownsAllowedTotal(total: number | null | undefined): string | null {
+  if (total == null) return null;
+  return String(total);
 }
 
 export function buildTdsAllowedTableRows(
@@ -52,11 +49,13 @@ export function buildTdsAllowedTableRows(
     const cells = {} as AllowedByPositionRow<TdsAllowedPositionKey>["cells"];
     for (const key of TDS_ALLOWED_POSITION_KEYS) {
       const positionSample = positionSamples[key];
-      const perGame = positionSample?.touchdownsAllowedPerGame ?? null;
+      // Rank always reflects touchdownsAllowedPerGame (see aggregate.ts) so it stays comparable
+      // across samples with different game counts; only the displayed raw value/sort key is the total.
+      const total = positionSample?.touchdownsAllowedTotal ?? null;
       cells[key] = {
         rank: positionSample?.rank ?? null,
-        rawValue: perGame,
-        rawDisplay: formatTouchdownsAllowedPerGame(perGame),
+        rawValue: total,
+        rawDisplay: formatTouchdownsAllowedTotal(total),
       };
     }
     return {

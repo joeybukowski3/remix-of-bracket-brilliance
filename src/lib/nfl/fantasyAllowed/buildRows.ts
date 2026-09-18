@@ -38,10 +38,15 @@ export type BuildFantasyAllowedRowsInput = {
 
 const JKB_SOURCE = "jkb-full-ppr-player-week" as const;
 
+/** Rolling-window sample keys mapped to their game count, so adding a new window (e.g. last10) is a one-line change. */
+const ROLLING_SAMPLE_GAME_COUNTS: Partial<Record<FantasyAllowedSampleKey, number>> = { last5: 5, last8: 8 };
+
 function selectorForSample(sampleKey: FantasyAllowedSampleKey, currentSeason: number, priorSeason: number) {
   if (sampleKey === "2026") return { kind: "season" as const, season: currentSeason };
   if (sampleKey === "2025") return { kind: "season" as const, season: priorSeason };
-  return { kind: "last-n" as const, n: 5 };
+  const n = ROLLING_SAMPLE_GAME_COUNTS[sampleKey];
+  if (n == null) throw new Error(`Unknown rolling sample key: ${sampleKey}`);
+  return { kind: "last-n" as const, n };
 }
 
 export function buildFantasyAllowedRows(input: BuildFantasyAllowedRowsInput): FantasyAllowedRow[] {

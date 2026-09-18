@@ -12,16 +12,11 @@ import {
 import { useNflTdsAllowedByPosition } from "@/hooks/useNflTdsAllowedByPosition";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { JKB_HEAT_LEGEND, jkbHeatStyle } from "@/lib/shared/jkbHeat";
-import {
-  TDS_ALLOWED_COLUMNS,
-  TDS_ALLOWED_WIDE_SLOT_NOTICE,
-  buildTdsAllowedTableRows,
-  tdsAllowedRankTone,
-} from "@/lib/nfl/tdsAllowed/presentation";
+import { TDS_ALLOWED_COLUMNS, buildTdsAllowedTableRows, tdsAllowedRankTone } from "@/lib/nfl/tdsAllowed/presentation";
 import type { TdsAllowedSampleKey } from "@/lib/nfl/tdsAllowed/types";
 
-const SAMPLE_OPTIONS: readonly TdsAllowedSampleKey[] = ["2026", "2025", "last5"];
-const SAMPLE_LABEL: Record<TdsAllowedSampleKey, string> = { "2026": "2026", "2025": "2025", last5: "Last 5" };
+const SAMPLE_OPTIONS: readonly TdsAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
+const SAMPLE_LABEL: Record<TdsAllowedSampleKey, string> = { "2026": "2026", "2025": "2025", last5: "Last 5", last8: "Last 8" };
 
 const DISPLAY_MODE_OPTIONS: readonly AllowedByPositionDisplayMode[] = ["rank", "raw"];
 const DISPLAY_MODE_LABEL: Record<AllowedByPositionDisplayMode, string> = { rank: "Rank", raw: "Raw" };
@@ -29,7 +24,7 @@ const DISPLAY_MODE_LABEL: Record<AllowedByPositionDisplayMode, string> = { rank:
 export default function NFLTdsAllowedByPosition() {
   usePageSeo({
     title: "Touchdowns Allowed by Position | Joe Knows Ball",
-    description: "Defense ranks for touchdowns allowed by position: QB, RB, Wide WR, Slot WR, TE.",
+    description: "Defense ranks for touchdowns allowed by position: QB, RB, WR, TE.",
     path: "/nfl/tds-allowed-by-position",
   });
   const source = useNflTdsAllowedByPosition();
@@ -60,7 +55,10 @@ export default function NFLTdsAllowedByPosition() {
       </NflPageHeader>
 
       <section className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <p className="text-[11px] text-slate-500">{TDS_ALLOWED_WIDE_SLOT_NOTICE}</p>
+        <p className="text-[11px] text-slate-500">
+          Raw mode shows total touchdowns allowed for the selected sample; rank is always based on
+          touchdowns allowed per game.
+        </p>
         <div aria-label="Rank heat legend" className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-slate-500">
           {JKB_HEAT_LEGEND.map((entry) => (
             <span key={entry.id} className="inline-flex items-center gap-1">
