@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-18T14:59:32.227Z",
+  "generatedAt": "2026-09-19T14:25:11.959Z",
   "note": "Score-band results are empirical outcome rates from graded historical predictions. HR Quality Score is a ranking score, not a calibrated probability — these rates describe what happened, not a validated forecast.",
-  "totalGradedRecords": 13195,
+  "totalGradedRecords": 13400,
   "byScoreBand": {
     "80+": {
       "predictions": 38,
@@ -15,48 +15,48 @@
       "sampleSize": 38
     },
     "70-79.9": {
-      "predictions": 168,
-      "eligibleGraded": 168,
-      "hrHits": 32,
-      "actualHrRate": 19,
+      "predictions": 172,
+      "eligibleGraded": 172,
+      "hrHits": 33,
+      "actualHrRate": 19.2,
       "avgMarketImpliedProbability": 23.6,
       "avgOdds": 361,
       "flatBetRoi": -11.8,
       "calibrationDifference": null,
-      "sampleSize": 168
+      "sampleSize": 172
     },
     "60-69.9": {
-      "predictions": 755,
-      "eligibleGraded": 755,
-      "hrHits": 126,
+      "predictions": 762,
+      "eligibleGraded": 762,
+      "hrHits": 127,
       "actualHrRate": 16.7,
       "avgMarketImpliedProbability": 22,
       "avgOdds": 394,
       "flatBetRoi": -20.5,
       "calibrationDifference": null,
-      "sampleSize": 755
+      "sampleSize": 762
     },
     "50-59.9": {
-      "predictions": 1924,
-      "eligibleGraded": 1924,
-      "hrHits": 285,
-      "actualHrRate": 14.8,
+      "predictions": 1957,
+      "eligibleGraded": 1957,
+      "hrHits": 295,
+      "actualHrRate": 15.1,
       "avgMarketImpliedProbability": 19,
       "avgOdds": 501,
       "flatBetRoi": -11.9,
       "calibrationDifference": null,
-      "sampleSize": 1924
+      "sampleSize": 1957
     },
     "Below 50": {
-      "predictions": 10310,
-      "eligibleGraded": 10310,
-      "hrHits": 1007,
+      "predictions": 10471,
+      "eligibleGraded": 10471,
+      "hrHits": 1021,
       "actualHrRate": 9.8,
       "avgMarketImpliedProbability": 14.4,
       "avgOdds": 781,
       "flatBetRoi": -16.3,
       "calibrationDifference": null,
-      "sampleSize": 10310
+      "sampleSize": 10471
     }
   },
   "byConfidenceLevel": {
@@ -72,15 +72,15 @@
       "sampleSize": 2922
     },
     "medium": {
-      "predictions": 10150,
-      "eligibleGraded": 10150,
-      "hrHits": 1147,
+      "predictions": 10355,
+      "eligibleGraded": 10355,
+      "hrHits": 1173,
       "actualHrRate": 11.3,
       "avgMarketImpliedProbability": 16,
       "avgOdds": 710,
       "flatBetRoi": -11.7,
       "calibrationDifference": null,
-      "sampleSize": 10150
+      "sampleSize": 10355
     },
     "low": {
       "predictions": 123,
@@ -118,35 +118,35 @@
       "sampleSize": 4889
     },
     "unconfirmed": {
-      "predictions": 8306,
-      "eligibleGraded": 8306,
-      "hrHits": 933,
-      "actualHrRate": 11.2,
+      "predictions": 8511,
+      "eligibleGraded": 8511,
+      "hrHits": 959,
+      "actualHrRate": 11.3,
       "avgMarketImpliedProbability": 16.1,
       "avgOdds": 695,
       "flatBetRoi": -12.9,
       "calibrationDifference": null,
-      "sampleSize": 8306
+      "sampleSize": 8511
     }
   },
   "byModelVersion": {
     "mlb-hr-quality-v1.1": {
-      "predictions": 13195,
-      "eligibleGraded": 13195,
-      "hrHits": 1455,
-      "actualHrRate": 11,
+      "predictions": 13400,
+      "eligibleGraded": 13400,
+      "hrHits": 1481,
+      "actualHrRate": 11.1,
       "avgMarketImpliedProbability": 15.7,
       "avgOdds": 709,
       "flatBetRoi": -15.8,
       "calibrationDifference": null,
-      "sampleSize": 13195
+      "sampleSize": 13400
     }
   },
   "sampleSizeWarning": null,
   "calibrationReadiness": {
-    "sampleCount": 13195,
-    "hrOutcomeCount": 1455,
-    "calendarDayCount": 65,
+    "sampleCount": 13400,
+    "hrOutcomeCount": 1481,
+    "calendarDayCount": 66,
     "meetsMinimumThreshold": true,
     "warnings": [
       "Sample meets minimum thresholds, but out-of-sample (train/test split by date) validation is still required before publishing any probability."
