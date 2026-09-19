@@ -15,7 +15,7 @@
  * Usage:
  *   node scripts/generate-nfl-espn-trench-metrics.mjs
  *   node scripts/generate-nfl-espn-trench-metrics.mjs --dry-run
- *   node scripts/generate-nfl-espn-trench-metrics.mjs --seasons=2024,2025
+ *   node scripts/generate-nfl-espn-trench-metrics.mjs --seasons=2024,2025,2026
  *   node scripts/generate-nfl-espn-trench-metrics.mjs --article=2025:46138675
  *   node scripts/generate-nfl-espn-trench-metrics.mjs --offline=<dir>
  */
@@ -35,6 +35,7 @@ import {
   buildEspnTeamMap,
   findTeamModule,
   newsUrl,
+  isSeasonInProgress,
   parseFreshness,
   parseTeamModule,
   selectSeasonArticle,
@@ -51,7 +52,7 @@ const MAX_ATTEMPTS = 3;
 const RETRY_BACKOFF_MS = 4000;
 const USER_AGENT = "JoeKnowsBall-nfl-matchup-analyzer/1.0 (+https://www.joeknowsball.com)";
 
-const DEFAULT_SEASONS = [2025];
+const DEFAULT_SEASONS = [2025, 2026];
 
 function parseArgs(argv) {
   const args = { seasons: DEFAULT_SEASONS, dryRun: false, offlineDir: null, overrides: {} };
@@ -122,6 +123,12 @@ async function discoverArticleId(season, { overrides, offlineDir }) {
     return { articleId: overrides[season], discovery: "override" };
   }
 
+  // A verified article id is authoritative; no live search is needed or trusted.
+  if (KNOWN_ARTICLE_IDS[season]) {
+    console.log(`[nfl:trench] using verified ${season} article ${KNOWN_ARTICLE_IDS[season]}`);
+    return { articleId: KNOWN_ARTICLE_IDS[season], discovery: "known" };
+  }
+
   const url = `${ESPN_SEARCH_ENDPOINT}?region=us&lang=en&query=${encodeURIComponent(
     `${season} NFL win rate rankings`
   )}&limit=20`;
@@ -160,8 +167,9 @@ async function buildSeason(season, { teamMap, overrides, offlineDir }) {
   const payload = await fetchJson(newsUrl(articleId), label, { offlineFile });
 
   const { article, module } = findTeamModule(payload, { label });
-  const teams = parseTeamModule(module, { teamMap, label });
   const { throughWeek, sourceUpdatedText } = parseFreshness(article.story);
+  // In-progress seasons may carry tied official ranks; completed ones stay strict.
+  const teams = parseTeamModule(module, { teamMap, label, allowTiedRanks: isSeasonInProgress(throughWeek) });
 
   console.log(
     `[nfl:trench] ${label}: ${Object.keys(teams).length} teams, throughWeek=${throughWeek ?? "unparsed"}`
