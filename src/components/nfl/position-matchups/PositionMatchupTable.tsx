@@ -1,12 +1,12 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller, TABLE_LAYER, frozenDenseColumn, stickyDenseHeader } from "@/components/ui/dense-table";
+import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller, TABLE_LAYER, frozenDenseColumn } from "@/components/ui/dense-table";
 import { cn } from "@/lib/utils";
 import { ALLOWED_BY_POSITION_HEADER_CLASSNAMES } from "@/components/nfl/allowed-by-position/headerColors";
 import { POSITION_MATCHUP_POSITION_KEYS, type PositionMatchupPositionKey } from "@/lib/nfl/positionMatchups/types";
 import { POSITION_MATCHUP_RATING_LABELS } from "@/lib/nfl/positionMatchups/rating";
 import { positionMatchupAllowedRankTone, positionMatchupForRankTone, positionMatchupRatingTone, type PositionMatchupTableRow } from "@/lib/nfl/positionMatchups/presentation";
-import { POSITION_MATCHUP_COLUMN_WIDTH, POSITION_MATCHUP_OPPONENT_LEFT, POSITION_MATCHUP_SCALE } from "./columnGeometry";
+import { POSITION_MATCHUP_COLUMN_WIDTH, POSITION_MATCHUP_OPPONENT_LEFT, POSITION_MATCHUP_SCALE, POSITION_MATCHUP_TABLE_WIDTH } from "./columnGeometry";
 import { nextPositionMatchupSort, sortPositionMatchupRows } from "./sort";
 import { positionMatchupSortKey, type PositionMatchupDisplayMode, type PositionMatchupSortKey, type PositionMatchupSortState } from "./types";
 
@@ -20,10 +20,59 @@ function positionDividerClassName(isFirstSubColumn: boolean): string {
   return isFirstSubColumn ? GROUP_BOUNDARY_BORDER : SUB_COLUMN_BORDER;
 }
 
-const HEADER_FONT_SIZE_CLASS = `text-[${POSITION_MATCHUP_SCALE.headerFontSize}]`;
-const BODY_FONT_SIZE_CLASS = `text-[${POSITION_MATCHUP_SCALE.bodyFontSize}]`;
-const EDGE_PILL_FONT_SIZE_CLASS = `text-[${POSITION_MATCHUP_SCALE.edgePillFontSize}]`;
-const CELL_PADDING_X_CLASS = `px-[${POSITION_MATCHUP_SCALE.cellPaddingX}]`;
+const HEADER_FONT_SIZE_CLASS = POSITION_MATCHUP_SCALE.headerFontClass;
+const BODY_FONT_SIZE_CLASS = POSITION_MATCHUP_SCALE.bodyFontClass;
+const EDGE_PILL_FONT_SIZE_CLASS = POSITION_MATCHUP_SCALE.edgePillFontClass;
+const CELL_PADDING_X_CLASS = POSITION_MATCHUP_SCALE.cellPaddingXClass;
+/** The site header is 72px tall plus its 1px bottom border. */
+export const POSITION_MATCHUP_STICKY_TOP = 73;
+
+type StickyGeometry = { left: number; width: number; scrollLeft: number; groupHeight: number; headerHeight: number };
+
+/** Horizontal overflow traps CSS sticky vertically, so a viewport-fixed copy follows page scroll. */
+function usePageStickyHeader() {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLTableSectionElement>(null);
+  const [geometry, setGeometry] = useState<StickyGeometry | null>(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const scroller = scrollRef.current;
+    const head = headRef.current;
+    if (!wrap || !scroller || !head) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const headRect = head.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      const active = headRect.top < POSITION_MATCHUP_STICKY_TOP && wrapRect.bottom > POSITION_MATCHUP_STICKY_TOP + headRect.height;
+      if (!active) {
+        setGeometry((current) => current === null ? current : null);
+        return;
+      }
+      const scrollRect = scroller.getBoundingClientRect();
+      const groupHeight = head.rows[0]?.getBoundingClientRect().height ?? 0;
+      setGeometry({ left: scrollRect.left, width: scrollRect.width, scrollLeft: scroller.scrollLeft, groupHeight, headerHeight: headRect.height });
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    scroller.addEventListener("scroll", schedule, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    if (observer) observer.observe(head);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      scroller.removeEventListener("scroll", schedule);
+      observer?.disconnect();
+    };
+  }, []);
+
+  return { wrapRef, scrollRef, headRef, geometry };
+}
 
 function SortHeaderButton({
   sortKey,
@@ -31,6 +80,7 @@ function SortHeaderButton({
   ariaLabel,
   sort,
   onSortChange,
+  clone = false,
 }: {
   sortKey: PositionMatchupSortKey;
   label: string;
@@ -38,12 +88,14 @@ function SortHeaderButton({
   ariaLabel: string;
   sort: PositionMatchupSortState;
   onSortChange: (next: PositionMatchupSortState) => void;
+  clone?: boolean;
 }) {
   const active = sort.key === sortKey;
   const Icon = active ? (sort.direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   return (
     <button
       type="button"
+      tabIndex={clone ? -1 : undefined}
       onClick={() => onSortChange(nextPositionMatchupSort(sort, sortKey))}
       aria-label={`Sort by ${ariaLabel}`}
       className={cn(
@@ -67,12 +119,53 @@ function EdgeRatingPill({ row, position }: { row: PositionMatchupTableRow; posit
   const sign = cell.edge > 0 ? `+${cell.edge}` : `${cell.edge}`;
   return (
     <span
-      className={cn("inline-flex max-w-full items-center justify-center whitespace-normal break-words rounded px-1 py-0.5 text-center font-bold uppercase leading-[1.1]", EDGE_PILL_FONT_SIZE_CLASS)}
+      className={cn("inline-flex h-4 max-w-full items-center justify-center whitespace-nowrap rounded px-0.5 py-0 text-center font-bold uppercase", EDGE_PILL_FONT_SIZE_CLASS, "leading-none")}
       style={tone.style}
     >
       {POSITION_MATCHUP_RATING_LABELS[cell.rating]} ({sign})
     </span>
   );
+}
+
+function TableColumns() {
+  return <colgroup>
+    <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.team} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.team }} />
+    <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.opponent} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.opponent }} />
+    {POSITION_MATCHUP_POSITION_KEYS.map((position) => <Fragment key={position}>
+      <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.sub} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.sub }} />
+      <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.sub} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.sub }} />
+      <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.edge} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.edge }} />
+    </Fragment>)}
+  </colgroup>;
+}
+
+function TableHeader({ sort, onSortChange, clone = false, cloneScrollLeft = 0, headRef, groupHeight }: {
+  sort: PositionMatchupSortState;
+  onSortChange: (next: PositionMatchupSortState) => void;
+  clone?: boolean;
+  cloneScrollLeft?: number;
+  headRef?: Ref<HTMLTableSectionElement>;
+  groupHeight?: number;
+}) {
+  return <thead ref={headRef} className="bg-slate-100">
+    <tr className={cn(DENSE_TABLE_HEAD_ROW, "bg-slate-100")} data-header-row="group" style={clone ? { height: groupHeight } : undefined}>
+      <th scope="col" rowSpan={2} className={cn("border-b border-r border-slate-200 py-2 text-left align-bottom", CELL_PADDING_X_CLASS, frozenDenseColumn({ isHeader: true, surface: "bg-slate-100" }))} style={clone ? { position: "relative", left: cloneScrollLeft } : undefined}>
+        <SortHeaderButton sortKey="team" label="Team" ariaLabel="Team" sort={sort} onSortChange={onSortChange} clone={clone} />
+      </th>
+      <th scope="col" rowSpan={2} className={cn("sticky border-b border-r border-slate-200 bg-slate-100 py-2 text-left align-bottom", CELL_PADDING_X_CLASS, TABLE_LAYER.frozenHeaderCell)} style={clone ? { position: "relative", left: cloneScrollLeft } : { left: POSITION_MATCHUP_OPPONENT_LEFT }} data-sticky-left={POSITION_MATCHUP_OPPONENT_LEFT}>
+        <SortHeaderButton sortKey="opponent" label="Opp" ariaLabel="Opponent" sort={sort} onSortChange={onSortChange} clone={clone} />
+      </th>
+      {POSITION_MATCHUP_POSITION_KEYS.map((position) => <th key={position} scope="colgroup" colSpan={3} data-position-group={position} className={cn(
+        "border-t-2 border-b-2 border-t-black/20 border-b-black/20 py-1.5 text-center text-xs font-bold uppercase tracking-wide",
+        GROUP_BOUNDARY_BORDER, ALLOWED_BY_POSITION_HEADER_CLASSNAMES[position],
+      )}>{POSITION_LABELS[position]}</th>)}
+    </tr>
+    <tr className={cn(DENSE_TABLE_HEAD_ROW, "bg-slate-100")} data-header-row="sub">
+      {POSITION_MATCHUP_POSITION_KEYS.map((position) => (["for", "allowed", "edge"] as const).map((field, index) => <th key={`${position}-${field}`} scope="col" className={cn("border-b-2 border-b-black/20 py-1.5 text-center", CELL_PADDING_X_CLASS, positionDividerClassName(index === 0))}>
+        <SortHeaderButton sortKey={positionMatchupSortKey(position, field)} label={field === "for" ? "For" : field === "allowed" ? "Allow" : "Edge"} ariaLabel={`${POSITION_LABELS[position]} ${field === "for" ? "For" : field === "allowed" ? "Allowed" : "Edge"}`} sort={sort} onSortChange={onSortChange} clone={clone} />
+      </th>))}
+    </tr>
+  </thead>;
 }
 
 /**
@@ -105,81 +198,24 @@ export default function PositionMatchupTable({
   renderTeam: (row: PositionMatchupTableRow) => ReactNode;
 }) {
   const sortedRows = sortPositionMatchupRows(rows, sort.key, sort.direction, displayMode);
+  const { wrapRef, scrollRef, headRef, geometry } = usePageStickyHeader();
 
   return (
-    <DenseTableScroller label={scrollLabel} className="rounded-lg border border-slate-200 bg-white">
-      {/* `table-fixed` needs an explicit <colgroup> here: the position group header row uses
-          colSpan=4 and the Team/Opp header cells use rowSpan=2, so no row has one un-spanned
-          cell per column for the browser to size columns from -- without this, column widths
-          collapse unpredictably and cell content overlaps neighboring columns. Every width
-          below comes from columnGeometry.ts and is applied nowhere else. */}
-      <table className="w-fit table-fixed border-separate border-spacing-0 text-sm">
-        <colgroup>
-          {/* `data-col-width` mirrors the inline `style` width for tests: jsdom's CSSOM
-              doesn't parse `clamp()` and silently drops it, so tests can't read it back off
-              `style`/`getAttribute("style")` the way a real browser would. */}
-          <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.team} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.team }} />
-          <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.opponent} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.opponent }} />
-          {POSITION_MATCHUP_POSITION_KEYS.map((position) => (
-            <Fragment key={position}>
-              <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.sub} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.sub }} />
-              <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.sub} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.sub }} />
-              <col data-col-width={POSITION_MATCHUP_COLUMN_WIDTH.edge} style={{ width: POSITION_MATCHUP_COLUMN_WIDTH.edge }} />
-            </Fragment>
-          ))}
-        </colgroup>
-        <thead className={stickyDenseHeader("top-[72px] bg-slate-100")}>
-          <tr className={DENSE_TABLE_HEAD_ROW}>
-            <th
-              scope="col"
-              rowSpan={2}
-              className={cn("border-b border-r border-slate-200 py-2 text-left align-bottom", CELL_PADDING_X_CLASS, frozenDenseColumn({ isHeader: true, surface: "bg-slate-100" }))}
-            >
-              <SortHeaderButton sortKey="team" label="Team" ariaLabel="Team" sort={sort} onSortChange={onSortChange} />
-            </th>
-            <th
-              scope="col"
-              rowSpan={2}
-              className={cn("sticky border-b border-r border-slate-200 bg-slate-100 py-2 text-left align-bottom", CELL_PADDING_X_CLASS, TABLE_LAYER.frozenHeaderCell)}
-              style={{ left: POSITION_MATCHUP_OPPONENT_LEFT }}
-              data-sticky-left={POSITION_MATCHUP_OPPONENT_LEFT}
-            >
-              <SortHeaderButton sortKey="opponent" label="Opp" ariaLabel="Opponent" sort={sort} onSortChange={onSortChange} />
-            </th>
-            {POSITION_MATCHUP_POSITION_KEYS.map((position) => (
-              <th
-                key={position}
-                scope="colgroup"
-                colSpan={3}
-                data-position-group={position}
-                className={cn(
-                  "border-t-2 border-b-2 border-t-black/20 border-b-black/20 py-1.5 text-center font-bold uppercase tracking-wide",
-                  CELL_PADDING_X_CLASS,
-                  "text-xs",
-                  GROUP_BOUNDARY_BORDER,
-                  ALLOWED_BY_POSITION_HEADER_CLASSNAMES[position],
-                )}
-              >
-                {POSITION_LABELS[position]}
-              </th>
-            ))}
-          </tr>
-          <tr className={DENSE_TABLE_HEAD_ROW}>
-            {POSITION_MATCHUP_POSITION_KEYS.map((position) =>
-              (["for", "allowed", "edge"] as const).map((field, index) => (
-                <th key={`${position}-${field}`} scope="col" className={cn("border-b-2 border-b-black/20 py-1.5 text-center", CELL_PADDING_X_CLASS, positionDividerClassName(index === 0))}>
-                  <SortHeaderButton
-                    sortKey={positionMatchupSortKey(position, field)}
-                    label={field === "for" ? "For" : field === "allowed" ? "Allow" : "Edge"}
-                    ariaLabel={`${POSITION_LABELS[position]} ${field === "for" ? "For" : field === "allowed" ? "Allowed" : "Edge"}`}
-                    sort={sort}
-                    onSortChange={onSortChange}
-                  />
-                </th>
-              )),
-            )}
-          </tr>
-        </thead>
+    <div ref={wrapRef} className="min-w-0">
+    {geometry && <div data-testid="position-matchup-sticky-header" aria-hidden="true" className="fixed z-20 overflow-hidden bg-slate-100" style={{ top: POSITION_MATCHUP_STICKY_TOP, left: geometry.left, width: geometry.width, height: geometry.headerHeight }}>
+      <div style={{ width: POSITION_MATCHUP_TABLE_WIDTH, transform: `translateX(${-geometry.scrollLeft}px)` }}>
+        <table className="table-fixed border-separate border-spacing-0 text-sm" style={{ width: POSITION_MATCHUP_TABLE_WIDTH }}>
+          <TableColumns />
+          <TableHeader sort={sort} onSortChange={onSortChange} clone cloneScrollLeft={geometry.scrollLeft} groupHeight={geometry.groupHeight} />
+        </table>
+      </div>
+    </div>}
+    <DenseTableScroller label={scrollLabel} scrollRef={scrollRef} className="rounded-lg border border-slate-200 bg-white">
+      {/* Fixed layout needs both an explicit table width and colgroup widths. The
+          grouped cells span three columns and cannot define column geometry. */}
+      <table className="table-fixed border-separate border-spacing-0 text-sm" data-table-width={POSITION_MATCHUP_TABLE_WIDTH} style={{ width: POSITION_MATCHUP_TABLE_WIDTH }}>
+        <TableColumns />
+        <TableHeader sort={sort} onSortChange={onSortChange} headRef={headRef} />
         <tbody>
           {sortedRows.map((row) => (
             <tr key={row.id} className={DENSE_TABLE_ROW}>
@@ -246,5 +282,6 @@ export default function PositionMatchupTable({
         </tbody>
       </table>
     </DenseTableScroller>
+    </div>
   );
 }

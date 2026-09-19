@@ -1,7 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import PositionMatchupTable from "./PositionMatchupTable";
-import { POSITION_MATCHUP_COLUMN_WIDTH, POSITION_MATCHUP_OPPONENT_LEFT } from "./columnGeometry";
+import PositionMatchupTable, { POSITION_MATCHUP_STICKY_TOP } from "./PositionMatchupTable";
+import { POSITION_MATCHUP_COLUMN_WIDTH, POSITION_MATCHUP_OPPONENT_LEFT, POSITION_MATCHUP_TABLE_WIDTH } from "./columnGeometry";
 import type { PositionMatchupSortState } from "./types";
 import type { PositionMatchupTableRow } from "@/lib/nfl/positionMatchups/presentation";
 
@@ -35,9 +35,11 @@ const rows: readonly PositionMatchupTableRow[] = [
 ];
 
 function renderTable(sort: PositionMatchupSortState) {
-  return render(
-    <PositionMatchupTable rows={rows} sort={sort} onSortChange={vi.fn()} scrollLabel="test table" displayMode="rank" renderTeam={(r) => r.team.toUpperCase()} />,
-  );
+  const onSortChange = vi.fn();
+  return {
+    ...render(<PositionMatchupTable rows={rows} sort={sort} onSortChange={onSortChange} scrollLabel="test table" displayMode="rank" renderTeam={(r) => r.team.toUpperCase()} />),
+    onSortChange,
+  };
 }
 
 describe("PositionMatchupTable column geometry", () => {
@@ -73,6 +75,24 @@ describe("PositionMatchupTable column geometry", () => {
     const kcRow = screen.getByText("KC").closest("tr") as HTMLElement;
     const oppBodyCell = within(kcRow).getAllByRole("cell")[1] as HTMLElement;
     expect(oppBodyCell.dataset.stickyLeft).toBe(POSITION_MATCHUP_OPPONENT_LEFT);
+  });
+
+  it("makes each group span exactly its three colgroup widths without a competing cell width", () => {
+    renderTable({ key: "team", direction: "asc" });
+    const table = screen.getAllByRole("columnheader")[0].closest("table") as HTMLTableElement;
+    // jsdom rewrites nested clamp() inside calc(), so read the mirrored source value.
+    expect(table.dataset.tableWidth).toBe(POSITION_MATCHUP_TABLE_WIDTH);
+    const cols = [...table.querySelectorAll("colgroup > col")] as HTMLElement[];
+    for (const [index, position] of ["qb", "rb", "wr", "te"].entries()) {
+      const group = table.querySelector(`th[data-position-group="${position}"]`) as HTMLTableCellElement;
+      expect(group.colSpan).toBe(3);
+      expect(group.getAttribute("style")).toBeNull();
+      expect(group.className).not.toMatch(/(^|\s)px-/);
+      expect(cols.slice(2 + index * 3, 5 + index * 3).map((col) => col.dataset.colWidth)).toEqual([
+        POSITION_MATCHUP_COLUMN_WIDTH.sub, POSITION_MATCHUP_COLUMN_WIDTH.sub, POSITION_MATCHUP_COLUMN_WIDTH.edge,
+      ]);
+    }
+    expect(POSITION_MATCHUP_TABLE_WIDTH.match(/clamp\(/g)).toHaveLength(cols.length);
   });
 
   it("keeps the same colgroup widths and cell classes whether sorted by team, FOR, ALLOWED, or EDGE, ascending or descending", () => {
@@ -147,12 +167,42 @@ describe("PositionMatchupTable responsive scaling", () => {
 });
 
 describe("PositionMatchupTable sticky header and sort", () => {
-  it("keeps the header sticky and layered above frozen columns regardless of sort state", () => {
-    renderTable({ key: "qb-edge", direction: "desc" });
-    const thead = screen.getAllByRole("columnheader")[0].closest("thead") as HTMLElement;
-    expect(thead.className).toContain("sticky");
-    expect(thead.className).toContain("top-[72px]");
-    expect(thead.className).toContain("z-20");
+  it("pins both header rows under the site header and preserves frozen intersections", async () => {
+    const { container, onSortChange } = renderTable({ key: "qb-edge", direction: "desc" });
+    const head = container.querySelector("thead") as HTMLElement;
+    const wrap = container.firstElementChild as HTMLElement;
+    const scroller = screen.getByRole("region", { name: "test table" });
+    head.getBoundingClientRect = () => ({ top: 20, bottom: 80, height: 60 } as DOMRect);
+    wrap.getBoundingClientRect = () => ({ bottom: 500 } as DOMRect);
+    scroller.getBoundingClientRect = () => ({ left: 16, width: 360 } as DOMRect);
+    (head.querySelector("tr") as HTMLElement).getBoundingClientRect = () => ({ height: 28 } as DOMRect);
+    fireEvent.scroll(window);
+    const clone = await waitFor(() => screen.getByTestId("position-matchup-sticky-header"));
+    expect(clone).toHaveAttribute("aria-hidden", "true");
+    expect(clone).toHaveClass("fixed", "z-20", "overflow-hidden", "bg-slate-100");
+    expect(clone.style.top).toBe(`${POSITION_MATCHUP_STICKY_TOP}px`);
+    expect(clone.style.height).toBe("60px");
+    expect(clone.querySelectorAll("thead tr")).toHaveLength(2);
+    expect((clone.querySelector('[data-header-row="group"]') as HTMLElement).style.height).toBe("28px");
+    expect(clone.querySelectorAll("thead th.sticky.z-30")).toHaveLength(2);
+    expect([...clone.querySelectorAll("button")].every((button) => button.tabIndex === -1)).toBe(true);
+    fireEvent.click(within(clone).getByRole("button", { name: "Sort by QB Edge", hidden: true }));
+    expect(onSortChange).toHaveBeenCalledWith({ key: "qb-edge", direction: "asc" });
+    expect(clone.querySelector("thead")?.className).toContain("bg-slate-100");
+  });
+
+  it("keeps EDGE badges one line and body cells at a consistent height", () => {
+    render(<PositionMatchupTable rows={[
+      row({ team: "kc", cells: { qb: cell({ edge: 15, rating: "very-strong" }), rb: cell(), wr: cell(), te: cell() } }),
+      row({ team: "buf", cells: { qb: cell({ edge: -21, rating: "very-weak" }), rb: cell(), wr: cell(), te: cell() } }),
+    ]} sort={{ key: "team", direction: "asc" }} onSortChange={vi.fn()} scrollLabel="test table" displayMode="rank" renderTeam={(r) => r.team.toUpperCase()} />);
+    for (const label of ["VERY STRONG (+15)", "VERY WEAK (-21)"]) {
+      const pill = screen.getByText((_, element) => element?.tagName === "SPAN" && element.textContent?.toUpperCase() === label);
+      expect(pill).toHaveClass("whitespace-nowrap", "h-4", "leading-none", "px-0.5", "py-0");
+      expect(pill.className).toMatch(/text-\[clamp\(/);
+      const bodyCells = (pill.closest("tr") as HTMLElement).querySelectorAll("td");
+      expect([...bodyCells].every((bodyCell) => bodyCell.className.includes("py-1.5"))).toBe(true);
+    }
   });
 
   it("sorts rows by QB edge while preserving column count and order", () => {
