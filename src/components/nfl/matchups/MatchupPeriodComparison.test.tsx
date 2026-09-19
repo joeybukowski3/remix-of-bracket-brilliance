@@ -91,14 +91,13 @@ describe("MatchupPeriodComparison", () => {
     expect(screen.getAllByText("2025 L8").length).toBeGreaterThan(0);
   });
 
-  it("renders each success-rate metric as its own Rank Tower card by default", () => {
+  it("renders the success-rate metrics in one unified chart by default", () => {
     const { container } = renderPeriods(0, 0);
-    // Six metrics, one visible period → six tower cards (desktop/no-mobile
-    // default; Comparison is only reachable via the mobile view toggle).
-    expect(container.querySelectorAll(".matchup-rank-towers__card")).toHaveLength(6);
-    // Every card carries both teams' away/home identity.
+    expect(container.querySelectorAll(".matchup-unified-chart")).toHaveLength(1);
+    expect(container.querySelectorAll(".matchup-rank-towers__card")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-rank-tower-group]")).toHaveLength(6);
     expect(
-      container.querySelector(".matchup-rank-towers__track")?.querySelectorAll(".matchup-rank-towers__team-id")
+      container.querySelector(".matchup-unified-chart__track")?.querySelectorAll(".matchup-unified-chart__identity")
     ).toHaveLength(12);
     expect(screen.getAllByText("NE").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SEA").length).toBeGreaterThan(0);

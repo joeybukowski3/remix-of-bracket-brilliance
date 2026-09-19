@@ -6,7 +6,7 @@ import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMet
 import MatchupPendingNote, { CONVENTIONAL_STATS_SOURCES } from "@/components/nfl/matchups/MatchupPendingNote";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
-import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/MatchupTowerMetricCard";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/matchupTowerPresentation";
 import MatchupContextMetricGrid from "@/components/nfl/matchups/MatchupContextMetricGrid";
 import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
 import {

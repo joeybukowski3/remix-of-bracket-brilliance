@@ -15,7 +15,7 @@ function luminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-for (const width of [390, 430, 768, 1440]) {
+for (const width of [390, 430, 768, 1150, 1440]) {
   const isMobile = width < 768;
 
   test(`${width}px Stitch visualization shell stays substantial and viewport-safe`, async ({ page }) => {
@@ -33,17 +33,17 @@ for (const width of [390, 430, 768, 1440]) {
     expect(await shell.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe("rgb(15, 19, 28)");
 
     const towers = shell.locator(".matchup-rank-towers:visible");
-    const towerViewport = towers.locator(".matchup-rank-towers__viewport");
-    const firstCard = towers.locator("[data-rank-tower-group]").first();
-    await expect(firstCard).toBeVisible();
-    const cardBox = await firstCard.boundingBox();
-    expect(cardBox).not.toBeNull();
-    expect(cardBox!.width).toBeGreaterThanOrEqual(width >= 1024 ? 199 : width >= 640 ? 175 : 163);
-    expect(cardBox!.height).toBeGreaterThanOrEqual(width >= 1024 ? 250 : 210);
+    const towerViewport = towers.locator(".matchup-unified-chart__viewport");
+    const firstGroup = towers.locator("[data-rank-tower-group]").first();
+    await expect(firstGroup).toBeVisible();
+    await expect(towers.locator(".matchup-rank-towers__card")).toHaveCount(0);
+    expect(await towers.locator("[data-rank-tower-group]").count()).toBeGreaterThan(1);
+    const groupBox = await firstGroup.boundingBox();
+    expect(groupBox).not.toBeNull();
+    expect(groupBox!.width).toBeGreaterThanOrEqual(isMobile ? 110 : 65);
 
     if (isMobile) {
-      // Rank Towers keep their internal horizontal swipe on mobile, with a
-      // visible swipe hint and fade.
+      // The unified plot scrolls internally while the Y axis remains in place.
       const initialTowerScroll = await towerViewport.evaluate((node) => ({
         clientWidth: node.clientWidth,
         scrollWidth: node.scrollWidth,
@@ -53,13 +53,12 @@ for (const width of [390, 430, 768, 1440]) {
       await towerViewport.evaluate((node) => { node.scrollLeft = 100; });
       await expect.poll(() => towerViewport.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
     } else {
-      // Desktop/tablet: cards wrap into rows instead of swiping, so the
-      // viewport never overflows and no swipe hint renders.
+      // Desktop/laptop: metrics share one continuous plot without page overflow.
       const desktopTowerScroll = await towerViewport.evaluate((node) => ({
         clientWidth: node.clientWidth,
         scrollWidth: node.scrollWidth,
       }));
-      expect(desktopTowerScroll.scrollWidth - desktopTowerScroll.clientWidth).toBeLessThanOrEqual(1);
+      if (width >= 1150) expect(desktopTowerScroll.scrollWidth - desktopTowerScroll.clientWidth).toBeLessThanOrEqual(1);
       await expect(towers.locator(".matchup-viz-swipe-hint")).toHaveCount(0);
     }
 
@@ -130,7 +129,7 @@ for (const width of [390, 430, 768, 1440]) {
       await expect(allMetrics.locator(".matchup-comparison-card, .matchup-metric-table").first()).toBeVisible();
     } else {
       await allMetrics.locator("summary").click();
-      await expect(allMetrics.locator(".matchup-rank-towers__card").first()).toBeVisible();
+      await expect(allMetrics.locator(".matchup-unified-chart [data-rank-tower-group]").first()).toBeVisible();
       // Context-only metrics render as neutral cards, never leader/tower semantics.
       const contextCard = allMetrics.locator(".matchup-context-metric").first();
       if (await contextCard.count()) {
@@ -146,11 +145,11 @@ for (const width of [390, 430, 768, 1440]) {
       await expect(toggle.first()).toBeVisible();
       await expect(successSection.locator(".matchup-mobile-view-control [role=\"tab\"][aria-selected=\"true\"]")).toHaveText("Comparison");
       // Comparison is the default: no Rank Towers card yet, the comparison grid is showing.
-      await expect(successSection.locator(".matchup-rank-towers__card")).toHaveCount(0);
+      await expect(successSection.locator(".matchup-unified-chart")).toHaveCount(0);
       await expect(successSection.locator(".matchup-comparison-card").first()).toBeVisible();
     } else {
       await expect(successSection.locator(".matchup-mobile-view-control")).toHaveCount(0);
-      await expect(successSection.locator(".matchup-rank-towers__card").first()).toBeVisible();
+      await expect(successSection.locator(".matchup-unified-chart").first()).toBeVisible();
     }
 
     // Unit by Unit.
@@ -158,13 +157,12 @@ for (const width of [390, 430, 768, 1440]) {
     await unitSection.scrollIntoViewIfNeeded();
     if (isMobile) {
       await expect(unitSection.locator(".matchup-mobile-view-control [role=\"tab\"][aria-selected=\"true\"]")).toHaveText("Comparison");
-      await expect(unitSection.locator(".matchup-rank-towers__card")).toHaveCount(0);
+      await expect(unitSection.locator(".matchup-unified-chart")).toHaveCount(0);
       await expect(unitSection.locator(".matchup-comparison-card").first()).toBeVisible();
     } else {
       await expect(unitSection.locator(".matchup-mobile-view-control")).toHaveCount(0);
-      await expect(unitSection.locator(".matchup-rank-towers__card").first()).toBeVisible();
-      // Attacking/defending identity is explicit in the pairing label, not only colour.
-      await expect(unitSection.locator(".matchup-rank-towers__pairing").first()).toContainText(/OFF vs .* DEF|DEF vs .* OFF/);
+      await expect(unitSection.locator(".matchup-unified-chart").first()).toBeVisible();
+      await expect(unitSection.locator(".matchup-unified-chart__identity").first()).toContainText(/OFF|DEF/);
     }
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

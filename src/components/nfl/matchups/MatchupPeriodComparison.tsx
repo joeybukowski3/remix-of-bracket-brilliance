@@ -4,7 +4,7 @@ import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCa
 import MatchupComparisonTeamHeader from "@/components/nfl/matchups/MatchupComparisonTeamHeader";
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
 import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
-import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/MatchupTowerMetricCard";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/matchupTowerPresentation";
 import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
 import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
 import type { MatchupSuccessRateSource } from "@/components/nfl/matchups/matchupDisplayMetrics";
