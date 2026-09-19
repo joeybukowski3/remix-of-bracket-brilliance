@@ -1,204 +1,242 @@
 {
-  "date": "2026-09-18",
-  "generatedAt": "2026-09-18T18:39:12.161Z",
+  "date": "2026-09-19",
+  "generatedAt": "2026-09-19T12:00:17.022Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Great American Ball Park (1.25) and Camden Yards (1.1) leading the way, while Angel Stadium (1.02) and Chase Field (1.01) offer neutral-to-slight boosts. Several right-handed pitchers are on the mound against top power bats, including Grayson Rodriguez vs. Emmanuel Rodriguez and Dustin May vs. Pete Alonso, creating favorable platoon and park matchups. Weather looks stable across most venues, so the edge comes from park factors and recent barrel trends rather than wind or temperature spikes.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park-adjusted hrFBRatio over raw recent home-run totals, which is why Emmanuel Rodriguez tops the slate despite only one HR in the last 30 days while players with hotter recent streaks like Pete Crow-Armstrong rank lower due to weaker underlying contact metrics."
+    "slateOverview": "Coors Field (1.40) and Great American Ball Park (1.25) headline a slate with two extreme hitter parks, while Camden Yards (1.10) and Citi Field (1.06) offer moderate boosts. Lodolo vs. Crow-Armstrong and Holmes vs. Alvarez stand out as the clearest power mismatches, with lefty-lefty and righty-righty platoon edges amplifying barrel rates above 16 percent.",
+    "modelNote": "The model is overweighting park-adjusted barrel and hard-hit rates while discounting recent HR volume in favor of underlying exit velocity and opposing pitcher HR vulnerability metrics."
   },
   "bestBets": [
     {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=79.2",
-        "barrel=26.7%"
+        "barrel=13.5%",
+        "HH=49.4%"
       ],
       "bullets": [
-        "hrScore=79.2",
-        "barrel=26.7%"
+        "hrScore=82.3",
+        "park=1.25"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "MIL",
-      "opposingPitcher": "Dustin May",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=73.8",
-        "barrel=14.1%"
-      ],
-      "bullets": [
-        "hrScore=73.8",
-        "barrel=14.1%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "ATL",
-      "opposingPitcher": "Tyler Mahle",
-      "hrScoreRank": 3,
+      "opposingPitcher": "Grant Holmes",
+      "hrScoreRank": 2,
       "topStats": [
-        "hrScore=71.5",
-        "barrel=16.4%"
+        "barrel=16.3%",
+        "HH=53.2%"
       ],
       "bullets": [
-        "hrScore=71.5",
-        "barrel=16.4%"
+        "hrScore=76.4",
+        "park=1.04"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+265",
+      "marketImpliedProbability": 0.273972602739726,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "CHC",
+      "opposingPitcher": "Matthew Boyd",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=16.3%",
+        "HH=53.8%"
+      ],
+      "bullets": [
+        "hrScore=72.6",
+        "park=1.25"
+      ],
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=67.3",
+        "Hard Hit%=58.4"
+      ],
+      "bullets": [
+        "HR score 69.3 (#4)",
+        "Pitcher HR VS 67.3 at park 0.92"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "MIL",
+      "opposingPitcher": "Robert Gasser",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=56.2",
+        "Pitcher HR VS=42.1"
+      ],
+      "bullets": [
+        "HR score 67.9 (#5)",
+        "Pitcher HR VS 42.1 at park 1.10"
+      ],
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=19.7%",
+        "HH=58.4%"
+      ],
+      "bullets": [
+        "hrScore=69.3",
+        "park=0.92"
+      ],
+      "hrOddsYes": "+350",
+      "marketImpliedProbability": 0.2222222222222222,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "PHI",
+      "opposingPitcher": "Andrew Painter",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=14%",
+        "HH=48.4%"
+      ],
+      "bullets": [
+        "hrScore=67.6",
+        "park=1.06"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Fernando Tatis Jr.",
       "team": "SD",
       "opponent": "MIA",
-      "opposingPitcher": "Tyler Phillips",
-      "hrScoreRank": 4,
+      "opposingPitcher": "Eury Pérez",
+      "hrScoreRank": 7,
       "topStats": [
-        "hrScore=70",
-        "barrel=12.7%"
+        "Pitcher HR VS=61.7",
+        "Hard Hit%=53.8"
       ],
       "bullets": [
-        "hrScore=70",
-        "barrel=12.7%"
+        "HR score 63.7 (#7)",
+        "Pitcher HR VS 61.7 at park 0.89"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "CIN",
-      "opposingPitcher": "Chase Burns",
-      "hrScoreRank": 5,
-      "topStats": [
-        "hrScore=66.9",
-        "barrel=13.6%"
-      ],
-      "bullets": [
-        "hrScore=66.9",
-        "barrel=13.6%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 1,
-      "topStats": [
-        "hrScore=79.2",
-        "barrel=26.7%"
-      ],
-      "bullets": [
-        "hrScore=79.2",
-        "barrel=26.7%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "MIL",
-      "opposingPitcher": "Dustin May",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=73.8",
-        "barrel=14.1%"
-      ],
-      "bullets": [
-        "hrScore=73.8",
-        "barrel=14.1%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "ATL",
-      "opposingPitcher": "Tyler Mahle",
-      "hrScoreRank": 3,
-      "topStats": [
-        "hrScore=71.5",
-        "barrel=16.4%"
-      ],
-      "bullets": [
-        "hrScore=71.5",
-        "barrel=16.4%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 1,
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "MIA",
+      "opposingPitcher": "Eury Pérez",
+      "hrScoreRank": 7,
       "topStats": [
-        "hrScore=79.2",
-        "barrel=26.7%"
+        "barrel=12.7%",
+        "HH=53.8%"
       ],
       "bullets": [
-        "hrScore=79.2",
-        "barrel=26.7%"
+        "hrScore=63.7",
+        "park=0.89"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "MIL",
-      "opposingPitcher": "Dustin May",
-      "hrScoreRank": 2,
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "AZ",
+      "opposingPitcher": "Brandon Pfaadt",
+      "hrScoreRank": 9,
       "topStats": [
-        "hrScore=73.8",
-        "barrel=14.1%"
+        "barrel=14.2%",
+        "HH=48.6%"
       ],
       "bullets": [
-        "hrScore=73.8",
-        "barrel=14.1%"
+        "hrScore=58.8",
+        "park=1.01"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+430",
+      "marketImpliedProbability": 0.18867924528301888,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Leo Bernal",
+      "team": "STL",
+      "opponent": "WSH",
+      "opposingPitcher": "Andrew Alvarez",
+      "hrScoreRank": 20,
+      "topStats": [
+        "Hard Hit%=65.4",
+        "Pitcher HR VS=39.0"
+      ],
+      "bullets": [
+        "HR score 54.6 (#20)",
+        "Pitcher HR VS 39.0 at park 0.92"
+      ],
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "MIA",
+      "opposingPitcher": "Eury Pérez",
+      "hrScoreRank": 11,
+      "topStats": [
+        "Pitcher HR VS=61.7",
+        "Hard Hit%=49.2"
+      ],
+      "bullets": [
+        "HR score 58.4 (#11)",
+        "Pitcher HR VS 61.7 at park 0.89"
+      ],
+      "hrOddsYes": "+480",
+      "marketImpliedProbability": 0.1724137931034483,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ]
