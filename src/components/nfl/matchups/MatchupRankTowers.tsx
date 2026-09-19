@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
-import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/MatchupTowerMetricCard";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/matchupTowerPresentation";
 import MatchupVisualMetricDetail from "@/components/nfl/matchups/MatchupVisualMetricDetail";
 import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
 import type { MatchupVisualMetric } from "@/lib/nfl/matchupVisualizationModel";
@@ -55,7 +55,7 @@ export default function MatchupRankTowers({ metrics, away, home, awayColor, home
     <>
       <MatchupTowerGrid
         metrics={towerMetrics}
-        title="Rank Towers"
+        title="Unified Rank Comparison"
         subtitle={`Selected ${metrics.length === 1 ? "metric" : "metrics"} · league rank comparison`}
         activeId={activeId}
         onActivate={(id) => setActiveId((previous) => previous === id ? null : id)}

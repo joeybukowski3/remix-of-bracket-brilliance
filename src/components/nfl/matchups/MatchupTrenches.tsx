@@ -1,7 +1,9 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
-import MatchupComparisonCard from "@/components/nfl/matchups/MatchupComparisonCard";
+import MatchupTowerGrid from "@/components/nfl/matchups/MatchupTowerGrid";
+import type { MatchupTowerMetricPresentation } from "@/components/nfl/matchups/matchupTowerPresentation";
 import type { MatchupMetricTableRow } from "@/components/nfl/matchups/MatchupMetricTable";
+import { towerHeightFromRank } from "@/components/nfl/matchups/matchupVisualMath";
 import { type MatchupTrenchConfig } from "@/components/nfl/matchups/MatchupTrenchRow";
 import { TRENCH_BATTLES, type NflMatchupMetricResolver } from "@/lib/nfl/matchupMetrics";
 import { deriveMetricComparisonFromRanks } from "@/lib/nfl/matchupRailNormalization";
@@ -11,6 +13,7 @@ import {
   trenchPeriodLabel,
 } from "@/lib/nfl/trenchMetricsData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 
 /**
  * Build one possession's comparison rows.
@@ -74,9 +77,7 @@ function possessionRows(
  *
  * ESPN publishes cumulative season-to-date figures only, so this section uses
  * its own season-based period policy rather than the conventional Season/Last 5
- * controls, and never produces a Last 5 or Last 8 trench value. Presentation is
- * the shared `MatchupMetricTable` so the section reads in the same language as
- * the Statistical Comparison above it.
+ * controls, and never produces a Last 5 or Last 8 trench value.
  */
 export default function MatchupTrenches({
   matchup,
@@ -107,27 +108,42 @@ export default function MatchupTrenches({
       bodyClassName="matchup-dense-section-body"
     >
       <div className="space-y-4">
-        {possessions.map(({ key, awayIsOffense, offense }) => (
-          // Away always left, home always right — the same orientation the rows
-          // enforce — even though the offense/defense roles swap between the two
-          // possessions.
-          <MatchupComparisonCard
-            key={key}
-            title={`${offense.abbr.toUpperCase()} Offense`}
-            matchup={matchup}
-            possession={`${offense.teamName} has the ball`}
-            unit={{
-              away: awayIsOffense ? "Offense" : "Defense",
-              home: awayIsOffense ? "Defense" : "Offense",
-            }}
-            variant="detail"
-            edgeDifference={false}
-            metrics={possessionRows(away, home, awayIsOffense, trench)}
-            caption={`Line-of-scrimmage win rates with ${
-              awayIsOffense ? away.teamName : home.teamName
-            } on offense`}
-          />
-        ))}
+        {possessions.map(({ key, awayIsOffense, offense }) => {
+          const awayRole = awayIsOffense ? "Offense" : "Defense";
+          const homeRole = awayIsOffense ? "Defense" : "Offense";
+          const defense = awayIsOffense ? home : away;
+          const metrics: MatchupTowerMetricPresentation[] = possessionRows(away, home, awayIsOffense, trench).map((row) => ({
+            id: `${key}-${row.key}`,
+            label: row.label,
+            contextLabel: row.contextLabel,
+            away: {
+              team: away,
+              color: nflTeamColorFor(away) ?? "#94a3b8",
+              identityLabel: `${away.abbr.toUpperCase()} ${awayIsOffense ? "OFF" : "DEF"}`,
+              accessibleIdentityLabel: `${away.teamName} ${awayRole.toLowerCase()}`,
+              formatted: row.away.formatted,
+              rank: row.away.rank,
+              heightPercent: towerHeightFromRank(row.away.rank),
+            },
+            home: {
+              team: home,
+              color: nflTeamColorFor(home) ?? "#94a3b8",
+              identityLabel: `${home.abbr.toUpperCase()} ${awayIsOffense ? "DEF" : "OFF"}`,
+              accessibleIdentityLabel: `${home.teamName} ${homeRole.toLowerCase()}`,
+              formatted: row.home.formatted,
+              rank: row.home.rank,
+              heightPercent: towerHeightFromRank(row.home.rank),
+            },
+          }));
+          return (
+            <MatchupTowerGrid
+              key={key}
+              title={`${offense.abbr.toUpperCase()} Offense vs ${defense.abbr.toUpperCase()} Defense`}
+              subtitle={`${offense.teamName} has the ball`}
+              metrics={metrics}
+            />
+          );
+        })}
       </div>
 
       <MatchupPendingNote>

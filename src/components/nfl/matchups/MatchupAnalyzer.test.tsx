@@ -323,11 +323,10 @@ describe("Placeholder sections stay honest", () => {
   it("renders trenches with an explicit unavailable state and no fabricated win rates", () => {
     renderWithRouter(<MatchupTrenches matchup={MATCHUP} resolver={unavailableMetricResolver} />);
 
-    // The card stays visible and every battle reads a neutral "Not compared"
-    // state when the ESPN artifact is absent — no fabricated win rate, no winner.
+    // Missing ESPN data leaves every rank tower unavailable without inventing a win rate.
     expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
     expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
-    expect(screen.getAllByTitle("Not compared")).toHaveLength(4);
+    expect(document.querySelectorAll("#trenches .matchup-unified-chart__missing")).toHaveLength(8);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Sacks/i)).toBeNull();
   });

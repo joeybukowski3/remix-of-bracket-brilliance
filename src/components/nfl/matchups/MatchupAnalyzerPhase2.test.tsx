@@ -211,9 +211,8 @@ describe("deferred metrics stay unavailable", () => {
         <MatchupTrenches matchup={MATCHUP} resolver={resolver} />
       </MemoryRouter>
     );
-    // One neutral "Not compared" battle per pairing per possession when the ESPN
-    // artifact is absent; sacks are never substituted for a win rate.
-    expect(screen.getAllByTitle("Not compared")).toHaveLength(4);
+    // Each tower remains unavailable when the ESPN artifact is absent.
+    expect(document.querySelectorAll("#trenches .matchup-unified-chart__missing")).toHaveLength(8);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Sacks/i)).toBeNull();
   });

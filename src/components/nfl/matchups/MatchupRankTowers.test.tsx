@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import MatchupRankTowers from "@/components/nfl/matchups/MatchupRankTowers";
 import type { MatchupVisualMetric } from "@/lib/nfl/matchupVisualizationModel";
@@ -61,18 +61,19 @@ describe("MatchupRankTowers", () => {
     const towers = container.querySelectorAll<HTMLElement>("[data-rank-tower]");
 
     expect(groups).toHaveLength(METRICS.length);
-    // Card sizing now comes entirely from CSS (wraps into a grid from 768px
-    // up instead of a fixed swipe-track width), so there's no per-card
-    // inline min-width to assert on any more.
+    expect(container.querySelectorAll(".matchup-unified-chart")).toHaveLength(1);
+    expect(container.querySelectorAll(".matchup-rank-towers__card")).toHaveLength(0);
     expect(crests).toHaveLength(METRICS.length * 2);
-    expect(crests[0].style.width).toBe("18px");
-    expect(crests[0].style.height).toBe("18px");
+    expect(crests[0].style.width).toBe("16px");
+    expect(crests[0].style.height).toBe("16px");
     expect(badges[0]).toHaveClass("matchup-rank-towers__rank");
     expect(badges[0]).toHaveTextContent("#1");
     expect(towers).toHaveLength(METRICS.length * 2);
     expect(towers[0].querySelector<HTMLElement>(".matchup-rank-towers__bar-fill")?.style.height).toBe("100%");
     expect(groups[0]).toHaveTextContent("+0.20");
     expect(groups[0]).toHaveTextContent("AWY +18");
+    expect(groups[0].querySelectorAll('[role="img"]')[0]).toHaveAttribute("aria-label", expect.stringContaining("Away Club — rank 1 of 32 — value +0.20"));
+    expect(groups[0].querySelectorAll('[role="img"]')[1]).toHaveAttribute("aria-label", expect.stringContaining("Home Club — rank 19 of 32 — value -0.10"));
   });
 
   it("renders missing ranks as full-height dashed empty rails", () => {
@@ -91,8 +92,28 @@ describe("MatchupRankTowers", () => {
 
     expect(missingTowers).toHaveLength(2);
     for (const tower of missingTowers) {
-      expect(tower).toHaveClass("matchup-rank-towers__bar-rail", "is-missing");
-      expect(tower).toBeEmptyDOMElement();
+      expect(tower).toHaveClass("matchup-unified-chart__missing");
+      expect(tower.querySelector(".matchup-rank-towers__bar-fill")).toBeNull();
     }
+  });
+
+  it("keeps source ordering and recalculates categories when selection changes", () => {
+    const { container, rerender } = render(<MatchupRankTowers metrics={METRICS} away={AWAY} home={HOME} awayColor="#031635" homeColor="#006778" />);
+    expect(Array.from(container.querySelectorAll("[data-rank-tower-group] .matchup-unified-chart__caption")).map((node) => node.textContent)).toEqual(["EPA / PlayAWY +18", "1st Downs / Play"]);
+    rerender(<MatchupRankTowers metrics={METRICS.slice(1)} away={AWAY} home={HOME} awayColor="#031635" homeColor="#006778" />);
+    expect(container.querySelectorAll("[data-rank-tower-group]")).toHaveLength(1);
+    expect(container.querySelector("[data-rank-tower-group]")).toHaveTextContent("1st Downs / Play");
+  });
+
+  it("places rank 1 above rank 32 and exposes keyboard-accessible details", () => {
+    const worst: MatchupVisualMetric = { ...METRICS[0], home: { value: -1, rank: 32, formatted: "-1.00", percentile: 1 } };
+    const { container, getByRole } = render(<MatchupRankTowers metrics={[worst]} away={AWAY} home={HOME} awayColor="#031635" homeColor="#006778" />);
+    const fills = container.querySelectorAll<HTMLElement>(".matchup-rank-towers__bar-fill");
+    expect(fills[0].style.height).toBe("100%");
+    expect(fills[1].style.height).toBe("8%");
+    const details = getByRole("button", { name: "Details for EPA / Play" });
+    fireEvent.click(details);
+    expect(details).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector(".matchup-unified-chart__viewport")).toHaveAttribute("tabindex", "0");
   });
 });
