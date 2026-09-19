@@ -1,10 +1,10 @@
 {
   "date": "2026-09-19",
-  "generatedAt": "2026-09-19T17:22:18.656Z",
+  "generatedAt": "2026-09-19T18:14:04.651Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Great American Ball Park leads the slate with a 1.25 park factor and two lefty-on-lefty power spots (Crow-Armstrong vs Lodolo, De La Cruz vs Boyd). Camden Yards (1.10) and Daikin Park (1.04) also play up, while Busch Stadium (0.92) and Petco (0.89) suppress power. Warm, low-wind conditions are expected across most venues, keeping fly-ball carry neutral-to-favorable.",
-    "modelNote": "The model is overweighting barrel rate, exit velo, and park factor while discounting recent HR volume; Crow-Armstrong tops the board because his 13.5 barrel rate and 1.25 park factor outweigh his modest 7.4 HR/FB ratio."
+    "slateOverview": "Great American Ball Park leads the slate with a 1.25 park factor and two top HR candidates (Crow-Armstrong, De La Cruz) facing lefties in a hitter-friendly environment. Camden Yards (1.10) and Daikin Park (1.04) also offer slight boosts, while Petco Park (0.89) and Busch Stadium (0.92) suppress power. Lodolo, Holmes, and Boyd are the primary pitchers to target, with no major weather overlays noted.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and recent HR volume over opposing pitcher HR vulnerability, elevating Crow-Armstrong to the top spot despite Lodolo's solid metrics."
   },
   "bestBets": [
     {
@@ -19,7 +19,7 @@
       ],
       "bullets": [
         "hrScore=82.3",
-        "park=1.25"
+        "barrel=13.5%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -38,7 +38,7 @@
       ],
       "bullets": [
         "hrScore=75.5",
-        "barrel=16.3%"
+        "HH=53.2%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -52,12 +52,12 @@
       "opposingPitcher": "Matthew Boyd",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=72.4",
+        "hrScore=72.3",
         "barrel=16.3%"
       ],
       "bullets": [
-        "hrScore=72.4",
-        "barrel=16.3%"
+        "hrScore=72.3",
+        "park=1.25"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -71,12 +71,12 @@
       "opposingPitcher": "Andrew Painter",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=49.8",
-        "Hard Hit%=48.4"
+        "hrScore=68.7",
+        "barrel=14%"
       ],
       "bullets": [
-        "HR score 68.7 (#4)",
-        "Pitcher HR VS 49.8 at park 1.06"
+        "hrScore=68.7",
+        "HH=48.4%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -90,12 +90,12 @@
       "opposingPitcher": "Michael McGreevy",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=67.9",
-        "Hard Hit%=58.4"
+        "hrScore=68.5",
+        "barrel=19.7%"
       ],
       "bullets": [
-        "HR score 68.5 (#5)",
-        "Pitcher HR VS 67.9 at park 0.92"
+        "hrScore=68.5",
+        "HH=58.4%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -105,18 +105,18 @@
   ],
   "valueBets": [
     {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "PHI",
-      "opposingPitcher": "Andrew Painter",
-      "hrScoreRank": 4,
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 1,
       "topStats": [
-        "hrScore=68.7",
-        "park=1.06"
+        "hrScore=82.3",
+        "park=1.25"
       ],
       "bullets": [
-        "hrScore=68.7",
-        "park=1.06"
+        "hrScore=82.3",
+        "barrel=13.5%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -124,18 +124,37 @@
       "hrValueEdge": null
     },
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 5,
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=19.7%",
-        "HH=58.4%"
+        "hrScore=75.5",
+        "barrel=16.3%"
       ],
       "bullets": [
-        "barrel=19.7%",
-        "HH=58.4%"
+        "hrScore=75.5",
+        "HH=53.2%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "CHC",
+      "opposingPitcher": "Matthew Boyd",
+      "hrScoreRank": 3,
+      "topStats": [
+        "hrScore=72.3",
+        "barrel=16.3%"
+      ],
+      "bullets": [
+        "hrScore=72.3",
+        "park=1.25"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -143,5 +162,44 @@
       "hrValueEdge": null
     }
   ],
-  "longshots": []
+  "longshots": [
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "CIN",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 1,
+      "topStats": [
+        "hrScore=82.3",
+        "park=1.25"
+      ],
+      "bullets": [
+        "hrScore=82.3",
+        "barrel=13.5%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=75.5",
+        "barrel=16.3%"
+      ],
+      "bullets": [
+        "hrScore=75.5",
+        "HH=53.2%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    }
+  ]
 }
