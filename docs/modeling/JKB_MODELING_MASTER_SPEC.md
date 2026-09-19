@@ -1,5 +1,7 @@
 # JKB Football Modeling Master Specification
 
+The [NFL Fantasy Points Allowed by Position](../features/nfl-fantasy-points-allowed.md) contract owns the `nfl-fantasy-points-allowed-v2` artifact extension: combined WR allowed points are aggregated from raw WR player-week rows for every sample, while the current-season Wide/Slot snapshot remains separate. This adds a valid fallback column without changing fantasy scoring, projections, model edges, archives, or evaluation.
+
 The offline [2026 Week 1 Spread + ATS Audit](../research/nfl-week1-spread-ats-audit-2026/REPORT.md)
 selects the final valid immutable pre-kickoff production snapshot per game,
 joins separately archived outcomes, and preserves closing/pick evidence gaps.

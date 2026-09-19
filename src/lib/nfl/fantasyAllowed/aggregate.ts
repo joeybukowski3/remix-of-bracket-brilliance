@@ -144,7 +144,7 @@ export function computePositionSample(
  * no per-game historical log exists. gamesSampled is always 0 here -- the
  * snapshot is a season-to-date aggregate we did not build game-by-game, so
  * it cannot be sliced into 2025/last-5 samples the way JKB-scored positions
- * can (see docs/research/nfl-fantasy-points-allowed for this gap).
+ * can (see docs/features/nfl-fantasy-points-allowed.md for this gap).
  */
 export function rankSnapshotSample(
   valuesByTeam: ReadonlyMap<string, number>,

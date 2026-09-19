@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import type { FantasyAllowedArtifact, FantasyAllowedPositionSample, FantasyAllowedRow } from "@/lib/nfl/fantasyAllowed/types";
+import { fantasyAllowedRankTone } from "@/lib/nfl/fantasyAllowed/presentation";
 import type { PositionMatchupArtifact, PositionMatchupCell, PositionMatchupCells, PositionMatchupRow } from "@/lib/nfl/positionMatchups/types";
 import NFLFantasyPointsAllowed from "./NFLFantasyPointsAllowed";
 
@@ -24,6 +25,8 @@ function sample(
 
 function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: number; qb2026PerGame?: number | null }): FantasyAllowedRow {
   const { qb2026 = 1, qb2026PerGame = null, ...rest } = overrides;
+  const wrRank = overrides.team === "buf" ? 20 : 1;
+  const wrPerGame = overrides.team === "buf" ? 5.4 : 18.7;
   return {
     opponent: null,
     location: null,
@@ -31,13 +34,14 @@ function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: nu
       "2026": {
         qb: sample(qb2026, "jkb-full-ppr-player-week", qb2026PerGame ?? qb2026),
         rb: sample(2),
+        wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame),
         te: sample(3),
         wideWr: sample(4, "razzball-slot-wide-snapshot"),
         slotWr: sample(5, "razzball-slot-wide-snapshot"),
       },
-      "2025": { qb: sample(30), rb: sample(31), te: sample(32), wideWr: null, slotWr: null },
-      last5: { qb: sample(10), rb: sample(11), te: sample(12), wideWr: null, slotWr: null },
-      last8: { qb: sample(15), rb: sample(16), te: sample(17), wideWr: null, slotWr: null },
+      "2025": { qb: sample(30), rb: sample(31), wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame), te: sample(32), wideWr: null, slotWr: null },
+      last5: { qb: sample(10), rb: sample(11), wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame), te: sample(12), wideWr: null, slotWr: null },
+      last8: { qb: sample(15), rb: sample(16), wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame), te: sample(17), wideWr: null, slotWr: null },
     },
     ...rest,
   };
@@ -45,7 +49,7 @@ function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: nu
 
 function artifact(): FantasyAllowedArtifact {
   return {
-    schemaVersion: "nfl-fantasy-points-allowed-v1",
+    schemaVersion: "nfl-fantasy-points-allowed-v2",
     generatedAt: "2026-09-17T00:00:00.000Z",
     season: 2026,
     week: 2,
@@ -146,16 +150,49 @@ describe("NFLFantasyPointsAllowed", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("renders em dash for null Wide WR / Slot WR ranks outside the 2026 sample", async () => {
+  it.each(["2025", "Last 5", "Last 8"])("renders combined WR and no unsupported splits for %s", async (sampleLabel) => {
     stubFetch(artifact());
     renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
-    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    expect(screen.getByRole("button", { name: "Sort by Wide WR" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sort by Slot WR" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by WR" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: sampleLabel }));
 
     const bufRow = screen.getByText("BUF").closest("tr") as HTMLElement;
-    const dashCells = within(bufRow).getAllByText("—");
-    expect(dashCells.length).toBeGreaterThanOrEqual(2); // wideWr + slotWr
+    expect(screen.getByRole("button", { name: "Sort by WR" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by Wide WR" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by Slot WR" })).not.toBeInTheDocument();
+    expect(within(bufRow).getByText("20")).toBeInTheDocument();
+  });
+
+  it("shows WR raw PPG with rank, sorts by raw or rank, and colors by rank", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    const teamOrder = () => [...screen.getAllByRole("row")].slice(1).map((tr) => tr.querySelector("td")?.textContent?.trim());
+    const wrCell = (team: string) => {
+      const bodyRow = screen.getByText(team).closest("tr") as HTMLElement;
+      return within(bodyRow).getAllByRole("cell")[4] as HTMLElement; // Team, Opp, QB, RB, WR
+    };
+    expect(wrCell("BUF")).toHaveStyle({ backgroundColor: fantasyAllowedRankTone(20).style?.backgroundColor });
+    expect(wrCell("DAL")).toHaveStyle({ backgroundColor: fantasyAllowedRankTone(1).style?.backgroundColor });
+    fireEvent.click(screen.getByRole("button", { name: "Sort by WR" }));
+    expect(teamOrder()).toEqual(["DAL", "BUF"]); // rank 1 before rank 20
+    fireEvent.click(screen.getByRole("button", { name: "Raw" }));
+    expect(within(wrCell("BUF")).getByText("5.4")).toBeInTheDocument();
+    expect(within(wrCell("BUF")).getByText("(20)")).toBeInTheDocument();
+    expect(teamOrder()).toEqual(["BUF", "DAL"]); // PPG 5.4 before 18.7
+    expect(wrCell("BUF")).toHaveStyle({ backgroundColor: fantasyAllowedRankTone(20).style?.backgroundColor });
+  });
+
+  it("explains that other samples use combined WR", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+    expect(screen.getByText("Wide/Slot WR splits are available for 2026; other samples use combined WR.")).toBeInTheDocument();
   });
 
   it("sorts by a position column ascending then descending on repeat clicks", async () => {
