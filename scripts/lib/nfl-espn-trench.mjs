@@ -42,7 +42,7 @@ export const TRENCH_METRIC_KEYS = Object.freeze(Object.keys(TRENCH_COLUMN_MAP));
 export const TRENCH_COLUMNS = Object.freeze(Object.values(TRENCH_COLUMN_MAP));
 
 /** Known article IDs, usable as deterministic fixtures / historical fallbacks. */
-export const KNOWN_ARTICLE_IDS = Object.freeze({ 2025: "46138675", 2024: "41040723" });
+export const KNOWN_ARTICLE_IDS = Object.freeze({ 2026: "49742016", 2025: "46138675", 2024: "41040723" });
 
 export const EXPECTED_TEAM_COUNT = 32;
 
@@ -227,10 +227,11 @@ export function parseTrenchCell(cell, { label, rowIndex, column }) {
  * Parse and fully validate the team win-rate table.
  *
  * `teamMap` maps ESPN slug -> canonical repo abbreviation. Unknown slugs,
- * duplicates, wrong row counts, malformed cells and duplicated official ranks
- * all throw — nothing is dropped silently.
+ * duplicates, wrong row counts, malformed cells and (unless `allowTiedRanks`)
+ * duplicated official ranks all throw — nothing is dropped silently.
+ * `allowTiedRanks` is for an in-progress season only; see isSeasonInProgress.
  */
-export function parseTeamModule(module, { teamMap, label }) {
+export function parseTeamModule(module, { teamMap, label, allowTiedRanks = false }) {
   const indexes = resolveColumnIndexes(module.json.header, { label });
   const rows = module.json.body;
 
@@ -258,16 +259,23 @@ export function parseTeamModule(module, { teamMap, label }) {
     throw new Error(`${label}: missing canonical teams ${missing.join(", ")}`);
   }
 
-  // ESPN ranks on finer internal precision than it publishes, so its official
-  // ranks are a complete distinct 1-32 for each metric. Assert that invariant:
-  // a break means the table shape or semantics changed.
-  for (const metricKey of TRENCH_METRIC_KEYS) {
-    const ranks = Object.values(teams).map((t) => t.metrics[metricKey].espnRank);
-    const unique = new Set(ranks);
-    if (unique.size !== EXPECTED_TEAM_COUNT) {
-      throw new Error(
-        `${label}: ${TRENCH_COLUMN_MAP[metricKey]} official ranks are not distinct 1-${EXPECTED_TEAM_COUNT} (${unique.size} unique)`
-      );
+  // ESPN ranks on finer internal precision than it publishes, so a completed
+  // season's official ranks are a complete distinct 1-32 for each metric. Assert
+  // that invariant: a break means the table shape or semantics changed.
+  //
+  // An in-progress season is different: with few games played ESPN publishes
+  // tied official ranks. Those are accepted exactly as published — never
+  // re-ranked or made unique locally. Range and integer checks still ran per
+  // cell in parseTrenchCell.
+  if (!allowTiedRanks) {
+    for (const metricKey of TRENCH_METRIC_KEYS) {
+      const ranks = Object.values(teams).map((t) => t.metrics[metricKey].espnRank);
+      const unique = new Set(ranks);
+      if (unique.size !== EXPECTED_TEAM_COUNT) {
+        throw new Error(
+          `${label}: ${TRENCH_COLUMN_MAP[metricKey]} official ranks are not distinct 1-${EXPECTED_TEAM_COUNT} (${unique.size} unique)`
+        );
+      }
     }
   }
 
@@ -277,6 +285,18 @@ export function parseTeamModule(module, { teamMap, label }) {
 // ---------------------------------------------------------------------------
 // Freshness
 // ---------------------------------------------------------------------------
+
+/** Final regular-season week; a season whose source is through this week is complete. */
+export const FINAL_REGULAR_SEASON_WEEK = 18;
+
+/**
+ * A season is in progress when ESPN's own freshness marker reports a week before
+ * the end of the regular season. An unparsed week is treated as NOT in progress
+ * so strict rank validation still applies and failures stay loud.
+ */
+export function isSeasonInProgress(throughWeek) {
+  return Number.isInteger(throughWeek) && throughWeek < FINAL_REGULAR_SEASON_WEEK;
+}
 
 const UPDATED_PATTERN = /Last updated:[^<\n]*/i;
 const WEEK_PATTERN = /Through\s+(?:all\s+)?Week\s+(\d{1,2})\b/i;
