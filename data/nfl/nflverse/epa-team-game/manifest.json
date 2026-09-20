@@ -375,6 +375,66 @@
       "eligiblePlays": 34301,
       "compactRowCount": 544,
       "reductionRatio": 363.1
+    },
+    {
+      "season": 2026,
+      "filename": "epa_team_game_2026.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-20",
+      "byteSize": 3367,
+      "sha256": "a78a19ac2785786152390438196c2cf7ef710a16a3262ce582b73640c08b1673",
+      "rowCount": 34,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "upstream": {
+        "byteSize": 1148429,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 2940,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "epa",
+          "pass",
+          "rush",
+          "two_point_attempt"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "off_epa",
+        "off_plays",
+        "pass_epa",
+        "pass_plays",
+        "rush_epa",
+        "rush_plays"
+      ],
+      "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
+      "upstreamCompressedBytes": 1148429,
+      "upstreamSourceRows": 2940,
+      "upstreamColumnCount": 372,
+      "eligiblePlays": 2142,
+      "compactRowCount": 34,
+      "reductionRatio": 341.1
     }
   ],
   "notPublished": [],

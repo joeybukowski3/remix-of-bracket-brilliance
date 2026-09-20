@@ -16,9 +16,9 @@
  * comparison row can show one value per team. The full period-by-period view
  * stays in its own section, unchanged.
  *
- * A key no resolver can answer stays null and renders "N/A" — first downs,
- * third down and time of possession included. Those are declared unavailable by
- * the repository's methodology and are never substituted or interpolated.
+ * A key no resolver can answer stays null and renders "N/A" — time of
+ * possession, for example, has no producer. Nothing is substituted or
+ * interpolated to fill a gap.
  */
 
 import {

@@ -280,8 +280,8 @@ export default function MatchupModelDetails({
               none are shown.
             </li>
             <li className="border-l-2 border-slate-200 pl-2.5">
-              First downs, third down and time of possession are not published for this sample and
-              stay unavailable. They are never estimated.
+              Time of possession is not published for this sample and stays unavailable. It is
+              never estimated.
             </li>
           </ul>
         </MatchupCollapsibleGroup>

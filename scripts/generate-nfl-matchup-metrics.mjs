@@ -3,7 +3,11 @@
  * the NFL matchup analyzer, precomputed for all four sample-control states.
  *
  * Inputs (all already present in this repository, no network required):
- *   data/nfl/nflverse/stats-team-week/stats_team_week_<season>.csv
+ *   data/nfl/nflverse/stats-team-week/stats_team_week_<season>.csv         (complete seasons)
+ *   data/nfl/nflverse/stats-team-week-current/stats_team_week_<season>.csv (in-progress season)
+ *   data/nfl/nflverse/downs-team-game/downs_team_game_<season>.csv  (optional;
+ *     play-by-play first/third-down counts, see scripts/lib/nfl-downs-core.mjs;
+ *     when absent the four down metrics stay unavailable)
  *   public/data/nfl/<season>/games.json
  *   public/data/nfl/<season>/results.json
  *   public/data/nfl/teams.json
@@ -23,6 +27,15 @@ import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync } from 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseAdvancedTeamStatRows } from "./lib/nfl-advanced-stats.mjs";
+import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
+import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+import {
+  DOWNS_COMPACT_COLUMNS,
+  indexDownsTeamGames,
+  mirrorProblems,
+  parseDownsCompactRow,
+  validateDownsTeamGames,
+} from "./lib/nfl-downs-core.mjs";
 import {
   MATCHUP_METRIC_DEFS,
   MATCHUP_METRIC_KEYS,
@@ -37,16 +50,22 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_DATA_DIR = join(ROOT, "public", "data", "nfl");
 const DEFAULT_STATS_DIR = join(ROOT, "data", "nfl", "nflverse", "stats-team-week");
+const DEFAULT_CURRENT_STATS_DIR = join(ROOT, "data", "nfl", "nflverse", "stats-team-week-current");
+const DEFAULT_DOWNS_DIR = join(ROOT, "data", "nfl", "nflverse", "downs-team-game");
+/** Windows that contain every game from both teams' sides, so league mirror totals must match. */
+const MIRROR_CHECKED_WINDOWS = new Set(["season-current", "prior-season-full"]);
 const SOURCE_LABEL = "nflverse (stats_team weekly release)";
 const SCHEMA_VERSION = "nfl-matchup-metrics-v1";
 const EXPECTED_TEAMS = 32;
 
 function parseArgs(argv) {
-  const args = { season: 2026, dryRun: false, statsDir: DEFAULT_STATS_DIR, dataDir: DEFAULT_DATA_DIR, out: null };
+  const args = { season: 2026, dryRun: false, statsDir: DEFAULT_STATS_DIR, currentStatsDir: DEFAULT_CURRENT_STATS_DIR, downsDir: DEFAULT_DOWNS_DIR, dataDir: DEFAULT_DATA_DIR, out: null };
   for (const raw of argv.slice(2)) {
     if (raw === "--dry-run") args.dryRun = true;
     else if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
     else if (raw.startsWith("--stats-dir=")) args.statsDir = resolve(raw.slice(12));
+    else if (raw.startsWith("--current-stats-dir=")) args.currentStatsDir = resolve(raw.slice(20));
+    else if (raw.startsWith("--downs-dir=")) args.downsDir = resolve(raw.slice(12));
     else if (raw.startsWith("--data-dir=")) args.dataDir = resolve(raw.slice(11));
     else if (raw.startsWith("--out=")) args.out = resolve(raw.slice(6));
     else throw new Error(`Unknown argument: ${raw}`);
@@ -71,9 +90,12 @@ function loadSeason(dataDir, season) {
   };
 }
 
-function loadStatRows(statsDir, season, teamsJson) {
-  const file = join(statsDir, `stats_team_week_${season}.csv`);
-  if (!existsSync(file)) {
+/** Look in the validated complete-season cache first, then the in-progress-season cache. */
+function loadStatRows(statsDirs, season, teamsJson) {
+  const file = statsDirs
+    .map((dir) => join(dir, `stats_team_week_${season}.csv`))
+    .find((candidate) => existsSync(candidate));
+  if (!file) {
     return { rows: [], file: null, present: false };
   }
   const rows = parseAdvancedTeamStatRows(readFileSync(file, "utf-8"), teamsJson, {
@@ -81,6 +103,34 @@ function loadStatRows(statsDir, season, teamsJson) {
     seasonType: "REG",
   });
   return { rows, file, present: true };
+}
+
+/**
+ * Load the byte-verified compact play-by-play down cache
+ * (scripts/refresh-nfl-downs-source-cache.mjs). Absent cache is not an error:
+ * the four down metrics simply stay unavailable. A present-but-corrupt cache is.
+ */
+function loadDownsCache(downsDir) {
+  const manifestPath = join(downsDir, "manifest.json");
+  if (!existsSync(manifestPath)) return { records: [], files: [], present: false };
+  const manifest = readJson(manifestPath);
+  const records = [];
+  const files = [];
+  for (const entry of manifest.files ?? []) {
+    const path = join(downsDir, entry.filename);
+    if (!existsSync(path)) throw new Error(`Downs cache: manifest lists ${entry.filename} but the file is missing`);
+    const text = readFileSync(path, "utf-8");
+    const problems = verifyCacheEntry(entry, text, { requiredHeaders: [...DOWNS_COMPACT_COLUMNS] });
+    if (problems.length > 0) throw new Error(`Downs cache integrity failure: ${problems.join("; ")}`);
+    const parsed = parseCsv(text).map(parseDownsCompactRow);
+    const structural = validateDownsTeamGames(parsed);
+    if (structural.length > 0) {
+      throw new Error(`Downs cache ${entry.filename} failed validation: ${structural.slice(0, 8).join("; ")}`);
+    }
+    records.push(...parsed);
+    files.push({ season: entry.season, path: `data/nfl/nflverse/downs-team-game/${entry.filename}`, rowCount: entry.rowCount });
+  }
+  return { records, files, present: true };
 }
 
 function main() {
@@ -105,7 +155,7 @@ function main() {
 
   for (const season of [priorSeason, currentSeason]) {
     const schedule = loadSeason(args.dataDir, season);
-    const stats = loadStatRows(args.statsDir, season, teamsJson);
+    const stats = loadStatRows([args.statsDir, args.currentStatsDir], season, teamsJson);
 
     if (!schedule) {
       console.log(`[nfl:matchup-metrics] no schedule/results for ${season}; skipping`);
@@ -140,6 +190,12 @@ function main() {
     throw new Error("No usable source seasons; refusing to write an empty artifact");
   }
 
+  const downsCache = loadDownsCache(args.downsDir);
+  if (!downsCache.present) {
+    console.log("[nfl:matchup-metrics] downs cache not present; first/third-down metrics stay unavailable");
+  }
+  const downsByGameTeam = downsCache.present ? indexDownsTeamGames(downsCache.records) : null;
+
   // --- indices -------------------------------------------------------------
   const completedByTeam = buildCompletedGameIndex(seasonInputs);
 
@@ -163,6 +219,8 @@ function main() {
     {
       const perTeam = {};
       const rawByMetric = Object.fromEntries(MATCHUP_METRIC_KEYS.map((k) => [k, {}]));
+      const downsOffenseByTeam = {};
+      const downsDefenseByTeam = {};
 
       for (const team of teamAbbrs) {
         const teamGames = completedByTeam.get(team) ?? [];
@@ -174,7 +232,7 @@ function main() {
         });
         if (selected.length === 0) continue;
 
-        const { values, missing } = aggregateTeamWindow(selected, rowsByGameTeam);
+        const { values, missing, downs } = aggregateTeamWindow(selected, rowsByGameTeam, downsByGameTeam);
         if (missing.length > 0) joinProblems.push(...missing);
 
         const last = selected[selected.length - 1];
@@ -187,6 +245,15 @@ function main() {
           rawMetrics: {},
         };
         for (const key of MATCHUP_METRIC_KEYS) rawByMetric[key][team] = values[key];
+        if (downs.complete) {
+          downsOffenseByTeam[team] = downs.offense;
+          downsDefenseByTeam[team] = downs.defense;
+        }
+      }
+
+      if (MIRROR_CHECKED_WINDOWS.has(id)) {
+        const mirror = mirrorProblems(downsOffenseByTeam, downsDefenseByTeam);
+        if (mirror.length > 0) throw new Error(`Down metrics offense/defense mirror failed in ${id}: ${mirror.join("; ")}`);
       }
 
       // Rank on unrounded values, then round only for display.
@@ -215,6 +282,7 @@ function main() {
       generatedAt: new Date().toISOString(),
       source: SOURCE_LABEL,
       sourceFiles,
+      downsSourceFiles: downsCache.files,
       scheduleSource: "public/data/nfl/<season>/{games,results}.json",
       currentSeason,
       priorSeason,
@@ -222,7 +290,8 @@ function main() {
       teamCount: EXPECTED_TEAMS,
       metricKeys: MATCHUP_METRIC_KEYS,
       notes: [
-        "Conventional team metrics only. EPA, success rate, first downs, third down, time of possession, line-of-scrimmage win rates, ATS/O-U and injuries are NOT in this artifact.",
+        "Conventional team metrics plus four play-by-play down metrics. EPA, success rate, time of possession, line-of-scrimmage win rates, ATS/O-U and injuries are NOT in this artifact.",
+        "First Downs / Play = first_down == 1 plays / eligible plays; 3rd Down Conversion = third_down_converted / (converted + failed). Both from nflverse play-by-play (nflfastR indicators), regular season, no_play rows excluded from numerator and denominator, offense and defense read from the same play rows. Definitions: scripts/lib/nfl-downs-core.mjs.",
         "Regular season only; postseason excluded. Samples are built from completed games, never week numbers, so byes are handled naturally.",
         "The `prior-season-full` window is every completed prior-season game (the /nfl/power-ratings 2025 tab); it is not a matchup-analyzer control state.",
         "Ratios are recomputed from summed numerators/denominators over the selected games -- never a mean of per-game rates.",

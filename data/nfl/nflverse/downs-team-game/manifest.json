@@ -1,0 +1,143 @@
+{
+  "files": [
+    {
+      "season": 2025,
+      "filename": "downs_team_game_2025.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2025.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-19",
+      "byteSize": 22613,
+      "sha256": "dfeb288dab50fcfd7798371b0db5c64dda1158075fca41af8c2170c5a737c381",
+      "rowCount": 544,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "plays",
+        "first_downs",
+        "third_attempts",
+        "third_conversions"
+      ],
+      "upstream": {
+        "byteSize": 19105296,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 48771,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "epa",
+          "pass",
+          "rush",
+          "two_point_attempt",
+          "play_type",
+          "down",
+          "first_down",
+          "third_down_converted",
+          "third_down_failed"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "plays",
+        "first_downs",
+        "third_attempts",
+        "third_conversions"
+      ],
+      "projectionFilter": "REG season AND (pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1 AND play_type != no_play AND first_down is present",
+      "upstreamSourceRows": 48771,
+      "eligiblePlays": 32813,
+      "compactRowCount": 544
+    },
+    {
+      "season": 2026,
+      "filename": "downs_team_game_2026.csv",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
+      "sourceType": "projection",
+      "retrievedDateUtc": "2026-09-19",
+      "byteSize": 1476,
+      "sha256": "7f888248b1add4397801d9c0fd56ff080e4e9aec0eaf37f5a2370177f6356372",
+      "rowCount": 34,
+      "headerColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "plays",
+        "first_downs",
+        "third_attempts",
+        "third_conversions"
+      ],
+      "upstream": {
+        "byteSize": 1148429,
+        "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
+        "rowCount": 2940,
+        "headerColumns": [
+          "game_id",
+          "season",
+          "season_type",
+          "week",
+          "posteam",
+          "defteam",
+          "epa",
+          "pass",
+          "rush",
+          "two_point_attempt",
+          "play_type",
+          "down",
+          "first_down",
+          "third_down_converted",
+          "third_down_failed"
+        ]
+      },
+      "projectedColumns": [
+        "game_id",
+        "season",
+        "week",
+        "team",
+        "opponent",
+        "plays",
+        "first_downs",
+        "third_attempts",
+        "third_conversions"
+      ],
+      "projectionFilter": "REG season AND (pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1 AND play_type != no_play AND first_down is present",
+      "upstreamSourceRows": 2940,
+      "eligiblePlays": 2035,
+      "compactRowCount": 34
+    }
+  ],
+  "notPublished": [],
+  "schemaVersion": "nfl-downs-team-game-cache-v1",
+  "source": "nflverse (play-by-play, nflfastR first-down and third-down indicators)",
+  "attribution": "Down data: nflverse / nflfastR",
+  "eligiblePlayFilter": "REG season AND (pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1 AND play_type != no_play AND first_down is present",
+  "requiredSourceColumns": [
+    "game_id",
+    "season",
+    "season_type",
+    "week",
+    "posteam",
+    "defteam",
+    "epa",
+    "pass",
+    "rush",
+    "two_point_attempt",
+    "play_type",
+    "down",
+    "first_down",
+    "third_down_converted",
+    "third_down_failed"
+  ],
+  "rawPlayByPlayCommitted": false
+}
