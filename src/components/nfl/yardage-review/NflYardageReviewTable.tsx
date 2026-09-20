@@ -9,6 +9,7 @@ import NflYardageReviewTeamCell from "./NflYardageReviewTeamCell";
 import { NflYardageMarketCell } from "./NflYardageMarketCell";
 import { NflMatchupScoreBadge } from "./NflYardageReviewBadges";
 import { marketRoleStat } from "./marketRoleStat";
+import { carryShareForRow, carryShareTitle, formatCarryShare, type CarryShareSample } from "@/lib/nfl/props/review/carryShare";
 import {
   OPP_DEFENSE_RANK_DIRECTION_HINT,
   OppEdgeCell,
@@ -80,6 +81,7 @@ export default function NflYardageReviewTable({
   opponentContextByKey,
   projectedYardsHeatByKey,
   season,
+  carryShareSamples,
 }: {
   entries: readonly NflYardageReviewRow[];
   sort: NflYardageReviewSortState;
@@ -87,11 +89,13 @@ export default function NflYardageReviewTable({
   opponentContextByKey: ReadonlyMap<string, NflYardageOpponentContextWithHeat>;
   projectedYardsHeatByKey: ReadonlyMap<string, WeeklyHeatTone>;
   season: number;
+  carryShareSamples: ReadonlyMap<string, CarryShareSample>;
 }) {
   // Passing has no opportunity x efficiency breakdown (no carries/targets leg) --
   // the Role column is always empty for that market, so it is dropped rather
   // than shown as a column of dashes.
-  const showRoleStat = useMemo(() => entries.some((e) => marketRoleStat(e.row) != null), [entries]);
+  const isRushing = entries[0]?.row.market === "rushing";
+  const showRoleStat = useMemo(() => isRushing || entries.some((e) => marketRoleStat(e.row) != null), [entries, isRushing]);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const expandedIndex = expandedKey == null ? -1 : entries.findIndex((e) => `${e.row.market}-${e.row.playerId}` === expandedKey);
   const expandedEntry = expandedIndex === -1 ? null : entries[expandedIndex];
@@ -124,7 +128,9 @@ export default function NflYardageReviewTable({
         <SortHeader label="Team" sortKey="team" sort={sort} onSort={onSort} />
         <th scope="col" className="px-2 py-2 text-center align-bottom">Opp</th>
         <th scope="col" className="px-2 py-2 text-center align-bottom">Pos</th>
-        {showRoleStat && <th scope="col" className="px-2 py-2 text-center align-bottom">Role</th>}
+        {showRoleStat && (isRushing
+          ? <SortHeader label="Carry Share" sortKey="carryShare" sort={sort} onSort={onSort} title="Player carries divided by current team's RB carries in completed 2026 regular-season games" />
+          : <th scope="col" className="px-2 py-2 text-center align-bottom">Role</th>)}
         <SortHeader label="Proj Yds" sortKey="projectedYards" sort={sort} onSort={onSort} />
         <th scope="col" className="px-2 py-2 text-center align-bottom" title="Sportsbook line when available; otherwise a Kalshi market-implied reference line (~), otherwise Unavailable">Market</th>
         <SortHeader label="Diff" sortKey="difference" sort={sort} onSort={onSort} />
@@ -201,7 +207,9 @@ export default function NflYardageReviewTable({
         <td className="px-2 py-1.5 text-center"><NflYardageReviewTeamCell abbr={row.team} /></td>
         <td className="px-2 py-1.5 text-center"><NflYardageReviewTeamCell abbr={row.opponent} /></td>
         <td className="px-2 py-1.5 text-center text-slate-600">{row.position}</td>
-        {showRoleStat && <td className="px-2 py-1.5 text-center text-[10px] text-slate-500">{marketRoleStat(row) ?? "—"}</td>}
+        {showRoleStat && <td className="px-2 py-1.5 text-center text-[10px] text-slate-500 tabular-nums" title={isRushing ? carryShareTitle(carryShareForRow(row, carryShareSamples)) : undefined}>
+          {isRushing ? formatCarryShare(carryShareForRow(row, carryShareSamples)) : marketRoleStat(row) ?? "—"}
+        </td>}
         {/* Projection is the primary numeric value on this page -- deliberately the largest, boldest figure in the row. Heat is a presentation-only rank within the row's market+position pool; the value shown is always the raw projection, never a rank. */}
         <td className="px-2 py-1.5 text-center tabular-nums">
           {row.projectedYards != null ? (

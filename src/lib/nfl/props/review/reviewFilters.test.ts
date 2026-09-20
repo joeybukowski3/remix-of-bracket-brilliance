@@ -125,6 +125,18 @@ describe("sortYardageReviewRows", () => {
     expect(desc.map((e) => e.row.playerName)).toEqual(["High", "Low", "Missing"]);
   });
 
+  test("Carry Share sorts as a number, with missing samples last in both directions", () => {
+    const a = buildRow({ playerName: "A", playerId: "gsis:a" });
+    const b = buildRow({ playerName: "B", playerId: "gsis:b" });
+    const c = buildRow({ playerName: "C", playerId: "gsis:c" });
+    const samples = new Map([
+      ["ne:gsis:a", { playerCarries: 2, teamRbCarries: 10, share: 0.2 }],
+      ["ne:gsis:b", { playerCarries: 8, teamRbCarries: 10, share: 0.8 }],
+    ]);
+    expect(sortYardageReviewRows([a, c, b], { key: "carryShare", direction: "asc" }, new Map(), samples).map((e) => e.row.playerName)).toEqual(["A", "B", "C"]);
+    expect(sortYardageReviewRows([a, c, b], { key: "carryShare", direction: "desc" }, new Map(), samples).map((e) => e.row.playerName)).toEqual(["B", "A", "C"]);
+  });
+
   test("no sort state falls back to alphabetical by player name", () => {
     const result = sortYardageReviewRows([high, low, missing], null);
     expect(result.map((e) => e.row.playerName)).toEqual(["High", "Low", "Missing"]);
