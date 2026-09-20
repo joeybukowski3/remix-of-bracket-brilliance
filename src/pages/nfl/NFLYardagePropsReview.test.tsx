@@ -211,6 +211,7 @@ function altMarketArtifact(generatedAt: string) {
 function stubFetch(projections: NflCurrentWeekProjectionArtifact, market: NflYardageMarketArtifact) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes("/results.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve({ results: [{ gameId: "2026_01_ATL_PIT", season: 2026, seasonType: "REG", final: true }] }) } as Response);
     if (url.includes("yardage-history.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(yardageHistoryArtifact()) } as Response);
     if (url.includes("yardage-projections.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(projections) } as Response);
     if (url.includes("nfl-yardage-alt-market.json")) return Promise.resolve({ ok: true, json: () => Promise.resolve(altMarketArtifact(market.generatedAt)) } as Response);
@@ -224,6 +225,28 @@ function stubFetch(projections: NflCurrentWeekProjectionArtifact, market: NflYar
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
+
+describe("Carry Share column", () => {
+  it("shows a compact, sortable Rushing percentage and preserves Passing/Receiving Role behavior", async () => {
+    const rico = { ...passingRow(), market: "rushing", position: "RB", playerName: "Rico Dowdle", playerId: "gsis:00-0036139", team: "pit", projectedCarries: 8, projectedYardsPerCarry: 4.2 } as never;
+    const missing = { ...rico, playerName: "Alvin Kamara", playerId: "gsis:missing", projectedYards: 90 } as never;
+    const receiver = { ...passingRow(), market: "receiving", position: "WR", playerName: "Test Receiver", projectedTargets: 7, projectedYardsPerTarget: 9 } as never;
+    stubFetch(projectionsArtifact([passingRow(), rico, missing, receiver]), marketArtifact());
+    renderPage();
+    await screen.findAllByRole("button", { name: "Rushing" });
+    expect(screen.queryByRole("button", { name: "Sort by Carry Share" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Rushing" })[0]);
+    const header = await screen.findByRole("button", { name: "Sort by Carry Share" });
+    expect(header).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTitle("8 of 18 RB carries · 44%")).toHaveTextContent("44%"));
+    expect(screen.getAllByRole("button", { name: /expand details for alvin kamara/i })[0].closest("tr")).toHaveTextContent("—");
+    fireEvent.click(header);
+    expect(header.closest("th")).toHaveAttribute("aria-sort", "descending");
+    fireEvent.click(screen.getAllByRole("button", { name: "Receiving" })[0]);
+    expect(screen.queryByRole("button", { name: "Sort by Carry Share" })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Role" })).toBeInTheDocument();
+  });
+});
 
 function renderPage() {
   return render(

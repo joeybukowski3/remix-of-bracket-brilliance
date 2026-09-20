@@ -1,5 +1,6 @@
 /** Pure filter/sort helpers for the NFL Yardage Props Review UI. No data fetching, no model logic. */
 import type { NflYardageOpponentContext } from "./opponentContext";
+import { carryShareForRow, type CarryShareSample } from "./carryShare";
 import type { NflMatchupScoreBand, NflYardageReviewRow } from "./yardageMarketJoin";
 
 export type NflYardageReviewLineFilter = "all" | "available" | "unavailable";
@@ -42,6 +43,7 @@ export type NflYardageReviewSortKey =
   | "difference"
   | "line"
   | "depthRank"
+  | "carryShare"
   | "oppYardsAllowedSeason"
   | "oppYardsAllowedL5"
   | "oppEpaAllowedRank"
@@ -86,6 +88,7 @@ function sortValue(
   entry: NflYardageReviewRow,
   key: NflYardageReviewSortKey,
   contextByKey: ReadonlyMap<string, NflYardageOpponentContext>,
+  carryShareSamples: ReadonlyMap<string, CarryShareSample>,
 ): number | string | null {
   switch (key) {
     case "player":
@@ -102,6 +105,8 @@ function sortValue(
       return entry.marketInfo.available ? entry.marketInfo.line : null;
     case "depthRank":
       return entry.row.depthRank;
+    case "carryShare":
+      return carryShareForRow(entry.row, carryShareSamples)?.share ?? null;
     case "oppYardsAllowedSeason":
     case "oppYardsAllowedL5":
     case "oppEpaAllowedRank":
@@ -113,6 +118,7 @@ function sortValue(
 }
 
 const EMPTY_CONTEXT_MAP: ReadonlyMap<string, NflYardageOpponentContext> = new Map();
+const EMPTY_CARRY_SHARE_MAP: ReadonlyMap<string, CarryShareSample> = new Map();
 
 /**
  * Rows with no value for the active sort key always sort last, regardless of
@@ -124,6 +130,7 @@ export function sortYardageReviewRows(
   entries: readonly NflYardageReviewRow[],
   sort: NflYardageReviewSortState,
   contextByKey: ReadonlyMap<string, NflYardageOpponentContext> = EMPTY_CONTEXT_MAP,
+  carryShareSamples: ReadonlyMap<string, CarryShareSample> = EMPTY_CARRY_SHARE_MAP,
 ): NflYardageReviewRow[] {
   const ordered = [...entries];
   if (!sort) {
@@ -131,8 +138,8 @@ export function sortYardageReviewRows(
     return ordered;
   }
   ordered.sort((a, b) => {
-    const va = sortValue(a, sort.key, contextByKey);
-    const vb = sortValue(b, sort.key, contextByKey);
+    const va = sortValue(a, sort.key, contextByKey, carryShareSamples);
+    const vb = sortValue(b, sort.key, contextByKey, carryShareSamples);
     if (va == null && vb == null) return a.row.playerName.localeCompare(b.row.playerName);
     if (va == null) return 1;
     if (vb == null) return -1;

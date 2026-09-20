@@ -6,6 +6,7 @@ import { useNflYardageProjections } from "@/hooks/useNflYardageProjections";
 import { useNflYardageMarket } from "@/hooks/useNflYardageMarket";
 import { useNflYardageAltMarket } from "@/hooks/useNflYardageAltMarket";
 import { useNflYardageOpponentContext } from "@/hooks/useNflYardageOpponentContext";
+import { useNflCarryShare } from "@/hooks/useNflCarryShare";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import NflYardageReviewTable from "@/components/nfl/yardage-review/NflYardageReviewTable";
@@ -83,6 +84,7 @@ export default function NFLYardagePropsReview() {
   const marketData = useNflYardageMarket();
   const altMarketData = useNflYardageAltMarket();
   const opponentContextData = useNflYardageOpponentContext();
+  const carryShareSamples = useNflCarryShare(SEASON);
 
   const marketRows = useMemo(
     () => (projections.data ? projections.data.rows.filter((r) => r.market === market && r.week === week) : []),
@@ -161,8 +163,8 @@ export default function NFLYardagePropsReview() {
 
   const filtered = useMemo(() => applyYardageReviewFilters(reviewEntries, filters), [reviewEntries, filters]);
   const sorted = useMemo(
-    () => sortYardageReviewRows(filtered, sort, opponentContextByKey),
-    [filtered, sort, opponentContextByKey],
+    () => sortYardageReviewRows(filtered, sort, opponentContextByKey, carryShareSamples),
+    [filtered, sort, opponentContextByKey, carryShareSamples],
   );
 
   const handleSort = (key: Parameters<typeof nextYardageReviewSort>[1]) => {
@@ -288,6 +290,7 @@ export default function NFLYardagePropsReview() {
                 opponentContextByKey={opponentContextByKey}
                 projectedYardsHeatByKey={projectedYardsHeatByKey}
                 season={SEASON}
+                carryShareSamples={carryShareSamples}
               />
               <NflYardageReviewMobileTable
                 entries={sorted}

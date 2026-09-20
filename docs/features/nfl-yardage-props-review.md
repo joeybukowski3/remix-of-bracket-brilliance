@@ -27,6 +27,16 @@ Filters cover game, position where applicable, Matchup Score band, and line
 availability; sorting is presentation-only. Desktop uses a table and compact
 layouts use cards.
 
+The desktop Rushing table replaces ROLE with sortable CARRY SHARE. This is a
+descriptive observed 2026 regular-season stat, separate from the rushing
+projection: the player's RB carries with the team on the current prop row,
+divided by all RB carries for that team across completed games. Carries are
+summed before division; QB/WR/TE carries are excluded. The source is the
+committed `data/nfl/nflverse/player-week-stats/stats_player_week_2026.csv`
+cache, joined by canonical GSIS player ID, team, and final game ID from
+`public/data/nfl/2026/results.json`. Missing player samples display `—`.
+Passing and Receiving retain their existing ROLE behavior.
+
 Rows expand into independently collapsible “Show the Work,” “Player Last 10,”
 and “Opponent Last 10” sections. The detail view shows the artifact's
 market-specific projection components, role/fallback provenance, estimated
