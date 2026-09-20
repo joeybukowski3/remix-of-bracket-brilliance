@@ -5,6 +5,8 @@ import { useSwipeOverflow } from "@/components/nfl/matchups/useSwipeOverflow";
 import { cn } from "@/lib/utils";
 
 const TICKS = [1, 8, 16, 24, 32] as const;
+/** Charts with at most this many metric groups share the viewport width on narrow screens instead of scrolling. */
+const FIT_METRIC_MAX = 6;
 
 function RankTower({ side, metric, crestSide }: {
   side: MatchupTowerSidePresentation;
@@ -51,7 +53,7 @@ export default function MatchupTowerGrid({ metrics, title, subtitle, scaleLabel 
   const hasOverflow = useSwipeOverflow(viewportRef, [metrics.length]);
   const first = metrics[0];
   return (
-    <section className={cn("matchup-rank-towers matchup-unified-chart", className)} aria-label={title ?? "Unified rank comparison"}>
+    <section className={cn("matchup-rank-towers matchup-unified-chart", className)} data-metric-count={metrics.length} data-fit={metrics.length <= FIT_METRIC_MAX || undefined} aria-label={title ?? "Unified rank comparison"}>
       <div className="matchup-viz-chart-heading">
         <div>{title && <h3>{title}</h3>}{subtitle && <p>{subtitle}</p>}</div>
         <span>{scaleLabel}</span>
