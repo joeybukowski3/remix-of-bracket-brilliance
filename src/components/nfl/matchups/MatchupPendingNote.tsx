@@ -33,4 +33,4 @@ export const CONVENTIONAL_STATS_SOURCES = "Sources: nflverse team-week, nflfastR
 
 /** Stated once per page, beneath the sections it describes. */
 export const CONVENTIONAL_STATS_METHODOLOGY =
-  "Conventional stats come from nflverse team-week data and reflect the selected sample. EPA is nflfastR play-by-play, aggregated over the same sample. Success rate is published by RBSDM and uses its own period policy shown on each row. First downs, third down and time of possession stay unavailable until a later data phase — they are never estimated.";
+  "Conventional stats come from nflverse team-week data and reflect the selected sample. EPA, first downs per play and third-down conversion are aggregated from nflfastR play-by-play over the same sample. Success rate is published by RBSDM and uses its own period policy shown on each row. Time of possession stays unavailable until a later data phase — it is never estimated.";

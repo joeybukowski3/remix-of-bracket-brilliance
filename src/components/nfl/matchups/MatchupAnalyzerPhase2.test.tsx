@@ -10,6 +10,7 @@ import {
   type MatchupMetricsArtifact,
 } from "@/lib/nfl/matchupMetricsData";
 import {
+  DEFENSE_METRIC_GROUPS,
   OFFENSE_METRIC_GROUPS,
   unavailableMetricResolver,
 } from "@/lib/nfl/matchupMetrics";
@@ -189,10 +190,70 @@ describe("volume metrics are never scored as quality", () => {
   });
 });
 
+/** The same deterministic artifact plus the four play-by-play down metrics. */
+const DOWNS_ARTIFACT: MatchupMetricsArtifact = {
+  ...ARTIFACT,
+  windows: {
+    ...ARTIFACT.windows,
+    "season-blend": {
+      ...ARTIFACT.windows["season-blend"],
+      teams: {
+        ne: {
+          ...ARTIFACT.windows["season-blend"].teams.ne,
+          metrics: {
+            ...ARTIFACT.windows["season-blend"].teams.ne.metrics,
+            "off.firstDownsPerPlay": [33.4, 3],
+            "def.firstDownsPerPlayAllowed": [27.1, 2],
+            "off.thirdDownConversion": [44.2, 5],
+            "def.thirdDownConversionAllowed": [36.8, 4],
+          },
+        },
+        sea: {
+          ...ARTIFACT.windows["season-blend"].teams.sea,
+          metrics: {
+            ...ARTIFACT.windows["season-blend"].teams.sea.metrics,
+            "off.firstDownsPerPlay": [29.9, 21],
+            "def.firstDownsPerPlayAllowed": [31.6, 24],
+            "off.thirdDownConversion": [38.5, 19],
+            "def.thirdDownConversionAllowed": [42.9, 28],
+          },
+        },
+      },
+    },
+  },
+};
+
+describe("play-by-play down metrics", () => {
+  it.each([
+    ["offense", OFFENSE_METRIC_GROUPS, [["1st Downs / Play", "33.4%", "29.9%"], ["3rd Down Conversion", "44.2%", "38.5%"]]],
+    ["defense", DEFENSE_METRIC_GROUPS, [["Opp 1st Downs / Play", "27.1%", "31.6%"], ["Opp 3rd Down Conversion", "36.8%", "42.9%"]]],
+  ] as const)("populate %s rows for both teams instead of N/A", (_side, groups, rows) => {
+    render(
+      <MemoryRouter>
+        <MatchupUnitComparison
+          id={_side}
+          matchup={MATCHUP}
+          groups={groups}
+          resolver={createMatchupMetricResolver(DOWNS_ARTIFACT, DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS, SLUG_TO_ABBR)}
+          baselineLabel="JKB Rating"
+          baselineRank={(team) => team.offenseRank}
+          baselineValue={(team) => team.offensePct}
+        />
+      </MemoryRouter>
+    );
+    for (const [label, away, home] of rows) {
+      const row = screen.getAllByText(label)[0].closest(".grid") as HTMLElement;
+      expect(within(row).queryByText("N/A"), label).toBeNull();
+      expect(within(row).getByText(away), label).toBeInTheDocument();
+      expect(within(row).getByText(home), label).toBeInTheDocument();
+    }
+  });
+});
+
 describe("deferred metrics stay unavailable", () => {
-  it("keeps EPA, success rate, third down and time of possession at N/A", () => {
+  it("keeps EPA, success rate and time of possession at N/A", () => {
     renderOffense();
-    for (const label of ["EPA / Play", "Success Rate", "3rd Down Conversion", "Avg Time of Possession"]) {
+    for (const label of ["EPA / Play", "Success Rate", "Avg Time of Possession"]) {
       const row = rowFor(label);
       expect(within(row).getAllByText("N/A").length, label).toBe(2);
     }

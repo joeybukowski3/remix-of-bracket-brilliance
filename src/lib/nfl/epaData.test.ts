@@ -107,9 +107,20 @@ describe("resolver", () => {
   });
 
   it("returns null for a control state with no completed games", () => {
-    // No 2026 games exist yet, so blend-OFF is legitimately empty.
-    const current = createEpaResolver(EPA, settings("season", false), SLUGS);
+    // A blend-OFF window with no completed 2026 games is legitimately empty.
+    const noGames = {
+      ...EPA,
+      windows: { ...EPA.windows, "season-current": { ...EPA.windows["season-current"], teams: {} } },
+    } as EpaArtifact;
+    const current = createEpaResolver(noGames, settings("season", false), SLUGS);
     expect(current("seattle-seahawks", "off.epaPerPlay")).toBeNull();
+  });
+
+  it("answers blend-OFF from the 2026-only window when 2026 games exist", () => {
+    const current = createEpaResolver(EPA, settings("season", false), SLUGS);
+    const team = EPA.windows["season-current"].teams.ne;
+    expect(team.seasons).toEqual([2026]);
+    expect(current("new-england-patriots", "off.epaPerPlay")!.value).toBeCloseTo(-0.092, 3);
   });
 
   it("changes value when the sample control changes", () => {
@@ -118,8 +129,8 @@ describe("resolver", () => {
     const a = season("kansas-city-chiefs", "off.epaPerPlay")!.value;
     const b = last5("kansas-city-chiefs", "off.epaPerPlay")!.value;
     expect(a).not.toBe(b);
-    expect(a).toBeCloseTo(-0.103, 3);
-    expect(b).toBeCloseTo(-0.269, 3);
+    expect(a).toBeCloseTo(-0.105, 3);
+    expect(b).toBeCloseTo(-0.172, 3);
   });
 });
 
@@ -168,7 +179,9 @@ describe("window membership matches Phase 2 exactly", () => {
   it("exposes the backing game ids for auditing", () => {
     const ids = epaGameIds(EPA, settings("last5", true), "ne");
     expect(ids).toHaveLength(5);
-    expect(ids.every((id) => id.startsWith("2025_"))).toBe(true);
+    // Last 5 with the blend ON crosses the season boundary once 2026 games exist.
+    expect(ids.every((id) => /^(2025|2026)_/.test(id))).toBe(true);
+    expect(ids.some((id) => id.startsWith("2026_"))).toBe(true);
   });
 });
 
@@ -305,13 +318,14 @@ describe("generated artifact", () => {
     }
   });
 
-  it("reproduces the audited 2025 Last 8 values", () => {
+  it("reproduces the audited rolling-eight (2025/2026 blend) values", () => {
     const cases: [string, number, number, number][] = [
-      // team, EPA/play, off EPA numerator, play denominator
-      ["ne", 0.215, 107.69, 501],
-      ["sea", -0.010, -5.09, 511],
-      ["kc", -0.103, -52.19, 506],
-      ["phi", -0.009, -4.38, 508],
+      // team, EPA/play, off EPA numerator, play denominator -- re-audited against
+      // the raw epa_team_game CSV rows for each team's eight selected game ids.
+      ["ne", 0.175, 89.52, 512],
+      ["sea", 0.026, 12.27, 476],
+      ["kc", -0.105, -52.68, 502],
+      ["phi", 0.022, 10.64, 490],
     ];
     for (const [abbr, epaPerPlay, numerator, denominator] of cases) {
       const team = EPA.windows["season-blend"].teams[abbr];
@@ -322,8 +336,8 @@ describe("generated artifact", () => {
     }
   });
 
-  it("reproduces the audited 2025 Last 5 values", () => {
-    const cases: [string, number][] = [["ne", 0.279], ["sea", 0.023], ["kc", -0.269], ["phi", 0.034]];
+  it("reproduces the audited Last 5 (2025/2026 blend) values", () => {
+    const cases: [string, number][] = [["ne", 0.221], ["sea", 0.004], ["kc", -0.172], ["phi", 0.104]];
     for (const [abbr, expected] of cases) {
       const team = EPA.windows["last5-blend"].teams[abbr];
       expect(team.gamesIncluded, abbr).toBe(5);

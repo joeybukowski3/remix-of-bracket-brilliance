@@ -102,7 +102,7 @@ describe("offense EPA rows", () => {
 
   it("shows New England's audited season-blend value", () => {
     const { container } = renderOffense();
-    expect(container.textContent).toContain("+0.215");
+    expect(container.textContent).toContain("+0.175");
   });
 
   it("uses three-decimal signed formatting", () => {
@@ -124,7 +124,7 @@ describe("defense EPA rows", () => {
 
   it("shows Seattle's audited defensive value", () => {
     const { container } = renderDefense();
-    expect(container.textContent).toContain("-0.179");
+    expect(container.textContent).toContain("-0.165");
   });
 });
 
@@ -132,14 +132,35 @@ describe("sample controls drive EPA", () => {
   it("changes the displayed value between Season and Last 5", () => {
     const season = renderOffense(settings("season", true)).container.textContent ?? "";
     const last5 = renderOffense(settings("last5", true)).container.textContent ?? "";
-    // NE: +0.215 on the rolling eight, +0.279 on the last five.
-    expect(season).toContain("+0.215");
-    expect(last5).toContain("+0.279");
-    expect(season).not.toContain("+0.279");
+    // NE: +0.175 on the rolling eight, +0.221 on the last five.
+    expect(season).toContain("+0.175");
+    expect(last5).toContain("+0.221");
+    expect(season).not.toContain("+0.221");
+  });
+
+  it("shows the 2026-only sample when the blend is OFF and 2026 games exist", () => {
+    const { container } = renderOffense(settings("season", false));
+    expect(container.textContent).toContain("-0.092");
   });
 
   it("falls back to N/A when the blend is OFF and no 2026 games exist", () => {
-    const { container } = renderOffense(settings("season", false));
+    const noGames = {
+      ...EPA,
+      windows: { ...EPA.windows, "season-current": { ...EPA.windows["season-current"], teams: {} } },
+    } as EpaArtifact;
+    const { container } = render(
+      <MemoryRouter>
+        <MatchupUnitComparison
+          id="offense"
+          matchup={MATCHUP}
+          groups={OFFENSE_METRIC_GROUPS}
+          resolver={composeMetricResolvers(createEpaResolver(noGames, settings("season", false), SLUGS), unavailableMetricResolver)}
+          baselineLabel="JKB Offense Rating"
+          baselineRank={(t) => t.offenseRank}
+          baselineValue={(t) => t.offensePct}
+        />
+      </MemoryRouter>
+    );
     const tokens = [...container.querySelectorAll("span")]
       .map((n) => (n.textContent ?? "").trim())
       .filter((t) => EPA_TOKEN.test(t));
@@ -151,8 +172,8 @@ describe("sample controls drive EPA", () => {
 describe("ranks", () => {
   it("attaches rank chips to EPA rows", () => {
     const { container } = renderOffense();
-    // NE is #1 in EPA/play over the rolling eight-game sample.
-    expect(container.textContent).toContain("1st");
+    // NE is #2 in EPA/play and EPA/pass over the rolling eight-game sample.
+    expect(container.textContent).toContain("2nd");
   });
 });
 

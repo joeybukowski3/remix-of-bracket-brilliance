@@ -10,8 +10,8 @@
  * here — the artifact is precomputed for all four sample-control states, so
  * switching Season/Last 5 or the historical blend is a pure lookup.
  *
- * Metrics absent from the artifact (EPA, success rate, first downs, third down,
- * time of possession, line-of-scrimmage win rates, ATS/O-U) resolve to null and
+ * Metrics absent from the artifact (EPA, success rate, time of possession,
+ * line-of-scrimmage win rates, ATS/O-U) resolve to null and
  * keep rendering "N/A", exactly as in Phase 1.
  */
 
@@ -49,6 +49,8 @@ export type MatchupMetricsArtifact = {
     generatedAt: string;
     source: string;
     sourceFiles: { season: number; path: string; rowCount: number }[];
+    /** Compact play-by-play down cache behind the first/third-down metrics. */
+    downsSourceFiles?: { season: number; path: string; rowCount: number }[];
     currentSeason: number;
     priorSeason: number;
     seasonsUsed: number[];

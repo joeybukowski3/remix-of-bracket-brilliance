@@ -1,0 +1,147 @@
+name: NFL Matchup Metrics Refresh
+
+run-name: NFL Matchup Metrics Refresh • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # 8:30 AM ET Tuesdays during the NFL season window (Sep-Feb) — after the
+    # daily 6:10 AM schedules/results refresh (finals in results.json) and the
+    # 7:55 AM performance-analytics refresh, so the week's final games are in
+    # every input this chain reads. The `timezone` field keeps the run anchored
+    # to 8:30 AM America/New_York across DST changes.
+    - cron: "30 8 * 1,2,9,10,11,12 2"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-matchup-metrics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The five refresh steps below are one synchronized chain and run in
+      # dependency order. None is guarded with `|| true` or continue-on-error:
+      # if any step fails, every later step (including validation and commit) is
+      # skipped and nothing is pushed, because a half-refreshed chain would put
+      # the matchup page's conventional/down metrics and EPA on different game
+      # windows. Each cache/generator writes atomically, so a failed run leaves
+      # the previously committed files intact.
+
+      # 1. Current-season nflverse team-week stats (input to matchup-metrics).
+      - name: Refresh current-season team-week stats cache
+        run: npm run nfl:stats-team-week-cache
+
+      # 2. Play-by-play first-down / third-down counts (current season).
+      - name: Refresh play-by-play down cache
+        run: npm run nfl:downs-cache
+
+      # 3. Play-by-play EPA (current season only; 2025 and earlier are frozen).
+      - name: Refresh play-by-play EPA cache
+        run: npm run nfl:epa-cache -- --seasons=2026
+
+      # 4. Conventional + down metrics artifact.
+      - name: Generate matchup metrics artifact
+        run: npm run nfl:matchup-metrics
+
+      # 5. EPA artifact.
+      - name: Generate matchup EPA artifact
+        run: npm run nfl:matchup-epa
+
+      # Integrity gate: both artifacts must parse, cover all 32 teams in the
+      # full-coverage windows, carry the down/EPA metrics, and be built from
+      # identical game ids, seasons and counts in every window. Runs whether or
+      # not files changed, so an unsynchronized chain is always a visible
+      # failure. See scripts/validate-nfl-matchup-metrics-alignment.mjs.
+      - name: Validate artifact alignment
+        run: node scripts/validate-nfl-matchup-metrics-alignment.mjs
+
+      - name: Detect data changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain --untracked-files=all -- \
+            data/nfl/nflverse/stats-team-week-current \
+            data/nfl/nflverse/downs-team-game \
+            data/nfl/nflverse/epa-team-game \
+            public/data/nfl/matchup-metrics.json \
+            public/data/nfl/matchup-epa.json)" ]; then
+            echo "No NFL matchup metrics changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "NFL matchup metrics changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push refreshed data
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            data/nfl/nflverse/stats-team-week-current \
+            data/nfl/nflverse/downs-team-game \
+            data/nfl/nflverse/epa-team-game \
+            public/data/nfl/matchup-metrics.json \
+            public/data/nfl/matchup-epa.json
+
+          if git diff --cached --quiet; then
+            echo "No staged NFL matchup metrics changes."
+            exit 0
+          fi
+
+          # Refuse to commit anything outside the approved chain outputs.
+          unexpected="$(git diff --cached --name-only | grep -Ev '^(data/nfl/nflverse/(stats-team-week-current|downs-team-game|epa-team-game)/|public/data/nfl/matchup-(metrics|epa)\.json$)' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "ERROR: unexpected staged paths:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+
+          git commit -m "chore: refresh NFL matchup metrics"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — NFL matchup metrics were not committed." >&2
+            exit 1
+          fi
+
+          echo "NFL matchup metrics pushed successfully."

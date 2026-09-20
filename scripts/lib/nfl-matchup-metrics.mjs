@@ -26,6 +26,8 @@
  * that publish net passing yards.
  */
 
+import { addDownsTotals, downsWindowMetrics, emptyDownsTotals } from "./nfl-downs-core.mjs";
+
 // ---------------------------------------------------------------------------
 // Metric catalogue (generator side)
 // ---------------------------------------------------------------------------
@@ -43,6 +45,9 @@ export const MATCHUP_METRIC_DEFS = Object.freeze({
   "off.yardsPerPlay": { direction: "higher-is-better", decimals: 2 },
   "off.pointsPerGame": { direction: "higher-is-better", decimals: 1 },
   "off.turnoversPerGame": { direction: "lower-is-better", decimals: 2 },
+  // Play-by-play down metrics (percent 0-100), see nfl-downs-core.mjs
+  "off.firstDownsPerPlay": { direction: "higher-is-better", decimals: 1 },
+  "off.thirdDownConversion": { direction: "higher-is-better", decimals: 1 },
   // Offense — passing
   "off.passPlayRate": { direction: "context-only", decimals: 1 },
   "off.passAttemptsPerGame": { direction: "context-only", decimals: 1 },
@@ -58,6 +63,8 @@ export const MATCHUP_METRIC_DEFS = Object.freeze({
   "def.yardsPerPlayAllowed": { direction: "lower-is-better", decimals: 2 },
   "def.pointsAllowedPerGame": { direction: "lower-is-better", decimals: 1 },
   "def.takeawaysPerGame": { direction: "higher-is-better", decimals: 2 },
+  "def.firstDownsPerPlayAllowed": { direction: "lower-is-better", decimals: 1 },
+  "def.thirdDownConversionAllowed": { direction: "lower-is-better", decimals: 1 },
   // Defense — pass
   "def.opponentPasserRating": { direction: "lower-is-better", decimals: 1 },
   "def.opponentYardsPerPassAttempt": { direction: "lower-is-better", decimals: 2 },
@@ -282,9 +289,12 @@ const ratio = (numerator, denominator) => (denominator > 0 ? numerator / denomin
  * exact for the window. Defensive values come from the opponent's row in the
  * same games via the game-id join.
  */
-export function aggregateTeamWindow(selectedGames, rowsByGameTeam) {
+export function aggregateTeamWindow(selectedGames, rowsByGameTeam, downsByGameTeam = null) {
   const totals = emptyTotals();
   const missing = [];
+  const downsOffense = emptyDownsTotals();
+  const downsDefense = emptyDownsTotals();
+  let downsComplete = downsByGameTeam !== null;
 
   for (const game of selectedGames) {
     const own = rowsByGameTeam.get(`${game.gameId}|${game.team}`);
@@ -296,6 +306,17 @@ export function aggregateTeamWindow(selectedGames, rowsByGameTeam) {
 
     const ownX = extras(own);
     const oppX = extras(opp);
+
+    // Play-by-play down counts must cover both sides of every selected game, or
+    // the four down metrics for this window stay unavailable (never partial).
+    const ownDowns = downsByGameTeam?.get(`${game.gameId}|${game.team}`);
+    const oppDowns = downsByGameTeam?.get(`${game.gameId}|${game.opponent}`);
+    if (ownDowns && oppDowns) {
+      addDownsTotals(downsOffense, ownDowns);
+      addDownsTotals(downsDefense, oppDowns);
+    } else {
+      downsComplete = false;
+    }
 
     totals.games += 1;
     totals.offPlays += own.attempts + own.sacksSuffered + own.carries;
@@ -359,9 +380,17 @@ export function aggregateTeamWindow(selectedGames, rowsByGameTeam) {
     "def.opponentYardsPerRushAttempt": ratio(totals.oppRushingYards, totals.oppCarries),
     "def.opponentRushAttemptsPerGame": ratio(totals.oppCarries, g),
     "def.opponentRushYardsPerGame": ratio(totals.oppRushingYards, g),
+    ...(downsComplete && g > 0
+      ? downsWindowMetrics(downsOffense, downsDefense)
+      : {
+          "off.firstDownsPerPlay": null,
+          "def.firstDownsPerPlayAllowed": null,
+          "off.thirdDownConversion": null,
+          "def.thirdDownConversionAllowed": null,
+        }),
   };
 
-  return { values, totals, missing };
+  return { values, totals, missing, downs: { offense: downsOffense, defense: downsDefense, complete: downsComplete && g > 0 } };
 }
 
 // ---------------------------------------------------------------------------

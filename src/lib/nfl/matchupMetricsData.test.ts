@@ -9,6 +9,7 @@ import {
   type MatchupMetricsArtifact,
 } from "@/lib/nfl/matchupMetricsData";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
+import { createObservedComparisonResolver } from "@/lib/nfl/observedComparisonMetrics";
 
 const ROOT = resolve(__dirname, "../../..");
 const ARTIFACT: MatchupMetricsArtifact = JSON.parse(
@@ -32,6 +33,9 @@ describe("generated artifact", () => {
     for (const file of ARTIFACT._meta.sourceFiles) {
       expect(file.path).toMatch(/stats_team_week_\d{4}\.csv$/);
       expect(file.rowCount).toBeGreaterThan(0);
+    }
+    for (const file of ARTIFACT._meta.downsSourceFiles ?? []) {
+      expect(file.path).toMatch(/downs_team_game_\d{4}\.csv$/);
     }
     expect(ARTIFACT._meta.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     // TeamRankings must appear nowhere in the provenance.
@@ -58,18 +62,23 @@ describe("generated artifact", () => {
     expect(Object.keys(ARTIFACT.windows["last5-blend"].teams)).toHaveLength(32);
   });
 
-  it("leaves the current-season-only windows empty until 2026 games are played", () => {
-    // Correct preseason behaviour: blend OFF has no completed 2026 games to use.
-    expect(Object.keys(ARTIFACT.windows["season-current"].teams)).toHaveLength(0);
-    expect(Object.keys(ARTIFACT.windows["last5-current"].teams)).toHaveLength(0);
+  it("builds the current-season-only windows from 2026 games alone, never borrowing 2025", () => {
+    // Holds at any point in the season: blend OFF is empty before kickoff and
+    // 2026-only afterwards.
+    for (const id of ["season-current", "last5-current"]) {
+      for (const [abbr, team] of Object.entries(ARTIFACT.windows[id].teams)) {
+        expect(team.seasons, `${id} ${abbr}`).toEqual([2026]);
+        expect(team.gameIds.every((gameId) => gameId.startsWith("2026_")), `${id} ${abbr}`).toBe(true);
+      }
+    }
   });
 
-  it("uses eight completed prior-season games per team in the blended season window", () => {
+  it("uses the latest eight completed games per team in the blended season window", () => {
     for (const [abbr, team] of Object.entries(ARTIFACT.windows["season-blend"].teams)) {
       expect(team.gamesIncluded, abbr).toBe(8);
       expect(team.gameIds, abbr).toHaveLength(8);
       expect(new Set(team.gameIds).size, abbr).toBe(8);
-      expect(team.seasons, abbr).toEqual([2025]);
+      for (const season of team.seasons) expect([2025, 2026], abbr).toContain(season);
     }
   });
 
@@ -94,8 +103,8 @@ describe("generated artifact", () => {
       Object.values(ARTIFACT.windows["season-blend"].teams).flatMap((t) => Object.keys(t.metrics))
     );
     for (const deferred of [
-      "off.epaPerPlay", "off.successRate", "off.thirdDownConversion", "off.timeOfPossession",
-      "off.firstDownsPerPlay", "off.passBlockWinRate", "def.runStopWinRate", "def.epaPerPlayAllowed",
+      "off.epaPerPlay", "off.successRate", "off.timeOfPossession",
+      "off.passBlockWinRate", "def.runStopWinRate", "def.epaPerPlayAllowed",
       "mkt.atsRecord", "mkt.overUnderRecord",
     ]) {
       expect(keys.has(deferred), `${deferred} must not be present`).toBe(false);
@@ -108,6 +117,65 @@ describe("generated artifact", () => {
       const rush = team.metrics["off.rushPlayRate"][0];
       expect(pass + rush, abbr).toBeCloseTo(100, 0);
     }
+  });
+});
+
+const DOWN_KEYS = [
+  "off.firstDownsPerPlay",
+  "def.firstDownsPerPlayAllowed",
+  "off.thirdDownConversion",
+  "def.thirdDownConversionAllowed",
+] as const;
+
+describe("play-by-play down metrics", () => {
+  it("are catalogued in the artifact and populated for all 32 teams in every window", () => {
+    for (const key of DOWN_KEYS) expect(ARTIFACT._meta.metricKeys).toContain(key);
+    for (const [id, window] of Object.entries(ARTIFACT.windows)) {
+      for (const [abbr, team] of Object.entries(window.teams)) {
+        for (const key of DOWN_KEYS) {
+          const [value, rank] = team.metrics[key] ?? [];
+          expect(value, `${id} ${abbr} ${key}`).toBeGreaterThan(0);
+          expect(value, `${id} ${abbr} ${key}`).toBeLessThan(100);
+          expect(rank, `${id} ${abbr} ${key} rank`).toBeGreaterThanOrEqual(1);
+        }
+      }
+    }
+    expect(Object.keys(ARTIFACT.windows["prior-season-full"].teams)).toHaveLength(32);
+    expect(Object.keys(ARTIFACT.windows["season-current"].teams)).toHaveLength(32);
+  });
+
+  it("resolve to a formatted percent and rank for the current 2026 sample and the blend", () => {
+    for (const settings of [SEASON_CURRENT, SEASON_BLEND]) {
+      const resolve = createMatchupMetricResolver(ARTIFACT, settings, SLUG_TO_ABBR);
+      for (const key of DOWN_KEYS) {
+        const value = resolve("new-england-patriots", key);
+        expect(value, `${settings.includePriorSeason} ${key}`).not.toBeNull();
+        expect(value!.formattedValue).toMatch(/^\d+\.\d%$/);
+        expect(value!.rank).toBeGreaterThanOrEqual(1);
+        expect(value!.rank).toBeLessThanOrEqual(32);
+      }
+    }
+  });
+
+  it("resolve through the explicit 2025 and 2026 season lenses", () => {
+    const sources = { conventional: ARTIFACT, epa: null, success: null, trench: null };
+    for (const season of [2025, 2026] as const) {
+      const observed = createObservedComparisonResolver(sources, season);
+      for (const key of DOWN_KEYS) {
+        const value = observed("ne", key);
+        expect(value, `${season} ${key}`).not.toBeNull();
+        expect(value!.value, `${season} ${key}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("rank in the catalogue direction: best offense first, best defense lowest allowed", () => {
+    const teams = Object.values(ARTIFACT.windows["prior-season-full"].teams);
+    const best = (key: string, rank: number) => teams.find((t) => t.metrics[key][1] === rank)!.metrics[key][0];
+    expect(best("off.thirdDownConversion", 1)).toBeGreaterThanOrEqual(best("off.thirdDownConversion", 32));
+    expect(best("def.thirdDownConversionAllowed", 1)).toBeLessThanOrEqual(best("def.thirdDownConversionAllowed", 32));
+    expect(best("off.firstDownsPerPlay", 1)).toBeGreaterThanOrEqual(best("off.firstDownsPerPlay", 32));
+    expect(best("def.firstDownsPerPlayAllowed", 1)).toBeLessThanOrEqual(best("def.firstDownsPerPlayAllowed", 32));
   });
 });
 
@@ -127,7 +195,7 @@ describe("resolver", () => {
 
   it("returns null for deferred metrics so the UI renders N/A", () => {
     for (const key of [
-      "off.epaPerPlay", "off.successRate", "off.thirdDownConversion", "off.timeOfPossession",
+      "off.epaPerPlay", "off.successRate", "off.timeOfPossession",
       "off.passBlockWinRate", "def.passRushWinRate", "def.runStopWinRate", "mkt.atsRecord",
     ]) {
       expect(resolve0("new-england-patriots", key), key).toBeNull();
@@ -139,13 +207,17 @@ describe("resolver", () => {
     expect(resolve0("new-england-patriots", "off.notAMetric")).toBeNull();
   });
 
-  it("returns null for every metric in the empty blend-OFF windows", () => {
+  it("answers blend-OFF windows only from the current-season-only artifact window", () => {
     const off = createMatchupMetricResolver(ARTIFACT, SEASON_CURRENT, SLUG_TO_ABBR);
-    expect(off("new-england-patriots", "off.yardsPerPlay")).toBeNull();
-    expect(off("seattle-seahawks", "def.pointsAllowedPerGame")).toBeNull();
-
-    const last5Off = createMatchupMetricResolver(ARTIFACT, LAST5_CURRENT, SLUG_TO_ABBR);
-    expect(last5Off("new-england-patriots", "off.yardsPerPlay")).toBeNull();
+    const team = ARTIFACT.windows["season-current"].teams.ne;
+    const value = off("new-england-patriots", "off.yardsPerPlay");
+    if (!team) {
+      expect(value).toBeNull();
+    } else {
+      expect(value!.value).toBe(team.metrics["off.yardsPerPlay"][0]);
+      expect(team.seasons).toEqual([2026]);
+    }
+    expect(off("not-a-team", "def.pointsAllowedPerGame")).toBeNull();
   });
 
   it("resolves a different sample when the control state changes", () => {
@@ -187,21 +259,24 @@ describe("value formatting", () => {
 });
 
 describe("sample label", () => {
-  it("describes the preseason blended samples", () => {
-    expect(describeMatchupSample(ARTIFACT, SEASON_BLEND, ["ne", "sea"]).label).toBe("8 games · 2025");
-    expect(describeMatchupSample(ARTIFACT, LAST5_BLEND, ["ne", "sea"]).label).toBe("5 games · 2025");
+  it("describes the blended samples by game count and seasons", () => {
+    expect(describeMatchupSample(ARTIFACT, SEASON_BLEND, ["ne", "sea"]).label).toMatch(/^8 games · (2025|2025\/2026 blend|2026 only)$/);
+    expect(describeMatchupSample(ARTIFACT, LAST5_BLEND, ["ne", "sea"]).label).toMatch(/^5 games · (2025|2025\/2026 blend|2026 only)$/);
   });
 
-  it("reports the empty blend-OFF state honestly rather than borrowing 2025", () => {
+  it("reports blend-OFF honestly: 2026-only when games exist, empty (never 2025) when none do", () => {
     const summary = describeMatchupSample(ARTIFACT, SEASON_CURRENT, ["ne", "sea"]);
-    expect(summary.empty).toBe(true);
-    expect(summary.label).toMatch(/no completed 2026 games/i);
+    expect(summary.empty).toBe(false);
+    expect(summary.label).toMatch(/2026 only/);
+    const none = describeMatchupSample(ARTIFACT, SEASON_CURRENT, ["not-a-team"]);
+    expect(none.empty).toBe(true);
+    expect(none.label).toMatch(/no completed 2026 games/i);
   });
 
   it("exposes the exact game ids backing the sample", () => {
     const summary = describeMatchupSample(ARTIFACT, SEASON_BLEND, ["ne", "sea"]);
     expect(summary.gameIdsByTeam.ne).toHaveLength(8);
     expect(summary.gameIdsByTeam.sea).toHaveLength(8);
-    for (const id of summary.gameIdsByTeam.ne) expect(id).toMatch(/^2025_\d{2}_/);
+    for (const id of summary.gameIdsByTeam.ne) expect(id).toMatch(/^(2025|2026)_\d{2}_/);
   });
 });

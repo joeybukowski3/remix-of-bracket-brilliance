@@ -74,8 +74,16 @@ to present:
 - completed-opponent schedule-strength context; and
 - descriptive category advantages.
 
-Unavailable metrics remain `N/A`; first downs, third-down rate, and time of
-possession are not estimated. Schedule context is descriptive and adjusts no
+Unavailable metrics remain `N/A`; time of possession is not estimated.
+First Downs / Play and 3rd Down Conversion (offense and opponent) are
+play-by-play metrics in the conventional artifact: `first_down == 1` plays over
+eligible plays, and `third_down_converted` over `third_down_converted +
+third_down_failed`, both from nflverse/nflfastR, regular season, with `no_play`
+(replayed-down) rows excluded from numerator and denominator. Offense and
+defense are read from the same play rows. Exact definitions live in
+[`nfl-downs-core.mjs`](../../scripts/lib/nfl-downs-core.mjs); the compact
+per-team-game cache is `data/nfl/nflverse/downs-team-game/`, refreshed by
+`npm run nfl:downs-cache` before `npm run nfl:matchup-metrics`. Schedule context is descriptive and adjusts no
 rating, metric, or projection.
 
 ### Samples and periods

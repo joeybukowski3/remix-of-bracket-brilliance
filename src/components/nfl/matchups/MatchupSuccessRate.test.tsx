@@ -245,7 +245,7 @@ describe("offense vs defense", () => {
 describe("nothing else regressed", () => {
   it("leaves EPA and other deferred rows at N/A", () => {
     renderOffense(resolveSuccessPeriods(0, 0));
-    for (const label of ["EPA / Play", "3rd Down Conversion", "Avg Time of Possession", "Pass Block Win Rate"]) {
+    for (const label of ["EPA / Play", "Avg Time of Possession", "Pass Block Win Rate"]) {
       const row = screen.getAllByText(label)[0].closest(".grid") as HTMLElement;
       expect(within(row).getAllByText("N/A").length, label).toBe(2);
     }
