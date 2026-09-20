@@ -1,29 +1,86 @@
 {
   "date": "2026-09-20",
-  "generatedAt": "2026-09-20T12:29:37.221Z",
+  "generatedAt": "2026-09-20T14:54:20.641Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field dominates the slate with a 1.4 park factor, creating a massive HR boost for Seattle bats against Sugano. Alvarez draws the top spot in a favorable matchup at Daikin Park against lefty Pérez, while Caminero benefits from a left-on-left look at Tropicana. Burnes and Alcantara represent the toughest assignments, suppressing power output for Rice and Tatis despite solid underlying metrics.",
-    "modelNote": "The model heavily weights park factors and recent HR trends, elevating Coors hitters and Alvarez despite varying barrel rates, while discounting high-K profiles like Montes and Rodriguez."
+    "slateOverview": "Coors Field and Great American Ball Park are the primary power drivers today, with 1.4 and 1.25 park factors respectively. Lowder and Peterson are both lefties facing right-handed bats in hitter-friendly venues, while Sugano at altitude creates a secondary Coors stack opportunity. Warm, dry conditions are expected across the slate with no weather suppression.",
+    "modelNote": "The model is overweighting barrel rate and hard-hit metrics in elevated parks while discounting strikeout rates for power bats in favorable matchups, with hrScoreRank prioritizing recent form and opposing pitcher HR vulnerability."
   },
   "bestBets": [
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 1,
+      "topStats": [
+        "hrScore=80.5",
+        "park=1.25"
+      ],
+      "bullets": [
+        "hrScore=80.5",
+        "park=1.25"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "CHC",
+      "opposingPitcher": "David Peterson",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=72.1",
+        "park=1.25"
+      ],
+      "bullets": [
+        "hrScore=72.1",
+        "park=1.25"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "ATL",
       "opposingPitcher": "Martín Pérez",
-      "hrScoreRank": 1,
+      "hrScoreRank": 3,
       "topStats": [
-        "barrel=16.2%",
-        "HH=53.4%"
-      ],
-      "bullets": [
-        "barrel=16.2%",
+        "hrScore=69.7",
         "park=1.04"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
+      "bullets": [
+        "hrScore=69.7",
+        "park=1.04"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "WSH",
+      "opposingPitcher": "Jake Irvin",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=78.0",
+        "Hard Hit%=50.2"
+      ],
+      "bullets": [
+        "HR score 66.4 (#4)",
+        "Pitcher HR VS 78.0 at park 0.92"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -31,251 +88,60 @@
       "team": "TB",
       "opponent": "BOS",
       "opposingPitcher": "Patrick Sandoval",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=13.1%",
-        "HH=49.8%"
-      ],
-      "bullets": [
-        "barrel=13.1%",
-        "park=0.98"
-      ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Cal Raleigh",
-      "team": "SEA",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=14.9%",
-        "HH=39.4%"
-      ],
-      "bullets": [
-        "barrel=14.9%",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Lazaro Montes",
-      "team": "SEA",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=84.5",
-        "Hard Hit%=42.1"
-      ],
-      "bullets": [
-        "HR score 67.5 (#4)",
-        "Pitcher HR VS 84.5 at park 1.40"
-      ],
-      "hrOddsYes": "+483",
-      "marketImpliedProbability": 0.17152658662092624,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Leo Bernal",
-      "team": "STL",
-      "opponent": "WSH",
-      "opposingPitcher": "Jake Irvin",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=77.8",
-        "Hard Hit%=62.5"
+        "Pitcher HR VS=54.7",
+        "Hard Hit%=49.8"
       ],
       "bullets": [
         "HR score 66.2 (#5)",
-        "Pitcher HR VS 77.8 at park 0.92"
+        "Pitcher HR VS 54.7 at park 0.98"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Lazaro Montes",
-      "team": "SEA",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=21.1%",
-        "HH=42.1%"
-      ],
-      "bullets": [
-        "barrel=21.1%",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+483",
-      "marketImpliedProbability": 0.17152658662092624,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Leo Bernal",
+      "player": "Alec Burleson",
       "team": "STL",
       "opponent": "WSH",
       "opposingPitcher": "Jake Irvin",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=8.9%",
-        "HH=62.5%"
-      ],
-      "bullets": [
-        "HH=62.5%",
+        "hrScore=66.4",
         "park=0.92"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
+      "bullets": [
+        "hrScore=66.4",
+        "park=0.92"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Randy Arozarena",
-      "team": "SEA",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=7.9%",
-        "HH=43.1%"
-      ],
-      "bullets": [
-        "barrel=7.9%",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Dominic Canzone",
-      "team": "SEA",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=84.5",
-        "Hard Hit%=44.9"
-      ],
-      "bullets": [
-        "HR score 66.0 (#7)",
-        "Pitcher HR VS 84.5 at park 1.40"
-      ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "LAA",
-      "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=65.5",
-        "Hard Hit%=58.8"
-      ],
-      "bullets": [
-        "HR score 65.2 (#8)",
-        "Pitcher HR VS 65.5 at park 1.02"
-      ],
-      "hrOddsYes": "+420",
-      "marketImpliedProbability": 0.19230769230769232,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Dominic Canzone",
-      "team": "SEA",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=12.2%",
-        "HH=44.9%"
-      ],
-      "bullets": [
-        "barrel=12.2%",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "LAA",
-      "opposingPitcher": "Ryan Johnson",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=23.5%",
-        "HH=58.8%"
-      ],
-      "bullets": [
-        "barrel=23.5%",
-        "park=1.02"
-      ],
-      "hrOddsYes": "+420",
-      "marketImpliedProbability": 0.19230769230769232,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "NYY",
-      "opposingPitcher": "Will Warren",
-      "hrScoreRank": 24,
-      "topStats": [
-        "Pitcher HR VS=54.9",
-        "Hard Hit%=42.0"
-      ],
-      "bullets": [
-        "HR score 55.0 (#24)",
-        "Pitcher HR VS 54.9 at park 1.01"
-      ],
-      "hrOddsYes": "+800",
-      "marketImpliedProbability": 0.1111111111111111,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jonathan Aranda",
+      "player": "Junior Caminero",
       "team": "TB",
       "opponent": "BOS",
       "opposingPitcher": "Patrick Sandoval",
-      "hrScoreRank": 15,
+      "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=54.7",
-        "Hard Hit%=45.7"
+        "hrScore=66.2",
+        "park=0.98"
       ],
       "bullets": [
-        "HR score 58.0 (#15)",
-        "Pitcher HR VS 54.7 at park 0.98"
+        "hrScore=66.2",
+        "park=0.98"
       ],
-      "hrOddsYes": "+625",
-      "marketImpliedProbability": 0.13793103448275862,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
-  ]
+  ],
+  "longshots": []
 }
