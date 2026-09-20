@@ -2518,8 +2518,28 @@ details[open] > summary .matchup-summary-chevron {
   color: #f5c454 !important;
 }
 
-/* Unified league-rank plot. The axis stays in place while metric groups scroll. */
+/*
+ * Unified league-rank plot. The axis stays in place while metric groups scroll.
+ * Sizing is driven entirely by the --tower-* custom properties below, set per
+ * viewport tier (compact mobile is the base). MatchupTowerGrid marks charts of
+ * <= 6 metrics with data-fit so they share the viewport width on phones instead
+ * of scrolling; larger sets keep a per-group minimum and scroll internally.
+ */
 .matchup-unified-chart {
+  --tower-h: 9.75rem;
+  --tower-w: 0.75rem;
+  --tower-gap: 0.2rem;
+  --tower-team-w: 1.5rem;
+  --tower-axis-w: 1.6rem;
+  --tower-group-min: 3.6rem;
+  --tower-group-pad: 0.1rem;
+  --tower-label: 0.55rem;
+  --tower-context: 0.5rem;
+  --tower-value: 0.52rem;
+  --tower-rank: 0.5rem;
+  --tower-id: 0.5rem;
+  --tower-crest: 11px;
+  --tower-axis-font: 0.55rem;
   overflow: hidden;
   border: 1px solid var(--matchup-viz-border);
   border-radius: 0.6rem;
@@ -2529,7 +2549,7 @@ details[open] > summary .matchup-summary-chevron {
 .matchup-unified-chart__legend {
   display: flex;
   gap: 1rem;
-  padding: 0 0.75rem 0.65rem;
+  padding: 0 0.75rem 0.4rem;
   color: var(--matchup-viz-text);
   font-size: 0.68rem;
   font-weight: 800;
@@ -2537,40 +2557,81 @@ details[open] > summary .matchup-summary-chevron {
 
 .matchup-unified-chart__legend > span { display: inline-flex; align-items: center; gap: 0.3rem; }
 .matchup-unified-chart__legend small { color: var(--matchup-viz-muted); font-size: 0.58rem; font-weight: 600; text-transform: uppercase; }
-.matchup-unified-chart__frame { display: flex; min-width: 0; padding: 0 0.55rem 0.8rem 0; }
-.matchup-unified-chart__axis { position: relative; flex: 0 0 2rem; height: 11.25rem; color: var(--matchup-viz-muted); font-size: 0.65rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.matchup-unified-chart__axis > span { position: absolute; right: 0.45rem; transform: translateY(-50%); }
+.matchup-unified-chart__frame { display: flex; min-width: 0; padding: 0 0.2rem 0.45rem 0; }
+.matchup-unified-chart__axis { position: relative; flex: 0 0 var(--tower-axis-w); height: var(--tower-h); color: var(--matchup-viz-muted); font-size: var(--tower-axis-font); font-weight: 700; font-variant-numeric: tabular-nums; }
+.matchup-unified-chart__axis > span { position: absolute; right: 0.3rem; transform: translateY(-50%); }
 .matchup-unified-chart__axis > span:first-child { transform: none; }
 .matchup-unified-chart__axis > span:last-child { transform: translateY(-100%); }
 .matchup-unified-chart__viewport { min-width: 0; flex: 1; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
 .matchup-unified-chart__viewport:focus-visible { outline: 2px solid var(--matchup-viz-accent); outline-offset: -2px; }
-.matchup-unified-chart__track { position: relative; display: flex; width: 100%; min-width: max-content; align-items: flex-start; }
-.matchup-unified-chart__grid { position: absolute; top: 0; right: 0; left: 0; height: 11.25rem; pointer-events: none; }
+.matchup-unified-chart__track { position: relative; display: flex; width: 100%; min-width: max-content; align-items: stretch; justify-content: center; }
+.matchup-unified-chart__grid { position: absolute; top: 0; right: 0; left: 0; height: var(--tower-h); pointer-events: none; }
 .matchup-unified-chart__grid > span { position: absolute; left: 0; right: 0; border-top: 1px solid var(--matchup-viz-grid); }
-.matchup-unified-chart__group { position: relative; z-index: 1; box-sizing: border-box; flex: 1 0 7rem; min-width: 7rem; padding: 0 0.25rem; text-align: center; scroll-snap-align: start; }
-.matchup-unified-chart__pair { display: flex; justify-content: center; gap: 0.35rem; }
-.matchup-unified-chart__team { display: flex; min-width: 0; flex: 0 0 2.6rem; flex-direction: column; align-items: center; color: var(--matchup-viz-muted); }
+.matchup-unified-chart__group { position: relative; z-index: 1; box-sizing: border-box; flex: 1 0 var(--tower-group-min); min-width: var(--tower-group-min); padding: 0 var(--tower-group-pad); text-align: center; scroll-snap-align: start; }
+.matchup-unified-chart__group:nth-child(odd) { background: color-mix(in srgb, var(--matchup-viz-raised) 30%, transparent); }
+.matchup-unified-chart[data-fit] .matchup-unified-chart__track { min-width: 0; }
+.matchup-unified-chart[data-fit] .matchup-unified-chart__group { flex: 1 1 0; min-width: 0; }
+.matchup-unified-chart[data-fit] .matchup-unified-chart__team { flex: 1 1 0; }
+.matchup-unified-chart__value { letter-spacing: -0.02em; }
+.matchup-unified-chart__pair { display: flex; justify-content: center; gap: var(--tower-gap); }
+.matchup-unified-chart__team { display: flex; min-width: 0; flex: 0 1 var(--tower-team-w); flex-direction: column; align-items: center; color: var(--matchup-viz-muted); }
 .matchup-unified-chart__team:focus-visible { outline: 2px solid var(--matchup-viz-accent); outline-offset: 2px; }
-.matchup-unified-chart__bar-zone { position: relative; width: 1.2rem; height: 11.25rem; }
+.matchup-unified-chart__bar-zone { position: relative; width: var(--tower-w); height: var(--tower-h); }
 .matchup-unified-chart__bar-rail { position: absolute; inset: 0; display: flex; align-items: flex-end; background: color-mix(in srgb, var(--matchup-viz-raised) 45%, transparent); }
 .matchup-unified-chart .matchup-rank-towers__bar-fill { width: 100%; background: color-mix(in srgb, var(--tower-team-color) 80%, white); border-radius: 0.16rem 0.16rem 0 0; }
-.matchup-unified-chart .matchup-rank-towers__rank { position: absolute; z-index: 2; bottom: max(0px, calc(var(--tower-height) - 1rem)); left: 50%; transform: translateX(-50%); padding: 0 0.1rem; color: white; background: color-mix(in srgb, var(--tower-team-color) 75%, #172536); text-shadow: 0 1px 1px #000; font-size: 0.6rem; }
+.matchup-unified-chart .matchup-rank-towers__rank { position: absolute; z-index: 2; bottom: max(0px, calc(var(--tower-height) - 1.2em)); left: 50%; transform: translateX(-50%); padding: 0 0.08rem; color: white; background: color-mix(in srgb, var(--tower-team-color) 75%, #172536); text-shadow: 0 1px 1px #000; font-size: var(--tower-rank); font-weight: 800; line-height: 1.2; }
 .matchup-unified-chart__missing { position: absolute; bottom: 0; width: 100%; height: 100%; display: grid; place-items: end center; border: 1px dashed var(--matchup-viz-muted); color: var(--matchup-viz-muted); }
-.matchup-unified-chart__identity { display: flex; min-height: 1.3rem; align-items: center; justify-content: center; gap: 0.12rem; margin-top: 0.3rem; font-size: 0.55rem; font-weight: 800; white-space: nowrap; }
-.matchup-unified-chart__value { min-height: 0.9rem; color: var(--matchup-viz-text); font-size: 0.59rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.matchup-unified-chart__caption { display: flex; min-height: 3.5rem; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0.1rem; padding: 0.5rem 0.1rem 0; color: var(--matchup-viz-text); font-size: 0.61rem; font-weight: 800; line-height: 0.8rem; text-transform: uppercase; overflow-wrap: anywhere; }
-.matchup-unified-chart__caption button { color: inherit; text-transform: inherit; font: inherit; line-height: inherit; overflow-wrap: inherit; }
+.matchup-unified-chart__identity { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0.08rem; margin-top: 0.2rem; font-size: var(--tower-id); font-weight: 800; line-height: 1.05; text-align: center; }
+.matchup-unified-chart__identity .rank-tower-team-crest { width: var(--tower-crest) !important; height: var(--tower-crest) !important; }
+.matchup-unified-chart__value { margin-top: 0.08rem; color: var(--matchup-viz-text); font-size: var(--tower-value); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; white-space: nowrap; }
+.matchup-unified-chart__caption { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0.08rem; padding: 0.3rem 0.05rem 0.35rem; color: var(--matchup-viz-text); font-size: var(--tower-label); font-weight: 800; line-height: 1.08; text-transform: uppercase; overflow-wrap: anywhere; }
+.matchup-unified-chart__caption button { color: inherit; text-transform: inherit; font: inherit; line-height: inherit; text-align: center; overflow-wrap: inherit; }
 .matchup-unified-chart__caption button:hover, .matchup-unified-chart__caption button:focus-visible { color: var(--matchup-viz-accent); text-decoration: underline; }
-.matchup-unified-chart__caption small { color: var(--matchup-viz-muted); font-size: 0.55rem; font-weight: 700; }
+.matchup-unified-chart__caption small { color: var(--matchup-viz-muted); font-size: var(--tower-context); font-weight: 600; line-height: 1.1; }
+.matchup-unified-chart .matchup-rank-towers__context { max-width: 100%; padding: 0.05rem 0.15rem; border: 0; background: transparent; font-size: var(--tower-context); font-weight: 600; line-height: 1.1; letter-spacing: 0; white-space: normal; }
 .matchup-unified-chart [data-active="true"] .matchup-unified-chart__caption { color: var(--matchup-viz-accent); }
 
-@media (min-width: 768px) {
-  .matchup-unified-chart__track { min-width: 0; }
-  .matchup-unified-chart__group { min-width: 0; flex-basis: 0; }
+/* Large mobile */
+@media (min-width: 481px) {
+  .matchup-unified-chart {
+    --tower-h: 10.5rem; --tower-w: 0.95rem; --tower-gap: 0.25rem; --tower-team-w: 1.9rem; --tower-axis-w: 1.9rem;
+    --tower-group-min: 4.6rem; --tower-group-pad: 0.15rem;
+    --tower-label: 0.62rem; --tower-context: 0.55rem; --tower-value: 0.58rem; --tower-rank: 0.56rem; --tower-id: 0.56rem;
+    --tower-crest: 13px; --tower-axis-font: 0.6rem;
+  }
 }
 
-@media (max-width: 767px) {
-  .matchup-unified-chart__group { flex: 0 0 7.25rem; }
-  .matchup-unified-chart__axis { flex-basis: 1.75rem; }
-  .matchup-unified-chart__caption { min-height: 4.5rem; }
+/* Tablet / small laptop: fit metrics without page or chart scrolling where possible. */
+@media (min-width: 768px) {
+  .matchup-unified-chart {
+    --tower-h: 12rem; --tower-w: 1.2rem; --tower-gap: 0.3rem; --tower-team-w: 2.4rem; --tower-axis-w: 2.1rem;
+    --tower-group-min: 5.6rem; --tower-group-pad: 0.25rem;
+    --tower-label: 0.7rem; --tower-context: 0.6rem; --tower-value: 0.66rem; --tower-rank: 0.64rem; --tower-id: 0.62rem;
+    --tower-crest: 16px; --tower-axis-font: 0.65rem;
+  }
+  .matchup-unified-chart__frame { padding-right: 0.55rem; }
+  .matchup-unified-chart__identity { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.15rem; margin-top: 0.3rem; }
+  .matchup-unified-chart__caption { padding-top: 0.4rem; border-top: 1px solid var(--matchup-viz-grid); }
+  .matchup-unified-chart__group + .matchup-unified-chart__group { border-left: 1px solid var(--matchup-viz-grid); }
+}
+
+/* Desktop */
+@media (min-width: 1100px) {
+  .matchup-unified-chart {
+    --tower-h: 15rem; --tower-w: 1.5rem; --tower-gap: 0.4rem; --tower-team-w: 3.1rem; --tower-axis-w: 2.4rem;
+    --tower-group-min: 7.4rem; --tower-group-pad: 0.4rem;
+    --tower-label: 0.78rem; --tower-context: 0.66rem; --tower-value: 0.7rem; --tower-rank: 0.7rem; --tower-id: 0.68rem;
+    --tower-crest: 18px; --tower-axis-font: 0.7rem;
+  }
+}
+
+/* Large desktop: use the space, but cap group width so the plot is not absurdly stretched. */
+@media (min-width: 1440px) {
+  .matchup-unified-chart {
+    --tower-h: 17rem; --tower-w: 1.75rem; --tower-gap: 0.5rem; --tower-team-w: 3.6rem; --tower-axis-w: 2.6rem;
+    --tower-group-min: 8.6rem; --tower-group-pad: 0.5rem;
+    --tower-label: 0.82rem; --tower-context: 0.7rem; --tower-value: 0.75rem; --tower-rank: 0.75rem; --tower-id: 0.72rem;
+    --tower-crest: 20px; --tower-axis-font: 0.75rem;
+  }
+  .matchup-unified-chart__group { max-width: 14rem; }
 }
