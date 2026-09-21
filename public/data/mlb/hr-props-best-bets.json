@@ -1,10 +1,10 @@
 {
   "date": "2026-09-21",
-  "generatedAt": "2026-09-21T19:37:42.054Z",
+  "generatedAt": "2026-09-21T20:08:11.017Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Camden Yards (1.1) and the matchup between Alonso and Yesavage headline a slate where three of the top seven model scores land in the same game. Oracle Park (0.85) suppresses power but still surfaces Clemens and Bericoto because opposing pitchers are leaking HRs at 64-plus rates. Comerica and the Herz-Ryan lefty-righty split create a secondary pocket of value for Wood and Greene.",
-    "modelNote": "The model is prioritizing barrel rate and park factor first, then layering in recent HR volume and opposing-pitcher vulnerability to separate Alonso from the pack."
+    "slateOverview": "Camden Yards (1.1 PF) and the matchup between Alonso, Mayo, and Encarnacion-Strand versus rookie righty Trey Yesavage headline the slate, while Oracle Park (0.85 PF) suppresses power for Clemens and Bell despite favorable opposing-pitcher HR rates. Comerica Park (0.95 PF) offers a neutral environment for Wood and Greene, but the model is discounting their recent HR drought and zero opposing-pitcher history.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park factor over recent HR volume, elevating Alonso to the top spot while still surfacing Wood and Greene on raw power metrics despite their cold streaks."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Trey Yesavage",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=14.3%",
-        "HH=55.9%"
+        "hrScore=68.7",
+        "barrel=14.3%"
       ],
       "bullets": [
         "hrScore=68.7",
         "park=1.1"
       ],
-      "hrOddsYes": "+359",
-      "marketImpliedProbability": 0.2178649237472767,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Blade Tidwell",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=11.3%",
-        "HH=45.8%"
+        "hrScore=57.7",
+        "barrel=11.3%"
       ],
       "bullets": [
-        "hrScore=57.6",
+        "hrScore=57.7",
         "park=0.85"
       ],
-      "hrOddsYes": "+419",
-      "marketImpliedProbability": 0.1926782273603083,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,8 +52,8 @@
       "opposingPitcher": "Zebby Matthews",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=14.7%",
-        "HH=50%"
+        "hrScore=54.3",
+        "barrel=14.7%"
       ],
       "bullets": [
         "hrScore=54.3",
@@ -71,16 +71,16 @@
       "opposingPitcher": "River Ryan",
       "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=58.6",
-        "Barrel%=19.3"
+        "hrScore=54.1",
+        "barrel=19.3%"
       ],
       "bullets": [
-        "HR score 54.0 (#4)",
-        "Pitcher HR VS 0.0 at park 0.95"
+        "hrScore=54.1",
+        "park=0.95"
       ],
-      "hrOddsYes": "+379",
-      "marketImpliedProbability": 0.20876826722338204,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -90,191 +90,115 @@
       "opposingPitcher": "DJ Herz",
       "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=47.0",
-        "Barrel%=15.3"
+        "hrScore=52.9",
+        "barrel=15.3%"
       ],
       "bullets": [
-        "HR score 52.8 (#5)",
-        "Pitcher HR VS 0.0 at park 0.95"
+        "hrScore=52.9",
+        "park=0.95"
       ],
-      "hrOddsYes": "+498",
-      "marketImpliedProbability": 0.16722408026755853,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "DET",
-      "opposingPitcher": "River Ryan",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=19.3%",
-        "HH=58.6%"
-      ],
-      "bullets": [
-        "hrScore=54",
-        "park=0.95"
-      ],
-      "hrOddsYes": "+379",
-      "marketImpliedProbability": 0.20876826722338204,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Riley Greene",
-      "team": "DET",
-      "opponent": "WSH",
-      "opposingPitcher": "DJ Herz",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=15.3%",
-        "HH=47%"
-      ],
-      "bullets": [
-        "hrScore=52.8",
-        "park=0.95"
-      ],
-      "hrOddsYes": "+498",
-      "marketImpliedProbability": 0.16722408026755853,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Kazuma Okamoto",
-      "team": "TOR",
-      "opponent": "BAL",
-      "opposingPitcher": "Shane Baz",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=13.3%",
-        "HH=44%"
-      ],
-      "bullets": [
-        "hrScore=52.3",
-        "park=1.1"
-      ],
-      "hrOddsYes": "+429",
-      "marketImpliedProbability": 0.1890359168241966,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Coby Mayo",
+      "player": "Pete Alonso",
       "team": "BAL",
       "opponent": "TOR",
       "opposingPitcher": "Trey Yesavage",
-      "hrScoreRank": 7,
+      "hrScoreRank": 1,
       "topStats": [
-        "Hard Hit%=48.1",
-        "Pitcher HR VS=39.6"
+        "hrScore=68.7",
+        "barrel=14.3%"
       ],
       "bullets": [
-        "HR score 51.0 (#7)",
-        "Pitcher HR VS 39.6 at park 1.10"
+        "hrScore=68.7",
+        "park=1.1"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Josh Bell",
+      "player": "Kody Clemens",
       "team": "MIN",
       "opponent": "SF",
       "opposingPitcher": "Blade Tidwell",
-      "hrScoreRank": 8,
+      "hrScoreRank": 2,
       "topStats": [
-        "Pitcher HR VS=64.7",
-        "Hard Hit%=42.4"
+        "hrScore=57.7",
+        "barrel=11.3%"
       ],
       "bullets": [
-        "HR score 50.1 (#8)",
-        "Pitcher HR VS 64.7 at park 0.85"
+        "hrScore=57.7",
+        "park=0.85"
       ],
-      "hrOddsYes": "+556",
-      "marketImpliedProbability": 0.1524390243902439,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Victor Bericoto",
+      "team": "SF",
+      "opponent": "MIN",
+      "opposingPitcher": "Zebby Matthews",
+      "hrScoreRank": 3,
+      "topStats": [
+        "hrScore=54.3",
+        "barrel=14.7%"
+      ],
+      "bullets": [
+        "hrScore=54.3",
+        "park=0.85"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Coby Mayo",
+      "player": "Pete Alonso",
       "team": "BAL",
       "opponent": "TOR",
       "opposingPitcher": "Trey Yesavage",
-      "hrScoreRank": 7,
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=13.6%",
-        "HH=48.1%"
+        "hrScore=68.7",
+        "barrel=14.3%"
       ],
       "bullets": [
-        "hrScore=51",
+        "hrScore=68.7",
         "park=1.1"
       ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Josh Bell",
+      "player": "Kody Clemens",
       "team": "MIN",
       "opponent": "SF",
       "opposingPitcher": "Blade Tidwell",
-      "hrScoreRank": 8,
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=9.7%",
-        "HH=42.4%"
+        "hrScore=57.7",
+        "barrel=11.3%"
       ],
       "bullets": [
-        "hrScore=50.1",
+        "hrScore=57.7",
         "park=0.85"
       ],
-      "hrOddsYes": "+556",
-      "marketImpliedProbability": 0.1524390243902439,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Drew Gilbert",
-      "team": "SF",
-      "opponent": "MIN",
-      "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 17,
-      "topStats": [
-        "Pitcher HR VS=68.1",
-        "Hard Hit%=36.5"
-      ],
-      "bullets": [
-        "HR score 42.8 (#17)",
-        "Pitcher HR VS 68.1 at park 0.85"
-      ],
-      "hrOddsYes": "+920",
-      "marketImpliedProbability": 0.09803921568627451,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Walker Jenkins",
-      "team": "MIN",
-      "opponent": "SF",
-      "opposingPitcher": "Blade Tidwell",
-      "hrScoreRank": 14,
-      "topStats": [
-        "Pitcher HR VS=64.7",
-        "Hard Hit%=30.4"
-      ],
-      "bullets": [
-        "HR score 43.9 (#14)",
-        "Pitcher HR VS 64.7 at park 0.85"
-      ],
-      "hrOddsYes": "+810",
-      "marketImpliedProbability": 0.10989010989010989,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]
