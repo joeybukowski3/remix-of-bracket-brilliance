@@ -12,119 +12,18 @@ import {
 import type { CfbConferenceId, CfbTeam } from "@/data/cfb/types";
 import { filterByConference, sortRankings } from "@/lib/cfb/rankings";
 import {
-  createRatingsExplorerContext,
   getRatingsViewDefinition,
   RATINGS_VIEW_DEFINITIONS,
   type RatingsDisplay,
   type RatingsView,
 } from "@/lib/cfb/ratingsExplorer";
 import CollegeFootballDataNotice from "@/components/cfb/CollegeFootballDataNotice";
+import CollegeFootballMatchupComparison from "@/components/cfb/CollegeFootballMatchupComparison";
+import CollegeFootballRankTierKey from "@/components/cfb/CollegeFootballRankTierKey";
 import CollegeFootballRatingsMatrix from "@/components/cfb/CollegeFootballRatingsMatrix";
-import CollegeFootballTeamLogo from "@/components/cfb/CollegeFootballTeamLogo";
 import { cn } from "@/lib/utils";
 
 type TeamScope = "all" | "top25" | "conference";
-
-function MatchupSnapshot({
-  left,
-  right,
-  allTeams,
-  statsSeason,
-}: {
-  left: CfbTeam;
-  right: CfbTeam;
-  allTeams: CfbTeam[];
-  statsSeason: 2025 | 2026;
-}) {
-  const context = useMemo(
-    () => createRatingsExplorerContext(allTeams, statsSeason),
-    [allTeams, statsSeason],
-  );
-  const statsLabel = `${statsSeason} ${statsSeason === 2025 ? "FINAL" : "season to date"}`;
-  // Same registry as the table; metrics repeated across categories (situational) show once.
-  const seenKeys = new Set<string>();
-  const groups = RATINGS_VIEW_DEFINITIONS.map((definition) => ({
-    definition,
-    metrics: definition.metrics.filter((metric) => {
-      if (seenKeys.has(metric.key)) return false;
-      seenKeys.add(metric.key);
-      return true;
-    }),
-  })).filter((group) => group.metrics.length > 0);
-
-  return (
-    <div className="mt-4 border-t border-slate-200 pt-4" aria-live="polite">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-bold text-slate-900">Team comparison</p>
-        <span className="bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
-          {CFB_PROVENANCE.label} · advanced stats {statsLabel}
-        </span>
-      </div>
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,1.5fr)_minmax(0,1fr)]">
-        {[left, right].map((team, index) => (
-          <div
-            key={team.id}
-            data-testid={index === 0 ? "comparison-team-a" : "comparison-team-b"}
-            className={cn(
-              "flex items-center gap-3",
-              index === 1 && "md:col-start-3 md:row-start-1 md:flex-row-reverse md:text-right",
-            )}
-          >
-            <CollegeFootballTeamLogo
-              name={team.name}
-              logo={team.logo}
-              abbreviation={team.abbreviation}
-              primaryColor={team.primaryColor}
-            />
-            <div>
-              <p className="font-bold text-slate-950">{team.name}</p>
-              <p className="text-xs text-slate-500">JKB #{team.ratings.jkbRank ?? "—"}</p>
-            </div>
-          </div>
-        ))}
-        <div className="overflow-hidden border border-slate-200 md:col-start-2 md:row-start-1">
-          <table className="w-full text-xs" aria-label="Team comparison">
-            {groups.map(({ definition, metrics }) => (
-              <tbody key={definition.id} aria-label={`${definition.label} comparison`}>
-                <tr className="bg-slate-100">
-                  <th colSpan={3} scope="colgroup" className="px-2 py-1.5 text-center text-xs font-black uppercase tracking-wide text-slate-700">
-                    {definition.label}
-                    {definition.usesSeasonStats && (
-                      <span className="ml-2 font-bold text-slate-500">{statsLabel}</span>
-                    )}
-                  </th>
-                </tr>
-                {metrics.map((metric) => {
-                  const leftRank = metric.readRank(left, context);
-                  const rightRank = metric.readRank(right, context);
-                  return (
-                    <tr key={metric.key} className="border-t border-slate-100">
-                      <td className="w-[32%] px-2 py-2 text-right font-bold tabular-nums text-slate-950">
-                        {metric.format(metric.readValue(left, context))}
-                        {metric.heat && leftRank != null && (
-                          <span className="ml-1 text-xs font-medium text-slate-500">FBS #{leftRank}</span>
-                        )}
-                      </td>
-                      <th scope="row" className="w-[36%] bg-slate-50 px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        {metric.shortLabel}
-                      </th>
-                      <td className="w-[32%] px-2 py-2 font-bold tabular-nums text-slate-950">
-                        {metric.format(metric.readValue(right, context))}
-                        {metric.heat && rightRank != null && (
-                          <span className="ml-1 text-xs font-medium text-slate-500">FBS #{rightRank}</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            ))}
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function CollegeFootballRankings() {
   const teams = useMemo(() => sortRankings(getAllTeams()), []);
@@ -132,7 +31,7 @@ export default function CollegeFootballRankings() {
   const [conference, setConference] = useState<CfbConferenceId>("sec");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<RatingsView>("power");
-  const [display, setDisplay] = useState<RatingsDisplay>("values");
+  const [display, setDisplay] = useState<RatingsDisplay>("ranks");
   const [teamA, setTeamA] = useState(teams[0]?.id ?? "");
   const [teamB, setTeamB] = useState(teams[1]?.id ?? "");
   const [compareIds, setCompareIds] = useState<[string, string] | null>(null);
@@ -340,10 +239,11 @@ export default function CollegeFootballRankings() {
           </div>
         </div>
         {compared[0] && compared[1] && (
-          <MatchupSnapshot
+          <CollegeFootballMatchupComparison
             left={compared[0]}
             right={compared[1]}
             allTeams={teams}
+            teamById={teamById}
             statsSeason={statsSeason}
           />
         )}
@@ -384,6 +284,7 @@ export default function CollegeFootballRankings() {
             ))}
           </div>
         </div>
+        <CollegeFootballRankTierKey />
         <CollegeFootballRatingsMatrix
           teams={filtered}
           allTeams={teams}
@@ -392,7 +293,7 @@ export default function CollegeFootballRankings() {
           statsSeason={statsSeason}
         />
         <p className="text-xs leading-5 text-slate-500">
-          Cell color reflects national FBS rank; green indicates stronger performance and red indicates weaker performance. Missing values remain neutral and unranked.
+          Cell color reflects national FBS rank in both Values and Ranks modes: gold is strongest, cream and neutral are mid-pack, and orange to red is weakest. Missing values remain neutral and unranked.
           {activeDefinition.usesSeasonStats && statsSeason === 2025 && " These are 2025 final statistics, not 2026 current-season results."}
         </p>
       </section>

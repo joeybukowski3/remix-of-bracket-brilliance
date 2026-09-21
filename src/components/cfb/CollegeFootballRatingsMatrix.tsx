@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import type { CfbTeam } from "@/data/cfb/types";
 import {
   createRatingsExplorerContext,
-  getRatingsHeatClass,
   getRatingsViewDefinition,
   type RatingsDisplay,
   type RatingsView,
 } from "@/lib/cfb/ratingsExplorer";
+import { getCfbRankCellProps } from "@/lib/cfb/rankTierPalette";
+import { formatCfbRecord } from "@/lib/cfb/teamContext";
 import { getCfbTeamPath } from "@/lib/cfb/routes";
 import { cn } from "@/lib/utils";
 import CollegeFootballTeamLogo from "./CollegeFootballTeamLogo";
@@ -77,7 +78,12 @@ export default function CollegeFootballRatingsMatrix({
                     primaryColor={team.primaryColor}
                     size="sm"
                   />
-                  <span className="whitespace-nowrap">{team.name}</span>
+                  <span className="flex min-w-0 flex-col leading-tight sm:flex-row sm:items-baseline sm:gap-1.5">
+                    <span className="whitespace-nowrap">{team.name}</span>
+                    <span data-team-record={team.id} className="text-[11px] font-medium tabular-nums text-slate-500">
+                      {formatCfbRecord(team.record)}
+                    </span>
+                  </span>
                 </Link>
               </td>
               <td className="hidden px-3 py-2.5 font-medium text-slate-500 sm:table-cell">
@@ -95,11 +101,10 @@ export default function CollegeFootballRatingsMatrix({
                       data-team-id={team.id}
                       data-metric-key={metric.key}
                       data-national-rank={rank ?? undefined}
+                      {...(metric.heat ? getCfbRankCellProps(rank, context.allTeamsCount) : {})}
                       className={cn(
                         "block px-2 py-1.5 font-bold tabular-nums",
-                        metric.heat
-                          ? getRatingsHeatClass(rank, context.allTeamsCount)
-                          : "bg-slate-50 text-slate-700",
+                        !metric.heat && "bg-slate-50 text-slate-700",
                       )}
                     >
                       {text}

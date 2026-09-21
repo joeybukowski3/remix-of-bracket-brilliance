@@ -58,32 +58,56 @@ describe("CollegeFootballRankings", () => {
     expect(screen.getByText(new RegExp(`Showing ${secCount} teams`))).toBeInTheDocument();
   }, 20_000);
 
-  it("switches between advanced-stat values and national ranks", () => {
+  it("defaults to RANKS, switches to VALUES, and keeps the mode across category changes", () => {
     const { container } = renderPage();
+    expect(screen.getByRole("button", { name: "ranks" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "values" })).toHaveAttribute("aria-pressed", "false");
+
     fireEvent.click(screen.getByRole("button", { name: "Offense" }));
     expect(screen.getByRole("columnheader", { name: "PPG" })).toBeInTheDocument();
     expect(screen.getAllByText(/2025 FINAL/i).length).toBeGreaterThan(0);
 
     const ohioState = getAllTeams().find((team) => team.name === "Ohio State")!;
-    const valueCell = container.querySelector(
-      `[data-team-id="${ohioState.id}"][data-metric-key="pointsPerGame"]`,
-    );
-    expect(valueCell).toHaveTextContent(
+    const selector = `[data-team-id="${ohioState.id}"][data-metric-key="pointsPerGame"]`;
+    const expectedRank = CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[ohioState.id].pointsPerGame;
+    // Category change did not reset the default RANKS mode.
+    expect(screen.getByRole("button", { name: "ranks" })).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector(selector)).toHaveTextContent(`#${expectedRank}`);
+    const rankTier = container.querySelector(selector)!.getAttribute("data-rank-tier");
+
+    fireEvent.click(screen.getByRole("button", { name: "values" }));
+    expect(screen.getByRole("button", { name: "values" })).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector(selector)).toHaveTextContent(
       CFB_STATS_PREVIOUS_SEASON_BY_TEAM[ohioState.id].pointsPerGame!.toFixed(1),
     );
+    // Same national-rank tier in Values mode: no contradictory colors between modes.
+    expect(container.querySelector(selector)).toHaveAttribute("data-rank-tier", rankTier!);
 
-    fireEvent.click(screen.getByRole("button", { name: "ranks" }));
-    const rankCell = container.querySelector(
-      `[data-team-id="${ohioState.id}"][data-metric-key="pointsPerGame"]`,
-    );
-    const expectedRank = CFB_STATS_PREVIOUS_SEASON_RANKS_BY_TEAM[ohioState.id].pointsPerGame;
-    expect(rankCell).toHaveTextContent(`#${expectedRank}`);
+    fireEvent.click(screen.getByRole("button", { name: "Defense" }));
+    expect(screen.getByRole("button", { name: "values" })).toHaveAttribute("aria-pressed", "true");
+  }, 20_000);
+
+  it("colors main-table cells with the JKB rank-tier palette without green", () => {
+    const { container } = renderPage();
+    const cells = container.querySelectorAll("[data-metric-key='jkbPowerRating']");
+    const tiers = new Set(Array.from(cells).map((cell) => cell.getAttribute("data-rank-tier")));
+    expect(tiers.has("elite")).toBe(true);
+    expect(tiers.has("poor")).toBe(true);
+    expect(container.innerHTML).not.toMatch(/emerald|lime-/);
+  }, 20_000);
+
+  it("shows the canonical team record inside the TEAM cell", () => {
+    const { container } = renderPage();
+    const team = getAllTeams().find((item) => item.id === "osu")!;
+    const record = container.querySelector(`[data-team-record="${team.id}"]`);
+    expect(record).toHaveTextContent(`${team.record.wins}-${team.record.losses}`);
+    expect(record?.closest("td")).toHaveClass("sticky");
+    expect(container.querySelectorAll("th[scope='col']").length).toBeLessThan(10);
   }, 20_000);
 
   it("keeps national ranks invariant under search, Top 25, and conference filters", () => {
     const { container } = renderPage();
     fireEvent.click(screen.getByRole("button", { name: "Offense" }));
-    fireEvent.click(screen.getByRole("button", { name: "ranks" }));
     const selector = '[data-team-id="osu"][data-metric-key="pointsPerGame"]';
     const nationalRank = container.querySelector(selector)?.getAttribute("data-national-rank");
     expect(nationalRank).toBeTruthy();
@@ -130,6 +154,35 @@ describe("CollegeFootballRankings", () => {
       expect(within(comparison).getByRole("rowheader", { name: label })).toBeInTheDocument();
     }
     expect(comparison).toHaveTextContent(/2025 FINAL/);
+    expect(comparison).not.toHaveTextContent(/FBS/);
+    expect(comparison).toHaveTextContent(/· #\d+/);
+
+    // Identity blocks carry the canonical record and a team-color tint.
+    for (const [testId, id] of [["comparison-team-a", top25Game.awayTeamId], ["comparison-team-b", top25Game.homeTeamId]] as const) {
+      const team = byId.get(id)!;
+      expect(screen.getByTestId(`${testId}-record`)).toHaveTextContent(`${team.record.wins}-${team.record.losses}`);
+      expect(screen.getByTestId(testId).style.borderTop).toContain("3px solid");
+    }
+
+    // Comparison cells use the same rank-tier palette as the table.
+    const leftJkb = comparison.querySelector("[data-compare-side='left'][data-metric-key='jkbPowerRating']")!;
+    const rightJkb = comparison.querySelector("[data-compare-side='right'][data-metric-key='jkbPowerRating']")!;
+    expect(leftJkb).toHaveAttribute("data-rank-tier");
+    expect(leftJkb.getAttribute("data-rank-tier")).not.toBe("unavailable");
+
+    // Advantage check sits on the side with the lower (better) national rank only.
+    const leftRank = Number(leftJkb.getAttribute("data-national-rank"));
+    const rightRank = Number(rightJkb.getAttribute("data-national-rank"));
+    const jkbRow = leftJkb.closest("tr")!;
+    expect(jkbRow.querySelectorAll("[data-advantage]")).toHaveLength(leftRank === rightRank ? 0 : 1);
+    expect(jkbRow.querySelector(`[data-advantage='${leftRank < rightRank ? "left" : "right"}']`)).not.toBeNull();
+    // Unranked AP (no national rank) never gets a check.
+    const apRow = comparison.querySelector("[data-metric-key='apRank']")!.closest("tr")!;
+    expect(apRow.querySelectorAll("[data-advantage]")).toHaveLength(0);
+
+    // Schedule context only from the schedule artifact: everything is scheduled, so no fabricated result.
+    expect(screen.getByTestId("comparison-team-a").querySelector("[data-game-line='next']")).not.toBeNull();
+    expect(screen.getByTestId("comparison-team-a").querySelector("[data-game-line='last']")).toBeNull();
 
     const secGame = CFB_GAMES_2026.find((game) =>
       byId.get(game.awayTeamId)?.conference === "sec"
