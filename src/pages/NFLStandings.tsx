@@ -30,8 +30,8 @@ const SEASONS = [2026, 2025, 2024, 2023, 2022];
 const CURRENT_SEASON = 2026;
 
 /** Fixed mobile column widths for the in-season table (`table-fixed`); `sm:w-auto` hands sizing back to the desktop table. */
-const MOBILE_STAT_COL = "w-[42px] sm:w-auto";
-const MOBILE_RANK_COL = "w-[46px] sm:w-auto";
+const MOBILE_STAT_COL = "w-[32px] min-[360px]:w-[42px] sm:w-auto";
+const MOBILE_RANK_COL = "w-[44px] min-[360px]:w-[46px] sm:w-auto";
 
 function TeamLogo({ abbr, color, compactOnMobile = false }: { abbr: string; color: string; compactOnMobile?: boolean }) {
   const [failed, setFailed] = useState(false);
@@ -49,7 +49,7 @@ function TeamLink({ row, color, children, compactOnMobile = false }: { row: Team
     <Link
       to={`/nfl/guide/team/${row.slug}`}
       className={`flex items-center font-semibold text-slate-800 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${
-        compactOnMobile ? "gap-1.5 px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5" : "gap-2 px-2 py-1.5"
+        compactOnMobile ? "justify-center gap-1.5 px-1.5 py-1 min-[400px]:justify-start sm:gap-2 sm:px-2 sm:py-1.5" : "gap-2 px-2 py-1.5"
       }`}
       aria-label={`Open ${row.name} team dashboard`}
     >
@@ -57,7 +57,7 @@ function TeamLink({ row, color, children, compactOnMobile = false }: { row: Team
       <TeamLogo abbr={row.abbr} color={color} compactOnMobile={compactOnMobile} />
       {compactOnMobile ? (
         <>
-          <span className="min-w-0 truncate whitespace-nowrap text-xs sm:hidden">{row.abbr.toUpperCase()}</span>
+          <span className="min-w-0 truncate whitespace-nowrap hidden text-xs min-[400px]:inline sm:hidden">{row.abbr.toUpperCase()}</span>
           <span className="hidden min-w-0 truncate whitespace-nowrap sm:inline sm:max-w-[8.5rem]">{row.name}</span>
         </>
       ) : (
