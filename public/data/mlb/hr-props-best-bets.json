@@ -1,10 +1,10 @@
 {
   "date": "2026-09-21",
-  "generatedAt": "2026-09-21T14:19:32.762Z",
+  "generatedAt": "2026-09-21T17:13:42.101Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Camden Yards (1.1) and Comerica Park (0.95) are the only two parks above neutral, creating the clearest edges for Alonso and Greene. Yesavage and Ryan are both right-handers allowing 39-plus HR per 100 FB, while Tidwell and Matthews are softer but pitching in pitcher-friendly Oracle Park (0.85).",
-    "modelNote": "The model is overweighting park factor and opposing-pitcher HR rate, which is why Alonso (69) and Clemens (57.5) sit atop the board despite modest barrel numbers."
+    "slateOverview": "Camden Yards (1.1) and Comerica (0.95) are the only plus parks on the slate, while Oracle (0.85) suppresses power. Alonso and Okamoto get the best venue boost against right-handers Baz and Yesavage, and Wood faces a debutant in River Ryan at a neutral park.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and recent HR volume, which is why Alonso (68.7) and Clemens (57.4) sit atop the board despite facing righties in mixed venues."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
         "HH=55.9%"
       ],
       "bullets": [
-        "hrScore=69",
+        "hrScore=68.7",
         "park=1.1"
       ],
       "hrOddsYes": "+359",
@@ -37,30 +37,11 @@
         "HH=45.8%"
       ],
       "bullets": [
-        "hrScore=57.5",
+        "hrScore=57.4",
         "park=0.85"
       ],
-      "hrOddsYes": "+419",
-      "marketImpliedProbability": 0.1926782273603083,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "DET",
-      "opposingPitcher": "River Ryan",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=19.3%",
-        "HH=58.6%"
-      ],
-      "bullets": [
-        "hrScore=54.2",
-        "park=0.95"
-      ],
-      "hrOddsYes": "+379",
-      "marketImpliedProbability": 0.20876826722338204,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -69,18 +50,37 @@
       "team": "SF",
       "opponent": "MIN",
       "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
         "Pitcher HR VS=68.1",
         "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 54.2 (#4)",
+        "HR score 54.4 (#3)",
         "Pitcher HR VS 68.1 at park 0.85"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
       "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "DET",
+      "opposingPitcher": "River Ryan",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Hard Hit%=58.6",
+        "Barrel%=19.3"
+      ],
+      "bullets": [
+        "HR score 54.0 (#4)",
+        "Pitcher HR VS 0.0 at park 0.95"
+      ],
+      "hrOddsYes": "+379",
+      "marketImpliedProbability": 0.20876826722338204,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -94,11 +94,11 @@
         "Hard Hit%=44.0"
       ],
       "bullets": [
-        "HR score 52.6 (#5)",
+        "HR score 52.4 (#5)",
         "Pitcher HR VS 55.8 at park 1.10"
       ],
-      "hrOddsYes": "+435",
-      "marketImpliedProbability": 0.18691588785046728,
+      "hrOddsYes": "+429",
+      "marketImpliedProbability": 0.1890359168241966,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -109,18 +109,37 @@
       "team": "SF",
       "opponent": "MIN",
       "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=14.7%",
         "HH=50%"
       ],
       "bullets": [
-        "hrScore=54.2",
+        "hrScore=54.4",
         "park=0.85"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
       "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "DET",
+      "opposingPitcher": "River Ryan",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=19.3%",
+        "HH=58.6%"
+      ],
+      "bullets": [
+        "hrScore=54",
+        "park=0.95"
+      ],
+      "hrOddsYes": "+379",
+      "marketImpliedProbability": 0.20876826722338204,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -134,11 +153,11 @@
         "HH=44%"
       ],
       "bullets": [
-        "hrScore=52.6",
+        "hrScore=52.4",
         "park=1.1"
       ],
-      "hrOddsYes": "+435",
-      "marketImpliedProbability": 0.18691588785046728,
+      "hrOddsYes": "+429",
+      "marketImpliedProbability": 0.1890359168241966,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,12 +168,12 @@
       "opposingPitcher": "DJ Herz",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=15.3%",
-        "HH=47%"
+        "Hard Hit%=47.0",
+        "Barrel%=15.3"
       ],
       "bullets": [
-        "hrScore=52.4",
-        "park=0.95"
+        "HR score 52.4 (#6)",
+        "Pitcher HR VS 0.0 at park 0.95"
       ],
       "hrOddsYes": "+498",
       "marketImpliedProbability": 0.16722408026755853,
@@ -172,7 +191,7 @@
         "Pitcher HR VS=39.6"
       ],
       "bullets": [
-        "HR score 51.5 (#7)",
+        "HR score 51.4 (#7)",
         "Pitcher HR VS 39.6 at park 1.10"
       ],
       "hrOddsYes": "+400",
@@ -191,7 +210,7 @@
         "Hard Hit%=42.4"
       ],
       "bullets": [
-        "HR score 50.2 (#8)",
+        "HR score 49.9 (#8)",
         "Pitcher HR VS 64.7 at park 0.85"
       ],
       "hrOddsYes": "+556",
@@ -201,25 +220,6 @@
     }
   ],
   "longshots": [
-    {
-      "player": "Coby Mayo",
-      "team": "BAL",
-      "opponent": "TOR",
-      "opposingPitcher": "Trey Yesavage",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=13.6%",
-        "HH=48.1%"
-      ],
-      "bullets": [
-        "hrScore=51.5",
-        "park=1.1"
-      ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Josh Bell",
       "team": "MIN",
@@ -231,7 +231,7 @@
         "HH=42.4%"
       ],
       "bullets": [
-        "hrScore=50.2",
+        "hrScore=49.9",
         "park=0.85"
       ],
       "hrOddsYes": "+556",
@@ -244,14 +244,14 @@
       "team": "WSH",
       "opponent": "DET",
       "opposingPitcher": "River Ryan",
-      "hrScoreRank": 15,
+      "hrScoreRank": 14,
       "topStats": [
-        "Hard Hit%=43.0",
-        "Barrel%=12.6"
+        "barrel=12.6%",
+        "HH=43%"
       ],
       "bullets": [
-        "HR score 43.0 (#15)",
-        "Pitcher HR VS 0.0 at park 0.95"
+        "hrScore=43",
+        "park=0.95"
       ],
       "hrOddsYes": "+950",
       "marketImpliedProbability": 0.09523809523809523,
@@ -269,7 +269,7 @@
         "Hard Hit%=36.5"
       ],
       "bullets": [
-        "HR score 41.9 (#17)",
+        "HR score 42.1 (#17)",
         "Pitcher HR VS 68.1 at park 0.85"
       ],
       "hrOddsYes": "+920",
