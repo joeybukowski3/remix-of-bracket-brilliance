@@ -276,6 +276,31 @@ describe("NFLStandings — 2026 once results exist (auto mode)", () => {
     }
   });
 
+  it("colors OVR/OFF/DEF with JKB Heat, renders one table per division, and uses abbreviations for mobile", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
+    render(
+      <MemoryRouter>
+        <NFLStandings />
+      </MemoryRouter>
+    );
+
+    const heading = await screen.findByRole("heading", { name: "NFC West" });
+    const card = heading.closest("article")!;
+    expect(card.querySelectorAll("table")).toHaveLength(1);
+    // Column headings appear once per division, mobile + desktop variants of the same th.
+    expect(within(card).getAllByRole("columnheader")).toHaveLength(7);
+
+    const ramsRow = within(card).getByRole("link", { name: /Open LA Rams team dashboard/i }).closest("tr")!;
+    expect(within(ramsRow).getByText("LAR")).toBeInTheDocument();
+    for (const unit of ["OVR", "OFF", "DEF"]) {
+      const cell = ramsRow.querySelector(`[title^="${unit} rank"]`) as HTMLElement | null;
+      expect(cell, `${unit} cell`).not.toBeNull();
+      expect(cell!.getAttribute("data-heat-tone")).not.toBe("missing");
+    }
+    // SOS cells keep their own positive/negative semantics, not JKB Heat.
+    expect(ramsRow.querySelectorAll("[title*='remaining schedule'][data-heat-tone]")).toHaveLength(0);
+  });
+
   it("SOS To Date is N/A for a team with zero completed games, even in in-season mode", async () => {
     vi.stubGlobal("fetch", vi.fn(oneResultFetch));
     render(
