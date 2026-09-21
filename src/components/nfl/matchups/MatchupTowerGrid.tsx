@@ -1,6 +1,11 @@
 import { useRef, type CSSProperties } from "react";
 import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
-import type { MatchupTowerMetricPresentation, MatchupTowerSidePresentation } from "@/components/nfl/matchups/matchupTowerPresentation";
+import {
+  resolveTowerComparisonColors,
+  towerColorText,
+  type MatchupTowerMetricPresentation,
+  type MatchupTowerSidePresentation,
+} from "@/components/nfl/matchups/matchupTowerPresentation";
 import { useSwipeOverflow } from "@/components/nfl/matchups/useSwipeOverflow";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +20,11 @@ function RankTower({ side, metric, crestSide }: {
 }) {
   const metricName = [metric.pairingLabel, metric.label, metric.contextLabel].filter(Boolean).join(" — ");
   const description = `${metricName} — ${side.accessibleIdentityLabel ?? side.team.teamName} — ${side.rank == null ? "rank unavailable" : `rank ${side.rank} of 32`} — value ${side.formatted}`;
-  const style = { "--tower-team-color": side.color, "--tower-height": `${side.heightPercent ?? 0}%` } as CSSProperties;
+  const style = {
+    "--tower-team-color": side.color,
+    "--tower-team-ink": towerColorText(side.color),
+    "--tower-height": `${side.heightPercent ?? 0}%`,
+  } as CSSProperties;
   return (
     <div className="matchup-unified-chart__team" style={style} role="img" aria-label={description} tabIndex={0} title={description}>
       <div className="matchup-unified-chart__bar-zone">
@@ -32,7 +41,7 @@ function RankTower({ side, metric, crestSide }: {
       </div>
       <span className="matchup-unified-chart__identity">
         <NflTeamCrest team={side.team} side={crestSide} size={16} className="rank-tower-team-crest" />
-        <span>{side.identityLabel}</span>
+        <span className="matchup-unified-chart__identity-label">{side.identityLabel}</span>
       </span>
       <span className="matchup-unified-chart__value">{side.formatted}</span>
     </div>
@@ -52,15 +61,27 @@ export default function MatchupTowerGrid({ metrics, title, subtitle, scaleLabel 
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasOverflow = useSwipeOverflow(viewportRef, [metrics.length]);
   const first = metrics[0];
+  const colors = first
+    ? resolveTowerComparisonColors({
+        awayTeam: first.away.team,
+        homeTeam: first.home.team,
+        awayPrimary: first.away.color,
+        homePrimary: first.home.color,
+      })
+    : null;
+  const displaySide = (side: MatchupTowerSidePresentation, teamSide: "away" | "home") => ({
+    ...side,
+    color: colors?.[teamSide] ?? side.color,
+  });
   return (
-    <section className={cn("matchup-rank-towers matchup-unified-chart", className)} data-metric-count={metrics.length} data-fit={metrics.length <= FIT_METRIC_MAX || undefined} aria-label={title ?? "Unified rank comparison"}>
+    <section className={cn("matchup-rank-towers matchup-unified-chart", className)} data-chart-surface="light" data-metric-count={metrics.length} data-fit={metrics.length <= FIT_METRIC_MAX || undefined} data-away-uses-alternate={colors?.awayUsesAlternate || undefined} aria-label={title ?? "Unified rank comparison"}>
       <div className="matchup-viz-chart-heading">
         <div>{title && <h3>{title}</h3>}{subtitle && <p>{subtitle}</p>}</div>
         <span>{scaleLabel}</span>
       </div>
-      {first && <div className="matchup-unified-chart__legend" aria-label="Team order: away then home">
-        <span><NflTeamCrest team={first.away.team} side="away" size={18} />{first.away.team.abbr.toUpperCase()} <small>Away</small></span>
-        <span><NflTeamCrest team={first.home.team} side="home" size={18} />{first.home.team.abbr.toUpperCase()} <small>Home</small></span>
+      {first && colors && <div className="matchup-unified-chart__legend" aria-label="Team order: away then home">
+        <span style={{ "--tower-legend-color": colors.away } as CSSProperties}><span className="matchup-unified-chart__legend-swatch" aria-hidden /><NflTeamCrest team={first.away.team} side="away" size={18} />{first.away.team.abbr.toUpperCase()} <small>Away</small></span>
+        <span style={{ "--tower-legend-color": colors.home } as CSSProperties}><span className="matchup-unified-chart__legend-swatch" aria-hidden /><NflTeamCrest team={first.home.team} side="home" size={18} />{first.home.team.abbr.toUpperCase()} <small>Home</small></span>
       </div>}
       <div className="matchup-unified-chart__frame">
         <div className="matchup-unified-chart__axis" aria-hidden>
@@ -72,13 +93,13 @@ export default function MatchupTowerGrid({ metrics, title, subtitle, scaleLabel 
             {metrics.map((metric) => (
               <div className="matchup-unified-chart__group" key={metric.id} data-rank-tower-group data-active={metric.id === activeId || undefined}>
                 <div className="matchup-unified-chart__pair">
-                  <RankTower side={metric.away} metric={metric} crestSide="away" />
-                  <RankTower side={metric.home} metric={metric} crestSide="home" />
+                  <RankTower side={displaySide(metric.away, "away")} metric={metric} crestSide="away" />
+                  <RankTower side={displaySide(metric.home, "home")} metric={metric} crestSide="home" />
                 </div>
                 <div className="matchup-unified-chart__caption">
                   {onActivate ? <button type="button" onClick={() => onActivate(metric.id)} aria-pressed={metric.id === activeId} aria-label={`Details for ${metric.label}${metric.contextLabel ? `, ${metric.contextLabel}` : ""}`}>{metric.shortLabel ?? metric.label}</button> : <span>{metric.shortLabel ?? metric.label}</span>}
                   {metric.contextLabel && <small className="matchup-rank-towers__context">{metric.contextLabel}</small>}
-                  {metric.badge && <small>{metric.badge.label}</small>}
+                  {metric.badge && <small className="matchup-unified-chart__advantage" style={{ "--tower-badge-color": metric.badge.color.toLowerCase() === first?.away.color.toLowerCase() ? colors?.away : metric.badge.color.toLowerCase() === first?.home.color.toLowerCase() ? colors?.home : metric.badge.color } as CSSProperties}>{metric.badge.label}</small>}
                 </div>
               </div>
             ))}

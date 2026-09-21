@@ -61,7 +61,8 @@ describe("MatchupRankTowers", () => {
     const towers = container.querySelectorAll<HTMLElement>("[data-rank-tower]");
 
     expect(groups).toHaveLength(METRICS.length);
-    expect(container.querySelectorAll(".matchup-unified-chart")).toHaveLength(1);
+    const chart = container.querySelector<HTMLElement>(".matchup-unified-chart");
+    expect(chart).toHaveAttribute("data-chart-surface", "light");
     expect(container.querySelectorAll(".matchup-rank-towers__card")).toHaveLength(0);
     expect(crests).toHaveLength(METRICS.length * 2);
     expect(crests[0].style.width).toBe("16px");
@@ -115,5 +116,20 @@ describe("MatchupRankTowers", () => {
     fireEvent.click(details);
     expect(details).toHaveAttribute("aria-pressed", "true");
     expect(container.querySelector(".matchup-unified-chart__viewport")).toHaveAttribute("tabindex", "0");
+  });
+
+  it("uses the resolved comparison colour for both away towers and the legend", () => {
+    const giants = { ...AWAY, abbr: "nyg", teamName: "NY Giants", color: "#0b2265" } as NflMatchupTeam;
+    const rams = { ...HOME, abbr: "lar", teamName: "LA Rams", color: "#003594" } as NflMatchupTeam;
+    const { container } = render(
+      <MatchupRankTowers metrics={[METRICS[0]]} away={giants} home={rams} awayColor="#0b2265" homeColor="#003594" />
+    );
+    const chart = container.querySelector<HTMLElement>(".matchup-unified-chart")!;
+    const awayTower = chart.querySelector<HTMLElement>(".matchup-unified-chart__team")!;
+    const awayLegend = chart.querySelector<HTMLElement>(".matchup-unified-chart__legend > span")!;
+
+    expect(chart).toHaveAttribute("data-away-uses-alternate", "true");
+    expect(awayTower.style.getPropertyValue("--tower-team-color")).toBe("#a71930");
+    expect(awayLegend.style.getPropertyValue("--tower-legend-color")).toBe("#a71930");
   });
 });
