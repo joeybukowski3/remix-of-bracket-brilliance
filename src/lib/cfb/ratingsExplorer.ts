@@ -191,14 +191,3 @@ export function createRatingsExplorerContext(
     defenseRanks: rank("defensiveRating"),
   };
 }
-
-export function getRatingsHeatClass(rank: number | null, fieldSize: number): string {
-  if (rank == null) return "bg-slate-50 text-slate-500";
-  const percentile = rank / Math.max(fieldSize, 1);
-  if (percentile <= 0.1) return "bg-emerald-700 text-white";
-  if (percentile <= 0.25) return "bg-emerald-100 text-emerald-950";
-  if (percentile <= 0.5) return "bg-lime-50 text-lime-950";
-  if (percentile <= 0.75) return "bg-amber-50 text-amber-950";
-  if (percentile <= 0.9) return "bg-orange-100 text-orange-950";
-  return "bg-rose-200 text-rose-950";
-}

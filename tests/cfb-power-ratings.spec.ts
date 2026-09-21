@@ -26,8 +26,15 @@ for (const viewport of [
     await expect(page.getByRole("heading", { name: "College Football", level: 1 })).toBeVisible();
     const tableRegion = page.getByRole("region", { name: "College Football power ratings" });
     await expect(tableRegion).toBeVisible();
-    await expect(page.getByRole("button", { name: "values" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "ranks" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "values" })).toHaveAttribute("aria-pressed", "false");
     await expect(page.getByRole("columnheader", { name: "JKB Power" })).toBeVisible();
+
+    // JKB gold→red rank palette + team record inside the TEAM cell (no extra column).
+    const firstPower = page.locator('[data-metric-key="jkbPowerRating"]').first();
+    await expect(firstPower).toHaveAttribute("data-rank-tier", "elite");
+    await expect(firstPower).toHaveText(/^#\d+$/);
+    await expect(page.locator('[data-team-record="osu"]')).toHaveText(/^\d+-\d+/);
 
     for (const check of viewChecks) {
       await page.getByRole("button", { name: check.tab }).click();
@@ -41,11 +48,16 @@ for (const viewport of [
     await page.getByPlaceholder("Search teams…").fill("Ohio State");
     const ohioPpg = page.locator('[data-team-id="osu"][data-metric-key="pointsPerGame"]');
     await expect(ohioPpg).toBeVisible();
-    await expect(ohioPpg).not.toHaveText(/#/);
-    await page.getByRole("button", { name: "ranks" }).click();
+    // RANKS persisted across category changes.
     await expect(ohioPpg).toHaveText(/^#\d+$/);
     const nationalRank = await ohioPpg.getAttribute("data-national-rank");
     expect(nationalRank).toBeTruthy();
+    const rankTier = await ohioPpg.getAttribute("data-rank-tier");
+    await page.getByRole("button", { name: "values" }).click();
+    await expect(ohioPpg).not.toHaveText(/#/);
+    await expect(ohioPpg).toHaveAttribute("data-rank-tier", rankTier!);
+    await page.getByRole("button", { name: "ranks" }).click();
+    await expect(ohioPpg).toHaveText(/^#\d+$/);
 
     await page.getByLabel("Team field").selectOption("top25");
     await expect(ohioPpg).toHaveAttribute("data-national-rank", nationalRank!);
@@ -72,6 +84,16 @@ for (const viewport of [
       await expect(comparison.getByRole("rowheader", { name: label, exact: true })).toBeVisible();
     }
     await expect(page.getByText("2025 FINAL", { exact: false }).first()).toBeVisible();
+    await expect(comparison).not.toContainText("FBS");
+    await expect(page.getByTestId("comparison-team-a-record")).toHaveText(/^\d+-\d+/);
+    await expect(page.getByTestId("comparison-team-b-record")).toHaveText(/^\d+-\d+/);
+    await expect(page.getByTestId("comparison-team-a").locator('[data-game-line="next"]')).toBeVisible();
+    await expect(comparison.locator("[data-advantage]").first()).toBeVisible();
+    const jkbLeft = await comparison.locator('[data-compare-side="left"][data-metric-key="jkbPowerRating"]').boundingBox();
+    const jkbRight = await comparison.locator('[data-compare-side="right"][data-metric-key="jkbPowerRating"]').boundingBox();
+    const sosLeft = await comparison.locator('[data-compare-side="left"][data-metric-key="sosRemainingRating"]').boundingBox();
+    expect(Math.abs(jkbLeft!.x - sosLeft!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(jkbLeft!.width - jkbRight!.width)).toBeLessThanOrEqual(1);
 
     const top25Shortcut = page.getByLabel("Top 25 matchups");
     const top25Options = await top25Shortcut.locator("option:not([disabled])").count();

@@ -3,9 +3,9 @@ import {
   CFB_STATS_PREVIOUS_SEASON_BY_TEAM,
   getAllTeams,
 } from "@/data/cfb";
+import { getCfbRankTier } from "./rankTierPalette";
 import {
   createRatingsExplorerContext,
-  getRatingsHeatClass,
   getRatingsViewDefinition,
 } from "./ratingsExplorer";
 
@@ -43,8 +43,8 @@ describe("CFB ratings explorer presentation", () => {
     )[0];
     expect(defense.readRank(best, context)).toBe(1);
     expect(defense.readRank(worst, context)).toBeGreaterThan(defense.readRank(best, context)!);
-    expect(getRatingsHeatClass(defense.readRank(best, context), teams.length)).toContain("emerald");
-    expect(getRatingsHeatClass(defense.readRank(worst, context), teams.length)).toMatch(/orange|rose/);
+    expect(getCfbRankTier(defense.readRank(best, context), teams.length)?.id).toBe("elite");
+    expect(getCfbRankTier(defense.readRank(worst, context), teams.length)?.id).toMatch(/weak|poor/);
   });
 
   it("keeps missing values unranked and visually neutral", () => {
@@ -53,7 +53,7 @@ describe("CFB ratings explorer presentation", () => {
     expect(ap.readValue(unranked, context)).toBeNull();
     expect(ap.readRank(unranked, context)).toBeNull();
     expect(ap.format(ap.readValue(unranked, context))).toBe("—");
-    expect(getRatingsHeatClass(null, teams.length)).toBe("bg-slate-50 text-slate-500");
+    expect(getCfbRankTier(null, teams.length)).toBeNull();
   });
 
   it("formats stored 0-1 percentage ratios as user-facing percentages", () => {
