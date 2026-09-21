@@ -41,7 +41,7 @@ function RankTower({ side, metric, crestSide }: {
       </div>
       <span className="matchup-unified-chart__identity">
         <NflTeamCrest team={side.team} side={crestSide} size={16} className="rank-tower-team-crest" />
-        <span>{side.identityLabel}</span>
+        <span className="matchup-unified-chart__identity-label">{side.identityLabel}</span>
       </span>
       <span className="matchup-unified-chart__value">{side.formatted}</span>
     </div>

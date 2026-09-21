@@ -2616,6 +2616,24 @@ details[open] > summary .matchup-summary-chevron {
 .matchup-unified-chart [data-active="true"] .matchup-unified-chart__caption { color: var(--tower-accent); }
 .matchup-unified-chart > .matchup-viz-swipe-hint { color: var(--tower-muted); background: var(--tower-surface); }
 
+/* Compact phones already identify away/home teams in the legend above the
+   plot. Keep the crest under each tower, but remove the redundant abbreviation
+   and close only the vacated vertical space; tower height remains unchanged. */
+@media (max-width: 480px) {
+  .matchup-unified-chart__identity-label { display: none; }
+  .matchup-unified-chart__identity { gap: 0; margin-top: 0.14rem; }
+  .matchup-unified-chart__value { margin-top: 0.04rem; }
+  .matchup-unified-chart__caption { padding-top: 0.22rem; }
+
+  /* All Metrics uses the shared team header, but its compact table needs every
+     header in normal flow so rank badges and labels cannot scroll underneath. */
+  .matchup-all-metrics .matchup-comparison-team-header--sticky {
+    position: static;
+    top: auto;
+    z-index: auto;
+  }
+}
+
 /* Large mobile */
 @media (min-width: 481px) {
   .matchup-unified-chart {
