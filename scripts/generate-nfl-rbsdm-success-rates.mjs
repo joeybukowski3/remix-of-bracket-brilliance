@@ -24,6 +24,7 @@ import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync, mkdirS
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildCompletedGameIndex } from "./lib/nfl-matchup-metrics.mjs";
+import { expectedFinalTeamGames, requireTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
 import {
   LAST5_GAME_COUNT,
   LAST8_GAME_COUNT,
@@ -138,7 +139,7 @@ async function fetchRange(payload, label, { offlineDir }) {
  * then read every team's value only from the request whose range matches that
  * team's own true window.
  */
-async function buildPeriod({ periodKey, ranges, teamMap, offlineDir, gamesIncluded, requestLog }) {
+export async function buildPeriod({ periodKey, ranges, teamMap, offlineDir, gamesIncluded, requestLog }) {
   const valuesByTeam = {};
   const gameIdsByTeam = {};
   let first = true;
@@ -227,6 +228,8 @@ async function main() {
   const completedByTeam = buildCompletedGameIndex(seasonInputs);
   const priorCounts = completedGameCounts(completedByTeam, priorSeason);
   const currentCounts = completedGameCounts(completedByTeam, currentSeason);
+  const currentInput = seasonInputs.find((input) => input.season === currentSeason);
+  const expectedCurrent = expectedFinalTeamGames(currentInput?.results ?? [], currentInput?.games ?? []);
 
   const requestLog = [];
   const periods = {};
@@ -305,6 +308,20 @@ async function main() {
   if (Object.keys(periods).length === 0) {
     throw new Error("No periods could be built; refusing to overwrite a known-good artifact");
   }
+  const currentRows = Object.entries(periods[PERIOD_2026_SEASON] ?? {}).flatMap(([team, row]) =>
+    (row.gameIds ?? []).map((gameId) => ({ team, gameId }))
+  );
+  requireTeamGameCoverage(expectedCurrent, currentRows, "RBSDM 2026-season artifact");
+  for (const [team, row] of Object.entries(periods[PERIOD_2026_SEASON] ?? {})) {
+    if (row.gamesIncluded !== row.gameIds?.length || row.gamesIncluded < 1) {
+      throw new Error(`RBSDM 2026-season ${team}: invalid gamesIncluded`);
+    }
+    for (const key of ["off.successRate", "def.successRateAllowed"]) {
+      if (!Number.isFinite(row.metrics[key]?.raw) || !Number.isInteger(row.metrics[key]?.rank)) {
+        throw new Error(`RBSDM 2026-season ${team}: missing ${key} value/rank`);
+      }
+    }
+  }
 
   const artifact = {
     _meta: {
@@ -319,6 +336,8 @@ async function main() {
       sourceFields: RBSDM_FIELD_MAP,
       metricDirections: RBSDM_METRIC_DIRECTION,
       completedGameCounts: { [priorSeason]: priorCounts, [currentSeason]: currentCounts },
+      currentSeasonRequestedThroughWeek: seasonRange?.weekMax ?? null,
+      currentSeasonIncludedGames: new Set(currentRows.map((row) => row.gameId)).size,
       requests: requestLog,
       notes: [
         "Success rates are RBSDM's published values, consumed verbatim. Success is never recomputed at the play level.",
@@ -356,8 +375,10 @@ async function main() {
   console.log(`[nfl:rbsdm] wrote ${OUT_FILE}`);
 }
 
-main().catch((err) => {
-  console.error(`[nfl:rbsdm] FAILED: ${err.message}`);
-  console.error("[nfl:rbsdm] existing artifact left untouched");
-  process.exit(1);
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(`[nfl:rbsdm] FAILED: ${err.message}`);
+    console.error("[nfl:rbsdm] existing artifact left untouched");
+    process.exit(1);
+  });
+}

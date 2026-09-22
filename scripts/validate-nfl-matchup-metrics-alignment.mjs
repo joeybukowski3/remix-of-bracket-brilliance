@@ -19,6 +19,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { expectedFinalTeamGames, validateTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXPECTED_TEAMS = 32;
@@ -52,7 +53,7 @@ const isFiniteNumber = (v) => typeof v === "number" && Number.isFinite(v);
  *   results.json. When > 0 the current-only windows must be populated.
  * @returns {{ problems: string[], summary: object }}
  */
-export function validateMatchupMetricsAlignment(metrics, epa, { finalCurrentSeasonGames = 0 } = {}) {
+export function validateMatchupMetricsAlignment(metrics, epa, { finalCurrentSeasonGames = 0, expectedCurrentTeamGames = null } = {}) {
   const problems = [];
   const summary = {};
   const fail = (message) => problems.push(message);
@@ -125,6 +126,17 @@ export function validateMatchupMetricsAlignment(metrics, epa, { finalCurrentSeas
     }
   }
 
+  if (expectedCurrentTeamGames) {
+    for (const [name, artifact] of [["metrics", metrics], ["epa", epa]]) {
+      const included = Object.entries(artifact.windows["season-current"].teams ?? {}).flatMap(([team, row]) =>
+        (row.gameIds ?? []).map((gameId) => ({ team, gameId }))
+      );
+      const coverage = validateTeamGameCoverage(expectedCurrentTeamGames, included, `${name} season-current`);
+      summary[`${name}Coverage`] = coverage.summary;
+      for (const problem of coverage.problems) fail(`${name}: ${problem}`);
+    }
+  }
+
   return { problems, summary };
 }
 
@@ -154,7 +166,11 @@ function main() {
   const metrics = readJson(join(dataDir, "matchup-metrics.json"));
   const epa = readJson(join(dataDir, "matchup-epa.json"));
   const finalGames = countFinalGames(dataDir, metrics?._meta?.currentSeason);
-  const { problems, summary } = validateMatchupMetricsAlignment(metrics, epa, { finalCurrentSeasonGames: finalGames });
+  const seasonDir = join(dataDir, String(metrics?._meta?.currentSeason));
+  const results = readJson(join(seasonDir, "results.json")).results ?? [];
+  const games = readJson(join(seasonDir, "games.json")).games ?? [];
+  const expectedCurrentTeamGames = expectedFinalTeamGames(results, games);
+  const { problems, summary } = validateMatchupMetricsAlignment(metrics, epa, { finalCurrentSeasonGames: finalGames, expectedCurrentTeamGames });
 
   if (problems.length > 0) {
     console.error(`[nfl:matchup-alignment] FAILED with ${problems.length} problem(s):`);

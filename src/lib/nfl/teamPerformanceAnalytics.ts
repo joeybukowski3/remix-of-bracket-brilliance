@@ -61,6 +61,8 @@ export type TeamPerformanceAnalyticsArtifact = {
   _meta: {
     season: number;
     generatedAt: string;
+    throughWeek?: number | null;
+    includedGameCount?: number;
     source: string;
     ratingFormula: string;
     scaleDivisors: { offense: number; defense: number; overall: number };

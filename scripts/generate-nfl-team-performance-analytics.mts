@@ -30,6 +30,7 @@ import { createInterface } from "node:readline";
 import { createReadStream } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { expectedFinalTeamGames, requireTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
 // @ts-expect-error -- plain .mjs sibling, no type declarations
 import { parsePerformanceCompactRow, PERFORMANCE_COMPACT_COLUMNS } from "./lib/nfl-performance-metrics-core.mjs";
 import {
@@ -207,6 +208,11 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
   for (const rows of rowsByTeam.values()) rows.sort((a, b) => a.week - b.week);
 
   const finalGames = loadFinalGames(join(ROOT, "public", "data", "nfl", String(season), "results.json"), new Map());
+  const resultsPath = join(ROOT, "public", "data", "nfl", String(season), "results.json");
+  const expectedCurrent = expectedFinalTeamGames(
+    existsSync(resultsPath) ? (JSON.parse(readFileSync(resultsPath, "utf-8")).results ?? []) : []
+  );
+  requireTeamGameCoverage(expectedCurrent, compactRows, "performance cache");
   const finalGamesByTeam = new Map<string, FinalGame[]>();
   for (const g of finalGames) {
     if (!finalGamesByTeam.has(g.team)) finalGamesByTeam.set(g.team, []);
@@ -329,12 +335,20 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
       },
     };
   });
+  for (const row of teams) {
+    const expected = expectedCurrent.filter((entry) => entry.team === row.team).length;
+    if (row.gamesPlayed !== expected || row.windows.fullSeason.sampleSize !== expected) {
+      throw new Error(`performance artifact ${row.team}: expected ${expected} final games, got ${row.gamesPlayed}`);
+    }
+  }
 
   return {
     schemaVersion: TEAM_PERFORMANCE_ANALYTICS_SCHEMA_VERSION,
     _meta: {
       season,
       generatedAt: new Date().toISOString(),
+      throughWeek: compactRows.length ? Math.max(...compactRows.map((row) => row.week)) : null,
+      includedGameCount: new Set(compactRows.map((row) => row.gameId)).size,
       source: "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives) + public/data/nfl results.json",
       ratingFormula:
         "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); " +

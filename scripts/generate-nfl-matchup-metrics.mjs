@@ -29,6 +29,7 @@ import { fileURLToPath } from "node:url";
 import { parseAdvancedTeamStatRows } from "./lib/nfl-advanced-stats.mjs";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+import { expectedFinalTeamGames, requireTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
 import {
   DOWNS_COMPACT_COLUMNS,
   indexDownsTeamGames,
@@ -198,6 +199,10 @@ function main() {
 
   // --- indices -------------------------------------------------------------
   const completedByTeam = buildCompletedGameIndex(seasonInputs);
+  const currentSchedule = loadSeason(args.dataDir, currentSeason);
+  const currentInput = seasonInputs.find((input) => input.season === currentSeason);
+  const expectedCurrent = expectedFinalTeamGames(currentSchedule?.results ?? [], currentSchedule?.games ?? []);
+  requireTeamGameCoverage(expectedCurrent, currentInput?.rows.map((row) => ({ gameId: row.source.game_id, team: row.team })) ?? [], "YPP team-week cache");
 
   const rowsByGameTeam = new Map();
   for (const input of seasonInputs) {
@@ -275,6 +280,11 @@ function main() {
       `Opponent join failed for ${joinProblems.length} team-games, e.g. ${JSON.stringify(joinProblems[0])}`
     );
   }
+  requireTeamGameCoverage(
+    expectedCurrent,
+    Object.entries(windows["season-current"].teams).flatMap(([team, row]) => row.gameIds.map((gameId) => ({ team, gameId }))),
+    "YPP season-current artifact"
+  );
 
   const artifact = {
     _meta: {

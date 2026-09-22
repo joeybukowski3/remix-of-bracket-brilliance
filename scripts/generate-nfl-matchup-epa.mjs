@@ -27,6 +27,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
+import { expectedFinalTeamGames, requireTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
 import {
   WINDOW_IDS,
@@ -145,6 +146,9 @@ function main() {
   if (seasons.length === 0) throw new Error("no season schedule/results found");
   const displaySeasons = new Set(seasons.map((s) => s.season));
   const completedByTeam = buildCompletedGameIndex(seasons);
+  const currentInput = seasons.find((input) => input.season === CURRENT_SEASON);
+  const expectedCurrent = expectedFinalTeamGames(currentInput?.results ?? [], currentInput?.games ?? []);
+  requireTeamGameCoverage(expectedCurrent, records.filter((row) => row.season === CURRENT_SEASON), "EPA cache");
 
   const windows = {};
   const coverage = { requested: 0, resolved: 0, teamsSkippedForMissingEpa: [] };
@@ -230,6 +234,11 @@ function main() {
   if (populated.length === 0) {
     throw new Error("no window produced any team values; refusing to overwrite a known-good artifact");
   }
+  requireTeamGameCoverage(
+    expectedCurrent,
+    Object.entries(windows["season-current"].teams).flatMap(([team, row]) => row.gameIds.map((gameId) => ({ team, gameId }))),
+    "EPA season-current artifact"
+  );
 
   const artifact = {
     _meta: buildNflMeta({
