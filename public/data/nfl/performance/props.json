@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-21T16:28:09.006Z",
+    "generatedAt": "2026-09-22T14:50:00.973Z",
     "source": "generated (data/nfl/starter-cohorts/** + data/nfl/starter-prop-evaluations/**)",
     "season": null,
     "week": null,
@@ -15,7 +15,7 @@
   "schemaVersion": "nfl-props-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-props-performance-v1",
-    "generatedAt": "2026-09-21T16:28:09.006Z",
+    "generatedAt": "2026-09-22T14:50:00.973Z",
     "seasons": [
       2026
     ],
@@ -24,30 +24,30 @@
       "nfl-receiving-share-x-efficiency-v2.0.0",
       "nfl-rushing-carries-x-shrunk-ypc-production-2022-2025-v1"
     ],
-    "gradedStarterProps": 221,
+    "gradedStarterProps": 228,
     "latestPredictionTimestamp": "2026-09-17T17:40:34.145Z"
   },
   "summary": {
-    "graded_starter_props": 221,
-    "passing_n": 42,
-    "rushing_n": 38,
-    "receiving_n": 141,
-    "wins": 105,
-    "losses": 116,
+    "graded_starter_props": 228,
+    "passing_n": 44,
+    "rushing_n": 39,
+    "receiving_n": 145,
+    "wins": 111,
+    "losses": 117,
     "pushes": 0,
     "neutral": 0,
-    "directional_hit_rate": 0.4751131221719457,
-    "over_wins": 60,
-    "over_losses": 68,
-    "over_hit_rate": 0.46875,
-    "under_wins": 45,
+    "directional_hit_rate": 0.4868421052631579,
+    "over_wins": 63,
+    "over_losses": 69,
+    "over_hit_rate": 0.4772727272727273,
+    "under_wins": 48,
     "under_losses": 48,
-    "under_hit_rate": 0.4838709677419355,
-    "projection_mae": 33.58780562661657,
-    "projection_rmse": 46.424157551158004,
-    "median_absolute_error": 26.0863698130033,
-    "mean_signed_projection_error": -1.9560161677038794,
-    "average_abs_jkb_line_difference": 9.225074561705322
+    "under_hit_rate": 0.5,
+    "projection_mae": 34.96316569891796,
+    "projection_rmse": 49.15217694439928,
+    "median_absolute_error": 26.561831141444245,
+    "mean_signed_projection_error": -1.4014359934635123,
+    "average_abs_jkb_line_difference": 9.344776869112952
   },
   "buckets": {
     "by_week": [
@@ -63,161 +63,161 @@
       },
       {
         "key": "2",
-        "n": 133,
-        "mae": 32.35767164095003,
-        "bias": 0.3979062055307658,
-        "wins": 62,
-        "losses": 71,
+        "n": 140,
+        "mae": 34.65905045798132,
+        "bias": 1.1833835134890616,
+        "wins": 68,
+        "losses": 72,
         "pushes": 0,
-        "hit_rate": 0.46616541353383456
+        "hit_rate": 0.4857142857142857
       }
     ],
     "by_market": [
       {
         "key": "passing_yards",
-        "n": 42,
-        "mae": 60.58865461564803,
-        "bias": -6.573447302425455,
-        "wins": 19,
-        "losses": 23,
+        "n": 44,
+        "mae": 63.70146218827204,
+        "bias": -2.7902862403588773,
+        "wins": 20,
+        "losses": 24,
         "pushes": 0,
-        "hit_rate": 0.4523809523809524
+        "hit_rate": 0.45454545454545453
       },
       {
         "key": "receiving_yards",
-        "n": 141,
-        "mae": 26.561415358473262,
-        "bias": -1.6157835650889183,
-        "wins": 67,
+        "n": 145,
+        "mae": 27.708212460463493,
+        "bias": -1.7266265933030107,
+        "wins": 71,
         "losses": 74,
         "pushes": 0,
-        "hit_rate": 0.475177304964539
+        "hit_rate": 0.4896551724137931
       },
       {
         "key": "rushing_yards",
-        "n": 38,
-        "mae": 29.816368002113546,
-        "bias": 1.8850183241275946,
-        "wins": 19,
+        "n": 39,
+        "mae": 29.514016315438905,
+        "bias": 1.374513951155026,
+        "wins": 20,
         "losses": 19,
         "pushes": 0,
-        "hit_rate": 0.5
+        "hit_rate": 0.5128205128205128
       }
     ],
     "by_position": [
       {
         "key": "QB",
-        "n": 42,
-        "mae": 60.58865461564803,
-        "bias": -6.573447302425455,
-        "wins": 19,
-        "losses": 23,
+        "n": 44,
+        "mae": 63.70146218827204,
+        "bias": -2.7902862403588773,
+        "wins": 20,
+        "losses": 24,
         "pushes": 0,
-        "hit_rate": 0.4523809523809524
+        "hit_rate": 0.45454545454545453
       },
       {
         "key": "WR",
-        "n": 101,
-        "mae": 26.913453779304522,
-        "bias": -3.1411727444891393,
-        "wins": 49,
+        "n": 104,
+        "mae": 28.735426906372062,
+        "bias": -3.245078325723689,
+        "wins": 52,
         "losses": 52,
-        "pushes": 0,
-        "hit_rate": 0.48514851485148514
-      },
-      {
-        "key": "RB",
-        "n": 38,
-        "mae": 29.816368002113546,
-        "bias": 1.8850183241275946,
-        "wins": 19,
-        "losses": 19,
         "pushes": 0,
         "hit_rate": 0.5
       },
       {
+        "key": "RB",
+        "n": 39,
+        "mae": 29.514016315438905,
+        "bias": 1.374513951155026,
+        "wins": 20,
+        "losses": 19,
+        "pushes": 0,
+        "hit_rate": 0.5128205128205128
+      },
+      {
         "key": "TE",
-        "n": 40,
-        "mae": 25.672518345874312,
-        "bias": 2.235824112896643,
-        "wins": 18,
+        "n": 41,
+        "mae": 25.102595329378328,
+        "bias": 2.1250558499104155,
+        "wins": 19,
         "losses": 22,
         "pushes": 0,
-        "hit_rate": 0.45
+        "hit_rate": 0.4634146341463415
       }
     ],
     "by_direction": [
       {
         "key": "OVER",
-        "n": 128,
-        "mae": 31.280440652891492,
-        "bias": 5.910007441696557,
-        "wins": 60,
-        "losses": 68,
+        "n": 132,
+        "mae": 33.524920688152015,
+        "bias": 5.655612574424516,
+        "wins": 63,
+        "losses": 69,
         "pushes": 0,
-        "hit_rate": 0.46875
+        "hit_rate": 0.4772727272727273
       },
       {
         "key": "UNDER",
-        "n": 93,
-        "mae": 36.76353376249623,
-        "bias": -12.782371243007704,
-        "wins": 45,
+        "n": 96,
+        "mae": 36.94075258872111,
+        "bias": -11.104877774309543,
+        "wins": 48,
         "losses": 48,
         "pushes": 0,
-        "hit_rate": 0.4838709677419355
+        "hit_rate": 0.5
       }
     ],
     "by_starter_basis": [
       {
         "key": "QB1_BY_ARCHIVED_DEPTH_CHART",
-        "n": 42,
-        "mae": 60.58865461564803,
-        "bias": -6.573447302425455,
-        "wins": 19,
-        "losses": 23,
+        "n": 44,
+        "mae": 63.70146218827204,
+        "bias": -2.7902862403588773,
+        "wins": 20,
+        "losses": 24,
         "pushes": 0,
-        "hit_rate": 0.4523809523809524
+        "hit_rate": 0.45454545454545453
       },
       {
         "key": "WR1_BY_PROJECTED_TARGETS",
-        "n": 43,
-        "mae": 33.818781770232384,
-        "bias": -3.9171218054064862,
-        "wins": 22,
+        "n": 45,
+        "mae": 35.09345666790069,
+        "bias": -0.9652956377097813,
+        "wins": 24,
         "losses": 21,
         "pushes": 0,
-        "hit_rate": 0.5116279069767442
+        "hit_rate": 0.5333333333333333
       },
       {
         "key": "RB1_BY_PROJECTED_CARRIES",
-        "n": 38,
-        "mae": 29.816368002113546,
-        "bias": 1.8850183241275946,
-        "wins": 19,
+        "n": 39,
+        "mae": 29.514016315438905,
+        "bias": 1.374513951155026,
+        "wins": 20,
         "losses": 19,
         "pushes": 0,
-        "hit_rate": 0.5
+        "hit_rate": 0.5128205128205128
       },
       {
         "key": "WR2_BY_PROJECTED_TARGETS",
-        "n": 38,
-        "mae": 23.316641653001394,
-        "bias": -1.6767211165113172,
-        "wins": 16,
+        "n": 39,
+        "mae": 26.442564498242366,
+        "bias": -5.357513719098185,
+        "wins": 17,
         "losses": 22,
         "pushes": 0,
-        "hit_rate": 0.42105263157894735
+        "hit_rate": 0.4358974358974359
       },
       {
         "key": "TE1_BY_PROJECTED_TARGETS",
-        "n": 40,
-        "mae": 25.672518345874312,
-        "bias": 2.235824112896643,
-        "wins": 18,
+        "n": 41,
+        "mae": 25.102595329378328,
+        "bias": 2.1250558499104155,
+        "wins": 19,
         "losses": 22,
         "pushes": 0,
-        "hit_rate": 0.45
+        "hit_rate": 0.4634146341463415
       },
       {
         "key": "WR3_BY_PROJECTED_TARGETS",
@@ -233,33 +233,33 @@
     "by_jkb_line_difference_bucket": [
       {
         "key": "15+",
-        "n": 40,
-        "mae": 42.28123796648664,
-        "bias": -3.1807827449732677,
-        "wins": 18,
+        "n": 41,
+        "mae": 42.528386434385425,
+        "bias": -4.381600852421164,
+        "wins": 19,
         "losses": 22,
         "pushes": 0,
-        "hit_rate": 0.45
+        "hit_rate": 0.4634146341463415
       },
       {
         "key": "10-15",
-        "n": 49,
-        "mae": 30.24683165903884,
-        "bias": 7.758670357823803,
-        "wins": 24,
-        "losses": 25,
+        "n": 53,
+        "mae": 34.24763919196973,
+        "bias": 13.369691020297772,
+        "wins": 27,
+        "losses": 26,
         "pushes": 0,
-        "hit_rate": 0.4897959183673469
+        "hit_rate": 0.5094339622641509
       },
       {
         "key": "3-6",
-        "n": 40,
-        "mae": 27.12124609744864,
-        "bias": -8.50075709057519,
-        "wins": 16,
+        "n": 42,
+        "mae": 29.716717350884466,
+        "bias": -11.98291829671927,
+        "wins": 18,
         "losses": 24,
         "pushes": 0,
-        "hit_rate": 0.4
+        "hit_rate": 0.42857142857142855
       },
       {
         "key": "<3",
@@ -285,14 +285,14 @@
   },
   "coverage": {
     "total_cohort_rows": 375,
-    "gradeable_rows": 221,
-    "excluded_rows": 154,
+    "gradeable_rows": 228,
+    "excluded_rows": 147,
     "exclusions_by_reason": {
       "NO_VALID_PROJECTION": 0,
       "MODEL_STATUS_NOT_PROJECTED": 0,
       "POST_KICKOFF_ONLY_PROJECTION": 0,
       "NO_VALID_COMPARISON_LINE": 143,
-      "GAME_NOT_FINAL": 7,
+      "GAME_NOT_FINAL": 0,
       "ACTUAL_UNRESOLVED": 4,
       "MARKET_MISMATCH": 0
     }
@@ -340,7 +340,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 10.236094738659915,
         "squared_projection_error": 104.7776354988212,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_3ed6e1fe7d753730f076464ea7594cabedcea158742e06f5992f268b0da92b31",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -607,7 +607,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 20.857359848064895,
         "squared_projection_error": 435.02945983166967,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_cfce383a875c4956061e8d01439e90ddc8f1fddcaa7b9a9af06dfc4f354f8158",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -918,7 +918,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 45.2651590474967,
         "squared_projection_error": 2048.9346235951725,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_1a5c4409fd7ab81cb6ce276afe4f8b75b2f6e26b420b3bd1e43aefe990d3a0fe",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -1190,7 +1190,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -13.455555517060638,
         "squared_projection_error": 181.051974272701,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_08c1193e073d335329fc5175f64e38ea47132a897b6ade1db5464f0353f4b4db",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -1501,7 +1501,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -10.32545460837877,
         "squared_projection_error": 106.61501286969037,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_ba8672fb9fc364a9bf7459f6f817e0ffe8d8338e5863465caf7ac3eb47c88f37",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -1812,7 +1812,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 42.71911973439267,
         "squared_projection_error": 1824.9231908813772,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_2ffa040caaa6eef8f8f8b33bbd0bed3345edb0032a7616b80e7b4d67a2dae1b0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -2123,7 +2123,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 33.9357309674303,
         "squared_projection_error": 1151.633836293808,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_dc1be3dc9a9cc1520d3a6833c54ce91b77d378dd52c6a5f0f9fe8efbc1b3a171",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -2434,7 +2434,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 13.51539397450614,
         "squared_projection_error": 182.66587428611686,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_6f47cf599ef417dd293fe483963cc3cb5f3d005e099957442bad9999e122f1eb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -2745,7 +2745,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -7.71761939363499,
         "squared_projection_error": 59.561649105010915,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_c5af20840ea901275b55f9615bf91ca56ae9be4c44820f03aa2b0002453a3e03",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3017,7 +3017,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -63.306713592002666,
         "squared_projection_error": 4007.739985819855,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_f088c7fe41213ff407c70c387a259295c84d5e9e96a6a2202e9f5c8e2c3238eb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3289,7 +3289,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -17.499823935492167,
         "squared_projection_error": 306.2438377732245,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_6d3102946018005711e126b5ff9e90ecdaebcd2c1a7a1bc9a3067e9468eafceb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3600,7 +3600,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -101.32001521172072,
         "squared_projection_error": 10265.745482503316,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_9e36eec1af9c371b0b00b37a67e8e449ba7b32d3d62823a438a6ecd2602f5218",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -3867,7 +3867,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 69.64169182491338,
         "squared_projection_error": 4849.965240236207,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_965f2395f239a6ec74248d98ad46a9a2605fb5d580c71ebc72e84bc8b8574568",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -4134,7 +4134,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -14.196812480108576,
         "squared_projection_error": 201.54948459536664,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_9715874f6af2a9f7a1407d2e83d86ce1b1ae7675590e98a4967a5d5e2390e088",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -4406,7 +4406,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 30.866446571853768,
         "squared_projection_error": 952.7375239731032,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_3a0965482d1d2cd8118e8c7d7d827f029da8e94ad5aee23a5ebad26159848d8f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -4717,7 +4717,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.945515471505715,
         "squared_projection_error": 15.567092335890964,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_105da6f4899c2fbbcd63953051275d6e2d86e77d9b5d59e2ecd26cc990e0b502",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5028,7 +5028,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 6.286715069722888,
         "squared_projection_error": 39.522786367880855,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_98fd791460680f4e7cace150c79f3d6f84bcb5ca005a88e56bf8a70cf7196e67",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5339,7 +5339,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.06613822830829,
         "squared_projection_error": 8476.173808273968,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_09271bd1b37d88f7d7f6390b2ce006df1d0d3cfdee00e43911a3d1a273532b21",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5650,7 +5650,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 31.072247909669244,
         "squared_projection_error": 965.4845901599447,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_aa9d1d4fc5fc4fc708ffa48b3420605b16cfe7b321939b90f954d911767cdbfc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -5961,7 +5961,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.843483595724635,
         "squared_projection_error": 14.77236615060437,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_d58eac71f8ecf046766099e505dbc78ccc0cad7052f42584c8f39e6affeafde8",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -6272,7 +6272,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -51.47305462085518,
         "squared_projection_error": 2649.4753520015406,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_83c6b71eaed0724c7bb0a94b136f583ab3bb938c9195484737b5cb0a42381a5b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -6583,7 +6583,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -110.83757849418927,
         "squared_projection_error": 12284.968806455568,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_2604f978f6e91c9abe28e1b56bb62bc808e3bd926f5fa9334991dad7bdab0a1a",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -6850,7 +6850,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -14.80174459506592,
         "squared_projection_error": 219.09164305756315,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_219e815d5c1461b35573a8e44ac7da1f37929444514cbbd975741adc19258a12",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -7161,7 +7161,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.4026122822782,
         "squared_projection_error": 595.4874861991948,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_a5bd16907107929c3621bbd9e2c3004e45f820778b562496c24e5cbcd7f55226",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -7433,7 +7433,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -11.24442255212061,
         "squared_projection_error": 126.43703853063859,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_06117c39370eb8332af3194965f88abd758edad060ef4a11ca3fffc4a6c955d0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -7744,7 +7744,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.15116018934102,
         "squared_projection_error": 366.7669365978004,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_d08ec3c9d382f1c02ef6796f7377485209e52417f6d230c3a887289d384925b5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8055,7 +8055,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -7.078820737466156,
         "squared_projection_error": 50.10970303318089,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_078ac9b2c02c99e46119b24bb2c0e36b17f58b868319b35e162c538b8cb95bfc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8366,7 +8366,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.82150836701919,
         "squared_projection_error": 8615.832415528614,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_7b635be5df95c1876ed7d25b360821499d679952c28792e70b5fec47044a0484",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8677,7 +8677,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -59.08065721997059,
         "squared_projection_error": 3490.524057543663,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_6a6b99ad5f3809faea014e57146d71e1707b5bfbc8780a566a496d25f1acf58e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -8944,7 +8944,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 11.45660645051884,
         "squared_projection_error": 131.25383136206992,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_bf14209507ad432cc20a533c107bccfe0e61111bb588e3bf8caeb4f1b2db8fbd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -9216,7 +9216,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -60.90416952064133,
         "squared_projection_error": 3709.317864999017,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_7f4e3e49feb87a5c730cc85470ae791fdb42d897a0715e63609aa9212bf5ccdc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -9527,7 +9527,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -62.617050331287075,
         "squared_projection_error": 3920.894992190939,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_86b32b16ab074867659ae1c9374626667963b92863cf4fb0d804ea9d993afb67",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -9799,7 +9799,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.598796556893525,
         "squared_projection_error": 12.951336657908692,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_0d6ced5b51dda2cda43185d4b12baeb0ad4abbe63fec7cea9cc2c8f4eea5f75c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10110,7 +10110,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -146.4428728737192,
         "squared_projection_error": 21445.515015508285,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_a3dc92655b57802ab9f6302eb3f6ae2213c6405165166fa0fd21540c1874f2f1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10377,7 +10377,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.44594095894401,
         "squared_projection_error": 597.6040293681764,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_48ef7188b635d377913ba5489a5373df13fa8c2e681acf2b615a9d41423f1ecd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10688,7 +10688,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -99.99051066745115,
         "squared_projection_error": 9998.102223537662,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_14ba1fccff58ac27337427796e80c6ff01b5705d0b5b26c64d4d1a1d79187037",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -10999,7 +10999,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -46.751418666066314,
         "squared_projection_error": 2185.6951472898136,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_a9495c07af75d5c9a2e858edc529909a2dd11802e61afc84d5c8bf453aed0585",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -11266,7 +11266,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.905959570310202,
         "squared_projection_error": 8.444601024277453,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_5c22732a14678cfbe29011e45b02aff79baafbf30e8cb4b1227dc53ab1490aba",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -11577,7 +11577,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -19.3034604382269,
         "squared_projection_error": 372.62358489019107,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_711099cca7dafdc401b8392806b72615652a332cdb47f20bdb17a4e16d224004",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -11888,7 +11888,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 38.69606137090083,
         "squared_projection_error": 1497.3851656205234,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_7c9df43c5936a9638721aa539a6a8789cd3c6a621cef23bff579cb314cdcebb2",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -12199,7 +12199,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -21.84766773751528,
         "squared_projection_error": 477.320585568866,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_d369f1fd357ea21d95f217583b8313a87c806f9553f77642bcafd78f9f1c6677",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -12510,7 +12510,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -1.1017183965666675,
         "squared_projection_error": 1.2137834253334288,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_77e3829b55542b48affe57b165fbc40c04dac3348db5936552786233d6e22008",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -12821,7 +12821,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 23.408532826053936,
         "squared_projection_error": 547.9594090684446,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_ff351d1d3f3c08ba5a50871dbcbe7e136c9f0f10e67b04fd3ed835e7f25a3ca5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13132,7 +13132,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -15.702439043917963,
         "squared_projection_error": 246.56659192795925,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_2549592ac0533576d62c75d03ea6b5bb64e4156703005007baddd85b52aa6fd1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13399,7 +13399,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -34.946701891566846,
         "squared_projection_error": 1221.2719730980418,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_111f79020f0609903e6cfdbc65dd7438765dc36e0053f1e1b9244a1165dbc499",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13710,7 +13710,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 11.577016593956941,
         "squared_projection_error": 134.02731321675438,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_c1b3d00657157aa4e4a07c2949f54ecb7b60527a10617f2c71efcb3f49775368",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -13982,7 +13982,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 21.06859349170903,
         "squared_projection_error": 443.88563171888416,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_8d83fccc26fc4e69cc94cbe47e99cfd23ca90cc969ea240baf9b25e4fa179abf",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -14293,7 +14293,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 22.30126216429216,
         "squared_projection_error": 497.3462941204891,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_00131d29d76ae0a6ca17d9ec2895e6192395a0a1422308d6b83d79e0a28d6f42",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -14604,7 +14604,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 17.029246122860343,
         "squared_projection_error": 289.995223512954,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_376f46f4fbaf4362538e0e13e40f8d9170b1cfdbfb05e3b8388ba8a1a0770012",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -14915,7 +14915,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 36.81841422348033,
         "squared_projection_error": 1355.5956259317788,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_e4d8b57ca0fe8fbe0743c308edc384dfac87cb550b96708dd7ab412362a05a66",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -15187,7 +15187,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 58.34464724208104,
         "squared_projection_error": 3404.0978618028744,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_21b5e91a69546c5fbbc4c49918cdb4bc77ba6ffa35678542626c299c4b279b38",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -15454,7 +15454,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.344120093824095,
         "squared_projection_error": 374.19498220428915,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_50af6fb5850c8221222fca9d29f3759b5124ab8f7a4b6480c4751343c4543a87",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -15765,7 +15765,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 9.445800834121975,
         "squared_projection_error": 89.22315339789941,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_aefa661081372a7a221647fc3bdc56ff4f1bba2fb928b9a8b1963ad1d2295385",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16076,7 +16076,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -43.70590041171337,
         "squared_projection_error": 1910.2057307986072,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_6b8bb6f3383984211a44e27a542396a43e3ab0e02d71f23cc3fa56b682cda5aa",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16343,7 +16343,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 25.90889092886988,
         "squared_projection_error": 671.270629164076,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_a2bcbd9735cd5deb34252b94480ae5942823e4b6ee84c92e3de26898087098d4",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16654,7 +16654,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 31.88539022938869,
         "squared_projection_error": 1016.6781100803958,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_16a1f04483091706020d51a80999b2882089935348af00def77f2256a28978ba",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -16926,7 +16926,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -9.329051001472727,
         "squared_projection_error": 87.03119258807929,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_c0a40c6eb806ae1653ab480bfdc5a81580fc159fc39ff0908c5361bda5eb13bc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -17237,7 +17237,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 8.723608310188709,
         "squared_projection_error": 76.1013419495935,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_8a710da926debe277cf6c8cd94b8b4200a1cda2c4a7589dc2a1262b496589098",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -17548,7 +17548,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -3.7405410237121046,
         "squared_projection_error": 13.9916471500732,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_5d023774f74ab49d835f6ac31afdc37a548c716db4358f72f1ca80798c7f406a",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -17859,7 +17859,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 206.79133762217478,
         "squared_projection_error": 42762.65731556828,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_4527477ac828df108537584ac792599304bd32eba5b09f0e923e6dac7b9a2c6c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -18126,7 +18126,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 28.577947244248328,
         "squared_projection_error": 816.6990686950406,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_29f4955d69707aee20523ee99e166e37380fe35ef07d5094ce84392ec4c6850b",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -18437,7 +18437,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 37.33784370516595,
         "squared_projection_error": 1394.1145725514007,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_ea457b10cdd39fbfb8fd3ca9338f094260af0d14941e80ffeaa74b02f66c543c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -18748,7 +18748,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 37.85066478471341,
         "squared_projection_error": 1432.6728246447437,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_f53429e30502bb2fc889647fe2e65bfb1af01433186bc273aec89344db6ec986",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19059,7 +19059,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -45.09501056541741,
         "squared_projection_error": 2033.559977895108,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_a428e8744bb5659b6ed4289c24da4e691c4bbf6092afa5627b6c90db2f8ebacf",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19370,7 +19370,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.5420680375690665,
         "squared_projection_error": 6.462109907630245,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_c4c012701f95ec7d4f4937b729726da61cadecb16c0e68431b784d063a6718f8",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19681,7 +19681,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.29278046592963,
         "squared_projection_error": 590.1391827658523,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_372d9cf921c76668c4ee4c79131a6203da532a0a1c5c8dcf9969ecce9fbb614c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -19992,7 +19992,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 50.26562274766982,
         "squared_projection_error": 2526.632830211062,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_4b62a12a9da61bb9a419ab2547b27679af4a13eb707c9e38dc95f30c8a96578e",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -20259,7 +20259,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 47.657147219293904,
         "squared_projection_error": 2271.2036810814525,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_80174c80bf22deae83f99c4d06552ac4320cf1640482bd8915996ba2770e3fef",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -20526,7 +20526,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -15.470163405990945,
         "squared_projection_error": 239.32595580806137,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_f43c4ad3eb2a9eb1033049c16508800129c808d5d65846cc065c195348a29a7c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -20837,7 +20837,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -0.6668926585439294,
         "squared_projection_error": 0.4447458180197901,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_978f64289a44011eac398d0daa1f7f32cada53abd2755666885c108636f27cf7",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -21148,7 +21148,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.471187185926084,
         "squared_projection_error": 379.12713042937213,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_11676b3998f8f9d0e8257c3a016d5a6f1022a48c140310169c733a74c8469ec3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -21420,7 +21420,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -122.47023686970587,
         "squared_projection_error": 14998.958918921864,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_bf773c44dc94ca52f131cfaaa90be142157b40ceb31c69211ee2c3c79d0fd0de",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -21731,7 +21731,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 1.9329298052091488,
         "squared_projection_error": 3.7362176318658777,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_dd4407868366fc4cc4937d4884c2d8084657fd6b7396b9bfff2f8270065216ee",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22042,7 +22042,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -5.003772929703899,
         "squared_projection_error": 25.037743532037542,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_214bff1732c033464bf7346844c27ff15fd9473f126e660ae9c496cfd3519c85",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22353,7 +22353,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.59337686310846,
         "squared_projection_error": 8573.53343891363,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_561c3bdf6a47900dfde1d089a4189d3f61d0d533a2eb13d04037427018bc75c0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22625,7 +22625,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -35.37175454383364,
         "squared_projection_error": 1251.1610195092157,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_c8de65e889d292b5b09390b7ac221ae76226e9e46f8654207261f7a798e5b2f7",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -22936,7 +22936,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 22.254876985579333,
         "squared_projection_error": 495.27954964326864,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_d31d834d690d6a151549fb264d2239bdb2affa7ee33092c6faa3cd593602cc1c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -23247,7 +23247,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -179.1062756603672,
         "squared_projection_error": 32079.057980927446,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_a6f319364ba402174db902460fd6ad45067e88197a82ddab2679fafc40263b7b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -23514,7 +23514,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -4.75869208145177,
         "squared_projection_error": 22.645150326071775,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_9fa716cb776d072f537b91946ea220098f6412f30d114551c20eec214afa2734",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -23825,7 +23825,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -42.876890387165176,
         "squared_projection_error": 1838.4277292729776,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_7af355fd108bafc689031a63f0cd11f8b4b160ec58c6cf1afa484f90df55395d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24136,7 +24136,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 13.938864080170106,
         "squared_projection_error": 194.29193184545642,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_45583f8fe64137358bc5349aaf0fda8da46853e526e624297409b891fde1d12a",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24403,7 +24403,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -12.569344443093769,
         "squared_projection_error": 157.9884197291322,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_f84195085fbbb7e9475bf18cad0905d9daef8b4f484f0483e85d47b92f886442",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24714,7 +24714,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 8.420311783623902,
         "squared_projection_error": 70.90165053343553,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_9a649e933b2c9411702d033cfd527df63220f7b576e96736f14f0af4ddfaf8e3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -24981,7 +24981,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 57.410612771813916,
         "squared_projection_error": 3295.978458835163,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_99ef962fa8a1b1b1df0cfbe5392c44b8de6efd12e978b00d49eb52ed3f1c70da",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -25292,7 +25292,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 6.750941203311214,
         "squared_projection_error": 45.57520713056506,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_6c88df08d8f11fee39e1d6bc466a69c477c9bfe7db1e7c13141e6a3ab81c999f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -25603,7 +25603,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.787683769523177,
         "squared_projection_error": 7.77118079886295,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_dfecd1af22f38d6de8fe6b713b6df09fd37f39f32eeb2a9ce4e952b3e48ab1d4",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -25875,7 +25875,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 26.0863698130033,
         "squared_projection_error": 680.4986900207699,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_3642a1f06d8df5cf943fb606b14470e92150f61b222b0b06526e2c6e107031ab",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -26147,7 +26147,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -12.67607485139591,
         "squared_projection_error": 160.68287363819184,
-        "generated_at": "2026-09-21T16:27:59.651Z",
+        "generated_at": "2026-09-22T14:49:50.345Z",
         "outcome_id": "outcome_d43c03bc34323ee39357f84ede312162ffb9fd82301581e6ad36af8f8d6ca7c2",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -26458,7 +26458,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 9.835980299480696,
         "squared_projection_error": 96.74650845177236,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_68fbe8e9ba91dbf1c24fbf0c67b9abf4093117bfe390648c79dd10594f475b44",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -26769,7 +26769,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.2823806063650096,
         "squared_projection_error": 10.774022445041128,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_cb05a6cfb2007595316dc9b825086e070b73a90c82a2d05c293a6061e19cf390",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -27041,7 +27041,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -72.52847836451434,
         "squared_projection_error": 5260.380173871825,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_af9a8228c8e0bafcbd005c3c03a1809612eac114c58768122fd583cfdb2705cc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -27308,7 +27308,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -30.442558487743483,
         "squared_projection_error": 926.7493672796828,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_699afaedbff3bb874008050bedd049c4360f0a2f38d1f3295c7a368b34161c19",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -27619,7 +27619,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -48.896525770817966,
         "squared_projection_error": 2390.8702324562655,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_3a1accb820134d02d6d43b9d26daa85de41f0f4b92c88d1a438981d2b04683a8",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -27930,7 +27930,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -100.16538584147153,
         "squared_projection_error": 10033.104520770867,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_65905246eb39b83f7277dbb2cdd50ffb1542f0e1a9dde0f33db9040865354cbd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -28241,7 +28241,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 33.913029544989904,
         "squared_projection_error": 1150.0935729193582,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_d17e137f68ff03607ae735bc5b447da61d057bff822f056d6e12d8c4859a9565",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -28552,7 +28552,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -50.16899810262776,
         "squared_projection_error": 2516.928370621468,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_310966129de9d25c01a4d3dabeabee55988c3227fb2e33cf7074d6ad81a4a9f9",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -28863,7 +28863,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 26.33665343925341,
         "squared_projection_error": 693.6193143793384,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_4480b86102019057edee74e7cf88366b9e231f992d7a154dbc8ade40d2110895",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -29130,7 +29130,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 61.734274454622735,
         "squared_projection_error": 3811.120642438685,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_ccb0a15378d7e2b5ce95d6c1bb273a417ebc577d33ba8d74d9676a82b6bb8deb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -29441,7 +29441,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -7.9807586055478765,
         "squared_projection_error": 63.692507920026486,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b4945f8107d8b52c2d217613b46d942e75c5f3dfdc89b171fcdc04cb47185a22",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -29752,7 +29752,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -21.212316230476823,
         "squared_projection_error": 449.96235986175043,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_ba80c7184c4bcf8276da14fd510ed62d603ffe4883302f238879f980d56e325d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -30024,7 +30024,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -0.645776513590512,
         "squared_projection_error": 0.41702730550511674,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_418d8f44ac10361a8d83e7d448e6dce076e5b1ee6c3ea3f72c57241d35746e6e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -30335,7 +30335,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -117.67869350185899,
         "squared_projection_error": 13848.274904304468,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_4de4dc5b2c7622ca3c66c350bd7484a409b588f88366e90293807a25bbf496bf",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -30602,7 +30602,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -11.438606146803572,
         "squared_projection_error": 130.84171058169247,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_32566480f5b2a6b5ee3588c56095280239f96ac11a509a8045ae9ffb0432d385",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -30913,7 +30913,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 40.65595924716166,
         "squared_projection_error": 1652.9070223068697,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_127c0cdd1b4fc0cfad8cbda52e1ec2355ede5f41e83a697a5fcce2d681d84114",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -31180,7 +31180,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 51.83933375667557,
         "squared_projection_error": 2687.3165243360036,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_496d56e9b401d6865d6b89d8f81840e7abaa3950d3b565faf78f5b9397d8d0bf",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -31491,7 +31491,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -5.8809259688467534,
         "squared_projection_error": 34.58529025105612,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_bac7c4d98bacb05a15c905e4afcce69648baecc1b04056fc03337024bc887a89",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -31802,7 +31802,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -17.9136301869967,
         "squared_projection_error": 320.8981464764794,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_6f3d354b5b1e41532c63177d9ffaf62e872933c6bc4de3ee1a97a48bf3d2990f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -32074,7 +32074,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -14.099791078229295,
         "squared_projection_error": 198.80410844971442,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_2229b3063bfcf0bf28668ffdcfdad11173e225c5c6ebeef78f773f34107f48dc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -32385,7 +32385,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 48.81841422348033,
         "squared_projection_error": 2383.2375672953067,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_f4cd60f6650ccb3e9d130923ad636c308bb9bba973f1a290debed7d2c32c75f3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -32657,7 +32657,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -92.12996477864496,
         "squared_projection_error": 8487.93041011436,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_3d05bad2d54d32fe1deece3e3f9c7ed9835068a0eb0075c70e8ccb9f4daed57a",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -32924,7 +32924,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 51.092570967190596,
         "squared_projection_error": 2610.4508080374076,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_59c0737100e10e3b2e86527465a1607cc520eae1dd941210b59816a09abab938",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -33235,7 +33235,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 20.561170345758683,
         "squared_projection_error": 422.76172598730625,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_8ba152b73923e7cdf0aec8f894278cb1e0a915b411786366506b421aee914cd2",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -33502,7 +33502,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -75.8435261570714,
         "squared_projection_error": 5752.240459938373,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_6ae3821f6fb0526ca4d07f85c105a95157f0cc7513fa6bb6f185ec1b9ff401c9",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -33813,7 +33813,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 13.807955596704709,
         "squared_projection_error": 190.65963776056887,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_16328c74cb820e007385b503423689a604562e6d21eed00c8fcbdc3fc1f0a567",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -34124,7 +34124,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -53.5973877177218,
         "squared_projection_error": 2872.6799701637956,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_8f9cde933c7a969442c8f64a19f4010616b254f20a499ea3af593be7ea16390f",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -34396,7 +34396,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.8045896080905166,
         "squared_projection_error": 7.865722869809318,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_97c4cc5d3155caf4b2687868e8b2382b450b13919922cb7a2115805a40a1558e",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -34707,7 +34707,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -55.85587692837695,
         "squared_projection_error": 3119.8789874379927,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_3d9b5a56cb079e152e16e7539c2a48d4a40ab2c5e4db1c6dc115562f5d0acfb4",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -35018,7 +35018,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -9.118264385257362,
         "squared_projection_error": 83.14274539945282,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_0d7ece30c5fd9f5510ac47e4b3e22f311c58e4af37b3d10af0edbca9f5fac5f0",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -35329,7 +35329,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 11.406623136891547,
         "squared_projection_error": 130.11105138706955,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_242d772abe9979a0b1d31fcc127eeb3304eda47c8289a244a8bd87ccff1b6e5c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -35601,7 +35601,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -35.89726613517827,
         "squared_projection_error": 1288.6137159798168,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_3d1c0ca8f8c837aa313b452c7b11c533a69d025239b9e1b3c994271e6f12800c",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -35912,7 +35912,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -3.8043838713111207,
         "squared_projection_error": 14.473336640292189,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_ba797c8b2b95c4ce47a0ed3548006e00099f26f3f99206d08ba09b9691c34ae6",
         "outcome_revision": 1,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -36223,7 +36223,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -42.777677655639906,
         "squared_projection_error": 1829.9297056098337,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_af1bc528da5ae6c9779e85e4cefae6aa64c13a20339a06975c1e8f7cbe4f560f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -36490,7 +36490,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 72.79975912329712,
         "squared_projection_error": 5299.8049284100825,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_f33fd5373df25d201a64677c9cfcb1ca956c6b0a3244631fed5fb662d275a4a5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -36757,7 +36757,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -6.720087219519407,
         "squared_projection_error": 45.15957223794807,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_1a05b8ac95d28c84713d2af974e1eea748568b08bb26343f8b0bb32b3c36dc1d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -37068,7 +37068,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 36.39453708294725,
         "squared_projection_error": 1324.5623294820227,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_1cf886796faa3b19ba630e6e9055fbf933350c0d887b913826508c3e92b3eedc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -37340,7 +37340,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.720435953514837,
         "squared_projection_error": 611.099953731829,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_81443628e7eee03d65dd2e7f1d897aec5a854b91c3c370785de72c4088bbd131",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -37651,7 +37651,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 33.08135736189007,
         "squared_projection_error": 1094.3762049050783,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_afc9b97d0e9812ed597ac431e672a962c64663b6c8f1de7133c522cf704d2e1f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -37962,7 +37962,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 39.12732799563472,
         "squared_projection_error": 1530.9477960779807,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_39d78eda21faaff8fecc2a00c04b9a45d2387cdf244d5977be03522433bbd3ab",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -38273,7 +38273,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -31.876725413410885,
         "squared_projection_error": 1016.1256230819953,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_956eb654ba231befacf7ac0d0896f5dc8f01e4ed1f085f618e3dfbddce9f2e35",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -38584,7 +38584,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -28.73928490918138,
         "squared_projection_error": 825.9464970911006,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b544eaf7bb8f1019dc5cace6d99c50f42ec0d81c92a208a4bdca5d8b340fae70",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -38895,7 +38895,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 29.30456467635881,
         "squared_projection_error": 858.7575108708967,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_bff8e8a1626f8864dd82282b71ec41bfe7567b22873696075b59424f7c98bd9e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -39206,7 +39206,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 27.57320515379586,
         "squared_projection_error": 760.2816424533146,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_45b0a3008f52a7227ca8da57f9b69f9492c2e795a2b0ae11029d06a8605ddbeb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -39517,7 +39517,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -59.03159437039914,
         "squared_projection_error": 3484.7291339113394,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_17a1114472d43e9ca9958a208508ae5141b71974ced45ff5c3ca947f61a128bf",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -39828,7 +39828,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -119.28360357084279,
         "squared_projection_error": 14228.578080845979,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_dd63d36c4925e100b2c42b30bad66c2fc296fe5c60e807c7b54486b33aca0238",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -40095,7 +40095,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.0643055405154485,
         "squared_projection_error": 9.389968445633675,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_0e87cc414f1361e4ad99e9f6b12f537db65bf6afd64ebdd2a9552cbbbc59e2f5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -40362,7 +40362,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -8.196812480108576,
         "squared_projection_error": 67.18773483406372,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_114a0c9c2a6ee04b46456d8e94d47307303b7d7a464c02244c1c01ef37b4aa68",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -40634,7 +40634,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 51.02778357321755,
         "squared_projection_error": 2603.834696395131,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_c70e7aaaefe10deacd6569430311b57c6e3e5df70aeeb4d9270f3d17915a4bae",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -40945,7 +40945,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -58.7620627088884,
         "squared_projection_error": 3452.980013803333,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_19aa6ee968ad88a54575c91dac943f17ce09ad8d79f0dfa4b51876082ee478d5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -41256,7 +41256,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -60.33713795078636,
         "squared_projection_error": 3640.5702160922233,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b05910f879f2865d39496daeb43e2826537d6151c707f4f79c12914bee8bbd26",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -41528,7 +41528,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -30.65797700661384,
         "squared_projection_error": 939.9115541380629,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_1e5bc44168ec8f51767d3c2277067ce2c0c3fba963ec1acd229c5bbf24ae40a8",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -41839,7 +41839,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -20.06156177285481,
         "squared_projection_error": 402.46626076606935,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_6797d1122f55b1eeeb03d2b26f791330534dee768e22ba9c48fbb04c6ed09cad",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -42150,7 +42150,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 16.239495976612524,
         "squared_projection_error": 263.72122957441434,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_4f13867eb048dcf0fa9d8b992b4a400f538025a6e4e156405c849b50fd13049f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -42461,7 +42461,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 21.092265109906506,
         "squared_projection_error": 444.8836474665793,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_d343792d60227da6fd84e902ae4e1474ec97054a49d04771f940e4c37e651e99",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -42772,7 +42772,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 18.008726471041264,
         "squared_projection_error": 324.31422910878234,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_53d60b2bd15bca940f07b423089544594737d3b1e909d0acbc5fbceb093e3b6b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -43083,7 +43083,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 20.25290472178247,
         "squared_projection_error": 410.18014966959873,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_62827bd24ca3622a12eee42f2df047ccb7746816068b5e5386c001019202665d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -43394,7 +43394,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 12.24542044302759,
         "squared_projection_error": 149.95032182651804,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_ffc96357c9b6a85bda19109ceec553983fc952259d45f74ea179135aa9743103",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -43705,7 +43705,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 31.90782995022836,
         "squared_projection_error": 1018.10961213269,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_a3e5686b50f5881b998398c0a372944cdcafa1b48b9e3088b73bf1f1da68cc71",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -43977,7 +43977,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -76.14573920699664,
         "squared_projection_error": 5798.173599379945,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_5c2da154c8dfcc29778e162b7a05061e674a7054f8990b877aec3834c816c3bd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -44288,7 +44288,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 48.14547706761988,
         "squared_projection_error": 2317.986962068712,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_e50c840d7a63a7311a82533e5c8f7d172ccc7a2a70c6986cf7b5fe8d916cc33d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -44555,7 +44555,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -48.2825033310125,
         "squared_projection_error": 2331.2001279092333,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_58e85e5baae7867aad0aa8534687ea3e16c9e89f64266024d8956f8697f511cb",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -44866,7 +44866,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 21.57701659395694,
         "squared_projection_error": 465.56764509589317,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_e5150dec95474ff95a8ecdd9474d9cbf3e7fcd52bd6c2fbce88e4692bf8fd1db",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -45138,7 +45138,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 28.594792373814194,
         "squared_projection_error": 817.6621509015424,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_70c66796e58728c53bd05a526dd27ffd0607c3929ac2271dca16b115c6fa7f9e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -45449,7 +45449,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -30.416396505565615,
         "squared_projection_error": 925.1571763837842,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_5c914273cf1498e58bdf4a7c8c7fb76886037411b64e8386ae9e31648fbcab6f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -45716,7 +45716,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 24.458901179632463,
         "squared_projection_error": 598.2378469150262,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_ede8078ffbacf58ec963b38ec48e45ff5e739f5d220b2e28977a8d023885887e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -46027,7 +46027,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -44.49931991907732,
         "squared_projection_error": 1980.1894732603919,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_c2ab52c44f18dc4efb3f264ca4544b8d8202524a02bf0ed9dac8a12653959882",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -46294,7 +46294,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 44.72321801230785,
         "squared_projection_error": 2000.1662293764177,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_4c2c75673c44093242b56348880089e8069ed712bd05dad87eb773332153f434",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -46561,7 +46561,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 16.651854565794125,
         "squared_projection_error": 277.2842604803586,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_eb411b8f0729f6b41c0ded9c0c00aae4d87a6dfd722f32c05c82ad29ccafe14c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -46833,7 +46833,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -34.85119718484566,
         "squared_projection_error": 1214.605945216994,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_54f1fa32334739876c5fa0eeb6d6a2e0225717579148b0e65f29c3feae108412",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -47105,7 +47105,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.046154017104101,
         "squared_projection_error": 9.279054295919451,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_7c7658e18db96a20f41dae7eb2db7cff9f3efa51623a89abd63c71321d6f2627",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -47416,7 +47416,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -9.200784085526134,
         "squared_projection_error": 84.65442778847098,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_534f4472a6c433a2f5725f3bffe53b89bfd457530a0f86ff0b0dc7b1d383181f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -47727,7 +47727,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 53.87664403891203,
         "squared_projection_error": 2902.6927728956357,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_8c7b7db2eab835926b26101b7174025c3db3d033eec7f44c6369b0449c39ba5d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -47999,7 +47999,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -34.16179748811304,
         "squared_projection_error": 1167.0284076188464,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_1d83bbdb49ed578484517f66f5abb524491926f4273e71de3a0f09d1e18703db",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -48310,7 +48310,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 14.735357687577235,
         "squared_projection_error": 217.1307661808415,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_bdd836f5e0adfa56abd483032146e4011ffb1cc6defb3885161a220058a51dc5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -48621,7 +48621,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 19.742369938301522,
         "squared_projection_error": 389.7611707807516,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_139c27c876f9326070269faa5f0b482bb9b505c8dbfc696db39d6830cc896645",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -48932,7 +48932,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -36.54259166531659,
         "squared_projection_error": 1335.3610056180657,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_7f502e644a185f75eaf1fa000d5bb6c43b7622171fa03927e4d1e3fa939e7db9",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -49199,7 +49199,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -27.28034452653344,
         "squared_projection_error": 744.217197486363,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_674dafbf6c25cd1d69be918480b45d95eccddd857656fc981b06e064889f96b3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -49466,7 +49466,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -6.11460977061131,
         "squared_projection_error": 37.38845264685529,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_5580464559c983789d6a8cdb95e0358c0148cac3a2dda8ab37de67efaab98c73",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -49738,7 +49738,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -0.03274947624354496,
         "squared_projection_error": 0.0010725281942265158,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_e983781a848e065da07f2d04506012b427628f98a5cd90ea5da3e182b76e0c27",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -50049,7 +50049,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -16.744812434887056,
         "squared_projection_error": 280.38874347954817,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_30ebd6a3fccb10b3d92d5a8eb769ddf4e38fbf68011fdd7ae2c61e63fb16e0ed",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -50360,7 +50360,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -58.14469742140445,
         "squared_projection_error": 3380.8058382266777,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_d392f383c82809ddc088a4da89d8cf0cc3d8d4988defd6e4452a6bef14eb8f27",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -50632,7 +50632,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 5.494002340994392,
         "squared_projection_error": 30.184061722851858,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_9469fa03ea8b0749406c9424bd8c33f6ee486912a43e4e0c09c449ec18a6c054",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -50943,7 +50943,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 30.77369921105392,
         "squared_projection_error": 947.0205631324206,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_41548f3777afcc093e95a4c9031e265aac4b2505261ede9e7c5acb12bef0d5ab",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -51254,7 +51254,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 16.382949668712925,
         "squared_projection_error": 268.40103984758093,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_c89e472f9e5f7ed8118fa408365dacf660923b73d521c1bd8da20d3dd2ef975e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -51526,7 +51526,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 3.6084327439495993,
         "squared_projection_error": 13.020786867607635,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_af32f2ea1b8a6b48b243ea721297d2dd5524284ad69d70552bf70664568c8dea",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -51837,7 +51837,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 18.556983318773504,
         "squared_projection_error": 344.3616298932381,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_3e6b8b0e131622cc71c2ad1532ccf3afaf3d43d46c7b720b05c7fc7a471ff6f9",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -52148,7 +52148,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 90.23324985528043,
         "squared_projection_error": 8142.039379445467,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_cefc07da4f7d3e0ed9798bb9a25d235a7ff74afaf6cefcd0259774ea5debb13b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -52415,7 +52415,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 12.284800838455403,
         "squared_projection_error": 150.91633164051458,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_5ba6fd983bb3dda462a6d9d6d97febbf6491fb072cc4f9dd360804ca21e735e7",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -52726,7 +52726,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 35.96305725034092,
         "squared_projection_error": 1293.3414867912984,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_7b372e02e7ecf12b99cbcf1c2f3799b77f4f69a5255ff26989a577f836a6972f",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -53037,7 +53037,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 9.436275970298233,
         "squared_projection_error": 89.04330418762785,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_701586876b8deef45415ba8a78de4c18e446e477a04678233d47b9346cfe1742",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -53348,7 +53348,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 12.693286407997334,
         "squared_projection_error": 161.11951983544986,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_7c983ab921ea3e11464c1e8ffd52f61538912b7281aa4fca1ec1831da6fc8dd9",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -53620,7 +53620,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -16.49873858755609,
         "squared_projection_error": 272.20837498051236,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_72de9566830fdd7ad1ea4e56880e0539ca072781866f6a7fcfbddd07c19a66d1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -53887,7 +53887,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -27.736572150774528,
         "squared_projection_error": 769.3174346751211,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_d10a2fafe00d9fb690990f568af591475491f0783fd405abe8f46485f97defad",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -54198,7 +54198,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -31.087104839590303,
         "squared_projection_error": 966.4080873076789,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_e789e4ed350a583f0168f39343b7b54930abb3efccb3d57b4c839ef9938d6343",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -54509,7 +54509,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -37.0819118205597,
         "squared_projection_error": 1375.068184267765,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_cfcc645502e014fda692c0609d0b2f2ef28ce12c71d3ae9a89e40405149a6d3c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -54735,6 +54735,2056 @@
       }
     },
     {
+      "evaluation_row_id": "starterprop_9c49940abcedcb2d8dacb5a88e168a30c29a1de2bc6ce46e8709a902e70d510b",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0026498",
+      "player": "Matthew Stafford",
+      "position": "QB",
+      "team": "lar",
+      "opponent": "nyg",
+      "market": "passing_yards",
+      "line": 242.5,
+      "jkb_projection": 274.58567484966295,
+      "difference": 32.08567484966295,
+      "actual": 327,
+      "direction": "OVER",
+      "result": "WIN",
+      "absolute_error": 52.41432515033705,
+      "starter_basis": "QB1_BY_ARCHIVED_DEPTH_CHART",
+      "model_version": "nfl-passing-direct-ridge-alpha10-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "depth_rank",
+        "starter_metric_value": 1,
+        "prediction_id": "pred_cdf7e2a770e1511d265468543884157c21eb1eb1b8f1b9aa3dd694754c944044",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "passing",
+        "fitted_model_hash": "8f87884149813c4eb4c00c4aec9d7c86770a0dab62b3f790fb48706ff7dcc616",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "fanduel",
+        "market_snapshot_timestamp": "2026-09-16T16:08:02.883Z",
+        "market_snapshot_ref": "yardage_37ff54607efa169ffb2471f7c4f1979f6e53dab222c84cf359ba6351e286b844",
+        "over_price": -114,
+        "under_price": -114,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -52.41432515033705,
+        "squared_projection_error": 2747.261480965255,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_0eb7d3086c286f5b44633d3f94b7576baf7d8124753a656b7314ddcf4181b203",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "30b662416e853485a0d8c34cf34161aa64b3c6eb3fab942354b9383fa1e0d263",
+        "feature_payload_hash": "311361bdadb16f68731ebf2e8420ef50115a12ef7140051faed31e90c3480731",
+        "context": {
+          "allocation_diagnostics": null,
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesStartedPriorThisSeason": 0,
+            "sourceAmbiguous": false,
+            "starterResolution": "sourcedDepthChart"
+          },
+          "estimated_range": {
+            "estimatedHigh": 396.4646038342705,
+            "estimatedLow": 174.89862936196997,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "gameEnvironment": {
+                "indicatorScores": {
+                  "dome": 84.11042944785277,
+                  "gameTotal": 86.56441717791411,
+                  "impliedTeamTotal": 94.4478527607362,
+                  "trailingScriptSpread": 10.889570552147239
+                },
+                "score": 69.00306748466258
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "dropbackRateAllowed": 49.81226533166458,
+                  "passAttemptsAllowed": 44.618272841051315,
+                  "passEpaAllowed": 67.70963704630788
+                },
+                "score": 54.04672507300793
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "dropbackRate": 35.85732165206508,
+                  "neutralPassRate": 81.72715894868585,
+                  "passRateOverExpected": 84.48060075093868,
+                  "qbAttemptRole": 73.47740667976424,
+                  "teamOffensivePlays": 51.18898623279099,
+                  "teamPassAttempts": 42.86608260325407
+                },
+                "score": 61.59959281124981
+              },
+              "passingQuality": {
+                "indicatorScores": {
+                  "qbCompletionRate": 47.08578912901113,
+                  "qbYardsPerAttempt": 81.13948919449902
+                },
+                "score": 64.11263916175508
+              }
+            },
+            "environmentScore": 62.38747723980853,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "passing",
+            "matchupScore": 61.07929849732063,
+            "opponent": "nyg",
+            "opportunityScore": 61.59959281124981,
+            "playerId": "gsis:00-0026498",
+            "playerName": "Matthew Stafford",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "lar",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentPassDefense": {
+              "overallDropbackRateAllowed": {
+                "last3": null,
+                "priorSeason": 0.6147465437788019,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 39.23529411764706,
+                "seasonPrior": null
+              },
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.08807211993151517,
+                "seasonPrior": null
+              }
+            },
+            "opportunity": {
+              "offensivePlaysPerGame": {
+                "last3": null,
+                "priorSeason": 65,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.8235294117647,
+                "seasonPrior": null
+              },
+              "qbAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 35.11764705882353,
+                "seasonPrior": null
+              }
+            },
+            "proePassTendency": {
+              "earlyDownNeutralPassRate": {
+                "last3": null,
+                "priorSeason": 0.5845213849287169,
+                "seasonPrior": null
+              },
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5972850678733032,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": 3.5395655762488483,
+                "seasonPrior": null
+              }
+            },
+            "qbEfficiency": {
+              "completionPct": {
+                "last3": null,
+                "priorSeason": 0.6499162479061976,
+                "seasonPrior": null
+              },
+              "yardsPerAttempt": {
+                "last3": null,
+                "priorSeason": 7.884422110552764,
+                "seasonPrior": null
+              }
+            },
+            "qbRollingPassingYardsPerGame": {
+              "last3": null,
+              "priorSeason": 276.88235294117646,
+              "seasonPrior": null
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "completionPct": {
+              "last3": null,
+              "priorSeason": 0.6499162479061976,
+              "seasonPrior": null
+            },
+            "earlyDownNeutralPassRate": {
+              "last3": null,
+              "priorSeason": 0.5845213849287169,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "passRateOverExpected": {
+              "last3": null,
+              "priorSeason": 3.5395655762488483,
+              "seasonPrior": null
+            },
+            "qbAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 35.11764705882353,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5972850678733032,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.8235294117647,
+              "seasonPrior": null
+            },
+            "yardsPerAttempt": {
+              "last3": null,
+              "priorSeason": 7.884422110552764,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_15e7197f905efc534aa56333811d70446caade327d8a1afcd496334527aafaed",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0031381",
+      "player": "Davante Adams",
+      "position": "WR",
+      "team": "lar",
+      "opponent": "nyg",
+      "market": "receiving_yards",
+      "line": 44.5,
+      "jkb_projection": 49.77236738260079,
+      "difference": 5.272367382600791,
+      "actual": 195,
+      "direction": "OVER",
+      "result": "WIN",
+      "absolute_error": 145.2276326173992,
+      "starter_basis": "WR2_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 2,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 7.1477883561144155,
+        "prediction_id": "pred_1230293dc219698f544653565cbd10f7ba80815026e9564bda350fa9ea632620",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-16T16:08:02.891Z",
+        "market_snapshot_ref": "yardage_ffa59715dc69a83419f32e93855c21dcf42e5baee25d4eb89f564c728cd3c217",
+        "over_price": -114,
+        "under_price": -110,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -145.2276326173992,
+        "squared_projection_error": 21091.06527565427,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_a59fb9d8c93ccf36d91fcc336dd20cc44d10e2dd9cf1995aeb65da849b3f0275",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "3e1e2f7c6dd3430d6caa7221093e559be57c342c50b97da912c3bd5022ffac1e",
+        "feature_payload_hash": "37e066a77e8ea0bc8b7d66e6d536707fb17690d2f54236df9a63c6124f628292",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8886542140980223,
+            "priorOpportunityShare": 0.22329102238766102,
+            "priorTeam": "lar",
+            "projectedOpportunityShare": 0.19157676841460633,
+            "projectedTargetablePool": 37.310308631187084,
+            "projectedTeamOpportunity": 41.98518168178247,
+            "roleConfidenceEvidence": {
+              "depthRank": 2,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 5,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 2,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 98.02282986451326,
+            "estimatedLow": 19.030766925215737,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 73.83764955323338,
+                  "yardsPerTarget": 40.40587611691655
+                },
+                "score": 57.12176283507496
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 67.84706546275395,
+                  "targetsAllowed": 44.441309255079005
+                },
+                "score": 56.144187358916476
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 92.21450731274929,
+                  "targetsPerGame": 88.42517358546314,
+                  "teamDropbackRate": 35.10158013544018,
+                  "teamPassAttempts": 41.71839729119639,
+                  "teamPassRateOverExpected": 83.90237020316027
+                },
+                "score": 68.27240570560186
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 54.421983397997145,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 61.88715043921506,
+            "opponent": "nyg",
+            "opportunityScore": 68.27240570560186,
+            "playerId": "gsis:00-0031381",
+            "playerName": "Davante Adams",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "lar",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 12.666666666666666,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.08807211993151517,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 39.23529411764706,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.5263157894736842,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 13.15,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 6.921052631578948,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.22329102238766102,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 8.142857142857142,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5972850678733032,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.8235294117647,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": 3.5395655762488483,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 39.23529411764706,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 6.921052631578948,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.22329102238766102,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 8.142857142857142,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5972850678733032,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.8235294117647,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": 3.5395655762488483,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.0637539163270866,
+              "depth_rank": 2,
+              "historical_share": 0.22329102238766102,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": true,
+              "role_prior_share": 0.15953710606057442,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 2,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": false
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": false,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_50806abf9d6939bb1c6f65edf1ca0bb25612f3ff4217649b826d159639bb91b0",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0037838",
+      "player": "Isaiah Likely",
+      "position": "TE",
+      "team": "nyg",
+      "opponent": "lar",
+      "market": "receiving_yards",
+      "line": 44.5,
+      "jkb_projection": 30.694325330461318,
+      "difference": -13.805674669538682,
+      "actual": 33,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 2.305674669538682,
+      "starter_basis": "TE1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 4.213551022604272,
+        "prediction_id": "pred_5be03ce040b95f1fa102c7d9c93a0232b5282f3b6bede94aecd4568594dfd9b4",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "fanduel",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.952Z",
+        "market_snapshot_ref": "yardage_d2f3414dda9f5d88a07874da17b1cf833644629f454b04020e4450de92bf9c6f",
+        "over_price": -114,
+        "under_price": -114,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -2.305674669538682,
+        "squared_projection_error": 5.316135681752311,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_a64da2df23797911a1512e9b1a80bfdfbfb1dd0ae9a13cc13fba5e21e14e96ad",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "bee37a95fb0c7c19433c1dab8e01ec03f440f08e65cc061742c2ddc982e080ec",
+        "feature_payload_hash": "897b34ae065e1ce84f2093aefa37a1d49ed4fa0d0384aa7e0498f86212a402cb",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.796643141422824,
+            "priorOpportunityShare": 0.07935430707586001,
+            "priorTeam": "bal",
+            "projectedOpportunityShare": 0.1367035615782295,
+            "projectedTargetablePool": 30.822540202751338,
+            "projectedTeamOpportunity": 38.69052352311919,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 3,
+              "teamChanged": true
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 78.94478781237379,
+            "estimatedLow": 0,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": true,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 78.27663134411601,
+                  "yardsPerTarget": 76.0457334076966
+                },
+                "score": 77.16118237590631
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 20.33635187580854,
+                  "targetsAllowed": 60.543337645536866
+                },
+                "score": 40.4398447606727
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 64.58333333333334,
+                  "targetsPerGame": 58.11688311688312,
+                  "teamDropbackRate": 31.487710219922384,
+                  "teamPassAttempts": 49.21086675291074,
+                  "teamPassRateOverExpected": 27.29624838292367
+                },
+                "score": 46.13900836119465
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 55.86700904552634,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 55.261843369436484,
+            "opponent": "lar",
+            "opportunityScore": 46.13900836119465,
+            "playerId": "gsis:00-0037838",
+            "playerName": "Isaiah Likely",
+            "position": "TE",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "nyg",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 7.972222222222222,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 20.75,
+              "isDome": true,
+              "spread": 7,
+              "total": 48.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.05122457398610894,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40.705882352941174,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.75,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 11.37037037037037,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 8.527777777777779,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.07935430707586001,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 2.5714285714285716,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5919085312225154,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 39.588235294117645,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.077882862919344,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 20.75,
+              "isDome": true,
+              "spread": 7,
+              "total": 48.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 40.705882352941174,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 8.527777777777779,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.07935430707586001,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 2.5714285714285716,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5919085312225154,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 39.588235294117645,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.077882862919344,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.06636619934846942,
+              "depth_rank": 1,
+              "historical_share": 0.07935430707586001,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": true,
+              "role_prior_share": 0.14572050642432943,
+              "role_sourced": true,
+              "team_changed": true
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": true
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_f982a2f71469227336b5898e703665e0403f03b7d63edfe31323adb3f2ca8926",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0037840",
+      "player": "Kyren Williams",
+      "position": "RB",
+      "team": "lar",
+      "opponent": "nyg",
+      "market": "rushing_yards",
+      "line": 61.5,
+      "jkb_projection": 66.9753477781974,
+      "difference": 5.475347778197403,
+      "actual": 85,
+      "direction": "OVER",
+      "result": "WIN",
+      "absolute_error": 18.024652221802597,
+      "starter_basis": "RB1_BY_PROJECTED_CARRIES",
+      "model_version": "nfl-rushing-carries-x-shrunk-ypc-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "projected_carries",
+        "starter_metric_value": 15.235294117647058,
+        "prediction_id": "pred_72807d8117eebe9185e3dfacb5c611af794e98840aa00f684a79c9d5c7d45b75",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "rushing",
+        "fitted_model_hash": "bf98f3949e344d12a9e14f684db82cb0772bc431d785b055a95e049006678988",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "fanduel",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.946Z",
+        "market_snapshot_ref": "yardage_748b4008c3ee7f82a9d7073dcb09649160244f4404ed1973289676fe55a4642f",
+        "over_price": -114,
+        "under_price": -114,
+        "market_outcome": "OVER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": -18.024652221802597,
+        "squared_projection_error": 324.8880877169333,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_15a5ef84d04b6b7ad2c949acdb5e69c10ea824184bf8120673c46463caee0e9a",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "a2acc0f53594a4ab20f675f9a9f1dac84f7b8f953d6bd94cf4d6fbcac73dbbed",
+        "feature_payload_hash": "c709680cfd3430e127966b4c6163c828c80573ddcc9a421e09fdf44b6dbb48f0",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationModelVersion": "nfl-rushing-role-allocation-shadow-v1.0.0",
+            "finalProjectedShare": 0.7309043862506458,
+            "historicalSharePrior": 0.5924312343346116,
+            "projectedCarries": 15.946132430621484,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 0,
+              "roleSourced": true,
+              "rosterCompetitionCount": null,
+              "teamChanged": false
+            },
+            "roleConflictFlag": true,
+            "roleConflictScore": 0.4678460119639296,
+            "roleSharePrior": 1.0602772462985413,
+            "teamChangeCalibrationApplied": false
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithCarriesPriorThisSeason": 0,
+            "recentTeamTopCarryShareConcentration": null
+          },
+          "estimated_range": {
+            "estimatedHigh": 105.0520493326463,
+            "estimatedLow": 35.31035819910035,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "opponent": {
+                "indicatorScores": {
+                  "rushAttemptsAllowed": 47.80185758513932,
+                  "rushEpaAllowed": 97.87409700722394
+                },
+                "score": 72.83797729618163
+              },
+              "roleQuality": {
+                "indicatorScores": {
+                  "teamTopRbCarryShare": 50
+                },
+                "score": 50
+              },
+              "teamRushingEnvironment": {
+                "indicatorScores": {
+                  "teamDropbackRate": 63.611971104231166,
+                  "teamPassRateOverExpected": 15.41795665634676,
+                  "teamRushAttempts": 66.4499484004128
+                },
+                "score": 48.49329205366357
+              },
+              "workload": {
+                "indicatorScores": {
+                  "carriesPerGame": 93.9535897156553,
+                  "carryShare": 92.55910229872535
+                },
+                "score": 93.25634600719033
+              }
+            },
+            "environmentScore": 57.11042311661507,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "rushing",
+            "matchupScore": 75.89442687356421,
+            "opponent": "nyg",
+            "opportunityScore": 93.25634600719033,
+            "playerId": "gsis:00-0037840",
+            "playerName": "Kyren Williams",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "lar",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentRushDefense": {
+              "rushAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 24.58823529411765,
+                "seasonPrior": null
+              },
+              "rushEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.10873776562904197,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "yardsPerCarry": {
+                "last3": null,
+                "priorSeason": 4.833976833976834,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "carriesPerGame": {
+                "last3": null,
+                "priorSeason": 15.235294117647058,
+                "seasonPrior": null
+              },
+              "carryShare": {
+                "last3": null,
+                "priorSeason": 0.5924312343346116,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5972850678733032,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": 3.5395655762488483,
+                "seasonPrior": null
+              },
+              "rushAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 26.176470588235293,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "carriesPerGame": {
+              "last3": null,
+              "priorSeason": 15.235294117647058,
+              "seasonPrior": null
+            },
+            "carryShare": {
+              "last3": null,
+              "priorSeason": 0.5924312343346116,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentRushAttemptsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 24.58823529411765,
+              "seasonPrior": null
+            },
+            "rollingYardsPerCarry": {
+              "last3": null,
+              "priorSeason": 4.833976833976834,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5972850678733032,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": 3.5395655762488483,
+              "seasonPrior": null
+            },
+            "teamRushAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 26.176470588235293,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": true,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": 0,
+          "rushing_role_conflict_v2": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.07608525583382886,
+              "depth_rank": 1,
+              "historical_share": 0.5924312343346116,
+              "no_history": false,
+              "role_prior_share": 0.6685164901684405,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "shadow_availability": {
+            "shadow_status": "available",
+            "shadow_unavailable_reason": null
+          },
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_9c99c6994cb1bd7b4c2fbfdbbf3de7293b484ae54464bf32f94732a4ff5cd900",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0039075",
+      "player": "Puka Nacua",
+      "position": "WR",
+      "team": "lar",
+      "opponent": "nyg",
+      "market": "receiving_yards",
+      "line": 85.5,
+      "jkb_projection": 73.2138546575794,
+      "difference": -12.286145342420596,
+      "actual": 0,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 73.2138546575794,
+      "starter_basis": "WR1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "home",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 9.576223434558173,
+        "prediction_id": "pred_c9a8609ac9431c3b43b998d05aad3ee78ec7a24257a8d1bea0d089b40bc87cb9",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "fanduel",
+        "market_snapshot_timestamp": "2026-09-16T16:08:02.891Z",
+        "market_snapshot_ref": "yardage_77c56f6d67ebe9ef16204953c3d4d3bad449086522e5c0b20fd9c10a7f7f1784",
+        "over_price": -114,
+        "under_price": -114,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 73.2138546575794,
+        "squared_projection_error": 5360.268513821161,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_1fdab928a64519074c06e691fd7a0a17480990ec93b29ffac831624eedba0636",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "a1cd1bdfb2f36584aa82305c47194d79e360c51abcdbdad2b0fcc627246291b7",
+        "feature_payload_hash": "f0aa2d423595dcbede22e659dad08a7b12a7c2d400e09317f1f6e259cf695fd7",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.8886542140980223,
+            "priorOpportunityShare": 0.2681439758924603,
+            "priorTeam": "lar",
+            "projectedOpportunityShare": 0.256664278208451,
+            "projectedTargetablePool": 37.310308631187084,
+            "projectedTeamOpportunity": 41.98518168178247,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 5,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 121.46431713949187,
+            "estimatedLow": 42.47225420019435,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 38.92170225655005,
+                  "yardsPerTarget": 85.12797213387854
+                },
+                "score": 62.024837195214296
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 67.84706546275395,
+                  "targetsAllowed": 44.441309255079005
+                },
+                "score": 56.144187358916476
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 98.3010784458561,
+                  "targetsPerGame": 97.08228689614418,
+                  "teamDropbackRate": 35.10158013544018,
+                  "teamPassAttempts": 41.71839729119639,
+                  "teamPassRateOverExpected": 83.90237020316027
+                },
+                "score": 71.22114259435942
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 56.05634151804359,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 64.83244119163564,
+            "opponent": "nyg",
+            "opportunityScore": 71.22114259435942,
+            "playerId": "gsis:00-0039075",
+            "playerName": "Puka Nacua",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "lar",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 9.433734939759036,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "home",
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": 0.08807211993151517,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 39.23529411764706,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.7771084337349398,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 13.294573643410853,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 10.331325301204819,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.2681439758924603,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 10.375,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5972850678733032,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 38.8235294117647,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": 3.5395655762488483,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 27.75,
+              "isDome": true,
+              "spread": -7,
+              "total": 48.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 39.23529411764706,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 10.331325301204819,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.2681439758924603,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 10.375,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5972850678733032,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 38.8235294117647,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": 3.5395655762488483,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.03890003938564093,
+              "depth_rank": 1,
+              "historical_share": 0.2681439758924603,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": false,
+              "role_prior_share": 0.22924393650681937,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_5fd6203258e5a1f29b46881c5051537ba05b012a7f80ff1360ccf33d7a46706c",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0039337",
+      "player": "Malik Nabers",
+      "position": "WR",
+      "team": "nyg",
+      "opponent": "lar",
+      "market": "receiving_yards",
+      "line": 63.5,
+      "jkb_projection": 52.78407927795931,
+      "difference": -10.715920722040693,
+      "actual": 1,
+      "direction": "UNDER",
+      "result": "WIN",
+      "absolute_error": 51.78407927795931,
+      "starter_basis": "WR1_BY_PROJECTED_TARGETS",
+      "model_version": "nfl-receiving-share-x-efficiency-v2.0.0",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "projected_targets",
+        "starter_metric_value": 7.405501054532049,
+        "prediction_id": "pred_83e37d5095bb9b0e94a6fd8c0b92ca85a77859dcf6ce6e5365db428f9ccf23fd",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "receiving",
+        "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "draftkings",
+        "market_snapshot_timestamp": "2026-09-16T16:08:02.891Z",
+        "market_snapshot_ref": "yardage_bf0ab8ff54e1064cb17b15c0d3f0cba4822122764bdecfc2f5b8fa943de1c374",
+        "over_price": -112,
+        "under_price": -112,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 51.78407927795931,
+        "squared_projection_error": 2681.5908666659743,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_3ca36223864c5adb65f07d7266c92ac7b91c0306438d4e4df55785403303ba9d",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "33355fc90e512602fb00ef39f2be27ab337c3072a5d35fadc514a28b812fa8f1",
+        "feature_payload_hash": "288adc6cf384943ef36e0a19c4723a988bda7a7acd72a791751c247cadd0173f",
+        "context": {
+          "allocation_diagnostics": {
+            "allocationFallbackReason": "none",
+            "allocationModelVersion": "nfl-receiving-calibrated-ratio-shrinkage-share-v2.0.0",
+            "fittedArtifactHash": "2819c7f1f36415cdc013ca34ee67ef8863dc93ede3d571370abc82eb7533a956",
+            "impliedTargetableRatio": 0.796643141422824,
+            "priorOpportunityShare": 0.1932011935208866,
+            "priorTeam": "nyg",
+            "projectedOpportunityShare": 0.24026251586723557,
+            "projectedTargetablePool": 30.822540202751338,
+            "projectedTeamOpportunity": 38.69052352311919,
+            "roleConfidenceEvidence": {
+              "depthRank": 1,
+              "limitedHistory": false,
+              "noHistory": false,
+              "priorGamesPlayed": 1,
+              "roleSourced": true,
+              "rosterCompetitionCount": 4,
+              "teamChanged": false
+            },
+            "teamResidualUnallocated": 0,
+            "trainedThroughSeason": 2025
+          },
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesWithTargetsPriorThisSeason": 0
+          },
+          "estimated_range": {
+            "estimatedHigh": 101.03454175987177,
+            "estimatedLow": 22.042478820574253,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": false,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "efficiencyProfile": {
+                "indicatorScores": {
+                  "averageDepthOfTarget": 90.70119642586702,
+                  "yardsPerTarget": 52.78661214599425
+                },
+                "score": 71.74390428593064
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "passEpaAllowed": 20.908577878103838,
+                  "targetsAllowed": 59.81941309255079
+                },
+                "score": 40.363995485327315
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "targetShare": 84.04491062195302,
+                  "targetsPerGame": 91.54971192199734,
+                  "teamDropbackRate": 31.82844243792325,
+                  "teamPassAttempts": 47.714446952595935,
+                  "teamPassRateOverExpected": 25.57844243792325
+                },
+                "score": 56.14319087447857
+              },
+              "roleStability": {
+                "indicatorScores": {
+                  "targetShareStability": 50,
+                  "targetVolumeStability": 50
+                },
+                "score": 50
+              }
+            },
+            "environmentScore": 54.03596659041932,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "receiving",
+            "matchupScore": 58.6311662715512,
+            "opponent": "lar",
+            "opportunityScore": 56.14319087447857,
+            "playerId": "gsis:00-0039337",
+            "playerName": "Malik Nabers",
+            "position": "WR",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "nyg",
+            "week": 2
+          },
+          "model_features": {
+            "airYards": {
+              "adot": {
+                "last3": null,
+                "priorSeason": 15.857142857142858,
+                "seasonPrior": null
+              },
+              "airYardsShare": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 20.75,
+              "isDome": true,
+              "spread": 7,
+              "total": 48.5
+            },
+            "opponentPassDefense": {
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.05122457398610894,
+                "seasonPrior": null
+              },
+              "targetsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40.705882352941174,
+                "seasonPrior": null
+              }
+            },
+            "playerEfficiency": {
+              "receptionsPerTarget": {
+                "last3": null,
+                "priorSeason": 0.5142857142857142,
+                "seasonPrior": null
+              },
+              "yardsPerReception": {
+                "last3": null,
+                "priorSeason": 15.055555555555555,
+                "seasonPrior": null
+              },
+              "yardsPerTarget": {
+                "last3": null,
+                "priorSeason": 7.742857142857143,
+                "seasonPrior": null
+              }
+            },
+            "playerUsage": {
+              "targetShare": {
+                "last3": null,
+                "priorSeason": 0.1932011935208866,
+                "seasonPrior": null
+              },
+              "targetsPerGame": {
+                "last3": null,
+                "priorSeason": 8.75,
+                "seasonPrior": null
+              }
+            },
+            "targetConcentration": {
+              "recentTeamTopTargetShareConcentration": {
+                "last3": null,
+                "priorSeason": null,
+                "seasonPrior": null
+              }
+            },
+            "teamEnvironment": {
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5919085312225154,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 39.588235294117645,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.077882862919344,
+                "seasonPrior": null
+              }
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "market": {
+              "impliedTeamTotal": 20.75,
+              "isDome": true,
+              "spread": 7,
+              "total": 48.5
+            },
+            "opponentTargetsAllowedPerGame": {
+              "last3": null,
+              "priorSeason": 40.705882352941174,
+              "seasonPrior": null
+            },
+            "rollingYardsPerTarget": {
+              "last3": null,
+              "priorSeason": 7.742857142857143,
+              "seasonPrior": null
+            },
+            "targetConcentration": {
+              "last3": null,
+              "priorSeason": null,
+              "seasonPrior": null
+            },
+            "targetShare": {
+              "last3": null,
+              "priorSeason": 0.1932011935208866,
+              "seasonPrior": null
+            },
+            "targetsPerGame": {
+              "last3": null,
+              "priorSeason": 8.75,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5919085312225154,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 39.588235294117645,
+              "seasonPrior": null
+            },
+            "teamPassRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.077882862919344,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": {
+            "available": true,
+            "diagnostic": {
+              "conflict_level": "low",
+              "conflict_score": 0.03604274298593277,
+              "depth_rank": 1,
+              "historical_share": 0.1932011935208866,
+              "limited_history": false,
+              "no_history": false,
+              "ordering_conflict": true,
+              "role_prior_share": 0.22924393650681937,
+              "role_sourced": true,
+              "team_changed": false
+            }
+          },
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
+      "evaluation_row_id": "starterprop_c43bd66d60436fc9a297151d4a07f5e451a8a4b15ff006e5dac5155cee40e0e3",
+      "season": 2026,
+      "week": 2,
+      "game_id": "2026_02_NYG_LA",
+      "player_id": "gsis:00-0040691",
+      "player": "Jaxson Dart",
+      "position": "QB",
+      "team": "nyg",
+      "opponent": "lar",
+      "market": "passing_yards",
+      "line": 213.5,
+      "jkb_projection": 225.72651727641545,
+      "difference": 12.22651727641545,
+      "actual": 20,
+      "direction": "OVER",
+      "result": "LOSS",
+      "absolute_error": 205.72651727641545,
+      "starter_basis": "QB1_BY_ARCHIVED_DEPTH_CHART",
+      "model_version": "nfl-passing-direct-ridge-alpha10-production-2022-2025-v1",
+      "detail": {
+        "kickoff_time": "2026-09-22T00:15:00.000Z",
+        "home_away": "away",
+        "starter_rank": 1,
+        "starter_metric": "depth_rank",
+        "starter_metric_value": 1,
+        "prediction_id": "pred_49728dd9ec86c0abe25a29217311185d78d552b58f1ac2ea5bfb59dadd1cf253",
+        "prediction_timestamp": "2026-09-17T17:40:34.145Z",
+        "prediction_type": "passing",
+        "fitted_model_hash": "8f87884149813c4eb4c00c4aec9d7c86770a0dab62b3f790fb48706ff7dcc616",
+        "projection_status": "projected",
+        "market_provider": "the-odds-api",
+        "market_book": "fanduel",
+        "market_snapshot_timestamp": "2026-09-17T16:14:45.942Z",
+        "market_snapshot_ref": "yardage_aef7d51ab9c8387196ea4c5fc52b818dc4db78a8b096b29c581fbea5b907b6b4",
+        "over_price": -114,
+        "under_price": -114,
+        "market_outcome": "UNDER",
+        "game_completion_status": "final",
+        "resolution_status": "resolved",
+        "signed_projection_error": 205.72651727641545,
+        "squared_projection_error": 42323.39991068326,
+        "generated_at": "2026-09-22T14:49:52.151Z",
+        "outcome_id": "outcome_67fea339adde3a8d672c305c2a213fd2b4bd3d3eebe2df3dc49c7d5bc89981f8",
+        "outcome_revision": 2,
+        "resolver_version": "nfl-prediction-outcome-resolver-v1",
+        "outcome_source_state_hash": "140491f067fd9eacc12690d4dead5214de13701d4bbf68088647d01debc4904c",
+        "feature_payload_hash": "960f30aba21e55b480643564ed0689cf2d652f0967a5baf5f7b449d9ae6a4530",
+        "context": {
+          "allocation_diagnostics": null,
+          "depth_chart_rank": 1,
+          "diagnostics": {
+            "gamesStartedPriorThisSeason": 0,
+            "sourceAmbiguous": false,
+            "starterResolution": "sourcedDepthChart"
+          },
+          "estimated_range": {
+            "estimatedHigh": 347.605446261023,
+            "estimatedLow": 126.03947178872247,
+            "intervalVersion": "nfl-empirical-interval-fold2-2022-2023-train-2024-validate-v1",
+            "nominalLevel": 0.9
+          },
+          "hard_case_flags": {
+            "committeeRole": false,
+            "limitedHistory": false,
+            "multiQbRoleUncertain": true,
+            "noHistory": false,
+            "roleUncertain": false,
+            "teamChanged": false,
+            "zeroTargetRisk": false
+          },
+          "limited_history": false,
+          "matchup_score": {
+            "components": {
+              "gameEnvironment": {
+                "indicatorScores": {
+                  "dome": 84.11042944785277,
+                  "gameTotal": 86.56441717791411,
+                  "impliedTeamTotal": 39.018404907975466,
+                  "trailingScriptSpread": 89.11042944785275
+                },
+                "score": 74.70092024539878
+              },
+              "opponent": {
+                "indicatorScores": {
+                  "dropbackRateAllowed": 57.69712140175219,
+                  "passAttemptsAllowed": 60.075093867334175,
+                  "passEpaAllowed": 20.963704630788484
+                },
+                "score": 46.24530663329161
+              },
+              "opportunity": {
+                "indicatorScores": {
+                  "dropbackRate": 32.66583229036296,
+                  "neutralPassRate": 12.265331664580724,
+                  "passRateOverExpected": 26.595744680851062,
+                  "qbAttemptRole": 19.744597249508843,
+                  "teamOffensivePlays": 71.08886107634544,
+                  "teamPassAttempts": 48.93617021276596
+                },
+                "score": 35.21608952906916
+              },
+              "passingQuality": {
+                "indicatorScores": {
+                  "qbCompletionRate": 37.32809430255403,
+                  "qbYardsPerAttempt": 31.827111984282908
+                },
+                "score": 34.57760314341847
+              }
+            },
+            "environmentScore": 51.84127667403629,
+            "gameId": "2026_02_NYG_LA",
+            "generatedAt": "2026-09-17T17:40:34.145Z",
+            "market": "passing",
+            "matchupScore": 42.217943177708584,
+            "opponent": "lar",
+            "opportunityScore": 35.21608952906916,
+            "playerId": "gsis:00-0040691",
+            "playerName": "Jaxson Dart",
+            "referenceDistributionVersion": "nfl-yardage-matchup-reference-2022-2024-v1",
+            "schemaVersion": "nfl-yardage-matchup-score-v2",
+            "scoreVersion": "nfl-yardage-matchup-score-phase8-v1",
+            "season": 2026,
+            "team": "nyg",
+            "week": 2
+          },
+          "model_features": {
+            "market": {
+              "homeAway": "away",
+              "impliedTeamTotal": 20.75,
+              "isDome": true,
+              "spread": 7,
+              "total": 48.5
+            },
+            "opponentPassDefense": {
+              "overallDropbackRateAllowed": {
+                "last3": null,
+                "priorSeason": 0.6239855725879171,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGameAllowed": {
+                "last3": null,
+                "priorSeason": 40.705882352941174,
+                "seasonPrior": null
+              },
+              "passEpaPerPlayAllowed": {
+                "last3": null,
+                "priorSeason": -0.05122457398610894,
+                "seasonPrior": null
+              }
+            },
+            "opportunity": {
+              "offensivePlaysPerGame": {
+                "last3": null,
+                "priorSeason": 66.88235294117646,
+                "seasonPrior": null
+              },
+              "passAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 39.588235294117645,
+                "seasonPrior": null
+              },
+              "qbAttemptsPerGame": {
+                "last3": null,
+                "priorSeason": 28.25,
+                "seasonPrior": null
+              }
+            },
+            "proePassTendency": {
+              "earlyDownNeutralPassRate": {
+                "last3": null,
+                "priorSeason": 0.46331236897274636,
+                "seasonPrior": null
+              },
+              "overallDropbackRate": {
+                "last3": null,
+                "priorSeason": 0.5919085312225154,
+                "seasonPrior": null
+              },
+              "passRateOverExpected": {
+                "last3": null,
+                "priorSeason": -4.077882862919344,
+                "seasonPrior": null
+              }
+            },
+            "qbEfficiency": {
+              "completionPct": {
+                "last3": null,
+                "priorSeason": 0.6371681415929203,
+                "seasonPrior": null
+              },
+              "yardsPerAttempt": {
+                "last3": null,
+                "priorSeason": 6.702064896755163,
+                "seasonPrior": null
+              }
+            },
+            "qbRollingPassingYardsPerGame": {
+              "last3": null,
+              "priorSeason": 189.33333333333334,
+              "seasonPrior": null
+            }
+          },
+          "no_history": false,
+          "production_feature_snapshot": {
+            "completionPct": {
+              "last3": null,
+              "priorSeason": 0.6371681415929203,
+              "seasonPrior": null
+            },
+            "earlyDownNeutralPassRate": {
+              "last3": null,
+              "priorSeason": 0.46331236897274636,
+              "seasonPrior": null
+            },
+            "market": {
+              "impliedTeamTotal": 20.75,
+              "isDome": true,
+              "spread": 7,
+              "total": 48.5
+            },
+            "passRateOverExpected": {
+              "last3": null,
+              "priorSeason": -4.077882862919344,
+              "seasonPrior": null
+            },
+            "qbAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 28.25,
+              "seasonPrior": null
+            },
+            "teamDropbackRate": {
+              "last3": null,
+              "priorSeason": 0.5919085312225154,
+              "seasonPrior": null
+            },
+            "teamPassAttemptsPerGame": {
+              "last3": null,
+              "priorSeason": 39.588235294117645,
+              "seasonPrior": null
+            },
+            "yardsPerAttempt": {
+              "last3": null,
+              "priorSeason": 6.702064896755163,
+              "seasonPrior": null
+            }
+          },
+          "receiving_role_conflict": null,
+          "role": {
+            "depth_rank": 1,
+            "fallback_provenance": "depthChart",
+            "history_status": "normal",
+            "role_confidence": "sourced",
+            "role_source": "nflverse-depth-charts-espn",
+            "role_source_updated_at": "2026-09-17T12:34:29Z",
+            "starter_flag": true
+          },
+          "role_conflict": null,
+          "role_sourced": true,
+          "rushing_pool_coherence_failures": null,
+          "rushing_role_conflict_v2": null,
+          "shadow_availability": null,
+          "starter_flag": true,
+          "team_changed": false
+        }
+      }
+    },
+    {
       "evaluation_row_id": "starterprop_f892ba9f77e2131c0f686812a3c5c3f9394b1cbb878317510f930d2c710786d1",
       "season": 2026,
       "week": 2,
@@ -54776,7 +56826,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 34.46704219033948,
         "squared_projection_error": 1187.9769973506416,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_ae2e76dedd7f59f25e699cf02f4150cd1f3ff63ee37b8d93f8c29593956440a3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -55087,7 +57137,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 60.89385769344075,
         "squared_projection_error": 3708.061904789013,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_30441ec592e2c6645462fa0c3c1d05ee5e9e7cc3a2e913a4a47418443f64df0b",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -55359,7 +57409,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -2.453922153190078,
         "squared_projection_error": 6.021733933917028,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_5226134866c819ca2f5358b6e4864ff9b022ebc5bc9bf2b79d75b839328a9905",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -55631,7 +57681,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -52.175917239278704,
         "squared_projection_error": 2722.326339760061,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_aead3e12cfef21ef3bda0a5c6689f7195095d964162223a99a0c2f616594e2de",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -55898,7 +57948,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -58.70216080253541,
         "squared_projection_error": 3445.9436828867247,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_fee8f0701e5d56ced3059aef64b49955d3407c76f067e3fde63984aad57a400e",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -56209,7 +58259,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 30.088385582159006,
         "squared_projection_error": 905.310946940674,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_6e8ba94e5300e16aaefb20e892b799c5b96f863c8b35e444dd8049692504a943",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -56520,7 +58570,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 13.407784157212237,
         "squared_projection_error": 179.76867600639147,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_be63021b21f8b6aa19fb18ca8abb99552357834d10205cb25b301d1b38bcc939",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -56831,7 +58881,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 10.14315306505216,
         "squared_projection_error": 102.88355410107704,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b3fcddae00831f520c84402610701ccc496ca65ede5f4a8bbab670e6c51c2528",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -57098,7 +59148,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 18.592024177689638,
         "squared_projection_error": 345.663363023796,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_f21eeb8bd09b33791ad851b6485fdea495b834893b48cae2fef45f1367fb56cc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -57365,7 +59415,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -1.3865875020065204,
         "squared_projection_error": 1.9226249007206822,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_31679ea74f82fe5e433171719d057b885430cf77a13f1f238af085b5d5ea6578",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -57676,7 +59726,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 10.286875981299161,
         "squared_projection_error": 105.81981745462959,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b5fde06b593aff26319d81f2f3d117740564993f4a61fbedac28b1fcea2ea3fd",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -57987,7 +60037,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 32.26321700436068,
         "squared_projection_error": 1040.9151714704683,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_4e34e6cd49e95cef66fe95cb91e698fcf22aaf5d34eecb7320c47ec71d6c93a9",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -58298,7 +60348,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 38.2651590474967,
         "squared_projection_error": 1464.2223969302188,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_e0af509af79f137899fa0c0bd82bc1152388e85f89f1b4189a4401824e2c54d1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -58570,7 +60620,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 43.37761424947969,
         "squared_projection_error": 1881.6174179766635,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_57325666b4f082fef1545020f9fac1900752e7602b0d633bf1c67978ce429cfe",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -58881,7 +60931,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -41.215692338405994,
         "squared_projection_error": 1698.7332949341385,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_631a70e80911d2a4b1078cc33417410ec77cecc0d69e97ab825c3daa4b3326bc",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -59192,7 +61242,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 26.78700884363508,
         "squared_projection_error": 717.5438427889839,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_c983dbd744acc81286d502b60aa48372015cfaa64b57ae303aedb3027489abf8",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -59503,7 +61553,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 27.32193176205412,
         "squared_projection_error": 746.4879552103417,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_be4c37fd14519f03d02f99ae6d5c6ca2cf0937f8ee3b53d0371e90ced7a44de5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -59814,7 +61864,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -5.588976131244461,
         "squared_projection_error": 31.236654195620304,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_a4f998fd57ed18d9b2ae38b9bad1fe92a7d62f94d035d5a738798a54cf719be1",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -60125,7 +62175,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 27.29971579912325,
         "squared_projection_error": 745.2744827128995,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_878908b8aae470743f88278fdf1c6b778aafabf19ded279a07dc0332509bcbae",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -60392,7 +62442,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -27.442360125449504,
         "squared_projection_error": 753.0831292548609,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_9c33c45424c8e670c324a71208015e783169fddca1a752ea2bd37f390f0157f3",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -60664,7 +62714,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 136.3285653561661,
         "squared_projection_error": 18585.477732070452,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_a17f2c43a7423b9adca78da85c497b20739570335abc14aad7a3c2a305fda63d",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -60931,7 +62981,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 10.442506395998603,
         "squared_projection_error": 109.04593983047172,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_cadd0b507313df5ba9522216b69fe327c8c1f45201c36b790485fdceec12e978",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -61242,7 +63292,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 5.257496853860943,
         "squared_projection_error": 27.64127316835771,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_55967ee3c6d88ee5d747504743d8653e733a8631a6117b9bb114e93513cad281",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -61553,7 +63603,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 12.853700450226228,
         "squared_projection_error": 165.21761526414593,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_8306ac82111ec9c5aae514a000cff712419b4487a6927590c962559835f4e163",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -61864,7 +63914,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -80.10488954647596,
         "squared_projection_error": 6416.793329253113,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b6871c4be95d13310f4af280bf478a7eaaaef3e3aaa2aba531d62cece9005c3c",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -62175,7 +64225,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 32.9251777382027,
         "squared_projection_error": 1084.0673290922387,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_03ee56a02a081ad5e2b61a28815dc69bd35cb50f6150a26128531088cfd7839a",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -62486,7 +64536,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 28.318149610964618,
         "squared_projection_error": 801.9175973889755,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_6fdd31da94fcb8d84e79a67ffe2908221279a3d66071301526f386f6ccd0aaf0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -62797,7 +64847,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 65.04235294748443,
         "squared_projection_error": 4230.507676945137,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_46451e40ce8622617ed41425edd353805ad47fce3ff60e7429c3f1d0d66730c5",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -63108,7 +65158,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -6.08899334525497,
         "squared_projection_error": 37.07583995855931,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_b97941a9e288e32b81ae9162db190e8c4b0b8df78a5fd84d574d6dc0c64e9004",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -63419,7 +65469,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -18.56334456248993,
         "squared_projection_error": 344.5977613457245,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_2c93813b322633de5edc6a1c1936bd110e2445cdb8e3d5ef12aa20c27c715c90",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -63686,7 +65736,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 2.591254133319758,
         "squared_projection_error": 6.714597983446731,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_7f0e47bea073178fd9eecd06b0b0287eac36df3b0cd4769106fc59a635b109ff",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -63997,7 +66047,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 39.023501419352726,
         "squared_projection_error": 1522.8336630262243,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_afe0ade63c727fc0f61e638de01aa1346abcffbb6f9991bef8fddc6c115e3328",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -64269,7 +66319,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 10.928423779605865,
         "squared_projection_error": 119.43044630665493,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_f78eb62db87ebbce95996ab676aa995fbb4a2b927c215534e25bd53252ee2cc0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -64580,7 +66630,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": -5.036047463102676,
         "squared_projection_error": 25.361774050622902,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_01f373f9071adffd83adf432b7f87effc2e65d6a7f5fc04a9c40739d5006d2db",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -64891,7 +66941,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 5.8914196538414245,
         "squared_projection_error": 34.70882553766901,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_577123d0879d92a22ecf6b4df4406fde7c92ae783dc2f39ce1dab600f0332673",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -65202,7 +67252,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 130.14038528986174,
         "squared_projection_error": 16936.519883393663,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_65aec25db38728b5ca09f073df9e96cc7a1b656ade53197a5876e68a37c21932",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
@@ -65469,7 +67519,7 @@
         "resolution_status": "resolved",
         "signed_projection_error": 1.4018461674333267,
         "squared_projection_error": 1.9651726771475067,
-        "generated_at": "2026-09-21T16:28:01.006Z",
+        "generated_at": "2026-09-22T14:49:52.151Z",
         "outcome_id": "outcome_60f243810cad931bc07d0b815327f9df792be53527aeb606d3362860bcf242c0",
         "outcome_revision": 2,
         "resolver_version": "nfl-prediction-outcome-resolver-v1",
