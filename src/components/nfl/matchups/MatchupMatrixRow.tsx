@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import { DenseTableScroller, DENSE_TABLE_ROW, frozenDenseColumn } from "@/components/ui/dense-table";
-import { rankBadgeClass, rankCellClass } from "@/lib/nfl/rankTier";
-import { formatMatrixRating } from "@/lib/nfl/matchupMatrixRatings";
+import { matrixCellClass, matrixTextClass } from "@/lib/nfl/matchupMatrixRankTier";
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatrixControls";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
@@ -45,32 +44,23 @@ const MATRIX_COLUMNS: readonly MatrixColumn[] = [
 /**
  * Heatmap color is ALWAYS derived from the cell's league rank, never from the
  * displayed number — so the same team/metric/window gets the same tier in
- * both Rankings and Ratings mode, and only the text changes. This is the one
- * place that rule is enforced; see rankTier.ts for the canonical 8-bucket
- * scale itself.
+ * both Rankings and Values mode, and only the displayed number changes. See
+ * matchupMatrixRankTier.ts for the matrix's own gold -> red 8-bucket scale.
+ *
+ * Each cell shows exactly ONE number: the rank in Rankings mode, or the raw
+ * underlying value in Values mode. The full cell background is the heatmap —
+ * there is no separate rank/rating badge.
  */
-function MatrixCellView({ cell, label, displayMode, isOvr }: { cell: NflMatrixCell; label: string; displayMode: NflMatrixDisplayMode; isOvr: boolean }) {
+function MatrixCellView({ cell, label, displayMode }: { cell: NflMatrixCell; label: string; displayMode: NflMatrixDisplayMode }) {
   const isRankings = displayMode === "rankings";
-  const badgeClass = rankBadgeClass(cell.rank);
-  const washClass = rankCellClass(cell.rank);
-  const badgeText = isRankings
-    ? (cell.rank == null ? "—" : String(cell.rank))
-    // OVR has no league-relative +/- — Ratings mode still shows the native
-    // JKB rating (the same number `formattedValue` already carries), never a
-    // computed delta.
-    : isOvr
-      ? cell.formattedValue
-      : formatMatrixRating(cell.rating);
+  const cellClass = matrixCellClass(cell.rank);
+  const textClass = matrixTextClass(cell.rank);
+  const displayText = isRankings ? (cell.rank == null ? "—" : String(cell.rank)) : cell.formattedValue;
 
   return (
-    <td className={`min-w-[64px] px-1 py-1 text-center align-middle ${washClass}`}>
-      <div className="text-[8px] font-bold uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-0.5 text-[11px] font-bold tabular-nums text-slate-800">{cell.formattedValue}</div>
-      <div
-        className={`mx-auto mt-0.5 inline-flex min-w-[26px] items-center justify-center rounded border px-1 text-[9px] font-bold tabular-nums ${badgeClass}`}
-      >
-        {badgeText}
-      </div>
+    <td className={`min-w-[64px] px-1 py-1.5 text-center align-middle ${cellClass}`}>
+      <div className={`text-[8px] font-bold uppercase tracking-wide ${textClass} opacity-70`}>{label}</div>
+      <div className={`mt-0.5 text-[13px] font-extrabold tabular-nums ${textClass}`}>{displayText}</div>
     </td>
   );
 }
@@ -167,7 +157,6 @@ export default function MatchupMatrixRow({
                       cell={cell}
                       label={label}
                       displayMode={displayMode}
-                      isOvr={metricId === "ovr"}
                     />
                   );
                 }).reduce<ReactNode[]>((acc, node, index) => {

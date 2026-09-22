@@ -22,7 +22,6 @@
 
 import type { CurrentRatingBoard } from "@/lib/nfl/currentRating2026";
 import { rankByDescending } from "@/lib/nfl/publicPowerRatings";
-import { computeMatrixRatings, type NflMatrixMetricDirection } from "@/lib/nfl/matchupMatrixRatings";
 import {
   blendMatrixMetricValue,
   sampleSettingsForMatrixWindow,
@@ -40,6 +39,8 @@ import { TRENCH_CURRENT_SEASON, TRENCH_PRIOR_SEASON, type TrenchMetricsArtifact 
 
 const PRIOR_SEASON_FULL_WINDOW_ID = "prior-season-full";
 
+export type NflMatrixMetricDirection = "higher-is-better" | "lower-is-better";
+
 export type NflMatrixMetricId =
   | "ovr"
   | "offEpa"
@@ -56,8 +57,6 @@ export type NflMatrixCell = {
   formattedValue: string;
   /** Canonical/published rank (1-32) where one exists; a newly computed rank for the Blended composite otherwise. */
   rank: number | null;
-  /** League-relative "+/-" rating; never clamped. Always null for OVR — see buildOvrCells. */
-  rating: number | null;
   /** False for Success Rate, Blocking and Def Rush — those never move with the Data Window toggle. */
   windowSensitive: boolean;
 };
@@ -66,7 +65,6 @@ const UNAVAILABLE_CELL: NflMatrixCell = {
   value: null,
   formattedValue: "N/A",
   rank: null,
-  rating: null,
   windowSensitive: true,
 };
 
@@ -191,11 +189,6 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
         value,
         formattedValue: value == null ? "N/A" : value.toFixed(1),
         rank,
-        // OVR has no league-relative +/- — it is the JKB composite rating
-        // itself on its native scale, not a metric to standardize against a
-        // league mean/SD. Ratings-mode display reads `formattedValue`
-        // directly (see MatchupMatrixRow), never this field.
-        rating: null,
         windowSensitive: mode !== "last8",
       });
     }
@@ -237,7 +230,6 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
     }
 
     const ranks = mode === "blended" ? rankMapDirectionAware(values, config.direction) : publishedRanks;
-    const ratings = computeMatrixRatings(values, config.direction);
     const format = config.kind === "epa" ? formatEpa : (value: number) => formatMetricValue(config.key, value);
 
     const out = new Map<string, NflMatrixCell>();
@@ -247,7 +239,6 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
         value,
         formattedValue: value == null ? "N/A" : format(value),
         rank: ranks.get(abbr) ?? null,
-        rating: ratings.get(abbr) ?? null,
         windowSensitive: true,
       });
     }
@@ -257,17 +248,14 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
   // ---- Success Rate (season-to-date only) ------------------------------------
   function buildSuccessCells(metricId: "offSr" | "defSr"): Map<string, NflMatrixCell> {
     const config = SUCCESS_METRIC_KEYS[metricId];
-    const rawValues = new Map<string, number | null>();
     const entries = new Map<string, SuccessMetricValue | null>();
 
     for (const abbr of teamAbbrs) {
       const period = successPeriodFor(successArtifact, abbr);
       const entry = successArtifact?.periods?.[period]?.[abbr]?.metrics?.[config.key] ?? null;
       entries.set(abbr, entry);
-      rawValues.set(abbr, entry?.raw ?? null);
     }
 
-    const ratings = computeMatrixRatings(rawValues, config.direction);
     const out = new Map<string, NflMatrixCell>();
     for (const abbr of teamAbbrs) {
       const entry = entries.get(abbr) ?? null;
@@ -275,7 +263,6 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
         value: entry?.pct ?? null,
         formattedValue: formatSuccessRate(entry),
         rank: entry?.rank ?? null,
-        rating: ratings.get(abbr) ?? null,
         windowSensitive: false,
       });
     }
@@ -285,7 +272,6 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
   // ---- Trench / Blocking (season-to-date only) -------------------------------
   function buildTrenchCells(metricId: "blocking" | "defRush"): Map<string, NflMatrixCell> {
     const config = TRENCH_METRIC_KEYS[metricId];
-    const rawValues = new Map<string, number | null>();
     const entries = new Map<string, { valuePct: number; espnRank: number } | null>();
 
     for (const abbr of teamAbbrs) {
@@ -293,13 +279,8 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
       const season = trenchArtifact?.seasons?.[seasonKey];
       const entry = season?.teams?.[abbr]?.metrics?.[config.key] ?? null;
       entries.set(abbr, entry);
-      rawValues.set(abbr, entry?.valuePct ?? null);
     }
 
-    // Rating is a new derived statistic (mean/SD of ESPN's own published
-    // percentages) — never a substitute for ESPN's own rank, which Rankings
-    // mode reads directly below.
-    const ratings = computeMatrixRatings(rawValues, config.direction);
     const out = new Map<string, NflMatrixCell>();
     for (const abbr of teamAbbrs) {
       const entry = entries.get(abbr) ?? null;
@@ -307,7 +288,6 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
         value: entry?.valuePct ?? null,
         formattedValue: entry ? `${entry.valuePct}%` : "N/A",
         rank: entry?.espnRank ?? null,
-        rating: ratings.get(abbr) ?? null,
         windowSensitive: false,
       });
     }
