@@ -1,18 +1,23 @@
 import MatchupSegmentedControl from "@/components/nfl/matchups/MatchupSegmentedControl";
-import MatchupRankLegend from "@/components/nfl/matchups/MatchupRankLegend";
+import MatchupMatrixRankLegend from "@/components/nfl/matchups/MatchupMatrixRankLegend";
 import { MATRIX_DATA_WINDOW_OPTIONS, type NflMatrixDataWindowMode } from "@/lib/nfl/matchupMatrixWindow";
 
-export type NflMatrixDisplayMode = "rankings" | "ratings";
+export type NflMatrixDisplayMode = "rankings" | "values";
 
 const DISPLAY_MODE_OPTIONS = [
   { value: "rankings" as const, label: "Rankings" },
-  { value: "ratings" as const, label: "Ratings +/- vs Avg", shortLabel: "Ratings +/-" },
+  { value: "values" as const, label: "Values" },
 ];
 
 /**
- * Page-wide controls for the Weekly Matchups matrix: Rankings/Ratings display
+ * Page-wide controls for the Weekly Matchups matrix: Rankings/Values display
  * mode and the Blended/2026 Only/Last 8 data window. Both apply to every game
  * on the page, not per matchup, per the approved design.
+ *
+ * Rankings shows each team's league rank per metric; Values shows the actual
+ * underlying metric value (native OVR, raw EPA, raw YPP, success-rate
+ * percentage, canonical trench percentage). Heatmap color is always driven by
+ * rank regardless of which mode is active — see matchupMatrixRankTier.ts.
  *
  * The two footnotes here are the SINGLE place the matrix explains that
  * Success Rate / Blocking / Def Rush never move with the Data Window toggle,
@@ -39,7 +44,7 @@ export default function MatchupMatrixControls({
             options={DISPLAY_MODE_OPTIONS}
             value={displayMode}
             onChange={onDisplayModeChange}
-            ariaLabel="Rankings or Ratings display"
+            ariaLabel="Rankings or Values display"
             size="sm"
           />
         </div>
@@ -68,7 +73,7 @@ export default function MatchupMatrixControls({
         )}
       </p>
 
-      <MatchupRankLegend />
+      <MatchupMatrixRankLegend />
     </div>
   );
 }

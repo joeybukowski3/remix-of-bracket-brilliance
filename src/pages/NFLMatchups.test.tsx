@@ -183,28 +183,29 @@ describe("NFLMatchups landing", () => {
     renderRoute("/nfl/matchups");
     // Mocked useNflCurrentRating2026 values above; the guide's own powerRank/
     // overallPct for these teams differ from these figures. Rankings mode is
-    // the default, so the OVR cell shows the board's own rank (#3 / #2).
+    // the default, so the OVR cell shows the board's own rank (#3 / #2), not
+    // the raw rating value.
     const ovrCells = screen.getAllByText("OVR");
     expect(ovrCells.length).toBeGreaterThan(0);
-    expect(screen.getAllByText("68.4").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("74.5").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
+    expect(screen.queryByText("68.4")).toBeNull();
   });
 
-  it("exposes page-wide Rankings/Ratings and Data Window controls", () => {
+  it("exposes page-wide Rankings/Values and Data Window controls", () => {
     renderRoute("/nfl/matchups");
     expect(screen.getByRole("tab", { name: "Rankings" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: /Ratings/i })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Values" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Blended" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "2026 Only" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Last 8" })).toBeTruthy();
   });
 
-  it("switches every matrix row to Ratings display when the Ratings tab is selected, keeping OVR on its native scale", () => {
+  it("switches every matrix row to Values display when the Values tab is selected, showing OVR's native scale", () => {
     renderRoute("/nfl/matchups");
-    fireEvent.click(screen.getByRole("tab", { name: /Ratings/i }));
-    // OVR shows its own native JKB rating in Ratings mode, never a
-    // league-relative +/- delta (that was the old, now-removed OVR-50
-    // behavior) — the mocked 68.4-rated team's OVR badge still reads 68.4.
+    fireEvent.click(screen.getByRole("tab", { name: "Values" }));
+    // OVR shows its own native JKB rating in Values mode, never the league
+    // rank — the mocked 68.4-rated team's OVR cell reads 68.4, not "3".
     expect(screen.getAllByText("68.4").length).toBeGreaterThan(0);
     expect(screen.queryByText("+18.4")).toBeNull();
   });

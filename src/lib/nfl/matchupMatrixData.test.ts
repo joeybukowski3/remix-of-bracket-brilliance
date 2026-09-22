@@ -106,7 +106,7 @@ describe("buildMatchupMatrixBoard", () => {
     expect(board.getCell("A", "offEpa").value).toBe(0.2);
   });
 
-  it("computes a new rank for Blended mode by direction-aware z-score, since no canonical rank exists for the composite", () => {
+  it("computes a new direction-aware rank for Blended mode, since no canonical rank exists for the composite", () => {
     const epaArtifact = makeEpaArtifact({
       "season-current": {
         mode: "season", includePriorSeason: false,
@@ -133,8 +133,6 @@ describe("buildMatchupMatrixBoard", () => {
     });
     expect(board.getCell("A", "offEpa").rank).toBe(1);
     expect(board.getCell("C", "offEpa").rank).toBe(3);
-    expect(board.getCell("A", "offEpa").rating).toBeGreaterThan(0);
-    expect(board.getCell("C", "offEpa").rating).toBeLessThan(0);
   });
 
   it("keeps Success Rate season-to-date across every Data Window mode", () => {
@@ -248,7 +246,7 @@ describe("buildMatchupMatrixBoard", () => {
     expect(last8.windowSensitive).toBe(false);
   });
 
-  it("never gives OVR a league-relative +/- rating — it stays null so the UI falls back to the native value", () => {
+  it("gives OVR a stable native value across every Data Window mode", () => {
     const currentRating = makeCurrentRating({
       A: { rating: 82.6, rank: 4, performanceRating: 82.6, performanceRank: 4, gamesPlayed: 6 },
     });
@@ -257,7 +255,6 @@ describe("buildMatchupMatrixBoard", () => {
         teamAbbrs: TEAM_ABBRS, mode, currentRating,
         epaArtifact: null, conventionalArtifact: null, successArtifact: null, trenchArtifact: null,
       }).getCell("A", "ovr");
-      expect(cell.rating).toBeNull();
       expect(cell.value).toBe(82.6);
       expect(cell.formattedValue).toBe("82.6");
     }
@@ -299,6 +296,5 @@ describe("buildMatchupMatrixBoard", () => {
     expect(cell.value).toBeNull();
     expect(cell.formattedValue).toBe("N/A");
     expect(cell.rank).toBeNull();
-    expect(cell.rating).toBeNull();
   });
 });

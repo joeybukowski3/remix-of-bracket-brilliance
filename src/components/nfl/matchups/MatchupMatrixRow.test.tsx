@@ -2,16 +2,16 @@ import { describe, it, expect } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupMatrixRow from "@/components/nfl/matchups/MatchupMatrixRow";
-import { rankBadgeClass } from "@/lib/nfl/rankTier";
+import { matrixCellClass } from "@/lib/nfl/matchupMatrixRankTier";
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 
 /**
- * Heatmap color must always be derived from league rank, never from the
- * displayed +/- rating — so switching Rankings <-> Ratings changes the text
- * in every cell but never its color, and OVR's Ratings-mode text is its own
- * native rating rather than a league-relative delta. See the 2026-09-22 QA
- * correction that removed the old rating-threshold heatmap.
+ * Each cell renders exactly one number: the rank in Rankings mode, or the raw
+ * value in Values mode. Heatmap color is always derived from league rank,
+ * never from the displayed number — so switching Rankings <-> Values changes
+ * the text in every cell but never its background tier. See the 2026-09-22
+ * QA correction that collapsed the rank+rating badge into a single value.
  */
 
 const team = (abbr: string, teamName: string, slug: string) => ({
@@ -39,7 +39,6 @@ function makeCell(overrides: Partial<NflMatrixCell>): NflMatrixCell {
     value: null,
     formattedValue: "N/A",
     rank: null,
-    rating: null,
     windowSensitive: true,
     ...overrides,
   };
@@ -55,28 +54,24 @@ function makeBoard(cells: Record<string, NflMatrixCell>): NflMatrixBoard {
 }
 
 describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
-  it("OVR shows the native rating in Ratings mode, not a league-relative delta", () => {
+  it("Values mode shows the raw value only, not the rank", () => {
     const board = makeBoard({
-      "ne:ovr": makeCell({ value: 82.6, formattedValue: "82.6", rank: 4, rating: null }),
-      "sea:ovr": makeCell({ value: 61.2, formattedValue: "61.2", rank: 20, rating: null }),
+      "ne:ovr": makeCell({ value: 82.6, formattedValue: "82.6", rank: 4 }),
+      "sea:ovr": makeCell({ value: 61.2, formattedValue: "61.2", rank: 20 }),
     });
     render(
       <MemoryRouter>
-        <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="ratings" awayRecord={null} homeRecord={null} />
+        <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="values" awayRecord={null} homeRecord={null} />
       </MemoryRouter>
     );
-    // Native rating text appears twice (the raw value line and the badge,
-    // which for OVR in Ratings mode both read the same native number), never
-    // "+32.6" (the old OVR-50 behavior).
-    expect(screen.getAllByText("82.6").length).toBe(2);
-    expect(screen.queryByText("+32.6")).toBeNull();
-    expect(screen.queryByText(/^\+/)).toBeNull();
+    expect(screen.getByText("82.6")).toBeTruthy();
+    expect(screen.queryByText("4")).toBeNull();
   });
 
-  it("OVR shows the rank in Rankings mode", () => {
+  it("Rankings mode shows the rank only, not the raw value", () => {
     const board = makeBoard({
-      "ne:ovr": makeCell({ value: 82.6, formattedValue: "82.6", rank: 4, rating: null }),
-      "sea:ovr": makeCell({ value: 61.2, formattedValue: "61.2", rank: 20, rating: null }),
+      "ne:ovr": makeCell({ value: 82.6, formattedValue: "82.6", rank: 4 }),
+      "sea:ovr": makeCell({ value: 61.2, formattedValue: "61.2", rank: 20 }),
     });
     render(
       <MemoryRouter>
@@ -84,11 +79,12 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
       </MemoryRouter>
     );
     expect(screen.getByText("4")).toBeTruthy();
+    expect(screen.queryByText("82.6")).toBeNull();
   });
 
-  it("gives a non-OVR metric the identical heatmap tier in Rankings and Ratings mode, only the text changes", () => {
-    const cell = makeCell({ value: 0.106, formattedValue: "+0.106", rank: 3, rating: 14.7 });
-    const expectedClass = rankBadgeClass(3);
+  it("gives a non-OVR metric the identical heatmap tier in Rankings and Values mode, only the text changes", () => {
+    const cell = makeCell({ value: 0.106, formattedValue: "+0.106", rank: 3 });
+    const expectedClass = matrixCellClass(3);
 
     const boardRankings = makeBoard({ "ne:offEpa": cell, "sea:offEpa": makeCell({}) });
     const { unmount } = render(
@@ -96,44 +92,48 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
         <MatchupMatrixRow matchup={MATCHUP} board={boardRankings} displayMode="rankings" awayRecord={null} homeRecord={null} />
       </MemoryRouter>
     );
-    const rankBadge = screen.getByText("3");
-    expect(rankBadge.className).toContain(expectedClass);
+    const rankCell = screen.getByText("3").closest("td")!;
+    expect(rankCell.className).toContain(expectedClass);
     unmount();
 
-    const boardRatings = makeBoard({ "ne:offEpa": cell, "sea:offEpa": makeCell({}) });
+    const boardValues = makeBoard({ "ne:offEpa": cell, "sea:offEpa": makeCell({}) });
     render(
       <MemoryRouter>
-        <MatchupMatrixRow matchup={MATCHUP} board={boardRatings} displayMode="ratings" awayRecord={null} homeRecord={null} />
+        <MatchupMatrixRow matchup={MATCHUP} board={boardValues} displayMode="values" awayRecord={null} homeRecord={null} />
       </MemoryRouter>
     );
-    const ratingBadge = screen.getByText("+14.7");
-    expect(ratingBadge.className).toContain(expectedClass);
+    const valueCell = screen.getByText("+0.106").closest("td")!;
+    expect(valueCell.className).toContain(expectedClass);
     // Same underlying rank (3) drove the same color class in both modes.
   });
 
-  it("colors a poor-rank cell in the worst tier regardless of the magnitude of its +/- rating", () => {
-    // A large-magnitude rating (+40) paired with a bad rank (30) must still
-    // color by the rank, not the rating's own size.
-    const cell = makeCell({ value: 5, formattedValue: "5.0", rank: 30, rating: 40 });
-    const board = makeBoard({ "ne:offYpp": cell, "sea:offYpp": makeCell({}) });
-    render(
-      <MemoryRouter>
-        <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="ratings" awayRecord={null} homeRecord={null} />
-      </MemoryRouter>
-    );
-    const badge = screen.getByText("+40.0");
-    expect(badge.className).toContain(rankBadgeClass(30));
-    expect(badge.className).not.toContain(rankBadgeClass(1));
+  it("gives rank 1-4 the elite gold tier and rank 29-32 the strongest red tier", () => {
+    expect(matrixCellClass(2)).toBe("bg-amber-500");
+    expect(matrixCellClass(31)).toBe("bg-red-700");
   });
 
-  it("gives a rankless cell the neutral unranked treatment rather than a fabricated tier", () => {
-    const board = makeBoard({ "ne:offSr": makeCell({ value: null, formattedValue: "N/A", rank: null, rating: null }) });
+  it("never uses green anywhere in the matrix tier palette", () => {
+    const board = makeBoard({
+      "ne:offYpp": makeCell({ value: 5, formattedValue: "5.0", rank: 30 }),
+    });
     render(
       <MemoryRouter>
         <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="rankings" awayRecord={null} homeRecord={null} />
       </MemoryRouter>
     );
-    const dash = within(screen.getAllByText("N/A")[0].closest("td")!).getByText("—");
-    expect(dash.className).toContain(rankBadgeClass(null));
+    const cell = screen.getByText("30").closest("td")!;
+    expect(cell.className).not.toMatch(/\bbg-(emerald|green|teal)-/);
+  });
+
+  it("gives a rankless cell the neutral unranked treatment rather than a fabricated tier", () => {
+    const board = makeBoard({ "ne:offSr": makeCell({ value: null, formattedValue: "N/A", rank: null }) });
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="rankings" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+    const cell = screen.getAllByText("Off SR")[0].closest("td")!;
+    expect(within(cell).getByText("—")).toBeTruthy();
+    expect(cell.className).toContain(matrixCellClass(null));
   });
 });
