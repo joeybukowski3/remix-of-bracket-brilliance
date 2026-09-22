@@ -1,10 +1,10 @@
 {
   "date": "2026-09-22",
-  "generatedAt": "2026-09-22T15:45:47.060Z",
+  "generatedAt": "2026-09-22T18:11:42.045Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field (1.4) and Camden Yards (1.1) headline the slate with elevated HR environments, while Truist Park (1.03) offers a neutral boost. Scherzer (R) vs Alonso at Camden and Freeland (L) vs Carroll/Moreno at altitude create the clearest edges; Williamson (L) vs the ATL trio adds volume but faces a deeper lineup.",
-    "modelNote": "The model is prioritizing barrel/hard-hit rates and recent HR volume over park factors alone, elevating Alonso and De La Cruz despite moderate park boosts."
+    "slateOverview": "Coors Field (1.4) and Camden Yards (1.1) headline a slate where altitude and lefty fly-ball pitching create clear power edges. Scherzer vs Alonso in Baltimore and Freeland vs Carroll/Moreno in Denver stand out as the strongest park-plus-pitcher combinations, while Williamson’s soft-contact profile against Atlanta’s lefty-heavy order adds volume at Truist.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR vulnerability over recent hot streaks, which is why Alonso (76.6) and De La Cruz (72.2) top the board despite modest recent home-run counts."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Max Scherzer",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=75.9",
-        "barrel=14.7%"
-      ],
-      "bullets": [
-        "hrScore=75.9",
+        "barrel=14.7%",
         "HH=56.2%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "hrScore=76.6",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+344",
+      "marketImpliedProbability": 0.22522522522522523,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "JR Ritchie",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=72.2",
-        "barrel=16.2%"
+        "barrel=16.2%",
+        "HH=53.5%"
       ],
       "bullets": [
         "hrScore=72.2",
-        "barrel=16.2%"
+        "park=1.03"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+391",
+      "marketImpliedProbability": 0.20366598778004075,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Brandon Williamson",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=70",
-        "barrel=14.6%"
+        "barrel=14.6%",
+        "HH=51.4%"
       ],
       "bullets": [
         "hrScore=70",
-        "HH=51.4%"
+        "park=1.03"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -71,16 +71,16 @@
       "opposingPitcher": "Janson Junk",
       "hrScoreRank": 4,
       "topStats": [
-        "hrScore=69.1",
-        "barrel=13.7%"
+        "Pitcher HR VS=50.4",
+        "Hard Hit%=49.1"
       ],
       "bullets": [
-        "hrScore=69.1",
-        "HH=49.1%"
+        "HR score 69.2 (#4)",
+        "Pitcher HR VS 50.4 at park 1.00"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+549",
+      "marketImpliedProbability": 0.15408320493066255,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -90,115 +90,191 @@
       "opposingPitcher": "Brandon Williamson",
       "hrScoreRank": 5,
       "topStats": [
-        "hrScore=68.4",
-        "barrel=12.9%"
+        "Pitcher HR VS=81.5",
+        "Hard Hit%=44.1"
       ],
       "bullets": [
-        "hrScore=68.4",
-        "park=1.03"
+        "HR score 68.4 (#5)",
+        "Pitcher HR VS 81.5 at park 1.03"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+351",
+      "marketImpliedProbability": 0.22172949002217296,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 1,
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "MIA",
+      "opposingPitcher": "Janson Junk",
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=75.9",
-        "barrel=14.7%"
+        "barrel=13.7%",
+        "HH=49.1%"
       ],
       "bullets": [
-        "hrScore=75.9",
-        "HH=56.2%"
+        "hrScore=69.2",
+        "park=1"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+549",
+      "marketImpliedProbability": 0.15408320493066255,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "ATL",
-      "opposingPitcher": "JR Ritchie",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=72.2",
-        "barrel=16.2%"
-      ],
-      "bullets": [
-        "hrScore=72.2",
-        "barrel=16.2%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Matt Olson",
+      "player": "Ronald Acuña Jr.",
       "team": "ATL",
       "opponent": "CIN",
       "opposingPitcher": "Brandon Williamson",
-      "hrScoreRank": 3,
+      "hrScoreRank": 5,
       "topStats": [
-        "hrScore=70",
-        "barrel=14.6%"
+        "barrel=12.9%",
+        "HH=44.1%"
       ],
       "bullets": [
-        "hrScore=70",
-        "HH=51.4%"
+        "hrScore=68.4",
+        "park=1.03"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+351",
+      "marketImpliedProbability": 0.22172949002217296,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "SEA",
+      "opposingPitcher": "Logan Gilbert",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=16%",
+        "HH=53.3%"
+      ],
+      "bullets": [
+        "hrScore=66.8",
+        "park=0.93"
+      ],
+      "hrOddsYes": "+289",
+      "marketImpliedProbability": 0.2570694087403599,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "CIN",
+      "opposingPitcher": "Brandon Williamson",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=81.5",
+        "Hard Hit%=46.7"
+      ],
+      "bullets": [
+        "HR score 65.5 (#7)",
+        "Pitcher HR VS 81.5 at park 1.03"
+      ],
+      "hrOddsYes": "+524",
+      "marketImpliedProbability": 0.16025641025641027,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "CIN",
+      "opposingPitcher": "Brandon Williamson",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=81.5",
+        "Hard Hit%=50.4"
+      ],
+      "bullets": [
+        "HR score 65.4 (#8)",
+        "Pitcher HR VS 81.5 at park 1.03"
+      ],
+      "hrOddsYes": "+488",
+      "marketImpliedProbability": 0.17006802721088435,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 1,
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "CIN",
+      "opposingPitcher": "Brandon Williamson",
+      "hrScoreRank": 7,
       "topStats": [
-        "hrScore=75.9",
-        "barrel=14.7%"
+        "barrel=10.1%",
+        "HH=46.7%"
       ],
       "bullets": [
-        "hrScore=75.9",
-        "HH=56.2%"
+        "hrScore=65.5",
+        "park=1.03"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+524",
+      "marketImpliedProbability": 0.16025641025641027,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "ATL",
-      "opposingPitcher": "JR Ritchie",
-      "hrScoreRank": 2,
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "CIN",
+      "opposingPitcher": "Brandon Williamson",
+      "hrScoreRank": 8,
       "topStats": [
-        "hrScore=72.2",
-        "barrel=16.2%"
+        "barrel=12.7%",
+        "HH=50.4%"
       ],
       "bullets": [
-        "hrScore=72.2",
-        "barrel=16.2%"
+        "hrScore=65.4",
+        "park=1.03"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+488",
+      "marketImpliedProbability": 0.17006802721088435,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
+      "hrScoreRank": 23,
+      "topStats": [
+        "Pitcher HR VS=55.6",
+        "Hard Hit%=54.5"
+      ],
+      "bullets": [
+        "HR score 55.8 (#23)",
+        "Pitcher HR VS 55.6 at park 0.96"
+      ],
+      "hrOddsYes": "+650",
+      "marketImpliedProbability": 0.13333333333333333,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Josh Jung",
+      "team": "TEX",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 17,
+      "topStats": [
+        "Pitcher HR VS=69.0",
+        "Hard Hit%=48.7"
+      ],
+      "bullets": [
+        "HR score 57.1 (#17)",
+        "Pitcher HR VS 69.0 at park 0.99"
+      ],
+      "hrOddsYes": "+557",
+      "marketImpliedProbability": 0.15220700152207,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ]
