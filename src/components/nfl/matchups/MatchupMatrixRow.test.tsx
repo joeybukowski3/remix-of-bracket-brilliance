@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MatchupMatrixRow from "@/components/nfl/matchups/MatchupMatrixRow";
-import { matrixCellClass } from "@/lib/nfl/matchupMatrixRankTier";
+import { matrixCellStyle } from "@/lib/nfl/matchupMatrixRankTier";
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 
@@ -53,6 +53,16 @@ function makeBoard(cells: Record<string, NflMatrixCell>): NflMatrixBoard {
   };
 }
 
+/** jsdom normalizes inline hex colors to `rgb(...)` when read back from style. */
+function cssColorToRgb(css: string): string {
+  const el = document.createElement("div");
+  el.style.backgroundColor = css;
+  document.body.appendChild(el);
+  const resolved = el.style.backgroundColor;
+  document.body.removeChild(el);
+  return resolved;
+}
+
 describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
   it("Values mode shows the raw value only, not the rank", () => {
     const board = makeBoard({
@@ -84,7 +94,7 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
 
   it("gives a non-OVR metric the identical heatmap tier in Rankings and Values mode, only the text changes", () => {
     const cell = makeCell({ value: 0.106, formattedValue: "+0.106", rank: 3 });
-    const expectedClass = matrixCellClass(3);
+    const expectedStyle = matrixCellStyle(3);
 
     const boardRankings = makeBoard({ "ne:offEpa": cell, "sea:offEpa": makeCell({}) });
     const { unmount } = render(
@@ -93,7 +103,7 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
       </MemoryRouter>
     );
     const rankCell = screen.getByText("3").closest("td")!;
-    expect(rankCell.className).toContain(expectedClass);
+    expect(rankCell.style.backgroundColor).toBe(cssColorToRgb(expectedStyle.backgroundColor));
     unmount();
 
     const boardValues = makeBoard({ "ne:offEpa": cell, "sea:offEpa": makeCell({}) });
@@ -103,16 +113,16 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
       </MemoryRouter>
     );
     const valueCell = screen.getByText("+0.106").closest("td")!;
-    expect(valueCell.className).toContain(expectedClass);
-    // Same underlying rank (3) drove the same color class in both modes.
+    expect(valueCell.style.backgroundColor).toBe(cssColorToRgb(expectedStyle.backgroundColor));
+    // Same underlying rank (3) drove the same color in both modes.
   });
 
-  it("gives rank 1-4 the elite gold tier and rank 29-32 the strongest red tier", () => {
-    expect(matrixCellClass(2)).toBe("bg-amber-500");
-    expect(matrixCellClass(31)).toBe("bg-red-700");
+  it("gives rank 1-4 the canonical JKB elite gold tier and rank 29-32 the canonical JKB poor tier", () => {
+    expect(matrixCellStyle(2).backgroundColor).toBe("#e8d5a8");
+    expect(matrixCellStyle(31).backgroundColor).toBe("#dc2626");
   });
 
-  it("never uses green anywhere in the matrix tier palette", () => {
+  it("colors a non-OVR metric using the same canonical JKB tier its rank resolves to", () => {
     const board = makeBoard({
       "ne:offYpp": makeCell({ value: 5, formattedValue: "5.0", rank: 30 }),
     });
@@ -122,7 +132,8 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
       </MemoryRouter>
     );
     const cell = screen.getByText("30").closest("td")!;
-    expect(cell.className).not.toMatch(/\bbg-(emerald|green|teal)-/);
+    expect(cell.getAttribute("data-matrix-rank-tier")).toBe("poor");
+    expect(cell.style.backgroundColor).toBe(cssColorToRgb(matrixCellStyle(30).backgroundColor));
   });
 
   it("gives a rankless cell the neutral unranked treatment rather than a fabricated tier", () => {
@@ -134,6 +145,6 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
     );
     const cell = screen.getAllByText("Off SR")[0].closest("td")!;
     expect(within(cell).getByText("—")).toBeTruthy();
-    expect(cell.className).toContain(matrixCellClass(null));
+    expect(cell.style.backgroundColor).toBe(cssColorToRgb(matrixCellStyle(null).backgroundColor));
   });
 });

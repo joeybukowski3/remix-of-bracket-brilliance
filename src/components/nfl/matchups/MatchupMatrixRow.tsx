@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import { DenseTableScroller, DENSE_TABLE_ROW, frozenDenseColumn } from "@/components/ui/dense-table";
-import { matrixCellClass, matrixTextClass } from "@/lib/nfl/matchupMatrixRankTier";
+import { matrixCellStyle, getMatrixRankTier } from "@/lib/nfl/matchupMatrixRankTier";
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatrixControls";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
@@ -44,8 +44,10 @@ const MATRIX_COLUMNS: readonly MatrixColumn[] = [
 /**
  * Heatmap color is ALWAYS derived from the cell's league rank, never from the
  * displayed number — so the same team/metric/window gets the same tier in
- * both Rankings and Values mode, and only the displayed number changes. See
- * matchupMatrixRankTier.ts for the matrix's own gold -> red 8-bucket scale.
+ * both Rankings and Values mode, and only the displayed number changes. Tier
+ * styling is the exact canonical JKB tier style (matchupMatrixRankTier.ts),
+ * applied inline so it can't drift from the K Props / percentile-scale hex
+ * and rgba values.
  *
  * Each cell shows exactly ONE number: the rank in Rankings mode, or the raw
  * underlying value in Values mode. The full cell background is the heatmap —
@@ -53,14 +55,21 @@ const MATRIX_COLUMNS: readonly MatrixColumn[] = [
  */
 function MatrixCellView({ cell, label, displayMode }: { cell: NflMatrixCell; label: string; displayMode: NflMatrixDisplayMode }) {
   const isRankings = displayMode === "rankings";
-  const cellClass = matrixCellClass(cell.rank);
-  const textClass = matrixTextClass(cell.rank);
+  const style = matrixCellStyle(cell.rank);
   const displayText = isRankings ? (cell.rank == null ? "—" : String(cell.rank)) : cell.formattedValue;
 
   return (
-    <td className={`min-w-[64px] px-1 py-1.5 text-center align-middle ${cellClass}`}>
-      <div className={`text-[8px] font-bold uppercase tracking-wide ${textClass} opacity-70`}>{label}</div>
-      <div className={`mt-0.5 text-[13px] font-extrabold tabular-nums ${textClass}`}>{displayText}</div>
+    <td
+      className="min-w-[64px] px-1 py-1.5 text-center align-middle"
+      style={{
+        backgroundColor: style.backgroundColor,
+        color: style.color,
+        boxShadow: style.border.replace("1px solid ", "inset 0 0 0 1px "),
+      }}
+      data-matrix-rank-tier={getMatrixRankTier(cell.rank)?.id ?? "unknown"}
+    >
+      <div className="text-[8px] font-bold uppercase tracking-wide opacity-70">{label}</div>
+      <div className="mt-0.5 text-[13px] font-extrabold tabular-nums">{displayText}</div>
     </td>
   );
 }
