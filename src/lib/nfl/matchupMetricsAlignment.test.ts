@@ -44,6 +44,15 @@ describe("matchup metric / EPA alignment gate", () => {
     expect(problems).toEqual([]);
   });
 
+  it("rejects two equally stale artifacts against final results", () => {
+    const f = fixture();
+    const expectedCurrentTeamGames = ABBRS.map((team) => ({ team, gameId: `2026_01_${team}` }));
+    expectedCurrentTeamGames.push({ team: "t05", gameId: "2026_02_GB_NYJ" });
+    const { problems, summary } = validateMatchupMetricsAlignment(f.metrics, f.epa, { expectedCurrentTeamGames });
+    expect(problems.join(" ")).toMatch(/metrics: missing team-games.*epa: missing team-games/);
+    expect(summary.metricsCoverage.missingGameIds).toContain("2026_02_GB_NYJ");
+  });
+
   it("passes a consistent pair, and an empty current window when no games are final yet", () => {
     expect(run(fixture())).toEqual([]);
     expect(run(fixture([]), 0)).toEqual([]);

@@ -152,6 +152,25 @@ Except for the schedule needed to identify the matchup, enrichment artifacts
 are independent failure domains. A missing/malformed enrichment leaves only its
 own rows or panels unavailable; no fallback recomputes it from another source.
 
+Current-season EPA, conventional/YPP, RBSDM success, and Team Performance
+Analytics generation now checks every final regular-season team-game in the
+canonical results feed against its input or published sample before writing.
+The matchup EPA/YPP alignment check also compares both artifacts independently
+against results, so two equally stale artifacts fail. RBSDM refresh runs in its
+own weekly job because an RBSDM outage must not block nflverse EPA/YPP updates.
+Success metadata records the requested current-season through-week and included
+game count. RBSDM does not return source game IDs or a source-through marker, so
+its gate verifies the requested period and team coverage, not publication of
+each underlying game. Performance metadata records the included game count and cache
+through-week. ESPN trench data remains provider season-to-date and retains its
+published `throughWeek` marker rather than asserting every final game is covered.
+The Tuesday nflverse jobs refresh performance, EPA, and conventional/YPP data;
+the separate Tuesday RBSDM job refreshes Success Rate. ESPN trench data refreshes
+on Wednesday. RBSDM failure does not block the nflverse jobs.
+
+Historical matchup views still use latest available analytics rather than a
+selected-week pregame snapshot. Point-in-time snapshots require separate work.
+
 ## Boundaries
 
 - Power rating is not projected spread; projected spread is not market

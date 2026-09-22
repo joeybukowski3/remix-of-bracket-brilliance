@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { generateTeamPerformanceAnalytics } from "./generate-nfl-team-performance-analytics.mts";
 import { validateTeamPerformanceAnalyticsArtifact } from "../src/lib/nfl/teamPerformanceAnalytics";
 import { PERFORMANCE_SCALE_DIVISORS, PERFORMANCE_OVERALL_WEIGHTS } from "../src/lib/nfl/performanceComposite2026";
 
-// These exercise the REAL production pipeline against the REAL 2026 season
-// (zero completed games at the time this was written) and, where a season
-// has no cache/results.json at all, a nonexistent season number to prove the
-// generator degrades gracefully rather than fabricating anything.
+// The real 2026 season is live. Zero-game behavior uses a nonexistent season.
 
-describe("generateTeamPerformanceAnalytics — 2026 (real, zero completed games)", () => {
+describe("generateTeamPerformanceAnalytics — 2026", () => {
   it("1. produces exactly 32 teams with unique abbreviations", async () => {
     const artifact = await generateTeamPerformanceAnalytics(2026);
     expect(artifact.teams).toHaveLength(32);
@@ -41,13 +40,15 @@ describe("generateTeamPerformanceAnalytics — 2026 (real, zero completed games)
     }
   });
 
-  it("4. sample sizes are correct: 0 games played -> every window sampleSize is 0", async () => {
+  it("4. full-season samples match final results for every team", async () => {
     const artifact = await generateTeamPerformanceAnalytics(2026);
+    const results = JSON.parse(readFileSync(join(process.cwd(), "public/data/nfl/2026/results.json"), "utf-8")).results;
     for (const row of artifact.teams) {
-      expect(row.gamesPlayed).toBe(0);
-      expect(row.windows.last4.sampleSize).toBe(0);
-      expect(row.windows.last8.sampleSize).toBe(0);
-      expect(row.windows.fullSeason.sampleSize).toBe(0);
+      const expected = results.filter((game: { seasonType: string; final: boolean; homeAbbr: string; awayAbbr: string }) =>
+        game.seasonType === "REG" && game.final && [game.homeAbbr, game.awayAbbr].includes(row.team)
+      ).length;
+      expect(row.gamesPlayed).toBe(expected);
+      expect(row.windows.fullSeason.sampleSize).toBe(expected);
     }
   });
 
@@ -61,7 +62,7 @@ describe("generateTeamPerformanceAnalytics — 2026 (real, zero completed games)
   });
 
   it("6. zero-game season yields null performance ratings/ranks for every team", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateTeamPerformanceAnalytics(1899);
     for (const row of artifact.teams) {
       expect(row.performance.offenseRating).toBeNull();
       expect(row.performance.offenseRank).toBeNull();
@@ -73,7 +74,7 @@ describe("generateTeamPerformanceAnalytics — 2026 (real, zero completed games)
   });
 
   it("7. zero-game season yields null raw metrics (not zero, not fabricated)", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateTeamPerformanceAnalytics(1899);
     const row = artifact.teams[0];
     expect(row.windows.fullSeason.offense.filtered.epaPerPlay).toBeNull();
     expect(row.windows.fullSeason.offense.filtered.successRate).toBeNull();
@@ -105,7 +106,7 @@ describe("generateTeamPerformanceAnalytics — 2026 (real, zero completed games)
   });
 
   it("12. contains no preseason v0.4 or prior-season substitution for a zero-game season", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateTeamPerformanceAnalytics(1899);
     // Every numeric performance/rating field must be null, never a plausible
     // prior-season/v0.4-scale number (which would typically land in [1,99]).
     for (const row of artifact.teams) {
