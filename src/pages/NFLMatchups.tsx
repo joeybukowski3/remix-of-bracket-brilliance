@@ -6,12 +6,11 @@ import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
-import { useNflV03Artifacts } from "@/hooks/useNflV03Artifacts";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
-import { buildRecordByAbbr } from "@/lib/nfl/publicPowerRatings";
+import { deriveStandings, formatStandingRecord } from "@/lib/nfl/standings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildWeekMatchups, type NflMatchup } from "@/lib/nfl/matchups";
 import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
@@ -66,10 +65,6 @@ export default function NFLMatchups() {
   // Universal current 2026 OVR/rank/performance -- the only source for the
   // matrix's OVR column. Never the guide's frozen 2025-preseason values.
   const currentRating = useNflCurrentRating2026();
-  // Live 2026 win-loss record, joined the same way the public power-ratings
-  // board already does -- closes the gap where the matchup data layer never
-  // carried an in-season record.
-  const v03 = useNflV03Artifacts(CURRENT_SEASON);
   // Independent optional enrichments: each pipeline outage leaves only its own
   // columns at "N/A" rather than breaking the matrix.
   const { artifact: epaArtifact } = useNflMatchupEpa();
@@ -100,10 +95,14 @@ export default function NFLMatchups() {
   const dayGroups = useMemo(() => groupByDay(matchups), [matchups]);
   const hasResults = (data?.results.length ?? 0) > 0;
 
-  const recordByAbbr = useMemo(
-    () => buildRecordByAbbr(v03.data?.artifacts.fullSeason ?? null),
-    [v03.data]
-  );
+  // Live 2026 win-loss record, from the same canonical results/standings
+  // pipeline that powers /nfl/standings and /nfl/power-ratings -- NOT the v03
+  // Stage-1 fullSeason artifact, whose `teams` array stays empty until it is
+  // manually regenerated post-preseason.
+  const recordByAbbr = useMemo(() => {
+    if (!data) return new Map<string, string>();
+    return new Map(deriveStandings(data.results, data.teams).map((row) => [row.abbr, formatStandingRecord(row)]));
+  }, [data]);
 
   // Ratings mode and rank computation both need the WHOLE league's values,
   // not just the two teams in a given card, so the board is built once per

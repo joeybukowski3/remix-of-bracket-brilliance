@@ -143,8 +143,113 @@ describe("MatchupMatrixRow heatmap and display-mode behavior", () => {
         <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="rankings" awayRecord={null} homeRecord={null} />
       </MemoryRouter>
     );
-    const cell = screen.getAllByText("Off SR")[0].closest("td")!;
-    expect(within(cell).getByText("—")).toBeTruthy();
-    expect(cell.style.backgroundColor).toBe(cssColorToRgb(matrixCellStyle(null).backgroundColor));
+    const headerCell = screen.getAllByText("Off SR")[0].closest("td")!;
+    // The header row's leading cell is the team-identity cell (rowSpan-merged
+    // across both rows); the value row has no such cell, so its column index
+    // is one less than the header cell's.
+    const valueCell = headerCell.parentElement!.nextElementSibling!.children[headerCell.cellIndex - 1];
+    expect(within(valueCell).getByText("—")).toBeTruthy();
+    expect((valueCell as HTMLElement).style.backgroundColor).toBe(cssColorToRgb(matrixCellStyle(null).backgroundColor));
+  });
+});
+
+describe("MatchupMatrixRow team record", () => {
+  it("renders the team record under the team identity when available", () => {
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord="0-2" homeRecord="2-0" />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("0-2")).toBeTruthy();
+    expect(screen.getByText("2-0")).toBeTruthy();
+  });
+
+  it("renders an em dash when the record is unavailable", () => {
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
+});
+
+describe("MatchupMatrixRow header/value row structure", () => {
+  it("renders the away stat header row in offense-then-defense order", () => {
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+    const table = screen.getByRole("region", { name: /matchup matrix/i }).querySelector("table")!;
+    const awayHeaderRow = table.querySelectorAll("tbody > tr")[0];
+    const labels = Array.from(awayHeaderRow.querySelectorAll("td")).map((td) => td.textContent);
+    expect(labels).toEqual([
+      expect.stringContaining("New England Patriots"),
+      "OVR",
+      "Off EPA",
+      "Off YPP",
+      "Off SR",
+      "Blocking",
+      "",
+      "Def EPA",
+      "Def YPP",
+      "Def SR",
+      "Def Rush",
+    ]);
+  });
+
+  it("renders the home stat header row in defense-then-offense order", () => {
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+    const table = screen.getByRole("region", { name: /matchup matrix/i }).querySelector("table")!;
+    const homeHeaderRow = table.querySelectorAll("tbody > tr")[2];
+    const labels = Array.from(homeHeaderRow.querySelectorAll("td")).map((td) => td.textContent);
+    expect(labels).toEqual([
+      expect.stringContaining("Seattle Seahawks"),
+      "OVR",
+      "Def EPA",
+      "Def YPP",
+      "Def SR",
+      "Def Rush",
+      "",
+      "Off EPA",
+      "Off YPP",
+      "Off SR",
+      "Blocking",
+    ]);
+  });
+
+  it("value cells no longer render an embedded stat label", () => {
+    const board = makeBoard({
+      "ne:ovr": makeCell({ value: 82.6, formattedValue: "82.6", rank: 4 }),
+    });
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="values" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+    const valueCell = screen.getByText("82.6").closest("td")!;
+    expect(valueCell.textContent).toBe("82.6");
+    expect(valueCell.querySelector("[class*='uppercase']")).toBeNull();
+  });
+
+  it("keeps a strong center divider present after column 5 in both header and value rows", () => {
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+    const table = screen.getByRole("region", { name: /matchup matrix/i }).querySelector("table")!;
+    const rows = table.querySelectorAll("tbody > tr");
+    // Header rows: identity(0) + OVR,EPA,YPP,SR,Blocking(1-5) -> divider at index 6.
+    expect(rows[0].querySelectorAll("td")[6].getAttribute("aria-hidden")).toBe("true");
+    expect(rows[2].querySelectorAll("td")[6].getAttribute("aria-hidden")).toBe("true");
+    // Value rows: no identity cell -> OVR..Blocking(0-4) -> divider at index 5.
+    expect(rows[1].querySelectorAll("td")[5].getAttribute("aria-hidden")).toBe("true");
+    expect(rows[3].querySelectorAll("td")[5].getAttribute("aria-hidden")).toBe("true");
   });
 });
