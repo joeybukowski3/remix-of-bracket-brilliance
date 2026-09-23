@@ -74,7 +74,7 @@ function renderDashboard(overrides: Partial<React.ComponentProps<typeof WeeklyCo
     weeks: [1, 2, 3],
     scheduleMeta: null,
     invalidQuery: false,
-    artifactErrors: [],
+    unavailableModules: [],
     onWeekChange: vi.fn(),
     ...overrides,
   };
@@ -385,10 +385,24 @@ describe("WeeklyCommandCenter", () => {
     expect(styledCount).toBeGreaterThan(0);
   });
 
-  it("surfaces partial artifact failure without suppressing available modules", () => {
-    renderDashboard({ artifactErrors: ["Market unavailable"] });
-    expect(screen.getByRole("status")).toHaveTextContent(/supporting data is unavailable/i);
+  it("shows a structured, friendly warning for unavailable fantasy rankings without suppressing other modules", () => {
+    renderDashboard({ unavailableModules: ["fantasyRankings"] });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Fantasy rankings unavailable for Week 1. Schedule, Market data, Spread projections, JKB totals, and Current power ratings remain available.",
+    );
     expect(screen.getByRole("heading", { name: "Weekly Game Board" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Top Fantasy Picks — Week 1" })).toBeTruthy();
+  });
+
+  it("renders no warning when every supporting module is available", () => {
+    renderDashboard();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("renders Top Fantasy Pick as week-scoped unavailable when no fantasy rows exist", () => {
+    const emptyDashboard = { ...dashboard, week: 3, highlights: { ...dashboard.highlights, topFantasyProjection: null } };
+    renderDashboard({ dashboard: emptyDashboard, unavailableModules: ["fantasyRankings"] });
+    expect(screen.getByText("Week 3 rankings unavailable")).toBeTruthy();
+    expect(screen.queryByText("Week 2 rankings unavailable")).toBeNull();
   });
 });
