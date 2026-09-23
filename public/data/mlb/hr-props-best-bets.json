@@ -1,10 +1,10 @@
 {
   "date": "2026-09-23",
-  "generatedAt": "2026-09-23T15:36:48.777Z",
+  "generatedAt": "2026-09-23T18:30:14.950Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field (1.4) and Camden Yards (1.1) headline the slate with the two highest park factors, while Scherzer (52.3 HR/9 vs RHB) and Kirby (47.8) represent the most vulnerable arms. The model is heavily weighting barrel rate and recent HR volume, pushing Alonso and Alvarez to the top despite facing right-handers.",
-    "modelNote": "HR score is driven by a blend of barrel rate, park factor, and opposing pitcher HR vulnerability, with last-7 and last-30 HR counts serving as secondary momentum filters."
+    "slateOverview": "Coors Field (1.4) and Yankee Stadium (1.18) stand out as the strongest park boosts, while Camden Yards (1.1) and Wrigley (1.0) offer neutral-to-slight edges. The slate features several favorable righty-vs-righty matchups, including Scherzer in Baltimore and Englert in the Bronx, where barrel and hard-hit rates align with elevated home-run odds.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and recent HR volume over raw xBA, elevating Alonso and Rice despite moderate exit velos because their underlying contact quality and venue boosts outweigh strikeout risk."
   },
   "bestBets": [
     {
@@ -18,11 +18,30 @@
         "HH=56.2%"
       ],
       "bullets": [
-        "hrScore=76.4",
-        "park=1.1"
+        "barrel=14.7%",
+        "HH=56.2%"
       ],
-      "hrOddsYes": "+346",
-      "marketImpliedProbability": 0.2242152466367713,
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "TB",
+      "opposingPitcher": "Mason Englert",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=13.9%",
+        "HH=48%"
+      ],
+      "bullets": [
+        "barrel=13.9%",
+        "HH=48%"
+      ],
+      "hrOddsYes": "+472",
+      "marketImpliedProbability": 0.17482517482517482,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -31,14 +50,14 @@
       "team": "HOU",
       "opponent": "SEA",
       "opposingPitcher": "George Kirby",
-      "hrScoreRank": 2,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=16.3%",
         "HH=53.5%"
       ],
       "bullets": [
-        "hrScore=73.1",
-        "park=0.93"
+        "barrel=16.3%",
+        "HH=53.5%"
       ],
       "hrOddsYes": "+289",
       "marketImpliedProbability": 0.2570694087403599,
@@ -50,13 +69,13 @@
       "team": "CHC",
       "opponent": "MIA",
       "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "Pitcher HR VS=67.0",
         "Hard Hit%=48.7"
       ],
       "bullets": [
-        "HR score 70.6 (#3)",
+        "HR score 70.5 (#4)",
         "Pitcher HR VS 67.0 at park 1.00"
       ],
       "hrOddsYes": "+431",
@@ -69,33 +88,14 @@
       "team": "AZ",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=87.4",
+        "Pitcher HR VS=87.1",
         "Hard Hit%=48.5"
       ],
       "bullets": [
-        "HR score 70.3 (#4)",
-        "Pitcher HR VS 87.4 at park 1.40"
-      ],
-      "hrOddsYes": "+410",
-      "marketImpliedProbability": 0.19607843137254902,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "TEX",
-      "opposingPitcher": "Cody Bradford",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=63.8",
-        "Hard Hit%=48.4"
-      ],
-      "bullets": [
-        "HR score 69.0 (#5)",
-        "Pitcher HR VS 63.8 at park 0.99"
+        "HR score 70.1 (#5)",
+        "Pitcher HR VS 87.1 at park 1.40"
       ],
       "hrOddsYes": "+410",
       "marketImpliedProbability": 0.19607843137254902,
@@ -109,14 +109,14 @@
       "team": "CHC",
       "opponent": "MIA",
       "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=13.6%",
         "HH=48.7%"
       ],
       "bullets": [
-        "hrScore=70.6",
-        "park=1"
+        "barrel=13.6%",
+        "HH=48.7%"
       ],
       "hrOddsYes": "+431",
       "marketImpliedProbability": 0.18832391713747645,
@@ -128,17 +128,55 @@
       "team": "AZ",
       "opponent": "COL",
       "opposingPitcher": "Mason Adams",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=12.7%",
         "HH=48.5%"
       ],
       "bullets": [
-        "hrScore=70.3",
-        "park=1.4"
+        "barrel=12.7%",
+        "HH=48.5%"
       ],
       "hrOddsYes": "+410",
       "marketImpliedProbability": 0.19607843137254902,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "TB",
+      "opposingPitcher": "Mason Englert",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=12.3%",
+        "HH=46.2%"
+      ],
+      "bullets": [
+        "barrel=12.3%",
+        "HH=46.2%"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Heliot Ramos",
+      "team": "NYY",
+      "opponent": "TB",
+      "opposingPitcher": "Mason Englert",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=78.2",
+        "Hard Hit%=48.7"
+      ],
+      "bullets": [
+        "HR score 69.8 (#7)",
+        "Pitcher HR VS 78.2 at park 1.18"
+      ],
+      "hrOddsYes": "+537",
+      "marketImpliedProbability": 0.15698587127158556,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,114 +185,57 @@
       "team": "NYM",
       "opponent": "TEX",
       "opposingPitcher": "Cody Bradford",
-      "hrScoreRank": 5,
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=13.8%",
-        "HH=48.4%"
+        "Pitcher HR VS=64.0",
+        "Hard Hit%=48.4"
       ],
       "bullets": [
-        "hrScore=69",
-        "park=0.99"
+        "HR score 68.3 (#8)",
+        "Pitcher HR VS 64.0 at park 0.99"
       ],
       "hrOddsYes": "+410",
       "marketImpliedProbability": 0.19607843137254902,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "Seth Lugo",
-      "hrScoreRank": 6,
-      "topStats": [
-        "Pitcher HR VS=63.2",
-        "Hard Hit%=55.5"
-      ],
-      "bullets": [
-        "HR score 67.7 (#6)",
-        "Pitcher HR VS 63.2 at park 0.96"
-      ],
-      "hrOddsYes": "+379",
-      "marketImpliedProbability": 0.20876826722338204,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "Seth Lugo",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=63.2",
-        "Hard Hit%=44.0"
-      ],
-      "bullets": [
-        "HR score 67.5 (#7)",
-        "Pitcher HR VS 63.2 at park 0.96"
-      ],
-      "hrOddsYes": "+426",
-      "marketImpliedProbability": 0.19011406844106463,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=82.1",
-        "Hard Hit%=45.0"
-      ],
-      "bullets": [
-        "HR score 66.6 (#8)",
-        "Pitcher HR VS 82.1 at park 1.40"
-      ],
-      "hrOddsYes": "+287",
-      "marketImpliedProbability": 0.25839793281653745,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 8,
+      "player": "Heliot Ramos",
+      "team": "NYY",
+      "opponent": "TB",
+      "opposingPitcher": "Mason Englert",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=14.7%",
-        "HH=45%"
+        "barrel=14.1%",
+        "HH=48.7%"
       ],
       "bullets": [
-        "hrScore=66.6",
-        "park=1.4"
+        "barrel=14.1%",
+        "HH=48.7%"
       ],
-      "hrOddsYes": "+287",
-      "marketImpliedProbability": 0.25839793281653745,
+      "hrOddsYes": "+537",
+      "marketImpliedProbability": 0.15698587127158556,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Yohandy Morales",
-      "team": "WSH",
-      "opponent": "DET",
-      "opposingPitcher": "Framber Valdez",
-      "hrScoreRank": 24,
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "TEX",
+      "opposingPitcher": "Cody Bradford",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=14.3%",
-        "HH=64.3%"
+        "barrel=13.8%",
+        "HH=48.4%"
       ],
       "bullets": [
-        "hrScore=57.7",
-        "park=0.95"
+        "barrel=13.8%",
+        "HH=48.4%"
       ],
-      "hrOddsYes": "+950",
-      "marketImpliedProbability": 0.09523809523809523,
+      "hrOddsYes": "+410",
+      "marketImpliedProbability": 0.19607843137254902,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +244,36 @@
       "team": "MIN",
       "opponent": "SF",
       "opposingPitcher": "Cesar Perdomo",
-      "hrScoreRank": 20,
+      "hrScoreRank": 23,
       "topStats": [
         "Pitcher HR VS=58.3",
         "Hard Hit%=50.0"
       ],
       "bullets": [
-        "HR score 59.3 (#20)",
+        "HR score 59.4 (#23)",
         "Pitcher HR VS 58.3 at park 0.85"
       ],
       "hrOddsYes": "+680",
       "marketImpliedProbability": 0.1282051282051282,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Rafael Flores Jr.",
+      "team": "PIT",
+      "opponent": "STL",
+      "opposingPitcher": "Matthew Liberatore",
+      "hrScoreRank": 15,
+      "topStats": [
+        "Pitcher HR VS=68.4",
+        "Hard Hit%=47.9"
+      ],
+      "bullets": [
+        "HR score 64.1 (#15)",
+        "Pitcher HR VS 68.4 at park 0.90"
+      ],
+      "hrOddsYes": "+670",
+      "marketImpliedProbability": 0.12987012987012986,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
