@@ -42,6 +42,7 @@ function FilterSelect({
 
 export default function NflYardageMobileFilterDropdowns({
   matchups,
+  hidePosition = false,
   positionOptions,
   bandOptions,
   lineOptions,
@@ -49,6 +50,8 @@ export default function NflYardageMobileFilterDropdowns({
   onFilterChange,
 }: {
   matchups: readonly NflYardageWeekMatchup[];
+  /** Selected-matchup view fixes position per section, so the Position select is omitted. */
+  hidePosition?: boolean;
   positionOptions: readonly { value: string; label: string }[];
   bandOptions: readonly { value: string; label: string }[];
   lineOptions: readonly { value: string; label: string }[];
@@ -69,13 +72,15 @@ export default function NflYardageMobileFilterDropdowns({
         onChange={(v) => onFilterChange({ matchup: v })}
         options={matchupOptions}
       />
-      <FilterSelect
-        label="Position"
-        testId="nfl-yardage-mobile-filter-position"
-        value={filters.position}
-        onChange={(v) => onFilterChange({ position: v })}
-        options={positionOptions}
-      />
+      {!hidePosition && (
+        <FilterSelect
+          label="Position"
+          testId="nfl-yardage-mobile-filter-position"
+          value={filters.position}
+          onChange={(v) => onFilterChange({ position: v })}
+          options={positionOptions}
+        />
+      )}
       <FilterSelect
         label="Band"
         testId="nfl-yardage-mobile-filter-band"
