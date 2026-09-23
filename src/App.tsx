@@ -23,6 +23,7 @@ import Bracket from "./pages/Bracket";
 import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import Support from "./pages/Support";
+import ResearchStudies from "./pages/ResearchStudies";
 import TeamPage from "./pages/TeamPage";
 import MlbLayout from "@/components/mlb/MlbLayout";
 import MlbGameDetail from "./pages/MlbGameDetail";
@@ -155,6 +156,8 @@ const App = () => (
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/research-studies" element={<ResearchStudies />} />
+          <Route path="/research-studies/:studySlug" element={<ResearchStudies />} />
           <Route
             path="/16-0/*"
             element={
