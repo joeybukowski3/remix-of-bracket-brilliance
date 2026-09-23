@@ -3,7 +3,18 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      // scripts/lib/*.mjs CLI modules start with a #! line, which vite-node's
+      // function wrapper rejects. Neutralise it so tests can import them.
+      name: "strip-hashbang",
+      enforce: "pre",
+      transform(code) {
+        return code.startsWith("#!") ? { code: `//${code.slice(2)}`, map: null } : null;
+      },
+    },
+  ],
   test: {
     environment: "jsdom",
     globals: true,
@@ -20,6 +31,7 @@ export default defineConfig({
       "scripts/lib/pga-probability-model.test.mjs",
       "scripts/lib/pga-best-bets-selection.test.mjs",
       "scripts/lib/pga-best-bets-schema.test.mjs",
+      "api/_lib/mlb-refresh-backup.test.ts",
       "scripts/lib/mlb-opponent-k-context.test.mjs",
       "scripts/lib/mlb-strikeout-reference-context.test.mjs",
       // MLB K probability/value shadow layer (informational, does not drive
