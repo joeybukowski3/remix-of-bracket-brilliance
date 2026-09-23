@@ -7,6 +7,27 @@ import { matrixCellStyle, getMatrixRankTier } from "@/lib/nfl/matchupMatrixRankT
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatrixControls";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+
+/** Identity column is 100px on phones (team abbr) and 148px from md up (full name); the divider is 3px. */
+const DIVIDER_COL_WIDTH_PX = 3;
+/** Minimum width of one metric column inside the mobile scroller. */
+const METRIC_COL_MIN_PX = 64; // 100 + 3 + 9*64 = 679px (md: 148 + 3 + 576 = 727px)
+/** Share of the team colour blended over white for the identity cell. */
+const TEAM_TINT_RATIO = 0.08;
+
+/**
+ * Opaque faint tint: team hex blended over white. Opaque (not alpha) so the
+ * sticky identity cell fully hides stat cells scrolling underneath it.
+ */
+function teamTintBackground(hex: string | null): string {
+  if (!hex) return "#ffffff";
+  const channel = (start: number) => parseInt(hex.slice(start, start + 2), 16);
+  const rgb = [channel(1), channel(3), channel(5)].map((c) =>
+    Math.round(255 * (1 - TEAM_TINT_RATIO) + c * TEAM_TINT_RATIO)
+  );
+  return `rgb(${rgb.join(", ")})`;
+}
 
 type MatrixColumn = {
   id: string;
@@ -46,10 +67,15 @@ const MATRIX_COLUMNS: readonly MatrixColumn[] = [
  * above the value row so the heatmap value cell never carries embedded text —
  * see MatchupMatrixRow for why the away/home stat order swaps per column.
  */
-function MatrixHeaderCell({ label }: { label: string }) {
+function MatrixHeaderCell({ label, separatorClass = "" }: { label: string; separatorClass?: string }) {
   return (
-    <td className="min-w-[64px] bg-slate-50/90 px-1 py-1 text-center align-middle">
-      <span className="text-[8px] font-bold uppercase tracking-wide text-slate-500">{label}</span>
+    <td
+      data-matrix-header-cell
+      className={`h-6 overflow-hidden border-b border-slate-300 bg-slate-200 px-0.5 text-center align-middle ${separatorClass}`}
+    >
+      <span className="block truncate text-[10px] font-extrabold uppercase leading-none tracking-normal text-slate-700">
+        {label}
+      </span>
     </td>
   );
 }
@@ -74,7 +100,7 @@ function MatrixValueCell({ cell, displayMode }: { cell: NflMatrixCell; displayMo
 
   return (
     <td
-      className="min-w-[64px] px-1 py-1 text-center align-middle"
+      className="overflow-hidden px-0.5 py-1 text-center align-middle"
       style={{
         backgroundColor: style.backgroundColor,
         color: style.color,
@@ -88,11 +114,15 @@ function MatrixValueCell({ cell, displayMode }: { cell: NflMatrixCell; displayMo
 }
 
 /** Interleaves a strong navy divider cell after any column flagged `dividerAfter`. */
-function withDividers(columns: readonly MatrixColumn[], renderCell: (column: MatrixColumn) => ReactNode): ReactNode[] {
+function withDividers(
+  columns: readonly MatrixColumn[],
+  renderCell: (column: MatrixColumn) => ReactNode,
+  renderDivider?: (column: MatrixColumn) => ReactNode
+): ReactNode[] {
   return columns.reduce<ReactNode[]>((acc, column) => {
     acc.push(renderCell(column));
     if (column.dividerAfter) {
-      acc.push(<td key={`${column.id}-divider`} className="w-[3px] bg-slate-900 p-0" aria-hidden />);
+      acc.push(renderDivider ? renderDivider(column) : (<td key={`${column.id}-divider`} data-matrix-divider className="bg-slate-900 p-0" aria-hidden />));
     }
     return acc;
   }, []);
@@ -104,17 +134,21 @@ function TeamIdentityCell({
   matchupSlug,
   side,
   rowSpan,
+  separatorClass = "",
 }: {
   team: NflMatchupTeam;
   record: string | null;
   matchupSlug: string;
   side: "away" | "home";
   rowSpan: number;
+  separatorClass?: string;
 }) {
   return (
     <td
       rowSpan={rowSpan}
-      className={`${frozenDenseColumn({ surface: "bg-white" })} min-w-[132px] border-r border-slate-200 px-2 py-1.5 text-left align-middle`}
+      data-matrix-team-cell={side}
+      style={{ backgroundColor: teamTintBackground(nflTeamColorFor(team)) }}
+      className={`${frozenDenseColumn()} overflow-hidden border-r border-slate-300 px-2 py-1.5 text-left align-middle ${separatorClass}`}
     >
       <Link
         to={`/nfl/matchups/${matchupSlug}`}
@@ -123,12 +157,13 @@ function TeamIdentityCell({
         <img src={nflLogoUrl(team.abbr)} alt="" aria-hidden className="h-6 w-6 shrink-0 object-contain" loading="lazy" />
         <span className="min-w-0">
           <span className="block truncate text-[11px] font-bold leading-4 text-slate-900">
+            <span className="hidden md:inline">{team.teamName}</span>
+            <span className="uppercase md:hidden">{team.abbr}</span>
+          </span>
+          <span className="block text-[9px] font-semibold tabular-nums text-slate-500">
             <span className="mr-1 text-[8px] font-bold uppercase tracking-wider text-slate-400">
               {side === "away" ? "Away" : "Home"}
             </span>
-            {team.teamName}
-          </span>
-          <span className="block text-[9px] font-semibold tabular-nums text-slate-500">
             {record ?? "—"}
           </span>
         </span>
@@ -162,8 +197,11 @@ export default function MatchupMatrixRow({
   const { away, home } = matchup;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
+    <div
+      data-matrix-game
+      className="overflow-hidden rounded-lg border-2 border-slate-700 bg-white shadow-sm"
+    >
+      <div className="flex items-center justify-between gap-2 border-b-2 border-slate-300 bg-slate-100 px-2.5 py-1.5">
         <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">
           {kickoffLabel(matchup.kickoffUtc)}
         </span>
@@ -177,17 +215,38 @@ export default function MatchupMatrixRow({
       </div>
 
       <DenseTableScroller label={`${away.teamName} at ${home.teamName} matchup matrix`}>
-        <table className="w-full border-separate border-spacing-0 text-[11px]">
+        <table
+          className="w-full min-w-[679px] table-fixed border-separate border-spacing-0 text-[11px] md:min-w-[727px]"
+        >
+          <colgroup>
+            <col data-matrix-col="identity" className="w-[100px] md:w-[148px]" />
+            {withDividers(MATRIX_COLUMNS, (column) => (
+              <col key={column.id} data-matrix-col="metric" />
+            ), (column) => (
+              <col key={`${column.id}-divider`} data-matrix-col="divider" style={{ width: DIVIDER_COL_WIDTH_PX }} />
+            ))}
+          </colgroup>
           <tbody>
             {([
-              { team: away, side: "away" as const, useTop: true, record: awayRecord },
-              { team: home, side: "home" as const, useTop: false, record: homeRecord },
-            ]).map(({ team, side, useTop, record }) => (
+              { team: away, side: "away" as const, useTop: true, record: awayRecord, separatorClass: "" },
+              { team: home, side: "home" as const, useTop: false, record: homeRecord, separatorClass: "border-t-2 border-t-slate-400" },
+            ]).map(({ team, side, useTop, record, separatorClass }) => (
               <Fragment key={team.abbr}>
                 <tr className={DENSE_TABLE_ROW}>
-                  <TeamIdentityCell team={team} record={record} matchupSlug={matchup.slug} side={side} rowSpan={2} />
+                  <TeamIdentityCell
+                    team={team}
+                    record={record}
+                    matchupSlug={matchup.slug}
+                    side={side}
+                    rowSpan={2}
+                    separatorClass={separatorClass}
+                  />
                   {withDividers(MATRIX_COLUMNS, (column) => (
-                    <MatrixHeaderCell key={column.id} label={useTop ? column.topLabel : column.bottomLabel} />
+                    <MatrixHeaderCell
+                      key={column.id}
+                      label={useTop ? column.topLabel : column.bottomLabel}
+                      separatorClass={separatorClass}
+                    />
                   ))}
                 </tr>
                 <tr>

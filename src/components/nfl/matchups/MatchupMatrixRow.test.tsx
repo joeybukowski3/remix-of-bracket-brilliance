@@ -253,3 +253,46 @@ describe("MatchupMatrixRow header/value row structure", () => {
     expect(rows[3].querySelectorAll("td")[5].getAttribute("aria-hidden")).toBe("true");
   });
 });
+
+describe("MatchupMatrixRow fixed grid and team tint", () => {
+  const renderRow = () =>
+    render(
+      <MemoryRouter>
+        <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} />
+      </MemoryRouter>
+    );
+
+  it("uses a fixed table layout with identity + 9 metric + 1 divider columns", () => {
+    const { container } = renderRow();
+    const table = container.querySelector("table")!;
+    expect(table.className).toContain("table-fixed");
+    const cols = Array.from(table.querySelectorAll("colgroup > col")).map((c) => c.getAttribute("data-matrix-col"));
+    expect(cols.filter((c) => c === "identity")).toHaveLength(1);
+    expect(cols.filter((c) => c === "metric")).toHaveLength(9);
+    expect(cols.indexOf("divider")).toBe(6);
+    // Metric columns carry no explicit width, so they share the remainder equally.
+    table.querySelectorAll('col[data-matrix-col="metric"]').forEach((c) => expect((c as HTMLElement).style.width).toBe(""));
+  });
+
+  it("keeps rowSpan=2 identity cells and tints only them with the team colour", () => {
+    const { container } = renderRow();
+    const teamCells = container.querySelectorAll<HTMLElement>("[data-matrix-team-cell]");
+    expect(teamCells).toHaveLength(2);
+    teamCells.forEach((cell) => {
+      expect(cell.getAttribute("rowspan")).toBe("2");
+      expect(cell.style.backgroundColor).not.toBe("");
+      expect(cell.className).toContain("sticky");
+    });
+    container.querySelectorAll<HTMLElement>("[data-matrix-header-cell], [data-matrix-rank-tier], [data-matrix-divider]").forEach((cell) => {
+      expect(cell.hasAttribute("data-matrix-team-cell")).toBe(false);
+    });
+    const headerBg = container.querySelector<HTMLElement>("[data-matrix-header-cell]")!.style.backgroundColor;
+    expect(headerBg).toBe("");
+  });
+
+  it("wraps each game in a strong bordered container", () => {
+    const { container } = renderRow();
+    const game = container.querySelector<HTMLElement>("[data-matrix-game]")!;
+    expect(game.className).toContain("border-2");
+  });
+});
