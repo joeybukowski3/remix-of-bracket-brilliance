@@ -1,0 +1,808 @@
+{
+  "historical_rows": 2046,
+  "historical_games": 1023,
+  "exploratory_rows": 958,
+  "heldout_rows": 1088,
+  "season_rows": {
+    "2022": 414,
+    "2023": 544,
+    "2024": 544,
+    "2025": 544
+  },
+  "overlay_week2_rows": 32,
+  "primary_specification": "prior-eight hits divided by dropbacks, minimum four prior games; z and percentiles from all eligible team histories at kickoff",
+  "all_simultaneous_games_batched": true,
+  "quintile_definition": "floor(5*pregame league percentile), capped at 4",
+  "stability_persistence_note": "future rates are evaluation targets, not pregame features; week-to-week pregame percentile windows overlap",
+  "correlations": [
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 958,
+      "pearson": 0.2381623204642968,
+      "spearman": 0.21353866603235225
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 958,
+      "pearson": 0.2228213051408087,
+      "spearman": 0.1971960793808999
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 958,
+      "pearson": -0.14437350787780276,
+      "spearman": -0.1446555468741563
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 958,
+      "pearson": -0.12928146626873868,
+      "spearman": -0.13849143501116212
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 958,
+      "pearson": -0.0389770902320977,
+      "spearman": -0.05322302377512275
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 958,
+      "pearson": -0.1278268992302206,
+      "spearman": -0.1289719093713271
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 958,
+      "pearson": 0.008991479087677457,
+      "spearman": 0.007449040357841177
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 958,
+      "pearson": 0.11028819400399312,
+      "spearman": 0.09728339678645889
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 958,
+      "pearson": 0.12638006975195107,
+      "spearman": 0.12503645902847604
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 958,
+      "pearson": -0.11509393527431017,
+      "spearman": -0.11067604177708808
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 958,
+      "pearson": -0.12047199763272141,
+      "spearman": -0.11044580102601993
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 958,
+      "pearson": -0.020161729145198037,
+      "spearman": -0.04108329330353601
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 958,
+      "pearson": -0.09535599063451979,
+      "spearman": -0.08634814294484447
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 958,
+      "pearson": -0.034253121615007036,
+      "spearman": -0.02060466776414452
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 1088,
+      "pearson": 0.20687197273321178,
+      "spearman": 0.19168681619050698
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 1088,
+      "pearson": 0.20524148534548364,
+      "spearman": 0.20156067054179216
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 1088,
+      "pearson": -0.1711770311981694,
+      "spearman": -0.1635920495122564
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 1088,
+      "pearson": -0.12629829758033906,
+      "spearman": -0.11957801304872893
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 1088,
+      "pearson": -0.08197395153219965,
+      "spearman": -0.07680628629529375
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 1088,
+      "pearson": -0.15194328388403797,
+      "spearman": -0.15799598117632496
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 1088,
+      "pearson": -0.05314890198843378,
+      "spearman": -0.0708872088110034
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 1088,
+      "pearson": 0.05128808284961128,
+      "spearman": 0.03981818288847625
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 1088,
+      "pearson": 0.05627546014078815,
+      "spearman": 0.045789201436045986
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 1088,
+      "pearson": -0.06753837985090645,
+      "spearman": -0.06235097292693857
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 1088,
+      "pearson": -0.08839058627799236,
+      "spearman": -0.07880191962604378
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 1088,
+      "pearson": -0.010003976333359747,
+      "spearman": -0.004390085200482977
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 1088,
+      "pearson": -0.04924174934171449,
+      "spearman": -0.034965543267467376
+    },
+    {
+      "window": "2024-2025 heldout",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 1088,
+      "pearson": 0.011727335621935512,
+      "spearman": 0.022293633032139777
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 2046,
+      "pearson": 0.22160424394259554,
+      "spearman": 0.20356608295455103
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 2046,
+      "pearson": 0.2135752064183079,
+      "spearman": 0.20119310119552242
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 2046,
+      "pearson": -0.15888156262696534,
+      "spearman": -0.1537725655245092
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 2046,
+      "pearson": -0.12774063961342336,
+      "spearman": -0.12831085272924314
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 2046,
+      "pearson": -0.062248547923271405,
+      "spearman": -0.06748303018882036
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 2046,
+      "pearson": -0.14071519160238005,
+      "spearman": -0.1434999160373266
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 2046,
+      "pearson": -0.02386006425624623,
+      "spearman": -0.033835510410241916
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 2046,
+      "pearson": 0.07883806169746116,
+      "spearman": 0.06713754472864178
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 2046,
+      "pearson": 0.08916275659820447,
+      "spearman": 0.08300922080741864
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 2046,
+      "pearson": -0.0882470699538895,
+      "spearman": -0.0853475389838817
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 2046,
+      "pearson": -0.10290960411802022,
+      "spearman": -0.09427717492442421
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 2046,
+      "pearson": -0.014616741523925862,
+      "spearman": -0.022289563178519073
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 2046,
+      "pearson": -0.07044179421795121,
+      "spearman": -0.06039010494133491
+    },
+    {
+      "window": "2022-2025 full",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 2046,
+      "pearson": -0.009923338052587802,
+      "spearman": 0.000768098590339526
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 414,
+      "pearson": 0.22087853395709933,
+      "spearman": 0.2149759936339262
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 414,
+      "pearson": 0.1819152341966706,
+      "spearman": 0.17729505370303061
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 414,
+      "pearson": -0.14000384196322674,
+      "spearman": -0.13746719216976105
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 414,
+      "pearson": -0.07854918922567977,
+      "spearman": -0.08815090240595244
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 414,
+      "pearson": -0.0564710187838795,
+      "spearman": -0.06642646663944236
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 414,
+      "pearson": -0.08005466303685556,
+      "spearman": -0.09810589007350226
+    },
+    {
+      "window": "2022",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 414,
+      "pearson": 0.051241971011313454,
+      "spearman": 0.033202727538095465
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 414,
+      "pearson": 0.11938402581602262,
+      "spearman": 0.07770362020090144
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 414,
+      "pearson": 0.15011268720556595,
+      "spearman": 0.10732385650421528
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 414,
+      "pearson": -0.14033627677761312,
+      "spearman": -0.12232173762200038
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 414,
+      "pearson": -0.12984067846006397,
+      "spearman": -0.1140695154613824
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 414,
+      "pearson": -0.0897039422561483,
+      "spearman": -0.10100207620339298
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 414,
+      "pearson": -0.13680894997933735,
+      "spearman": -0.1112637019854954
+    },
+    {
+      "window": "2022",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 414,
+      "pearson": -0.07662673316133119,
+      "spearman": -0.04487523012010446
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 544,
+      "pearson": 0.25169509555512076,
+      "spearman": 0.20878791930662602
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 544,
+      "pearson": 0.25377535364536447,
+      "spearman": 0.21337556255510118
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 544,
+      "pearson": -0.14800669304394928,
+      "spearman": -0.15178496389999813
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 544,
+      "pearson": -0.16877121194845013,
+      "spearman": -0.18246272521502366
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 544,
+      "pearson": -0.02641594427141049,
+      "spearman": -0.04502298991559176
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 544,
+      "pearson": -0.1625032984833173,
+      "spearman": -0.15335159242371402
+    },
+    {
+      "window": "2023",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 544,
+      "pearson": -0.021635526942212602,
+      "spearman": -0.012458045572251986
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 544,
+      "pearson": 0.10339884038431539,
+      "spearman": 0.10698749659904559
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 544,
+      "pearson": 0.10954094552591029,
+      "spearman": 0.13094192491460513
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 544,
+      "pearson": -0.09887816746671291,
+      "spearman": -0.10023681174025693
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 544,
+      "pearson": -0.11335043477012569,
+      "spearman": -0.10999470765789797
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 544,
+      "pearson": 0.02769002477801145,
+      "spearman": 0.0016199925311627499
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 544,
+      "pearson": -0.06610053055817462,
+      "spearman": -0.06694240562659601
+    },
+    {
+      "window": "2023",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 544,
+      "pearson": -0.0041096098304906565,
+      "spearman": -0.0020147455337765955
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 544,
+      "pearson": 0.16365976953296613,
+      "spearman": 0.1618106862516373
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 544,
+      "pearson": 0.1836449360523321,
+      "spearman": 0.1860482253238906
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 544,
+      "pearson": -0.17864576270454952,
+      "spearman": -0.17870196640027458
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 544,
+      "pearson": -0.12855786607440997,
+      "spearman": -0.12758732620394841
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 544,
+      "pearson": -0.08941287565453626,
+      "spearman": -0.09317057476020225
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 544,
+      "pearson": -0.1604278358640498,
+      "spearman": -0.16850870137421203
+    },
+    {
+      "window": "2024",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 544,
+      "pearson": -0.06844508327165642,
+      "spearman": -0.08425432526062185
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 544,
+      "pearson": -0.017832795241970092,
+      "spearman": -0.00635705983402333
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 544,
+      "pearson": -0.023820685513096563,
+      "spearman": -0.01188105366428834
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 544,
+      "pearson": -0.018060528188670946,
+      "spearman": -0.030010465334696902
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 544,
+      "pearson": -0.026270607868637417,
+      "spearman": -0.03920637035033783
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 544,
+      "pearson": 0.02904463608671934,
+      "spearman": 0.024839653913819593
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 544,
+      "pearson": -0.03230277785131934,
+      "spearman": -0.013766917453160455
+    },
+    {
+      "window": "2024",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 544,
+      "pearson": 0.0221868209957725,
+      "spearman": 0.03571024510258831
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_sack_rate",
+      "n": 544,
+      "pearson": 0.24780622368334682,
+      "spearman": 0.21786850347001357
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_sacks",
+      "n": 544,
+      "pearson": 0.2264137713573827,
+      "spearman": 0.21287462082644637
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_pass_epa_db",
+      "n": 544,
+      "pearson": -0.16483682549286907,
+      "spearman": -0.14830154475495907
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_pass_success_rate",
+      "n": 544,
+      "pearson": -0.12445213116007439,
+      "spearman": -0.10875061393837596
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 544,
+      "pearson": -0.07474799098174498,
+      "spearman": -0.06228196240566588
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_points",
+      "n": 544,
+      "pearson": -0.14352056880164002,
+      "spearman": -0.14389675216996667
+    },
+    {
+      "window": "2025",
+      "component": "protection",
+      "outcome": "team_total_margin",
+      "n": 544,
+      "pearson": -0.038374347596163386,
+      "spearman": -0.05561992953925862
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_sack_rate",
+      "n": 544,
+      "pearson": 0.116432467909777,
+      "spearman": 0.08633684584264958
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_sacks",
+      "n": 544,
+      "pearson": 0.13550296401263323,
+      "spearman": 0.10344404569197942
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_pass_epa_db",
+      "n": 544,
+      "pearson": -0.11480786620369078,
+      "spearman": -0.0934645343944368
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_pass_success_rate",
+      "n": 544,
+      "pearson": -0.14612592569092822,
+      "spearman": -0.11734240069620401
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_explosive_pass_rate",
+      "n": 544,
+      "pearson": -0.04958424956806421,
+      "spearman": -0.030489745832677873
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_points",
+      "n": 544,
+      "pearson": -0.06573072306886393,
+      "spearman": -0.05530081773173632
+    },
+    {
+      "window": "2025",
+      "component": "pass_rush",
+      "outcome": "team_total_margin",
+      "n": 544,
+      "pearson": 0.0011775315832378455,
+      "spearman": 0.007001305109399302
+    }
+  ],
+  "inputs": [
+    "data/nfl/research/trench-offensive-disruption/game_level.csv",
+    "data/nfl/research/qb-pressure-trench/team_pregame_hit_ratings.csv",
+    "scripts/research/nfl-trench-offensive-disruption-study.py"
+  ]
+}
