@@ -17,6 +17,7 @@ import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   WEEKLY_RANKING_POSITIONS,
 } from "@/lib/fantasy/weeklyRankings";
+import { formatSupportingDataWarning, type NflCommandCenterModuleId } from "@/lib/nfl/moduleAvailability";
 import { ppgPercentileStyle } from "@/lib/fantasy/ppgPercentile";
 import type {
   WeeklyDashboard,
@@ -250,6 +251,7 @@ function TotalSignalTile({ game }: { game: WeeklyDashboardGame | null }) {
 }
 
 function SignalStrip({ dashboard }: { dashboard: WeeklyDashboard }) {
+  const week = dashboard.week;
   const gap = dashboard.highlights.largestGap;
   const highestTotal = dashboard.highlights.highestMarketTotal;
   const fantasy = dashboard.highlights.topFantasyProjection;
@@ -263,7 +265,7 @@ function SignalStrip({ dashboard }: { dashboard: WeeklyDashboard }) {
         <p className="mt-0.5 truncate text-xs font-black tabular-nums text-slate-950 sm:text-sm">
           {fantasy ? `${fantasy.player} · ${fantasy.position}${fantasy.rank}` : "Unavailable"}
         </p>
-        <SignalDetail>{fantasy ? `${fantasy.projectedPpg.toFixed(1)} 2026 projected PPG` : "Rankings unavailable"}</SignalDetail>
+        <SignalDetail>{fantasy ? `${fantasy.projectedPpg.toFixed(1)} 2026 projected PPG` : `Week ${week} rankings unavailable`}</SignalDetail>
       </div>
     </section>
   );
@@ -630,22 +632,23 @@ export default function WeeklyCommandCenter({
   weeks,
   scheduleMeta,
   invalidQuery,
-  artifactErrors,
+  unavailableModules,
   onWeekChange,
 }: {
   dashboard: WeeklyDashboard;
   weeks: readonly number[];
   scheduleMeta: NflDataMeta | null | undefined;
   invalidQuery: boolean;
-  artifactErrors: readonly string[];
+  unavailableModules: readonly NflCommandCenterModuleId[];
   onWeekChange: (week: number) => void;
 }) {
+  const supportingDataWarning = formatSupportingDataWarning(unavailableModules, dashboard.week);
   return (
     <div className="space-y-3">
       <CommandHeader dashboard={dashboard} weeks={weeks} scheduleMeta={scheduleMeta} invalidQuery={invalidQuery} onWeekChange={onWeekChange} />
-      {artifactErrors.length > 0 && (
+      {supportingDataWarning && (
         <div role="status" className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-semibold leading-4 text-amber-900">
-          Some supporting data is unavailable. Available schedule, rankings, ratings, and market modules continue independently.
+          {supportingDataWarning}
         </div>
       )}
       <SignalStrip dashboard={dashboard} />

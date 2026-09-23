@@ -173,6 +173,12 @@ jobs:
 
           git commit -m "chore: publish JKB weekly fantasy projections — season ${{ steps.target.outputs.season }} week ${{ steps.target.outputs.week }} $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
+          # Ephemeral generation inputs (e.g. matchup-market.json refreshed
+          # above) leave tracked modifications outside the owned output paths.
+          # Git refuses to rebase with a dirty tracked tree, so drop them now
+          # that the owned outputs are committed.
+          bash scripts/ci/discard-unowned-tracked-changes.sh
+
           pushed=false
           for attempt in 1 2 3 4 5; do
             echo "Push attempt ${attempt}/5"

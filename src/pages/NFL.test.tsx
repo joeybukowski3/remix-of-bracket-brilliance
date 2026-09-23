@@ -11,7 +11,8 @@ const useDashboard = vi.hoisted(() => vi.fn(() => ({
   projections: { error: null },
   totals: { error: null },
   ratings: { error: null },
-  fantasy: { contextErrors: [] },
+  fantasy: { status: "ready" },
+  unavailableModules: [],
 })));
 
 vi.mock("@/hooks/useNflWeeklyDashboard", () => ({ useNflWeeklyDashboard: useDashboard }));
