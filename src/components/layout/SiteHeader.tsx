@@ -9,6 +9,7 @@ const navItems = [
   { to: "/fantasy-football", label: "Fantasy" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
+  { to: "/research-studies", label: "Research Studies" },
   { to: "/support", label: "Support the Site" },
 ];
 
