@@ -1661,3 +1661,93 @@ describe("NFLYardagePropsReview old-schema yardage-history artifact (regression:
     expect(screen.queryByText("Wk")).not.toBeInTheDocument();
   });
 });
+
+describe("NFLYardagePropsReview selected-matchup stack", () => {
+  const asRow = (o: Record<string, unknown>) => ({ ...passingRow(), ...o }) as never;
+  const rushing = { market: "rushing", projectedCarries: 10, projectedYardsPerCarry: 4 };
+  const receiving = { market: "receiving", projectedTargets: 6, projectedYardsPerTarget: 8 };
+
+  function stackRows() {
+    return [
+      passingRow(),
+      asRow({ ...rushing, playerId: "qb-rush", playerName: "Scramble QB", position: "QB", projectedYards: 30 }),
+      asRow({ ...rushing, playerId: "rb-rush", playerName: "Rusher RB", position: "RB", projectedYards: 70 }),
+      asRow({ ...receiving, playerId: "rb-rec", playerName: "Catcher RB", position: "RB", projectedYards: 25 }),
+      asRow({ ...receiving, playerId: "wr-1", playerName: "Wide WR", position: "WR", projectedYards: 60 }),
+      asRow({ ...receiving, playerId: "te-1", playerName: "Tight TE", position: "TE", projectedYards: 40 }),
+      passingRow({ playerId: "other-qb", playerName: "Other Game QB", gameId: "2026_01_DET_BUF", team: "det", opponent: "buf" }),
+    ];
+  }
+
+  async function selectMatchup(gameLabel: RegExp) {
+    await screen.findAllByText("Drake Maye");
+    const select = screen.getByTestId("nfl-yardage-mobile-filter-matchup") as HTMLSelectElement;
+    const option = within(select).getAllByRole("option").find((o) => gameLabel.test(o.textContent ?? ""))!;
+    fireEvent.change(select, { target: { value: (option as HTMLOptionElement).value } });
+  }
+  const section = (pos: string) => screen.getByTestId(`nfl-yardage-matchup-section-${pos}`);
+
+  it("stacks QB/RB/WR/TE for the selected matchup with correct default prop types", async () => {
+    stubFetch(projectionsArtifact(stackRows()), marketArtifact());
+    renderPage();
+    await selectMatchup(/NE @ SEA|SEA @ NE/);
+
+    expect(within(section("QB")).getAllByText("Drake Maye").length).toBeGreaterThan(0);
+    expect(within(section("QB")).queryByText("Scramble QB")).not.toBeInTheDocument();
+    expect(within(section("RB")).getAllByText("Rusher RB").length).toBeGreaterThan(0);
+    expect(within(section("RB")).queryByText("Catcher RB")).not.toBeInTheDocument();
+    expect(within(section("WR")).getAllByText("Wide WR").length).toBeGreaterThan(0);
+    expect(within(section("TE")).getAllByText("Tight TE").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Other Game QB")).not.toBeInTheDocument();
+    // Global market tabs are gone -- the matchup is the primary filter.
+    expect(screen.queryByRole("group", { name: "Market" })).not.toBeInTheDocument();
+  });
+
+  it("local QB/RB tabs switch only their own section and the matchup stays selected", async () => {
+    stubFetch(projectionsArtifact(stackRows()), marketArtifact());
+    renderPage();
+    await selectMatchup(/NE @ SEA|SEA @ NE/);
+
+    fireEvent.click(within(section("QB")).getByRole("button", { name: "Rushing" }));
+    expect(within(section("QB")).getAllByText("Scramble QB").length).toBeGreaterThan(0);
+    expect(within(section("QB")).queryByText("Drake Maye")).not.toBeInTheDocument();
+    expect(within(section("RB")).getAllByText("Rusher RB").length).toBeGreaterThan(0);
+
+    fireEvent.click(within(section("RB")).getByRole("button", { name: "Receiving" }));
+    expect(within(section("RB")).getAllByText("Catcher RB").length).toBeGreaterThan(0);
+    expect(within(section("QB")).getAllByText("Scramble QB").length).toBeGreaterThan(0);
+    expect((screen.getByTestId("nfl-yardage-mobile-filter-matchup") as HTMLSelectElement).value).toBe("2026_01_NE_SEA");
+    expect(screen.queryByText("Other Game QB")).not.toBeInTheDocument();
+  });
+
+  it("shows an explicit empty state for a section with no props and applies shared filters to every section", async () => {
+    stubFetch(projectionsArtifact([passingRow(), asRow({ ...rushing, playerId: "rb-rush", playerName: "Rusher RB", position: "RB" })]), marketArtifact());
+    renderPage();
+    await selectMatchup(/NE @ SEA|SEA @ NE/);
+
+    expect(within(section("WR")).getByText(/No WR receiving props available for this matchup\./)).toBeInTheDocument();
+    fireEvent.click(within(section("QB")).getByRole("button", { name: "Rushing" }));
+    expect(screen.getByTestId("nfl-yardage-matchup-empty-QB")).toHaveTextContent("No QB rushing props available for this matchup");
+
+    // Line filter = available: Maye has a line, the unmatched RB does not -> RB section empties with the filtered wording.
+    fireEvent.click(within(section("QB")).getByRole("button", { name: "Passing" }));
+    fireEvent.change(screen.getByTestId("nfl-yardage-mobile-filter-line"), { target: { value: "available" } });
+    expect(within(section("QB")).getAllByText("Drake Maye").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("nfl-yardage-matchup-empty-RB")).toHaveTextContent("with the current filters");
+  });
+
+  it("choosing a different matchup replaces all four sections, and All Matchups restores the global tabs", async () => {
+    stubFetch(projectionsArtifact(stackRows()), marketArtifact());
+    renderPage();
+    await selectMatchup(/NE @ SEA|SEA @ NE/);
+    await selectMatchup(/DET @ BUF|BUF @ DET/);
+
+    expect(within(section("QB")).getAllByText("Other Game QB").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Drake Maye")).not.toBeInTheDocument();
+    expect(within(section("RB")).getByTestId("nfl-yardage-matchup-empty-RB")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId("nfl-yardage-mobile-filter-matchup"), { target: { value: "all" } });
+    expect(screen.queryByTestId("nfl-yardage-matchup-stack")).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Market" })).toBeInTheDocument();
+  });
+});
